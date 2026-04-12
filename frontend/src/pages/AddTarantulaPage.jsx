@@ -15,6 +15,8 @@ export default function AddTarantulaPage() {
   })
   const [speciesQuery, setSpeciesQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
+  const [gbifResults, setGbifResults] = useState([])
+  const [gbifLoading, setGbifLoading] = useState(false)
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [showSugg, setShowSugg] = useState(false)
   const [photo, setPhoto] = useState(null)
@@ -42,12 +44,17 @@ export default function AddTarantulaPage() {
     }
   }, [id, isEdit])
 
-  // Debounced species search
+  // Debounced species search (local + GBIF in parallel)
   useEffect(() => {
     clearTimeout(debounceRef.current)
-    if (speciesQuery.length < 2) { setSuggestions([]); return }
+    if (speciesQuery.length < 2) { setSuggestions([]); setGbifResults([]); return }
     debounceRef.current = setTimeout(() => {
       speciesService.search(speciesQuery).then(setSuggestions)
+      setGbifLoading(true)
+      speciesService.searchGbif(speciesQuery)
+        .then(setGbifResults)
+        .catch(() => setGbifResults([]))
+        .finally(() => setGbifLoading(false))
       setShowSugg(true)
     }, 300)
   }, [speciesQuery])
@@ -63,6 +70,19 @@ export default function AddTarantulaPage() {
     setSelectedSpecies(null)
     setForm(f => ({ ...f, speciesId: null }))
     setSpeciesQuery('')
+  }
+
+  const selectGbif = async (gbifResult) => {
+    setShowSugg(false)
+    setGbifLoading(true)
+    try {
+      const imported = await speciesService.importFromGbif(gbifResult.key)
+      selectSpecies(imported)
+    } catch {
+      setError('No se pudo importar la especie desde GBIF.')
+    } finally {
+      setGbifLoading(false)
+    }
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -126,10 +146,10 @@ export default function AddTarantulaPage() {
                 )}
               </div>
 
-              {showSugg && suggestions.length > 0 && (
+              {showSugg && (suggestions.length > 0 || gbifResults.length > 0) && (
                 <ul className="list-group position-absolute w-100 shadow-sm"
-                    style={{ zIndex: 1000, top: '100%' }}>
-                  {suggestions.slice(0, 8).map(sp => (
+                    style={{ zIndex: 1000, top: '100%', maxHeight: 320, overflowY: 'auto' }}>
+                  {suggestions.slice(0, 6).map(sp => (
                     <li key={sp.id}
                         className="list-group-item list-group-item-action"
                         style={{ cursor: 'pointer' }}
@@ -138,6 +158,31 @@ export default function AddTarantulaPage() {
                       {sp.commonName && <span className="text-muted small ms-2">· {sp.commonName}</span>}
                     </li>
                   ))}
+                  {gbifResults.length > 0 && (
+                    <>
+                      <li className="list-group-item py-1 px-3"
+                          style={{ background: '#e8f4fd', borderTop: '1px solid #bee5fb', cursor: 'default' }}>
+                        <span className="small fw-semibold text-primary">
+                          {gbifLoading ? '🌍 Buscando en GBIF...' : '🌍 GBIF — Catálogo oficial'}
+                        </span>
+                      </li>
+                      {gbifResults.slice(0, 6).map(gr => (
+                        <li key={gr.key}
+                            className="list-group-item list-group-item-action"
+                            style={{ cursor: 'pointer', background: '#f0f8ff' }}
+                            onMouseDown={() => selectGbif(gr)}>
+                          <span className="fw-semibold small">{gr.canonicalName || gr.scientificName}</span>
+                          {gr.vernacularName && <span className="text-muted small ms-2">· {gr.vernacularName}</span>}
+                          {gr.family && <span className="badge bg-primary ms-2" style={{ fontSize: '0.65rem' }}>{gr.family}</span>}
+                        </li>
+                      ))}
+                    </>
+                  )}
+                  {gbifLoading && gbifResults.length === 0 && (
+                    <li className="list-group-item py-1 px-3 text-muted small" style={{ cursor: 'default' }}>
+                      🌍 Consultando GBIF...
+                    </li>
+                  )}
                 </ul>
               )}
             </div>
