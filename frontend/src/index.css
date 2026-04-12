@@ -1,0 +1,13 @@
+:root {
+  --color-brand: #1a1a2e;
+  --color-accent: #e94560;
+}
+
+body {
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.navbar-brand {
+  letter-spacing: 0.5px;
+}
