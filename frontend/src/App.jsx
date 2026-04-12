@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import AddTarantulaPage from './pages/AddTarantulaPage'
+import TarantulaDetailPage from './pages/TarantulaDetailPage'
+import PublicProfilePage from './pages/PublicProfilePage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -12,14 +15,16 @@ function AppRoutes() {
   const { token } = useAuth()
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={token ? <Navigate to="/" replace /> : <LoginPage />}
-      />
-      <Route
-        path="/"
-        element={<PrivateRoute><DashboardPage /></PrivateRoute>}
-      />
+      {/* Pública */}
+      <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/t/:shortId" element={<PublicProfilePage />} />
+
+      {/* Protegidas */}
+      <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+      <Route path="/tarantulas/new" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
+      <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
+      <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

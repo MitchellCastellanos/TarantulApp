@@ -4,10 +4,26 @@
 }
 
 body {
-  background-color: #f8f9fa;
+  background-color: #f0f2f5;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 .navbar-brand {
   letter-spacing: 0.5px;
 }
+
+/* Hover suave en las cards de tarántula */
+.tarantula-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.tarantula-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+
+/* Autocomplete suggestions */
+.list-group-item-action:hover {
+  background-color: #f8f9fa;
+}
+

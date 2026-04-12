@@ -1,0 +1,14 @@
+package com.tarantulapp.repository;
+
+import com.tarantulapp.entity.Tarantula;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
+    List<Tarantula> findByUserIdOrderByCreatedAtDesc(UUID userId);
+    Optional<Tarantula> findByShortId(String shortId);
+    boolean existsByShortId(String shortId);
+}
