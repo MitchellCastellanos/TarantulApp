@@ -10,7 +10,10 @@ export default function Navbar() {
         🕷️ TarantulApp
       </Link>
       <div className="d-flex align-items-center gap-3">
-        <span className="text-light small d-none d-sm-inline">
+        <Link to="/reminders" className="text-light small text-decoration-none d-none d-sm-inline">
+          🔔 Recordatorios
+        </Link>
+        <span className="text-light small d-none d-md-inline">
           {user?.displayName || user?.email}
         </span>
         <button className="btn btn-outline-light btn-sm" onClick={logout}>

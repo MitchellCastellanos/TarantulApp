@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.dto.*;
+import com.tarantulapp.entity.Photo;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
@@ -22,19 +23,22 @@ public class TarantulaService {
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
     private final FileStorageService fileStorageService;
+    private final PhotoRepository photoRepository;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
                             FeedingLogRepository feedingLogRepository,
                             MoltLogRepository moltLogRepository,
                             BehaviorLogRepository behaviorLogRepository,
-                            FileStorageService fileStorageService) {
+                            FileStorageService fileStorageService,
+                            PhotoRepository photoRepository) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
         this.fileStorageService = fileStorageService;
+        this.photoRepository = photoRepository;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -71,6 +75,29 @@ public class TarantulaService {
         String path = fileStorageService.saveFile(file, "tarantulas/" + id);
         t.setProfilePhoto(path);
         return toResponse(tarantulaRepository.save(t));
+    }
+
+    public List<PhotoResponse> getPhotos(UUID tarantulaId, UUID userId) {
+        getOwned(tarantulaId, userId);
+        return photoRepository.findByTarantulaIdOrderByCreatedAtDesc(tarantulaId)
+                .stream().map(PhotoResponse::from).collect(Collectors.toList());
+    }
+
+    public PhotoResponse addPhoto(UUID tarantulaId, MultipartFile file, String caption, UUID userId) throws IOException {
+        getOwned(tarantulaId, userId);
+        String path = fileStorageService.saveFile(file, "gallery/" + tarantulaId);
+        Photo photo = new Photo();
+        photo.setTarantulaId(tarantulaId);
+        photo.setFilePath(path);
+        photo.setCaption(caption);
+        return PhotoResponse.from(photoRepository.save(photo));
+    }
+
+    public void deletePhoto(UUID tarantulaId, UUID photoId, UUID userId) {
+        getOwned(tarantulaId, userId);
+        Photo photo = photoRepository.findByIdAndTarantulaId(photoId, tarantulaId)
+                .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
+        photoRepository.delete(photo);
     }
 
     public TarantulaResponse togglePublic(UUID id, UUID userId) {

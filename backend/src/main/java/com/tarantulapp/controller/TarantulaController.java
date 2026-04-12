@@ -67,4 +67,22 @@ public class TarantulaController {
     public ResponseEntity<List<TimelineEventDTO>> getTimeline(@PathVariable UUID id) {
         return ResponseEntity.ok(tarantulaService.getTimeline(id, securityHelper.getCurrentUserId()));
     }
+
+    @GetMapping("/{id}/photos")
+    public ResponseEntity<List<PhotoResponse>> getPhotos(@PathVariable UUID id) {
+        return ResponseEntity.ok(tarantulaService.getPhotos(id, securityHelper.getCurrentUserId()));
+    }
+
+    @PostMapping(value = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PhotoResponse> addPhoto(@PathVariable UUID id,
+                                                   @RequestParam("file") MultipartFile file,
+                                                   @RequestParam(value = "caption", required = false) String caption) throws IOException {
+        return ResponseEntity.ok(tarantulaService.addPhoto(id, file, caption, securityHelper.getCurrentUserId()));
+    }
+
+    @DeleteMapping("/{id}/photos/{photoId}")
+    public ResponseEntity<Void> deletePhoto(@PathVariable UUID id, @PathVariable UUID photoId) {
+        tarantulaService.deletePhoto(id, photoId, securityHelper.getCurrentUserId());
+        return ResponseEntity.noContent().build();
+    }
 }

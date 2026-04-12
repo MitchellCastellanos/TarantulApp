@@ -2,19 +2,36 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import TarantulaCard from '../components/TarantulaCard'
+import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
 
-const FILTERS = [
+const HABITAT_FILTERS = [
   { key: 'all', label: 'Todas' },
   { key: 'terrestrial', label: '🌎 Terrestres' },
   { key: 'arboreal', label: '🌳 Arbóreas' },
   { key: 'fossorial', label: '🕳️ Fosoriales' },
 ]
+const STAGE_FILTERS = [
+  { key: '', label: 'Etapa' },
+  { key: 'sling', label: 'Sling' },
+  { key: 'juvenile', label: 'Juvenil' },
+  { key: 'subadult', label: 'Subadulto' },
+  { key: 'adult', label: 'Adulto' },
+]
+const STATUS_FILTERS = [
+  { key: '', label: 'Estado' },
+  { key: 'active', label: '✅ Activas' },
+  { key: 'pre_molt', label: '🌙 Pre-muda' },
+  { key: 'pending_feeding', label: '🍽️ Sin comer' },
+]
 
 export default function DashboardPage() {
   const [tarantulas, setTarantulas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  const [habitat, setHabitat] = useState('all')
+  const [stage, setStage] = useState('')
+  const [status, setStatus] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     tarantulaService.getAll()
@@ -23,9 +40,15 @@ export default function DashboardPage() {
   }, [])
 
   const filtered = tarantulas.filter(t => {
-    if (filter === 'all') return true
-    return t.species?.habitatType === filter
+    if (habitat !== 'all' && t.species?.habitatType !== habitat) return false
+    if (stage && t.stage !== stage) return false
+    if (status && t.status !== status) return false
+    if (search && !t.name.toLowerCase().includes(search.toLowerCase()) &&
+        !t.species?.scientificName?.toLowerCase().includes(search.toLowerCase())) return false
+    return true
   })
+
+  const hasActiveFilters = habitat !== 'all' || stage || status || search
 
   return (
     <div>
@@ -44,16 +67,44 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {/* Recordatorios próximos */}
+        <RemindersPanel />
+
         {/* Filtros */}
         {tarantulas.length > 0 && (
-          <div className="d-flex gap-2 mb-4 flex-wrap">
-            {FILTERS.map(f => (
-              <button key={f.key}
-                      className={`btn btn-sm ${filter === f.key ? 'btn-dark' : 'btn-outline-secondary'}`}
-                      onClick={() => setFilter(f.key)}>
-                {f.label}
-              </button>
-            ))}
+          <div className="mb-4">
+            <div className="input-group input-group-sm mb-2" style={{ maxWidth: 320 }}>
+              <span className="input-group-text bg-white border-end-0">🔍</span>
+              <input type="text" className="form-control border-start-0"
+                     placeholder="Buscar por nombre o especie..."
+                     value={search} onChange={e => setSearch(e.target.value)} />
+              {search && (
+                <button className="btn btn-outline-secondary" onClick={() => setSearch('')}>✕</button>
+              )}
+            </div>
+            <div className="d-flex gap-2 flex-wrap align-items-center">
+              {HABITAT_FILTERS.map(f => (
+                <button key={f.key}
+                        className={`btn btn-sm ${habitat === f.key ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setHabitat(f.key)}>
+                  {f.label}
+                </button>
+              ))}
+              <select className="form-select form-select-sm" style={{ width: 'auto' }}
+                      value={stage} onChange={e => setStage(e.target.value)}>
+                {STAGE_FILTERS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+              </select>
+              <select className="form-select form-select-sm" style={{ width: 'auto' }}
+                      value={status} onChange={e => setStatus(e.target.value)}>
+                {STATUS_FILTERS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+              </select>
+              {hasActiveFilters && (
+                <button className="btn btn-sm btn-link text-muted p-0"
+                        onClick={() => { setHabitat('all'); setStage(''); setStatus(''); setSearch('') }}>
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -74,7 +125,15 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-muted">Sin resultados para este filtro.</p>
+          <p className="text-muted small">
+            Sin resultados para los filtros seleccionados.{' '}
+            {hasActiveFilters && (
+              <button className="btn btn-link btn-sm p-0 text-muted"
+                      onClick={() => { setHabitat('all'); setStage(''); setStatus(''); setSearch('') }}>
+                Limpiar filtros
+              </button>
+            )}
+          </p>
         ) : (
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
             {filtered.map(t => (

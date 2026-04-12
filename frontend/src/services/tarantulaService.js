@@ -15,6 +15,17 @@ const tarantulaService = {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(r => r.data)
   },
+  getPhotos: (id) => api.get(`/tarantulas/${id}/photos`).then(r => r.data),
+  addPhoto: (id, file, caption) => {
+    const form = new FormData()
+    form.append('file', file)
+    if (caption) form.append('caption', caption)
+    return api.post(`/tarantulas/${id}/photos`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(r => r.data)
+  },
+  deletePhoto: (tarantulaId, photoId) =>
+    api.delete(`/tarantulas/${tarantulaId}/photos/${photoId}`),
 }
 
 export default tarantulaService

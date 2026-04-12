@@ -7,6 +7,7 @@ import FeedingModal from '../components/FeedingModal'
 import MoltModal from '../components/MoltModal'
 import BehaviorModal from '../components/BehaviorModal'
 import QRModal from '../components/QRModal'
+import PhotoGallery from '../components/PhotoGallery'
 import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
 
@@ -67,6 +68,36 @@ export default function TarantulaDetailPage() {
   )
 
   const { species } = tarantula
+
+  // ─── Terrarium recommendation ──────────────────────────────────────────────
+  const terrariumRec = (() => {
+    if (!tarantula.currentSizeCm || !species) return null
+    const body = Number(tarantula.currentSizeCm)
+    const legSpan = body * 2        // rough estimate: leg span ≈ 2× body length
+    const { habitatType, adultSizeCmMax } = species
+
+    let enclosure
+    if (habitatType === 'arboreal') {
+      const w = Math.ceil(legSpan * 1.5)
+      const h = Math.ceil(legSpan * 3)
+      enclosure = `${w} × ${w} × ${h} cm (ancho × prof × alto)`
+    } else if (habitatType === 'fossorial') {
+      const floor = Math.ceil(legSpan * 2)
+      const substrate = Math.ceil(body * 3)
+      enclosure = `${floor} × ${floor} cm piso, ${substrate} cm de sustrato`
+    } else {
+      // terrestrial (default)
+      const floor = Math.ceil(legSpan * 2.5)
+      const height = Math.ceil(legSpan * 1.2)
+      enclosure = `${floor} × ${floor} × ${height} cm (largo × ancho × alto)`
+    }
+
+    const pct = adultSizeCmMax
+      ? Math.min(100, Math.round((body / Number(adultSizeCmMax)) * 100))
+      : null
+
+    return { enclosure, pct, adultSizeCmMax }
+  })()
 
   return (
     <div>
@@ -221,6 +252,32 @@ export default function TarantulaDetailPage() {
               </div>
             )}
 
+            {/* Recomendación de terrario */}
+            {terrariumRec && (
+              <div className="card border-0 shadow-sm mb-4">
+                <div className="card-body">
+                  <h6 className="fw-bold mb-2">🏠 Recomendación de terrario</h6>
+                  <p className="small mb-2 text-muted">
+                    Basado en tamaño actual de <strong>{tarantula.currentSizeCm} cm</strong>
+                    {terrariumRec.adultSizeCmMax && ` · Adulto esperado: ${terrariumRec.adultSizeCmMax} cm`}
+                  </p>
+                  <div className="fw-semibold small mb-2">📐 {terrariumRec.enclosure}</div>
+                  {terrariumRec.pct !== null && (
+                    <div>
+                      <div className="d-flex justify-content-between small text-muted mb-1">
+                        <span>Crecimiento hacia adulto</span>
+                        <span>{terrariumRec.pct}%</span>
+                      </div>
+                      <div className="progress" style={{ height: 6 }}>
+                        <div className={`progress-bar ${terrariumRec.pct >= 80 ? 'bg-success' : terrariumRec.pct >= 50 ? 'bg-warning' : 'bg-info'}`}
+                             style={{ width: `${terrariumRec.pct}%` }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Acciones de registro */}
             <div className="d-flex gap-2 mb-4 flex-wrap">
               <button className="btn btn-outline-primary btn-sm" onClick={() => setModal('feeding')}>
@@ -234,6 +291,9 @@ export default function TarantulaDetailPage() {
                 🔍 + Comportamiento
               </button>
             </div>
+
+            {/* Photo gallery */}
+            <PhotoGallery tarantulaId={id} />
 
             {/* Timeline */}
             <div className="card border-0 shadow-sm">

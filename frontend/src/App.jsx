@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import AddTarantulaPage from './pages/AddTarantulaPage'
 import TarantulaDetailPage from './pages/TarantulaDetailPage'
 import PublicProfilePage from './pages/PublicProfilePage'
+import RemindersPage from './pages/RemindersPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -24,6 +25,7 @@ function AppRoutes() {
       <Route path="/tarantulas/new" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
+      <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
