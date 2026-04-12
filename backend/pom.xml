@@ -48,17 +48,17 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- SQL Server JDBC driver -->
+        <!-- PostgreSQL JDBC driver (Supabase usa PostgreSQL) -->
         <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Flyway for SQL Server -->
+        <!-- Flyway core (PostgreSQL está incluido sin módulo extra) -->
         <dependency>
             <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-sqlserver</artifactId>
+            <artifactId>flyway-core</artifactId>
         </dependency>
 
         <!-- JWT (jjwt 0.12.x) -->
