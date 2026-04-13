@@ -5,6 +5,7 @@ import com.tarantulapp.entity.Photo;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
+import com.tarantulapp.util.FileStorageService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
