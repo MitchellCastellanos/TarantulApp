@@ -8,6 +8,7 @@ import com.tarantulapp.repository.*;
 import com.tarantulapp.util.FileStorageService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class TarantulaService {
 
     private final TarantulaRepository tarantulaRepository;
@@ -50,11 +52,13 @@ public class TarantulaService {
         return toResponse(tarantulaRepository.save(t));
     }
 
+    @Transactional(readOnly = true)
     public List<TarantulaResponse> findByUser(UUID userId) {
         return tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public TarantulaResponse findById(UUID id, UUID userId) {
         Tarantula t = getOwned(id, userId);
         return toResponse(t);
@@ -78,6 +82,7 @@ public class TarantulaService {
         return toResponse(tarantulaRepository.save(t));
     }
 
+    @Transactional(readOnly = true)
     public List<PhotoResponse> getPhotos(UUID tarantulaId, UUID userId) {
         getOwned(tarantulaId, userId);
         return photoRepository.findByTarantulaIdOrderByCreatedAtDesc(tarantulaId)
@@ -107,6 +112,7 @@ public class TarantulaService {
         return toResponse(tarantulaRepository.save(t));
     }
 
+    @Transactional(readOnly = true)
     public List<TimelineEventDTO> getTimeline(UUID tarantulaId, UUID userId) {
         getOwned(tarantulaId, userId); // verify ownership
         List<TimelineEventDTO> events = new ArrayList<>();
@@ -131,6 +137,7 @@ public class TarantulaService {
         return events;
     }
 
+    @Transactional(readOnly = true)
     public PublicProfileDTO getPublicProfile(String shortId) {
         Tarantula t = tarantulaRepository.findByShortId(shortId)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
