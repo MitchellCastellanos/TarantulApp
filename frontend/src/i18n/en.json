@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "reminders": "Reminders",
+    "logout": "Sign out",
+    "lang": "Language"
+  },
+  "auth": {
+    "loginTitle": "TarantulApp",
+    "loginSubtitle": "Sign in to view your collection",
+    "registerSubtitle": "Create your account and start tracking",
+    "name": "Name",
+    "namePlaceholder": "What should we call you?",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "At least 6 characters",
+    "login": "Sign in",
+    "register": "Create account",
+    "loading": "Loading...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "registerLink": "Sign up",
+    "loginLink": "Sign in",
+    "forgotPassword": "Forgot your password?",
+    "sendReset": "Send reset link",
+    "backToLogin": "← Back to login",
+    "resetSent": "Done! If that email exists, you'll receive a link in your inbox.",
+    "resetTitle": "New password",
+    "resetSubtitle": "Enter your new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "resetPassword": "Change password",
+    "passwordMismatch": "Passwords don't match",
+    "resetSuccess": "Password updated. You can now sign in."
+  },
+  "dashboard": {
+    "myCollection": "My Collection",
+    "add": "+ Add Tarantula",
+    "empty": "No tarantulas yet. Add your first one!",
+    "filterAll": "All",
+    "filterActive": "Active",
+    "filterHungry": "Hungry",
+    "filterPreMolt": "Pre-molt",
+    "search": "Search by name or species..."
+  },
+  "status": {
+    "active": "Active",
+    "pre_molt": "Pre-molt",
+    "pending_feeding": "Hungry"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Something went wrong. Please try again.",
+    "confirm": "Are you sure?"
+  }
+}

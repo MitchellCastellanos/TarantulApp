@@ -1,29 +1,284 @@
+/* ─── TarantulApp Theme — Woodsy Fantasy ─────────────────────────────────── */
+
+/* Google Fonts: Cinzel (titles) + Crimson Text (body) */
+
 :root {
-  --color-brand: #1a1a2e;
-  --color-accent: #e94560;
+  --ta-bg:           #1e2a10;
+  --ta-bg-deep:      #131c09;
+  --ta-parchment:    #f4e5c2;
+  --ta-parchment-dk: #e8d5a8;
+  --ta-brown:        #5c3d1e;
+  --ta-brown-light:  #8b6540;
+  --ta-green:        #3d5a2a;
+  --ta-green-light:  #4e7238;
+  --ta-text:         #2e1f0e;
+  --ta-text-muted:   #6b5234;
+  --ta-border:       #7a5c2e;
+  --ta-gold:         #c9a84c;
 }
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
 
 body {
-  background-color: #f0f2f5;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--ta-bg);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 48px,
+      rgba(0,0,0,0.06) 48px,
+      rgba(0,0,0,0.06) 49px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 120px,
+      rgba(0,0,0,0.04) 120px,
+      rgba(0,0,0,0.04) 121px
+    );
+  font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  color: var(--ta-text);
+  min-height: 100vh;
 }
 
+h1, h2, h3, h4, h5, h6,
+.navbar-brand,
+.cinzel {
+  font-family: 'Cinzel', 'Georgia', serif;
+}
+
+/* Spider decorations on sides (hidden on mobile) */
+body::before,
+body::after {
+  content: '🕷️';
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8rem;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+}
+body::before { left: -1.5rem; }
+body::after  { right: -1.5rem; }
+
+/* ─── Bootstrap overrides ───────────────────────────────────────────────── */
+
+/* Cards — parchment look */
+.card {
+  background-color: var(--ta-parchment) !important;
+  border: 1px solid var(--ta-border) !important;
+  color: var(--ta-text) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35) !important;
+}
+.card-header {
+  background-color: var(--ta-parchment-dk) !important;
+  border-bottom: 1px solid var(--ta-border) !important;
+}
+.card-footer {
+  background-color: var(--ta-parchment-dk) !important;
+  border-top: 1px solid var(--ta-border) !important;
+}
+
+/* Form controls on parchment */
+.form-control, .form-select {
+  background-color: #fdf6e3 !important;
+  border-color: var(--ta-border) !important;
+  color: var(--ta-text) !important;
+}
+.form-control:focus, .form-select:focus {
+  background-color: #fff9ee !important;
+  border-color: var(--ta-gold) !important;
+  box-shadow: 0 0 0 0.2rem rgba(201,168,76,0.25) !important;
+}
+.form-control::placeholder { color: var(--ta-text-muted) !important; }
+.form-label { color: var(--ta-text) !important; }
+
+/* Buttons */
+.btn-dark, .btn-primary {
+  background-color: var(--ta-brown) !important;
+  border-color: var(--ta-brown) !important;
+  color: var(--ta-parchment) !important;
+}
+.btn-dark:hover, .btn-primary:hover {
+  background-color: var(--ta-brown-light) !important;
+  border-color: var(--ta-brown-light) !important;
+}
+
+.btn-outline-secondary {
+  border-color: var(--ta-brown) !important;
+  color: var(--ta-brown) !important;
+}
+.btn-outline-secondary:hover {
+  background-color: var(--ta-brown) !important;
+  color: var(--ta-parchment) !important;
+}
+
+.btn-outline-primary {
+  border-color: var(--ta-green) !important;
+  color: var(--ta-green) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--ta-green) !important;
+  color: var(--ta-parchment) !important;
+}
+
+.btn-outline-danger {
+  border-color: #8b2500 !important;
+  color: #8b2500 !important;
+}
+.btn-outline-danger:hover {
+  background-color: #8b2500 !important;
+  color: #fff !important;
+}
+
+.btn-success {
+  background-color: var(--ta-green) !important;
+  border-color: var(--ta-green-light) !important;
+}
+
+/* Badge overrides */
+.badge.bg-light {
+  background-color: var(--ta-parchment-dk) !important;
+  color: var(--ta-text) !important;
+  border: 1px solid var(--ta-border) !important;
+}
+.badge.bg-success {
+  background-color: var(--ta-green) !important;
+}
+.badge.bg-danger {
+  background-color: #8b2500 !important;
+}
+.badge.bg-warning {
+  background-color: #8b6000 !important;
+  color: var(--ta-parchment) !important;
+}
+
+/* Alerts */
+.alert-light {
+  background-color: var(--ta-parchment-dk) !important;
+  border-color: var(--ta-border) !important;
+  color: var(--ta-text) !important;
+}
+.alert-danger {
+  background-color: #3d0c00 !important;
+  border-color: #8b2500 !important;
+  color: #ffcdb5 !important;
+}
+.alert-warning {
+  background-color: #3d2c00 !important;
+  border-color: #8b6000 !important;
+  color: #ffe9a0 !important;
+}
+.alert-info {
+  background-color: #0d2d1e !important;
+  border-color: var(--ta-green) !important;
+  color: #a8d8b0 !important;
+}
+.alert-success {
+  background-color: #0d2d1e !important;
+  border-color: var(--ta-green-light) !important;
+  color: #a8d8b0 !important;
+}
+
+/* List groups */
+.list-group-item {
+  background-color: var(--ta-parchment) !important;
+  border-color: var(--ta-border) !important;
+  color: var(--ta-text) !important;
+}
+.list-group-item:hover,
+.list-group-item-action:hover {
+  background-color: var(--ta-parchment-dk) !important;
+}
+
+/* Progress bar */
+.progress {
+  background-color: var(--ta-parchment-dk) !important;
+  border: 1px solid var(--ta-border);
+}
+.progress-bar {
+  background-color: var(--ta-green) !important;
+}
+
+/* Text utilities */
+.text-muted { color: var(--ta-text-muted) !important; }
+.text-dark   { color: var(--ta-text) !important; }
+
+/* HR */
+hr { border-color: var(--ta-border) !important; opacity: 0.5; }
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+
+.navbar {
+  background: linear-gradient(180deg, #1a0e06 0%, var(--ta-bg-deep) 100%) !important;
+  border-bottom: 2px solid var(--ta-border) !important;
+  position: relative;
+  z-index: 100;
+}
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ta-gold), transparent);
+  pointer-events: none;
+}
 .navbar-brand {
-  letter-spacing: 0.5px;
+  font-family: 'Cinzel', serif !important;
+  font-weight: 700 !important;
+  color: var(--ta-gold) !important;
+  letter-spacing: 1px;
 }
 
-/* Hover suave en las cards de tarántula */
+/* ─── Tarantula card hover ───────────────────────────────────────────────── */
+
 .tarantula-card {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
 .tarantula-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45) !important;
 }
 
-/* Autocomplete suggestions */
-.list-group-item-action:hover {
-  background-color: #f8f9fa;
+/* ─── Section titles inside cards ───────────────────────────────────────── */
+
+.card .fw-bold {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  color: var(--ta-brown) !important;
 }
 
+/* ─── Scrollbar (WebKit) ─────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--ta-bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--ta-brown); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ta-brown-light); }
+
+/* ─── Modal backdrop darkening ───────────────────────────────────────────── */
+
+.modal-content {
+  background-color: var(--ta-parchment) !important;
+  border: 1px solid var(--ta-border) !important;
+  color: var(--ta-text) !important;
+}
+.modal-header {
+  border-bottom-color: var(--ta-border) !important;
+  background-color: var(--ta-parchment-dk) !important;
+}
+.modal-footer {
+  border-top-color: var(--ta-border) !important;
+  background-color: var(--ta-parchment-dk) !important;
+}
+
+/* ─── Input group ────────────────────────────────────────────────────────── */
+.input-group-text {
+  background-color: var(--ta-parchment-dk) !important;
+  border-color: var(--ta-border) !important;
+  color: var(--ta-text-muted) !important;
+}

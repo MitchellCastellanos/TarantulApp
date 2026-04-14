@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import api from '../services/api'
+
+const LANGS = [
+  { code: 'es', flag: '🇲🇽', label: 'Español' },
+  { code: 'en', flag: '🇺🇸', label: 'English' },
+  { code: 'fr', flag: '🇫🇷', label: 'Français' },
+]
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const { t, i18n } = useTranslation()
   const [mode, setMode] = useState('login') // 'login' | 'register'
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
@@ -21,90 +30,87 @@ export default function LoginPage() {
       const { data } = await api.post(endpoint, form)
       login(data)
     } catch (err) {
-      setError(err.response?.data?.error || 'Algo salió mal. Intenta de nuevo.')
+      setError(err.response?.data?.error || t('common.error'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div
-      className="min-vh-100 d-flex align-items-center justify-content-center"
-      style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' }}
-    >
-      <div className="card shadow-lg border-0" style={{ width: '100%', maxWidth: '420px' }}>
+    <div className="min-vh-100 d-flex align-items-center justify-content-center"
+         style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
+      <div className="card shadow-lg" style={{ width: '100%', maxWidth: '420px' }}>
         <div className="card-body p-4 p-md-5">
+
+          {/* Language selector */}
+          <div className="d-flex justify-content-end gap-2 mb-3">
+            {LANGS.map(l => (
+              <button
+                key={l.code}
+                title={l.label}
+                onClick={() => i18n.changeLanguage(l.code)}
+                className="btn btn-sm px-2 py-0"
+                style={{
+                  background: 'transparent',
+                  border: i18n.language === l.code ? '1px solid var(--ta-gold)' : '1px solid var(--ta-border)',
+                  color: i18n.language === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
+                  fontSize: '0.85rem',
+                  borderRadius: 4,
+                }}>
+                {l.flag} {l.code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
           {/* Header */}
           <div className="text-center mb-4">
             <div className="fs-1 mb-2">🕷️</div>
-            <h2 className="fw-bold mb-1">TarantulApp</h2>
+            <h2 className="fw-bold mb-1">{t('auth.loginTitle')}</h2>
             <p className="text-muted small mb-0">
-              {mode === 'login'
-                ? 'Inicia sesión para ver tu colección'
-                : 'Crea tu cuenta y empieza a registrar'}
+              {mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
             </p>
           </div>
 
           {error && (
-            <div className="alert alert-danger py-2 small" role="alert">
-              {error}
-            </div>
+            <div className="alert alert-danger py-2 small" role="alert">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
             {mode === 'register' && (
               <div className="mb-3">
-                <label className="form-label fw-semibold small">Nombre</label>
-                <input
-                  type="text"
-                  name="displayName"
-                  className="form-control"
-                  value={form.displayName}
-                  onChange={handleChange}
-                  placeholder="¿Cómo te llamamos?"
-                  autoComplete="name"
-                />
+                <label className="form-label fw-semibold small">{t('auth.name')}</label>
+                <input type="text" name="displayName" className="form-control"
+                       value={form.displayName} onChange={handleChange}
+                       placeholder={t('auth.namePlaceholder')} autoComplete="name" />
               </div>
             )}
 
             <div className="mb-3">
-              <label className="form-label fw-semibold small">Email</label>
-              <input
-                type="email"
-                name="email"
-                className="form-control"
-                required
-                value={form.email}
-                onChange={handleChange}
-                placeholder="tucorreo@ejemplo.com"
-                autoComplete="email"
-              />
+              <label className="form-label fw-semibold small">{t('auth.email')}</label>
+              <input type="email" name="email" className="form-control" required
+                     value={form.email} onChange={handleChange}
+                     placeholder={t('auth.emailPlaceholder')} autoComplete="email" />
             </div>
 
-            <div className="mb-4">
-              <label className="form-label fw-semibold small">Contraseña</label>
-              <input
-                type="password"
-                name="password"
-                className="form-control"
-                required
-                value={form.password}
-                onChange={handleChange}
-                placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : ''}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              />
+            <div className={mode === 'login' ? 'mb-2' : 'mb-4'}>
+              <label className="form-label fw-semibold small">{t('auth.password')}</label>
+              <input type="password" name="password" className="form-control" required
+                     value={form.password} onChange={handleChange}
+                     placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : ''}
+                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-dark w-100 py-2 fw-semibold"
-              disabled={loading}
-            >
-              {loading
-                ? 'Cargando...'
-                : mode === 'login'
-                ? 'Iniciar sesión'
-                : 'Crear cuenta'}
+            {mode === 'login' && (
+              <div className="mb-4 text-end">
+                <Link to="/forgot-password" className="small text-decoration-none"
+                      style={{ color: 'var(--ta-brown-light)' }}>
+                  {t('auth.forgotPassword')}
+                </Link>
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
+              {loading ? t('auth.loading') : mode === 'login' ? t('auth.login') : t('auth.register')}
             </button>
           </form>
 
@@ -113,22 +119,20 @@ export default function LoginPage() {
           <p className="text-center small mb-0">
             {mode === 'login' ? (
               <>
-                ¿No tienes cuenta?{' '}
-                <button
-                  className="btn btn-link btn-sm p-0 text-decoration-none"
-                  onClick={() => { setMode('register'); setError('') }}
-                >
-                  Regístrate
+                {t('auth.noAccount')}{' '}
+                <button className="btn btn-link btn-sm p-0 text-decoration-none"
+                        style={{ color: 'var(--ta-brown)' }}
+                        onClick={() => { setMode('register'); setError('') }}>
+                  {t('auth.registerLink')}
                 </button>
               </>
             ) : (
               <>
-                ¿Ya tienes cuenta?{' '}
-                <button
-                  className="btn btn-link btn-sm p-0 text-decoration-none"
-                  onClick={() => { setMode('login'); setError('') }}
-                >
-                  Inicia sesión
+                {t('auth.hasAccount')}{' '}
+                <button className="btn btn-link btn-sm p-0 text-decoration-none"
+                        style={{ color: 'var(--ta-brown)' }}
+                        onClick={() => { setMode('login'); setError('') }}>
+                  {t('auth.loginLink')}
                 </button>
               </>
             )}

@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "reminders": "Rappels",
+    "logout": "Déconnexion",
+    "lang": "Langue"
+  },
+  "auth": {
+    "loginTitle": "TarantulApp",
+    "loginSubtitle": "Connectez-vous pour voir votre collection",
+    "registerSubtitle": "Créez votre compte et commencez à suivre",
+    "name": "Nom",
+    "namePlaceholder": "Comment vous appeler?",
+    "email": "E-mail",
+    "emailPlaceholder": "votre@email.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Au moins 6 caractères",
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "loading": "Chargement...",
+    "noAccount": "Pas encore de compte?",
+    "hasAccount": "Vous avez déjà un compte?",
+    "registerLink": "S'inscrire",
+    "loginLink": "Se connecter",
+    "forgotPassword": "Mot de passe oublié?",
+    "sendReset": "Envoyer le lien de réinitialisation",
+    "backToLogin": "← Retour à la connexion",
+    "resetSent": "Fait ! Si cet e-mail existe, vous recevrez un lien.",
+    "resetTitle": "Nouveau mot de passe",
+    "resetSubtitle": "Entrez votre nouveau mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "resetPassword": "Changer le mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "resetSuccess": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter."
+  },
+  "dashboard": {
+    "myCollection": "Ma Collection",
+    "add": "+ Ajouter une tarentule",
+    "empty": "Aucune tarentule pour l'instant. Ajoutez la première!",
+    "filterAll": "Toutes",
+    "filterActive": "Actives",
+    "filterHungry": "Affamées",
+    "filterPreMolt": "Pré-mue",
+    "search": "Rechercher par nom ou espèce..."
+  },
+  "status": {
+    "active": "Active",
+    "pre_molt": "Pré-mue",
+    "pending_feeding": "Affamée"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "confirm": "Êtes-vous sûr?"
+  }
+}

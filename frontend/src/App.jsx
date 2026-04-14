@@ -6,6 +6,8 @@ import AddTarantulaPage from './pages/AddTarantulaPage'
 import TarantulaDetailPage from './pages/TarantulaDetailPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import RemindersPage from './pages/RemindersPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -18,6 +20,8 @@ function AppRoutes() {
     <Routes>
       {/* Pública */}
       <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
 
       {/* Protegidas */}

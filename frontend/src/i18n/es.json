@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "reminders": "Recordatorios",
+    "logout": "Cerrar sesión",
+    "lang": "Idioma"
+  },
+  "auth": {
+    "loginTitle": "TarantulApp",
+    "loginSubtitle": "Inicia sesión para ver tu colección",
+    "registerSubtitle": "Crea tu cuenta y empieza a registrar",
+    "name": "Nombre",
+    "namePlaceholder": "¿Cómo te llamamos?",
+    "email": "Email",
+    "emailPlaceholder": "tucorreo@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "login": "Iniciar sesión",
+    "register": "Crear cuenta",
+    "loading": "Cargando...",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "registerLink": "Regístrate",
+    "loginLink": "Inicia sesión",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "sendReset": "Enviar enlace de reseteo",
+    "backToLogin": "← Volver al login",
+    "resetSent": "¡Listo! Si ese email existe, recibirás un enlace en tu bandeja.",
+    "resetTitle": "Nueva contraseña",
+    "resetSubtitle": "Escribe tu nueva contraseña",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "resetPassword": "Cambiar contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "resetSuccess": "Contraseña actualizada. Ahora puedes iniciar sesión."
+  },
+  "dashboard": {
+    "myCollection": "Mi colección",
+    "add": "+ Agregar tarántula",
+    "empty": "Aún no tienes tarántulas. ¡Agrega la primera!",
+    "filterAll": "Todas",
+    "filterActive": "Activas",
+    "filterHungry": "Sin comer",
+    "filterPreMolt": "Pre-muda",
+    "search": "Buscar por nombre o especie..."
+  },
+  "status": {
+    "active": "Activa",
+    "pre_molt": "Pre-muda",
+    "pending_feeding": "Sin comer"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "error": "Algo salió mal. Intenta de nuevo.",
+    "confirm": "¿Estás seguro?"
+  }
+}
