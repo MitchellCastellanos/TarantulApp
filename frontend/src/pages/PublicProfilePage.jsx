@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
+import { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
@@ -53,7 +54,7 @@ export default function PublicProfilePage() {
           <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                style={{ height: 240, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
             {profile.profilePhoto ? (
-              <img src={`/uploads/${profile.profilePhoto}`} alt={profile.name}
+              <img src={imgUrl(profile.profilePhoto)} alt={profile.name}
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ fontSize: '5rem', opacity: 0.5 }}>🕷️</span>

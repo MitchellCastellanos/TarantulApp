@@ -6,8 +6,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Redirige /api/* al backend Spring Boot en dev
+      // Redirige /api/* y /uploads/* al backend Spring Boot en dev
       '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      '/uploads': {
         target: 'http://localhost:8080',
         changeOrigin: true
       }

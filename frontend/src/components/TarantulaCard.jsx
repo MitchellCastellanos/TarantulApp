@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import StatusBadge from './StatusBadge'
+import { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
@@ -15,7 +16,7 @@ export default function TarantulaCard({ tarantula }) {
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden"
              style={{ height: '160px', background: 'linear-gradient(135deg, #1a1a2e, #2d2d44)' }}>
           {profilePhoto ? (
-            <img src={`/uploads/${profilePhoto}`} alt={name}
+            <img src={imgUrl(profilePhoto)} alt={name}
                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <span style={{ fontSize: '4rem', opacity: 0.6 }}>🕷️</span>

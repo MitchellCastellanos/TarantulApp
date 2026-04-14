@@ -28,3 +28,11 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// Construye la URL completa de una foto almacenada en el backend.
+// En dev: '/uploads/path' (el proxy de Vite lo redirige al backend local)
+// En producción: 'https://railway-url/uploads/path'
+export function imgUrl(path) {
+  if (!path) return null
+  return (import.meta.env.VITE_API_URL || '') + '/uploads/' + path
+}

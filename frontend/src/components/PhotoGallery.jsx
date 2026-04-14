@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import tarantulaService from '../services/tarantulaService'
+import { imgUrl } from '../services/api'
 
 export default function PhotoGallery({ tarantulaId }) {
   const [photos, setPhotos] = useState([])
@@ -65,7 +66,7 @@ export default function PhotoGallery({ tarantulaId }) {
               <div key={p.id} className="col-6 col-md-4 col-lg-3">
                 <div className="position-relative" style={{ aspectRatio: '1', overflow: 'hidden', borderRadius: 6, background: '#1a1a2e', cursor: 'pointer' }}>
                   <img
-                    src={`/uploads/${p.filePath}`}
+                    src={imgUrl(p.filePath)}
                     alt={p.caption || ''}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onClick={() => setLightbox(p)}
@@ -99,7 +100,7 @@ export default function PhotoGallery({ tarantulaId }) {
           <div style={{ maxWidth: '90vw', maxHeight: '90vh', position: 'relative' }}
                onClick={e => e.stopPropagation()}>
             <img
-              src={`/uploads/${lightbox.filePath}`}
+              src={imgUrl(lightbox.filePath)}
               alt={lightbox.caption || ''}
               style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }}
             />

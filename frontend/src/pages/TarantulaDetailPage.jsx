@@ -10,6 +10,7 @@ import QRModal from '../components/QRModal'
 import PhotoGallery from '../components/PhotoGallery'
 import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
+import { imgUrl } from '../services/api'
 
 const HABITAT_ICON  = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STAGE_LABEL   = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
@@ -131,7 +132,7 @@ export default function TarantulaDetailPage() {
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                    style={{ height: 220, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
                 {tarantula.profilePhoto ? (
-                  <img src={`/uploads/${tarantula.profilePhoto}`} alt={tarantula.name}
+                  <img src={imgUrl(tarantula.profilePhoto)} alt={tarantula.name}
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '5rem', opacity: 0.5 }}>🕷️</span>
