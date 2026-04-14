@@ -60,6 +60,12 @@ export default function TarantulaDetailPage() {
     setTarantula(updated)
   }
 
+  const handleDelete = async () => {
+    if (!confirm(`¿Eliminar a "${tarantula.name}"? Esta acción no se puede deshacer.`)) return
+    await tarantulaService.delete(id)
+    navigate('/')
+  }
+
   if (loading) return (
     <div><Navbar /><div className="container mt-4 text-muted">Cargando...</div></div>
   )
@@ -181,6 +187,10 @@ export default function TarantulaDetailPage() {
                   onClick={handleTogglePublic}
                   title={tarantula.isPublic ? 'Perfil público — click para hacer privado' : 'Perfil privado — click para hacer público'}>
                   {tarantula.isPublic ? '🌐 Público' : '🔒 Privado'}
+                </button>
+                <button className="btn btn-outline-danger btn-sm flex-fill"
+                        onClick={handleDelete}>
+                  🗑️ Eliminar
                 </button>
               </div>
             </div>
