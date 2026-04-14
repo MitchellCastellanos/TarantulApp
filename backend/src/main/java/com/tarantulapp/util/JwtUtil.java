@@ -2,6 +2,8 @@ package com.tarantulapp.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +13,8 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${app.jwt.secret}")
     private String secret;
@@ -23,6 +27,7 @@ public class JwtUtil {
     }
 
     public String generateToken(String email) {
+        log.info("Generating token for {} (secret length: {})", email, secret.length());
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
@@ -45,6 +50,7 @@ public class JwtUtil {
             Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            log.warn("JWT validation failed [{}]: {}", e.getClass().getSimpleName(), e.getMessage());
             return false;
         }
     }
