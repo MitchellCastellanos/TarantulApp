@@ -350,3 +350,9 @@ hr { border-color: var(--ta-border) !important; opacity: 0.5; }
   border-color: var(--ta-border) !important;
   color: var(--ta-text-muted) !important;
 }
+
+
+.text-collection {
+  color: var(--ta-gold);
+  font-weight: 600;
+}
