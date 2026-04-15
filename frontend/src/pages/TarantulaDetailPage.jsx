@@ -117,11 +117,11 @@ export default function TarantulaDetailPage() {
       <div className="container mt-4">
         {/* Breadcrumb */}
         <div className="d-flex align-items-center gap-2 mb-3">
-          <button className="btn btn-link p-0 text-dark text-decoration-none" onClick={() => navigate('/')}>
+          <button className="btn btn-link p-0 text-collection text-decoration-none" onClick={() => navigate('/')}>
             ← Colección
           </button>
-          <span className="text-muted">/</span>
-          <span className="fw-semibold">{tarantula.name}</span>
+          <span className="text-collection">/</span>
+          <span className="text-collection">{tarantula.name}</span>
         </div>
 
         <div className="row g-4">
