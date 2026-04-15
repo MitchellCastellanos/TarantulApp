@@ -58,7 +58,7 @@ export default function DashboardPage() {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h4 className="fw-bold mb-0">Mis Tarántulas</h4>
-            <p className="text-muted small mb-0">
+            <p className="text-collection small mb-0">
               {tarantulas.length} en tu colección
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
           <div className="card border-0 shadow-sm text-center py-5">
             <div className="fs-1 mb-2">🕸️</div>
             <p className="fw-semibold mb-1">Tu colección está vacía</p>
-            <p className="text-muted small mb-3">
+            <p className="text-collection small mb-3">
               Agrega tu primera tarántula para empezar su expediente.
             </p>
             <div>
