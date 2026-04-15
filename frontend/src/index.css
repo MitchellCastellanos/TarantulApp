@@ -12,7 +12,7 @@
   --ta-green:        #3d5a2a;
   --ta-green-light:  #4e7238;
   --ta-text:         #2e1f0e;
-  --ta-text-muted:   #6b5234;
+  --ta-text-muted:   #4a2c08;
   --ta-border:       #7a5c2e;
   --ta-gold:         #c9a84c;
 }
@@ -46,6 +46,14 @@ h1, h2, h3, h4, h5, h6,
 .navbar-brand,
 .cinzel {
   font-family: 'Cinzel', 'Georgia', serif;
+  color: var(--ta-parchment);
+}
+
+/* Headings inside parchment containers stay dark */
+.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
+.modal-content h1, .modal-content h2, .modal-content h3,
+.modal-content h4, .modal-content h5, .modal-content h6 {
+  color: var(--ta-text);
 }
 
 /* Spider decorations on sides (hidden on mobile) */
@@ -56,7 +64,7 @@ body::after {
   top: 50%;
   transform: translateY(-50%);
   font-size: 8rem;
-  opacity: 0.12;
+  opacity: 0.20;
   pointer-events: none;
   z-index: 0;
 }
@@ -69,9 +77,33 @@ body::after  { right: -1.5rem; }
 .card {
   background-color: var(--ta-parchment) !important;
   border: 1px solid var(--ta-border) !important;
+  border-top: 3px solid var(--ta-gold) !important;
   color: var(--ta-text) !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.35) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45) !important;
+  position: relative;
 }
+
+/* Spider web corner decoration (top-right of every card) */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><g stroke='%23c9a84c' stroke-width='0.8' fill='none' opacity='0.45'><line x1='80' y1='0' x2='0' y2='80'/><line x1='80' y1='0' x2='0' y2='40'/><line x1='80' y1='0' x2='40' y2='80'/><line x1='80' y1='0' x2='0' y2='20'/><line x1='80' y1='0' x2='60' y2='80'/><path d='M60 0 Q70 10 80 20'/><path d='M40 0 Q60 20 80 40'/><path d='M20 0 Q50 30 80 60'/><path d='M0 0 Q40 40 80 80'/></g></svg>");
+  background-size: 80px 80px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure card content sits above web decoration */
+.card-body, .card-header, .card-footer {
+  position: relative;
+  z-index: 1;
+}
+
 .card-header {
   background-color: var(--ta-parchment-dk) !important;
   border-bottom: 1px solid var(--ta-border) !important;
@@ -252,6 +284,42 @@ hr { border-color: var(--ta-border) !important; opacity: 0.5; }
   letter-spacing: 0.5px;
   color: var(--ta-brown) !important;
 }
+
+/* ─── Page-level headings (on dark background) ──────────────────────────── */
+
+.page-title {
+  color: var(--ta-parchment);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  letter-spacing: 1px;
+}
+
+/* ─── Decorative section divider ────────────────────────────────────────── */
+
+.ta-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0.75rem;
+  color: var(--ta-brown);
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.ta-divider::before,
+.ta-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--ta-border));
+}
+.ta-divider::after {
+  background: linear-gradient(to left, transparent, var(--ta-border));
+}
+
+/* ─── Gold text utility ──────────────────────────────────────────────────── */
+
+.text-gold { color: var(--ta-gold) !important; }
 
 /* ─── Scrollbar (WebKit) ─────────────────────────────────────────────────── */
 

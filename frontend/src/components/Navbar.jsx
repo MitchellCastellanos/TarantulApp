@@ -18,11 +18,11 @@ export default function Navbar() {
         🕷️ TarantulApp
       </Link>
       <div className="d-flex align-items-center gap-2 gap-md-3">
-        <Link to="/reminders" className="text-warning small text-decoration-none d-none d-sm-inline"
-              style={{ opacity: 0.85 }}>
+        <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
+              style={{ color: 'var(--ta-gold)' }}>
           🔔 {t('nav.reminders')}
         </Link>
-        <span className="text-secondary small d-none d-md-inline" style={{ opacity: 0.7 }}>
+        <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
           {user?.displayName || user?.email}
         </span>
 
