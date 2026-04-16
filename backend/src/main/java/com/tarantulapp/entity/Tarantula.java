@@ -49,6 +49,12 @@ public class Tarantula {
     @Column(name = "short_id", unique = true, nullable = false, length = 10)
     private String shortId;
 
+    @Column(name = "deceased_at")
+    private LocalDateTime deceasedAt;
+
+    @Column(name = "death_notes", columnDefinition = "TEXT")
+    private String deathNotes;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -90,6 +96,10 @@ public class Tarantula {
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getShortId() { return shortId; }
     public void setShortId(String shortId) { this.shortId = shortId; }
+    public LocalDateTime getDeceasedAt() { return deceasedAt; }
+    public void setDeceasedAt(LocalDateTime deceasedAt) { this.deceasedAt = deceasedAt; }
+    public String getDeathNotes() { return deathNotes; }
+    public void setDeathNotes(String deathNotes) { this.deathNotes = deathNotes; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

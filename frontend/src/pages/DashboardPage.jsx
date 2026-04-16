@@ -5,6 +5,11 @@ import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
 
+function formatDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 const HABITAT_FILTERS = [
   { key: 'all', label: 'Todas' },
   { key: 'terrestrial', label: '🌎 Terrestres' },
@@ -39,7 +44,10 @@ export default function DashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = tarantulas.filter(t => {
+  const alive    = tarantulas.filter(t => !t.deceasedAt)
+  const deceased = tarantulas.filter(t =>  t.deceasedAt)
+
+  const filtered = alive.filter(t => {
     if (habitat !== 'all' && t.species?.habitatType !== habitat) return false
     if (stage && t.stage !== stage) return false
     if (status && t.status !== status) return false
@@ -142,6 +150,37 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* ─── En memoria ───────────────────────────────────────────── */}
+        {deceased.length > 0 && (
+          <details className="mt-4">
+            <summary className="small fw-semibold mb-2" style={{ cursor: 'pointer', color: 'var(--ta-gold)', listStyle: 'none' }}>
+              🕯️ En memoria ({deceased.length})
+            </summary>
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mt-1">
+              {deceased.map(t => (
+                <div className="col" key={t.id}>
+                  <Link to={`/tarantulas/${t.id}`} className="text-decoration-none">
+                    <div className="card h-100 tarantula-card" style={{ opacity: 0.72 }}>
+                      <div className="card-body p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-1">
+                          <h6 className="card-title fw-bold mb-0 text-truncate me-2">{t.name}</h6>
+                          <span className="badge bg-secondary">🕯️</span>
+                        </div>
+                        {t.species && (
+                          <p className="text-muted small mb-1 fst-italic text-truncate">
+                            {t.species.scientificName}
+                          </p>
+                        )}
+                        <p className="text-muted small mb-0">† {formatDate(t.deceasedAt)}</p>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
       </div>
     </div>

@@ -22,6 +22,8 @@ public class TarantulaResponse {
     private String status;
     private LocalDateTime lastFedAt;
     private LocalDateTime lastMoltAt;
+    private LocalDateTime deceasedAt;
+    private String deathNotes;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -55,4 +57,8 @@ public class TarantulaResponse {
     public void setLastFedAt(LocalDateTime lastFedAt) { this.lastFedAt = lastFedAt; }
     public LocalDateTime getLastMoltAt() { return lastMoltAt; }
     public void setLastMoltAt(LocalDateTime lastMoltAt) { this.lastMoltAt = lastMoltAt; }
+    public LocalDateTime getDeceasedAt() { return deceasedAt; }
+    public void setDeceasedAt(LocalDateTime deceasedAt) { this.deceasedAt = deceasedAt; }
+    public String getDeathNotes() { return deathNotes; }
+    public void setDeathNotes(String deathNotes) { this.deathNotes = deathNotes; }
 }

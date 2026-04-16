@@ -2,8 +2,11 @@ package com.tarantulapp.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class PublicProfileDTO {
+    private UUID tarantulaId;
+    private UUID ownerId;
     private String name;
     private String scientificName;
     private String commonName;
@@ -16,6 +19,10 @@ public class PublicProfileDTO {
     private LocalDateTime lastFedAt;
     private LocalDateTime lastMoltAt;
 
+    public UUID getTarantulaId() { return tarantulaId; }
+    public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
+    public UUID getOwnerId() { return ownerId; }
+    public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getScientificName() { return scientificName; }

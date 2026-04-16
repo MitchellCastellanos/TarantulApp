@@ -45,7 +45,7 @@ public class AuthService {
         user.setDisplayName(request.getDisplayName());
         userRepository.save(user);
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName());
+        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -55,7 +55,7 @@ public class AuthService {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName());
+        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId());
     }
 
     @Transactional

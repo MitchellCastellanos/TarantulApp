@@ -63,6 +63,12 @@ public class TarantulaController {
         return ResponseEntity.ok(tarantulaService.togglePublic(id, securityHelper.getCurrentUserId()));
     }
 
+    @PatchMapping("/{id}/deceased")
+    public ResponseEntity<TarantulaResponse> markDeceased(@PathVariable UUID id,
+                                                           @RequestBody DeceasedRequest req) {
+        return ResponseEntity.ok(tarantulaService.markDeceased(id, securityHelper.getCurrentUserId(), req));
+    }
+
     @GetMapping("/{id}/timeline")
     public ResponseEntity<List<TimelineEventDTO>> getTimeline(@PathVariable UUID id) {
         return ResponseEntity.ok(tarantulaService.getTimeline(id, securityHelper.getCurrentUserId()));

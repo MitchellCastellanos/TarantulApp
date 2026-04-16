@@ -32,7 +32,9 @@ export default function TarantulaDetailPage() {
   const [tarantula, setTarantula] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr'
+  const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased'
+  const [deceasedNotes, setDeceasedNotes] = useState('')
+  const [deceasedDate, setDeceasedDate] = useState(new Date().toISOString().slice(0, 10))
 
   const load = useCallback(() => {
     Promise.all([
@@ -65,6 +67,15 @@ export default function TarantulaDetailPage() {
     if (!confirm(`¿Eliminar a "${tarantula.name}"? Esta acción no se puede deshacer.`)) return
     await tarantulaService.delete(id)
     navigate('/')
+  }
+
+  const handleMarkDeceased = async () => {
+    const updated = await tarantulaService.markDeceased(id, {
+      notes: deceasedNotes || null,
+      deceasedAt: deceasedDate ? new Date(deceasedDate).toISOString() : null,
+    })
+    setTarantula(updated)
+    setModal(null)
   }
 
   if (loading) return (
@@ -113,6 +124,47 @@ export default function TarantulaDetailPage() {
       {modal === 'molt'     && <MoltModal     tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'behavior' && <BehaviorModal tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'qr'       && <QRModal tarantula={tarantula}  onClose={() => setModal(null)} />}
+
+      {modal === 'deceased' && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.7)' }}
+             onClick={() => setModal(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">🕯️ Registrar fallecimiento</h5>
+                <button className="btn-close" onClick={() => setModal(null)} />
+              </div>
+              <div className="modal-body">
+                <p className="text-muted small mb-3">
+                  Esto quedará en el expediente de <strong>{tarantula.name}</strong>. Puedes seguir consultando su historial.
+                </p>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold small">Fecha de fallecimiento</label>
+                  <input type="date" className="form-control"
+                         value={deceasedDate}
+                         onChange={e => setDeceasedDate(e.target.value)} />
+                </div>
+                <div className="mb-1">
+                  <label className="form-label fw-semibold small">Notas (opcional)</label>
+                  <textarea className="form-control" rows={3}
+                            placeholder="Causa probable, observaciones..."
+                            value={deceasedNotes}
+                            onChange={e => setDeceasedNotes(e.target.value)} />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => setModal(null)}>
+                  Cancelar
+                </button>
+                <button className="btn btn-sm" style={{ background: '#6b4a00', color: '#f4e5c2' }}
+                        onClick={handleMarkDeceased}>
+                  🕯️ Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="container mt-4">
         {/* Breadcrumb */}
@@ -176,19 +228,27 @@ export default function TarantulaDetailPage() {
               </div>
 
               <div className="card-footer bg-transparent border-top-0 d-flex gap-2 flex-wrap">
-                <Link to={`/tarantulas/${id}/edit`} className="btn btn-outline-secondary btn-sm flex-fill">
-                  ✏️ Editar
-                </Link>
-                <button className="btn btn-outline-secondary btn-sm flex-fill"
-                        onClick={() => setModal('qr')}>
-                  📱 QR
-                </button>
-                <button
-                  className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
-                  onClick={handleTogglePublic}
-                  title={tarantula.isPublic ? 'Perfil público — click para hacer privado' : 'Perfil privado — click para hacer público'}>
-                  {tarantula.isPublic ? '🌐 Público' : '🔒 Privado'}
-                </button>
+                {!tarantula.deceasedAt && (
+                  <>
+                    <Link to={`/tarantulas/${id}/edit`} className="btn btn-outline-secondary btn-sm flex-fill">
+                      ✏️ Editar
+                    </Link>
+                    <button className="btn btn-outline-secondary btn-sm flex-fill"
+                            onClick={() => setModal('qr')}>
+                      📱 QR
+                    </button>
+                    <button
+                      className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
+                      onClick={handleTogglePublic}>
+                      {tarantula.isPublic ? '🌐 Público' : '🔒 Privado'}
+                    </button>
+                    <button className="btn btn-sm flex-fill"
+                            style={{ borderColor: '#6b4a00', color: '#6b4a00' }}
+                            onClick={() => setModal('deceased')}>
+                      🕯️ Fallecida
+                    </button>
+                  </>
+                )}
                 <button className="btn btn-outline-danger btn-sm flex-fill"
                         onClick={handleDelete}>
                   🗑️ Eliminar
@@ -199,6 +259,19 @@ export default function TarantulaDetailPage() {
 
           {/* ─── Columna derecha: ficha especie + timeline ─────────────── */}
           <div className="col-md-8">
+            {/* Banner memorial */}
+            {tarantula.deceasedAt && (
+              <div className="alert mb-4" style={{ background: '#2a1a00', border: '1px solid #6b4a00', color: '#e8d5a8' }}>
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <span style={{ fontSize: '1.4rem' }}>🕯️</span>
+                  <strong style={{ fontFamily: 'Cinzel, serif' }}>En memoria de {tarantula.name}</strong>
+                </div>
+                <div className="small" style={{ opacity: 0.85 }}>
+                  Fallecida el {formatDate(tarantula.deceasedAt)}.
+                  {tarantula.deathNotes && <> {tarantula.deathNotes}</>}
+                </div>
+              </div>
+            )}
             {/* Ficha de especie */}
             {species && (
               <div className="card border-0 shadow-sm mb-4">

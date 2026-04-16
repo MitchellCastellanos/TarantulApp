@@ -12,11 +12,12 @@ export function AuthProvider({ children }) {
   const login = useCallback((authData) => {
     localStorage.setItem('token', authData.token)
     localStorage.setItem('user', JSON.stringify({
+      id: authData.userId,
       email: authData.email,
       displayName: authData.displayName
     }))
     setToken(authData.token)
-    setUser({ email: authData.email, displayName: authData.displayName })
+    setUser({ id: authData.userId, email: authData.email, displayName: authData.displayName })
   }, [])
 
   const logout = useCallback(() => {

@@ -2,6 +2,7 @@ const STATUS = {
   active:          { label: 'Activa',           color: 'success' },
   pre_molt:        { label: 'Pre-muda',          color: 'warning' },
   pending_feeding: { label: 'Sin comer',         color: 'danger'  },
+  deceased:        { label: '🕯️ Fallecida',      color: 'secondary' },
 }
 
 export default function StatusBadge({ status }) {

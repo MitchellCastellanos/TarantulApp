@@ -112,6 +112,13 @@ public class TarantulaService {
         return toResponse(tarantulaRepository.save(t));
     }
 
+    public TarantulaResponse markDeceased(UUID id, UUID userId, DeceasedRequest req) {
+        Tarantula t = getOwned(id, userId);
+        t.setDeceasedAt(req.getDeceasedAt() != null ? req.getDeceasedAt() : LocalDateTime.now());
+        t.setDeathNotes(req.getNotes());
+        return toResponse(tarantulaRepository.save(t));
+    }
+
     @Transactional(readOnly = true)
     public List<TimelineEventDTO> getTimeline(UUID tarantulaId, UUID userId) {
         getOwned(tarantulaId, userId); // verify ownership
@@ -147,6 +154,8 @@ public class TarantulaService {
         }
 
         PublicProfileDTO dto = new PublicProfileDTO();
+        dto.setTarantulaId(t.getId());
+        dto.setOwnerId(t.getUserId());
         dto.setName(t.getName());
         dto.setStage(t.getStage());
         dto.setSex(t.getSex());
@@ -159,7 +168,7 @@ public class TarantulaService {
             dto.setHabitatType(t.getSpecies().getHabitatType());
         }
 
-        dto.setStatus(computeStatus(t.getId()));
+        dto.setStatus(computeStatus(t));
         feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId())
                 .ifPresent(f -> dto.setLastFedAt(f.getFedAt()));
         moltLogRepository.findFirstByTarantulaIdOrderByMoltedAtDesc(t.getId())
@@ -207,7 +216,9 @@ public class TarantulaService {
         r.setCreatedAt(t.getCreatedAt());
         r.setUpdatedAt(t.getUpdatedAt());
         r.setSpecies(SpeciesDTO.from(t.getSpecies()));
-        r.setStatus(computeStatus(t.getId()));
+        r.setDeceasedAt(t.getDeceasedAt());
+        r.setDeathNotes(t.getDeathNotes());
+        r.setStatus(computeStatus(t));
 
         feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId())
                 .ifPresent(f -> r.setLastFedAt(f.getFedAt()));
@@ -217,7 +228,10 @@ public class TarantulaService {
         return r;
     }
 
-    private String computeStatus(UUID tarantulaId) {
+    private String computeStatus(Tarantula t) {
+        if (t.getDeceasedAt() != null) return "deceased";
+
+        UUID tarantulaId = t.getId();
         Optional<com.tarantulapp.entity.BehaviorLog> lastBehavior =
                 behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(tarantulaId);
 
