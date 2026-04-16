@@ -123,6 +123,14 @@ export default function PublicProfilePage() {
     <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
       <div className="container py-4" style={{ maxWidth: 480 }}>
 
+        {user && (
+          <div className="mb-3">
+            <Link to="/" className="btn btn-outline-light btn-sm w-100">
+              {t('public.backToCollection')}
+            </Link>
+          </div>
+        )}
+
         {/* ─── Ficha pública ──────────────────────────── */}
         <div className="card shadow-lg mb-3">
           <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"

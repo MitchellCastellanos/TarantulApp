@@ -22,4 +22,8 @@ public class SecurityHelper {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"))
                 .getId();
     }
+
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 }

@@ -296,6 +296,11 @@
     "currentFree": "Plan actuel : Gratuit",
     "currentPro": "Plan actuel : Pro",
     "soonPayments": "Bientôt, vous pourrez passer à Pro directement depuis l'application. En attendant, nous continuons à construire les fonctionnalités.",
-    "learnMore": "Découvrir Pro"
+    "learnMore": "Découvrir Pro",
+    "upgradeNow": "Passer à Pro",
+    "checkoutSuccess": "Paiement terminé. Nous mettons à jour votre plan Pro.",
+    "checkoutCancel": "Paiement annulé. Votre plan actuel n'a pas changé.",
+    "checkoutError": "Impossible de démarrer le paiement pour le moment.",
+    "checkoutNotConfigured": "Le paiement Stripe n'est pas encore configuré dans cet environnement."
   }
 }

@@ -5,6 +5,7 @@ import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
 import com.tarantulapp.entity.PasswordResetToken;
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
@@ -43,9 +44,10 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setDisplayName(request.getDisplayName());
+        user.setPlan(UserPlan.FREE);
         userRepository.save(user);
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId());
+        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(), user.getPlan().name());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -54,8 +56,12 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
+        if (user.getPlan() == null) {
+            user.setPlan(UserPlan.FREE);
+            userRepository.save(user);
+        }
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId());
+        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(), user.getPlan().name());
     }
 
     @Transactional

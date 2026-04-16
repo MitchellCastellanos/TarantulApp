@@ -1,13 +1,47 @@
 import Navbar from '../components/Navbar'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import billingService from '../services/billingService'
 
 export default function ProPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
-  const plan = user?.plan || 'FREE'
+  const { user, setPlan } = useAuth()
+  const [searchParams] = useSearchParams()
+  const [billing, setBilling] = useState(null)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const [error, setError] = useState('')
+  const plan = billing?.plan || user?.plan || 'FREE'
 
   const isPro = plan === 'PRO'
+  const checkout = searchParams.get('checkout')
+
+  const loadBilling = () => {
+    billingService.me()
+      .then(data => {
+        setBilling(data)
+        setPlan(data.plan)
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    loadBilling()
+  }, [])
+
+  const handleUpgrade = async () => {
+    setError('')
+    setLoadingCheckout(true)
+    try {
+      const session = await billingService.createCheckoutSession()
+      if (!session?.url) throw new Error('checkout-url-missing')
+      window.location.href = session.url
+    } catch (e) {
+      setError(t('pro.checkoutError'))
+      setLoadingCheckout(false)
+    }
+  }
 
   return (
     <div>
@@ -19,6 +53,21 @@ export default function ProPage() {
             {isPro ? t('pro.currentPro') : t('pro.currentFree')}
           </span>
         </div>
+        {checkout === 'success' && (
+          <div className="alert alert-success small py-2">
+            {t('pro.checkoutSuccess')}
+          </div>
+        )}
+        {checkout === 'cancel' && (
+          <div className="alert alert-warning small py-2">
+            {t('pro.checkoutCancel')}
+          </div>
+        )}
+        {error && (
+          <div className="alert alert-danger small py-2">
+            {error}
+          </div>
+        )}
 
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body">
@@ -60,9 +109,19 @@ export default function ProPage() {
               {isPro ? t('pro.statusPro') : t('pro.statusFree')}
             </p>
             {!isPro && (
-              <p className="small mb-0">
-                {t('pro.soonPayments')}
-              </p>
+              <div className="d-flex flex-column gap-2">
+                <p className="small mb-0">{t('pro.soonPayments')}</p>
+                <button
+                  className="btn btn-dark btn-sm align-self-start"
+                  onClick={handleUpgrade}
+                  disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                >
+                  {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                </button>
+                {billing?.checkoutEnabled === false && (
+                  <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                )}
+              </div>
             )}
           </div>
         </div>

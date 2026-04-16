@@ -14,10 +14,16 @@ export function AuthProvider({ children }) {
     localStorage.setItem('user', JSON.stringify({
       id: authData.userId,
       email: authData.email,
-      displayName: authData.displayName
+      displayName: authData.displayName,
+      plan: authData.plan || 'FREE',
     }))
     setToken(authData.token)
-    setUser({ id: authData.userId, email: authData.email, displayName: authData.displayName })
+    setUser({
+      id: authData.userId,
+      email: authData.email,
+      displayName: authData.displayName,
+      plan: authData.plan || 'FREE',
+    })
   }, [])
 
   const logout = useCallback(() => {
@@ -27,8 +33,17 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const setPlan = useCallback((plan) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const next = { ...prev, plan: plan || 'FREE' }
+      localStorage.setItem('user', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider value={{ token, user, login, logout, setPlan }}>
       {children}
     </AuthContext.Provider>
   )

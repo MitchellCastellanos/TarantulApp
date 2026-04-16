@@ -14,6 +14,7 @@ public class ReminderRequest {
     private LocalDateTime dueDate;
 
     private String message;
+    @NotNull
     private UUID tarantulaId;
 
     public String getType() { return type; }

@@ -5,11 +5,21 @@ import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
 import speciesService from '../services/speciesService'
 import PhotoCropModal from '../components/PhotoCropModal'
+import logsService from '../services/logsService'
+import { useAuth } from '../context/AuthContext'
+
+function nowLocalInput() {
+  const date = new Date()
+  const offset = date.getTimezoneOffset()
+  const local = new Date(date.getTime() - offset * 60000)
+  return local.toISOString().slice(0, 16)
+}
 
 export default function AddTarantulaPage() {
   const { t } = useTranslation()
   const { id } = useParams()  // si hay id, es edición
   const navigate = useNavigate()
+  const { user } = useAuth()
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState({
@@ -29,7 +39,30 @@ export default function AddTarantulaPage() {
   const [photoPreview, setPhotoPreview] = useState(null) // URL de objeto para preview
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [collectionCount, setCollectionCount] = useState(0)
+  const [createdTarantula, setCreatedTarantula] = useState(null)
+  const [postCreateMode, setPostCreateMode] = useState('')
+  const [postCreateSaving, setPostCreateSaving] = useState(false)
+  const [postCreateError, setPostCreateError] = useState('')
+  const [feedingForm, setFeedingForm] = useState({
+    fedAt: nowLocalInput(),
+    preyType: 'Cricket',
+    preySize: 'medium',
+    quantity: 1,
+    accepted: true,
+    notes: '',
+  })
+  const [moltForm, setMoltForm] = useState({
+    moltedAt: nowLocalInput(),
+    preSizeCm: '',
+    postSizeCm: '',
+    notes: '',
+  })
   const debounceRef = useRef(null)
+  const plan = user?.plan || 'FREE'
+  const isFreePlan = plan !== 'PRO'
+  const tarantulaLimit = 6
+  const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
 
   useEffect(() => {
     if (isEdit) {
@@ -50,6 +83,11 @@ export default function AddTarantulaPage() {
       })
     }
   }, [id, isEdit])
+
+  useEffect(() => {
+    if (isEdit) return
+    tarantulaService.getAll().then(items => setCollectionCount(items.length)).catch(() => {})
+  }, [isEdit])
 
   // Debounced species search (local + GBIF in parallel)
   useEffect(() => {
@@ -130,6 +168,10 @@ export default function AddTarantulaPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    if (atLimit) {
+      setError(t('form.limitReached'))
+      return
+    }
     setLoading(true)
     try {
       const payload = {
@@ -147,10 +189,57 @@ export default function AddTarantulaPage() {
       if (photo) {
         await tarantulaService.uploadPhoto(tarantula.id, photo)
       }
-      navigate(`/tarantulas/${tarantula.id}`)
+      if (isEdit) {
+        navigate(`/tarantulas/${tarantula.id}`)
+        return
+      }
+      setCreatedTarantula(tarantula)
+      setCollectionCount(count => count + 1)
+      setPostCreateMode('choice')
+      setLoading(false)
     } catch (err) {
       setError(err.response?.data?.error ?? 'Algo salió mal.')
       setLoading(false)
+    }
+  }
+
+  const closePostCreate = () => {
+    if (!createdTarantula) return
+    navigate(`/tarantulas/${createdTarantula.id}`)
+  }
+
+  const saveInitialFeeding = async () => {
+    if (!createdTarantula) return
+    setPostCreateError('')
+    setPostCreateSaving(true)
+    try {
+      await logsService.addFeeding(createdTarantula.id, {
+        ...feedingForm,
+        fedAt: new Date(feedingForm.fedAt).toISOString(),
+        quantity: Number(feedingForm.quantity) || 1,
+      })
+      navigate(`/tarantulas/${createdTarantula.id}`)
+    } catch (err) {
+      setPostCreateError(err.response?.data?.error ?? t('form.postCreateSaveError'))
+      setPostCreateSaving(false)
+    }
+  }
+
+  const saveInitialMolt = async () => {
+    if (!createdTarantula) return
+    setPostCreateError('')
+    setPostCreateSaving(true)
+    try {
+      await logsService.addMolt(createdTarantula.id, {
+        moltedAt: new Date(moltForm.moltedAt).toISOString(),
+        preSizeCm: moltForm.preSizeCm ? Number(moltForm.preSizeCm) : null,
+        postSizeCm: moltForm.postSizeCm ? Number(moltForm.postSizeCm) : null,
+        notes: moltForm.notes || null,
+      })
+      navigate(`/tarantulas/${createdTarantula.id}`)
+    } catch (err) {
+      setPostCreateError(err.response?.data?.error ?? t('form.postCreateSaveError'))
+      setPostCreateSaving(false)
     }
   }
 
@@ -167,6 +256,12 @@ export default function AddTarantulaPage() {
         </div>
 
         {error && <div className="alert alert-danger small py-2">{error}</div>}
+        {!isEdit && isFreePlan && (
+          <div className={`alert small py-2 ${atLimit ? 'alert-warning' : 'alert-secondary'}`}>
+            {t('form.planUsage', { count: collectionCount, limit: tarantulaLimit })}
+            {atLimit && ` ${t('form.limitReached')}`}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="card border-0 shadow-sm p-4 mb-3">
@@ -336,6 +431,168 @@ export default function AddTarantulaPage() {
           onConfirm={handleCropConfirm}
           onCancel={() => setCropSrc(null)}
         />
+      )}
+
+      {createdTarantula && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{t('form.postCreateTitle', { name: createdTarantula.name })}</h5>
+                <button type="button" className="btn-close" onClick={closePostCreate} disabled={postCreateSaving} />
+              </div>
+              <div className="modal-body">
+                {postCreateError && <div className="alert alert-danger small py-2">{postCreateError}</div>}
+
+                {postCreateMode === 'choice' && (
+                  <>
+                    <p className="small text-muted mb-3">{t('form.postCreateDesc')}</p>
+                    <div className="d-grid gap-2">
+                      <button type="button" className="btn btn-outline-primary" onClick={() => setPostCreateMode('feeding')}>
+                        {t('form.addLastFeeding')}
+                      </button>
+                      <button type="button" className="btn btn-outline-purple" style={{ color: '#6f42c1', borderColor: '#6f42c1' }} onClick={() => setPostCreateMode('molt')}>
+                        {t('form.addLastMolt')}
+                      </button>
+                      <button type="button" className="btn btn-outline-secondary" onClick={closePostCreate}>
+                        {t('form.skipForNow')}
+                      </button>
+                    </div>
+                    <p className="text-muted small mb-0 mt-3">{t('form.firstFeedingHint')}</p>
+                  </>
+                )}
+
+                {postCreateMode === 'feeding' && (
+                  <div className="small">
+                    <div className="mb-2">
+                      <label className="form-label fw-semibold small">{t('form.lastFeedingDate')}</label>
+                      <input
+                        type="datetime-local"
+                        className="form-control"
+                        value={feedingForm.fedAt}
+                        onChange={e => setFeedingForm(f => ({ ...f, fedAt: e.target.value }))}
+                      />
+                    </div>
+                    <div className="row g-2 mb-2">
+                      <div className="col-6">
+                        <label className="form-label fw-semibold small">{t('quickLog.prey')}</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={feedingForm.preyType}
+                          onChange={e => setFeedingForm(f => ({ ...f, preyType: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-3">
+                        <label className="form-label fw-semibold small">{t('quickLog.size')}</label>
+                        <select
+                          className="form-select"
+                          value={feedingForm.preySize}
+                          onChange={e => setFeedingForm(f => ({ ...f, preySize: e.target.value }))}
+                        >
+                          <option value="small">S</option>
+                          <option value="medium">M</option>
+                          <option value="large">L</option>
+                        </select>
+                      </div>
+                      <div className="col-3">
+                        <label className="form-label fw-semibold small">{t('quickLog.qty')}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="20"
+                          className="form-control"
+                          value={feedingForm.quantity}
+                          onChange={e => setFeedingForm(f => ({ ...f, quantity: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-check mb-2">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="initialAccepted"
+                        checked={feedingForm.accepted}
+                        onChange={e => setFeedingForm(f => ({ ...f, accepted: e.target.checked }))}
+                      />
+                      <label className="form-check-label small" htmlFor="initialAccepted">{t('quickLog.accepted')}</label>
+                    </div>
+                    <textarea
+                      className="form-control"
+                      rows={2}
+                      placeholder={t('quickLog.notes')}
+                      value={feedingForm.notes}
+                      onChange={e => setFeedingForm(f => ({ ...f, notes: e.target.value }))}
+                    />
+                  </div>
+                )}
+
+                {postCreateMode === 'molt' && (
+                  <div className="small">
+                    <div className="mb-2">
+                      <label className="form-label fw-semibold small">{t('form.lastMoltDate')}</label>
+                      <input
+                        type="datetime-local"
+                        className="form-control"
+                        value={moltForm.moltedAt}
+                        onChange={e => setMoltForm(m => ({ ...m, moltedAt: e.target.value }))}
+                      />
+                    </div>
+                    <div className="row g-2 mb-2">
+                      <div className="col-6">
+                        <label className="form-label fw-semibold small">{t('quickLog.preMoltSize')}</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="form-control"
+                          value={moltForm.preSizeCm}
+                          onChange={e => setMoltForm(m => ({ ...m, preSizeCm: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-6">
+                        <label className="form-label fw-semibold small">{t('quickLog.postMoltSize')}</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="form-control"
+                          value={moltForm.postSizeCm}
+                          onChange={e => setMoltForm(m => ({ ...m, postSizeCm: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <textarea
+                      className="form-control"
+                      rows={2}
+                      placeholder={t('quickLog.notes')}
+                      value={moltForm.notes}
+                      onChange={e => setMoltForm(m => ({ ...m, notes: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                {postCreateMode !== 'choice' && (
+                  <button type="button" className="btn btn-light btn-sm" onClick={() => setPostCreateMode('choice')} disabled={postCreateSaving}>
+                    {t('common.back')}
+                  </button>
+                )}
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={closePostCreate} disabled={postCreateSaving}>
+                  {t('form.skipForNow')}
+                </button>
+                {postCreateMode === 'feeding' && (
+                  <button type="button" className="btn btn-dark btn-sm" onClick={saveInitialFeeding} disabled={postCreateSaving}>
+                    {postCreateSaving ? t('common.saving') : t('form.saveAndContinue')}
+                  </button>
+                )}
+                {postCreateMode === 'molt' && (
+                  <button type="button" className="btn btn-dark btn-sm" onClick={saveInitialMolt} disabled={postCreateSaving}>
+                    {postCreateSaving ? t('common.saving') : t('form.saveAndContinue')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -3,6 +3,8 @@ package com.tarantulapp.service;
 import com.tarantulapp.dto.*;
 import com.tarantulapp.entity.Photo;
 import com.tarantulapp.entity.Tarantula;
+import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
 import com.tarantulapp.util.FileStorageService;
@@ -27,6 +29,7 @@ public class TarantulaService {
     private final BehaviorLogRepository behaviorLogRepository;
     private final FileStorageService fileStorageService;
     private final PhotoRepository photoRepository;
+    private final UserRepository userRepository;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -34,7 +37,8 @@ public class TarantulaService {
                             MoltLogRepository moltLogRepository,
                             BehaviorLogRepository behaviorLogRepository,
                             FileStorageService fileStorageService,
-                            PhotoRepository photoRepository) {
+                            PhotoRepository photoRepository,
+                            UserRepository userRepository) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -42,9 +46,11 @@ public class TarantulaService {
         this.behaviorLogRepository = behaviorLogRepository;
         this.fileStorageService = fileStorageService;
         this.photoRepository = photoRepository;
+        this.userRepository = userRepository;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
+        enforceCreationLimit(userId);
         Tarantula t = new Tarantula();
         t.setUserId(userId);
         t.setShortId(generateShortId());
@@ -210,6 +216,21 @@ public class TarantulaService {
                 .orElseThrow(() -> new NotFoundException("Tarántula no encontrada"));
         if (!t.getUserId().equals(userId)) throw new AccessDeniedException("Acceso denegado");
         return t;
+    }
+
+    private void enforceCreationLimit(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+
+        UserPlan plan = user.getPlan() != null ? user.getPlan() : UserPlan.FREE;
+        if (plan == UserPlan.PRO) {
+            return;
+        }
+
+        long count = tarantulaRepository.countByUserId(userId);
+        if (count >= 6) {
+            throw new IllegalArgumentException("La versión gratis permite guardar hasta 6 tarántulas. Actualiza a Pro para agregar más.");
+        }
     }
 
     private void applyRequest(TarantulaRequest req, Tarantula t) {

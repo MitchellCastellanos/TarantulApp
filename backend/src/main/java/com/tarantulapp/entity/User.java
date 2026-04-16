@@ -22,12 +22,19 @@ public class User {
     @Column(name = "display_name", length = 100)
     private String displayName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserPlan plan;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (plan == null) {
+            plan = UserPlan.FREE;
+        }
     }
 
     public UUID getId() { return id; }
@@ -41,6 +48,9 @@ public class User {
 
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
+
+    public UserPlan getPlan() { return plan; }
+    public void setPlan(UserPlan plan) { this.plan = plan; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
