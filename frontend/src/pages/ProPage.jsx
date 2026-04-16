@@ -115,6 +115,18 @@ export default function ProPage() {
             </p>
             {!isPro && (
               <div className="d-flex flex-column gap-2">
+                <div className="d-flex gap-3 align-items-end mb-1">
+                  <div>
+                    <div className="fw-bold fs-5">{t('pro.priceMonthly')}</div>
+                  </div>
+                  <div className="text-muted" style={{ fontSize: '0.85rem', paddingBottom: '2px' }}>
+                    {t('pro.priceYearly')}{' '}
+                    <span className="badge bg-success ms-1" style={{ fontSize: '0.7rem' }}>
+                      {t('pro.priceSaveLabel')}
+                    </span>
+                    <div style={{ fontSize: '0.75rem' }}>{t('pro.priceYearlyNote')}</div>
+                  </div>
+                </div>
                 <p className="small mb-0">{t('pro.soonPayments')}</p>
                 <button
                   className="btn btn-dark btn-sm align-self-start"
@@ -123,7 +135,7 @@ export default function ProPage() {
                 >
                   {loadingCheckout ? t('common.loading') : !user ? t('pro.loginToUpgrade', 'Login to upgrade') : t('pro.upgradeNow')}
                 </button>
-                {billing?.checkoutEnabled === false && (
+                {user && billing?.checkoutEnabled === false && (
                   <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
                 )}
               </div>
