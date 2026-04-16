@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import axios from 'axios'
-import { imgUrl } from '../services/api'
+import api, { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
@@ -23,7 +22,7 @@ export default function PublicProfilePage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    axios.get(`/api/public/t/${shortId}`)
+    api.get(`/public/t/${shortId}`)
       .then(r => setProfile(r.data))
       .catch(() => setError('Perfil no encontrado o no es público.'))
   }, [shortId])
