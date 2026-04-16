@@ -96,11 +96,21 @@ export default function ProPage() {
                     PRO
                   </span>
                   <h6 className="fw-bold mb-2">{t('pro.proTitle')}</h6>
-                  <ul className="small mb-0">
+                  <ul className="small mb-3">
                     <li>{t('pro.proUnlimited')}</li>
                     <li>{t('pro.proAutoReminders')}</li>
                     <li>{t('pro.proQrActions')}</li>
                   </ul>
+                  <div className="border-top pt-2">
+                    <span className="fw-bold">{t('pro.priceMonthly')}</span>
+                    <span className="text-muted small ms-2">{t('pro.priceOr')}</span>
+                    <div className="small text-muted">
+                      {t('pro.priceYearly')}{' '}
+                      <span className="badge bg-success" style={{ fontSize: '0.65rem' }}>
+                        {t('pro.priceSaveLabel')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -115,18 +125,6 @@ export default function ProPage() {
             </p>
             {!isPro && (
               <div className="d-flex flex-column gap-2">
-                <div className="d-flex gap-3 align-items-end mb-1">
-                  <div>
-                    <div className="fw-bold fs-5">{t('pro.priceMonthly')}</div>
-                  </div>
-                  <div className="text-muted" style={{ fontSize: '0.85rem', paddingBottom: '2px' }}>
-                    {t('pro.priceYearly')}{' '}
-                    <span className="badge bg-success ms-1" style={{ fontSize: '0.7rem' }}>
-                      {t('pro.priceSaveLabel')}
-                    </span>
-                    <div style={{ fontSize: '0.75rem' }}>{t('pro.priceYearlyNote')}</div>
-                  </div>
-                </div>
                 <p className="small mb-0">{t('pro.soonPayments')}</p>
                 <button
                   className="btn btn-dark btn-sm align-self-start"
