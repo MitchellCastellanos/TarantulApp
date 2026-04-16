@@ -34,5 +34,6 @@ export default api
 // En producción: 'https://railway-url/uploads/path'
 export function imgUrl(path) {
   if (!path) return null
+  if (path.startsWith('http')) return path   // Cloudinary or any absolute URL
   return (import.meta.env.VITE_API_URL || '') + '/uploads/' + path
 }
