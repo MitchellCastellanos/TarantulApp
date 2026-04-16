@@ -13,6 +13,7 @@ export default function ProPage() {
   const [billing, setBilling] = useState(null)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')
+  const [interval, setInterval] = useState('month')
   const plan = billing?.plan || user?.plan || 'FREE'
 
   const isPro = plan === 'PRO'
@@ -39,7 +40,7 @@ export default function ProPage() {
     setError('')
     setLoadingCheckout(true)
     try {
-      const session = await billingService.createCheckoutSession()
+      const session = await billingService.createCheckoutSession(interval)
       if (!session?.url) throw new Error('checkout-url-missing')
       window.location.href = session.url
     } catch (e) {
@@ -124,8 +125,25 @@ export default function ProPage() {
               {isPro ? t('pro.statusPro') : t('pro.statusFree')}
             </p>
             {!isPro && (
-              <div className="d-flex flex-column gap-2">
-                <p className="small mb-0">{t('pro.soonPayments')}</p>
+              <div className="d-flex flex-column gap-3">
+                {/* Billing interval toggle */}
+                <div className="d-flex gap-2">
+                  <button
+                    className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setInterval('month')}
+                  >
+                    {t('pro.priceMonthly')}
+                  </button>
+                  <button
+                    className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setInterval('year')}
+                  >
+                    {t('pro.priceYearly')}{' '}
+                    <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
+                      {t('pro.priceSaveLabel')}
+                    </span>
+                  </button>
+                </div>
                 <button
                   className="btn btn-dark btn-sm align-self-start"
                   onClick={handleUpgrade}
