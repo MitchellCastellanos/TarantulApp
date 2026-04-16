@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
 import speciesService from '../services/speciesService'
+import PhotoCropModal from '../components/PhotoCropModal'
 
 export default function AddTarantulaPage() {
   const { id } = useParams()  // si hay id, es edición
@@ -19,7 +20,9 @@ export default function AddTarantulaPage() {
   const [gbifLoading, setGbifLoading] = useState(false)
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [showSugg, setShowSugg] = useState(false)
-  const [photo, setPhoto] = useState(null)
+  const [photo, setPhoto] = useState(null)          // Blob final listo para subir
+  const [cropSrc, setCropSrc] = useState(null)       // data URL abierta en el modal
+  const [photoPreview, setPhotoPreview] = useState(null) // URL de objeto para preview
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const debounceRef = useRef(null)
@@ -86,6 +89,21 @@ export default function AddTarantulaPage() {
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setCropSrc(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  const handleCropConfirm = (blob) => {
+    setPhoto(blob)
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
+    setPhotoPreview(URL.createObjectURL(blob))
+    setCropSrc(null)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -238,8 +256,20 @@ export default function AddTarantulaPage() {
               </div>
               <div className="col-12">
                 <label className="form-label small fw-semibold">Foto de perfil</label>
-                <input type="file" accept="image/*" className="form-control"
-                       onChange={e => setPhoto(e.target.files[0])} />
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  {photoPreview && (
+                    <img src={photoPreview} alt="preview"
+                         style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8,
+                                  border: '2px solid var(--ta-border)' }} />
+                  )}
+                  <div className="flex-grow-1">
+                    <input type="file" accept="image/*" className="form-control"
+                           onChange={handleFileSelect} />
+                    <p className="text-muted small mb-0 mt-1">
+                      Podrás ajustar el recorte antes de guardar.
+                    </p>
+                  </div>
+                </div>
               </div>
               <div className="col-12">
                 <label className="form-label small fw-semibold">Notas</label>
@@ -258,6 +288,15 @@ export default function AddTarantulaPage() {
           </div>
         </form>
       </div>
+
+      {/* Modal de recorte — se abre cuando el usuario elige una imagen */}
+      {cropSrc && (
+        <PhotoCropModal
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </div>
   )
 }

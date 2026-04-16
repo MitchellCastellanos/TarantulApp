@@ -10,7 +10,8 @@ const tarantulaService = {
   getTimeline: (id) => api.get(`/tarantulas/${id}/timeline`).then(r => r.data),
   uploadPhoto: (id, file) => {
     const form = new FormData()
-    form.append('file', file)
+    // file puede ser un File original o un Blob recortado; le damos nombre explícito
+    form.append('file', file, file.name || 'profile.jpg')
     return api.post(`/tarantulas/${id}/photo`, form, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(r => r.data)

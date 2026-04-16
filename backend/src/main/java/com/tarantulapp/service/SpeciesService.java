@@ -31,8 +31,7 @@ public class SpeciesService {
 
     public List<SpeciesDTO> search(String query) {
         if (query == null || query.isBlank()) return findAll();
-        return speciesRepository
-                .findByScientificNameContainingIgnoreCaseOrCommonNameContainingIgnoreCase(query, query)
+        return speciesRepository.searchIncludingSynonyms(query)
                 .stream().map(SpeciesDTO::from).collect(Collectors.toList());
     }
 }
