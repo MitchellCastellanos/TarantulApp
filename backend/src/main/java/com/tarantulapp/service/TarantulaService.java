@@ -144,6 +144,33 @@ public class TarantulaService {
         return events;
     }
 
+    /** Public timeline — no authentication required. Only for public profiles. */
+    @Transactional(readOnly = true)
+    public List<TimelineEventDTO> getPublicTimeline(String shortId) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        if (!Boolean.TRUE.equals(t.getIsPublic())) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+
+        List<TimelineEventDTO> events = new ArrayList<>();
+        feedingLogRepository.findByTarantulaIdOrderByFedAtDesc(t.getId()).forEach(f -> {
+            String title = Boolean.FALSE.equals(f.getAccepted()) ? "feeding_rejected" : "feeding";
+            String summary = buildFeedingSummary(f.getQuantity(), f.getPreyType(), f.getPreySize(), f.getNotes());
+            events.add(new TimelineEventDTO(f.getId(), "feeding", f.getFedAt(), title, summary));
+        });
+        moltLogRepository.findByTarantulaIdOrderByMoltedAtDesc(t.getId()).forEach(m -> {
+            String summary = buildMoltSummary(m.getPreSizeCm(), m.getPostSizeCm(), m.getNotes());
+            events.add(new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary));
+        });
+        behaviorLogRepository.findByTarantulaIdOrderByLoggedAtDesc(t.getId()).forEach(b -> {
+            events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), b.getMood(), b.getNotes()));
+        });
+        events.sort(Comparator.comparing(TimelineEventDTO::getEventDate).reversed());
+        // Limit to last 20 events for public view
+        return events.size() > 20 ? events.subList(0, 20) : events;
+    }
+
     @Transactional(readOnly = true)
     public PublicProfileDTO getPublicProfile(String shortId) {
         Tarantula t = tarantulaRepository.findByShortId(shortId)

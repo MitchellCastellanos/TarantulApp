@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.dto.WscSearchResultDTO;
 import com.tarantulapp.entity.Species;
@@ -9,6 +10,10 @@ import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.SpeciesSynonymRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -61,12 +66,27 @@ public class WscService {
                     .queryParam("format", "json")
                     .toUriString();
 
-            WscSearchResponse response = restTemplate.getForObject(url, WscSearchResponse.class);
-            if (response == null || response.getData() == null) return Collections.emptyList();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "TarantulApp/1.0 (tarantula collection tracker)");
+            headers.set("Accept", "application/json");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            // Map WSC rows → our DTO; filter to accepted species only
-            return response.getData().stream()
-                    .filter(row -> "species".equalsIgnoreCase(row.getStatus()) || row.getStatus() == null)
+            ResponseEntity<WscSearchResponse> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, WscSearchResponse.class);
+            WscSearchResponse response = resp.getBody();
+
+            // WSC may wrap results in "data" or "results"
+            List<WscRow> rows = (response != null && response.getData() != null)
+                    ? response.getData()
+                    : (response != null && response.getResults() != null ? response.getResults() : null);
+
+            if (rows == null) return Collections.emptyList();
+
+            return rows.stream()
+                    .filter(row -> row.getName() != null && !row.getName().isBlank())
+                    .filter(row -> row.getStatus() == null
+                            || "species".equalsIgnoreCase(row.getStatus())
+                            || "accepted".equalsIgnoreCase(row.getStatus()))
                     .map(row -> {
                         WscSearchResultDTO dto = new WscSearchResultDTO();
                         dto.setTaxonId(row.getTaxonId());
@@ -132,18 +152,30 @@ public class WscService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class WscSearchResponse {
         private List<WscRow> data;
+        private List<WscRow> results; // fallback key name
+
         public List<WscRow> getData() { return data; }
         public void setData(List<WscRow> d) { this.data = d; }
+        public List<WscRow> getResults() { return results; }
+        public void setResults(List<WscRow> r) { this.results = r; }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class WscRow {
+        // WSC may use either camelCase or snake_case — accept both
+        @JsonProperty("taxon_id")
         private String taxonId;
+
+        // "name" is the canonical scientific name in WSC JSON
         private String name;
+
         private String family;
         private String author;
         private String year;
+
+        // WSC uses "status" field: "species" = accepted
         private String status;
+
         public String getTaxonId() { return taxonId; }
         public void setTaxonId(String t) { this.taxonId = t; }
         public String getName() { return name; }

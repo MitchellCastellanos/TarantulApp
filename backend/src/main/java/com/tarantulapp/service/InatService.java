@@ -1,18 +1,18 @@
 package com.tarantulapp.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
-/**
- * Fetches reference photos from iNaturalist for species that don't have a photo yet.
- * Uses the public iNaturalist API — no key required.
- */
 @Service
 public class InatService {
 
@@ -25,10 +25,6 @@ public class InatService {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Returns the medium-size photo URL from iNaturalist for the given species name,
-     * or null if nothing is found / the API is unreachable.
-     */
     public String fetchPhotoUrl(String scientificName) {
         if (scientificName == null || scientificName.isBlank()) return null;
         try {
@@ -39,7 +35,13 @@ public class InatService {
                     .queryParam("per_page", 1)
                     .toUriString();
 
-            InatTaxaResponse response = restTemplate.getForObject(url, InatTaxaResponse.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "TarantulApp/1.0 (tarantula collection tracker)");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            InatTaxaResponse response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, InatTaxaResponse.class).getBody();
+
             if (response == null || response.getResults() == null || response.getResults().isEmpty()) return null;
 
             InatTaxon taxon = response.getResults().get(0);
@@ -51,8 +53,6 @@ public class InatService {
         }
     }
 
-    // ─── Inner response wrappers ──────────────────────────────────────────────
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class InatTaxaResponse {
         private List<InatTaxon> results;
@@ -62,6 +62,7 @@ public class InatService {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class InatTaxon {
+        @JsonProperty("default_photo")
         private InatPhoto defaultPhoto;
         public InatPhoto getDefaultPhoto() { return defaultPhoto; }
         public void setDefaultPhoto(InatPhoto p) { this.defaultPhoto = p; }
@@ -69,6 +70,7 @@ public class InatService {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class InatPhoto {
+        @JsonProperty("medium_url")
         private String mediumUrl;
         public String getMediumUrl() { return mediumUrl; }
         public void setMediumUrl(String u) { this.mediumUrl = u; }

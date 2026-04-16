@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
 import speciesService from '../services/speciesService'
 import PhotoCropModal from '../components/PhotoCropModal'
 
 export default function AddTarantulaPage() {
+  const { t } = useTranslation()
   const { id } = useParams()  // si hay id, es edición
   const navigate = useNavigate()
   const isEdit = Boolean(id)
@@ -89,7 +91,7 @@ export default function AddTarantulaPage() {
       const imported = await speciesService.importFromGbif(gbifResult.key)
       selectSpecies(imported)
     } catch {
-      setError('No se pudo importar la especie desde GBIF.')
+      setError(t('form.importError'))
     } finally {
       setGbifLoading(false)
     }
@@ -102,7 +104,7 @@ export default function AddTarantulaPage() {
       const imported = await speciesService.importFromWsc(wscResult.name, wscResult.family)
       selectSpecies(imported)
     } catch {
-      setError('No se pudo importar la especie desde WSC.')
+      setError(t('form.importErrorWsc'))
     } finally {
       setWscLoading(false)
     }
@@ -158,9 +160,9 @@ export default function AddTarantulaPage() {
       <div className="container mt-4" style={{ maxWidth: 640 }}>
         <div className="d-flex align-items-center gap-2 mb-4">
           <button className="btn btn-link p-0 text-dark text-decoration-none"
-                  onClick={() => navigate(-1)}>← Volver</button>
+                  onClick={() => navigate(-1)}>{t('common.back')}</button>
           <h5 className="fw-bold mb-0">
-            {isEdit ? 'Editar tarántula' : 'Nueva tarántula'}
+            {isEdit ? t('tarantula.editTitle') : t('tarantula.newTitle')}
           </h5>
         </div>
 
@@ -168,13 +170,13 @@ export default function AddTarantulaPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="card border-0 shadow-sm p-4 mb-3">
-            <h6 className="fw-bold mb-3">Especie</h6>
+            <h6 className="fw-bold mb-3">{t('form.speciesSection')}</h6>
 
             {/* Autocomplete de especie */}
             <div className="mb-3 position-relative">
-              <label className="form-label small fw-semibold">Buscar especie</label>
+              <label className="form-label small fw-semibold">{t('form.searchSpecies')}</label>
               <div className="input-group">
-                <input type="text" className="form-control" placeholder="Ej: vagans, Red Knee..."
+                <input type="text" className="form-control" placeholder={t('form.searchPlaceholder')}
                        value={speciesQuery}
                        onChange={e => { setSpeciesQuery(e.target.value); setShowSugg(true) }}
                        onFocus={() => speciesQuery.length >= 2 && setShowSugg(true)}
@@ -204,7 +206,7 @@ export default function AddTarantulaPage() {
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#f3e5ff', borderTop: '1px solid #d9b3ff', cursor: 'default' }}>
                         <span className="small fw-semibold" style={{ color: '#6a1b9a' }}>
-                          {wscLoading ? '🕷️ Buscando en WSC...' : '🕷️ World Spider Catalog'}
+                          {wscLoading ? t('form.wscLoading') : t('form.wscLabel')}
                         </span>
                       </li>
                       {wscResults.slice(0, 6).map(wr => (
@@ -226,7 +228,7 @@ export default function AddTarantulaPage() {
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#e8f4fd', borderTop: '1px solid #bee5fb', cursor: 'default' }}>
                         <span className="small fw-semibold text-primary">
-                          {gbifLoading ? '🌍 Buscando en GBIF...' : '🌍 GBIF — Catálogo global'}
+                          {gbifLoading ? t('form.gbifLoading') : t('form.gbifLabel')}
                         </span>
                       </li>
                       {gbifResults.slice(0, 6).map(gr => (
@@ -257,45 +259,45 @@ export default function AddTarantulaPage() {
           </div>
 
           <div className="card border-0 shadow-sm p-4 mb-3">
-            <h6 className="fw-bold mb-3">Datos del ejemplar</h6>
+            <h6 className="fw-bold mb-3">{t('form.individualSection')}</h6>
             <div className="row g-3">
               <div className="col-12">
-                <label className="form-label small fw-semibold">Nombre *</label>
+                <label className="form-label small fw-semibold">{t('form.name')}</label>
                 <input type="text" className="form-control" required
                        value={form.name} onChange={e => set('name', e.target.value)}
-                       placeholder="ej. Mole" />
+                       placeholder={t('form.namePlaceholder')} />
               </div>
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">Tamaño actual (cm)</label>
+                <label className="form-label small fw-semibold">{t('form.currentSize')}</label>
                 <input type="number" step="0.1" min="0" className="form-control"
                        value={form.currentSizeCm} onChange={e => set('currentSizeCm', e.target.value)} />
               </div>
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">Etapa</label>
+                <label className="form-label small fw-semibold">{t('form.stage')}</label>
                 <select className="form-select" value={form.stage} onChange={e => set('stage', e.target.value)}>
                   <option value="">–</option>
-                  <option value="sling">Sling</option>
-                  <option value="juvenile">Juvenil</option>
-                  <option value="subadult">Subadulto</option>
-                  <option value="adult">Adulto</option>
+                  <option value="sling">{t('stages.sling')}</option>
+                  <option value="juvenile">{t('stages.juvenile')}</option>
+                  <option value="subadult">{t('stages.subadult')}</option>
+                  <option value="adult">{t('stages.adult')}</option>
                 </select>
               </div>
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">Sexo</label>
+                <label className="form-label small fw-semibold">{t('form.sex')}</label>
                 <select className="form-select" value={form.sex} onChange={e => set('sex', e.target.value)}>
                   <option value="">–</option>
-                  <option value="unsexed">Sin determinar</option>
-                  <option value="female">Hembra</option>
-                  <option value="male">Macho</option>
+                  <option value="unsexed">{t('form.unsexed')}</option>
+                  <option value="female">{t('form.female')}</option>
+                  <option value="male">{t('form.male')}</option>
                 </select>
               </div>
               <div className="col-md-6">
-                <label className="form-label small fw-semibold">Fecha de compra</label>
+                <label className="form-label small fw-semibold">{t('form.purchaseDate')}</label>
                 <input type="date" className="form-control"
                        value={form.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} />
               </div>
               <div className="col-12">
-                <label className="form-label small fw-semibold">Foto de perfil</label>
+                <label className="form-label small fw-semibold">{t('form.profilePhoto')}</label>
                 <div className="d-flex align-items-center gap-3 flex-wrap">
                   {photoPreview && (
                     <img src={photoPreview} alt="preview"
@@ -305,25 +307,23 @@ export default function AddTarantulaPage() {
                   <div className="flex-grow-1">
                     <input type="file" accept="image/*" className="form-control"
                            onChange={handleFileSelect} />
-                    <p className="text-muted small mb-0 mt-1">
-                      Podrás ajustar el recorte antes de guardar.
-                    </p>
+                    <p className="text-muted small mb-0 mt-1">{t('form.photoCropHint')}</p>
                   </div>
                 </div>
               </div>
               <div className="col-12">
-                <label className="form-label small fw-semibold">Notas</label>
+                <label className="form-label small fw-semibold">{t('form.notes')}</label>
                 <textarea className="form-control" rows={3}
                           value={form.notes} onChange={e => set('notes', e.target.value)}
-                          placeholder="Observaciones personales..." />
+                          placeholder={t('form.notesPlaceholder')} />
               </div>
             </div>
           </div>
 
           <div className="d-flex gap-2 justify-content-end mb-4">
-            <button type="button" className="btn btn-light" onClick={() => navigate(-1)}>Cancelar</button>
+            <button type="button" className="btn btn-light" onClick={() => navigate(-1)}>{t('common.cancel')}</button>
             <button type="submit" className="btn btn-dark" disabled={loading}>
-              {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear tarántula'}
+              {loading ? t('common.saving') : isEdit ? t('form.saveBtn') : t('form.createBtn')}
             </button>
           </div>
         </form>

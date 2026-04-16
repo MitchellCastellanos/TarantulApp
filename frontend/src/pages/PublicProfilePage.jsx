@@ -1,31 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import logsService from '../services/logsService'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
-const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
-const SEX_LABEL    = { male: '♂ Macho', female: '♀ Hembra', unsexed: '? Sin determinar' }
 const STATUS_CFG   = {
-  active:          { label: 'Activa',     color: 'success' },
-  pre_molt:        { label: 'Pre-muda',   color: 'warning' },
-  pending_feeding: { label: 'Sin comer',  color: 'danger'  },
-  deceased:        { label: '🕯️ Fallecida', color: 'secondary' },
+  active:          { color: 'success' },
+  pre_molt:        { color: 'warning' },
+  pending_feeding: { color: 'danger'  },
+  deceased:        { color: 'secondary' },
 }
 
-const PREY_TYPES = ['Grillo', 'Dubia', 'Superworm', 'Lombriz', 'Mealworm', 'Otro']
-const MOODS      = [
-  { value: 'calm',       label: '😌 Tranquila' },
-  { value: 'active',     label: '⚡ Activa' },
-  { value: 'defensive',  label: '⚠️ Defensiva' },
-  { value: 'hiding',     label: '🕳️ Escondida' },
-  { value: 'pre_molt',   label: '🌙 Pre-muda' },
-]
+const PREY_TYPES = ['Cricket', 'Dubia', 'Superworm', 'Worm', 'Mealworm', 'Other']
 
 function formatDate(iso) {
   if (!iso) return '–'
-  return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function nowISO() {
@@ -35,21 +27,29 @@ function nowISO() {
 export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
+  const { t }       = useTranslation()
+
   const [profile, setProfile]   = useState(null)
+  const [timeline, setTimeline] = useState([])
   const [error, setError]       = useState('')
-  const [quickLog, setQuickLog] = useState(null) // 'feeding' | 'molt' | 'behavior'
+  const [quickLog, setQuickLog] = useState(null)
   const [saved, setSaved]       = useState('')
   const [busy, setBusy]         = useState(false)
 
-  // Quick-log form state
-  const [feed, setFeed] = useState({ preyType: 'Grillo', preySize: 'medium', quantity: 1, accepted: true, notes: '' })
-  const [molt, setMolt] = useState({ preSizeCm: '', postSizeCm: '', notes: '' })
+  const [feed, setFeed]   = useState({ preyType: 'Cricket', preySize: 'medium', quantity: 1, accepted: true, notes: '' })
+  const [molt, setMolt]   = useState({ preSizeCm: '', postSizeCm: '', notes: '' })
   const [behav, setBehav] = useState({ mood: 'active', notes: '' })
 
-  const load = () =>
+  const load = () => {
     api.get(`/public/t/${shortId}`)
-       .then(r => setProfile(r.data))
-       .catch(() => setError('Perfil no encontrado o no es público.'))
+       .then(r => {
+         setProfile(r.data)
+         api.get(`/public/t/${shortId}/timeline`)
+            .then(tr => setTimeline(tr.data))
+            .catch(() => {})
+       })
+       .catch(() => setError(t('public.notFound')))
+  }
 
   useEffect(() => { load() }, [shortId])
 
@@ -60,29 +60,35 @@ export default function PublicProfilePage() {
     setSaved('')
     try {
       await fn()
-      setSaved('✅ Registrado')
+      setSaved(t('quickLog.saved'))
       setQuickLog(null)
-      load() // refresh lastFedAt etc.
+      load()
     } catch {
-      setSaved('❌ Error al guardar')
+      setSaved(t('quickLog.error'))
     } finally {
       setBusy(false)
     }
   }
 
-  const saveFeed = () => doSave(() =>
+  const saveFeed  = () => doSave(() =>
     logsService.addFeeding(profile.tarantulaId, { ...feed, fedAt: nowISO(), quantity: Number(feed.quantity) }))
-
-  const saveMolt = () => doSave(() =>
+  const saveMolt  = () => doSave(() =>
     logsService.addMolt(profile.tarantulaId, {
       moltedAt: nowISO(),
       preSizeCm:  molt.preSizeCm  ? Number(molt.preSizeCm)  : null,
       postSizeCm: molt.postSizeCm ? Number(molt.postSizeCm) : null,
       notes: molt.notes || null,
     }))
-
   const saveBehav = () => doSave(() =>
     logsService.addBehavior(profile.tarantulaId, { ...behav, loggedAt: nowISO() }))
+
+  const eventIcon  = (type) => type === 'feeding' ? '🍽️' : type === 'molt' ? '🕸️' : '📊'
+  const eventLabel = (ev) => {
+    if (ev.type === 'feeding') return ev.title === 'feeding_rejected' ? t('timeline.feeding_rejected') : t('timeline.feeding')
+    if (ev.type === 'molt')    return t('timeline.molt')
+    const moodKey = ev.title
+    return `${t('quickLog.behavior')}: ${t(`timeline.${moodKey}`) || moodKey}`
+  }
 
   if (error) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
@@ -90,7 +96,7 @@ export default function PublicProfilePage() {
       <div className="text-center" style={{ color: 'var(--ta-parchment)' }}>
         <div className="fs-1 mb-2">🕸️</div>
         <p>{error}</p>
-        <Link to="/" className="btn btn-outline-light btn-sm">Ir al inicio</Link>
+        <Link to="/" className="btn btn-outline-light btn-sm">{t('public.goHome')}</Link>
       </div>
     </div>
   )
@@ -98,11 +104,20 @@ export default function PublicProfilePage() {
   if (!profile) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
          style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
-      <p style={{ color: 'var(--ta-parchment)' }}>Cargando...</p>
+      <p style={{ color: 'var(--ta-parchment)' }}>{t('common.loading')}</p>
     </div>
   )
 
-  const statusCfg = STATUS_CFG[profile.status] || { label: profile.status, color: 'secondary' }
+  const statusCfg   = STATUS_CFG[profile.status] || { color: 'secondary' }
+  const statusLabel = t(`status.${profile.status}`) || profile.status
+
+  const MOODS = [
+    { value: 'calm',      label: t('moods.calm') },
+    { value: 'active',    label: t('moods.active') },
+    { value: 'defensive', label: t('moods.defensive') },
+    { value: 'hiding',    label: t('moods.hiding') },
+    { value: 'pre_molt',  label: t('moods.pre_molt') },
+  ]
 
   return (
     <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
@@ -110,7 +125,6 @@ export default function PublicProfilePage() {
 
         {/* ─── Ficha pública ──────────────────────────── */}
         <div className="card shadow-lg mb-3">
-          {/* Foto */}
           <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                style={{ height: 240, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
             {profile.profilePhoto ? (
@@ -125,7 +139,7 @@ export default function PublicProfilePage() {
             <div className="d-flex justify-content-between align-items-start mb-2">
               <h4 className="fw-bold mb-0">{profile.name}</h4>
               <span className={`badge bg-${statusCfg.color} text-${statusCfg.color === 'warning' ? 'dark' : 'white'}`}>
-                {statusCfg.label}
+                {statusLabel}
               </span>
             </div>
 
@@ -137,14 +151,14 @@ export default function PublicProfilePage() {
             )}
 
             <div className="d-flex flex-wrap gap-2 mb-3">
-              {profile.stage && <span className="badge bg-light text-dark border">{STAGE_LABEL[profile.stage] ?? profile.stage}</span>}
-              {profile.sex   && <span className="badge bg-light text-dark border">{SEX_LABEL[profile.sex] ?? profile.sex}</span>}
+              {profile.stage && <span className="badge bg-light text-dark border">{t(`stages.${profile.stage}`) || profile.stage}</span>}
+              {profile.sex   && <span className="badge bg-light text-dark border">{t(`sex.${profile.sex}`) || profile.sex}</span>}
               {profile.currentSizeCm && <span className="badge bg-light text-dark border">📏 {profile.currentSizeCm} cm</span>}
             </div>
 
             <div className="small text-muted">
-              <div>🍽️ Última comida: {formatDate(profile.lastFedAt)}</div>
-              <div>🕸️ Última muda: {formatDate(profile.lastMoltAt)}</div>
+              <div>{t('public.lastFed')} {formatDate(profile.lastFedAt)}</div>
+              <div>{t('public.lastMolt')} {formatDate(profile.lastMoltAt)}</div>
             </div>
           </div>
 
@@ -153,22 +167,46 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
+        {/* ─── Historial reciente ─────────────────────── */}
+        <div className="card shadow-sm mb-3">
+          <div className="card-body p-3">
+            <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>
+              {t('public.history')}
+            </p>
+            {timeline.length === 0 ? (
+              <p className="text-muted small mb-0">{t('public.historyEmpty')}</p>
+            ) : (
+              <ul className="list-unstyled mb-0">
+                {timeline.slice(0, 10).map(ev => (
+                  <li key={ev.id} className="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-light">
+                    <span style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{eventIcon(ev.type)}</span>
+                    <div className="small flex-grow-1">
+                      <div className="fw-semibold">{eventLabel(ev)}</div>
+                      {ev.summary && <div className="text-muted">{ev.summary}</div>}
+                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>{formatDate(ev.eventDate)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
         {/* ─── Panel de registro rápido (solo propietario) ── */}
         {isOwner && (
           <div className="card shadow-sm">
             <div className="card-body p-3">
               <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>
-                📋 Registro rápido
+                {t('quickLog.title')}
               </p>
 
               {saved && <div className="alert py-1 small mb-2" style={{ background: '#1a2e1a', color: '#a8d8b0', border: '1px solid #3d5a2a' }}>{saved}</div>}
 
-              {/* Selector de acción */}
               <div className="d-flex gap-2 mb-3 flex-wrap">
                 {[
-                  { key: 'feeding',  icon: '🍽️', label: 'Alimentación' },
-                  { key: 'molt',     icon: '🌙', label: 'Muda' },
-                  { key: 'behavior', icon: '📊', label: 'Comportamiento' },
+                  { key: 'feeding',  icon: '🍽️', label: t('quickLog.feeding') },
+                  { key: 'molt',     icon: '🌙', label: t('quickLog.molt') },
+                  { key: 'behavior', icon: '📊', label: t('quickLog.behavior') },
                 ].map(({ key, icon, label }) => (
                   <button key={key}
                           className={`btn btn-sm ${quickLog === key ? 'btn-dark' : 'btn-outline-secondary'}`}
@@ -178,19 +216,18 @@ export default function PublicProfilePage() {
                 ))}
               </div>
 
-              {/* ─── Formulario alimentación ─── */}
               {quickLog === 'feeding' && (
                 <div className="border rounded p-3 small">
                   <div className="row g-2 mb-2">
                     <div className="col-6">
-                      <label className="form-label mb-1 small fw-semibold">Presa</label>
+                      <label className="form-label mb-1 small fw-semibold">{t('quickLog.prey')}</label>
                       <select className="form-select form-select-sm"
                               value={feed.preyType} onChange={e => setFeed(f => ({ ...f, preyType: e.target.value }))}>
                         {PREY_TYPES.map(p => <option key={p}>{p}</option>)}
                       </select>
                     </div>
                     <div className="col-3">
-                      <label className="form-label mb-1 small fw-semibold">Tamaño</label>
+                      <label className="form-label mb-1 small fw-semibold">{t('quickLog.size')}</label>
                       <select className="form-select form-select-sm"
                               value={feed.preySize} onChange={e => setFeed(f => ({ ...f, preySize: e.target.value }))}>
                         <option value="small">S</option>
@@ -199,55 +236,49 @@ export default function PublicProfilePage() {
                       </select>
                     </div>
                     <div className="col-3">
-                      <label className="form-label mb-1 small fw-semibold">Cant.</label>
+                      <label className="form-label mb-1 small fw-semibold">{t('quickLog.qty')}</label>
                       <input type="number" className="form-control form-control-sm" min={1} max={20}
                              value={feed.quantity} onChange={e => setFeed(f => ({ ...f, quantity: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="d-flex align-items-center gap-3 mb-2">
-                    <div className="form-check mb-0">
-                      <input type="checkbox" className="form-check-input" id="accepted"
-                             checked={feed.accepted} onChange={e => setFeed(f => ({ ...f, accepted: e.target.checked }))} />
-                      <label className="form-check-label small" htmlFor="accepted">Aceptó</label>
-                    </div>
+                  <div className="form-check mb-2">
+                    <input type="checkbox" className="form-check-input" id="accepted"
+                           checked={feed.accepted} onChange={e => setFeed(f => ({ ...f, accepted: e.target.checked }))} />
+                    <label className="form-check-label small" htmlFor="accepted">{t('quickLog.accepted')}</label>
                   </div>
-                  <input type="text" className="form-control form-control-sm mb-2" placeholder="Notas (opcional)"
+                  <input type="text" className="form-control form-control-sm mb-2" placeholder={t('quickLog.notes')}
                          value={feed.notes} onChange={e => setFeed(f => ({ ...f, notes: e.target.value }))} />
                   <button className="btn btn-dark btn-sm w-100" onClick={saveFeed} disabled={busy}>
-                    {busy ? 'Guardando...' : '💾 Guardar alimentación'}
+                    {busy ? t('common.saving') : t('quickLog.saveFeeding')}
                   </button>
                 </div>
               )}
 
-              {/* ─── Formulario muda ─── */}
               {quickLog === 'molt' && (
                 <div className="border rounded p-3 small">
                   <div className="row g-2 mb-2">
                     <div className="col-6">
-                      <label className="form-label mb-1 small fw-semibold">Talla pre (cm)</label>
-                      <input type="number" step="0.1" className="form-control form-control-sm"
-                             placeholder="Ej: 4.5"
+                      <label className="form-label mb-1 small fw-semibold">{t('quickLog.preMoltSize')}</label>
+                      <input type="number" step="0.1" className="form-control form-control-sm" placeholder="4.5"
                              value={molt.preSizeCm} onChange={e => setMolt(m => ({ ...m, preSizeCm: e.target.value }))} />
                     </div>
                     <div className="col-6">
-                      <label className="form-label mb-1 small fw-semibold">Talla post (cm)</label>
-                      <input type="number" step="0.1" className="form-control form-control-sm"
-                             placeholder="Ej: 5.2"
+                      <label className="form-label mb-1 small fw-semibold">{t('quickLog.postMoltSize')}</label>
+                      <input type="number" step="0.1" className="form-control form-control-sm" placeholder="5.2"
                              value={molt.postSizeCm} onChange={e => setMolt(m => ({ ...m, postSizeCm: e.target.value }))} />
                     </div>
                   </div>
-                  <input type="text" className="form-control form-control-sm mb-2" placeholder="Notas (opcional)"
+                  <input type="text" className="form-control form-control-sm mb-2" placeholder={t('quickLog.notes')}
                          value={molt.notes} onChange={e => setMolt(m => ({ ...m, notes: e.target.value }))} />
                   <button className="btn btn-dark btn-sm w-100" onClick={saveMolt} disabled={busy}>
-                    {busy ? 'Guardando...' : '💾 Guardar muda'}
+                    {busy ? t('common.saving') : t('quickLog.saveMolt')}
                   </button>
                 </div>
               )}
 
-              {/* ─── Formulario comportamiento ─── */}
               {quickLog === 'behavior' && (
                 <div className="border rounded p-3 small">
-                  <label className="form-label mb-2 small fw-semibold">Estado observado</label>
+                  <label className="form-label mb-2 small fw-semibold">{t('quickLog.mood')}</label>
                   <div className="d-flex flex-wrap gap-2 mb-2">
                     {MOODS.map(({ value, label }) => (
                       <button key={value}
@@ -257,10 +288,10 @@ export default function PublicProfilePage() {
                       </button>
                     ))}
                   </div>
-                  <input type="text" className="form-control form-control-sm mb-2" placeholder="Notas (opcional)"
+                  <input type="text" className="form-control form-control-sm mb-2" placeholder={t('quickLog.notes')}
                          value={behav.notes} onChange={e => setBehav(b => ({ ...b, notes: e.target.value }))} />
                   <button className="btn btn-dark btn-sm w-100" onClick={saveBehav} disabled={busy}>
-                    {busy ? 'Guardando...' : '💾 Guardar comportamiento'}
+                    {busy ? t('common.saving') : t('quickLog.saveBehavior')}
                   </button>
                 </div>
               )}

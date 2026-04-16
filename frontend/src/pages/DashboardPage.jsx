@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
@@ -7,30 +8,11 @@ import tarantulaService from '../services/tarantulaService'
 
 function formatDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-const HABITAT_FILTERS = [
-  { key: 'all', label: 'Todas' },
-  { key: 'terrestrial', label: '🌎 Terrestres' },
-  { key: 'arboreal', label: '🌳 Arbóreas' },
-  { key: 'fossorial', label: '🕳️ Fosoriales' },
-]
-const STAGE_FILTERS = [
-  { key: '', label: 'Etapa' },
-  { key: 'sling', label: 'Sling' },
-  { key: 'juvenile', label: 'Juvenil' },
-  { key: 'subadult', label: 'Subadulto' },
-  { key: 'adult', label: 'Adulto' },
-]
-const STATUS_FILTERS = [
-  { key: '', label: 'Estado' },
-  { key: 'active', label: '✅ Activas' },
-  { key: 'pre_molt', label: '🌙 Pre-muda' },
-  { key: 'pending_feeding', label: '🍽️ Sin comer' },
-]
-
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const [tarantulas, setTarantulas] = useState([])
   const [loading, setLoading] = useState(true)
   const [habitat, setHabitat] = useState('all')
@@ -58,6 +40,26 @@ export default function DashboardPage() {
 
   const hasActiveFilters = habitat !== 'all' || stage || status || search
 
+  const HABITAT_FILTERS = [
+    { key: 'all',         label: t('dashboard.filterAll') },
+    { key: 'terrestrial', label: t('dashboard.filterTerrestrial') },
+    { key: 'arboreal',    label: t('dashboard.filterArboreal') },
+    { key: 'fossorial',   label: t('dashboard.filterFossorial') },
+  ]
+  const STAGE_FILTERS = [
+    { key: '', label: t('stages.label') },
+    { key: 'sling',    label: t('stages.sling') },
+    { key: 'juvenile', label: t('stages.juvenile') },
+    { key: 'subadult', label: t('stages.subadult') },
+    { key: 'adult',    label: t('stages.adult') },
+  ]
+  const STATUS_FILTERS = [
+    { key: '', label: t('dashboard.filterStatus') },
+    { key: 'active',          label: t('dashboard.filterActive') },
+    { key: 'pre_molt',        label: t('dashboard.filterPreMolt') },
+    { key: 'pending_feeding', label: t('dashboard.filterHungry') },
+  ]
+
   return (
     <div>
       <Navbar />
@@ -65,13 +67,13 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <h4 className="fw-bold mb-0">Mis Tarántulas</h4>
+            <h4 className="fw-bold mb-0">{t('dashboard.title')}</h4>
             <p className="text-collection small mb-0">
-              {tarantulas.length} en tu colección
+              {tarantulas.length} {t('dashboard.inCollection')}
             </p>
           </div>
           <Link to="/tarantulas/new" className="btn btn-dark">
-            + Agregar
+            {t('dashboard.add')}
           </Link>
         </div>
 
@@ -84,7 +86,7 @@ export default function DashboardPage() {
             <div className="input-group input-group-sm mb-2" style={{ maxWidth: 320 }}>
               <span className="input-group-text bg-white border-end-0">🔍</span>
               <input type="text" className="form-control border-start-0"
-                     placeholder="Buscar por nombre o especie..."
+                     placeholder={t('dashboard.search')}
                      value={search} onChange={e => setSearch(e.target.value)} />
               {search && (
                 <button className="btn btn-outline-secondary" onClick={() => setSearch('')}>✕</button>
@@ -109,7 +111,7 @@ export default function DashboardPage() {
               {hasActiveFilters && (
                 <button className="btn btn-sm btn-link text-muted p-0"
                         onClick={() => { setHabitat('all'); setStage(''); setStatus(''); setSearch('') }}>
-                  Limpiar filtros
+                  {t('dashboard.clearFilters')}
                 </button>
               )}
             </div>
@@ -118,27 +120,25 @@ export default function DashboardPage() {
 
         {/* Contenido */}
         {loading ? (
-          <div className="text-center py-5 text-muted">Cargando...</div>
+          <div className="text-center py-5 text-muted">{t('common.loading')}</div>
         ) : tarantulas.length === 0 ? (
           <div className="card border-0 shadow-sm text-center py-5">
             <div className="fs-1 mb-2">🕸️</div>
-            <p className="fw-semibold mb-1">Tu colección está vacía</p>
-            <p className="text-collection small mb-3">
-              Agrega tu primera tarántula para empezar su expediente.
-            </p>
+            <p className="fw-semibold mb-1">{t('dashboard.empty')}</p>
+            <p className="text-collection small mb-3">{t('dashboard.emptyDesc')}</p>
             <div>
               <Link to="/tarantulas/new" className="btn btn-dark btn-sm">
-                + Agregar primera tarántula
+                {t('dashboard.addFirst')}
               </Link>
             </div>
           </div>
         ) : filtered.length === 0 ? (
           <p className="text-muted small">
-            Sin resultados para los filtros seleccionados.{' '}
+            {t('dashboard.noResults')}{' '}
             {hasActiveFilters && (
               <button className="btn btn-link btn-sm p-0 text-muted"
                       onClick={() => { setHabitat('all'); setStage(''); setStatus(''); setSearch('') }}>
-                Limpiar filtros
+                {t('dashboard.clearFilters')}
               </button>
             )}
           </p>
@@ -156,24 +156,24 @@ export default function DashboardPage() {
         {deceased.length > 0 && (
           <details className="mt-4">
             <summary className="small fw-semibold mb-2" style={{ cursor: 'pointer', color: 'var(--ta-gold)', listStyle: 'none' }}>
-              🕯️ En memoria ({deceased.length})
+              {t('dashboard.inMemory')} ({deceased.length})
             </summary>
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mt-1">
-              {deceased.map(t => (
-                <div className="col" key={t.id}>
-                  <Link to={`/tarantulas/${t.id}`} className="text-decoration-none">
+              {deceased.map(d => (
+                <div className="col" key={d.id}>
+                  <Link to={`/tarantulas/${d.id}`} className="text-decoration-none">
                     <div className="card h-100 tarantula-card" style={{ opacity: 0.72 }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-start mb-1">
-                          <h6 className="card-title fw-bold mb-0 text-truncate me-2">{t.name}</h6>
+                          <h6 className="card-title fw-bold mb-0 text-truncate me-2">{d.name}</h6>
                           <span className="badge bg-secondary">🕯️</span>
                         </div>
-                        {t.species && (
+                        {d.species && (
                           <p className="text-muted small mb-1 fst-italic text-truncate">
-                            {t.species.scientificName}
+                            {d.species.scientificName}
                           </p>
                         )}
-                        <p className="text-muted small mb-0">† {formatDate(t.deceasedAt)}</p>
+                        <p className="text-muted small mb-0">† {formatDate(d.deceasedAt)}</p>
                       </div>
                     </div>
                   </Link>
