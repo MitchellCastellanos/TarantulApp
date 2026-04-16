@@ -2,7 +2,9 @@
   "nav": {
     "reminders": "Reminders",
     "logout": "Sign out",
-    "lang": "Language"
+    "lang": "Language",
+    "planFree": "Free plan",
+    "planPro": "Pro plan"
   },
   "auth": {
     "loginTitle": "TarantulApp",
@@ -74,6 +76,7 @@
   "dashboard": {
     "title": "My Tarantulas",
     "inCollection": "in your collection",
+    "planUsage": "used on your free plan",
     "add": "+ Add",
     "filterAll": "All",
     "filterTerrestrial": "🌎 Terrestrial",
@@ -90,7 +93,8 @@
     "emptyDesc": "Add your first tarantula to start their file.",
     "addFirst": "+ Add first tarantula",
     "noResults": "No results for the selected filters.",
-    "inMemory": "🕯️ In memory"
+    "inMemory": "🕯️ In memory",
+    "limitReached": "You've reached the free plan limit of 6 tarantulas. Upgrade to Pro to add more."
   },
   "tarantula": {
     "loading": "Loading...",
@@ -174,6 +178,8 @@
     "photoCropHint": "You can adjust the crop before saving.",
     "notes": "Notes",
     "notesPlaceholder": "Personal observations...",
+    "planUsage": "Free plan: {{count}}/{{limit}} tarantulas.",
+    "limitReached": "You've reached the free plan limit of 6 tarantulas.",
     "unsexed": "Unknown",
     "female": "Female",
     "male": "Male",
@@ -184,7 +190,17 @@
     "wscLabel": "🕷️ World Spider Catalog",
     "wscLoading": "🕷️ Searching WSC...",
     "importError": "Could not import species from GBIF.",
-    "importErrorWsc": "Could not import species from WSC."
+    "importErrorWsc": "Could not import species from WSC.",
+    "postCreateTitle": "Complete {{name}}'s history",
+    "postCreateDesc": "Do you want to log the last feeding or last molt now so tracking starts with better data?",
+    "addLastFeeding": "🍽️ Add last feeding",
+    "addLastMolt": "🕸️ Add last molt",
+    "lastFeedingDate": "Date of last feeding",
+    "lastMoltDate": "Date of last molt",
+    "skipForNow": "I don't remember / later",
+    "saveAndContinue": "Save and continue",
+    "postCreateSaveError": "Could not save the initial record.",
+    "firstFeedingHint": "If you don't remember the date, that's fine: the feeding schedule can start when you log the first real feeding."
   },
   "quickLog": {
     "title": "📋 Quick log",
@@ -223,12 +239,63 @@
     "hiding": "Hiding",
     "pre_molt": "Pre-molt"
   },
+  "reminders": {
+    "pageTitle": "Reminders",
+    "panelTitle": "Upcoming reminders",
+    "viewAll": "View all",
+    "panelProNotice": "Includes manual reminders and Pro automatic suggestions.",
+    "pendingCount": "{{count}} pending",
+    "new": "+ New",
+    "type": "Type",
+    "typeFeeding": "Feeding",
+    "typeCleaning": "Cleaning",
+    "typeCheckup": "Checkup",
+    "typeCustom": "Custom",
+    "dateTime": "Date and time *",
+    "message": "Message",
+    "messagePlaceholder": "e.g. Feed Mole",
+    "tarantula": "Tarantula *",
+    "selectTarantula": "Select a tarantula…",
+    "create": "Create reminder",
+    "showDone": "Show completed",
+    "emptyAll": "No reminders.",
+    "emptyPending": "No pending reminders.",
+    "done": "✅ Completed",
+    "markDone": "Mark as done",
+    "freeNotice": "Free plan: you can only use manual reminders created by you.",
+    "proNotice": "Pro plan active: you see manual reminders and automatic feeding suggestions.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "overdueDays": "{{count}} day(s) ago",
+    "inDays": "In {{count}} days"
+  },
   "public": {
     "notFound": "Profile not found or not public.",
     "goHome": "Go to home",
+    "backToCollection": "← Back to collection",
     "lastFed": "🍽️ Last fed:",
     "lastMolt": "🕸️ Last molt:",
     "history": "📅 Recent history",
     "historyEmpty": "No events recorded yet."
+  }
+  ,
+  "pro": {
+    "title": "TarantulApp Pro",
+    "subtitle": "Features designed for large collections and automatic tracking.",
+    "freeTitle": "Free (current)",
+    "freeLimit": "Up to 6 tarantulas in your collection.",
+    "freeReminders": "Reminders created manually by you.",
+    "freeQr": "QR with basic info, no actions.",
+    "proTitle": "Pro (paid plan)",
+    "proUnlimited": "Unlimited tarantulas in your collection.",
+    "proAutoReminders": "Automatic feeding reminders based on your history.",
+    "proQrActions": "Per-tarantula QR with quick actions (feeding, molt logs, etc.).",
+    "statusTitle": "Your current plan",
+    "statusFree": "You are using the free plan. Great for trying TarantulApp or small collections.",
+    "statusPro": "You are using TarantulApp Pro. You'll get every new feature as soon as it lands.",
+    "currentFree": "Current plan: Free",
+    "currentPro": "Current plan: Pro",
+    "soonPayments": "Soon you'll be able to upgrade to Pro directly from the app. Meanwhile, we're building the features.",
+    "learnMore": "Learn about Pro"
   }
 }

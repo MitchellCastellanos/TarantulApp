@@ -83,6 +83,9 @@ export default function TarantulaDetailPage() {
   )
 
   const { species } = tarantula
+  const displayProfilePhoto = tarantula.profilePhoto
+    ? imgUrl(tarantula.profilePhoto)
+    : (species?.referencePhotoUrl ?? null)
 
   // ─── Terrarium recommendation ──────────────────────────────────────────────
   const terrariumRec = (() => {
@@ -179,8 +182,8 @@ export default function TarantulaDetailPage() {
               {/* Foto */}
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                    style={{ height: 220, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
-                {tarantula.profilePhoto ? (
-                  <img src={imgUrl(tarantula.profilePhoto)} alt={tarantula.name}
+                {displayProfilePhoto ? (
+                  <img src={displayProfilePhoto} alt={tarantula.name}
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '5rem', opacity: 0.5 }}>🕷️</span>

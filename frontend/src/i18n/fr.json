@@ -2,7 +2,9 @@
   "nav": {
     "reminders": "Rappels",
     "logout": "Déconnexion",
-    "lang": "Langue"
+    "lang": "Langue",
+    "planFree": "Plan gratuit",
+    "planPro": "Plan Pro"
   },
   "auth": {
     "loginTitle": "TarantulApp",
@@ -74,6 +76,7 @@
   "dashboard": {
     "title": "Mes Tarentules",
     "inCollection": "dans votre collection",
+    "planUsage": "utilisées sur votre plan gratuit",
     "add": "+ Ajouter",
     "filterAll": "Toutes",
     "filterTerrestrial": "🌎 Terrestres",
@@ -90,7 +93,8 @@
     "emptyDesc": "Ajoutez votre première tarentule pour commencer son dossier.",
     "addFirst": "+ Ajouter la première tarentule",
     "noResults": "Aucun résultat pour les filtres sélectionnés.",
-    "inMemory": "🕯️ En mémoire"
+    "inMemory": "🕯️ En mémoire",
+    "limitReached": "Vous avez atteint la limite gratuite de 6 tarentules. Passez à Pro pour en ajouter davantage."
   },
   "tarantula": {
     "loading": "Chargement...",
@@ -174,6 +178,8 @@
     "photoCropHint": "Vous pourrez ajuster le recadrage avant d'enregistrer.",
     "notes": "Notes",
     "notesPlaceholder": "Observations personnelles...",
+    "planUsage": "Plan gratuit : {{count}}/{{limit}} tarentules.",
+    "limitReached": "Vous avez atteint la limite gratuite de 6 tarentules.",
     "unsexed": "Indéterminé",
     "female": "Femelle",
     "male": "Mâle",
@@ -184,7 +190,17 @@
     "wscLabel": "🕷️ World Spider Catalog",
     "wscLoading": "🕷️ Recherche WSC...",
     "importError": "Impossible d'importer l'espèce depuis GBIF.",
-    "importErrorWsc": "Impossible d'importer l'espèce depuis WSC."
+    "importErrorWsc": "Impossible d'importer l'espèce depuis WSC.",
+    "postCreateTitle": "Compléter l'historique de {{name}}",
+    "postCreateDesc": "Voulez-vous enregistrer son dernier repas ou sa dernière mue maintenant pour démarrer le suivi avec de meilleures données ?",
+    "addLastFeeding": "🍽️ Ajouter le dernier repas",
+    "addLastMolt": "🕸️ Ajouter la dernière mue",
+    "lastFeedingDate": "Date du dernier repas",
+    "lastMoltDate": "Date de la dernière mue",
+    "skipForNow": "Je ne sais pas / plus tard",
+    "saveAndContinue": "Enregistrer et continuer",
+    "postCreateSaveError": "Impossible d'enregistrer le premier événement.",
+    "firstFeedingHint": "Si vous ne vous souvenez pas de la date, ce n'est pas grave : le calendrier d'alimentation pourra commencer lors du premier repas enregistré."
   },
   "quickLog": {
     "title": "📋 Enregistrement rapide",
@@ -223,12 +239,63 @@
     "hiding": "Cachée",
     "pre_molt": "Pré-mue"
   },
+  "reminders": {
+    "pageTitle": "Rappels",
+    "panelTitle": "Rappels à venir",
+    "viewAll": "Tout voir",
+    "panelProNotice": "Inclut les rappels manuels et les suggestions automatiques Pro.",
+    "pendingCount": "{{count}} en attente",
+    "new": "+ Nouveau",
+    "type": "Type",
+    "typeFeeding": "Alimentation",
+    "typeCleaning": "Nettoyage",
+    "typeCheckup": "Contrôle",
+    "typeCustom": "Personnalisé",
+    "dateTime": "Date et heure *",
+    "message": "Message",
+    "messagePlaceholder": "ex. Nourrir Mole",
+    "tarantula": "Tarentule *",
+    "selectTarantula": "Sélectionnez une tarentule…",
+    "create": "Créer un rappel",
+    "showDone": "Afficher les terminés",
+    "emptyAll": "Aucun rappel.",
+    "emptyPending": "Aucun rappel en attente.",
+    "done": "✅ Terminé",
+    "markDone": "Marquer comme fait",
+    "freeNotice": "Plan gratuit : vous ne pouvez utiliser que des rappels manuels créés par vous.",
+    "proNotice": "Plan Pro actif : vous voyez les rappels manuels et les suggestions automatiques d'alimentation.",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "overdueDays": "Il y a {{count}} jour(s)",
+    "inDays": "Dans {{count}} jours"
+  },
   "public": {
     "notFound": "Profil introuvable ou non public.",
     "goHome": "Retour à l'accueil",
+    "backToCollection": "← Retour à la collection",
     "lastFed": "🍽️ Dernier repas :",
     "lastMolt": "🕸️ Dernière mue :",
     "history": "📅 Historique récent",
     "historyEmpty": "Aucun événement enregistré."
+  }
+  ,
+  "pro": {
+    "title": "TarantulApp Pro",
+    "subtitle": "Fonctionnalités pensées pour les grandes collections et le suivi automatique.",
+    "freeTitle": "Gratuit (actuel)",
+    "freeLimit": "Jusqu'à 6 tarentules dans votre collection.",
+    "freeReminders": "Rappels créés manuellement par vous.",
+    "freeQr": "QR avec fiche basique, sans actions.",
+    "proTitle": "Pro (offre payante)",
+    "proUnlimited": "Nombre illimité de tarentules dans votre collection.",
+    "proAutoReminders": "Rappels d'alimentation automatiques basés sur votre historique.",
+    "proQrActions": "QR par individu avec actions rapides (alimentation, mues, etc.).",
+    "statusTitle": "Votre plan actuel",
+    "statusFree": "Vous utilisez le plan gratuit. Parfait pour tester TarantulApp ou pour une petite collection.",
+    "statusPro": "Vous utilisez TarantulApp Pro. Vous profiterez de toutes les nouvelles fonctions dès leur sortie.",
+    "currentFree": "Plan actuel : Gratuit",
+    "currentPro": "Plan actuel : Pro",
+    "soonPayments": "Bientôt, vous pourrez passer à Pro directement depuis l'application. En attendant, nous continuons à construire les fonctionnalités.",
+    "learnMore": "Découvrir Pro"
   }
 }

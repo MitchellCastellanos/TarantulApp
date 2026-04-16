@@ -6,6 +6,7 @@ import AddTarantulaPage from './pages/AddTarantulaPage'
 import TarantulaDetailPage from './pages/TarantulaDetailPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import RemindersPage from './pages/RemindersPage'
+import ProPage from './pages/ProPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 
@@ -23,6 +24,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
+      <Route path="/pro" element={<PrivateRoute><ProPage /></PrivateRoute>} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

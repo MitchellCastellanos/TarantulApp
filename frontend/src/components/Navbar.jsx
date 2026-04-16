@@ -11,6 +11,8 @@ const LANGS = [
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { t, i18n } = useTranslation()
+  const plan = user?.plan || 'FREE'
+  const isPro = plan === 'PRO'
 
   return (
     <nav className="navbar navbar-dark px-3 px-md-4 py-2">
@@ -21,6 +23,18 @@ export default function Navbar() {
         <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
               style={{ color: 'var(--ta-gold)' }}>
           🔔 {t('nav.reminders')}
+        </Link>
+        <Link
+          to="/pro"
+          className="btn btn-sm"
+          style={{
+            background: isPro ? 'var(--ta-gold)' : 'transparent',
+            color: isPro ? '#111' : 'var(--ta-gold)',
+            border: '1px solid var(--ta-gold)',
+            fontSize: '0.75rem',
+          }}
+        >
+          {isPro ? t('nav.planPro') : t('nav.planFree')}
         </Link>
         <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
           {user?.displayName || user?.email}

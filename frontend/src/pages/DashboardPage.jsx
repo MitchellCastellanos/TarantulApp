@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
+import { useAuth } from '../context/AuthContext'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -13,6 +14,7 @@ function formatDate(iso) {
 
 export default function DashboardPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [tarantulas, setTarantulas] = useState([])
   const [loading, setLoading] = useState(true)
   const [habitat, setHabitat] = useState('all')
@@ -39,6 +41,10 @@ export default function DashboardPage() {
   })
 
   const hasActiveFilters = habitat !== 'all' || stage || status || search
+  const plan = user?.plan || 'FREE'
+  const isFreePlan = plan !== 'PRO'
+  const tarantulaLimit = isFreePlan ? 6 : null
+  const atLimit = isFreePlan && tarantulas.length >= tarantulaLimit
 
   const HABITAT_FILTERS = [
     { key: 'all',         label: t('dashboard.filterAll') },
@@ -70,12 +76,28 @@ export default function DashboardPage() {
             <h4 className="fw-bold mb-0">{t('dashboard.title')}</h4>
             <p className="text-collection small mb-0">
               {tarantulas.length} {t('dashboard.inCollection')}
+              {isFreePlan && ` · ${tarantulas.length}/${tarantulaLimit} ${t('dashboard.planUsage')}`}
             </p>
           </div>
-          <Link to="/tarantulas/new" className="btn btn-dark">
-            {t('dashboard.add')}
-          </Link>
+          {atLimit ? (
+            <button type="button" className="btn btn-outline-secondary" disabled title={t('dashboard.limitReached')}>
+              {t('dashboard.add')}
+            </button>
+          ) : (
+            <Link to="/tarantulas/new" className="btn btn-dark">
+              {t('dashboard.add')}
+            </Link>
+          )}
         </div>
+
+        {atLimit && (
+          <div className="alert alert-warning small py-2">
+            {t('dashboard.limitReached')}{' '}
+            <Link to="/pro" className="alert-link">
+              {t('pro.learnMore')}
+            </Link>
+          </div>
+        )}
 
         {/* Recordatorios próximos */}
         <RemindersPanel />

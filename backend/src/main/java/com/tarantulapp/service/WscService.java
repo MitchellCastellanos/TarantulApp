@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,6 +44,8 @@ public class WscService {
     /** GBIF dataset key for the World Spider Catalog checklist. */
     private static final String WSC_DATASET_KEY = "80dd9c94-241b-4d49-999f-c89de7648525";
     private static final String GBIF_SPECIES_SEARCH = "https://api.gbif.org/v1/species/search";
+    private static final String GBIF_SPECIES_MATCH = "https://api.gbif.org/v1/species/match";
+    private static final String GBIF_SPECIES_DETAIL = "https://api.gbif.org/v1/species";
 
     private static final Pattern YEAR_PATTERN = Pattern.compile("(\\d{4})");
 
@@ -96,36 +99,25 @@ public class WscService {
 
             List<WscSearchResultDTO> list = new ArrayList<>();
             for (JsonNode item : results) {
-                String name = text(item, "canonicalName", "scientificName");
-                if (name == null || name.isBlank()) continue;
+                mapToDto(item).ifPresent(list::add);
+            }
 
-                WscSearchResultDTO dto = new WscSearchResultDTO();
-                dto.setName(name);
-                dto.setFamily(text(item, "family"));
-                dto.setStatus("accepted");
-
-                // authorship field contains "Author, Year" or "(Author, Year)"
-                String authorship = text(item, "authorship");
-                if (authorship != null) {
-                    // Author: everything before the last comma+year
-                    Matcher m = YEAR_PATTERN.matcher(authorship);
-                    if (m.find()) {
-                        dto.setYear(m.group(1));
-                        // Author is everything in authorship minus the year
-                        dto.setAuthor(authorship.replaceAll(",?\\s*\\d{4}", "")
-                                .replaceAll("[(),]", "").trim());
-                    } else {
-                        dto.setAuthor(authorship);
-                    }
+            // Fallback for synonym/legacy names that search does not return.
+            Optional<WscSearchResultDTO> matched = resolveFromMatch(q);
+            if (matched.isPresent()) {
+                WscSearchResultDTO dto = matched.get();
+                boolean alreadyPresent = list.stream()
+                        .map(WscSearchResultDTO::getTaxonId)
+                        .filter(Objects::nonNull)
+                        .anyMatch(id -> id.equals(dto.getTaxonId()));
+                if (!alreadyPresent) {
+                    list.add(0, dto);
                 }
+            }
 
-                // Use GBIF key as taxonId (sufficient for import lookup)
-                JsonNode keyNode = item.get("key");
-                if (keyNode != null && !keyNode.isNull()) {
-                    dto.setTaxonId(keyNode.asText());
-                }
-
-                list.add(dto);
+            // Keep list compact and predictable for UI.
+            if (list.size() > 10) {
+                list = new ArrayList<>(list.subList(0, 10));
             }
             log.debug("WSC/GBIF search q='{}' returned {} results", q, list.size());
             return list;
@@ -192,5 +184,64 @@ public class WscService {
             }
         }
         return null;
+    }
+
+    private Optional<WscSearchResultDTO> mapToDto(JsonNode item) {
+        String name = text(item, "canonicalName", "scientificName");
+        if (name == null || name.isBlank()) return Optional.empty();
+
+        WscSearchResultDTO dto = new WscSearchResultDTO();
+        dto.setName(name);
+        dto.setFamily(text(item, "family"));
+        dto.setStatus("accepted");
+
+        String authorship = text(item, "authorship");
+        if (authorship != null) {
+            Matcher m = YEAR_PATTERN.matcher(authorship);
+            if (m.find()) {
+                dto.setYear(m.group(1));
+                dto.setAuthor(authorship.replaceAll(",?\\s*\\d{4}", "")
+                        .replaceAll("[(),]", "").trim());
+            } else {
+                dto.setAuthor(authorship);
+            }
+        }
+
+        JsonNode keyNode = item.get("key");
+        if (keyNode != null && !keyNode.isNull()) {
+            dto.setTaxonId(keyNode.asText());
+        }
+        return Optional.of(dto);
+    }
+
+    /**
+     * Resolves free text against GBIF /species/match scoped to WSC dataset.
+     * This recovers accepted taxa for legacy names/synonyms.
+     */
+    private Optional<WscSearchResultDTO> resolveFromMatch(String q) {
+        try {
+            String matchUrl = UriComponentsBuilder
+                    .fromHttpUrl(GBIF_SPECIES_MATCH)
+                    .queryParam("name", q)
+                    .queryParam("rank", "SPECIES")
+                    .queryParam("datasetKey", WSC_DATASET_KEY)
+                    .toUriString();
+
+            JsonNode match = restTemplate.getForObject(matchUrl, JsonNode.class);
+            if (match == null) return Optional.empty();
+            if ("NONE".equalsIgnoreCase(text(match, "matchType"))) return Optional.empty();
+            if (!"SPECIES".equalsIgnoreCase(text(match, "rank"))) return Optional.empty();
+
+            String key = text(match, "acceptedUsageKey", "usageKey", "speciesKey");
+            if (key == null || key.isBlank()) return Optional.empty();
+
+            String detailUrl = GBIF_SPECIES_DETAIL + "/" + key;
+            JsonNode detail = restTemplate.getForObject(detailUrl, JsonNode.class);
+            if (detail == null) return Optional.empty();
+            return mapToDto(detail);
+        } catch (Exception e) {
+            log.debug("WSC/GBIF match fallback failed for q='{}': {}", q, e.getMessage());
+            return Optional.empty();
+        }
     }
 }
