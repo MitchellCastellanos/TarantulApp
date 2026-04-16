@@ -24,16 +24,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Integrates with the World Spider Catalog (wsc.nmbe.ch) for authoritative
- * spider taxonomy. WSC is the primary taxonomic source for tarantula species.
+ * World Spider Catalog integration.
+ *
+ * The WSC public REST API requires an API key and has no free text-search endpoint.
+ * Instead, we query WSC data through GBIF, which hosts the full WSC dataset as a
+ * checklist (datasetKey = 80dd9c94-241b-4d49-999f-c89de7648525). This gives us
+ * authoritative WSC taxonomy through GBIF's free, unauthenticated API.
  */
 @Service
 public class WscService {
 
     private static final Logger log = LoggerFactory.getLogger(WscService.class);
-    private static final String WSC_BASE = "https://wsc.nmbe.ch/api";
+
+    /** GBIF dataset key for the World Spider Catalog checklist. */
+    private static final String WSC_DATASET_KEY = "80dd9c94-241b-4d49-999f-c89de7648525";
+    private static final String GBIF_SPECIES_SEARCH = "https://api.gbif.org/v1/species/search";
+
+    private static final Pattern YEAR_PATTERN = Pattern.compile("(\\d{4})");
 
     private final RestTemplate restTemplate;
     private final SpeciesRepository speciesRepository;
@@ -54,72 +65,76 @@ public class WscService {
     // ─── Public API ───────────────────────────────────────────────────────────
 
     /**
-     * Searches WSC for species matching the query.
-     * Uses flexible JSON parsing to handle any response structure.
+     * Searches for species within the WSC checklist via GBIF.
+     * Only returns accepted names.
      */
     public List<WscSearchResultDTO> search(String q) {
         if (q == null || q.isBlank()) return Collections.emptyList();
         try {
             String url = UriComponentsBuilder
-                    .fromHttpUrl(WSC_BASE + "/search/species")
+                    .fromHttpUrl(GBIF_SPECIES_SEARCH)
                     .queryParam("q", q)
-                    .queryParam("format", "json")
+                    .queryParam("datasetKey", WSC_DATASET_KEY)
+                    .queryParam("status", "ACCEPTED")
+                    .queryParam("rank", "SPECIES")
+                    .queryParam("limit", "10")
                     .toUriString();
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("User-Agent", "TarantulApp/1.0 (tarantula collection tracker)");
-            headers.set("Accept", "application/json");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            // Fetch raw response body for flexible parsing
             ResponseEntity<String> resp = restTemplate.exchange(
                     url, HttpMethod.GET, entity, String.class);
 
             String body = resp.getBody();
-            log.info("WSC search q='{}' status={} body={}",
-                    q, resp.getStatusCode(),
-                    body != null && body.length() > 600 ? body.substring(0, 600) + "..." : body);
-
             if (body == null || body.isBlank()) return Collections.emptyList();
 
             JsonNode root = objectMapper.readTree(body);
-            JsonNode rows = findResultArray(root);
+            JsonNode results = root.get("results");
+            if (results == null || !results.isArray()) return Collections.emptyList();
 
-            if (rows == null) {
-                log.warn("WSC: no result array found. Top-level keys: {}", root.fieldNames());
-                return Collections.emptyList();
-            }
-
-            List<WscSearchResultDTO> results = new ArrayList<>();
-            for (JsonNode row : rows) {
-                String name = text(row, "name", "taxon", "scientificName", "canonical_name", "fullName");
+            List<WscSearchResultDTO> list = new ArrayList<>();
+            for (JsonNode item : results) {
+                String name = text(item, "canonicalName", "scientificName");
                 if (name == null || name.isBlank()) continue;
-
-                String status = text(row, "status");
-                // If status is present and is NOT an accepted value, skip it
-                if (status != null && !status.isBlank()
-                        && !"species".equalsIgnoreCase(status)
-                        && !"accepted".equalsIgnoreCase(status)
-                        && !"valid".equalsIgnoreCase(status)) {
-                    continue;
-                }
 
                 WscSearchResultDTO dto = new WscSearchResultDTO();
                 dto.setName(name);
-                dto.setFamily(text(row, "family"));
-                dto.setAuthor(text(row, "author"));
-                dto.setYear(text(row, "year"));
-                dto.setStatus(status);
-                dto.setTaxonId(text(row, "taxon_id", "taxonId", "id", "lsid", "wscId"));
-                results.add(dto);
-                if (results.size() >= 10) break;
+                dto.setFamily(text(item, "family"));
+                dto.setStatus("accepted");
+
+                // authorship field contains "Author, Year" or "(Author, Year)"
+                String authorship = text(item, "authorship");
+                if (authorship != null) {
+                    // Author: everything before the last comma+year
+                    Matcher m = YEAR_PATTERN.matcher(authorship);
+                    if (m.find()) {
+                        dto.setYear(m.group(1));
+                        // Author is everything in authorship minus the year
+                        dto.setAuthor(authorship.replaceAll(",?\\s*\\d{4}", "")
+                                .replaceAll("[(),]", "").trim());
+                    } else {
+                        dto.setAuthor(authorship);
+                    }
+                }
+
+                // Use GBIF key as taxonId (sufficient for import lookup)
+                JsonNode keyNode = item.get("key");
+                if (keyNode != null && !keyNode.isNull()) {
+                    dto.setTaxonId(keyNode.asText());
+                }
+
+                list.add(dto);
             }
-            return results;
+            log.debug("WSC/GBIF search q='{}' returned {} results", q, list.size());
+            return list;
+
         } catch (RestClientException e) {
-            log.warn("WSC HTTP error for q='{}': {}", q, e.getMessage());
+            log.warn("WSC/GBIF search HTTP error for q='{}': {}", q, e.getMessage());
             return Collections.emptyList();
         } catch (Exception e) {
-            log.warn("WSC parse error for q='{}': {}", q, e.getMessage());
+            log.warn("WSC/GBIF search error for q='{}': {}", q, e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -145,16 +160,16 @@ public class WscService {
                     .orElseThrow();
         }
 
-        // Create new species from WSC data
+        // Create new species from WSC/GBIF data
         Species species = new Species();
         species.setScientificName(name);
         species.setIsCustom(true);
         species.setCreatedBy(userId);
         species.setDataSource("wsc");
         if (family != null && !family.isBlank()) {
-            species.setCareNotes("Family: " + family + ". Imported from World Spider Catalog.");
+            species.setCareNotes("Family: " + family + ". Imported from World Spider Catalog (via GBIF).");
         } else {
-            species.setCareNotes("Imported from World Spider Catalog.");
+            species.setCareNotes("Imported from World Spider Catalog (via GBIF).");
         }
 
         // Try to get a reference photo from iNaturalist
@@ -167,17 +182,7 @@ public class WscService {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Finds the first array node in common response wrapper structures. */
-    private JsonNode findResultArray(JsonNode root) {
-        if (root.isArray()) return root;
-        for (String key : new String[]{"data", "results", "species", "records", "items", "taxa"}) {
-            JsonNode node = root.get(key);
-            if (node != null && node.isArray()) return node;
-        }
-        return null;
-    }
-
-    /** Returns the text of the first matching non-blank field, or null. */
+    /** Returns the text of the first non-blank matching field. */
     private String text(JsonNode node, String... fields) {
         for (String field : fields) {
             JsonNode f = node.get(field);
