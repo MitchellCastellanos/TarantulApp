@@ -24,7 +24,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
-      <Route path="/pro" element={<PrivateRoute><ProPage /></PrivateRoute>} />
+      <Route path="/pro" element={<ProPage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

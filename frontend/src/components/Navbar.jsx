@@ -20,10 +20,12 @@ export default function Navbar() {
         🕷️ TarantulApp
       </Link>
       <div className="d-flex align-items-center gap-2 gap-md-3">
-        <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
-              style={{ color: 'var(--ta-gold)' }}>
-          🔔 {t('nav.reminders')}
-        </Link>
+        {user && (
+          <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
+                style={{ color: 'var(--ta-gold)' }}>
+            🔔 {t('nav.reminders')}
+          </Link>
+        )}
         <Link
           to="/pro"
           className="btn btn-sm"
@@ -36,9 +38,11 @@ export default function Navbar() {
         >
           {isPro ? t('nav.planPro') : t('nav.planFree')}
         </Link>
-        <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
-          {user?.displayName || user?.email}
-        </span>
+        {user && (
+          <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
+            {user.displayName || user.email}
+          </span>
+        )}
 
         {/* Language selector */}
         <div className="d-flex gap-1">
@@ -60,10 +64,17 @@ export default function Navbar() {
           ))}
         </div>
 
-        <button className="btn btn-sm btn-outline-light" onClick={logout}
+        {user ? (
+          <button className="btn btn-sm btn-outline-light" onClick={logout}
+                  style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>
+            {t('nav.logout')}
+          </button>
+        ) : (
+          <Link to="/login" className="btn btn-sm btn-outline-light"
                 style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>
-          {t('nav.logout')}
-        </button>
+            {t('nav.login', 'Login')}
+          </Link>
+        )}
       </div>
     </nav>
   )

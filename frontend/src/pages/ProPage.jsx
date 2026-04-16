@@ -27,8 +27,8 @@ export default function ProPage() {
   }
 
   useEffect(() => {
-    loadBilling()
-  }, [])
+    if (user) loadBilling()
+  }, [user])
 
   const handleUpgrade = async () => {
     setError('')
