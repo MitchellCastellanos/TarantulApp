@@ -2,13 +2,14 @@ import Navbar from '../components/Navbar'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 
 export default function ProPage() {
   const { t } = useTranslation()
   const { user, setPlan } = useAuth()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [billing, setBilling] = useState(null)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')
@@ -31,6 +32,10 @@ export default function ProPage() {
   }, [user])
 
   const handleUpgrade = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
     setError('')
     setLoadingCheckout(true)
     try {
@@ -114,9 +119,9 @@ export default function ProPage() {
                 <button
                   className="btn btn-dark btn-sm align-self-start"
                   onClick={handleUpgrade}
-                  disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                  disabled={loadingCheckout || (user && billing?.checkoutEnabled === false)}
                 >
-                  {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                  {loadingCheckout ? t('common.loading') : !user ? t('pro.loginToUpgrade', 'Login to upgrade') : t('pro.upgradeNow')}
                 </button>
                 {billing?.checkoutEnabled === false && (
                   <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
