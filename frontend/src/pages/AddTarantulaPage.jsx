@@ -18,6 +18,8 @@ export default function AddTarantulaPage() {
   const [suggestions, setSuggestions] = useState([])
   const [gbifResults, setGbifResults] = useState([])
   const [gbifLoading, setGbifLoading] = useState(false)
+  const [wscResults, setWscResults] = useState([])
+  const [wscLoading, setWscLoading] = useState(false)
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [showSugg, setShowSugg] = useState(false)
   const [photo, setPhoto] = useState(null)          // Blob final listo para subir
@@ -58,6 +60,11 @@ export default function AddTarantulaPage() {
         .then(setGbifResults)
         .catch(() => setGbifResults([]))
         .finally(() => setGbifLoading(false))
+      setWscLoading(true)
+      speciesService.searchWsc(speciesQuery)
+        .then(setWscResults)
+        .catch(() => setWscResults([]))
+        .finally(() => setWscLoading(false))
       setShowSugg(true)
     }, 300)
   }, [speciesQuery])
@@ -85,6 +92,19 @@ export default function AddTarantulaPage() {
       setError('No se pudo importar la especie desde GBIF.')
     } finally {
       setGbifLoading(false)
+    }
+  }
+
+  const selectWsc = async (wscResult) => {
+    setShowSugg(false)
+    setWscLoading(true)
+    try {
+      const imported = await speciesService.importFromWsc(wscResult.name, wscResult.family)
+      selectSpecies(imported)
+    } catch {
+      setError('No se pudo importar la especie desde WSC.')
+    } finally {
+      setWscLoading(false)
     }
   }
 
@@ -164,9 +184,10 @@ export default function AddTarantulaPage() {
                 )}
               </div>
 
-              {showSugg && (suggestions.length > 0 || gbifResults.length > 0) && (
+              {showSugg && (suggestions.length > 0 || gbifResults.length > 0 || wscResults.length > 0 || gbifLoading || wscLoading) && (
                 <ul className="list-group position-absolute w-100 shadow-sm"
-                    style={{ zIndex: 1000, top: '100%', maxHeight: 320, overflowY: 'auto' }}>
+                    style={{ zIndex: 1000, top: '100%', maxHeight: 360, overflowY: 'auto' }}>
+                  {/* Internal DB results */}
                   {suggestions.slice(0, 6).map(sp => (
                     <li key={sp.id}
                         className="list-group-item list-group-item-action"
@@ -176,12 +197,36 @@ export default function AddTarantulaPage() {
                       {sp.commonName && <span className="text-muted small ms-2">· {sp.commonName}</span>}
                     </li>
                   ))}
-                  {gbifResults.length > 0 && (
+
+                  {/* WSC section — primary taxonomic source */}
+                  {(wscResults.length > 0 || wscLoading) && (
+                    <>
+                      <li className="list-group-item py-1 px-3"
+                          style={{ background: '#f3e5ff', borderTop: '1px solid #d9b3ff', cursor: 'default' }}>
+                        <span className="small fw-semibold" style={{ color: '#6a1b9a' }}>
+                          {wscLoading ? '🕷️ Buscando en WSC...' : '🕷️ World Spider Catalog'}
+                        </span>
+                      </li>
+                      {wscResults.slice(0, 6).map(wr => (
+                        <li key={wr.taxonId ?? wr.name}
+                            className="list-group-item list-group-item-action"
+                            style={{ cursor: 'pointer', background: '#fdf5ff' }}
+                            onMouseDown={() => selectWsc(wr)}>
+                          <span className="fw-semibold small">{wr.name}</span>
+                          {wr.family && <span className="badge ms-2" style={{ background: '#6a1b9a', fontSize: '0.65rem' }}>{wr.family}</span>}
+                          {wr.author && wr.year && <span className="text-muted small ms-2">· {wr.author}, {wr.year}</span>}
+                        </li>
+                      ))}
+                    </>
+                  )}
+
+                  {/* GBIF section — distribution & synonyms */}
+                  {(gbifResults.length > 0 || gbifLoading) && (
                     <>
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#e8f4fd', borderTop: '1px solid #bee5fb', cursor: 'default' }}>
                         <span className="small fw-semibold text-primary">
-                          {gbifLoading ? '🌍 Buscando en GBIF...' : '🌍 GBIF — Catálogo oficial'}
+                          {gbifLoading ? '🌍 Buscando en GBIF...' : '🌍 GBIF — Catálogo global'}
                         </span>
                       </li>
                       {gbifResults.slice(0, 6).map(gr => (
@@ -195,11 +240,6 @@ export default function AddTarantulaPage() {
                         </li>
                       ))}
                     </>
-                  )}
-                  {gbifLoading && gbifResults.length === 0 && (
-                    <li className="list-group-item py-1 px-3 text-muted small" style={{ cursor: 'default' }}>
-                      🌍 Consultando GBIF...
-                    </li>
                   )}
                 </ul>
               )}

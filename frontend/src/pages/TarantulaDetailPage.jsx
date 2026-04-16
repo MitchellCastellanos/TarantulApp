@@ -276,8 +276,42 @@ export default function TarantulaDetailPage() {
             {species && (
               <div className="card border-0 shadow-sm mb-4">
                 <div className="card-body">
-                  <h6 className="fw-bold mb-3">📋 Ficha de especie</h6>
+                  {/* Header: title + source badge */}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="fw-bold mb-0">📋 Ficha de especie</h6>
+                    {species.dataSource === 'gbif' && (
+                      <span className="badge" style={{ background: '#1565c0', fontSize: '0.65rem' }}
+                            title="Datos taxonómicos oficiales de GBIF (Global Biodiversity Information Facility)">
+                        🌍 GBIF
+                      </span>
+                    )}
+                    {species.dataSource === 'wsc' && (
+                      <span className="badge" style={{ background: '#4a148c', fontSize: '0.65rem' }}
+                            title="Taxonomía verificada por el World Spider Catalog">
+                        🕷️ WSC
+                      </span>
+                    )}
+                    {species.dataSource === 'seed' && (
+                      <span className="badge bg-secondary" style={{ fontSize: '0.65rem' }}
+                            title="Datos del catálogo interno de TarantulApp">
+                        📚 Catálogo
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reference photo from iNaturalist (only shown when no own photo) */}
+                  {species.referencePhotoUrl && !tarantula.profilePhoto && (
+                    <div className="mb-3 text-center position-relative">
+                      <img src={species.referencePhotoUrl} alt={species.scientificName}
+                           style={{ maxHeight: 180, borderRadius: 8, objectFit: 'cover', width: '100%' }} />
+                      <div className="text-muted" style={{ fontSize: '0.65rem', marginTop: 2 }}>
+                        📸 Foto referencia · iNaturalist
+                      </div>
+                    </div>
+                  )}
+
                   <div className="row g-2 small">
+                    {/* Taxonomic fields — no asterisk, these come from official sources */}
                     <div className="col-6 col-md-4">
                       <div className="text-muted">Origen</div>
                       <div className="fw-semibold">{species.originRegion ?? '–'}</div>
@@ -289,25 +323,25 @@ export default function TarantulaDetailPage() {
                       </div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">Tamaño adulto</div>
+                      <div className="text-muted">Tamaño adulto *</div>
                       <div className="fw-semibold">
                         {species.adultSizeCmMin ?? '?'}–{species.adultSizeCmMax ?? '?'} cm
                       </div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">Crecimiento</div>
+                      <div className="text-muted">Crecimiento *</div>
                       <div className="fw-semibold">{GROWTH_LABEL[species.growthRate] ?? '–'}</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">Humedad</div>
+                      <div className="text-muted">Humedad *</div>
                       <div className="fw-semibold">{species.humidityMin ?? '?'}–{species.humidityMax ?? '?'}%</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">Ventilación</div>
+                      <div className="text-muted">Ventilación *</div>
                       <div className="fw-semibold">{VENT_LABEL[species.ventilation] ?? '–'}</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">Nivel</div>
+                      <div className="text-muted">Nivel *</div>
                       <div>
                         <span className={`badge bg-${LEVEL_COLOR[species.experienceLevel] ?? 'secondary'}`}>
                           {LEVEL_LABEL[species.experienceLevel] ?? '–'}
@@ -315,12 +349,12 @@ export default function TarantulaDetailPage() {
                       </div>
                     </div>
                     <div className="col-md-8">
-                      <div className="text-muted">Temperamento</div>
+                      <div className="text-muted">Temperamento *</div>
                       <div className="fw-semibold">{species.temperament ?? '–'}</div>
                     </div>
                     {species.substrateType && (
                       <div className="col-12">
-                        <div className="text-muted">Sustrato</div>
+                        <div className="text-muted">Sustrato *</div>
                         <div className="fw-semibold">{species.substrateType}</div>
                       </div>
                     )}
@@ -331,6 +365,16 @@ export default function TarantulaDetailPage() {
                         </div>
                       </div>
                     )}
+                    {/* Disclaimer for estimated care fields */}
+                    <div className="col-12 mt-2">
+                      <p className="text-muted mb-0" style={{ fontSize: '0.7rem' }}>
+                        * Parámetros de cuidado basados en literatura de keepers y guías comunitarias.
+                        {(species.dataSource === 'gbif' || species.dataSource === 'seed') &&
+                          ' Datos taxonómicos de GBIF.'}
+                        {species.dataSource === 'wsc' &&
+                          ' Taxonomía verificada por el World Spider Catalog.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -340,7 +384,7 @@ export default function TarantulaDetailPage() {
             {terrariumRec && (
               <div className="card border-0 shadow-sm mb-4">
                 <div className="card-body">
-                  <h6 className="fw-bold mb-2">🏠 Recomendación de terrario</h6>
+                  <h6 className="fw-bold mb-2">🏠 Recomendación de terrario *</h6>
                   <p className="small mb-2 text-muted">
                     Basado en tamaño actual de <strong>{tarantula.currentSizeCm} cm</strong>
                     {terrariumRec.adultSizeCmMax && ` · Adulto esperado: ${terrariumRec.adultSizeCmMax} cm`}
@@ -358,6 +402,9 @@ export default function TarantulaDetailPage() {
                       </div>
                     </div>
                   )}
+                  <p className="text-muted mb-0 mt-2" style={{ fontSize: '0.7rem' }}>
+                    * Estimado basado en el tamaño adulto de la especie y guías de keepers.
+                  </p>
                 </div>
               </div>
             )}

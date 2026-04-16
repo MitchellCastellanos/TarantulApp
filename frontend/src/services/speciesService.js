@@ -6,6 +6,8 @@ const speciesService = {
   search: (q) => api.get('/species', { params: { q } }).then(r => r.data),
   searchGbif: (q) => api.get('/gbif/search', { params: { q } }).then(r => r.data),
   importFromGbif: (key) => api.post(`/gbif/${key}/import`).then(r => r.data),
+  searchWsc: (q) => api.get('/wsc/search', { params: { q } }).then(r => r.data),
+  importFromWsc: (name, family) => api.post('/wsc/import', { name, family }).then(r => r.data),
 }
 
 export default speciesService

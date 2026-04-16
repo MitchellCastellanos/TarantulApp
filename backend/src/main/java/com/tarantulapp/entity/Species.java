@@ -60,6 +60,12 @@ public class Species {
     @Column(name = "created_by", columnDefinition = "uuid")
     private UUID createdBy;
 
+    @Column(name = "reference_photo_url", length = 500)
+    private String referencePhotoUrl;
+
+    @Column(name = "data_source", nullable = false, length = 30)
+    private String dataSource = "manual";
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getScientificName() { return scientificName; }
@@ -94,4 +100,8 @@ public class Species {
     public void setIsCustom(Boolean isCustom) { this.isCustom = isCustom; }
     public UUID getCreatedBy() { return createdBy; }
     public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
+    public String getReferencePhotoUrl() { return referencePhotoUrl; }
+    public void setReferencePhotoUrl(String referencePhotoUrl) { this.referencePhotoUrl = referencePhotoUrl; }
+    public String getDataSource() { return dataSource; }
+    public void setDataSource(String dataSource) { this.dataSource = dataSource; }
 }

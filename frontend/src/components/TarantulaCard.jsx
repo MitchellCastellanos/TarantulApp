@@ -8,16 +8,30 @@ const SEX_LABEL    = { male: '♂ Macho', female: '♀ Hembra', unsexed: '? Sin 
 
 export default function TarantulaCard({ tarantula }) {
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status } = tarantula
+  // Use own photo first, then species reference photo from iNaturalist, then placeholder
+  const displayPhoto = profilePhoto
+    ? imgUrl(profilePhoto)
+    : species?.referencePhotoUrl ?? null
 
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
       <div className="card h-100 shadow-sm border-0 tarantula-card">
         {/* Foto o placeholder */}
-        <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden"
+        <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative"
              style={{ height: '160px', background: 'linear-gradient(135deg, #1a1a2e, #2d2d44)' }}>
-          {profilePhoto ? (
-            <img src={imgUrl(profilePhoto)} alt={name}
-                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {displayPhoto ? (
+            <>
+              <img src={displayPhoto} alt={name}
+                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Show subtle label when using species reference photo */}
+              {!profilePhoto && species?.referencePhotoUrl && (
+                <span className="position-absolute bottom-0 end-0 m-1 badge"
+                      style={{ background: 'rgba(0,0,0,0.55)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
+                      title="Foto referencia de la especie (iNaturalist)">
+                  📸 especie
+                </span>
+              )}
+            </>
           ) : (
             <span style={{ fontSize: '4rem', opacity: 0.6 }}>🕷️</span>
           )}

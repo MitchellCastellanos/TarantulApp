@@ -31,13 +31,16 @@ public class GbifService {
     private final RestTemplate restTemplate;
     private final SpeciesRepository speciesRepository;
     private final SpeciesSynonymRepository speciesSynonymRepository;
+    private final InatService inatService;
 
     public GbifService(RestTemplate restTemplate,
                        SpeciesRepository speciesRepository,
-                       SpeciesSynonymRepository speciesSynonymRepository) {
+                       SpeciesSynonymRepository speciesSynonymRepository,
+                       InatService inatService) {
         this.restTemplate = restTemplate;
         this.speciesRepository = speciesRepository;
         this.speciesSynonymRepository = speciesSynonymRepository;
+        this.inatService = inatService;
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -104,7 +107,13 @@ public class GbifService {
         species.setCommonName(commonName);
         species.setIsCustom(true);
         species.setCreatedBy(userId);
+        species.setDataSource("gbif");
         species.setCareNotes("Importado desde GBIF (key: " + key + ")");
+
+        // Foto de referencia desde iNaturalist
+        String photoUrl = inatService.fetchPhotoUrl(canonicalName);
+        if (photoUrl != null) species.setReferencePhotoUrl(photoUrl);
+
         Species saved = speciesRepository.save(species);
 
         // Guardar sinónimos en background (no falla el import si esto falla)

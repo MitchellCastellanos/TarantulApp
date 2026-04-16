@@ -20,6 +20,8 @@ public class SpeciesDTO {
     private String experienceLevel;
     private String careNotes;
     private Boolean isCustom;
+    private String referencePhotoUrl;
+    private String dataSource;
 
     public static SpeciesDTO from(Species s) {
         if (s == null) return null;
@@ -40,6 +42,8 @@ public class SpeciesDTO {
         dto.experienceLevel = s.getExperienceLevel();
         dto.careNotes = s.getCareNotes();
         dto.isCustom = s.getIsCustom();
+        dto.referencePhotoUrl = s.getReferencePhotoUrl();
+        dto.dataSource = s.getDataSource();
         return dto;
     }
 
@@ -59,4 +63,6 @@ public class SpeciesDTO {
     public String getExperienceLevel() { return experienceLevel; }
     public String getCareNotes() { return careNotes; }
     public Boolean getIsCustom() { return isCustom; }
+    public String getReferencePhotoUrl() { return referencePhotoUrl; }
+    public String getDataSource() { return dataSource; }
 }
