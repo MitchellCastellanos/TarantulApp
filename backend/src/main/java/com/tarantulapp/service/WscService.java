@@ -1,7 +1,7 @@
 package com.tarantulapp.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.dto.WscSearchResultDTO;
 import com.tarantulapp.entity.Species;
@@ -19,11 +19,11 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Integrates with the World Spider Catalog (wsc.nmbe.ch) for authoritative
@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
 public class WscService {
 
     private static final Logger log = LoggerFactory.getLogger(WscService.class);
-    // WSC offers a public REST API — no key required
     private static final String WSC_BASE = "https://wsc.nmbe.ch/api";
 
     private final RestTemplate restTemplate;
     private final SpeciesRepository speciesRepository;
     private final SpeciesSynonymRepository speciesSynonymRepository;
     private final InatService inatService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WscService(RestTemplate restTemplate,
                       SpeciesRepository speciesRepository,
@@ -55,7 +55,7 @@ public class WscService {
 
     /**
      * Searches WSC for species matching the query.
-     * Returns only accepted names (status == "species").
+     * Uses flexible JSON parsing to handle any response structure.
      */
     public List<WscSearchResultDTO> search(String q) {
         if (q == null || q.isBlank()) return Collections.emptyList();
@@ -71,36 +71,55 @@ public class WscService {
             headers.set("Accept", "application/json");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            ResponseEntity<WscSearchResponse> resp = restTemplate.exchange(
-                    url, HttpMethod.GET, entity, WscSearchResponse.class);
-            WscSearchResponse response = resp.getBody();
+            // Fetch raw response body for flexible parsing
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, String.class);
 
-            // WSC may wrap results in "data" or "results"
-            List<WscRow> rows = (response != null && response.getData() != null)
-                    ? response.getData()
-                    : (response != null && response.getResults() != null ? response.getResults() : null);
+            String body = resp.getBody();
+            log.info("WSC search q='{}' status={} body={}",
+                    q, resp.getStatusCode(),
+                    body != null && body.length() > 600 ? body.substring(0, 600) + "..." : body);
 
-            if (rows == null) return Collections.emptyList();
+            if (body == null || body.isBlank()) return Collections.emptyList();
 
-            return rows.stream()
-                    .filter(row -> row.getName() != null && !row.getName().isBlank())
-                    .filter(row -> row.getStatus() == null
-                            || "species".equalsIgnoreCase(row.getStatus())
-                            || "accepted".equalsIgnoreCase(row.getStatus()))
-                    .map(row -> {
-                        WscSearchResultDTO dto = new WscSearchResultDTO();
-                        dto.setTaxonId(row.getTaxonId());
-                        dto.setName(row.getName());
-                        dto.setFamily(row.getFamily());
-                        dto.setAuthor(row.getAuthor());
-                        dto.setYear(row.getYear());
-                        dto.setStatus(row.getStatus());
-                        return dto;
-                    })
-                    .limit(10)
-                    .collect(Collectors.toList());
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode rows = findResultArray(root);
+
+            if (rows == null) {
+                log.warn("WSC: no result array found. Top-level keys: {}", root.fieldNames());
+                return Collections.emptyList();
+            }
+
+            List<WscSearchResultDTO> results = new ArrayList<>();
+            for (JsonNode row : rows) {
+                String name = text(row, "name", "taxon", "scientificName", "canonical_name", "fullName");
+                if (name == null || name.isBlank()) continue;
+
+                String status = text(row, "status");
+                // If status is present and is NOT an accepted value, skip it
+                if (status != null && !status.isBlank()
+                        && !"species".equalsIgnoreCase(status)
+                        && !"accepted".equalsIgnoreCase(status)
+                        && !"valid".equalsIgnoreCase(status)) {
+                    continue;
+                }
+
+                WscSearchResultDTO dto = new WscSearchResultDTO();
+                dto.setName(name);
+                dto.setFamily(text(row, "family"));
+                dto.setAuthor(text(row, "author"));
+                dto.setYear(text(row, "year"));
+                dto.setStatus(status);
+                dto.setTaxonId(text(row, "taxon_id", "taxonId", "id", "lsid", "wscId"));
+                results.add(dto);
+                if (results.size() >= 10) break;
+            }
+            return results;
         } catch (RestClientException e) {
-            log.warn("WSC search failed for q={}: {}", q, e.getMessage());
+            log.warn("WSC HTTP error for q='{}': {}", q, e.getMessage());
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("WSC parse error for q='{}': {}", q, e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -133,10 +152,9 @@ public class WscService {
         species.setCreatedBy(userId);
         species.setDataSource("wsc");
         if (family != null && !family.isBlank()) {
-            // Store family in careNotes since we don't have a dedicated field
-            species.setCareNotes("Familia: " + family + ". Importado desde World Spider Catalog.");
+            species.setCareNotes("Family: " + family + ". Imported from World Spider Catalog.");
         } else {
-            species.setCareNotes("Importado desde World Spider Catalog.");
+            species.setCareNotes("Imported from World Spider Catalog.");
         }
 
         // Try to get a reference photo from iNaturalist
@@ -147,46 +165,27 @@ public class WscService {
         return SpeciesDTO.from(saved);
     }
 
-    // ─── Inner response wrappers ──────────────────────────────────────────────
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    static class WscSearchResponse {
-        private List<WscRow> data;
-        private List<WscRow> results; // fallback key name
-
-        public List<WscRow> getData() { return data; }
-        public void setData(List<WscRow> d) { this.data = d; }
-        public List<WscRow> getResults() { return results; }
-        public void setResults(List<WscRow> r) { this.results = r; }
+    /** Finds the first array node in common response wrapper structures. */
+    private JsonNode findResultArray(JsonNode root) {
+        if (root.isArray()) return root;
+        for (String key : new String[]{"data", "results", "species", "records", "items", "taxa"}) {
+            JsonNode node = root.get(key);
+            if (node != null && node.isArray()) return node;
+        }
+        return null;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    static class WscRow {
-        // WSC may use either camelCase or snake_case — accept both
-        @JsonProperty("taxon_id")
-        private String taxonId;
-
-        // "name" is the canonical scientific name in WSC JSON
-        private String name;
-
-        private String family;
-        private String author;
-        private String year;
-
-        // WSC uses "status" field: "species" = accepted
-        private String status;
-
-        public String getTaxonId() { return taxonId; }
-        public void setTaxonId(String t) { this.taxonId = t; }
-        public String getName() { return name; }
-        public void setName(String n) { this.name = n; }
-        public String getFamily() { return family; }
-        public void setFamily(String f) { this.family = f; }
-        public String getAuthor() { return author; }
-        public void setAuthor(String a) { this.author = a; }
-        public String getYear() { return year; }
-        public void setYear(String y) { this.year = y; }
-        public String getStatus() { return status; }
-        public void setStatus(String s) { this.status = s; }
+    /** Returns the text of the first matching non-blank field, or null. */
+    private String text(JsonNode node, String... fields) {
+        for (String field : fields) {
+            JsonNode f = node.get(field);
+            if (f != null && !f.isNull() && f.isTextual()) {
+                String v = f.asText().trim();
+                if (!v.isEmpty()) return v;
+            }
+        }
+        return null;
     }
 }

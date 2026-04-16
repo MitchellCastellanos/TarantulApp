@@ -125,19 +125,18 @@ public class TarantulaService {
         List<TimelineEventDTO> events = new ArrayList<>();
 
         feedingLogRepository.findByTarantulaIdOrderByFedAtDesc(tarantulaId).forEach(f -> {
-            String title = Boolean.FALSE.equals(f.getAccepted()) ? "Alimentación rechazada" : "Alimentación";
+            String title = Boolean.FALSE.equals(f.getAccepted()) ? "feeding_rejected" : "feeding";
             String summary = buildFeedingSummary(f.getQuantity(), f.getPreyType(), f.getPreySize(), f.getNotes());
             events.add(new TimelineEventDTO(f.getId(), "feeding", f.getFedAt(), title, summary));
         });
 
         moltLogRepository.findByTarantulaIdOrderByMoltedAtDesc(tarantulaId).forEach(m -> {
             String summary = buildMoltSummary(m.getPreSizeCm(), m.getPostSizeCm(), m.getNotes());
-            events.add(new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "Muda", summary));
+            events.add(new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary));
         });
 
         behaviorLogRepository.findByTarantulaIdOrderByLoggedAtDesc(tarantulaId).forEach(b -> {
-            String title = "Comportamiento: " + formatMood(b.getMood());
-            events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), title, b.getNotes()));
+            events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), b.getMood(), b.getNotes()));
         });
 
         events.sort(Comparator.comparing(TimelineEventDTO::getEventDate).reversed());

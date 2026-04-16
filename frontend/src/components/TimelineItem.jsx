@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 const TYPE_CONFIG = {
   feeding:  { icon: '🍽️', color: '#0d6efd' },
   molt:     { icon: '🕸️', color: '#6f42c1' },
@@ -6,13 +8,21 @@ const TYPE_CONFIG = {
 
 function formatDate(isoString) {
   if (!isoString) return ''
-  return new Date(isoString).toLocaleDateString('es-MX', {
+  return new Date(isoString).toLocaleDateString(undefined, {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
 
 export default function TimelineItem({ event, onDelete }) {
+  const { t } = useTranslation()
   const cfg = TYPE_CONFIG[event.type] || { icon: '📝', color: '#6c757d' }
+
+  const getTitle = () => {
+    if (event.type === 'behavior') {
+      return `${t('quickLog.behavior')}: ${t('timeline.' + event.title, event.title)}`
+    }
+    return t('timeline.' + event.title, event.title)
+  }
 
   return (
     <div className="d-flex gap-3 mb-3">
@@ -29,13 +39,13 @@ export default function TimelineItem({ event, onDelete }) {
       <div className="flex-grow-1 pb-2">
         <div className="d-flex justify-content-between align-items-start">
           <div>
-            <span className="fw-semibold small">{event.title}</span>
+            <span className="fw-semibold small">{getTitle()}</span>
             <span className="text-muted small ms-2">{formatDate(event.eventDate)}</span>
           </div>
           {onDelete && (
             <button className="btn btn-link btn-sm text-danger p-0 ms-2"
                     onClick={() => onDelete(event.id, event.type)}
-                    title="Eliminar">
+                    title={t('common.delete')}>
               ✕
             </button>
           )}
