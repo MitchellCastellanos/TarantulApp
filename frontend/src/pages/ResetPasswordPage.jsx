@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
+import FangPanel from '../components/FangPanel'
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation()
@@ -34,7 +35,8 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
          style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
-      <div className="card shadow-lg" style={{ width: '100%', maxWidth: '420px' }}>
+      <FangPanel style={{ width: '100%', maxWidth: '420px' }}>
+      <div className="card shadow-lg" style={{ width: '100%' }}>
         <div className="card-body p-4 p-md-5">
           <div className="text-center mb-4">
             <div className="fs-1 mb-2">🔒</div>
@@ -80,6 +82,7 @@ export default function ResetPasswordPage() {
           </p>
         </div>
       </div>
+      </FangPanel>
     </div>
   )
 }

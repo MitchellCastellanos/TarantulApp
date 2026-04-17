@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
+import FangPanel from '../components/FangPanel'
 
 const LANGS = [
   { code: 'es', flag: '🇲🇽', label: 'Español' },
@@ -39,7 +40,8 @@ export default function LoginPage() {
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
          style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
-      <div className="card shadow-lg" style={{ width: '100%', maxWidth: '420px' }}>
+      <FangPanel style={{ width: '100%', maxWidth: '420px' }}>
+      <div className="card shadow-lg" style={{ width: '100%' }}>
         <div className="card-body p-4 p-md-5">
 
           {/* Language selector */}
@@ -139,6 +141,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      </FangPanel>
     </div>
   )
 }
