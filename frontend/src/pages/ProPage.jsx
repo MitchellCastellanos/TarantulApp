@@ -115,14 +115,14 @@ export default function ProPage() {
                 </div>
               </div>
             </div>
+          ) : polling ? (
+            <div className="alert mb-4 d-flex align-items-center gap-2 py-2" style={{ background: '#fff3cd', color: '#664d03', border: '1px solid #ffda6a' }}>
+              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: '#664d03' }} role="status" />
+              <span className="small fw-semibold">{t('pro.checkoutUpdating')}</span>
+            </div>
           ) : (
-            <div className="card border-0 shadow-sm mb-4" style={{ background: '#1a2200', border: '1px solid #4a5e00' }}>
-              <div className="card-body p-3 text-center">
-                <div className="d-flex align-items-center justify-content-center gap-2">
-                  <div className="spinner-border spinner-border-sm" style={{ color: 'var(--ta-gold)' }} role="status" />
-                  <span style={{ color: '#d4e88a' }}>{t('pro.checkoutUpdating')}</span>
-                </div>
-              </div>
+            <div className="alert alert-success small py-2">
+              {t('pro.checkoutSuccess')}
             </div>
           )
         )}
