@@ -1,6 +1,7 @@
 package com.tarantulapp.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,10 +21,12 @@ public class TarantulaResponse {
     private LocalDateTime updatedAt;
     private SpeciesDTO species;
     private String status;
-    private LocalDateTime lastFedAt;
-    private LocalDateTime lastMoltAt;
+    private Instant lastFedAt;
+    private Instant lastMoltAt;
     private LocalDateTime deceasedAt;
     private String deathNotes;
+    /** True si el plan Free aplica cupo y esta tarántula está fuera de las 6 más antiguas (solo lectura). */
+    private boolean locked;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -53,12 +56,15 @@ public class TarantulaResponse {
     public void setSpecies(SpeciesDTO species) { this.species = species; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public LocalDateTime getLastFedAt() { return lastFedAt; }
-    public void setLastFedAt(LocalDateTime lastFedAt) { this.lastFedAt = lastFedAt; }
-    public LocalDateTime getLastMoltAt() { return lastMoltAt; }
-    public void setLastMoltAt(LocalDateTime lastMoltAt) { this.lastMoltAt = lastMoltAt; }
+    public Instant getLastFedAt() { return lastFedAt; }
+    public void setLastFedAt(Instant lastFedAt) { this.lastFedAt = lastFedAt; }
+    public Instant getLastMoltAt() { return lastMoltAt; }
+    public void setLastMoltAt(Instant lastMoltAt) { this.lastMoltAt = lastMoltAt; }
     public LocalDateTime getDeceasedAt() { return deceasedAt; }
     public void setDeceasedAt(LocalDateTime deceasedAt) { this.deceasedAt = deceasedAt; }
     public String getDeathNotes() { return deathNotes; }
     public void setDeathNotes(String deathNotes) { this.deathNotes = deathNotes; }
+
+    public boolean isLocked() { return locked; }
+    public void setLocked(boolean locked) { this.locked = locked; }
 }

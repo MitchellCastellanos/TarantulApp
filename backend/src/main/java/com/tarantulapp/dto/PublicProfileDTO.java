@@ -1,7 +1,7 @@
 package com.tarantulapp.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class PublicProfileDTO {
@@ -16,8 +16,8 @@ public class PublicProfileDTO {
     private String profilePhoto;
     private String habitatType;
     private String status;
-    private LocalDateTime lastFedAt;
-    private LocalDateTime lastMoltAt;
+    private Instant lastFedAt;
+    private Instant lastMoltAt;
 
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
@@ -41,8 +41,8 @@ public class PublicProfileDTO {
     public void setHabitatType(String habitatType) { this.habitatType = habitatType; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public LocalDateTime getLastFedAt() { return lastFedAt; }
-    public void setLastFedAt(LocalDateTime lastFedAt) { this.lastFedAt = lastFedAt; }
-    public LocalDateTime getLastMoltAt() { return lastMoltAt; }
-    public void setLastMoltAt(LocalDateTime lastMoltAt) { this.lastMoltAt = lastMoltAt; }
+    public Instant getLastFedAt() { return lastFedAt; }
+    public void setLastFedAt(Instant lastFedAt) { this.lastFedAt = lastFedAt; }
+    public Instant getLastMoltAt() { return lastMoltAt; }
+    public void setLastMoltAt(Instant lastMoltAt) { this.lastMoltAt = lastMoltAt; }
 }

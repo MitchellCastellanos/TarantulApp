@@ -1,7 +1,7 @@
 package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -23,7 +23,7 @@ public class Reminder {
     private String type = "custom";
 
     @Column(name = "due_date", nullable = false)
-    private LocalDateTime dueDate;
+    private Instant dueDate;
 
     @Column(length = 500)
     private String message;
@@ -32,10 +32,10 @@ public class Reminder {
     private Boolean isDone = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @PrePersist
-    void onCreate() { createdAt = LocalDateTime.now(); }
+    void onCreate() { createdAt = Instant.now(); }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -45,11 +45,11 @@ public class Reminder {
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public LocalDateTime getDueDate() { return dueDate; }
-    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
+    public Instant getDueDate() { return dueDate; }
+    public void setDueDate(Instant dueDate) { this.dueDate = dueDate; }
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
     public Boolean getIsDone() { return isDone; }
     public void setIsDone(Boolean isDone) { this.isDone = isDone; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

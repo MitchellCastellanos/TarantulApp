@@ -18,24 +18,28 @@ public class LogsService {
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
     private final TarantulaRepository tarantulaRepository;
+    private final PlanAccessService planAccessService;
 
     public LogsService(FeedingLogRepository feedingLogRepository,
                        MoltLogRepository moltLogRepository,
                        BehaviorLogRepository behaviorLogRepository,
-                       TarantulaRepository tarantulaRepository) {
+                       TarantulaRepository tarantulaRepository,
+                       PlanAccessService planAccessService) {
         this.feedingLogRepository = feedingLogRepository;
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
         this.tarantulaRepository = tarantulaRepository;
+        this.planAccessService = planAccessService;
     }
 
     // ─── Feeding ────────────────────────────────────────────────────────────
 
     public FeedingLogResponse addFeeding(UUID tarantulaId, FeedingLogRequest req, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         verifyOwnership(tarantulaId, userId);
         FeedingLog log = new FeedingLog();
         log.setTarantulaId(tarantulaId);
-        log.setFedAt(req.getFedAt());
+        log.setFedAt(req.getFedAt().toInstant());
         log.setPreyType(req.getPreyType());
         log.setPreySize(req.getPreySize());
         log.setQuantity(req.getQuantity() != null ? req.getQuantity() : 1);
@@ -54,16 +58,18 @@ public class LogsService {
         FeedingLog log = feedingLogRepository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Registro no encontrado"));
         verifyOwnership(log.getTarantulaId(), userId);
+        planAccessService.enforceTarantulaWrite(userId, log.getTarantulaId());
         feedingLogRepository.delete(log);
     }
 
     // ─── Molt ───────────────────────────────────────────────────────────────
 
     public MoltLogResponse addMolt(UUID tarantulaId, MoltLogRequest req, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         verifyOwnership(tarantulaId, userId);
         MoltLog log = new MoltLog();
         log.setTarantulaId(tarantulaId);
-        log.setMoltedAt(req.getMoltedAt());
+        log.setMoltedAt(req.getMoltedAt().toInstant());
         log.setPreSizeCm(req.getPreSizeCm());
         log.setPostSizeCm(req.getPostSizeCm());
         log.setNotes(req.getNotes());
@@ -80,16 +86,18 @@ public class LogsService {
         MoltLog log = moltLogRepository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Registro no encontrado"));
         verifyOwnership(log.getTarantulaId(), userId);
+        planAccessService.enforceTarantulaWrite(userId, log.getTarantulaId());
         moltLogRepository.delete(log);
     }
 
     // ─── Behavior ───────────────────────────────────────────────────────────
 
     public BehaviorLogResponse addBehavior(UUID tarantulaId, BehaviorLogRequest req, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         verifyOwnership(tarantulaId, userId);
         BehaviorLog log = new BehaviorLog();
         log.setTarantulaId(tarantulaId);
-        log.setLoggedAt(req.getLoggedAt());
+        log.setLoggedAt(req.getLoggedAt().toInstant());
         log.setMood(req.getMood());
         log.setNotes(req.getNotes());
         return BehaviorLogResponse.from(behaviorLogRepository.save(log));
@@ -105,6 +113,7 @@ public class LogsService {
         BehaviorLog log = behaviorLogRepository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Registro no encontrado"));
         verifyOwnership(log.getTarantulaId(), userId);
+        planAccessService.enforceTarantulaWrite(userId, log.getTarantulaId());
         behaviorLogRepository.delete(log);
     }
 

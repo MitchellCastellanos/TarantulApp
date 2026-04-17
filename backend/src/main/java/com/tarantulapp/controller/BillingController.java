@@ -1,16 +1,14 @@
 package com.tarantulapp.controller;
 
 import com.stripe.Stripe;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.model.Event;
-import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
-import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.util.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,6 +29,8 @@ public class BillingController {
 
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
+    private final PlanAccessService planAccessService;
+    private final BillingService billingService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -46,9 +47,12 @@ public class BillingController {
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
-    public BillingController(UserRepository userRepository, SecurityHelper securityHelper) {
+    public BillingController(UserRepository userRepository, SecurityHelper securityHelper,
+                             PlanAccessService planAccessService, BillingService billingService) {
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
+        this.planAccessService = planAccessService;
+        this.billingService = billingService;
     }
 
     @GetMapping("/me")
@@ -60,10 +64,15 @@ public class BillingController {
         UserPlan plan = user.getPlan() != null ? user.getPlan() : UserPlan.FREE;
         boolean checkoutEnabled = isStripeConfigured();
 
-        return ResponseEntity.ok(Map.of(
-                "plan", plan.name(),
-                "checkoutEnabled", checkoutEnabled
-        ));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("plan", plan.name());
+        body.put("checkoutEnabled", checkoutEnabled);
+        body.put("trialEndsAt", user.getTrialEndsAt());
+        body.put("readOnly", planAccessService.isReadOnly(user));
+        body.put("inTrial", planAccessService.isTrialActive(user));
+        body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
+        body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/checkout")
@@ -165,37 +174,13 @@ public class BillingController {
             return ResponseEntity.badRequest().body("Webhook secret not configured");
         }
 
-        Event event;
         try {
-            event = Webhook.constructEvent(new String(payload), sigHeader, stripeWebhookSecret);
-        } catch (SignatureVerificationException e) {
-            log.warn("Invalid Stripe webhook signature");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
+            billingService.handleStripeWebhook(new String(payload), sigHeader);
+            return ResponseEntity.ok("ok");
+        } catch (IllegalArgumentException e) {
+            log.warn("Stripe webhook rejected: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        switch (event.getType()) {
-            case "checkout.session.completed" -> {
-                StripeObject obj = event.getDataObjectDeserializer().getObject().orElse(null);
-                if (obj instanceof Session session) {
-                    String userId = session.getMetadata().get("userId");
-                    if (userId != null) {
-                        userRepository.findById(UUID.fromString(userId)).ifPresent(user -> {
-                            user.setPlan(UserPlan.PRO);
-                            userRepository.save(user);
-                            log.info("Upgraded user {} to PRO", userId);
-                        });
-                    }
-                }
-            }
-            case "customer.subscription.deleted" -> {
-                // Downgrade — match by customer email via session metadata not available here.
-                // Implement customer.subscription.deleted handling if needed using Stripe Customer ID.
-                log.info("Subscription deleted event received");
-            }
-            default -> log.debug("Unhandled Stripe event: {}", event.getType());
-        }
-
-        return ResponseEntity.ok("ok");
     }
 
     private boolean isStripeConfigured() {

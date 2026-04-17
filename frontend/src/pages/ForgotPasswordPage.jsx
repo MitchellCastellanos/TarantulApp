@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
-import FangPanel from '../components/FangPanel'
+import ChitinCardFrame from '../components/ChitinCardFrame'
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation()
@@ -26,11 +26,15 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
-      <FangPanel style={{ width: '100%', maxWidth: '420px' }}>
-      <div className="card shadow-lg" style={{ width: '100%' }}>
-        <div className="card-body p-4 p-md-5">
+    <div className="min-vh-100 d-flex align-items-center justify-content-center px-3">
+      <ChitinCardFrame
+        className="w-100"
+        style={{ maxWidth: 420 }}
+        showSilhouettes={false}
+        variant="auth"
+      >
+      <div className="card border-0 bg-transparent shadow-none w-100">
+        <div className="card-body p-3 p-md-4">
           <div className="text-center mb-4">
             <div className="fs-1 mb-2">🔑</div>
             <h2 className="fw-bold mb-1">{t('auth.forgotPassword')}</h2>
@@ -63,7 +67,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
       </div>
-      </FangPanel>
+      </ChitinCardFrame>
     </div>
   )
 }

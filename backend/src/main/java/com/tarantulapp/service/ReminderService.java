@@ -7,7 +7,6 @@ import com.tarantulapp.entity.FeedingLog;
 import com.tarantulapp.entity.Reminder;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
-import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.BehaviorLogRepository;
 import com.tarantulapp.repository.FeedingLogRepository;
@@ -17,7 +16,9 @@ import com.tarantulapp.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,17 +34,20 @@ public class ReminderService {
     private final TarantulaRepository tarantulaRepository;
     private final FeedingLogRepository feedingLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
+    private final PlanAccessService planAccessService;
 
     public ReminderService(ReminderRepository reminderRepository,
                            UserRepository userRepository,
                            TarantulaRepository tarantulaRepository,
                            FeedingLogRepository feedingLogRepository,
-                           BehaviorLogRepository behaviorLogRepository) {
+                           BehaviorLogRepository behaviorLogRepository,
+                           PlanAccessService planAccessService) {
         this.reminderRepository = reminderRepository;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.feedingLogRepository = feedingLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
+        this.planAccessService = planAccessService;
     }
 
     public List<ReminderResponse> findByUser(UUID userId) {
@@ -51,7 +55,7 @@ public class ReminderService {
     }
 
     public List<ReminderResponse> findPending(UUID userId) {
-        LocalDateTime cutoff = LocalDateTime.now().plusDays(7);
+        Instant cutoff = Instant.now().plus(7, ChronoUnit.DAYS);
         return mergeManualAndAutomatic(userId, cutoff);
     }
 
@@ -69,10 +73,12 @@ public class ReminderService {
             throw new AccessDeniedException("Acceso denegado");
         }
 
+        planAccessService.enforceTarantulaWrite(userId, req.getTarantulaId());
+
         Reminder r = new Reminder();
         r.setUserId(userId);
         r.setType(req.getType());
-        r.setDueDate(req.getDueDate());
+        r.setDueDate(req.getDueDate().toInstant());
         r.setMessage(req.getMessage());
         r.setTarantulaId(req.getTarantulaId());
         return ReminderResponse.from(reminderRepository.save(r));
@@ -80,16 +86,22 @@ public class ReminderService {
 
     public ReminderResponse markDone(UUID id, UUID userId) {
         Reminder r = getOwned(id, userId);
+        if (r.getTarantulaId() != null) {
+            planAccessService.enforceTarantulaWrite(userId, r.getTarantulaId());
+        }
         r.setIsDone(true);
         return ReminderResponse.from(reminderRepository.save(r));
     }
 
     public void delete(UUID id, UUID userId) {
         Reminder r = getOwned(id, userId);
+        if (r.getTarantulaId() != null) {
+            planAccessService.enforceTarantulaWrite(userId, r.getTarantulaId());
+        }
         reminderRepository.delete(r);
     }
 
-    private List<ReminderResponse> mergeManualAndAutomatic(UUID userId, LocalDateTime cutoff) {
+    private List<ReminderResponse> mergeManualAndAutomatic(UUID userId, Instant cutoff) {
         List<ReminderResponse> reminders = new ArrayList<>();
 
         List<Tarantula> tarantulas = tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -103,7 +115,7 @@ public class ReminderService {
                     .stream().map(ReminderResponse::from).collect(Collectors.toList()));
         }
 
-        if (isPro(userId)) {
+        if (hasProFeatures(userId)) {
             reminders.addAll(buildAutomaticFeedingReminders(userId, cutoff, tarantulas));
         }
 
@@ -122,13 +134,13 @@ public class ReminderService {
         return reminders;
     }
 
-    private boolean isPro(UUID userId) {
+    private boolean hasProFeatures(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-        return user.getPlan() == UserPlan.PRO;
+        return planAccessService.hasProFeatures(user);
     }
 
-    private List<ReminderResponse> buildAutomaticFeedingReminders(UUID userId, LocalDateTime cutoff, List<Tarantula> tarantulas) {
+    private List<ReminderResponse> buildAutomaticFeedingReminders(UUID userId, Instant cutoff, List<Tarantula> tarantulas) {
         List<ReminderResponse> reminders = new ArrayList<>();
 
         for (Tarantula tarantula : tarantulas) {
@@ -142,13 +154,15 @@ public class ReminderService {
             }
 
             Optional<BehaviorLog> lastBehavior = behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(tarantula.getId());
+            Instant now = Instant.now();
             if (lastBehavior.isPresent()
                     && "pre_molt".equals(lastBehavior.get().getMood())
-                    && lastBehavior.get().getLoggedAt().isAfter(LocalDateTime.now().minusDays(30))) {
+                    && lastBehavior.get().getLoggedAt().isAfter(now.minus(30, ChronoUnit.DAYS))) {
                 continue;
             }
 
-            LocalDateTime dueDate = lastFeeding.get().getFedAt().plusDays(estimateFeedingIntervalDays(tarantula));
+            Instant dueDate = lastFeeding.get().getFedAt()
+                    .plus(Duration.ofDays(estimateFeedingIntervalDays(tarantula)));
             if (cutoff != null && dueDate.isAfter(cutoff)) {
                 continue;
             }

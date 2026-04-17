@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import tarantulaService from '../services/tarantulaService'
 import { imgUrl } from '../services/api'
 
-export default function PhotoGallery({ tarantulaId }) {
+export default function PhotoGallery({ tarantulaId, readOnly = false }) {
+  const { t } = useTranslation()
   const [photos, setPhotos] = useState([])
   const [file, setFile] = useState(null)
   const [caption, setCaption] = useState('')
@@ -30,7 +32,7 @@ export default function PhotoGallery({ tarantulaId }) {
   }
 
   const handleDelete = async (photoId) => {
-    if (!confirm('¿Eliminar esta foto?')) return
+    if (!confirm(t('gallery.deleteConfirm'))) return
     await tarantulaService.deletePhoto(tarantulaId, photoId)
     load()
   }
@@ -39,10 +41,11 @@ export default function PhotoGallery({ tarantulaId }) {
     <div className="card border-0 shadow-sm mb-4">
       <div className="card-body">
         <div className="ta-section-header mb-3">
-          <span>📷 Galería</span>
+          <span>{t('gallery.title')}</span>
         </div>
 
         {/* Upload form */}
+        {!readOnly && (
         <form onSubmit={handleUpload} className="mb-3 d-flex gap-2 align-items-end flex-wrap">
           <div>
             <input type="file" accept="image/*" className="form-control form-control-sm"
@@ -50,18 +53,19 @@ export default function PhotoGallery({ tarantulaId }) {
                    onChange={e => setFile(e.target.files[0])} required />
           </div>
           <div>
-            <input type="text" className="form-control form-control-sm" placeholder="Descripción (opcional)"
+            <input type="text" className="form-control form-control-sm" placeholder={t('gallery.captionPlaceholder')}
                    style={{ maxWidth: 200 }}
                    value={caption} onChange={e => setCaption(e.target.value)} />
           </div>
           <button type="submit" className="btn btn-sm btn-dark" disabled={uploading || !file}>
-            {uploading ? 'Subiendo...' : '+ Agregar foto'}
+            {uploading ? t('gallery.uploading') : t('gallery.addPhoto')}
           </button>
         </form>
+        )}
 
         {/* Grid */}
         {photos.length === 0 ? (
-          <p className="text-muted small mb-0">Aún no hay fotos en la galería.</p>
+          <p className="text-muted small mb-0">{t('gallery.empty')}</p>
         ) : (
           <div className="row g-2">
             {photos.map(p => (
@@ -73,13 +77,15 @@ export default function PhotoGallery({ tarantulaId }) {
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onClick={() => setLightbox(p)}
                   />
+                  {!readOnly && (
                   <button
                     className="btn btn-sm btn-danger position-absolute"
                     style={{ top: 4, right: 4, padding: '1px 6px', fontSize: '0.7rem', lineHeight: 1.4 }}
                     onClick={() => handleDelete(p.id)}
-                    title="Eliminar foto">
+                    title={t('gallery.deletePhoto')}>
                     ✕
                   </button>
+                  )}
                   {p.caption && (
                     <div className="position-absolute bottom-0 start-0 end-0 px-1 py-1"
                          style={{ background: 'rgba(0,0,0,0.5)', fontSize: '0.7rem', color: 'white' }}>

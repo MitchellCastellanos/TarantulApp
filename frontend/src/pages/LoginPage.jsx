@@ -3,13 +3,9 @@ import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
-import FangPanel from '../components/FangPanel'
-
-const LANGS = [
-  { code: 'es', flag: '🇲🇽', label: 'Español' },
-  { code: 'en', flag: '🇺🇸', label: 'English' },
-  { code: 'fr', flag: '🇫🇷', label: 'Français' },
-]
+import ChitinCardFrame from '../components/ChitinCardFrame'
+import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
+import { appLangBase } from '../utils/appLanguage'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -25,41 +21,67 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    const email = form.email.trim()
+    const password = form.password
+    if (!email || !password) {
+      setError(t('auth.fillRequired'))
+      return
+    }
+    if (mode === 'register' && password.length < 6) {
+      setError(t('auth.passwordTooShort'))
+      return
+    }
     setLoading(true)
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
-      const { data } = await api.post(endpoint, form)
+      const body = mode === 'login'
+        ? { email, password }
+        : { email, password, displayName: form.displayName?.trim() || undefined }
+      const { data } = await api.post(endpoint, body)
       login(data)
     } catch (err) {
-      setError(err.response?.data?.error || t('common.error'))
+      const d = err.response?.data
+      const fieldMsgs = d?.fields && typeof d.fields === 'object'
+        ? Object.values(d.fields).filter(Boolean).join(' ')
+        : ''
+      setError(fieldMsgs || d?.error || t('common.error'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
-      <FangPanel style={{ width: '100%', maxWidth: '420px' }}>
-      <div className="card shadow-lg" style={{ width: '100%' }}>
-        <div className="card-body p-4 p-md-5">
+    <div className="min-vh-100 d-flex align-items-center justify-content-center px-3">
+      <ChitinCardFrame
+        className="w-100"
+        style={{ maxWidth: 420 }}
+        showSilhouettes={false}
+        variant="auth"
+      >
+      <div className="card border-0 bg-transparent shadow-none w-100">
+        <div className="card-body p-3 p-md-4">
 
-          {/* Language selector */}
-          <div className="d-flex justify-content-end gap-2 mb-3">
-            {LANGS.map(l => (
+          {/* Language selector — solo códigos ES / EN / FR (sin emojis: evita “GB” u otros glifos feos) */}
+          <div className="d-flex justify-content-end gap-2 mb-3 pt-3 px-2">
+            {APP_LANGS.map(l => (
               <button
                 key={l.code}
-                title={l.label}
+                type="button"
+                title={LOGIN_LANG_LABELS[l.code]}
+                aria-label={LOGIN_LANG_LABELS[l.code]}
                 onClick={() => i18n.changeLanguage(l.code)}
-                className="btn btn-sm px-2 py-0"
+                className="btn btn-sm px-2 py-1"
                 style={{
                   background: 'transparent',
-                  border: i18n.language === l.code ? '1px solid var(--ta-gold)' : '1px solid var(--ta-border)',
-                  color: i18n.language === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
-                  fontSize: '0.85rem',
+                  border: appLangBase(i18n.language) === l.code ? '1px solid var(--ta-gold)' : '1px solid var(--ta-border)',
+                  color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  lineHeight: 1,
                   borderRadius: 4,
                 }}>
-                {l.flag} {l.code.toUpperCase()}
+                {l.display}
               </button>
             ))}
           </div>
@@ -77,7 +99,15 @@ export default function LoginPage() {
             <div className="alert alert-danger py-2 small" role="alert">{error}</div>
           )}
 
-          <form onSubmit={handleSubmit} noValidate>
+          {mode === 'register' && (
+            <div className="alert py-2 small mb-3"
+                 style={{ background: 'rgba(200, 170, 80, 0.15)', border: '1px solid rgba(200, 170, 80, 0.45)', color: 'var(--ta-parchment)' }}>
+              <span className="fw-semibold me-1">🎁</span>
+              {t('auth.trialRegisterPromo')}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
             {mode === 'register' && (
               <div className="mb-3">
                 <label className="form-label fw-semibold small">{t('auth.name')}</label>
@@ -141,7 +171,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-      </FangPanel>
+      </ChitinCardFrame>
     </div>
   )
 }

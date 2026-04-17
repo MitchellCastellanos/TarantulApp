@@ -13,18 +13,15 @@ const tarantulaService = {
     const form = new FormData()
     // file puede ser un File original o un Blob recortado; le damos nombre explícito
     form.append('file', file, file.name || 'profile.jpg')
-    return api.post(`/tarantulas/${id}/photo`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(r => r.data)
+    // Sin Content-Type manual: axios añade multipart/form-data + boundary (obligatorio para Tomcat).
+    return api.post(`/tarantulas/${id}/photo`, form).then(r => r.data)
   },
   getPhotos: (id) => api.get(`/tarantulas/${id}/photos`).then(r => r.data),
   addPhoto: (id, file, caption) => {
     const form = new FormData()
     form.append('file', file)
     if (caption) form.append('caption', caption)
-    return api.post(`/tarantulas/${id}/photos`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(r => r.data)
+    return api.post(`/tarantulas/${id}/photos`, form).then(r => r.data)
   },
   deletePhoto: (tarantulaId, photoId) =>
     api.delete(`/tarantulas/${tarantulaId}/photos/${photoId}`),

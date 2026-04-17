@@ -2,7 +2,7 @@ package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -18,7 +18,7 @@ public class MoltLog {
     private UUID tarantulaId;
 
     @Column(name = "molted_at", nullable = false)
-    private LocalDateTime moltedAt;
+    private Instant moltedAt;
 
     @Column(name = "pre_size_cm", precision = 4, scale = 1)
     private BigDecimal preSizeCm;
@@ -30,22 +30,22 @@ public class MoltLog {
     private String notes;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @PrePersist
-    protected void onCreate() { createdAt = LocalDateTime.now(); }
+    protected void onCreate() { createdAt = Instant.now(); }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
-    public LocalDateTime getMoltedAt() { return moltedAt; }
-    public void setMoltedAt(LocalDateTime moltedAt) { this.moltedAt = moltedAt; }
+    public Instant getMoltedAt() { return moltedAt; }
+    public void setMoltedAt(Instant moltedAt) { this.moltedAt = moltedAt; }
     public BigDecimal getPreSizeCm() { return preSizeCm; }
     public void setPreSizeCm(BigDecimal preSizeCm) { this.preSizeCm = preSizeCm; }
     public BigDecimal getPostSizeCm() { return postSizeCm; }
     public void setPostSizeCm(BigDecimal postSizeCm) { this.postSizeCm = postSizeCm; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

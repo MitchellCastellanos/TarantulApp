@@ -1,15 +1,20 @@
-const STATUS = {
-  active:          { label: 'Activa',           color: 'success' },
-  pre_molt:        { label: 'Pre-muda',          color: 'warning' },
-  pending_feeding: { label: 'Sin comer',         color: 'danger'  },
-  deceased:        { label: '🕯️ Fallecida',      color: 'secondary' },
+import { useTranslation } from 'react-i18next'
+
+const STATUS_COLORS = {
+  active: 'success',
+  pre_molt: 'warning',
+  pending_feeding: 'danger',
+  deceased: 'secondary',
 }
 
 export default function StatusBadge({ status }) {
-  const cfg = STATUS[status] || { label: status ?? '–', color: 'secondary' }
+  const { t } = useTranslation()
+  const color = STATUS_COLORS[status] ?? 'secondary'
+  const labelKey = status && t(`status.${status}`, { defaultValue: '' })
+  const label = labelKey || status || '–'
   return (
-    <span className={`badge bg-${cfg.color} text-${cfg.color === 'warning' ? 'dark' : 'white'}`}>
-      {cfg.label}
+    <span className={`badge bg-${color} text-${color === 'warning' ? 'dark' : 'white'}`}>
+      {label}
     </span>
   )
 }

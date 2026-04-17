@@ -11,31 +11,33 @@ import BehaviorModal from '../components/BehaviorModal'
 import QRModal from '../components/QRModal'
 import PhotoGallery from '../components/PhotoGallery'
 import FangPanel from '../components/FangPanel'
+import ChitinCardFrame from '../components/ChitinCardFrame'
+import SpeciesProfileCard from '../components/SpeciesProfileCard'
+import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
 import { imgUrl } from '../services/api'
+import { publicUrl } from '../utils/publicAssets.js'
+import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
+import { formatDateInUserZone } from '../utils/dateFormat'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
-const LEVEL_COLOR  = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
 const defaultSpiderStyle = {
   width: '100%',
   height: '100%',
-  objectFit: 'cover',
-  transform: 'scale(1.28)',
-  transformOrigin: 'center',
-}
-
-function formatDate(iso) {
-  if (!iso) return '–'
-  return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+  objectFit: 'contain',
+  objectPosition: 'center',
+  opacity: 0.95,
+  padding: '6px',
+  boxSizing: 'border-box',
 }
 
 export default function TarantulaDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
-  const isPro = user?.plan === 'PRO'
+  const hasProFeatures = user?.hasProFeatures === true
 
   const [tarantula, setTarantula] = useState(null)
   const [timeline, setTimeline] = useState([])
@@ -43,27 +45,49 @@ export default function TarantulaDetailPage() {
   const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased'
   const [deceasedNotes, setDeceasedNotes] = useState('')
   const [deceasedDate, setDeceasedDate] = useState(new Date().toISOString().slice(0, 10))
+  const [historyPageIndex, setHistoryPageIndex] = useState(0)
 
-  const load = useCallback(() => {
+  /** En plan Free sin prueba, solo las 6 más antiguas son editables; el resto viene con locked=true desde el API. */
+  const mayEdit = tarantula ? !tarantula.locked : false
+  const canDeleteSpider = true
+
+  const load = useCallback((showFullPageLoading = true) => {
+    if (showFullPageLoading) setLoading(true)
     Promise.all([
       tarantulaService.getById(id),
       tarantulaService.getTimeline(id),
     ]).then(([t, tl]) => {
       setTarantula(t)
       setTimeline(tl)
-    }).finally(() => setLoading(false))
+    }).finally(() => {
+      if (showFullPageLoading) setLoading(false)
+    })
   }, [id])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(true) }, [load])
 
-  const handleLogSaved = () => { setModal(null); load() }
+  useEffect(() => {
+    setHistoryPageIndex(0)
+  }, [id])
+
+  const historyTotalPages = Math.max(1, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE))
+  const historyPageSafe = Math.min(historyPageIndex, historyTotalPages - 1)
+  const historyPageStart = historyPageSafe * PARCHMENT_HISTORY_PAGE_SIZE
+  const timelinePage = timeline.slice(historyPageStart, historyPageStart + PARCHMENT_HISTORY_PAGE_SIZE)
+  const showHistoryPager = timeline.length > PARCHMENT_HISTORY_PAGE_SIZE
+
+  useEffect(() => {
+    setHistoryPageIndex(i => Math.min(i, Math.max(0, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE) - 1)))
+  }, [timeline.length])
+
+  const handleLogSaved = () => { setModal(null); load(false) }
 
   const handleDeleteEvent = async (logId, type) => {
     if (!confirm(t('tarantula.deleteEvent'))) return
     if (type === 'feeding')  await logsService.deleteFeeding(logId)
     if (type === 'molt')     await logsService.deleteMolt(logId)
     if (type === 'behavior') await logsService.deleteBehavior(logId)
-    load()
+    load(false)
   }
 
   const handleTogglePublic = async () => {
@@ -105,27 +129,26 @@ export default function TarantulaDetailPage() {
     const legSpan = body * 2        // rough estimate: leg span ≈ 2× body length
     const { habitatType, adultSizeCmMax } = species
 
-    let enclosure
+    let enclosureI18n
     if (habitatType === 'arboreal') {
       const w = Math.ceil(legSpan * 1.5)
       const h = Math.ceil(legSpan * 3)
-      enclosure = `${w} × ${w} × ${h} cm (ancho × prof × alto)`
+      enclosureI18n = { key: 'terrarium.enclosureArboreal', params: { w, h } }
     } else if (habitatType === 'fossorial') {
       const floor = Math.ceil(legSpan * 2)
       const substrate = Math.ceil(body * 3)
-      enclosure = `${floor} × ${floor} cm piso, ${substrate} cm de sustrato`
+      enclosureI18n = { key: 'terrarium.enclosureFossorial', params: { floor, substrate } }
     } else {
-      // terrestrial (default)
       const floor = Math.ceil(legSpan * 2.5)
       const height = Math.ceil(legSpan * 1.2)
-      enclosure = `${floor} × ${floor} × ${height} cm (largo × ancho × alto)`
+      enclosureI18n = { key: 'terrarium.enclosureTerrestrial', params: { floor, height } }
     }
 
     const pct = adultSizeCmMax
       ? Math.min(100, Math.round((body / Number(adultSizeCmMax)) * 100))
       : null
 
-    return { enclosure, pct, adultSizeCmMax }
+    return { enclosureI18n, pct, adultSizeCmMax }
   })()
 
   return (
@@ -157,7 +180,7 @@ export default function TarantulaDetailPage() {
                 <div className="mb-1">
                   <label className="form-label fw-semibold small">{t('tarantula.deceasedNotes')}</label>
                   <textarea className="form-control" rows={3}
-                            placeholder="..."
+                            placeholder={t('logModals.optional')}
                             value={deceasedNotes}
                             onChange={e => setDeceasedNotes(e.target.value)} />
                 </div>
@@ -198,7 +221,7 @@ export default function TarantulaDetailPage() {
                   <img src={displayProfilePhoto} alt={tarantula.name}
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <img src="/spider-default.svg" alt="spider"
+                  <img src={publicUrl('spider-default.png')} alt="spider"
                        style={defaultSpiderStyle} />
                 )}
               </div>
@@ -229,9 +252,9 @@ export default function TarantulaDetailPage() {
                 </div>
 
                 <div className="small text-muted">
-                  <div>📅 {t('tarantula.purchaseDate')}: {formatDate(tarantula.purchaseDate)}</div>
-                  <div>{t('tarantula.lastFed')}: {formatDate(tarantula.lastFedAt)}</div>
-                  <div>{t('tarantula.lastMolt')}: {formatDate(tarantula.lastMoltAt)}</div>
+                  <div>📅 {t('tarantula.purchaseDate')}: {formatDateInUserZone(tarantula.purchaseDate, i18n.language)}</div>
+                  <div>{t('tarantula.lastFed')}: {formatDateInUserZone(tarantula.lastFedAt, i18n.language)}</div>
+                  <div>{t('tarantula.lastMolt')}: {formatDateInUserZone(tarantula.lastMoltAt, i18n.language)}</div>
                 </div>
 
                 {tarantula.notes && (
@@ -242,36 +265,50 @@ export default function TarantulaDetailPage() {
               <div className="card-footer bg-transparent border-top-0 d-flex gap-2 flex-wrap">
                 {!tarantula.deceasedAt && (
                   <>
-                    <Link to={`/tarantulas/${id}/edit`} className="btn btn-outline-secondary btn-sm flex-fill">
-                      ✏️ {t('common.edit')}
-                    </Link>
+                    {!mayEdit ? (
+                      <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" disabled title={t('tarantula.lockedEditHint')}>
+                        ✏️ {t('common.edit')}
+                      </button>
+                    ) : (
+                      <Link to={`/tarantulas/${id}/edit`} className="btn btn-outline-secondary btn-sm flex-fill">
+                        ✏️ {t('common.edit')}
+                      </Link>
+                    )}
                     <button className="btn btn-outline-secondary btn-sm flex-fill"
                             onClick={() => setModal('qr')}>
                       📱 {t('tarantula.qrCode')}
                     </button>
-                    {isPro ? (
+                    {hasProFeatures ? (
                       <button
                         className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
-                        onClick={handleTogglePublic}>
+                        onClick={mayEdit ? handleTogglePublic : undefined}
+                        disabled={!mayEdit}
+                        title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                         {tarantula.isPublic ? `🌐 ${t('tarantula.publicOn')}` : `🔒 ${t('tarantula.publicOff')}`}
                       </button>
                     ) : (
-                      <Link to="/pro"
+                      <ProTrialCtaLink
                         className="btn btn-sm flex-fill btn-outline-secondary"
-                        title={t('pro.publicToggleProOnlyHint')}>
+                        style={{ background: 'transparent', color: 'rgba(201,168,76,0.95)', borderColor: 'rgba(180,120,30,0.45)' }}
+                        title={t('pro.publicToggleProOnlyHint')}
+                      >
                         {t('pro.publicToggleProOnly')}
-                      </Link>
+                      </ProTrialCtaLink>
                     )}
                     <button className="btn btn-sm flex-fill btn-outline-secondary"
                             style={{ borderColor: 'rgba(180,120,30,0.4)', color: 'rgba(201,168,76,0.7)' }}
-                            onClick={() => setModal('deceased')}>
+                            onClick={() => mayEdit && setModal('deceased')}
+                            disabled={!mayEdit}
+                            title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                       {t('tarantula.markDeceased')}
                     </button>
                   </>
                 )}
                 <button className="btn btn-outline-danger btn-sm flex-fill"
-                        onClick={handleDelete}>
-                  🗑️ Eliminar
+                        onClick={canDeleteSpider ? handleDelete : undefined}
+                        disabled={!canDeleteSpider}
+                        title={!canDeleteSpider ? t('tarantula.lockedEditHint') : undefined}>
+                  🗑️ {t('common.delete')}
                 </button>
               </div>
             </div>
@@ -288,117 +325,16 @@ export default function TarantulaDetailPage() {
                   <strong style={{ fontFamily: 'Cinzel, serif' }}>{t('tarantula.inMemoryOf')} {tarantula.name}</strong>
                 </div>
                 <div className="small" style={{ opacity: 0.85 }}>
-                  {t('tarantula.deceasedOn')} {formatDate(tarantula.deceasedAt)}.
+                  {t('tarantula.deceasedOn')} {formatDateInUserZone(tarantula.deceasedAt, i18n.language)}.
                   {tarantula.deathNotes && <> {tarantula.deathNotes}</>}
                 </div>
               </div>
             )}
-            {/* Ficha de especie */}
+            {/* Ficha de especie — marco chitin + siluetas opcionales (assets en public/) */}
             {species && (
-              <FangPanel className="mb-4">
-              <div className="card border-0 shadow-sm">
-                <div className="card-body">
-                  {/* Header */}
-                  <div className="ta-section-header mb-3">
-                    <span>🕷 {t('species.cardTitle')}</span>
-                    <span>
-                    {species.dataSource === 'gbif' && (
-                      <span className="badge" style={{ background: 'rgba(20,80,180,0.55)', fontSize: '0.65rem', letterSpacing: 1 }}
-                            title={t('species.estimatedNoteGbif')}>
-                        🌍 GBIF
-                      </span>
-                    )}
-                    {species.dataSource === 'wsc' && (
-                      <span className="badge" style={{ background: 'rgba(80,20,140,0.65)', fontSize: '0.65rem', letterSpacing: 1 }}
-                            title={t('species.estimatedNoteWsc')}>
-                        🕷️ WSC
-                      </span>
-                    )}
-                    {species.dataSource === 'seed' && (
-                      <span className="badge" style={{ background: 'rgba(40,30,80,0.75)', color: 'rgba(220,190,130,0.85)', fontSize: '0.65rem', letterSpacing: 1 }}>
-                        📚 {t('species.catalog')}
-                      </span>
-                    )}
-                    </span>
-                  </div>
-
-                  {/* Reference photo from iNaturalist (only shown when no own photo) */}
-                  {species.referencePhotoUrl && !tarantula.profilePhoto && (
-                    <div className="mb-3 text-center position-relative">
-                      <img src={species.referencePhotoUrl} alt={species.scientificName}
-                           style={{ maxHeight: 180, borderRadius: 8, objectFit: 'cover', width: '100%' }} />
-                      <div className="text-muted" style={{ fontSize: '0.65rem', marginTop: 2 }}>
-                        {t('species.refPhoto')}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="row g-2 small">
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">📍 {t('species.origin')}</div>
-                      <div className="fw-semibold">{species.originRegion ?? t('common.unknown')}</div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">🌿 {t('species.habitat')}</div>
-                      <div className="fw-semibold">
-                        {HABITAT_ICON[species.habitatType]} {species.habitatType ? t(`habitat.${species.habitatType}`) : t('common.unknown')}
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">📐 {t('species.adultSize')} *</div>
-                      <div className="fw-semibold">
-                        {species.adultSizeCmMin ?? '?'}–{species.adultSizeCmMax ?? '?'} cm
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">🌱 {t('species.growth')} *</div>
-                      <div className="fw-semibold">{species.growthRate ? t(`species.growth${species.growthRate.charAt(0).toUpperCase() + species.growthRate.slice(1)}`) : t('common.unknown')}</div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">💧 {t('species.humidity')} *</div>
-                      <div className="fw-semibold">{species.humidityMin ?? '?'}–{species.humidityMax ?? '?'}%</div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">🌬️ {t('species.ventilation')} *</div>
-                      <div className="fw-semibold">{species.ventilation ? t(`species.vent${species.ventilation.charAt(0).toUpperCase() + species.ventilation.slice(1)}`) : t('common.unknown')}</div>
-                    </div>
-                    <div className="col-6 col-md-4">
-                      <div className="text-muted">⭐ {t('species.level')} *</div>
-                      <div>
-                        <span className={`badge bg-${LEVEL_COLOR[species.experienceLevel] ?? 'secondary'}`}>
-                          {species.experienceLevel ? t(`species.level${species.experienceLevel.charAt(0).toUpperCase() + species.experienceLevel.slice(1)}`) : t('common.unknown')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-md-8">
-                      <div className="text-muted">😤 {t('species.temperament')} *</div>
-                      <div className="fw-semibold">{species.temperament ?? t('common.unknown')}</div>
-                    </div>
-                    {species.substrateType && (
-                      <div className="col-12">
-                        <div className="text-muted">🪨 {t('species.substrate')} *</div>
-                        <div className="fw-semibold">{species.substrateType}</div>
-                      </div>
-                    )}
-                    {species.careNotes && (
-                      <div className="col-12 mt-1">
-                        <div className="alert alert-light small py-2 mb-0 border-start border-4 border-dark">
-                          {species.careNotes}
-                        </div>
-                      </div>
-                    )}
-                    {/* Disclaimer for estimated care fields */}
-                    <div className="col-12 mt-2">
-                      <p className="text-muted mb-0" style={{ fontSize: '0.7rem' }}>
-                        {t('species.estimatedNote')}
-                        {(species.dataSource === 'gbif' || species.dataSource === 'seed') && t('species.estimatedNoteGbif')}
-                        {species.dataSource === 'wsc' && t('species.estimatedNoteWsc')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </FangPanel>
+              <ChitinCardFrame className="mb-4">
+                <SpeciesProfileCard species={species} tarantula={tarantula} t={t} />
+              </ChitinCardFrame>
             )}
 
             {/* Recomendación de terrario */}
@@ -413,7 +349,7 @@ export default function TarantulaDetailPage() {
                     {t('terrarium.basedOn')} <strong>{tarantula.currentSizeCm} cm</strong>
                     {terrariumRec.adultSizeCmMax && ` · ${t('terrarium.expectedAdult')}: ${terrariumRec.adultSizeCmMax} cm`}
                   </p>
-                  <div className="fw-semibold small mb-2">📐 {terrariumRec.enclosure}</div>
+                  <div className="fw-semibold small mb-2">📐 {t(terrariumRec.enclosureI18n.key, terrariumRec.enclosureI18n.params)}</div>
                   {terrariumRec.pct !== null && (
                     <div>
                       <div className="d-flex justify-content-between small text-muted mb-1">
@@ -436,40 +372,78 @@ export default function TarantulaDetailPage() {
 
             {/* Acciones de registro */}
             <div className="d-flex gap-2 mb-4 flex-wrap">
-              <button className="btn btn-outline-primary btn-sm" onClick={() => setModal('feeding')}>
+              <button className="btn btn-outline-primary btn-sm" onClick={() => setModal('feeding')}
+                      disabled={!mayEdit} title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                 {t('tarantula.addFeeding')}
               </button>
               <button className="btn btn-outline-purple btn-sm" style={{ color: '#6f42c1', borderColor: '#6f42c1' }}
-                      onClick={() => setModal('molt')}>
+                      onClick={() => setModal('molt')}
+                      disabled={!mayEdit}
+                      title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                 {t('tarantula.addMolt')}
               </button>
-              <button className="btn btn-outline-warning btn-sm" onClick={() => setModal('behavior')}>
+              <button className="btn btn-outline-warning btn-sm" onClick={() => setModal('behavior')}
+                      disabled={!mayEdit} title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                 {t('tarantula.addBehavior')}
               </button>
             </div>
 
             {/* Photo gallery */}
-            <PhotoGallery tarantulaId={id} />
+            <PhotoGallery tarantulaId={id} readOnly={!mayEdit} />
 
-            {/* Timeline — parchment card (no FangPanel: parchment image has its own frame) */}
-            <div className="card border-0 shadow-sm" style={{ overflow: 'hidden' }}>
-              <div className="card-body" style={{
-                backgroundImage: "url('/parchment-bg.png')",
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundBlendMode: 'multiply',
-              }}>
-                <div className="ta-section-header mb-3">
-                  <span>📜 {t('tarantula.history')}</span>
+            {/* Timeline — pergamino */}
+            <div className="ta-parchment-float-wrap">
+            <div className="card border-0 ta-parchment-history">
+              <div className="card-body ta-parchment-scroll p-0">
+                <img
+                  className="ta-parchment-bg-img"
+                  src={publicUrl('parchment-bg.png')}
+                  alt=""
+                  decoding="async"
+                  draggable={false}
+                />
+                <div className="ta-parchment-scroll-inner">
+                  <header className="ta-parchment-page-title">
+                    <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
+                    <span className="ta-parchment-page-title__text">{t('tarantula.history')}</span>
+                  </header>
+                  {timeline.length === 0 ? (
+                    <p className="small mb-0 ta-parchment-muted text-center">{t('tarantula.historyEmpty')}</p>
+                  ) : (
+                    <>
+                      <div className="ta-parchment-events flex-grow-1">
+                        {timelinePage.map(event => (
+                          <TimelineItem key={event.id} event={event} onDelete={mayEdit ? handleDeleteEvent : undefined} />
+                        ))}
+                      </div>
+                      {showHistoryPager && (
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-auto">
+                          <button
+                            type="button"
+                            className="btn btn-sm ta-parchment-pager__btn"
+                            disabled={historyPageSafe <= 0}
+                            onClick={() => setHistoryPageIndex(p => Math.max(0, p - 1))}
+                          >
+                            {t('tarantula.historyPrev')}
+                          </button>
+                          <span className="small ta-parchment-muted mb-0">
+                            {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm ta-parchment-pager__btn"
+                            disabled={historyPageSafe >= historyTotalPages - 1}
+                            onClick={() => setHistoryPageIndex(p => Math.min(historyTotalPages - 1, p + 1))}
+                          >
+                            {t('tarantula.historyNext')}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-                {timeline.length === 0 ? (
-                  <p className="text-muted small mb-0">{t('tarantula.historyEmpty')}</p>
-                ) : (
-                  timeline.map(event => (
-                    <TimelineItem key={event.id} event={event} onDelete={handleDeleteEvent} />
-                  ))
-                )}
               </div>
+            </div>
             </div>
           </div>
         </div>

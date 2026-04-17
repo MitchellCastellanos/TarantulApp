@@ -1,0 +1,12 @@
+# Copia este archivo a: backend/src/main/resources/application-local.properties
+# (gitignore — no subir a la nube).
+
+# Obligatorio para la semilla del usuario dev (LocalDevUserSeed):
+spring.profiles.active=local
+app.dev-seed-user=true
+
+# Login: http://localhost:5173 + backend en marcha
+#   Email:    dev@tarantulapp.local
+#   Password: LocalDev123!
+#
+# Nube: sin perfil local/dev, LocalDevUserSeed no existe aunque haya variables sueltas.

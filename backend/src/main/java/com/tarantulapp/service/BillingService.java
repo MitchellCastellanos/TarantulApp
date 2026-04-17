@@ -203,6 +203,8 @@ public class BillingService {
             user.setPlan(UserPlan.PRO);
         } else {
             user.setPlan(UserPlan.FREE);
+            // Tras cancelar Pro: no aplicar "prueba vencida" por fecha; el modo lectura por >6 tarántulas lo gestiona PlanAccessService.
+            user.setTrialEndsAt(null);
         }
         userRepository.save(user);
     }

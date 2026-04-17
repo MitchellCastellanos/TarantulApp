@@ -35,30 +35,51 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
+        String token = extractBearerToken(header);
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (!jwtUtil.isTokenValid(token)) {
+            log.warn("Invalid JWT on {}", request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
-        boolean tokenValid = jwtUtil.isTokenValid(token);
-        if (tokenValid && SecurityContextHolder.getContext().getAuthentication() == null) {
-            try {
-                String email = jwtUtil.extractEmail(token);
-                var userDetails = userDetailsService.loadUserByUsername(email);
-                var auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("Authenticated user: {}", email);
-            } catch (UsernameNotFoundException e) {
-                log.warn("User from JWT not found in DB: {}", e.getMessage());
-                // No establecer auth; Spring Security devolverá 401
-            }
-        } else if (!tokenValid) {
-            log.warn("Invalid JWT on {}", request.getRequestURI());
+        // Siempre aplicar el JWT cuando el Bearer es válido (no condicionar a getAuthentication() == null).
+        try {
+            String email = jwtUtil.extractEmail(token);
+            var userDetails = userDetailsService.loadUserByUsername(email);
+            var auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            log.debug("Authenticated user: {}", email);
+        } catch (UsernameNotFoundException e) {
+            log.warn("User from JWT not found in DB: {}", e.getMessage());
+        } catch (Exception e) {
+            log.warn("JWT processing failed: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /** Acepta "Bearer ", "bearer ", etc. (algunos proxies/clientes alteran mayúsculas). */
+    private static String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null) {
+            return null;
+        }
+        String h = authorizationHeader.trim();
+        if (h.length() < 8) {
+            return null;
+        }
+        if (!h.regionMatches(true, 0, "Bearer", 0, 6)) {
+            return null;
+        }
+        if (h.charAt(6) != ' ') {
+            return null;
+        }
+        String raw = h.substring(7).trim();
+        return raw.isEmpty() ? null : raw;
     }
 }

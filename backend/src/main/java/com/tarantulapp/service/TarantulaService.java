@@ -4,7 +4,6 @@ import com.tarantulapp.dto.*;
 import com.tarantulapp.entity.Photo;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
-import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
 import com.tarantulapp.util.FileStorageService;
@@ -14,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class TarantulaService {
     private final FileStorageService fileStorageService;
     private final PhotoRepository photoRepository;
     private final UserRepository userRepository;
+    private final PlanAccessService planAccessService;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -38,7 +40,8 @@ public class TarantulaService {
                             BehaviorLogRepository behaviorLogRepository,
                             FileStorageService fileStorageService,
                             PhotoRepository photoRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            PlanAccessService planAccessService) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -47,6 +50,7 @@ public class TarantulaService {
         this.fileStorageService = fileStorageService;
         this.photoRepository = photoRepository;
         this.userRepository = userRepository;
+        this.planAccessService = planAccessService;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -55,25 +59,37 @@ public class TarantulaService {
         t.setUserId(userId);
         t.setShortId(generateShortId());
         applyRequest(req, t);
-        return toResponse(tarantulaRepository.save(t));
+        Tarantula saved = tarantulaRepository.save(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
     @Transactional(readOnly = true)
     public List<TarantulaResponse> findByUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        Set<UUID> lockedIds = planAccessService.lockedTarantulaIds(user);
         return tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream().map(t -> toResponse(t, lockedIds)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public TarantulaResponse findById(UUID id, UUID userId) {
         Tarantula t = getOwned(id, userId);
-        return toResponse(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(t, planAccessService.lockedTarantulaIds(user));
     }
 
     public TarantulaResponse update(UUID id, TarantulaRequest req, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, id);
         Tarantula t = getOwned(id, userId);
         applyRequest(req, t);
-        return toResponse(tarantulaRepository.save(t));
+        Tarantula saved = tarantulaRepository.save(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
     public void delete(UUID id, UUID userId) {
@@ -82,10 +98,14 @@ public class TarantulaService {
     }
 
     public TarantulaResponse uploadPhoto(UUID id, MultipartFile file, UUID userId) throws IOException {
+        planAccessService.enforceTarantulaWrite(userId, id);
         Tarantula t = getOwned(id, userId);
         String path = fileStorageService.saveFile(file, "tarantulas/" + id);
         t.setProfilePhoto(path);
-        return toResponse(tarantulaRepository.save(t));
+        Tarantula saved = tarantulaRepository.save(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +116,7 @@ public class TarantulaService {
     }
 
     public PhotoResponse addPhoto(UUID tarantulaId, MultipartFile file, String caption, UUID userId) throws IOException {
+        planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         getOwned(tarantulaId, userId);
         String path = fileStorageService.saveFile(file, "gallery/" + tarantulaId);
         Photo photo = new Photo();
@@ -106,6 +127,7 @@ public class TarantulaService {
     }
 
     public void deletePhoto(UUID tarantulaId, UUID photoId, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         getOwned(tarantulaId, userId);
         Photo photo = photoRepository.findByIdAndTarantulaId(photoId, tarantulaId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
@@ -113,16 +135,24 @@ public class TarantulaService {
     }
 
     public TarantulaResponse togglePublic(UUID id, UUID userId) {
+        planAccessService.enforceTarantulaWrite(userId, id);
         Tarantula t = getOwned(id, userId);
         t.setIsPublic(!Boolean.TRUE.equals(t.getIsPublic()));
-        return toResponse(tarantulaRepository.save(t));
+        Tarantula saved = tarantulaRepository.save(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
     public TarantulaResponse markDeceased(UUID id, UUID userId, DeceasedRequest req) {
+        planAccessService.enforceTarantulaWrite(userId, id);
         Tarantula t = getOwned(id, userId);
         t.setDeceasedAt(req.getDeceasedAt() != null ? req.getDeceasedAt() : LocalDateTime.now());
         t.setDeathNotes(req.getNotes());
-        return toResponse(tarantulaRepository.save(t));
+        Tarantula saved = tarantulaRepository.save(t);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
     @Transactional(readOnly = true)
@@ -222,8 +252,7 @@ public class TarantulaService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
-        UserPlan plan = user.getPlan() != null ? user.getPlan() : UserPlan.FREE;
-        if (plan == UserPlan.PRO) {
+        if (planAccessService.hasProFeatures(user)) {
             return;
         }
 
@@ -248,7 +277,7 @@ public class TarantulaService {
         }
     }
 
-    private TarantulaResponse toResponse(Tarantula t) {
+    private TarantulaResponse toResponse(Tarantula t, Set<UUID> lockedIds) {
         TarantulaResponse r = new TarantulaResponse();
         r.setId(t.getId());
         r.setName(t.getName());
@@ -272,6 +301,8 @@ public class TarantulaService {
         moltLogRepository.findFirstByTarantulaIdOrderByMoltedAtDesc(t.getId())
                 .ifPresent(m -> r.setLastMoltAt(m.getMoltedAt()));
 
+        r.setLocked(lockedIds != null && lockedIds.contains(t.getId()));
+
         return r;
     }
 
@@ -282,9 +313,10 @@ public class TarantulaService {
         Optional<com.tarantulapp.entity.BehaviorLog> lastBehavior =
                 behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(tarantulaId);
 
+        Instant now = Instant.now();
         if (lastBehavior.isPresent()
                 && "pre_molt".equals(lastBehavior.get().getMood())
-                && lastBehavior.get().getLoggedAt().isAfter(LocalDateTime.now().minusDays(30))) {
+                && lastBehavior.get().getLoggedAt().isAfter(now.minus(30, ChronoUnit.DAYS))) {
             return "pre_molt";
         }
 
@@ -292,7 +324,7 @@ public class TarantulaService {
                 feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(tarantulaId);
 
         if (lastFeeding.isEmpty()
-                || lastFeeding.get().getFedAt().isBefore(LocalDateTime.now().minusDays(14))) {
+                || lastFeeding.get().getFedAt().isBefore(now.minus(14, ChronoUnit.DAYS))) {
             return "pending_feeding";
         }
 

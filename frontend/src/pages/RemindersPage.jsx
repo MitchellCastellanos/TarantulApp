@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ChitinCardFrame from '../components/ChitinCardFrame'
 import reminderService from '../services/reminderService'
 import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
+import { formatDateTimeInUserZone } from '../utils/dateFormat'
+import { datetimeLocalToOffsetISO } from '../utils/datetimeSubmit'
+import ProTrialCtaLink from '../components/ProTrialCtaLink'
 
 const TYPE_OPTS = [
   { value: 'feeding',  icon: '🍽️', labelKey: 'reminders.typeFeeding' },
@@ -12,16 +17,6 @@ const TYPE_OPTS = [
   { value: 'custom',   icon: '📌', labelKey: 'reminders.typeCustom' },
 ]
 const TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
-
-function formatDate(iso, locale) {
-  return new Date(iso).toLocaleDateString(locale || undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function isOverdue(iso) {
   return new Date(iso) < new Date()
@@ -36,7 +31,13 @@ export default function RemindersPage() {
   const [saving, setSaving] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [tarantulas, setTarantulas] = useState([])
-  const isPro = (user?.plan || 'FREE') === 'PRO'
+  const hasProFeatures = user?.hasProFeatures === true
+  const overFreeLimit = user?.overFreeLimit === true
+  const lockedIds = useMemo(
+    () => new Set(tarantulas.filter(t => t.locked).map(t => t.id)),
+    [tarantulas],
+  )
+  const isReminderLocked = (r) => Boolean(r.tarantulaId && lockedIds.has(r.tarantulaId))
 
   const load = () => reminderService.getAll().then(setReminders)
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function RemindersPage() {
     try {
       await reminderService.create({
         ...form,
-        dueDate: new Date(form.dueDate).toISOString(),
+        dueDate: datetimeLocalToOffsetISO(form.dueDate),
       })
       setForm({ type: 'feeding', dueDate: '', message: '', tarantulaId: '' })
       setShowForm(false)
@@ -68,7 +69,7 @@ export default function RemindersPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar este recordatorio?')) return
+    if (!confirm(t('reminders.deleteConfirm'))) return
     await reminderService.delete(id)
     load()
   }
@@ -79,6 +80,7 @@ export default function RemindersPage() {
     <div>
       <Navbar />
       <div className="container mt-4" style={{ maxWidth: 640 }}>
+        <ChitinCardFrame showSilhouettes={false}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h4 className="fw-bold mb-0">🔔 {t('reminders.pageTitle')}</h4>
@@ -91,9 +93,24 @@ export default function RemindersPage() {
           </button>
         </div>
 
-        <div className={`alert small py-2 ${isPro ? 'alert-dark' : 'alert-secondary'}`}>
-          {isPro ? t('reminders.proNotice') : t('reminders.freeNotice')}
+        {overFreeLimit && (
+          <div className="alert alert-warning small py-2 mb-3">
+            {t('readOnly.overLimitBanner')}{' '}
+            <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
+          </div>
+        )}
+
+        <div className={`alert small py-2 ${hasProFeatures ? 'alert-dark' : 'alert-secondary'}`}>
+          {hasProFeatures ? t('reminders.proNotice') : t('reminders.freeNotice')}
         </div>
+
+        {!hasProFeatures && (
+          <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between mb-3 p-2 rounded"
+               style={{ background: 'rgba(200, 160, 60, 0.08)', border: '1px solid rgba(200, 160, 60, 0.22)' }}>
+            <p className="small text-muted mb-0">{t('reminders.freeAutoUpsell')}</p>
+            <ProTrialCtaLink className="btn btn-sm flex-shrink-0 align-self-stretch align-self-sm-auto" />
+          </div>
+        )}
 
         {/* Form */}
         {showForm && (
@@ -126,9 +143,10 @@ export default function RemindersPage() {
                       onChange={e => set('tarantulaId', e.target.value)}
                     >
                       <option value="">{t('reminders.selectTarantula')}</option>
-                      {tarantulas.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.name} · {t.species?.scientificName || t('common.unknown')}
+                      {tarantulas.map(ta => (
+                        <option key={ta.id} value={ta.id} disabled={ta.locked}>
+                          {ta.name} · {ta.species?.scientificName || t('common.unknown')}
+                          {ta.locked ? ` (${t('tarantula.lockedShort')})` : ''}
                         </option>
                       ))}
                     </select>
@@ -187,7 +205,7 @@ export default function RemindersPage() {
                       </div>
                       <div className={`small ${overdue ? 'text-danger fw-semibold' : 'text-muted'}`}>
                         {overdue && '⚠️ '}
-                        {formatDate(r.dueDate, i18n.language)}
+                        {formatDateTimeInUserZone(r.dueDate, i18n.language)}
                         {r.isDone && ` · ${t('reminders.done')}`}
                       </div>
                       {r.tarantulaName && (
@@ -197,12 +215,12 @@ export default function RemindersPage() {
                       )}
                     </div>
                     <div className="d-flex gap-1">
-                      {!r.isDone && !isAutomatic && (
+                      {!r.isDone && !isAutomatic && !isReminderLocked(r) && (
                         <button className="btn btn-sm btn-outline-success"
                                 style={{ padding: '2px 8px' }}
                                 onClick={() => handleDone(r.id)} title={t('reminders.markDone')}>✓</button>
                       )}
-                      {!isAutomatic && (
+                      {!isAutomatic && !isReminderLocked(r) && (
                         <button className="btn btn-sm btn-outline-danger"
                                 style={{ padding: '2px 8px' }}
                                 onClick={() => handleDelete(r.id)} title={t('common.delete')}>✕</button>
@@ -214,6 +232,7 @@ export default function RemindersPage() {
             })}
           </div>
         )}
+        </ChitinCardFrame>
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.Reminder;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.UUID;
 
 public class ReminderResponse {
@@ -10,10 +11,10 @@ public class ReminderResponse {
     private String tarantulaName;
     private String type;
     private String source;
-    private LocalDateTime dueDate;
+    private Instant dueDate;
     private String message;
     private Boolean isDone;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public static ReminderResponse from(Reminder r) {
         ReminderResponse dto = new ReminderResponse();
@@ -29,7 +30,7 @@ public class ReminderResponse {
     }
 
     public static ReminderResponse automatic(UUID tarantulaId, String tarantulaName, String type,
-                                             LocalDateTime dueDate, String message) {
+                                             Instant dueDate, String message) {
         ReminderResponse dto = new ReminderResponse();
         dto.tarantulaId = tarantulaId;
         dto.tarantulaName = tarantulaName;
@@ -46,10 +47,10 @@ public class ReminderResponse {
     public String getTarantulaName() { return tarantulaName; }
     public String getType() { return type; }
     public String getSource() { return source; }
-    public LocalDateTime getDueDate() { return dueDate; }
+    public Instant getDueDate() { return dueDate; }
     public String getMessage() { return message; }
     public Boolean getIsDone() { return isDone; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 
     public void setTarantulaName(String tarantulaName) { this.tarantulaName = tarantulaName; }
 }

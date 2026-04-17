@@ -7,13 +7,8 @@ import speciesService from '../services/speciesService'
 import PhotoCropModal from '../components/PhotoCropModal'
 import logsService from '../services/logsService'
 import { useAuth } from '../context/AuthContext'
-
-function nowLocalInput() {
-  const date = new Date()
-  const offset = date.getTimezoneOffset()
-  const local = new Date(date.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 16)
-}
+import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
+import ProTrialCtaLink from '../components/ProTrialCtaLink'
 
 export default function AddTarantulaPage() {
   const { t } = useTranslation()
@@ -45,7 +40,7 @@ export default function AddTarantulaPage() {
   const [postCreateSaving, setPostCreateSaving] = useState(false)
   const [postCreateError, setPostCreateError] = useState('')
   const [feedingForm, setFeedingForm] = useState({
-    fedAt: nowLocalInput(),
+    fedAt: nowLocalDatetimeInputValue(),
     preyType: 'Cricket',
     preySize: 'medium',
     quantity: 1,
@@ -53,20 +48,24 @@ export default function AddTarantulaPage() {
     notes: '',
   })
   const [moltForm, setMoltForm] = useState({
-    moltedAt: nowLocalInput(),
+    moltedAt: nowLocalDatetimeInputValue(),
     preSizeCm: '',
     postSizeCm: '',
     notes: '',
   })
   const debounceRef = useRef(null)
-  const plan = user?.plan || 'FREE'
-  const isFreePlan = plan !== 'PRO'
+  const hasProFeatures = user?.hasProFeatures === true
+  const isFreePlan = !hasProFeatures
   const tarantulaLimit = 6
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
 
   useEffect(() => {
     if (isEdit) {
       tarantulaService.getById(id).then(t => {
+        if (t.locked) {
+          navigate(`/tarantulas/${id}`, { replace: true })
+          return
+        }
         setForm({
           name: t.name ?? '',
           speciesId: t.species?.id ?? null,
@@ -215,7 +214,7 @@ export default function AddTarantulaPage() {
     try {
       await logsService.addFeeding(createdTarantula.id, {
         ...feedingForm,
-        fedAt: new Date(feedingForm.fedAt).toISOString(),
+        fedAt: datetimeLocalToOffsetISO(feedingForm.fedAt),
         quantity: Number(feedingForm.quantity) || 1,
       })
       navigate(`/tarantulas/${createdTarantula.id}`)
@@ -231,7 +230,7 @@ export default function AddTarantulaPage() {
     setPostCreateSaving(true)
     try {
       await logsService.addMolt(createdTarantula.id, {
-        moltedAt: new Date(moltForm.moltedAt).toISOString(),
+        moltedAt: datetimeLocalToOffsetISO(moltForm.moltedAt),
         preSizeCm: moltForm.preSizeCm ? Number(moltForm.preSizeCm) : null,
         postSizeCm: moltForm.postSizeCm ? Number(moltForm.postSizeCm) : null,
         notes: moltForm.notes || null,
@@ -258,17 +257,25 @@ export default function AddTarantulaPage() {
         {error && <div className="alert alert-danger small py-2">{error}</div>}
         {!isEdit && isFreePlan && (
           <div className={`alert small py-2 ${atLimit ? 'alert-warning' : 'alert-secondary'}`}>
-            {t('form.planUsage', { count: collectionCount, limit: tarantulaLimit })}
-            {atLimit && ` ${t('form.limitReached')}`}
+            <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between">
+              <span>
+                {t('form.planUsage', { count: collectionCount, limit: tarantulaLimit })}
+                {atLimit && ` ${t('form.limitReached')}`}
+              </span>
+              {atLimit && <ProTrialCtaLink className="btn btn-sm align-self-stretch align-self-sm-auto" />}
+            </div>
+            {atLimit && (
+              <p className="small text-muted mb-0 mt-2">{t('form.limitTrialHint')}</p>
+            )}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="card border-0 shadow-sm p-4 mb-3">
+          <div className="card border-0 shadow-sm p-4 mb-3 ta-species-dropdown-card">
             <h6 className="fw-bold mb-3">{t('form.speciesSection')}</h6>
 
             {/* Autocomplete de especie */}
-            <div className="mb-3 position-relative">
+            <div className="mb-3 position-relative ta-species-autocomplete-wrap">
               <label className="form-label small fw-semibold">{t('form.searchSpecies')}</label>
               <div className="input-group">
                 <input type="text" className="form-control" placeholder={t('form.searchPlaceholder')}
@@ -417,7 +424,7 @@ export default function AddTarantulaPage() {
 
           <div className="d-flex gap-2 justify-content-end mb-4">
             <button type="button" className="btn btn-light" onClick={() => navigate(-1)}>{t('common.cancel')}</button>
-            <button type="submit" className="btn btn-dark" disabled={loading}>
+            <button type="submit" className="btn btn-dark" disabled={loading || atLimit}>
               {loading ? t('common.saving') : isEdit ? t('form.saveBtn') : t('form.createBtn')}
             </button>
           </div>

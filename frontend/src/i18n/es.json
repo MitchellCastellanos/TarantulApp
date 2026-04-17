@@ -4,7 +4,13 @@
     "logout": "Cerrar sesión",
     "lang": "Idioma",
     "planFree": "Plan Free",
-    "planPro": "Plan Pro"
+    "planFreeDiscover": "Pro — prueba gratis",
+    "planPro": "Plan Pro",
+    "trialBadge": "Prueba · {{days}}d restantes",
+    "trialBadgeTitle": "Estás en una prueba gratuita de 7 días con acceso completo. Toca para ver Pro.",
+    "badgeReadOnly": "Solo lectura",
+    "badgeOverLimit": "Algunas bloqueadas",
+    "badgeOverLimitTitle": "En el plan gratis puedes editar solo las 6 ejemplares más antiguas; el resto es solo lectura. Pasa a Pro o elimina ejemplares para desbloquear."
   },
   "auth": {
     "loginTitle": "TarantulApp",
@@ -33,7 +39,10 @@
     "confirmPassword": "Confirmar contraseña",
     "resetPassword": "Cambiar contraseña",
     "passwordMismatch": "Las contraseñas no coinciden",
-    "resetSuccess": "Contraseña actualizada. Ahora puedes iniciar sesión."
+    "resetSuccess": "Contraseña actualizada. Ahora puedes iniciar sesión.",
+    "fillRequired": "Escribe tu correo y contraseña.",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres.",
+    "trialRegisterPromo": "Las cuentas nuevas tienen 7 días de prueba gratis con acceso completo (mismos límites que Pro). Después puedes seguir navegando y exportando, o suscribirte para seguir editando."
   },
   "common": {
     "save": "Guardar",
@@ -94,9 +103,17 @@
     "addFirst": "+ Agregar primera tarántula",
     "noResults": "Sin resultados para los filtros seleccionados.",
     "inMemory": "🕯️ En memoria",
-    "limitReached": "Ya llegaste al límite de 6 tarántulas del plan gratis. Actualiza a Pro para agregar más."
+    "limitReached": "Ya llegaste al límite de 6 tarántulas del plan gratis. Actualiza a Pro para agregar más.",
+    "readOnlyHint": "Solo lectura para esta tarántula en el plan gratis — pasa a Pro o elimina ejemplares para desbloquear.",
+    "trialBanner": "Tienes una prueba gratuita de 7 días con acceso completo."
+  },
+  "readOnly": {
+    "banner": "Tu prueba terminó. Puedes ver tu colección, el historial y exportar datos. Suscríbete a Pro para añadir o editar entradas.",
+    "overLimitBanner": "En el plan gratis puedes editar solo las 6 ejemplares más antiguas; las que excedan de 6 son solo lectura. Elimina ejemplares o pasa a Pro para desbloquearlas. Siempre puedes exportar tus datos."
   },
   "tarantula": {
+    "lockedEditHint": "Solo lectura en el plan gratis — pasa a Pro o elimina ejemplares para desbloquear.",
+    "lockedShort": "Solo lectura",
     "loading": "Cargando...",
     "notFound": "Tarántula no encontrada.",
     "deleteConfirm": "¿Eliminar a \"{{name}}\"? Esta acción no se puede deshacer.",
@@ -108,6 +125,9 @@
     "addBehavior": "🔍 + Comportamiento",
     "history": "📅 Historial",
     "historyEmpty": "Aún no hay eventos registrados. Empieza registrando una alimentación o muda.",
+    "historyPrev": "← Anterior",
+    "historyNext": "Siguiente →",
+    "historyPage": "Página {{current}} de {{total}}",
     "publicOn": "Público ✓",
     "publicOff": "Hacer público",
     "qrCode": "Código QR",
@@ -180,6 +200,7 @@
     "notesPlaceholder": "Observaciones personales...",
     "planUsage": "Plan gratis: {{count}}/{{limit}} tarántulas.",
     "limitReached": "Ya alcanzaste el límite de 6 tarántulas del plan gratis.",
+    "limitTrialHint": "Con Pro tienes colección ilimitada. Las cuentas nuevas pueden probar 7 días gratis; si ya la usaste, suscríbete para seguir.",
     "unsexed": "Sin determinar",
     "female": "Hembra",
     "male": "Macho",
@@ -262,12 +283,64 @@
     "emptyPending": "No hay recordatorios pendientes.",
     "done": "✅ Completado",
     "markDone": "Marcar como hecho",
-    "freeNotice": "Plan gratis: aquí solo puedes usar recordatorios manuales creados por ti.",
+    "freeNotice": "Plan gratis: solo recordatorios manuales (los que tú creas).",
+    "freeAutoUpsell": "Con Pro se generan además recordatorios automáticos de alimentación según el historial de cada tarántula. Prueba Pro o actualiza para activarlos.",
+    "panelFreeUpsell": "¿Recordatorios automáticos de comida? Van con Pro.",
     "proNotice": "Plan Pro activo: aquí ves recordatorios manuales y sugerencias automáticas de alimentación.",
     "today": "Hoy",
     "tomorrow": "Mañana",
     "overdueDays": "Hace {{count}} día(s)",
-    "inDays": "En {{count}} días"
+    "inDays": "En {{count}} días",
+    "deleteConfirm": "¿Eliminar este recordatorio?"
+  },
+  "cropModal": {
+    "title": "✂️ Ajustar foto",
+    "cancel": "Cancelar",
+    "confirm": "Usar esta foto",
+    "processing": "Procesando..."
+  },
+  "gallery": {
+    "title": "📷 Galería",
+    "captionPlaceholder": "Descripción (opcional)",
+    "addPhoto": "+ Agregar foto",
+    "uploading": "Subiendo...",
+    "empty": "Aún no hay fotos en la galería.",
+    "deletePhoto": "Eliminar foto",
+    "deleteConfirm": "¿Eliminar esta foto?"
+  },
+  "logModals": {
+    "dateTime": "Fecha y hora",
+    "notes": "Notas",
+    "optional": "Opcional…",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "saveError": "No se pudo guardar el registro.",
+    "select": "– Selecciona –",
+    "feedingTitle": "🍽️ Registrar alimentación",
+    "preyType": "Tipo de presa",
+    "preySize": "Tamaño",
+    "quantity": "Cantidad",
+    "accepted": "¿Aceptó?",
+    "acceptedYes": "Sí",
+    "acceptedNo": "No (rechazó)",
+    "preyCricket": "Grillo",
+    "preyDubia": "Dubia",
+    "preySuperworm": "Superworm",
+    "preyWorm": "Lombriz",
+    "preyPinkies": "Pinkies",
+    "preyOther": "Otro",
+    "sizeExtraSmall": "extra-pequeño",
+    "sizeSmall": "pequeño",
+    "sizeMedium": "mediano",
+    "sizeLarge": "grande",
+    "moltTitle": "🕸️ Registrar muda",
+    "preMoltSize": "Tamaño pre-muda (cm)",
+    "postMoltSize": "Tamaño post-muda (cm)",
+    "sizeExample": "ej. {{n}}",
+    "behaviorTitle": "🔍 Registrar comportamiento",
+    "moodLabel": "Estado / humor",
+    "behaviorNotesPlaceholder": "Describe lo que observaste..."
   },
   "public": {
     "notFound": "Perfil no encontrado o no es público.",
@@ -280,14 +353,17 @@
     "privateCard": "Este perfil es privado.",
     "loginToAccess": "Inicia sesión para ver tu colección",
     "quickActionsProTitle": "📋 Registro rápido",
-    "quickActionsProCTA": "Actualiza a Pro para registrar alimentaciones, mudas y comportamientos directamente desde el QR.",
-    "quickActionsUpgrade": "Actualizar a Pro"
+    "quickActionsProCTA": "Para registrar alimentaciones, mudas y comportamientos al escanear el QR necesitas Pro. Las cuentas nuevas tienen 7 días de prueba gratis con todo desbloqueado.",
+    "quickActionsUpgrade": "Probar Pro gratis"
   }
   ,
   "pro": {
     "title": "TarantulApp Pro",
     "subtitle": "Funciones pensadas para colecciones grandes y seguimiento automático.",
+    "trialThenPricing": "Prueba gratis 7 días al crear cuenta; después $2.99 USD/mes o $29.99 USD/año.",
+    "pricingAfterTrial": "Tras la prueba: $2.99 USD/mes o $29.99 USD/año.",
     "freeTitle": "Gratis (actual)",
+    "freeTrialLine": "Prueba gratis de 7 días al registrarte — acceso completo; luego límites Free o solo lectura si no te suscribes.",
     "freeLimit": "Hasta 6 tarántulas en tu colección.",
     "freeReminders": "Recordatorios creados manualmente por ti.",
     "freeQr": "QR de ficha básica sin acciones.",
@@ -316,6 +392,9 @@
     "checkoutError": "No se pudo iniciar el checkout en este momento.",
     "checkoutNotConfigured": "Checkout de Stripe no configurado aún en este entorno.",
     "publicToggleProOnly": "🔒 Función Pro",
-    "publicToggleProOnlyHint": "Actualiza a Pro para hacer tu ficha escaneable por cualquiera."
+    "publicToggleProOnlyHint": "Actualiza a Pro para hacer tu ficha escaneable por cualquiera.",
+    "trialDaysLeft": "Te quedan {{count}} día(s) de prueba",
+    "ctaTryFree": "Probar Pro gratis",
+    "ctaRegisterTrialReminder": "Las cuentas nuevas incluyen 7 días de prueba con todas las funciones Pro. Si ya usaste la tuya, suscríbete abajo para seguir sin límites."
   }
 }

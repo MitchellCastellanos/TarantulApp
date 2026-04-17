@@ -1,7 +1,7 @@
 package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -17,7 +17,7 @@ public class BehaviorLog {
     private UUID tarantulaId;
 
     @Column(name = "logged_at", nullable = false)
-    private LocalDateTime loggedAt;
+    private Instant loggedAt;
 
     @Column(name = "mood", length = 30)
     private String mood;
@@ -26,20 +26,20 @@ public class BehaviorLog {
     private String notes;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @PrePersist
-    protected void onCreate() { createdAt = LocalDateTime.now(); }
+    protected void onCreate() { createdAt = Instant.now(); }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
-    public LocalDateTime getLoggedAt() { return loggedAt; }
-    public void setLoggedAt(LocalDateTime loggedAt) { this.loggedAt = loggedAt; }
+    public Instant getLoggedAt() { return loggedAt; }
+    public void setLoggedAt(Instant loggedAt) { this.loggedAt = loggedAt; }
     public String getMood() { return mood; }
     public void setMood(String mood) { this.mood = mood; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

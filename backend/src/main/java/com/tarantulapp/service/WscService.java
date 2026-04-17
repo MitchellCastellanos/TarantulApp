@@ -8,6 +8,7 @@ import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.SpeciesSynonym;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.SpeciesSynonymRepository;
+import com.tarantulapp.util.SpeciesNarrativeJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -173,11 +174,20 @@ public class WscService {
         species.setIsCustom(true);
         species.setCreatedBy(userId);
         species.setDataSource("wsc");
+        String careEs;
+        String careEn;
+        String careFr;
         if (family != null && !family.isBlank()) {
-            species.setCareNotes("Family: " + family + ". Imported from World Spider Catalog (via GBIF).");
+            careEs = "Familia: " + family + ". Importado desde el World Spider Catalog (vía GBIF).";
+            careEn = "Family: " + family + ". Imported from the World Spider Catalog (via GBIF).";
+            careFr = "Famille : " + family + ". Importé depuis le World Spider Catalog (via GBIF).";
         } else {
-            species.setCareNotes("Imported from World Spider Catalog (via GBIF).");
+            careEs = "Importado desde el World Spider Catalog (vía GBIF).";
+            careEn = "Imported from the World Spider Catalog (via GBIF).";
+            careFr = "Importé depuis le World Spider Catalog (via GBIF).";
         }
+        species.setCareNotes(careEn);
+        species.setNarrativeI18n(SpeciesNarrativeJson.buildCareNotesTri(careEs, careEn, careFr));
 
         // Try to get a reference photo from iNaturalist
         String photoUrl = inatService.fetchPhotoUrl(name);

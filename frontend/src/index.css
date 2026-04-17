@@ -19,20 +19,28 @@
   --ta-green:         #1e5230;
   --ta-green-light:   #2d7040;
   --ta-purple:        rgba(100,60,200,0.5);
+
+  /* Mismo “lienzo” que body: textura + halos (reutilizable en marcos login, etc.) */
+  --ta-sheet-bg-color: var(--ta-bg);
+  --ta-sheet-bg-image:
+    var(--ta-url-bg-texture, url('/bg-texture.png')),
+    radial-gradient(ellipse at 15% 50%, rgba(60,30,120,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(80,40,140,0.05) 0%, transparent 45%);
+  --ta-sheet-bg-size: 420px auto, auto, auto;
+  --ta-sheet-bg-repeat: repeat, no-repeat, no-repeat;
+  --ta-sheet-bg-attachment: fixed, fixed, fixed;
+  --ta-sheet-bg-blend: soft-light, normal, normal;
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────── */
 
 body {
-  background-color: var(--ta-bg);
-  background-image:
-    url('/bg-texture.png'),
-    radial-gradient(ellipse at 15% 50%, rgba(60,30,120,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 20%, rgba(80,40,140,0.05) 0%, transparent 45%);
-  background-size: 420px auto, auto, auto;
-  background-repeat: repeat, no-repeat, no-repeat;
-  background-attachment: fixed, fixed, fixed;
-  background-blend-mode: soft-light, normal, normal;
+  background-color: var(--ta-sheet-bg-color);
+  background-image: var(--ta-sheet-bg-image);
+  background-size: var(--ta-sheet-bg-size);
+  background-repeat: var(--ta-sheet-bg-repeat);
+  background-attachment: var(--ta-sheet-bg-attachment);
+  background-blend-mode: var(--ta-sheet-bg-blend);
   font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
   font-size: 1.05rem;
   color: var(--ta-text);
@@ -78,17 +86,15 @@ body::after  { right: -1.5rem; }
   overflow: hidden;
 }
 
-/* Gold web corner decoration */
-.card::before {
-  content: '';
+/* Fang frame — one PNG corner, mirrored; size tracks panel width */
+.fang-panel__corner {
   position: absolute;
-  top: 0; right: 0;
-  width: 80px; height: 80px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg stroke='%23c9a84c' stroke-width='0.7' fill='none' opacity='0.2'%3E%3Cline x1='80' y1='0' x2='0' y2='80'/%3E%3Cline x1='80' y1='0' x2='0' y2='40'/%3E%3Cline x1='80' y1='0' x2='40' y2='80'/%3E%3Cline x1='80' y1='0' x2='0' y2='20'/%3E%3Cline x1='80' y1='0' x2='60' y2='80'/%3E%3Cpath d='M60 0 Q70 10 80 20'/%3E%3Cpath d='M40 0 Q60 20 80 40'/%3E%3Cpath d='M20 0 Q50 30 80 60'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 80px 80px;
-  background-repeat: no-repeat;
   pointer-events: none;
-  z-index: 0;
+  z-index: 10;
+  width: clamp(40px, 22%, 112px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(115, 70, 248, 0.45));
 }
 
 .card-body, .card-header, .card-footer {
@@ -486,4 +492,412 @@ a.text-collection:hover {
 .ta-history-meta,
 .ta-history-summary {
   color: rgba(225,202,154,0.88) !important;
+}
+
+/* Sin padding extra: todo el bloque visual vive en .ta-parchment-scroll */
+.ta-parchment-float-wrap {
+  margin: 0.75rem 0 1.75rem;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Wrapper transparente: la sombra y el “flotado” van en .ta-parchment-scroll (todo dentro del pergamino) */
+.ta-parchment-history.card {
+  overflow: visible !important;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  border: none !important;
+  border-top: none !important;
+  border-radius: 0;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+/* Pergamino: <img> a ancho completo = PNG completo visible (sin recorte); contenido en capa superpuesta */
+.ta-parchment-scroll {
+  position: relative;
+  padding: 0 !important;
+  overflow: visible;
+  color: #2a1f0a !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.48),
+    0 8px 20px rgba(0, 0, 0, 0.32) !important;
+  transform: translateY(-3px);
+}
+
+.ta-parchment-bg-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Contenido (Historique, eventos, paginador) encima del pergamino, mismo rectángulo que la imagen */
+.ta-parchment-scroll-inner {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: clamp(3.5rem, 8.5vw, 6rem);
+  padding-bottom: clamp(1.85rem, 3.5vw, 2.75rem);
+  padding-left: clamp(3.25rem, 16vw, 8.5rem);
+  padding-right: clamp(3.25rem, 16vw, 8.5rem);
+  z-index: 1;
+}
+
+.ta-parchment-scroll-inner .ta-parchment-events,
+.ta-parchment-scroll-inner > ul.list-unstyled {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Título del historial: todo dentro del pergamino; texto oscuro legible sobre el papel */
+.ta-parchment-page-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  width: 100%;
+  flex-shrink: 0;
+  margin: 0 0 1.15rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(24, 14, 6, 0.45);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: clamp(0.72rem, 2.1vw, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #070503 !important;
+  text-shadow:
+    0 1px 0 rgba(255, 248, 228, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.ta-parchment-page-title__icons {
+  letter-spacing: 0;
+  font-size: 1.15em;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.35));
+  opacity: 0.98;
+}
+.ta-parchment-page-title__text {
+  color: inherit !important;
+  letter-spacing: 0.14em;
+}
+
+.ta-parchment-pager {
+  margin-top: 0.5rem;
+  padding-top: 0.55rem;
+  padding-bottom: 0.15rem;
+  border-top: 1px solid rgba(55, 40, 24, 0.22);
+}
+.ta-parchment-scroll .ta-parchment-pager__btn {
+  color: #2a1a0c !important;
+  background: rgba(255, 248, 228, 0.35) !important;
+  border: 1px solid rgba(55, 40, 24, 0.45) !important;
+  font-weight: 600;
+}
+.ta-parchment-scroll .ta-parchment-pager__btn:hover:not(:disabled) {
+  background: rgba(75, 55, 30, 0.2) !important;
+  border-color: rgba(55, 40, 24, 0.65) !important;
+  color: #1a1006 !important;
+}
+.ta-parchment-scroll .ta-parchment-pager__btn:disabled {
+  opacity: 0.35;
+}
+
+.ta-parchment-scroll .ta-history-title {
+  color: #100a05 !important;
+  text-shadow: 0 0 6px rgba(255, 248, 220, 0.28);
+  word-break: break-word;
+}
+.ta-parchment-scroll .ta-history-meta,
+.ta-parchment-scroll .ta-history-summary {
+  color: #3d2814 !important;
+}
+.ta-parchment-scroll .ta-parchment-muted {
+  color: rgba(45, 35, 18, 0.78) !important;
+}
+.ta-parchment-scroll .text-muted {
+  color: rgba(45, 35, 18, 0.65) !important;
+}
+.ta-parchment-scroll .border-light {
+  border-color: rgba(45, 35, 18, 0.22) !important;
+}
+
+/* Timeline dentro del pergamino: icono y línea tierra, alineados con el texto */
+.ta-parchment-scroll .ta-timeline-row {
+  align-items: flex-start;
+}
+.ta-parchment-scroll .ta-timeline-icon-col {
+  padding-top: 0.2rem;
+}
+.ta-parchment-scroll .ta-timeline-marker {
+  border: 2px solid rgba(52, 38, 24, 0.62) !important;
+  background: rgba(95, 78, 52, 0.22) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.ta-parchment-scroll .ta-timeline-vline {
+  background: rgba(52, 38, 24, 0.38) !important;
+}
+.ta-parchment-scroll .ta-timeline-head-row {
+  align-items: baseline;
+  row-gap: 0.35rem;
+  max-width: 100%;
+}
+.ta-parchment-scroll .ta-timeline-meta-actions {
+  max-width: 100%;
+}
+@media (max-width: 576px) {
+  .ta-parchment-scroll-inner {
+    padding-left: clamp(2.75rem, 12vw, 5rem);
+    padding-right: clamp(2.75rem, 12vw, 5rem);
+  }
+}
+
+.ta-parchment-scroll .ta-parchment-events .ta-timeline-entry:not(:last-child) {
+  border-bottom: 1px solid rgba(55, 40, 24, 0.12);
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+/* × discreta, en la misma línea que título/fecha = clara asociación al registro */
+.ta-parchment-scroll .ta-history-delete-inline {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 0.25rem !important;
+  line-height: 1.1;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(72, 38, 32, 0.72) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  border-radius: 3px;
+  vertical-align: baseline;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.ta-parchment-scroll .ta-history-delete-inline:hover {
+  color: rgba(110, 28, 22, 0.95) !important;
+  background: rgba(80, 40, 30, 0.08) !important;
+}
+.ta-parchment-scroll .ta-history-delete-inline:focus-visible {
+  outline: 2px solid rgba(55, 40, 24, 0.45);
+  outline-offset: 1px;
+}
+
+/* Autocomplete especies: el .card global usa overflow:hidden */
+.card.ta-species-dropdown-card {
+  overflow: visible !important;
+}
+.ta-species-autocomplete-wrap .list-group {
+  z-index: 1050;
+}
+
+/* ─── Chitin species / login frame (card-chitin-*.png, badge-level-chitin) ─ */
+
+.ta-chitin-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  isolation: isolate;
+  overflow: visible;
+}
+
+/* Fallback: FangPanel alrededor del interior chitin (mismas esquinas que el resto de la app) */
+.ta-chitin-frame-fang-wrap .ta-chitin-frame--fang-fallback {
+  position: relative;
+  width: 100%;
+  isolation: isolate;
+  border-radius: 4px;
+}
+
+.ta-chitin-frame__plate {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--ta-sheet-bg-color);
+  background-image: var(--ta-sheet-bg-image);
+  background-size: var(--ta-sheet-bg-size);
+  background-repeat: var(--ta-sheet-bg-repeat);
+  background-attachment: var(--ta-sheet-bg-attachment);
+  background-blend-mode: var(--ta-sheet-bg-blend);
+  border-radius: 4px;
+}
+
+.ta-chitin-frame__silhouette {
+  position: absolute;
+  z-index: 1;
+  width: min(38%, 200px);
+  height: auto;
+  opacity: 0.16;
+  pointer-events: none;
+  object-fit: contain;
+}
+.ta-chitin-frame__silhouette--l {
+  left: 0;
+  top: 22%;
+}
+.ta-chitin-frame__silhouette--r {
+  right: 0;
+  top: 22%;
+  transform: scaleX(-1);
+}
+
+.ta-chitin-frame__content {
+  position: relative;
+  z-index: 3;
+  padding: clamp(0.95rem, 5.2vw, 2.6rem);
+}
+
+/* Login / recuperación: quitar doble padding y el borde púrpura del .card global */
+.ta-chitin-frame--auth .ta-chitin-frame__content {
+  padding: 0;
+}
+.ta-chitin-frame--auth .card,
+.ta-chitin-frame--auth .card:hover {
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+.ta-chitin-frame--auth .card {
+  background-color: transparent !important;
+}
+
+.ta-chitin-frame__ring {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.ta-chitin-col-divider {
+  width: 12px;
+  min-height: 100px;
+  align-self: stretch;
+  background: var(--ta-url-divider-v, none) center top repeat-y;
+  background-size: 100% auto;
+  opacity: 0.85;
+}
+
+.ta-spec-header-row {
+  border-bottom: 1px solid rgba(100, 60, 200, 0.28);
+}
+
+.ta-spec-title {
+  font-family: 'Cinzel', Georgia, serif;
+  letter-spacing: 0.12em;
+  color: rgba(248, 244, 255, 0.96);
+  text-shadow: 0 0 18px rgba(90, 130, 255, 0.35);
+}
+
+.letter-spacing-wide {
+  letter-spacing: 0.12em;
+}
+
+.ta-spec-field__label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+
+.ta-spec-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.ta-spec-icon--cyan {
+  color: #5eb3ff;
+  filter: drop-shadow(0 0 5px rgba(80, 170, 255, 0.45));
+}
+.ta-spec-icon--violet {
+  color: #b197fc;
+  filter: drop-shadow(0 0 5px rgba(140, 100, 255, 0.4));
+}
+.ta-spec-icon--pink {
+  color: #f783ac;
+  filter: drop-shadow(0 0 5px rgba(255, 100, 160, 0.45));
+}
+
+.ta-spec-asterisk {
+  color: #f783ac;
+  font-size: 0.68em;
+  margin-left: 0.05rem;
+  line-height: 1;
+}
+
+.ta-spec-field__value {
+  color: rgba(232, 226, 252, 0.95);
+  font-size: 0.9rem;
+}
+
+.ta-catalog-pill {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  padding: 0.38em 0.85em !important;
+  border-radius: 999px !important;
+  background: rgba(8, 12, 28, 0.92) !important;
+  color: #9ec5fe !important;
+  border: 1px solid rgba(80, 160, 255, 0.48) !important;
+  box-shadow: 0 0 12px rgba(40, 100, 220, 0.38), inset 0 0 12px rgba(60, 120, 255, 0.08);
+}
+.ta-catalog-pill--violet {
+  color: #d0bfff !important;
+  border-color: rgba(150, 110, 255, 0.55) !important;
+  box-shadow: 0 0 12px rgba(120, 80, 220, 0.38);
+}
+.ta-catalog-pill--catalog {
+  color: #ffecc8 !important;
+  border-color: rgba(240, 190, 90, 0.5) !important;
+  box-shadow: 0 0 14px rgba(220, 160, 60, 0.28), inset 0 0 10px rgba(255, 200, 100, 0.07);
+}
+
+.ta-level-chitin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.2rem 2rem 0.38rem;
+  background: var(--ta-url-badge-level, none) center / 100% 100% no-repeat;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f0f4ff;
+  text-shadow: 0 0 12px rgba(60, 140, 255, 0.5);
+  white-space: nowrap;
+  max-width: 100%;
+}
+.ta-level-chitin__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ta-level-chitin--mid .ta-level-chitin__text {
+  color: #fff5d6;
+}
+.ta-level-chitin--hot .ta-level-chitin__text {
+  color: #ffe4e4;
+}
+.ta-level-chitin--ok .ta-level-chitin__text {
+  color: #e6fff0;
+}
+.ta-level-chitin--muted .ta-level-chitin__text {
+  color: rgba(220, 215, 235, 0.88);
 }

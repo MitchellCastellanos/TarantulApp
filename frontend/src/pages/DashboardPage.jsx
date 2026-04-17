@@ -6,14 +6,17 @@ import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
+import { formatDateInUserZone } from '../utils/dateFormat'
+import ProTrialCtaLink from '../components/ProTrialCtaLink'
 
-function formatDate(iso) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+function daysLeftInTrial(iso) {
+  if (!iso) return 0
+  const d = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
+  return Math.max(0, d)
 }
 
 export default function DashboardPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const [tarantulas, setTarantulas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -41,8 +44,9 @@ export default function DashboardPage() {
   })
 
   const hasActiveFilters = habitat !== 'all' || stage || status || search
-  const plan = user?.plan || 'FREE'
-  const isFreePlan = plan !== 'PRO'
+  const overFreeLimit = user?.overFreeLimit === true
+  const hasProFeatures = user?.hasProFeatures === true
+  const isFreePlan = !hasProFeatures
   const tarantulaLimit = isFreePlan ? 6 : null
   const atLimit = isFreePlan && tarantulas.length >= tarantulaLimit
 
@@ -71,7 +75,7 @@ export default function DashboardPage() {
       <Navbar />
       <div className="container mt-4">
         {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div>
             <h4 className="fw-bold mb-0">{t('dashboard.title')}</h4>
             <p className="text-collection small mb-0">
@@ -79,23 +83,47 @@ export default function DashboardPage() {
               {isFreePlan && ` · ${tarantulas.length}/${tarantulaLimit} ${t('dashboard.planUsage')}`}
             </p>
           </div>
-          {atLimit ? (
-            <button type="button" className="btn btn-outline-secondary" disabled title={t('dashboard.limitReached')}>
-              {t('dashboard.add')}
-            </button>
-          ) : (
-            <Link to="/tarantulas/new" className="btn btn-dark">
-              {t('dashboard.add')}
-            </Link>
-          )}
+          <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+            {atLimit ? (
+              <>
+                <button type="button" className="btn btn-outline-secondary btn-sm" disabled title={t('dashboard.limitReached')}>
+                  {t('dashboard.add')}
+                </button>
+                <ProTrialCtaLink className="btn btn-dark btn-sm" />
+              </>
+            ) : (
+              <Link to="/tarantulas/new" className="btn btn-dark">
+                {t('dashboard.add')}
+              </Link>
+            )}
+          </div>
         </div>
 
+        {overFreeLimit && (
+          <div className="alert alert-warning small py-2 mb-3">
+            {t('readOnly.overLimitBanner')}{' '}
+            <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
+          </div>
+        )}
+
+        {user?.inTrial && (
+          <div className="alert alert-info small py-2 mb-3">
+            {t('dashboard.trialBanner')}
+            {user?.trialEndsAt && (
+              <span className="ms-1">· {t('pro.trialDaysLeft', { count: daysLeftInTrial(user.trialEndsAt) })}</span>
+            )}
+          </div>
+        )}
+
         {atLimit && (
-          <div className="alert alert-warning small py-2">
-            {t('dashboard.limitReached')}{' '}
-            <Link to="/pro" className="alert-link">
-              {t('pro.learnMore')}
-            </Link>
+          <div className="alert alert-warning small py-2 d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-between">
+            <span>
+              {t('dashboard.limitReached')}{' '}
+              <Link to="/pro" className="alert-link">
+                {t('pro.learnMore')}
+              </Link>
+            </span>
+            <ProTrialCtaLink className="btn btn-sm align-self-stretch align-self-sm-auto" />
           </div>
         )}
 
@@ -195,7 +223,7 @@ export default function DashboardPage() {
                             {d.species.scientificName}
                           </p>
                         )}
-                        <p className="text-muted small mb-0">† {formatDate(d.deceasedAt)}</p>
+                        <p className="text-muted small mb-0">† {formatDateInUserZone(d.deceasedAt, i18n.language)}</p>
                       </div>
                     </div>
                   </Link>

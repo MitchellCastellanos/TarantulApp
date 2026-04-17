@@ -1,6 +1,7 @@
 package com.tarantulapp.config;
 
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.exception.ReadOnlyModeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", "Acceso denegado"));
+    }
+
+    @ExceptionHandler(ReadOnlyModeException.class)
+    public ResponseEntity<Map<String, String>> handleReadOnly(ReadOnlyModeException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "read_only", "message", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -1,7 +1,10 @@
 package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.Species;
+import com.tarantulapp.util.SpeciesNarrativeJson;
+
 import java.math.BigDecimal;
+import java.util.Map;
 
 public class SpeciesDTO {
     private Integer id;
@@ -19,6 +22,8 @@ public class SpeciesDTO {
     private String substrateType;
     private String experienceLevel;
     private String careNotes;
+    /** Parsed from {@link Species#getNarrativeI18n()} — field → locale → text */
+    private Map<String, Map<String, String>> narrativeI18n;
     private Boolean isCustom;
     private String referencePhotoUrl;
     private String dataSource;
@@ -41,6 +46,7 @@ public class SpeciesDTO {
         dto.substrateType = s.getSubstrateType();
         dto.experienceLevel = s.getExperienceLevel();
         dto.careNotes = s.getCareNotes();
+        dto.narrativeI18n = SpeciesNarrativeJson.parse(s.getNarrativeI18n());
         dto.isCustom = s.getIsCustom();
         dto.referencePhotoUrl = s.getReferencePhotoUrl();
         dto.dataSource = s.getDataSource();
@@ -62,6 +68,8 @@ public class SpeciesDTO {
     public String getSubstrateType() { return substrateType; }
     public String getExperienceLevel() { return experienceLevel; }
     public String getCareNotes() { return careNotes; }
+    public Map<String, Map<String, String>> getNarrativeI18n() { return narrativeI18n; }
+    public void setNarrativeI18n(Map<String, Map<String, String>> narrativeI18n) { this.narrativeI18n = narrativeI18n; }
     public Boolean getIsCustom() { return isCustom; }
     public String getReferencePhotoUrl() { return referencePhotoUrl; }
     public String getDataSource() { return dataSource; }

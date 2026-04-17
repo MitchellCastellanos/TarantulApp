@@ -25,15 +25,17 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
+    private final PlanAccessService planAccessService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil, PasswordResetTokenRepository resetTokenRepository,
-                       EmailService emailService) {
+                       EmailService emailService, PlanAccessService planAccessService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.resetTokenRepository = resetTokenRepository;
         this.emailService = emailService;
+        this.planAccessService = planAccessService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -45,9 +47,10 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setDisplayName(request.getDisplayName());
         user.setPlan(UserPlan.FREE);
+        user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
         userRepository.save(user);
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(), user.getPlan().name());
+        return buildAuthResponse(token, user);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -61,7 +64,18 @@ public class AuthService {
             userRepository.save(user);
         }
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(), user.getPlan().name());
+        return buildAuthResponse(token, user);
+    }
+
+    private AuthResponse buildAuthResponse(String token, User user) {
+        AuthResponse r = new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(),
+                user.getPlan() != null ? user.getPlan().name() : UserPlan.FREE.name());
+        r.setTrialEndsAt(user.getTrialEndsAt());
+        r.setReadOnly(planAccessService.isReadOnly(user));
+        r.setInTrial(planAccessService.isTrialActive(user));
+        r.setOverFreeLimit(planAccessService.isOverFreeTierLimit(user));
+        r.setStrictReadOnly(planAccessService.isStrictReadOnly(user));
+        return r;
     }
 
     @Transactional

@@ -1,6 +1,8 @@
 package com.tarantulapp.config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +26,8 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
     private final JwtAuthFilter jwtAuthFilter;
 
     @Value("${app.cors.allowed-origins}")
@@ -46,8 +50,18 @@ public class SecurityConfig {
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, e) ->
-                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")));
+                .authenticationEntryPoint((req, res, e) -> {
+                    if (log.isWarnEnabled() && req.getRequestURI() != null && req.getRequestURI().contains("/feedings")) {
+                        String auth = req.getHeader("Authorization");
+                        log.warn(
+                                "401 no autenticado uri={} method={} authorizationPresent={} authorizationLength={}",
+                                req.getRequestURI(),
+                                req.getMethod(),
+                                auth != null,
+                                auth != null ? auth.length() : 0);
+                    }
+                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                }));
 
         return http.build();
     }

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import reminderService from '../services/reminderService'
+import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
+import ChitinCardFrame from './ChitinCardFrame'
 
 const TYPE_ICONS = {
   feeding: '🍽️',
@@ -27,10 +29,23 @@ export default function RemindersPanel() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [reminders, setReminders] = useState([])
-  const isPro = (user?.plan || 'FREE') === 'PRO'
+  const [tarantulas, setTarantulas] = useState([])
+  const hasProFeatures = user?.hasProFeatures === true
+  const showFreeUpsell = Boolean(user) && !hasProFeatures
+  const lockedIds = useMemo(
+    () => new Set(tarantulas.filter(t => t.locked).map(t => t.id)),
+    [tarantulas],
+  )
+  const isReminderLocked = (r) => Boolean(r.tarantulaId && lockedIds.has(r.tarantulaId))
 
   const load = () =>
-    reminderService.getPending().then(setReminders).catch(() => {})
+    Promise.all([
+      reminderService.getPending(),
+      tarantulaService.getAll(),
+    ]).then(([rems, ts]) => {
+      setReminders(rems)
+      setTarantulas(ts)
+    }).catch(() => {})
 
   useEffect(() => { load() }, [])
 
@@ -39,18 +54,42 @@ export default function RemindersPanel() {
     load()
   }
 
-  if (reminders.length === 0) return null
+  if (reminders.length === 0 && !showFreeUpsell) return null
 
   return (
-    <div className="card border-0 shadow-sm mb-4 border-start border-4 border-warning">
-      <div className="card-body py-3">
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <h6 className="fw-bold mb-0">🔔 {t('reminders.panelTitle')}</h6>
-          <Link to="/reminders" className="btn btn-link btn-sm p-0 text-muted small">
+    <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
+      <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+        <div
+          className="card-body py-3 py-md-4"
+          style={{
+            paddingLeft: 'clamp(1.25rem, 4.5vw, 2.75rem)',
+            paddingRight: 'clamp(1.25rem, 4.5vw, 2.75rem)',
+          }}
+        >
+        <div className="ta-section-header mb-3">
+          <span>🔔 {t('reminders.panelTitle')}</span>
+          <Link
+            to="/reminders"
+            className="small text-decoration-underline"
+            style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}
+          >
             {t('reminders.viewAll')}
           </Link>
         </div>
-        {isPro && (
+        {showFreeUpsell && (
+          <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between mb-3">
+            <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+              {t('reminders.panelFreeUpsell')}
+            </p>
+            <Link
+              to="/pro"
+              className="btn btn-dark btn-sm flex-shrink-0 align-self-stretch align-self-sm-auto fw-semibold"
+            >
+              {t('pro.ctaTryFree')}
+            </Link>
+          </div>
+        )}
+        {hasProFeatures && reminders.length > 0 && (
           <div className="small text-muted mb-2">
             {t('reminders.panelProNotice')}
           </div>
@@ -61,8 +100,11 @@ export default function RemindersPanel() {
             const isAutomatic = r.source === 'automatic'
             return (
               <div key={r.id || `${r.type}-${r.tarantulaId}-${r.dueDate}`}
-                   className="d-flex align-items-center gap-2 p-2 rounded"
-                   style={{ background: urgent ? '#fff8e6' : '#f8f9fa' }}>
+                   className="d-flex align-items-center gap-2 p-2 rounded-2"
+                   style={{
+                     background: 'var(--ta-bg-input)',
+                     border: `1px solid ${urgent ? 'rgba(201,168,76,0.42)' : 'rgba(100,60,200,0.35)'}`,
+                   }}>
                 <span style={{ fontSize: '1.1rem' }}>{TYPE_ICONS[r.type] ?? '📌'}</span>
                 <div className="flex-grow-1 min-w-0">
                   <div className="small fw-semibold text-truncate">
@@ -76,10 +118,10 @@ export default function RemindersPanel() {
                     {r.tarantulaName && ` · ${r.tarantulaName}`}
                   </div>
                 </div>
-                {!isAutomatic && (
-                  <button className="btn btn-sm btn-outline-success"
-                          style={{ padding: '1px 8px', fontSize: '0.75rem' }}
-                          onClick={() => handleDone(r.id)} title="Marcar como hecho">
+                {!isAutomatic && !isReminderLocked(r) && (
+                  <button className="btn btn-sm btn-outline-secondary py-0 px-2"
+                          style={{ fontSize: '0.75rem' }}
+                          onClick={() => handleDone(r.id)} title={t('reminders.markDone')}>
                     ✓
                   </button>
                 )}
@@ -88,6 +130,7 @@ export default function RemindersPanel() {
           })}
         </div>
       </div>
-    </div>
+      </div>
+    </ChitinCardFrame>
   )
 }

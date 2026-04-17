@@ -1,43 +1,122 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
+import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
+import { appLangBase } from '../utils/appLanguage'
 
-const LANGS = [
-  { code: 'es', label: 'ES', flag: '🇲🇽' },
-  { code: 'en', label: 'EN', flag: '🇺🇸' },
-  { code: 'fr', label: 'FR', flag: '🇫🇷' },
-]
+function trialDaysLeft(trialEndsAt) {
+  if (!trialEndsAt) return 0
+  return Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
+}
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { t, i18n } = useTranslation()
   const plan = user?.plan || 'FREE'
   const isPro = plan === 'PRO'
+  const inTrial = user?.inTrial === true
+  const overFreeLimit = user?.overFreeLimit === true
+  const days = trialDaysLeft(user?.trialEndsAt)
+
+  const planControl = (() => {
+    if (!user) {
+      return (
+        <Link
+          to="/pro"
+          className="btn btn-sm"
+          style={{
+            background: 'transparent',
+            color: 'var(--ta-gold)',
+            border: '1px solid var(--ta-gold)',
+            fontSize: '0.75rem',
+          }}
+        >
+          {t('nav.planFreeDiscover')}
+        </Link>
+      )
+    }
+    if (!isPro && !inTrial && overFreeLimit) {
+      return (
+        <Link
+          to="/pro"
+          className="btn btn-sm"
+          style={{
+            background: 'rgba(180, 120, 30, 0.35)',
+            color: '#ffd89a',
+            border: '1px solid rgba(220, 170, 80, 0.5)',
+            fontSize: '0.72rem',
+            maxWidth: 220,
+          }}
+          title={t('nav.badgeOverLimitTitle')}
+        >
+          {t('nav.badgeOverLimit')}
+        </Link>
+      )
+    }
+    if (isPro) {
+      return (
+        <Link
+          to="/pro"
+          className="btn btn-sm"
+          style={{
+            background: 'var(--ta-gold)',
+            color: '#111',
+            border: '1px solid var(--ta-gold)',
+            fontSize: '0.75rem',
+          }}
+        >
+          {t('nav.planPro')}
+        </Link>
+      )
+    }
+    if (inTrial) {
+      return (
+        <Link
+          to="/pro"
+          className="btn btn-sm fw-semibold"
+          style={{
+            background: 'linear-gradient(135deg, #e8c56a 0%, #c9a227 100%)',
+            color: '#1a1205',
+            border: '1px solid rgba(200, 160, 40, 0.9)',
+            fontSize: '0.72rem',
+            boxShadow: '0 0 12px rgba(200, 170, 60, 0.35)',
+          }}
+          title={t('nav.trialBadgeTitle')}
+        >
+          {t('nav.trialBadge', { days })}
+        </Link>
+      )
+    }
+    return (
+      <Link
+        to="/pro"
+        className="btn btn-sm"
+        style={{
+          background: 'transparent',
+          color: 'var(--ta-gold)',
+          border: '1px solid var(--ta-gold)',
+          fontSize: '0.75rem',
+        }}
+      >
+        {t('nav.planFreeDiscover')}
+      </Link>
+    )
+  })()
 
   return (
     <nav className="navbar navbar-dark px-3 px-md-4 py-2">
       <Link to="/" className="navbar-brand text-decoration-none">
         🕷️ TarantulApp
       </Link>
-      <div className="d-flex align-items-center gap-2 gap-md-3">
+      <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end">
         {user && (
           <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
                 style={{ color: 'var(--ta-gold)' }}>
             🔔 {t('nav.reminders')}
           </Link>
         )}
-        <Link
-          to="/pro"
-          className="btn btn-sm"
-          style={{
-            background: isPro ? 'var(--ta-gold)' : 'transparent',
-            color: isPro ? '#111' : 'var(--ta-gold)',
-            border: '1px solid var(--ta-gold)',
-            fontSize: '0.75rem',
-          }}
-        >
-          {isPro ? t('nav.planPro') : t('nav.planFree')}
-        </Link>
+        {planControl}
+
         {user && (
           <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
             {user.displayName || user.email}
@@ -45,21 +124,25 @@ export default function Navbar() {
         )}
 
         {/* Language selector */}
-        <div className="d-flex gap-1">
-          {LANGS.map(l => (
+        <div className="d-flex gap-1 align-items-center">
+          {APP_LANGS.map(l => (
             <button
               key={l.code}
-              title={l.label}
+              type="button"
+              title={LOGIN_LANG_LABELS[l.code]}
+              aria-label={LOGIN_LANG_LABELS[l.code]}
               onClick={() => i18n.changeLanguage(l.code)}
-              className="btn btn-sm px-1 py-0 border-0"
+              className="btn btn-sm px-1 py-0 border-0 d-inline-flex align-items-center"
               style={{
                 background: 'transparent',
-                color: i18n.language === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.4)',
-                fontSize: '1.1rem',
+                color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.4)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
                 lineHeight: 1,
                 transition: 'color 0.15s',
               }}>
-              {l.flag}
+              {l.display}
             </button>
           ))}
         </div>

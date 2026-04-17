@@ -1,18 +1,19 @@
 package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.MoltLog;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class MoltLogResponse {
     private UUID id;
     private UUID tarantulaId;
-    private LocalDateTime moltedAt;
+    private Instant moltedAt;
     private BigDecimal preSizeCm;
     private BigDecimal postSizeCm;
     private String notes;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public static MoltLogResponse from(MoltLog m) {
         MoltLogResponse dto = new MoltLogResponse();
@@ -28,9 +29,9 @@ public class MoltLogResponse {
 
     public UUID getId() { return id; }
     public UUID getTarantulaId() { return tarantulaId; }
-    public LocalDateTime getMoltedAt() { return moltedAt; }
+    public Instant getMoltedAt() { return moltedAt; }
     public BigDecimal getPreSizeCm() { return preSizeCm; }
     public BigDecimal getPostSizeCm() { return postSizeCm; }
     public String getNotes() { return notes; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

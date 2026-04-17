@@ -4,7 +4,13 @@
     "logout": "Sign out",
     "lang": "Language",
     "planFree": "Free plan",
-    "planPro": "Pro plan"
+    "planFreeDiscover": "Pro — free trial",
+    "planPro": "Pro plan",
+    "trialBadge": "Trial · {{days}}d left",
+    "trialBadgeTitle": "You are on a 7-day free trial with full access. Tap to see Pro.",
+    "badgeReadOnly": "Read-only",
+    "badgeOverLimit": "Some spiders locked",
+    "badgeOverLimitTitle": "On the free plan you can edit your 6 oldest spiders; the rest are read-only. Upgrade to Pro or delete spiders to unlock editing."
   },
   "auth": {
     "loginTitle": "TarantulApp",
@@ -33,7 +39,10 @@
     "confirmPassword": "Confirm password",
     "resetPassword": "Change password",
     "passwordMismatch": "Passwords don't match",
-    "resetSuccess": "Password updated. You can now sign in."
+    "resetSuccess": "Password updated. You can now sign in.",
+    "fillRequired": "Enter your email and password.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "trialRegisterPromo": "New accounts get a 7-day free trial with full access (same limits as Pro). After that, you can keep browsing and exporting, or subscribe to keep editing."
   },
   "common": {
     "save": "Save",
@@ -94,9 +103,17 @@
     "addFirst": "+ Add first tarantula",
     "noResults": "No results for the selected filters.",
     "inMemory": "🕯️ In memory",
-    "limitReached": "You've reached the free plan limit of 6 tarantulas. Upgrade to Pro to add more."
+    "limitReached": "You've reached the free plan limit of 6 tarantulas. Upgrade to Pro to add more.",
+    "readOnlyHint": "Read-only for this spider on the free plan — upgrade to Pro or delete spiders to unlock editing.",
+    "trialBanner": "You're on a 7-day free trial with full access."
+  },
+  "readOnly": {
+    "banner": "Your trial has ended. You can browse your collection, history, and export data. Subscribe to Pro to add or edit entries.",
+    "overLimitBanner": "On the free plan you can edit your 6 oldest spiders; any extra spiders are read-only. Delete spiders or subscribe to Pro to unlock them. You can still export your data."
   },
   "tarantula": {
+    "lockedEditHint": "Read-only on the free plan — upgrade to Pro or delete spiders to unlock editing.",
+    "lockedShort": "Read-only",
     "loading": "Loading...",
     "notFound": "Tarantula not found.",
     "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
@@ -108,6 +125,9 @@
     "addBehavior": "🔍 + Behavior",
     "history": "📅 History",
     "historyEmpty": "No events recorded yet. Start by logging a feeding or molt.",
+    "historyPrev": "← Previous",
+    "historyNext": "Next →",
+    "historyPage": "Page {{current}} / {{total}}",
     "publicOn": "Public ✓",
     "publicOff": "Make public",
     "qrCode": "QR Code",
@@ -180,6 +200,7 @@
     "notesPlaceholder": "Personal observations...",
     "planUsage": "Free plan: {{count}}/{{limit}} tarantulas.",
     "limitReached": "You've reached the free plan limit of 6 tarantulas.",
+    "limitTrialHint": "Pro gives you an unlimited collection. New accounts get a 7-day trial; if you already used yours, subscribe to continue.",
     "unsexed": "Unknown",
     "female": "Female",
     "male": "Male",
@@ -262,12 +283,64 @@
     "emptyPending": "No pending reminders.",
     "done": "✅ Completed",
     "markDone": "Mark as done",
-    "freeNotice": "Free plan: you can only use manual reminders created by you.",
+    "freeNotice": "Free plan: manual reminders only (ones you create yourself).",
+    "freeAutoUpsell": "Pro adds automatic feeding reminders based on each spider’s history. Try Pro or upgrade to turn them on.",
+    "panelFreeUpsell": "Want automatic feeding reminders? That’s included in Pro.",
     "proNotice": "Pro plan active: you see manual reminders and automatic feeding suggestions.",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "overdueDays": "{{count}} day(s) ago",
-    "inDays": "In {{count}} days"
+    "inDays": "In {{count}} days",
+    "deleteConfirm": "Delete this reminder?"
+  },
+  "cropModal": {
+    "title": "✂️ Adjust photo",
+    "cancel": "Cancel",
+    "confirm": "Use this photo",
+    "processing": "Processing..."
+  },
+  "gallery": {
+    "title": "📷 Gallery",
+    "captionPlaceholder": "Caption (optional)",
+    "addPhoto": "+ Add photo",
+    "uploading": "Uploading...",
+    "empty": "No photos in the gallery yet.",
+    "deletePhoto": "Delete photo",
+    "deleteConfirm": "Delete this photo?"
+  },
+  "logModals": {
+    "dateTime": "Date and time",
+    "notes": "Notes",
+    "optional": "Optional…",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveError": "Could not save the record.",
+    "select": "– Select –",
+    "feedingTitle": "🍽️ Log feeding",
+    "preyType": "Prey type",
+    "preySize": "Size",
+    "quantity": "Quantity",
+    "accepted": "Accepted?",
+    "acceptedYes": "Yes",
+    "acceptedNo": "No (rejected)",
+    "preyCricket": "Cricket",
+    "preyDubia": "Dubia roach",
+    "preySuperworm": "Superworm",
+    "preyWorm": "Earthworm",
+    "preyPinkies": "Pinkies",
+    "preyOther": "Other",
+    "sizeExtraSmall": "extra-small",
+    "sizeSmall": "small",
+    "sizeMedium": "medium",
+    "sizeLarge": "large",
+    "moltTitle": "🕸️ Log molt",
+    "preMoltSize": "Pre-molt size (cm)",
+    "postMoltSize": "Post-molt size (cm)",
+    "sizeExample": "e.g. {{n}}",
+    "behaviorTitle": "🔍 Log behavior",
+    "moodLabel": "Mood / state",
+    "behaviorNotesPlaceholder": "Describe what you observed…"
   },
   "public": {
     "notFound": "Profile not found or not public.",
@@ -280,14 +353,17 @@
     "privateCard": "This profile is private.",
     "loginToAccess": "Sign in to view your collection",
     "quickActionsProTitle": "📋 Quick log",
-    "quickActionsProCTA": "Upgrade to Pro to log feedings, molts and behaviors directly from QR codes.",
-    "quickActionsUpgrade": "Upgrade to Pro"
+    "quickActionsProCTA": "To log feedings, molts and behaviors when someone scans your QR you need Pro. New accounts get a 7-day free trial with everything unlocked.",
+    "quickActionsUpgrade": "Try Pro free"
   }
   ,
   "pro": {
     "title": "TarantulApp Pro",
     "subtitle": "Features designed for large collections and automatic tracking.",
+    "trialThenPricing": "Try free for 7 days when you sign up, then $2.99/month or $29.99/year.",
+    "pricingAfterTrial": "After your trial: $2.99/month or $29.99/year.",
     "freeTitle": "Free (current)",
+    "freeTrialLine": "7-day free trial on signup — full access, then Free limits or read-only if you do not subscribe.",
     "freeLimit": "Up to 6 tarantulas in your collection.",
     "freeReminders": "Reminders created manually by you.",
     "freeQr": "QR with basic info, no actions.",
@@ -316,6 +392,9 @@
     "checkoutError": "Could not start checkout right now.",
     "checkoutNotConfigured": "Stripe checkout is not configured in this environment yet.",
     "publicToggleProOnly": "🔒 Pro feature",
-    "publicToggleProOnlyHint": "Upgrade to Pro to make this card scannable by anyone."
+    "publicToggleProOnlyHint": "Upgrade to Pro to make this card scannable by anyone.",
+    "trialDaysLeft": "{{count}} day(s) left in your trial",
+    "ctaTryFree": "Try Pro free",
+    "ctaRegisterTrialReminder": "New accounts include a 7-day trial with full Pro features. If you already used yours, subscribe below to keep unlimited access."
   }
 }

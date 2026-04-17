@@ -1,16 +1,17 @@
 package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.BehaviorLog;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.UUID;
 
 public class BehaviorLogResponse {
     private UUID id;
     private UUID tarantulaId;
-    private LocalDateTime loggedAt;
+    private Instant loggedAt;
     private String mood;
     private String notes;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public static BehaviorLogResponse from(BehaviorLog b) {
         BehaviorLogResponse dto = new BehaviorLogResponse();
@@ -25,8 +26,8 @@ public class BehaviorLogResponse {
 
     public UUID getId() { return id; }
     public UUID getTarantulaId() { return tarantulaId; }
-    public LocalDateTime getLoggedAt() { return loggedAt; }
+    public Instant getLoggedAt() { return loggedAt; }
     public String getMood() { return mood; }
     public String getNotes() { return notes; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

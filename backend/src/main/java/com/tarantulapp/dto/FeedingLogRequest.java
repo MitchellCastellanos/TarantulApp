@@ -1,12 +1,13 @@
 package com.tarantulapp.dto;
 
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+
+import java.time.OffsetDateTime;
 
 public class FeedingLogRequest {
 
     @NotNull(message = "La fecha de alimentación es obligatoria")
-    private LocalDateTime fedAt;
+    private OffsetDateTime fedAt;
 
     private String preyType;
     private String preySize;
@@ -14,8 +15,8 @@ public class FeedingLogRequest {
     private Boolean accepted;
     private String notes;
 
-    public LocalDateTime getFedAt() { return fedAt; }
-    public void setFedAt(LocalDateTime fedAt) { this.fedAt = fedAt; }
+    public OffsetDateTime getFedAt() { return fedAt; }
+    public void setFedAt(OffsetDateTime fedAt) { this.fedAt = fedAt; }
     public String getPreyType() { return preyType; }
     public void setPreyType(String preyType) { this.preyType = preyType; }
     public String getPreySize() { return preySize; }

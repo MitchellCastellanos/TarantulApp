@@ -7,6 +7,7 @@ import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.SpeciesSynonym;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.SpeciesSynonymRepository;
+import com.tarantulapp.util.SpeciesNarrativeJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -108,7 +109,11 @@ public class GbifService {
         species.setIsCustom(true);
         species.setCreatedBy(userId);
         species.setDataSource("gbif");
-        species.setCareNotes("Importado desde GBIF (key: " + key + ")");
+        String careEs = "Importado desde GBIF (key: " + key + ")";
+        String careEn = "Imported from GBIF (key: " + key + ").";
+        String careFr = "Importé depuis GBIF (clé : " + key + ").";
+        species.setCareNotes(careEs);
+        species.setNarrativeI18n(SpeciesNarrativeJson.buildCareNotesTri(careEs, careEn, careFr));
 
         // Foto de referencia desde iNaturalist
         String photoUrl = inatService.fetchPhotoUrl(canonicalName);

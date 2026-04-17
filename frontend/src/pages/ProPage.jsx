@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar'
+import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef } from 'react'
@@ -19,6 +20,11 @@ export default function ProPage() {
 
   const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
+  const inTrial = billing?.inTrial === true || user?.inTrial === true
+  const trialEndsAt = billing?.trialEndsAt ?? user?.trialEndsAt
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
+    : 0
   const checkout = searchParams.get('checkout')
   const sessionId = searchParams.get('session_id')
 
@@ -112,12 +118,19 @@ export default function ProPage() {
     <div>
       <Navbar />
       <div className="container mt-4" style={{ maxWidth: 720 }}>
+        <ChitinCardFrame showSilhouettes={false}>
         <div className="mb-3">
           <span className="badge bg-dark me-2">TarantulApp</span>
           <span className={`badge ${isPro ? 'bg-success' : 'bg-secondary'}`}>
             {isPro ? t('pro.currentPro') : t('pro.currentFree')}
           </span>
         </div>
+
+        {user && inTrial && !isPro && (
+          <div className="alert alert-info small py-2 mb-3">
+            {t('dashboard.trialBanner')} · {t('pro.trialDaysLeft', { count: trialDaysLeft })}
+          </div>
+        )}
 
         {/* Success screen */}
         {checkout === 'success' && (
@@ -163,13 +176,26 @@ export default function ProPage() {
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body">
             <h4 className="fw-bold mb-2">{t('pro.title')}</h4>
-            <p className="text-muted mb-3">{t('pro.subtitle')}</p>
+            <p className="text-muted mb-2">{t('pro.subtitle')}</p>
+            {!isPro && inTrial && (
+              <p className="small fw-semibold mb-3 pb-2"
+                 style={{ color: 'var(--ta-gold)', borderBottom: '1px solid rgba(200, 170, 90, 0.35)' }}>
+                {t('pro.pricingAfterTrial')}
+              </p>
+            )}
+            {!isPro && !inTrial && (
+              <p className="small fw-semibold mb-3 pb-2"
+                 style={{ color: 'var(--ta-gold)', borderBottom: '1px solid rgba(200, 170, 90, 0.35)' }}>
+                {t('pro.trialThenPricing')}
+              </p>
+            )}
 
             <div className="row g-3">
               <div className="col-md-6">
                 <div className="border rounded p-3 h-100">
                   <h6 className="fw-bold mb-2">{t('pro.freeTitle')}</h6>
                   <ul className="small mb-0">
+                    <li className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('pro.freeTrialLine')}</li>
                     <li>{t('pro.freeLimit')}</li>
                     <li>{t('pro.freeReminders')}</li>
                     <li>{t('pro.freeQr')}</li>
@@ -206,9 +232,12 @@ export default function ProPage() {
         <div className="card border-0 shadow-sm">
           <div className="card-body">
             <h6 className="fw-bold mb-2">{t('pro.statusTitle')}</h6>
-            <p className="small text-muted mb-3">
+            <p className="small text-muted mb-2">
               {isPro ? t('pro.statusPro') : t('pro.statusFree')}
             </p>
+            {!isPro && user && !inTrial && (
+              <p className="small text-muted mb-3">{t('pro.ctaRegisterTrialReminder')}</p>
+            )}
             {!isPro && (
               <div className="d-flex flex-column gap-3">
                 <div className="d-flex gap-2">
@@ -228,20 +257,33 @@ export default function ProPage() {
                     </span>
                   </button>
                 </div>
-                <button
-                  className="btn btn-dark btn-sm align-self-start"
-                  onClick={handleUpgrade}
-                  disabled={loadingCheckout || (user && billing?.checkoutEnabled === false)}
-                >
-                  {loadingCheckout ? t('common.loading') : !user ? t('pro.loginToUpgrade', 'Login to upgrade') : t('pro.upgradeNow')}
-                </button>
-                {user && billing?.checkoutEnabled === false && (
-                  <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                {!user ? (
+                  <button
+                    type="button"
+                    className="btn btn-dark btn-sm align-self-start"
+                    onClick={() => navigate('/login')}
+                  >
+                    {t('pro.loginToUpgrade', 'Login to upgrade')}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="btn btn-dark btn-sm align-self-start"
+                      onClick={handleUpgrade}
+                      disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                    >
+                      {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                    </button>
+                    {billing?.checkoutEnabled === false && (
+                      <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                    )}
+                  </>
                 )}
               </div>
             )}
           </div>
         </div>
+        </ChitinCardFrame>
       </div>
     </div>
   )

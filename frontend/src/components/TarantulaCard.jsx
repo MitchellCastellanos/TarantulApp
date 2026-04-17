@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import StatusBadge from './StatusBadge'
 import FangPanel from './FangPanel'
 import { imgUrl } from '../services/api'
+import { publicUrl } from '../utils/publicAssets.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
-const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
-const SEX_LABEL    = { male: '♂ Macho', female: '♀ Hembra', unsexed: '? Sin determinar' }
 const defaultSpiderStyle = {
   width: '100%',
   height: '100%',
-  objectFit: 'cover',
-  opacity: 0.92,
-  transform: 'scale(1.28)',
-  transformOrigin: 'center',
+  objectFit: 'contain',
+  objectPosition: 'center',
+  opacity: 0.95,
+  padding: '4px',
+  boxSizing: 'border-box',
 }
 
 export default function TarantulaCard({ tarantula }) {
-  const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status } = tarantula
+  const { t } = useTranslation()
+  const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
   // Use own photo first, then species reference photo from iNaturalist, then placeholder
   const displayPhoto = profilePhoto
     ? imgUrl(profilePhoto)
@@ -36,13 +38,13 @@ export default function TarantulaCard({ tarantula }) {
               {!profilePhoto && species?.referencePhotoUrl && (
                 <span className="position-absolute bottom-0 end-0 m-1 badge"
                       style={{ background: 'rgba(0,0,0,0.6)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
-                      title="Foto referencia de la especie (iNaturalist)">
-                  📸 especie
+                      title={t('species.refPhoto')}>
+                  {t('species.refPhotoLabel')}
                 </span>
               )}
             </>
           ) : (
-            <img src="/spider-default.svg" alt="spider"
+            <img src={publicUrl('spider-default.png')} alt="spider"
                  style={defaultSpiderStyle} />
           )}
         </div>
@@ -50,7 +52,14 @@ export default function TarantulaCard({ tarantula }) {
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-start mb-1">
             <h6 className="card-title fw-bold mb-0 text-truncate me-2">{name}</h6>
-            <StatusBadge status={status} />
+            <div className="d-flex align-items-center gap-1 flex-shrink-0">
+              {locked && (
+                <span className="badge bg-secondary" style={{ fontSize: '0.6rem' }} title={t('tarantula.lockedEditHint')}>
+                  {t('tarantula.lockedShort')}
+                </span>
+              )}
+              <StatusBadge status={status} />
+            </div>
           </div>
 
           {species && (
@@ -62,12 +71,12 @@ export default function TarantulaCard({ tarantula }) {
           <div className="d-flex gap-2 flex-wrap">
             {stage && (
               <span className="badge bg-light text-dark border">
-                {STAGE_LABEL[stage] ?? stage}
+                {t(`stages.${stage}`, { defaultValue: stage })}
               </span>
             )}
             {sex && (
               <span className="badge bg-light text-dark border">
-                {SEX_LABEL[sex] ?? sex}
+                {t(`sex.${sex}`, { defaultValue: sex })}
               </span>
             )}
             {currentSizeCm && (

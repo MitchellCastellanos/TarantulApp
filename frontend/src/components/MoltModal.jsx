@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import logsService from '../services/logsService'
+import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
 
 export default function MoltModal({ tarantulaId, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
-    moltedAt: new Date().toISOString().slice(0, 16),
+    moltedAt: nowLocalDatetimeInputValue(),
     preSizeCm: '', postSizeCm: '', notes: ''
   })
   const [loading, setLoading] = useState(false)
@@ -16,14 +19,16 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
     setLoading(true)
     try {
       await logsService.addMolt(tarantulaId, {
-        moltedAt: new Date(form.moltedAt).toISOString(),
+        moltedAt: datetimeLocalToOffsetISO(form.moltedAt),
         preSizeCm: form.preSizeCm ? Number(form.preSizeCm) : null,
         postSizeCm: form.postSizeCm ? Number(form.postSizeCm) : null,
         notes: form.notes,
       })
+      setLoading(false)
       onSaved()
-    } catch {
-      setError('No se pudo guardar el registro.')
+    } catch (err) {
+      console.error('[MoltModal] guardar muda', err?.response?.status, err?.response?.data ?? err)
+      setError(t('logModals.saveError'))
       setLoading(false)
     }
   }
@@ -33,7 +38,7 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
       <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">🕸️ Registrar muda</h5>
+            <h5 className="modal-title">{t('logModals.moltTitle')}</h5>
             <button className="btn-close" onClick={onClose} />
           </div>
           <form onSubmit={handleSubmit}>
@@ -41,34 +46,34 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
               {error && <div className="alert alert-danger small py-2">{error}</div>}
               <div className="row g-3">
                 <div className="col-12">
-                  <label className="form-label small fw-semibold">Fecha y hora</label>
+                  <label className="form-label small fw-semibold">{t('logModals.dateTime')}</label>
                   <input type="datetime-local" className="form-control form-control-sm"
                          value={form.moltedAt} onChange={e => set('moltedAt', e.target.value)} required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-semibold">Tamaño pre-muda (cm)</label>
+                  <label className="form-label small fw-semibold">{t('logModals.preMoltSize')}</label>
                   <input type="number" step="0.1" min="0" className="form-control form-control-sm"
                          value={form.preSizeCm} onChange={e => set('preSizeCm', e.target.value)}
-                         placeholder="ej. 5.0" />
+                         placeholder={t('logModals.sizeExample', { n: '5.0' })} />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-semibold">Tamaño post-muda (cm)</label>
+                  <label className="form-label small fw-semibold">{t('logModals.postMoltSize')}</label>
                   <input type="number" step="0.1" min="0" className="form-control form-control-sm"
                          value={form.postSizeCm} onChange={e => set('postSizeCm', e.target.value)}
-                         placeholder="ej. 6.0" />
+                         placeholder={t('logModals.sizeExample', { n: '6.0' })} />
                 </div>
                 <div className="col-12">
-                  <label className="form-label small fw-semibold">Notas</label>
+                  <label className="form-label small fw-semibold">{t('logModals.notes')}</label>
                   <input type="text" className="form-control form-control-sm"
                          value={form.notes} onChange={e => set('notes', e.target.value)}
-                         placeholder="Opcional..." />
+                         placeholder={t('logModals.optional')} />
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-light btn-sm" onClick={onClose}>Cancelar</button>
+              <button type="button" className="btn btn-light btn-sm" onClick={onClose}>{t('logModals.cancel')}</button>
               <button type="submit" className="btn btn-dark btn-sm" disabled={loading}>
-                {loading ? 'Guardando...' : 'Guardar'}
+                {loading ? t('logModals.saving') : t('logModals.save')}
               </button>
             </div>
           </form>

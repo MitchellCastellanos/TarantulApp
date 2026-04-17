@@ -54,6 +54,10 @@ public class Species {
     @Column(name = "care_notes", columnDefinition = "TEXT")
     private String careNotes;
 
+    /** JSON: { "temperament"|"substrate"|"careNotes": { "es","en","fr": string } } */
+    @Column(name = "narrative_i18n", columnDefinition = "TEXT")
+    private String narrativeI18n;
+
     @Column(name = "is_custom", nullable = false)
     private Boolean isCustom = false;
 
@@ -96,6 +100,8 @@ public class Species {
     public void setExperienceLevel(String experienceLevel) { this.experienceLevel = experienceLevel; }
     public String getCareNotes() { return careNotes; }
     public void setCareNotes(String careNotes) { this.careNotes = careNotes; }
+    public String getNarrativeI18n() { return narrativeI18n; }
+    public void setNarrativeI18n(String narrativeI18n) { this.narrativeI18n = narrativeI18n; }
     public Boolean getIsCustom() { return isCustom; }
     public void setIsCustom(Boolean isCustom) { this.isCustom = isCustom; }
     public UUID getCreatedBy() { return createdBy; }

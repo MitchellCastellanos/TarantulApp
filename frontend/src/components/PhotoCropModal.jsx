@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import Cropper from 'react-easy-crop'
 
 /** Recorta imageSrc en el área seleccionada y devuelve un Blob JPEG 600×600. */
@@ -29,6 +30,7 @@ async function cropToBlob(imageSrc, pixelCrop) {
  *   onCancel()
  */
 export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }) {
+  const { t } = useTranslation()
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
@@ -52,7 +54,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }) {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">✂️ Ajustar foto</h5>
+            <h5 className="modal-title">{t('cropModal.title')}</h5>
             <button className="btn-close" onClick={onCancel} />
           </div>
 
@@ -86,10 +88,10 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }) {
 
           <div className="modal-footer">
             <button className="btn btn-outline-secondary btn-sm" onClick={onCancel}>
-              Cancelar
+              {t('cropModal.cancel')}
             </button>
             <button className="btn btn-dark btn-sm" onClick={handleConfirm} disabled={busy}>
-              {busy ? 'Procesando...' : 'Usar esta foto'}
+              {busy ? t('cropModal.processing') : t('cropModal.confirm')}
             </button>
           </div>
         </div>

@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { setUnauthorizedHandler } from './services/authSession'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AddTarantulaPage from './pages/AddTarantulaPage'
@@ -11,6 +13,21 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+
+/** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
+function AuthSessionBridge() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+  // useLayoutEffect: antes que useEffect de rutas hijas y sin ventana Strict Mode donde handler=null → fallback que borra token sin logout().
+  useLayoutEffect(() => {
+    setUnauthorizedHandler(() => {
+      logout()
+      navigate('/login', { replace: true })
+    })
+    return () => setUnauthorizedHandler(null)
+  }, [logout, navigate])
+  return null
+}
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -56,7 +73,13 @@ function Footer() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AuthSessionBridge />
         <AppRoutes />
         <Footer />
       </BrowserRouter>

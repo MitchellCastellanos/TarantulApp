@@ -5,6 +5,10 @@ import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import logsService from '../services/logsService'
 import FangPanel from '../components/FangPanel'
+import { publicUrl } from '../utils/publicAssets.js'
+import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
+import { formatDateInUserZone, formatEventDateTime } from '../utils/dateFormat'
+import ProTrialCtaLink from '../components/ProTrialCtaLink'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STATUS_CFG   = {
@@ -16,27 +20,20 @@ const STATUS_CFG   = {
 
 const PREY_TYPES = ['Cricket', 'Dubia', 'Superworm', 'Worm', 'Mealworm', 'Other']
 
-function formatDate(iso) {
-  if (!iso) return '–'
-  return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function nowISO() {
-  return new Date().toISOString().slice(0, 16)
-}
-
 const defaultSpiderStyle = {
   width: '100%',
   height: '100%',
-  objectFit: 'cover',
-  transform: 'scale(1.28)',
-  transformOrigin: 'center',
+  objectFit: 'contain',
+  objectPosition: 'center',
+  opacity: 0.95,
+  padding: '6px',
+  boxSizing: 'border-box',
 }
 
 export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
-  const { t }       = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate    = useNavigate()
 
   const [profile, setProfile]   = useState(null)
@@ -45,6 +42,7 @@ export default function PublicProfilePage() {
   const [quickLog, setQuickLog] = useState(null)
   const [saved, setSaved]       = useState('')
   const [busy, setBusy]         = useState(false)
+  const [historyPageIndex, setHistoryPageIndex] = useState(0)
 
   const [feed, setFeed]   = useState({ preyType: 'Cricket', preySize: 'medium', quantity: 1, accepted: true, notes: '' })
   const [molt, setMolt]   = useState({ preSizeCm: '', postSizeCm: '', notes: '' })
@@ -63,9 +61,26 @@ export default function PublicProfilePage() {
 
   useEffect(() => { load() }, [shortId])
 
-  const isOwner    = !!(user && profile && String(user.id) === String(profile.ownerId))
-  const isPro      = user?.plan === 'PRO'
-  const isProOwner = isOwner && isPro
+  useEffect(() => {
+    setHistoryPageIndex(0)
+  }, [shortId])
+
+  useEffect(() => {
+    setHistoryPageIndex(i =>
+      Math.min(i, Math.max(0, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE) - 1)),
+    )
+  }, [timeline.length])
+
+  const historyTotalPages = Math.max(1, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE))
+  const historyPageSafe = Math.min(historyPageIndex, historyTotalPages - 1)
+  const historyPageStart = historyPageSafe * PARCHMENT_HISTORY_PAGE_SIZE
+  const timelinePage = timeline.slice(historyPageStart, historyPageStart + PARCHMENT_HISTORY_PAGE_SIZE)
+  const showHistoryPager = timeline.length > PARCHMENT_HISTORY_PAGE_SIZE
+
+  const isOwner = !!(user && profile && String(user.id) === String(profile.ownerId))
+  /** Pro o periodo de prueba activo: mismas capacidades que Pro (p. ej. registro rápido desde QR). */
+  const hasProFeatures = user?.hasProFeatures === true
+  const canUseQrQuickLog = isOwner && hasProFeatures
 
   const doSave = async (fn) => {
     setBusy(true)
@@ -83,16 +98,16 @@ export default function PublicProfilePage() {
   }
 
   const saveFeed  = () => doSave(() =>
-    logsService.addFeeding(profile.tarantulaId, { ...feed, fedAt: nowISO(), quantity: Number(feed.quantity) }))
+    logsService.addFeeding(profile.tarantulaId, { ...feed, fedAt: new Date().toISOString(), quantity: Number(feed.quantity) }))
   const saveMolt  = () => doSave(() =>
     logsService.addMolt(profile.tarantulaId, {
-      moltedAt: nowISO(),
+      moltedAt: new Date().toISOString(),
       preSizeCm:  molt.preSizeCm  ? Number(molt.preSizeCm)  : null,
       postSizeCm: molt.postSizeCm ? Number(molt.postSizeCm) : null,
       notes: molt.notes || null,
     }))
   const saveBehav = () => doSave(() =>
-    logsService.addBehavior(profile.tarantulaId, { ...behav, loggedAt: nowISO() }))
+    logsService.addBehavior(profile.tarantulaId, { ...behav, loggedAt: new Date().toISOString() }))
 
   const eventIcon  = (type) => type === 'feeding' ? '🍽️' : type === 'molt' ? '🕸️' : '📊'
   const eventLabel = (ev) => {
@@ -104,7 +119,7 @@ export default function PublicProfilePage() {
 
   if (error) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
+         style={{ backgroundImage: `url('${publicUrl('bg-texture.png')}')`, backgroundColor: '#06060e' }}>
       <div className="text-center px-4" style={{ color: 'var(--ta-parchment)', maxWidth: 380 }}>
         <div className="fs-1 mb-3">🔒</div>
         <h5 className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>TarantulApp</h5>
@@ -128,7 +143,7 @@ export default function PublicProfilePage() {
 
   if (!profile) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
+         style={{ backgroundImage: `url('${publicUrl('bg-texture.png')}')`, backgroundColor: '#06060e' }}>
       <p style={{ color: 'var(--ta-parchment)' }}>{t('common.loading')}</p>
     </div>
   )
@@ -145,7 +160,7 @@ export default function PublicProfilePage() {
   ]
 
   return (
-    <div className="min-vh-100" style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
+    <div className="min-vh-100" style={{ backgroundImage: `url('${publicUrl('bg-texture.png')}')`, backgroundColor: '#06060e' }}>
       <div className="container py-4" style={{ maxWidth: 480 }}>
 
         {user && (
@@ -165,7 +180,7 @@ export default function PublicProfilePage() {
               <img src={imgUrl(profile.profilePhoto)} alt={profile.name}
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <img src="/spider-default.svg" alt="spider"
+              <img src={publicUrl('spider-default.png')} alt="spider"
                    style={defaultSpiderStyle} />
             )}
           </div>
@@ -192,8 +207,8 @@ export default function PublicProfilePage() {
             </div>
 
             <div className="small text-muted">
-              <div>{t('public.lastFed')} {formatDate(profile.lastFedAt)}</div>
-              <div>{t('public.lastMolt')} {formatDate(profile.lastMoltAt)}</div>
+              <div>{t('public.lastFed')} {formatDateInUserZone(profile.lastFedAt, i18n.language)}</div>
+              <div>{t('public.lastMolt')} {formatDateInUserZone(profile.lastMoltAt, i18n.language)}</div>
             </div>
           </div>
 
@@ -203,35 +218,70 @@ export default function PublicProfilePage() {
         </div>
         </FangPanel>
 
-        {/* ─── Historial reciente ─────────────────────── */}
-        <FangPanel className="mb-3">
-        <div className="card shadow-sm">
-          <div className="card-body p-3">
-            <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>
-              {t('public.history')}
-            </p>
-            {timeline.length === 0 ? (
-              <p className="text-muted small mb-0">{t('public.historyEmpty')}</p>
-            ) : (
-              <ul className="list-unstyled mb-0">
-                {timeline.slice(0, 10).map(ev => (
-                  <li key={ev.id} className="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-light">
-                    <span style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{eventIcon(ev.type)}</span>
-                    <div className="small flex-grow-1">
-                      <div className="fw-semibold ta-history-title">{eventLabel(ev)}</div>
-                      {ev.summary && <div className="ta-history-summary">{ev.summary}</div>}
-                      <div className="ta-history-meta" style={{ fontSize: '0.7rem' }}>{formatDate(ev.eventDate)}</div>
+        {/* ─── Historial reciente (pergamino, mismo tratamiento que detalle) ─ */}
+        <div className="ta-parchment-float-wrap mb-1">
+        <div className="card border-0 ta-parchment-history">
+          <div className="card-body ta-parchment-scroll p-0">
+            <img
+              className="ta-parchment-bg-img"
+              src={publicUrl('parchment-bg.png')}
+              alt=""
+              decoding="async"
+              draggable={false}
+            />
+            <div className="ta-parchment-scroll-inner">
+              <header className="ta-parchment-page-title">
+                <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
+                <span className="ta-parchment-page-title__text">{t('public.history')}</span>
+              </header>
+              {timeline.length === 0 ? (
+                <p className="small mb-0 ta-parchment-muted text-center">{t('public.historyEmpty')}</p>
+              ) : (
+                <>
+                  <ul className="list-unstyled mb-0 flex-grow-1">
+                    {timelinePage.map(ev => (
+                      <li key={ev.id} className="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-light">
+                        <span style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{eventIcon(ev.type)}</span>
+                        <div className="small flex-grow-1">
+                          <div className="fw-semibold ta-history-title">{eventLabel(ev)}</div>
+                          {ev.summary && <div className="ta-history-summary">{ev.summary}</div>}
+                          <div className="ta-history-meta" style={{ fontSize: '0.7rem' }}>{formatEventDateTime(ev.eventDate, i18n.language)}</div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {showHistoryPager && (
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-auto">
+                      <button
+                        type="button"
+                        className="btn btn-sm ta-parchment-pager__btn"
+                        disabled={historyPageSafe <= 0}
+                        onClick={() => setHistoryPageIndex(p => Math.max(0, p - 1))}
+                      >
+                        {t('tarantula.historyPrev')}
+                      </button>
+                      <span className="small ta-parchment-muted mb-0">
+                        {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-sm ta-parchment-pager__btn"
+                        disabled={historyPageSafe >= historyTotalPages - 1}
+                        onClick={() => setHistoryPageIndex(p => Math.min(historyTotalPages - 1, p + 1))}
+                      >
+                        {t('tarantula.historyNext')}
+                      </button>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-        </FangPanel>
+        </div>
 
         {/* ─── Teaser para propietarios free ─────────────── */}
-        {isOwner && !isPro && (
+        {isOwner && !hasProFeatures && (
           <FangPanel>
           <div className="card shadow-sm">
             <div className="card-body p-3 text-center">
@@ -240,17 +290,16 @@ export default function PublicProfilePage() {
                 {t('public.quickActionsProTitle')}
               </p>
               <p className="text-muted small mb-3">{t('public.quickActionsProCTA')}</p>
-              <Link to="/pro" className="btn btn-sm px-3"
-                    style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}>
+              <ProTrialCtaLink className="btn btn-sm px-3 align-self-center">
                 {t('public.quickActionsUpgrade')}
-              </Link>
+              </ProTrialCtaLink>
             </div>
           </div>
           </FangPanel>
         )}
 
-        {/* ─── Panel de registro rápido (solo propietario Pro) ── */}
-        {isProOwner && (
+        {/* ─── Panel de registro rápido (propietario con Pro o prueba activa) ── */}
+        {canUseQrQuickLog && (
           <FangPanel>
           <div className="card shadow-sm">
             <div className="card-body p-3">

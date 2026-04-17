@@ -4,7 +4,13 @@
     "logout": "Déconnexion",
     "lang": "Langue",
     "planFree": "Plan gratuit",
-    "planPro": "Plan Pro"
+    "planFreeDiscover": "Pro — essai gratuit",
+    "planPro": "Plan Pro",
+    "trialBadge": "Essai · {{days}}j restants",
+    "trialBadgeTitle": "Vous êtes en essai gratuit de 7 jours avec accès complet. Touchez pour voir Pro.",
+    "badgeReadOnly": "Lecture seule",
+    "badgeOverLimit": "Certaines verrouillées",
+    "badgeOverLimitTitle": "En plan gratuit vous pouvez modifier les 6 plus anciennes ; les autres sont en lecture seule. Passez à Pro ou supprimez des exemplaires pour débloquer."
   },
   "auth": {
     "loginTitle": "TarantulApp",
@@ -33,7 +39,10 @@
     "confirmPassword": "Confirmer le mot de passe",
     "resetPassword": "Changer le mot de passe",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
-    "resetSuccess": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter."
+    "resetSuccess": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter.",
+    "fillRequired": "Saisissez votre courriel et votre mot de passe.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+    "trialRegisterPromo": "Les nouveaux comptes bénéficient de 7 jours d'essai gratuit avec accès complet (mêmes limites que Pro). Ensuite vous pouvez consulter et exporter, ou vous abonner pour continuer à modifier."
   },
   "common": {
     "save": "Enregistrer",
@@ -94,9 +103,17 @@
     "addFirst": "+ Ajouter la première tarentule",
     "noResults": "Aucun résultat pour les filtres sélectionnés.",
     "inMemory": "🕯️ En mémoire",
-    "limitReached": "Vous avez atteint la limite gratuite de 6 tarentules. Passez à Pro pour en ajouter davantage."
+    "limitReached": "Vous avez atteint la limite gratuite de 6 tarentules. Passez à Pro pour en ajouter davantage.",
+    "readOnlyHint": "Lecture seule pour cette tarentule en plan gratuit — passez à Pro ou supprimez des exemplaires pour débloquer.",
+    "trialBanner": "Vous bénéficiez d'un essai gratuit de 7 jours avec accès complet."
+  },
+  "readOnly": {
+    "banner": "Votre essai est terminé. Vous pouvez consulter votre collection, l'historique et exporter les données. Passez à Pro pour ajouter ou modifier des entrées.",
+    "overLimitBanner": "En plan gratuit vous pouvez modifier les 6 plus anciennes ; les exemplaires au-delà sont en lecture seule. Supprimez ou passez à Pro pour les débloquer. Vous pouvez toujours exporter vos données."
   },
   "tarantula": {
+    "lockedEditHint": "Lecture seule en plan gratuit — passez à Pro ou supprimez des exemplaires pour débloquer.",
+    "lockedShort": "Lecture seule",
     "loading": "Chargement...",
     "notFound": "Tarentule introuvable.",
     "deleteConfirm": "Supprimer \"{{name}}\" ? Cette action est irréversible.",
@@ -108,6 +125,9 @@
     "addBehavior": "🔍 + Comportement",
     "history": "📅 Historique",
     "historyEmpty": "Aucun événement enregistré. Commencez par une alimentation ou une mue.",
+    "historyPrev": "← Précédent",
+    "historyNext": "Suivant →",
+    "historyPage": "Page {{current}} / {{total}}",
     "publicOn": "Public ✓",
     "publicOff": "Rendre public",
     "qrCode": "Code QR",
@@ -180,6 +200,7 @@
     "notesPlaceholder": "Observations personnelles...",
     "planUsage": "Plan gratuit : {{count}}/{{limit}} tarentules.",
     "limitReached": "Vous avez atteint la limite gratuite de 6 tarentules.",
+    "limitTrialHint": "Pro offre une collection illimitée. Les nouveaux comptes ont 7 jours d'essai ; si le vôtre est terminé, abonnez-vous pour continuer.",
     "unsexed": "Indéterminé",
     "female": "Femelle",
     "male": "Mâle",
@@ -262,12 +283,64 @@
     "emptyPending": "Aucun rappel en attente.",
     "done": "✅ Terminé",
     "markDone": "Marquer comme fait",
-    "freeNotice": "Plan gratuit : vous ne pouvez utiliser que des rappels manuels créés par vous.",
+    "freeNotice": "Plan gratuit : rappels manuels uniquement (ceux que vous créez).",
+    "freeAutoUpsell": "Pro ajoute des rappels d'alimentation automatiques selon l'historique de chaque tarentule. Essayez Pro ou passez à l'offre supérieure pour les activer.",
+    "panelFreeUpsell": "Des rappels d'alimentation automatiques ? C'est inclus dans Pro.",
     "proNotice": "Plan Pro actif : vous voyez les rappels manuels et les suggestions automatiques d'alimentation.",
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
     "overdueDays": "Il y a {{count}} jour(s)",
-    "inDays": "Dans {{count}} jours"
+    "inDays": "Dans {{count}} jours",
+    "deleteConfirm": "Supprimer ce rappel ?"
+  },
+  "cropModal": {
+    "title": "✂️ Ajuster la photo",
+    "cancel": "Annuler",
+    "confirm": "Utiliser cette photo",
+    "processing": "Traitement…"
+  },
+  "gallery": {
+    "title": "📷 Galerie",
+    "captionPlaceholder": "Légende (facultatif)",
+    "addPhoto": "+ Ajouter une photo",
+    "uploading": "Envoi…",
+    "empty": "Aucune photo dans la galerie pour l’instant.",
+    "deletePhoto": "Supprimer la photo",
+    "deleteConfirm": "Supprimer cette photo ?"
+  },
+  "logModals": {
+    "dateTime": "Date et heure",
+    "notes": "Notes",
+    "optional": "Facultatif…",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saveError": "Impossible d’enregistrer.",
+    "select": "– Choisir –",
+    "feedingTitle": "🍽️ Enregistrer un repas",
+    "preyType": "Type de proie",
+    "preySize": "Taille",
+    "quantity": "Quantité",
+    "accepted": "Accepté ?",
+    "acceptedYes": "Oui",
+    "acceptedNo": "Non (refus)",
+    "preyCricket": "Grillon",
+    "preyDubia": "Blatte Dubia",
+    "preySuperworm": "Superworm",
+    "preyWorm": "Ver de terre",
+    "preyPinkies": "Pinkies",
+    "preyOther": "Autre",
+    "sizeExtraSmall": "très petit",
+    "sizeSmall": "petit",
+    "sizeMedium": "moyen",
+    "sizeLarge": "grand",
+    "moltTitle": "🕸️ Enregistrer une mue",
+    "preMoltSize": "Taille avant mue (cm)",
+    "postMoltSize": "Taille après mue (cm)",
+    "sizeExample": "ex. {{n}}",
+    "behaviorTitle": "🔍 Enregistrer un comportement",
+    "moodLabel": "Humeur / état",
+    "behaviorNotesPlaceholder": "Décrivez ce que vous avez observé…"
   },
   "public": {
     "notFound": "Profil introuvable ou non public.",
@@ -280,14 +353,17 @@
     "privateCard": "Ce profil est privé.",
     "loginToAccess": "Connectez-vous pour voir votre collection",
     "quickActionsProTitle": "📋 Saisie rapide",
-    "quickActionsProCTA": "Passez à Pro pour enregistrer les repas, mues et comportements directement depuis les QR codes.",
-    "quickActionsUpgrade": "Passer à Pro"
+    "quickActionsProCTA": "Pour enregistrer repas, mues et comportements en scannant le QR code, il faut Pro. Les nouveaux comptes ont 7 jours d'essai gratuit avec tout débloqué.",
+    "quickActionsUpgrade": "Essayer Pro gratuitement"
   }
   ,
   "pro": {
     "title": "TarantulApp Pro",
     "subtitle": "Fonctionnalités pensées pour les grandes collections et le suivi automatique.",
+    "trialThenPricing": "7 jours d'essai gratuits à la création du compte, puis 2,99 $/mois ou 29,99 $/an.",
+    "pricingAfterTrial": "Après l'essai : 2,99 $/mois ou 29,99 $/an.",
     "freeTitle": "Gratuit (actuel)",
+    "freeTrialLine": "Essai gratuit de 7 jours à l'inscription — accès complet, puis limites du gratuit ou lecture seule sans abonnement.",
     "freeLimit": "Jusqu'à 6 tarentules dans votre collection.",
     "freeReminders": "Rappels créés manuellement par vous.",
     "freeQr": "QR avec fiche basique, sans actions.",
@@ -316,6 +392,9 @@
     "checkoutError": "Impossible de démarrer le paiement pour le moment.",
     "checkoutNotConfigured": "Le paiement Stripe n'est pas encore configuré dans cet environnement.",
     "publicToggleProOnly": "🔒 Fonction Pro",
-    "publicToggleProOnlyHint": "Passez à Pro pour rendre votre fiche scannable par tout le monde."
+    "publicToggleProOnlyHint": "Passez à Pro pour rendre votre fiche scannable par tout le monde.",
+    "trialDaysLeft": "Il reste {{count}} jour(s) d'essai",
+    "ctaTryFree": "Essayer Pro gratuitement",
+    "ctaRegisterTrialReminder": "Les nouveaux comptes incluent 7 jours d'essai avec toutes les fonctions Pro. Si vous avez déjà utilisé le vôtre, abonnez-vous ci-dessous pour garder l'accès illimité."
   }
 }

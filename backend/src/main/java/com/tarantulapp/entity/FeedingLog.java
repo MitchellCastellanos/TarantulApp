@@ -1,7 +1,8 @@
 package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -17,7 +18,7 @@ public class FeedingLog {
     private UUID tarantulaId;
 
     @Column(name = "fed_at", nullable = false)
-    private LocalDateTime fedAt;
+    private Instant fedAt;
 
     @Column(name = "prey_type", length = 50)
     private String preyType;
@@ -35,17 +36,17 @@ public class FeedingLog {
     private String notes;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @PrePersist
-    protected void onCreate() { createdAt = LocalDateTime.now(); }
+    protected void onCreate() { createdAt = Instant.now(); }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
-    public LocalDateTime getFedAt() { return fedAt; }
-    public void setFedAt(LocalDateTime fedAt) { this.fedAt = fedAt; }
+    public Instant getFedAt() { return fedAt; }
+    public void setFedAt(Instant fedAt) { this.fedAt = fedAt; }
     public String getPreyType() { return preyType; }
     public void setPreyType(String preyType) { this.preyType = preyType; }
     public String getPreySize() { return preySize; }
@@ -56,5 +57,5 @@ public class FeedingLog {
     public void setAccepted(Boolean accepted) { this.accepted = accepted; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

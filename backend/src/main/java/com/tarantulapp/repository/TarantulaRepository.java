@@ -9,6 +9,9 @@ import java.util.UUID;
 
 public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     List<Tarantula> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    /** Orden estable: las 6 primeras son las del cupo Free cuando no hay Pro/prueba. */
+    List<Tarantula> findByUserIdOrderByCreatedAtAscIdAsc(UUID userId);
     long countByUserId(UUID userId);
     Optional<Tarantula> findByShortId(String shortId);
     boolean existsByShortId(String shortId);
