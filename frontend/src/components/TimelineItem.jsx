@@ -39,8 +39,8 @@ export default function TimelineItem({ event, onDelete }) {
       <div className="flex-grow-1 pb-2">
         <div className="d-flex justify-content-between align-items-start">
           <div>
-            <span className="fw-semibold small">{getTitle()}</span>
-            <span className="text-muted small ms-2">{formatDate(event.eventDate)}</span>
+            <span className="fw-semibold small ta-history-title">{getTitle()}</span>
+            <span className="small ms-2 ta-history-meta">{formatDate(event.eventDate)}</span>
           </div>
           {onDelete && (
             <button className="btn btn-link btn-sm text-danger p-0 ms-2"
@@ -51,7 +51,7 @@ export default function TimelineItem({ event, onDelete }) {
           )}
         </div>
         {event.summary && (
-          <p className="text-muted small mb-0 mt-1">{event.summary}</p>
+          <p className="small mb-0 mt-1 ta-history-summary">{event.summary}</p>
         )}
       </div>
     </div>

@@ -17,6 +17,13 @@ import { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const LEVEL_COLOR  = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
+const defaultSpiderStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  transform: 'scale(1.28)',
+  transformOrigin: 'center',
+}
 
 function formatDate(iso) {
   if (!iso) return '–'
@@ -192,7 +199,7 @@ export default function TarantulaDetailPage() {
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <img src="/spider-default.svg" alt="spider"
-                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       style={defaultSpiderStyle} />
                 )}
               </div>
 

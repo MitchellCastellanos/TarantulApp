@@ -6,6 +6,14 @@ import { imgUrl } from '../services/api'
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STAGE_LABEL  = { sling: 'Sling', juvenile: 'Juvenil', subadult: 'Subadulto', adult: 'Adulto' }
 const SEX_LABEL    = { male: '♂ Macho', female: '♀ Hembra', unsexed: '? Sin determinar' }
+const defaultSpiderStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  opacity: 0.92,
+  transform: 'scale(1.28)',
+  transformOrigin: 'center',
+}
 
 export default function TarantulaCard({ tarantula }) {
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status } = tarantula
@@ -35,7 +43,7 @@ export default function TarantulaCard({ tarantula }) {
             </>
           ) : (
             <img src="/spider-default.svg" alt="spider"
-                 style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+                 style={defaultSpiderStyle} />
           )}
         </div>
 

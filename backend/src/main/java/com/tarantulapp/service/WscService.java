@@ -53,16 +53,19 @@ public class WscService {
     private final SpeciesRepository speciesRepository;
     private final SpeciesSynonymRepository speciesSynonymRepository;
     private final InatService inatService;
+    private final GbifService gbifService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WscService(RestTemplate restTemplate,
                       SpeciesRepository speciesRepository,
                       SpeciesSynonymRepository speciesSynonymRepository,
-                      InatService inatService) {
+                      InatService inatService,
+                      GbifService gbifService) {
         this.restTemplate = restTemplate;
         this.speciesRepository = speciesRepository;
         this.speciesSynonymRepository = speciesSynonymRepository;
         this.inatService = inatService;
+        this.gbifService = gbifService;
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -138,6 +141,18 @@ public class WscService {
     public SpeciesDTO importSpecies(String name, String family, UUID userId) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Species name is required");
+        }
+
+        // Prefer GBIF accepted import so WSC selections get the same enriched data
+        // path (synonym resolution, common name, synonyms persistence, etc.).
+        Long acceptedKey = resolveAcceptedGbifKey(name);
+        if (acceptedKey != null) {
+            try {
+                return gbifService.importSpecies(acceptedKey, userId);
+            } catch (Exception e) {
+                log.debug("WSC import fallback to manual create for '{}' after GBIF import error: {}",
+                        name, e.getMessage());
+            }
         }
 
         // Already in DB by scientific name?
@@ -242,6 +257,31 @@ public class WscService {
         } catch (Exception e) {
             log.debug("WSC/GBIF match fallback failed for q='{}': {}", q, e.getMessage());
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Resolves a scientific name/synonym to an accepted GBIF species key.
+     * Uses global GBIF backbone matching (not dataset-specific) for robust synonym handling.
+     */
+    private Long resolveAcceptedGbifKey(String name) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromHttpUrl(GBIF_SPECIES_MATCH)
+                    .queryParam("name", name)
+                    .queryParam("rank", "SPECIES")
+                    .toUriString();
+            JsonNode match = restTemplate.getForObject(url, JsonNode.class);
+            if (match == null) return null;
+            if ("NONE".equalsIgnoreCase(text(match, "matchType"))) return null;
+            if (!"SPECIES".equalsIgnoreCase(text(match, "rank"))) return null;
+
+            String keyText = text(match, "acceptedUsageKey", "speciesKey", "usageKey");
+            if (keyText == null || keyText.isBlank()) return null;
+            return Long.parseLong(keyText);
+        } catch (Exception e) {
+            log.debug("WSC import GBIF match failed for '{}': {}", name, e.getMessage());
+            return null;
         }
     }
 }

@@ -25,6 +25,14 @@ function nowISO() {
   return new Date().toISOString().slice(0, 16)
 }
 
+const defaultSpiderStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  transform: 'scale(1.28)',
+  transformOrigin: 'center',
+}
+
 export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
@@ -96,7 +104,7 @@ export default function PublicProfilePage() {
 
   if (error) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
+         style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
       <div className="text-center px-4" style={{ color: 'var(--ta-parchment)', maxWidth: 380 }}>
         <div className="fs-1 mb-3">🔒</div>
         <h5 className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>TarantulApp</h5>
@@ -120,7 +128,7 @@ export default function PublicProfilePage() {
 
   if (!profile) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
+         style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
       <p style={{ color: 'var(--ta-parchment)' }}>{t('common.loading')}</p>
     </div>
   )
@@ -137,7 +145,7 @@ export default function PublicProfilePage() {
   ]
 
   return (
-    <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
+    <div className="min-vh-100" style={{ backgroundImage: "url('/bg-texture.png')", backgroundColor: '#06060e' }}>
       <div className="container py-4" style={{ maxWidth: 480 }}>
 
         {user && (
@@ -158,7 +166,7 @@ export default function PublicProfilePage() {
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <img src="/spider-default.svg" alt="spider"
-                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   style={defaultSpiderStyle} />
             )}
           </div>
 
@@ -210,9 +218,9 @@ export default function PublicProfilePage() {
                   <li key={ev.id} className="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-light">
                     <span style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{eventIcon(ev.type)}</span>
                     <div className="small flex-grow-1">
-                      <div className="fw-semibold">{eventLabel(ev)}</div>
-                      {ev.summary && <div className="text-muted">{ev.summary}</div>}
-                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>{formatDate(ev.eventDate)}</div>
+                      <div className="fw-semibold ta-history-title">{eventLabel(ev)}</div>
+                      {ev.summary && <div className="ta-history-summary">{ev.summary}</div>}
+                      <div className="ta-history-meta" style={{ fontSize: '0.7rem' }}>{formatDate(ev.eventDate)}</div>
                     </div>
                   </li>
                 ))}

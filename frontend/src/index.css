@@ -26,8 +26,13 @@
 body {
   background-color: var(--ta-bg);
   background-image:
+    url('/bg-texture.png'),
     radial-gradient(ellipse at 15% 50%, rgba(60,30,120,0.07) 0%, transparent 55%),
     radial-gradient(ellipse at 85% 20%, rgba(80,40,140,0.05) 0%, transparent 45%);
+  background-size: 420px auto, auto, auto;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed;
+  background-blend-mode: soft-light, normal, normal;
   font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
   font-size: 1.05rem;
   color: var(--ta-text);
@@ -471,4 +476,14 @@ a.text-collection:hover {
 
 .ta-timeline-line {
   background: rgba(100,60,200,0.2) !important;
+}
+
+/* ─── History readability over parchment cards ──────────────────────────── */
+.ta-history-title {
+  color: var(--ta-parchment) !important;
+}
+
+.ta-history-meta,
+.ta-history-summary {
+  color: rgba(225,202,154,0.88) !important;
 }
