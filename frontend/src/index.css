@@ -363,17 +363,37 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   background: linear-gradient(to left, transparent, rgba(100,60,200,0.3));
 }
 
-/* ─── Section header (like the gothic panels) ───────────────────────────── */
+/* ─── Section header (gothic panel titles matching reference) ────────────── */
 
 .ta-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-family: 'Cinzel', serif;
   font-size: 0.82rem;
-  letter-spacing: 2.5px;
+  font-weight: 700;
+  letter-spacing: 2.8px;
   text-transform: uppercase;
-  color: var(--ta-gold);
-  border-bottom: 1px solid rgba(201,168,76,0.18);
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.75rem;
+  color: var(--ta-parchment);
+  padding-bottom: 0.45rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.ta-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(130,85,242,0.8) 0%,
+    rgba(201,168,76,0.45) 40%,
+    rgba(201,168,76,0.45) 60%,
+    rgba(130,85,242,0.8) 100%);
+}
+
+/* Inside FangPanel — remove card's double-border since FangPanel provides it */
+.fang-inner.card {
+  border-top-color: rgba(130,80,220,0.2) !important;
 }
 
 /* ─── Page title ────────────────────────────────────────────────────────── */

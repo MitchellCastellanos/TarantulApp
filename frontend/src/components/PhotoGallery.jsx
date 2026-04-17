@@ -38,7 +38,9 @@ export default function PhotoGallery({ tarantulaId }) {
   return (
     <div className="card border-0 shadow-sm mb-4">
       <div className="card-body">
-        <h6 className="fw-bold mb-3">📷 Galería</h6>
+        <div className="ta-section-header mb-3">
+          <span>📷 Galería</span>
+        </div>
 
         {/* Upload form */}
         <form onSubmit={handleUpload} className="mb-3 d-flex gap-2 align-items-end flex-wrap">

@@ -291,26 +291,28 @@ export default function TarantulaDetailPage() {
               <FangPanel className="mb-4">
               <div className="card border-0 shadow-sm">
                 <div className="card-body">
-                  {/* Header: title + source badge */}
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="fw-bold mb-0">{t('species.cardTitle')}</h6>
+                  {/* Header */}
+                  <div className="ta-section-header mb-3">
+                    <span>🕷 {t('species.cardTitle')}</span>
+                    <span>
                     {species.dataSource === 'gbif' && (
-                      <span className="badge" style={{ background: 'rgba(20,80,180,0.6)', fontSize: '0.65rem' }}
+                      <span className="badge" style={{ background: 'rgba(20,80,180,0.55)', fontSize: '0.65rem', letterSpacing: 1 }}
                             title={t('species.estimatedNoteGbif')}>
                         🌍 GBIF
                       </span>
                     )}
                     {species.dataSource === 'wsc' && (
-                      <span className="badge" style={{ background: 'rgba(80,20,140,0.7)', fontSize: '0.65rem' }}
+                      <span className="badge" style={{ background: 'rgba(80,20,140,0.65)', fontSize: '0.65rem', letterSpacing: 1 }}
                             title={t('species.estimatedNoteWsc')}>
                         🕷️ WSC
                       </span>
                     )}
                     {species.dataSource === 'seed' && (
-                      <span className="badge bg-secondary" style={{ fontSize: '0.65rem' }}>
+                      <span className="badge" style={{ background: 'rgba(40,30,80,0.75)', color: 'rgba(220,190,130,0.85)', fontSize: '0.65rem', letterSpacing: 1 }}>
                         📚 {t('species.catalog')}
                       </span>
                     )}
+                    </span>
                   </div>
 
                   {/* Reference photo from iNaturalist (only shown when no own photo) */}
@@ -326,35 +328,35 @@ export default function TarantulaDetailPage() {
 
                   <div className="row g-2 small">
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.origin')}</div>
+                      <div className="text-muted">📍 {t('species.origin')}</div>
                       <div className="fw-semibold">{species.originRegion ?? t('common.unknown')}</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.habitat')}</div>
+                      <div className="text-muted">🌿 {t('species.habitat')}</div>
                       <div className="fw-semibold">
                         {HABITAT_ICON[species.habitatType]} {species.habitatType ? t(`habitat.${species.habitatType}`) : t('common.unknown')}
                       </div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.adultSize')} *</div>
+                      <div className="text-muted">📐 {t('species.adultSize')} *</div>
                       <div className="fw-semibold">
                         {species.adultSizeCmMin ?? '?'}–{species.adultSizeCmMax ?? '?'} cm
                       </div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.growth')} *</div>
+                      <div className="text-muted">🌱 {t('species.growth')} *</div>
                       <div className="fw-semibold">{species.growthRate ? t(`species.growth${species.growthRate.charAt(0).toUpperCase() + species.growthRate.slice(1)}`) : t('common.unknown')}</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.humidity')} *</div>
+                      <div className="text-muted">💧 {t('species.humidity')} *</div>
                       <div className="fw-semibold">{species.humidityMin ?? '?'}–{species.humidityMax ?? '?'}%</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.ventilation')} *</div>
+                      <div className="text-muted">🌬️ {t('species.ventilation')} *</div>
                       <div className="fw-semibold">{species.ventilation ? t(`species.vent${species.ventilation.charAt(0).toUpperCase() + species.ventilation.slice(1)}`) : t('common.unknown')}</div>
                     </div>
                     <div className="col-6 col-md-4">
-                      <div className="text-muted">{t('species.level')} *</div>
+                      <div className="text-muted">⭐ {t('species.level')} *</div>
                       <div>
                         <span className={`badge bg-${LEVEL_COLOR[species.experienceLevel] ?? 'secondary'}`}>
                           {species.experienceLevel ? t(`species.level${species.experienceLevel.charAt(0).toUpperCase() + species.experienceLevel.slice(1)}`) : t('common.unknown')}
@@ -362,12 +364,12 @@ export default function TarantulaDetailPage() {
                       </div>
                     </div>
                     <div className="col-md-8">
-                      <div className="text-muted">{t('species.temperament')} *</div>
+                      <div className="text-muted">😤 {t('species.temperament')} *</div>
                       <div className="fw-semibold">{species.temperament ?? t('common.unknown')}</div>
                     </div>
                     {species.substrateType && (
                       <div className="col-12">
-                        <div className="text-muted">{t('species.substrate')} *</div>
+                        <div className="text-muted">🪨 {t('species.substrate')} *</div>
                         <div className="fw-semibold">{species.substrateType}</div>
                       </div>
                     )}
@@ -397,7 +399,9 @@ export default function TarantulaDetailPage() {
               <FangPanel className="mb-4">
               <div className="card border-0 shadow-sm">
                 <div className="card-body">
-                  <h6 className="fw-bold mb-2">{t('terrarium.title')}</h6>
+                  <div className="ta-section-header mb-3">
+                    <span>🏠 {t('terrarium.title')}</span>
+                  </div>
                   <p className="small mb-2 text-muted">
                     {t('terrarium.basedOn')} <strong>{tarantula.currentSizeCm} cm</strong>
                     {terrariumRec.adultSizeCmMax && ` · ${t('terrarium.expectedAdult')}: ${terrariumRec.adultSizeCmMax} cm`}
@@ -444,7 +448,9 @@ export default function TarantulaDetailPage() {
             <FangPanel>
             <div className="card border-0 shadow-sm">
               <div className="card-body">
-                <h6 className="fw-bold mb-3">{t('tarantula.history')}</h6>
+                <div className="ta-section-header mb-3">
+                  <span>📜 {t('tarantula.history')}</span>
+                </div>
                 {timeline.length === 0 ? (
                   <p className="text-muted small mb-0">{t('tarantula.historyEmpty')}</p>
                 ) : (
