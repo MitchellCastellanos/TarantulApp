@@ -38,6 +38,7 @@ export default function ProPage() {
   // Poll for plan upgrade after successful checkout
   useEffect(() => {
     if (checkout !== 'success' || !user) return
+    if (user.plan === 'PRO') return // already upgraded, nothing to do
 
     pollingRef.current = true
     setPolling(true)
@@ -49,9 +50,9 @@ export default function ProPage() {
       billingService.me()
         .then(data => {
           if (!pollingRef.current) return
-          setBilling(data)
-          setPlan(data.plan)
           if (data.plan === 'PRO') {
+            setBilling(data)
+            setPlan(data.plan)
             setPolling(false)
           } else if (attempts < 6) {
             setTimeout(poll, 2000)
@@ -65,9 +66,9 @@ export default function ProPage() {
         })
     }
 
-    const t = setTimeout(poll, 1500)
-    return () => { pollingRef.current = false; clearTimeout(t) }
-  }, [checkout, user])
+    const timer = setTimeout(poll, 1500)
+    return () => { pollingRef.current = false; clearTimeout(timer) }
+  }, [checkout, user?.id]) // user.id never changes — avoids infinite loop from setPlan re-triggering this effect
 
   const handleUpgrade = async () => {
     if (!user) {
