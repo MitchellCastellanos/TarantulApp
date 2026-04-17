@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -28,6 +28,7 @@ export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
   const { t }       = useTranslation()
+  const navigate    = useNavigate()
 
   const [profile, setProfile]   = useState(null)
   const [timeline, setTimeline] = useState([])
@@ -53,7 +54,9 @@ export default function PublicProfilePage() {
 
   useEffect(() => { load() }, [shortId])
 
-  const isOwner = !!(user && profile && String(user.id) === String(profile.ownerId))
+  const isOwner    = !!(user && profile && String(user.id) === String(profile.ownerId))
+  const isPro      = user?.plan === 'PRO'
+  const isProOwner = isOwner && isPro
 
   const doSave = async (fn) => {
     setBusy(true)
@@ -93,10 +96,23 @@ export default function PublicProfilePage() {
   if (error) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
          style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
-      <div className="text-center" style={{ color: 'var(--ta-parchment)' }}>
-        <div className="fs-1 mb-2">🕸️</div>
-        <p>{error}</p>
-        <Link to="/" className="btn btn-outline-light btn-sm">{t('public.goHome')}</Link>
+      <div className="text-center px-4" style={{ color: 'var(--ta-parchment)', maxWidth: 380 }}>
+        <div className="fs-1 mb-3">🔒</div>
+        <h5 className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>TarantulApp</h5>
+        <p className="mb-4" style={{ opacity: 0.8 }}>{t('public.privateCard')}</p>
+        {user ? (
+          <Link to="/" className="btn btn-outline-light btn-sm">
+            {t('public.backToCollection')}
+          </Link>
+        ) : (
+          <div className="d-flex flex-column align-items-center gap-2">
+            <p className="small mb-2" style={{ opacity: 0.65 }}>{t('public.loginToAccess')}</p>
+            <Link to="/login" className="btn btn-sm px-4"
+                  style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}>
+              {t('nav.login', 'Sign in')}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -200,8 +216,25 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* ─── Panel de registro rápido (solo propietario) ── */}
-        {isOwner && (
+        {/* ─── Teaser para propietarios free ─────────────── */}
+        {isOwner && !isPro && (
+          <div className="card shadow-sm">
+            <div className="card-body p-3 text-center">
+              <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🔒</div>
+              <p className="fw-semibold mb-1 small" style={{ color: 'var(--ta-brown)' }}>
+                {t('public.quickActionsProTitle')}
+              </p>
+              <p className="text-muted small mb-3">{t('public.quickActionsProCTA')}</p>
+              <Link to="/pro" className="btn btn-sm px-3"
+                    style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}>
+                {t('public.quickActionsUpgrade')}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Panel de registro rápido (solo propietario Pro) ── */}
+        {isProOwner && (
           <div className="card shadow-sm">
             <div className="card-body p-3">
               <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>

@@ -276,7 +276,12 @@
     "lastFed": "🍽️ Last fed:",
     "lastMolt": "🕸️ Last molt:",
     "history": "📅 Recent history",
-    "historyEmpty": "No events recorded yet."
+    "historyEmpty": "No events recorded yet.",
+    "privateCard": "This profile is private.",
+    "loginToAccess": "Sign in to view your collection",
+    "quickActionsProTitle": "📋 Quick log",
+    "quickActionsProCTA": "Upgrade to Pro to log feedings, molts and behaviors directly from QR codes.",
+    "quickActionsUpgrade": "Upgrade to Pro"
   }
   ,
   "pro": {
@@ -303,9 +308,14 @@
     "priceYearly": "$29.99 / year",
     "priceSaveLabel": "Save 16%",
     "priceYearlyNote": "Billed annually",
+    "checkoutSuccessTitle": "🎉 Welcome to Pro!",
+    "checkoutSuccessBody": "Your plan has been upgraded. All Pro features are now active.",
+    "checkoutUpdating": "Confirming your subscription…",
     "checkoutSuccess": "Payment completed. We are updating your Pro plan.",
     "checkoutCancel": "Checkout cancelled. Your current plan did not change.",
     "checkoutError": "Could not start checkout right now.",
-    "checkoutNotConfigured": "Stripe checkout is not configured in this environment yet."
+    "checkoutNotConfigured": "Stripe checkout is not configured in this environment yet.",
+    "publicToggleProOnly": "🔒 Pro feature",
+    "publicToggleProOnlyHint": "Upgrade to Pro to make this card scannable by anyone."
   }
 }

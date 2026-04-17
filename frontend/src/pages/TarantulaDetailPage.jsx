@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import StatusBadge from '../components/StatusBadge'
 import TimelineItem from '../components/TimelineItem'
@@ -25,6 +26,8 @@ export default function TarantulaDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const isPro = user?.plan === 'PRO'
 
   const [tarantula, setTarantula] = useState(null)
   const [timeline, setTimeline] = useState([])
@@ -236,11 +239,19 @@ export default function TarantulaDetailPage() {
                             onClick={() => setModal('qr')}>
                       📱 {t('tarantula.qrCode')}
                     </button>
-                    <button
-                      className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
-                      onClick={handleTogglePublic}>
-                      {tarantula.isPublic ? `🌐 ${t('tarantula.publicOn')}` : `🔒 ${t('tarantula.publicOff')}`}
-                    </button>
+                    {isPro ? (
+                      <button
+                        className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
+                        onClick={handleTogglePublic}>
+                        {tarantula.isPublic ? `🌐 ${t('tarantula.publicOn')}` : `🔒 ${t('tarantula.publicOff')}`}
+                      </button>
+                    ) : (
+                      <Link to="/pro"
+                        className="btn btn-sm flex-fill btn-outline-secondary"
+                        title={t('pro.publicToggleProOnlyHint')}>
+                        {t('pro.publicToggleProOnly')}
+                      </Link>
+                    )}
                     <button className="btn btn-sm flex-fill"
                             style={{ borderColor: '#6b4a00', color: '#6b4a00' }}
                             onClick={() => setModal('deceased')}>

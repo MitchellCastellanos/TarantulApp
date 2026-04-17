@@ -276,7 +276,12 @@
     "lastFed": "🍽️ Dernier repas :",
     "lastMolt": "🕸️ Dernière mue :",
     "history": "📅 Historique récent",
-    "historyEmpty": "Aucun événement enregistré."
+    "historyEmpty": "Aucun événement enregistré.",
+    "privateCard": "Ce profil est privé.",
+    "loginToAccess": "Connectez-vous pour voir votre collection",
+    "quickActionsProTitle": "📋 Saisie rapide",
+    "quickActionsProCTA": "Passez à Pro pour enregistrer les repas, mues et comportements directement depuis les QR codes.",
+    "quickActionsUpgrade": "Passer à Pro"
   }
   ,
   "pro": {
@@ -303,9 +308,14 @@
     "priceYearly": "29,99 $ / an",
     "priceSaveLabel": "Économisez 16%",
     "priceYearlyNote": "Facturé annuellement",
+    "checkoutSuccessTitle": "🎉 Bienvenue dans Pro !",
+    "checkoutSuccessBody": "Votre plan a été mis à niveau. Toutes les fonctionnalités Pro sont maintenant actives.",
+    "checkoutUpdating": "Confirmation de votre abonnement…",
     "checkoutSuccess": "Paiement terminé. Nous mettons à jour votre plan Pro.",
     "checkoutCancel": "Paiement annulé. Votre plan actuel n'a pas changé.",
     "checkoutError": "Impossible de démarrer le paiement pour le moment.",
-    "checkoutNotConfigured": "Le paiement Stripe n'est pas encore configuré dans cet environnement."
+    "checkoutNotConfigured": "Le paiement Stripe n'est pas encore configuré dans cet environnement.",
+    "publicToggleProOnly": "🔒 Fonction Pro",
+    "publicToggleProOnlyHint": "Passez à Pro pour rendre votre fiche scannable par tout le monde."
   }
 }

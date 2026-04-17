@@ -1,8 +1,8 @@
 import Navbar from '../components/Navbar'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { useEffect, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import billingService from '../services/billingService'
 
 export default function ProPage() {
@@ -14,23 +14,60 @@ export default function ProPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')
   const [interval, setInterval] = useState('month')
-  const plan = billing?.plan || user?.plan || 'FREE'
+  const [polling, setPolling] = useState(false)
+  const pollingRef = useRef(false)
 
+  const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
   const checkout = searchParams.get('checkout')
 
   const loadBilling = () => {
-    billingService.me()
+    return billingService.me()
       .then(data => {
         setBilling(data)
         setPlan(data.plan)
+        return data
       })
-      .catch(() => {})
+      .catch(() => null)
   }
 
   useEffect(() => {
     if (user) loadBilling()
   }, [user])
+
+  // Poll for plan upgrade after successful checkout
+  useEffect(() => {
+    if (checkout !== 'success' || !user) return
+
+    pollingRef.current = true
+    setPolling(true)
+    let attempts = 0
+
+    const poll = () => {
+      if (!pollingRef.current) return
+      attempts++
+      billingService.me()
+        .then(data => {
+          if (!pollingRef.current) return
+          setBilling(data)
+          setPlan(data.plan)
+          if (data.plan === 'PRO') {
+            setPolling(false)
+          } else if (attempts < 6) {
+            setTimeout(poll, 2000)
+          } else {
+            setPolling(false)
+          }
+        })
+        .catch(() => {
+          if (pollingRef.current && attempts < 6) setTimeout(poll, 2000)
+          else setPolling(false)
+        })
+    }
+
+    const t = setTimeout(poll, 1500)
+    return () => { pollingRef.current = false; clearTimeout(t) }
+  }, [checkout, user])
 
   const handleUpgrade = async () => {
     if (!user) {
@@ -59,11 +96,37 @@ export default function ProPage() {
             {isPro ? t('pro.currentPro') : t('pro.currentFree')}
           </span>
         </div>
+
+        {/* Success screen */}
         {checkout === 'success' && (
-          <div className="alert alert-success small py-2">
-            {t('pro.checkoutSuccess')}
-          </div>
+          isPro ? (
+            <div className="card border-0 shadow-sm mb-4" style={{ background: 'linear-gradient(135deg,#0d2b0d,#1a3d1a)', border: '1px solid #2d6a2d' }}>
+              <div className="card-body p-4 text-center">
+                <div style={{ fontSize: '3rem', marginBottom: 8 }}>🎉</div>
+                <h4 className="fw-bold mb-2" style={{ color: '#a8d8b0' }}>{t('pro.checkoutSuccessTitle')}</h4>
+                <p className="mb-3" style={{ color: '#c8e8d0' }}>{t('pro.checkoutSuccessBody')}</p>
+                <div className="d-flex justify-content-center gap-2">
+                  <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#111', fontSize: '0.9rem' }}>
+                    ⭐ Pro
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <Link to="/" className="btn btn-sm btn-outline-light">{t('public.backToCollection')}</Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="card border-0 shadow-sm mb-4" style={{ background: '#1a2200', border: '1px solid #4a5e00' }}>
+              <div className="card-body p-3 text-center">
+                <div className="d-flex align-items-center justify-content-center gap-2">
+                  <div className="spinner-border spinner-border-sm" style={{ color: 'var(--ta-gold)' }} role="status" />
+                  <span style={{ color: '#d4e88a' }}>{t('pro.checkoutUpdating')}</span>
+                </div>
+              </div>
+            </div>
+          )
         )}
+
         {checkout === 'cancel' && (
           <div className="alert alert-warning small py-2">
             {t('pro.checkoutCancel')}
@@ -126,7 +189,6 @@ export default function ProPage() {
             </p>
             {!isPro && (
               <div className="d-flex flex-column gap-3">
-                {/* Billing interval toggle */}
                 <div className="d-flex gap-2">
                   <button
                     className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
@@ -162,4 +224,3 @@ export default function ProPage() {
     </div>
   )
 }
-

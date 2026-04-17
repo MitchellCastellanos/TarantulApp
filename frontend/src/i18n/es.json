@@ -276,7 +276,12 @@
     "lastFed": "🍽️ Última comida:",
     "lastMolt": "🕸️ Última muda:",
     "history": "📅 Historial reciente",
-    "historyEmpty": "Aún no hay eventos registrados."
+    "historyEmpty": "Aún no hay eventos registrados.",
+    "privateCard": "Este perfil es privado.",
+    "loginToAccess": "Inicia sesión para ver tu colección",
+    "quickActionsProTitle": "📋 Registro rápido",
+    "quickActionsProCTA": "Actualiza a Pro para registrar alimentaciones, mudas y comportamientos directamente desde el QR.",
+    "quickActionsUpgrade": "Actualizar a Pro"
   }
   ,
   "pro": {
@@ -303,9 +308,14 @@
     "priceYearly": "$29.99 USD / año",
     "priceSaveLabel": "Ahorra 16%",
     "priceYearlyNote": "Facturado anualmente",
+    "checkoutSuccessTitle": "🎉 ¡Bienvenido a Pro!",
+    "checkoutSuccessBody": "Tu plan fue actualizado. Todas las funciones Pro ya están activas.",
+    "checkoutUpdating": "Confirmando tu suscripción…",
     "checkoutSuccess": "Pago completado. Estamos actualizando tu plan Pro.",
     "checkoutCancel": "Checkout cancelado. Tu plan actual no cambió.",
     "checkoutError": "No se pudo iniciar el checkout en este momento.",
-    "checkoutNotConfigured": "Checkout de Stripe no configurado aún en este entorno."
+    "checkoutNotConfigured": "Checkout de Stripe no configurado aún en este entorno.",
+    "publicToggleProOnly": "🔒 Función Pro",
+    "publicToggleProOnlyHint": "Actualiza a Pro para hacer tu ficha escaneable por cualquiera."
   }
 }
