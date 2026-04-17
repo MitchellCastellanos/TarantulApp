@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import logsService from '../services/logsService'
+import FangPanel from '../components/FangPanel'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STATUS_CFG   = {
@@ -148,7 +149,8 @@ export default function PublicProfilePage() {
         )}
 
         {/* ─── Ficha pública ──────────────────────────── */}
-        <div className="card shadow-lg mb-3">
+        <FangPanel className="mb-3">
+        <div className="card shadow-lg">
           <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                style={{ height: 240, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
             {profile.profilePhoto ? (
@@ -191,9 +193,11 @@ export default function PublicProfilePage() {
             🕷️ TarantulApp
           </div>
         </div>
+        </FangPanel>
 
         {/* ─── Historial reciente ─────────────────────── */}
-        <div className="card shadow-sm mb-3">
+        <FangPanel className="mb-3">
+        <div className="card shadow-sm">
           <div className="card-body p-3">
             <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>
               {t('public.history')}
@@ -216,9 +220,11 @@ export default function PublicProfilePage() {
             )}
           </div>
         </div>
+        </FangPanel>
 
         {/* ─── Teaser para propietarios free ─────────────── */}
         {isOwner && !isPro && (
+          <FangPanel>
           <div className="card shadow-sm">
             <div className="card-body p-3 text-center">
               <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🔒</div>
@@ -232,10 +238,12 @@ export default function PublicProfilePage() {
               </Link>
             </div>
           </div>
+          </FangPanel>
         )}
 
         {/* ─── Panel de registro rápido (solo propietario Pro) ── */}
         {isProOwner && (
+          <FangPanel>
           <div className="card shadow-sm">
             <div className="card-body p-3">
               <p className="fw-semibold mb-2 small" style={{ color: 'var(--ta-brown)' }}>
@@ -339,6 +347,7 @@ export default function PublicProfilePage() {
               )}
             </div>
           </div>
+          </FangPanel>
         )}
       </div>
     </div>

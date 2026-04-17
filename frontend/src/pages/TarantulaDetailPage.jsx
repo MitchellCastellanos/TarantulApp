@@ -10,6 +10,7 @@ import MoltModal from '../components/MoltModal'
 import BehaviorModal from '../components/BehaviorModal'
 import QRModal from '../components/QRModal'
 import PhotoGallery from '../components/PhotoGallery'
+import FangPanel from '../components/FangPanel'
 import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
 import { imgUrl } from '../services/api'
@@ -181,6 +182,7 @@ export default function TarantulaDetailPage() {
         <div className="row g-4">
           {/* ─── Columna izquierda: perfil ─────────────────────────────── */}
           <div className="col-md-4">
+            <FangPanel>
             <div className="card border-0 shadow-sm">
               {/* Foto */}
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
@@ -266,6 +268,7 @@ export default function TarantulaDetailPage() {
                 </button>
               </div>
             </div>
+            </FangPanel>
           </div>
 
           {/* ─── Columna derecha: ficha especie + timeline ─────────────── */}
@@ -285,7 +288,8 @@ export default function TarantulaDetailPage() {
             )}
             {/* Ficha de especie */}
             {species && (
-              <div className="card border-0 shadow-sm mb-4">
+              <FangPanel className="mb-4">
+              <div className="card border-0 shadow-sm">
                 <div className="card-body">
                   {/* Header: title + source badge */}
                   <div className="d-flex justify-content-between align-items-center mb-3">
@@ -385,11 +389,13 @@ export default function TarantulaDetailPage() {
                   </div>
                 </div>
               </div>
+              </FangPanel>
             )}
 
             {/* Recomendación de terrario */}
             {terrariumRec && (
-              <div className="card border-0 shadow-sm mb-4">
+              <FangPanel className="mb-4">
+              <div className="card border-0 shadow-sm">
                 <div className="card-body">
                   <h6 className="fw-bold mb-2">{t('terrarium.title')}</h6>
                   <p className="small mb-2 text-muted">
@@ -414,6 +420,7 @@ export default function TarantulaDetailPage() {
                   </p>
                 </div>
               </div>
+              </FangPanel>
             )}
 
             {/* Acciones de registro */}
@@ -434,6 +441,7 @@ export default function TarantulaDetailPage() {
             <PhotoGallery tarantulaId={id} />
 
             {/* Timeline */}
+            <FangPanel>
             <div className="card border-0 shadow-sm">
               <div className="card-body">
                 <h6 className="fw-bold mb-3">{t('tarantula.history')}</h6>
@@ -446,6 +454,7 @@ export default function TarantulaDetailPage() {
                 )}
               </div>
             </div>
+            </FangPanel>
           </div>
         </div>
       </div>

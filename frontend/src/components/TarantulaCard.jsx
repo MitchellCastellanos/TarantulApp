@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import StatusBadge from './StatusBadge'
+import FangPanel from './FangPanel'
 import { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
@@ -15,6 +16,7 @@ export default function TarantulaCard({ tarantula }) {
 
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
+      <FangPanel className="h-100">
       <div className="card h-100 shadow-sm border-0 tarantula-card">
         {/* Foto o placeholder */}
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative"
@@ -68,6 +70,7 @@ export default function TarantulaCard({ tarantula }) {
           </div>
         </div>
       </div>
+      </FangPanel>
     </Link>
   )
 }
