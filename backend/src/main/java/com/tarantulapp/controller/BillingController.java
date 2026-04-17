@@ -101,6 +101,7 @@ public class BillingController {
                     .build();
 
             Session session = Session.create(params);
+            log.info("Stripe session created. successUrl={} sessionUrl={}", baseUrl + "/pro?checkout=success", session.getUrl());
             return ResponseEntity.ok(Map.of(
                     "checkoutEnabled", true,
                     "url", session.getUrl()
