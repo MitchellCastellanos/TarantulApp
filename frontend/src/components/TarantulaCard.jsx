@@ -34,7 +34,7 @@ export default function TarantulaCard({ tarantula }) {
               )}
             </>
           ) : (
-            <img src="/spider-default.svg" alt="spider"
+            <img src="/spider-default.png" alt="spider"
                  style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
           )}
         </div>

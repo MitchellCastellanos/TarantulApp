@@ -27,7 +27,10 @@ body {
   background-color: var(--ta-bg);
   background-image:
     radial-gradient(ellipse at 15% 50%, rgba(60,30,120,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 20%, rgba(80,40,140,0.05) 0%, transparent 45%);
+    radial-gradient(ellipse at 85% 20%, rgba(80,40,140,0.05) 0%, transparent 45%),
+    url('/bg-texture.png');
+  background-size: auto, auto, 512px 512px;
+  background-blend-mode: normal, normal, overlay;
   font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
   font-size: 1.05rem;
   color: var(--ta-text);

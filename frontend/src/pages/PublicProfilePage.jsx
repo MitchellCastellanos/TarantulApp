@@ -157,7 +157,7 @@ export default function PublicProfilePage() {
               <img src={imgUrl(profile.profilePhoto)} alt={profile.name}
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <img src="/spider-default.svg" alt="spider"
+              <img src="/spider-default.png" alt="spider"
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             )}
           </div>

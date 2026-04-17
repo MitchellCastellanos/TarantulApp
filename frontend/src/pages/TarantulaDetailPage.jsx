@@ -191,7 +191,7 @@ export default function TarantulaDetailPage() {
                   <img src={displayProfilePhoto} alt={tarantula.name}
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <img src="/spider-default.svg" alt="spider"
+                  <img src="/spider-default.png" alt="spider"
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </div>
@@ -444,10 +444,14 @@ export default function TarantulaDetailPage() {
             {/* Photo gallery */}
             <PhotoGallery tarantulaId={id} />
 
-            {/* Timeline */}
-            <FangPanel>
-            <div className="card border-0 shadow-sm">
-              <div className="card-body">
+            {/* Timeline — parchment card (no FangPanel: parchment image has its own frame) */}
+            <div className="card border-0 shadow-sm" style={{ overflow: 'hidden' }}>
+              <div className="card-body" style={{
+                backgroundImage: "url('/parchment-bg.png')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundBlendMode: 'multiply',
+              }}>
                 <div className="ta-section-header mb-3">
                   <span>📜 {t('tarantula.history')}</span>
                 </div>
@@ -460,7 +464,6 @@ export default function TarantulaDetailPage() {
                 )}
               </div>
             </div>
-            </FangPanel>
           </div>
         </div>
       </div>
