@@ -18,22 +18,22 @@ export default function TarantulaCard({ tarantula }) {
       <div className="card h-100 shadow-sm border-0 tarantula-card">
         {/* Foto o placeholder */}
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative"
-             style={{ height: '160px', background: 'linear-gradient(135deg, #1a1a2e, #2d2d44)' }}>
+             style={{ height: '160px', background: 'linear-gradient(135deg, #0c0c1e 0%, #1a1040 100%)' }}>
           {displayPhoto ? (
             <>
               <img src={displayPhoto} alt={name}
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              {/* Show subtle label when using species reference photo */}
               {!profilePhoto && species?.referencePhotoUrl && (
                 <span className="position-absolute bottom-0 end-0 m-1 badge"
-                      style={{ background: 'rgba(0,0,0,0.55)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
+                      style={{ background: 'rgba(0,0,0,0.6)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
                       title="Foto referencia de la especie (iNaturalist)">
                   📸 especie
                 </span>
               )}
             </>
           ) : (
-            <span style={{ fontSize: '4rem', opacity: 0.6 }}>🕷️</span>
+            <img src="/spider-default.svg" alt="spider"
+                 style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
           )}
         </div>
 

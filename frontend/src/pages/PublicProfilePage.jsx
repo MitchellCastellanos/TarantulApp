@@ -95,7 +95,7 @@ export default function PublicProfilePage() {
 
   if (error) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
+         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
       <div className="text-center px-4" style={{ color: 'var(--ta-parchment)', maxWidth: 380 }}>
         <div className="fs-1 mb-3">🔒</div>
         <h5 className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>TarantulApp</h5>
@@ -119,7 +119,7 @@ export default function PublicProfilePage() {
 
   if (!profile) return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
+         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
       <p style={{ color: 'var(--ta-parchment)' }}>{t('common.loading')}</p>
     </div>
   )
@@ -136,7 +136,7 @@ export default function PublicProfilePage() {
   ]
 
   return (
-    <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
+    <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
       <div className="container py-4" style={{ maxWidth: 480 }}>
 
         {user && (
@@ -150,12 +150,13 @@ export default function PublicProfilePage() {
         {/* ─── Ficha pública ──────────────────────────── */}
         <div className="card shadow-lg mb-3">
           <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
-               style={{ height: 240, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
+               style={{ height: 240, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
             {profile.profilePhoto ? (
               <img src={imgUrl(profile.profilePhoto)} alt={profile.name}
                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span style={{ fontSize: '5rem', opacity: 0.5 }}>🕷️</span>
+              <img src="/spider-default.svg" alt="spider"
+                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             )}
           </div>
 
@@ -241,7 +242,7 @@ export default function PublicProfilePage() {
                 {t('quickLog.title')}
               </p>
 
-              {saved && <div className="alert py-1 small mb-2" style={{ background: '#1a2e1a', color: '#a8d8b0', border: '1px solid #3d5a2a' }}>{saved}</div>}
+              {saved && <div className="alert alert-success py-1 small mb-2">{saved}</div>}
 
               <div className="d-flex gap-2 mb-3 flex-wrap">
                 {[

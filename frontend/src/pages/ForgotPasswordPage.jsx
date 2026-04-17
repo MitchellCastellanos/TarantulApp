@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
-         style={{ background: 'linear-gradient(135deg, #1a0e06 0%, #131c09 100%)' }}>
+         style={{ background: 'linear-gradient(135deg, #0c0c1e 0%, #06060e 100%)' }}>
       <div className="card shadow-lg" style={{ width: '100%', maxWidth: '420px' }}>
         <div className="card-body p-4 p-md-5">
           <div className="text-center mb-4">

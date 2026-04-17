@@ -158,7 +158,7 @@ export default function TarantulaDetailPage() {
                 <button className="btn btn-outline-secondary btn-sm" onClick={() => setModal(null)}>
                   {t('common.cancel')}
                 </button>
-                <button className="btn btn-sm" style={{ background: '#6b4a00', color: '#f4e5c2' }}
+                <button className="btn btn-sm" style={{ background: 'rgba(140,90,10,0.6)', color: '#ffd9a0', border: '1px solid rgba(200,140,30,0.4)' }}
                         onClick={handleMarkDeceased}>
                   🕯️ {t('tarantula.confirm')}
                 </button>
@@ -184,12 +184,13 @@ export default function TarantulaDetailPage() {
             <div className="card border-0 shadow-sm">
               {/* Foto */}
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
-                   style={{ height: 220, background: 'linear-gradient(135deg,#1a1a2e,#2d2d44)' }}>
+                   style={{ height: 220, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
                 {displayProfilePhoto ? (
                   <img src={displayProfilePhoto} alt={tarantula.name}
                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <span style={{ fontSize: '5rem', opacity: 0.5 }}>🕷️</span>
+                  <img src="/spider-default.svg" alt="spider"
+                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </div>
 
@@ -252,8 +253,8 @@ export default function TarantulaDetailPage() {
                         {t('pro.publicToggleProOnly')}
                       </Link>
                     )}
-                    <button className="btn btn-sm flex-fill"
-                            style={{ borderColor: '#6b4a00', color: '#6b4a00' }}
+                    <button className="btn btn-sm flex-fill btn-outline-secondary"
+                            style={{ borderColor: 'rgba(180,120,30,0.4)', color: 'rgba(201,168,76,0.7)' }}
                             onClick={() => setModal('deceased')}>
                       {t('tarantula.markDeceased')}
                     </button>
@@ -271,7 +272,7 @@ export default function TarantulaDetailPage() {
           <div className="col-md-8">
             {/* Banner memorial */}
             {tarantula.deceasedAt && (
-              <div className="alert mb-4" style={{ background: '#2a1a00', border: '1px solid #6b4a00', color: '#e8d5a8' }}>
+              <div className="alert mb-4 ta-memorial">
                 <div className="d-flex align-items-center gap-2 mb-1">
                   <span style={{ fontSize: '1.4rem' }}>🕯️</span>
                   <strong style={{ fontFamily: 'Cinzel, serif' }}>{t('tarantula.inMemoryOf')} {tarantula.name}</strong>
@@ -290,13 +291,13 @@ export default function TarantulaDetailPage() {
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h6 className="fw-bold mb-0">{t('species.cardTitle')}</h6>
                     {species.dataSource === 'gbif' && (
-                      <span className="badge" style={{ background: '#1565c0', fontSize: '0.65rem' }}
+                      <span className="badge" style={{ background: 'rgba(20,80,180,0.6)', fontSize: '0.65rem' }}
                             title={t('species.estimatedNoteGbif')}>
                         🌍 GBIF
                       </span>
                     )}
                     {species.dataSource === 'wsc' && (
-                      <span className="badge" style={{ background: '#4a148c', fontSize: '0.65rem' }}
+                      <span className="badge" style={{ background: 'rgba(80,20,140,0.7)', fontSize: '0.65rem' }}
                             title={t('species.estimatedNoteWsc')}>
                         🕷️ WSC
                       </span>

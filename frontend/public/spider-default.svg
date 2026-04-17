@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#10102a"/>
+      <stop offset="100%" stop-color="#06060e"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="40%">
+      <stop offset="0%" stop-color="rgba(100,60,200,0.12)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <rect width="400" height="300" fill="url(#glow)"/>
+
+  <!-- Corner decorations -->
+  <path d="M10 10 L40 10 M10 10 L10 40" stroke="rgba(201,168,76,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M390 10 L360 10 M390 10 L390 40" stroke="rgba(201,168,76,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M10 290 L40 290 M10 290 L10 260" stroke="rgba(201,168,76,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M390 290 L360 290 M390 290 L390 260" stroke="rgba(201,168,76,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Spider silhouette — filter for glow -->
+  <g filter="url(#softglow)" opacity="0.85">
+    <!-- Left legs (4 pairs) -->
+    <path d="M183 118 Q158 102 128 90 Q118 87 112 82" stroke="rgba(201,168,76,0.55)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M181 127 Q152 118 120 114 Q109 113 102 110" stroke="rgba(201,168,76,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M181 136 Q150 136 117 138 Q106 139 98 142" stroke="rgba(201,168,76,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M183 145 Q154 152 124 162 Q112 167 106 172" stroke="rgba(201,168,76,0.45)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Right legs -->
+    <path d="M217 118 Q242 102 272 90 Q282 87 288 82" stroke="rgba(201,168,76,0.55)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M219 127 Q248 118 280 114 Q291 113 298 110" stroke="rgba(201,168,76,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M219 136 Q250 136 283 138 Q294 139 302 142" stroke="rgba(201,168,76,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M217 145 Q246 152 276 162 Q288 167 294 172" stroke="rgba(201,168,76,0.45)" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+    <!-- Pedipalps -->
+    <path d="M191 108 Q178 98 170 90" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M209 108 Q222 98 230 90" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Cephalothorax -->
+    <ellipse cx="200" cy="122" rx="22" ry="24"
+             fill="rgba(201,168,76,0.08)" stroke="rgba(201,168,76,0.45)" stroke-width="1.5"/>
+
+    <!-- Abdomen -->
+    <ellipse cx="200" cy="162" rx="30" ry="38"
+             fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.4)" stroke-width="1.5"/>
+
+    <!-- Abdomen pattern -->
+    <ellipse cx="200" cy="155" rx="12" ry="14" fill="none" stroke="rgba(201,168,76,0.2)" stroke-width="1"/>
+
+    <!-- Eyes (4 pairs visible) -->
+    <circle cx="194" cy="112" r="2.5" fill="rgba(201,168,76,0.6)"/>
+    <circle cx="206" cy="112" r="2.5" fill="rgba(201,168,76,0.6)"/>
+    <circle cx="190" cy="117" r="1.8" fill="rgba(201,168,76,0.45)"/>
+    <circle cx="210" cy="117" r="1.8" fill="rgba(201,168,76,0.45)"/>
+  </g>
+
+  <!-- Subtle web threads in background -->
+  <g opacity="0.07" stroke="rgba(201,168,76,1)" stroke-width="0.8" fill="none">
+    <line x1="200" y1="0" x2="200" y2="300"/>
+    <line x1="0" y1="150" x2="400" y2="150"/>
+    <line x1="0" y1="0" x2="400" y2="300"/>
+    <line x1="400" y1="0" x2="0" y2="300"/>
+    <ellipse cx="200" cy="150" rx="80" ry="60"/>
+    <ellipse cx="200" cy="150" rx="140" ry="105"/>
+  </g>
+
+  <!-- TarantulApp watermark -->
+  <text x="200" y="240" text-anchor="middle"
+        font-family="'Cinzel', serif" font-size="10"
+        fill="rgba(201,168,76,0.3)" letter-spacing="4">TARANTULAPP</text>
+</svg>

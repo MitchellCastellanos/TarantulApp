@@ -138,8 +138,8 @@ export default function ProPage() {
               </div>
             </div>
           ) : polling ? (
-            <div className="alert mb-4 d-flex align-items-center gap-2 py-2" style={{ background: '#fff3cd', color: '#664d03', border: '1px solid #ffda6a' }}>
-              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: '#664d03' }} role="status" />
+            <div className="alert mb-4 d-flex align-items-center gap-2 py-2" style={{ background: 'rgba(100,75,10,0.45)', color: '#ffdda0', border: '1px solid rgba(200,150,30,0.4)' }}>
+              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: '#c9a84c' }} role="status" />
               <span className="small fw-semibold">{t('pro.checkoutUpdating')}</span>
             </div>
           ) : (

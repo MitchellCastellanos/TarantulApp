@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
 const TYPE_CONFIG = {
-  feeding:  { icon: '🍽️', color: '#0d6efd' },
-  molt:     { icon: '🕸️', color: '#6f42c1' },
-  behavior: { icon: '🔍', color: '#fd7e14' },
+  feeding:  { icon: '🍽️', color: '#4a8fcf' },
+  molt:     { icon: '🕸️', color: '#9060e0' },
+  behavior: { icon: '🔍', color: '#c09040' },
 }
 
 function formatDate(isoString) {
@@ -32,7 +32,7 @@ export default function TimelineItem({ event, onDelete }) {
              style={{ width: 36, height: 36, background: cfg.color + '22', border: `2px solid ${cfg.color}`, flexShrink: 0 }}>
           <span style={{ fontSize: '1rem' }}>{cfg.icon}</span>
         </div>
-        <div style={{ width: 2, flex: 1, background: '#dee2e6', minHeight: 16 }} />
+        <div style={{ width: 2, flex: 1, background: 'rgba(100,60,200,0.2)', minHeight: 16 }} />
       </div>
 
       {/* Contenido */}
