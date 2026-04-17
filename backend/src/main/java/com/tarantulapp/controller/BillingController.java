@@ -95,7 +95,7 @@ public class BillingController {
                             .setPrice(priceId)
                             .setQuantity(1L)
                             .build())
-                    .setSuccessUrl(baseUrl + "/pro?checkout=success")
+                    .setSuccessUrl(baseUrl + "/pro?checkout=success&session_id={CHECKOUT_SESSION_ID}")
                     .setCancelUrl(baseUrl + "/pro?checkout=cancel")
                     .putMetadata("userId", userId.toString())
                     .build();
@@ -110,6 +110,49 @@ public class BillingController {
             log.error("Stripe checkout error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Could not create checkout session"));
+        }
+    }
+
+    @PostMapping("/verify-session")
+    public ResponseEntity<Map<String, Object>> verifySession(
+            @RequestBody Map<String, String> body) {
+
+        String sessionId = body != null ? body.get("sessionId") : null;
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing sessionId"));
+        }
+
+        if (!isStripeConfigured()) {
+            return ResponseEntity.ok(Map.of("plan", "FREE", "verified", false));
+        }
+
+        UUID userId = securityHelper.getCurrentUserId();
+
+        try {
+            Stripe.apiKey = stripeSecretKey;
+            Session session = Session.retrieve(sessionId);
+
+            String metaUserId = session.getMetadata() != null ? session.getMetadata().get("userId") : null;
+            if (!userId.toString().equals(metaUserId)) {
+                log.warn("Session {} userId mismatch: expected {} got {}", sessionId, userId, metaUserId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Session does not belong to this user"));
+            }
+
+            if ("paid".equals(session.getPaymentStatus())) {
+                userRepository.findById(userId).ifPresent(user -> {
+                    user.setPlan(UserPlan.PRO);
+                    userRepository.save(user);
+                    log.info("Verified and upgraded user {} to PRO via session {}", userId, sessionId);
+                });
+                return ResponseEntity.ok(Map.of("plan", "PRO", "verified", true));
+            }
+
+            return ResponseEntity.ok(Map.of("plan", "FREE", "verified", false));
+        } catch (Exception e) {
+            log.error("Error verifying Stripe session {}: {}", sessionId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Could not verify session"));
         }
     }
 

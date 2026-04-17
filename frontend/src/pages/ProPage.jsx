@@ -20,6 +20,7 @@ export default function ProPage() {
   const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
   const checkout = searchParams.get('checkout')
+  const sessionId = searchParams.get('session_id')
 
   const loadBilling = () => {
     return billingService.me()
@@ -33,42 +34,62 @@ export default function ProPage() {
 
   useEffect(() => {
     if (user) loadBilling()
-  }, [user])
+  }, [user?.id])
 
-  // Poll for plan upgrade after successful checkout
+  // Verify plan upgrade after successful checkout
   useEffect(() => {
     if (checkout !== 'success' || !user) return
-    if (user.plan === 'PRO') return // already upgraded, nothing to do
+    if (user.plan === 'PRO') return
 
     pollingRef.current = true
     setPolling(true)
-    let attempts = 0
 
-    const poll = () => {
-      if (!pollingRef.current) return
-      attempts++
-      billingService.me()
-        .then(data => {
+    const verifyAndUpgrade = async () => {
+      // If Stripe passed back a session_id, verify directly — no webhook dependency
+      if (sessionId) {
+        try {
+          const data = await billingService.verifySession(sessionId)
           if (!pollingRef.current) return
           if (data.plan === 'PRO') {
-            setBilling(data)
-            setPlan(data.plan)
+            setBilling(prev => ({ ...(prev || {}), plan: 'PRO', checkoutEnabled: true }))
+            setPlan('PRO')
             setPolling(false)
-          } else if (attempts < 6) {
-            setTimeout(poll, 2000)
-          } else {
-            setPolling(false)
+            return
           }
-        })
-        .catch(() => {
-          if (pollingRef.current && attempts < 6) setTimeout(poll, 2000)
-          else setPolling(false)
-        })
+        } catch (_) {
+          // fall through to polling
+        }
+      }
+
+      // Fallback: poll billingService.me() up to 6 times
+      let attempts = 0
+      const poll = () => {
+        if (!pollingRef.current) return
+        attempts++
+        billingService.me()
+          .then(data => {
+            if (!pollingRef.current) return
+            if (data.plan === 'PRO') {
+              setBilling(data)
+              setPlan(data.plan)
+              setPolling(false)
+            } else if (attempts < 6) {
+              setTimeout(poll, 2000)
+            } else {
+              setPolling(false)
+            }
+          })
+          .catch(() => {
+            if (pollingRef.current && attempts < 6) setTimeout(poll, 2000)
+            else setPolling(false)
+          })
+      }
+      setTimeout(poll, 1000)
     }
 
-    const timer = setTimeout(poll, 1500)
-    return () => { pollingRef.current = false; clearTimeout(timer) }
-  }, [checkout, user?.id]) // user.id never changes — avoids infinite loop from setPlan re-triggering this effect
+    verifyAndUpgrade()
+    return () => { pollingRef.current = false }
+  }, [checkout, user?.id, sessionId])
 
   const handleUpgrade = async () => {
     if (!user) {
