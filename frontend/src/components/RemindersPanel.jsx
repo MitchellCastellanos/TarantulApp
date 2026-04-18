@@ -70,7 +70,7 @@ export default function RemindersPanel() {
           <span>🔔 {t('reminders.panelTitle')}</span>
           <Link
             to="/reminders"
-            className="small text-decoration-underline"
+            className="small text-decoration-underline flex-shrink-0"
             style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}
           >
             {t('reminders.viewAll')}

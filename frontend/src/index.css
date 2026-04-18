@@ -378,17 +378,33 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 
 .ta-section-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  column-gap: 0.65rem;
+  row-gap: 0.35rem;
   font-family: 'Cinzel', serif;
-  font-size: 0.82rem;
+  font-size: clamp(0.68rem, 1.6vw + 0.55rem, 0.82rem);
   font-weight: 700;
-  letter-spacing: 2.8px;
+  letter-spacing: clamp(0.06em, 0.35vw + 0.04em, 0.18em);
   text-transform: uppercase;
   color: var(--ta-parchment);
   padding-bottom: 0.45rem;
   margin-bottom: 1rem;
   position: relative;
+}
+.ta-section-header > span,
+.ta-section-header > a {
+  min-width: 0;
+}
+.ta-section-header > span:first-child {
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+}
+.ta-section-header > a {
+  flex: 0 0 auto;
+  text-align: right;
+  align-self: center;
 }
 .ta-section-header::after {
   content: '';
