@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
@@ -9,10 +9,12 @@ import logsService from '../services/logsService'
 import { useAuth } from '../context/AuthContext'
 import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 
 export default function AddTarantulaPage() {
   const { t } = useTranslation()
   const { id } = useParams()  // si hay id, es edición
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const isEdit = Boolean(id)
@@ -54,6 +56,7 @@ export default function AddTarantulaPage() {
     notes: '',
   })
   const debounceRef = useRef(null)
+  const discoverPrefillRef = useRef('')
   const hasProFeatures = user?.hasProFeatures === true
   const isFreePlan = !hasProFeatures
   const tarantulaLimit = 6
@@ -87,6 +90,45 @@ export default function AddTarantulaPage() {
     if (isEdit) return
     tarantulaService.getAll().then(items => setCollectionCount(items.length)).catch(() => {})
   }, [isEdit])
+
+  // Descubrir → "Agregar a colección": ?speciesId= o ?gbifKey=
+  useEffect(() => {
+    if (isEdit) return
+    const sid = searchParams.get('speciesId')
+    const gk = searchParams.get('gbifKey')
+    const key = `${sid || ''}|${gk || ''}`
+    if (!sid && !gk) return
+    if (discoverPrefillRef.current === key) return
+    discoverPrefillRef.current = key
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (sid) {
+          const sp = await speciesService.getById(Number(sid))
+          if (!cancelled && sp?.id) {
+            setSelectedSpecies(sp)
+            setForm((f) => ({ ...f, speciesId: sp.id }))
+            setSpeciesQuery(sp.scientificName || '')
+            setShowSugg(false)
+          }
+        } else if (gk) {
+          const imported = await speciesService.importFromGbif(Number(gk))
+          if (!cancelled && imported?.id) {
+            setSelectedSpecies(imported)
+            setForm((f) => ({ ...f, speciesId: imported.id }))
+            setSpeciesQuery(imported.scientificName || '')
+            setShowSugg(false)
+          }
+        }
+      } catch {
+        if (!cancelled) setError(t('form.importError'))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isEdit, searchParams, t])
 
   // Debounced species search (local + GBIF in parallel)
   useEffect(() => {
@@ -349,15 +391,8 @@ export default function AddTarantulaPage() {
               )}
             </div>
 
-            {/* Ficha de especie seleccionada */}
-            {selectedSpecies && (
-              <div className="alert alert-dark small py-2 mb-0">
-                <div className="fw-bold">{selectedSpecies.scientificName}</div>
-                <div className="text-muted">
-                  {selectedSpecies.habitatType} · Adulto: {selectedSpecies.adultSizeCmMin}–{selectedSpecies.adultSizeCmMax} cm · {selectedSpecies.experienceLevel}
-                </div>
-              </div>
-            )}
+            {/* Ficha de especie seleccionada (misma pieza que Descubrir) */}
+            {selectedSpecies && <DiscoverSpeciesProfileSnippet species={selectedSpecies} variant="form" />}
           </div>
 
           <div className="card border-0 shadow-sm p-4 mb-3">

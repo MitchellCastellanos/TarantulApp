@@ -2,6 +2,9 @@ package com.tarantulapp.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stripe.Stripe;
+import com.stripe.model.billingportal.Session;
+import com.stripe.param.billingportal.SessionCreateParams;
 import com.tarantulapp.dto.BillingStatusResponse;
 import com.tarantulapp.dto.CheckoutSessionResponse;
 import com.tarantulapp.entity.Subscription;
@@ -25,6 +28,8 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +39,7 @@ public class BillingService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final ObjectMapper objectMapper;
+    private final PlanAccessService planAccessService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${stripe.secret-key:}")
@@ -42,18 +48,27 @@ public class BillingService {
     @Value("${stripe.webhook-secret:}")
     private String stripeWebhookSecret;
 
+    /** @deprecated Prefer monthly/yearly price IDs; kept for legacy checkout/webhook. */
     @Value("${stripe.price-id:}")
     private String stripePriceId;
+
+    @Value("${stripe.price-id-monthly:}")
+    private String priceIdMonthly;
+
+    @Value("${stripe.price-id-yearly:}")
+    private String priceIdYearly;
 
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
     public BillingService(UserRepository userRepository,
                           SubscriptionRepository subscriptionRepository,
-                          ObjectMapper objectMapper) {
+                          ObjectMapper objectMapper,
+                          PlanAccessService planAccessService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
+        this.planAccessService = planAccessService;
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +80,7 @@ public class BillingService {
 
         BillingStatusResponse response = new BillingStatusResponse();
         response.setPlan((user.getPlan() != null ? user.getPlan() : UserPlan.FREE).name());
-        response.setCheckoutEnabled(isCheckoutConfigured());
+        response.setCheckoutEnabled(isCheckoutAvailable());
         sub.ifPresent(s -> {
             response.setStatus(s.getStatus());
             response.setProvider(s.getProvider());
@@ -75,8 +90,64 @@ public class BillingService {
         return response;
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> getBillingMe(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        UserPlan plan = user.getPlan() != null ? user.getPlan() : UserPlan.FREE;
+        body.put("plan", plan.name());
+        body.put("checkoutEnabled", isCheckoutAvailable());
+        body.put("trialEndsAt", user.getTrialEndsAt());
+        body.put("readOnly", planAccessService.isReadOnly(user));
+        body.put("inTrial", planAccessService.isTrialActive(user));
+        body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
+        body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
+
+        Optional<Subscription> optSub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
+        if (optSub.isPresent()) {
+            Subscription s = optSub.get();
+            body.put("subscriptionStatus", s.getStatus());
+            body.put("subscriptionProvider", s.getProvider());
+            body.put("currentPeriodEnd", s.getCurrentPeriodEnd());
+            body.put("cancelAtPeriodEnd", s.getCancelAtPeriodEnd());
+            boolean portalOk = stripeSecretKey != null && !stripeSecretKey.isBlank()
+                    && s.getProviderCustomerId() != null && !s.getProviderCustomerId().isBlank();
+            body.put("portalAvailable", portalOk);
+        } else {
+            body.put("subscriptionStatus", null);
+            body.put("subscriptionProvider", null);
+            body.put("currentPeriodEnd", null);
+            body.put("cancelAtPeriodEnd", null);
+            body.put("portalAvailable", false);
+        }
+        return body;
+    }
+
+    public String createPortalSession(UUID userId) {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            throw new IllegalArgumentException("STRIPE_NOT_CONFIGURED");
+        }
+        Subscription sub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+        if (sub == null || sub.getProviderCustomerId() == null || sub.getProviderCustomerId().isBlank()) {
+            throw new IllegalArgumentException("NO_STRIPE_CUSTOMER");
+        }
+        Stripe.apiKey = stripeSecretKey;
+        try {
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setCustomer(sub.getProviderCustomerId())
+                    .setReturnUrl(appBaseUrl + "/account")
+                    .build();
+            Session session = Session.create(params);
+            return session.getUrl();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("PORTAL_FAILED");
+        }
+    }
+
     public CheckoutSessionResponse createCheckoutSession(UUID userId, String userEmail) {
-        if (!isCheckoutConfigured()) {
+        if (!isCheckoutAvailable()) {
             throw new IllegalArgumentException("Stripe no está configurado en el backend");
         }
 
@@ -87,7 +158,11 @@ public class BillingService {
         body.add("mode", "subscription");
         body.add("success_url", successUrl);
         body.add("cancel_url", cancelUrl);
-        body.add("line_items[0][price]", stripePriceId);
+        String price = effectivePriceId();
+        if (price.isBlank()) {
+            throw new IllegalArgumentException("Stripe no tiene price id configurado");
+        }
+        body.add("line_items[0][price]", price);
         body.add("line_items[0][quantity]", "1");
         body.add("client_reference_id", userId.toString());
         body.add("customer_email", userEmail);
@@ -168,7 +243,8 @@ public class BillingService {
         sub.setProvider("stripe");
         sub.setProviderCustomerId(customerId.isBlank() ? null : customerId);
         sub.setProviderSubscriptionId(subscriptionId);
-        sub.setProviderPriceId(stripePriceId);
+        String pid = effectivePriceId();
+        sub.setProviderPriceId(pid.isBlank() ? null : pid);
         sub.setStatus("active");
         sub.setCancelAtPeriodEnd(false);
         subscriptionRepository.save(sub);
@@ -213,9 +289,27 @@ public class BillingService {
         return "active".equals(status) || "trialing".equals(status) || "past_due".equals(status);
     }
 
-    private boolean isCheckoutConfigured() {
-        return stripeSecretKey != null && !stripeSecretKey.isBlank()
-                && stripePriceId != null && !stripePriceId.isBlank();
+    private boolean isCheckoutAvailable() {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            return false;
+        }
+        return (stripePriceId != null && !stripePriceId.isBlank())
+                || (priceIdMonthly != null && !priceIdMonthly.isBlank())
+                || (priceIdYearly != null && !priceIdYearly.isBlank());
+    }
+
+    /** First non-blank legacy or monthly/yearly price id (webhook / legacy REST checkout). */
+    private String effectivePriceId() {
+        if (stripePriceId != null && !stripePriceId.isBlank()) {
+            return stripePriceId;
+        }
+        if (priceIdMonthly != null && !priceIdMonthly.isBlank()) {
+            return priceIdMonthly;
+        }
+        if (priceIdYearly != null && !priceIdYearly.isBlank()) {
+            return priceIdYearly;
+        }
+        return "";
     }
 
     private boolean verifyStripeSignature(String payload, String signatureHeader, String webhookSecret) {

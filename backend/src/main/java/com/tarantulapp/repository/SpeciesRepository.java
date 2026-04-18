@@ -2,15 +2,18 @@ package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.Species;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface SpeciesRepository extends JpaRepository<Species, Integer> {
+public interface SpeciesRepository extends JpaRepository<Species, Integer>, JpaSpecificationExecutor<Species> {
 
     Optional<Species> findByScientificNameIgnoreCase(String scientificName);
+
+    Optional<Species> findByGbifUsageKey(Long gbifUsageKey);
 
     /** Busca por nombre científico, nombre común o cualquier sinónimo registrado. */
     @Query(value = """

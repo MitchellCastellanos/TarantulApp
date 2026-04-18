@@ -193,7 +193,9 @@ export default function ProPage() {
             <div className="row g-3">
               <div className="col-md-6">
                 <div className="border rounded p-3 h-100">
-                  <h6 className="fw-bold mb-2">{t('pro.freeTitle')}</h6>
+                  <h6 className="fw-bold mb-2">
+                    {isPro ? t('pro.freeTitleCompare') : t('pro.freeTitle')}
+                  </h6>
                   <ul className="small mb-0">
                     <li className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('pro.freeTrialLine')}</li>
                     <li>{t('pro.freeLimit')}</li>

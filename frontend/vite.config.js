@@ -13,22 +13,30 @@ function forwardAuthHeader(proxy) {
   })
 }
 
+/** Mismo mapa para `vite dev` y `vite preview` (sin esto, POST /api/* en preview → 403). */
+const backendDevProxy = {
+  '/api': {
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+    configure: (proxy) => forwardAuthHeader(proxy),
+  },
+  '/uploads': {
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+    configure: (proxy) => forwardAuthHeader(proxy),
+  },
+}
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: {
-      // Redirige /api/* y /uploads/* al backend Spring Boot en dev
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        configure: proxy => forwardAuthHeader(proxy)
-      },
-      '/uploads': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        configure: proxy => forwardAuthHeader(proxy)
-      }
-    }
-  }
+    strictPort: false,
+    proxy: backendDevProxy,
+  },
+  preview: {
+    port: 5173,
+    strictPort: false,
+    proxy: backendDevProxy,
+  },
 })

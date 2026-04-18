@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
-import api from '../services/api'
+import { Link, useNavigate } from 'react-router-dom'
+import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { login, logout } = useAuth()
+  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [mode, setMode] = useState('login') // 'login' | 'register'
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
@@ -37,14 +38,20 @@ export default function LoginPage() {
       const body = mode === 'login'
         ? { email, password }
         : { email, password, displayName: form.displayName?.trim() || undefined }
-      const { data } = await api.post(endpoint, body)
+      const { data } = await publicApi.post(endpoint, body)
       login(data)
     } catch (err) {
+      const st = err.response?.status
       const d = err.response?.data
       const fieldMsgs = d?.fields && typeof d.fields === 'object'
         ? Object.values(d.fields).filter(Boolean).join(' ')
         : ''
-      setError(fieldMsgs || d?.error || t('common.error'))
+      const baseMsg = fieldMsgs || d?.error || t('common.error')
+      setError(
+        import.meta.env.DEV && st
+          ? `${baseMsg} (HTTP ${st})`
+          : baseMsg
+      )
     } finally {
       setLoading(false)
     }
@@ -145,6 +152,36 @@ export default function LoginPage() {
               {loading ? t('auth.loading') : mode === 'login' ? t('auth.login') : t('auth.register')}
             </button>
           </form>
+
+          <div
+            className="mt-4 p-3 rounded-2"
+            style={{
+              border: '1px solid rgba(200, 170, 80, 0.35)',
+              background: 'rgba(30, 26, 18, 0.55)',
+            }}
+          >
+            <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>
+              {t('discover.loginCtaTitle')}
+            </h3>
+            <p className="small mb-3" style={{ color: 'var(--ta-parchment)', opacity: 0.92 }}>
+              {t('discover.loginCtaBody')}
+            </p>
+            <button
+              type="button"
+              className="btn btn-sm w-100 fw-semibold"
+              style={{
+                border: '1px solid var(--ta-gold)',
+                color: '#1a1205',
+                background: 'linear-gradient(135deg, #e8c56a 0%, #c9a227 100%)',
+              }}
+              onClick={() => {
+                logout()
+                navigate('/descubrir', { replace: true })
+              }}
+            >
+              {t('discover.loginCtaButton')}
+            </button>
+          </div>
 
           <hr className="my-3" />
 

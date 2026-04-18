@@ -22,12 +22,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class GbifService {
 
     private static final Logger log = LoggerFactory.getLogger(GbifService.class);
     private static final String GBIF_BASE = "https://api.gbif.org/v1";
+
+    /** GBIF backbone family key for Theraphosidae (public species search fallback). */
+    public static final long GBIF_THERAPHOSIDAE_FAMILY_KEY = 5650L;
 
     private final RestTemplate restTemplate;
     private final SpeciesRepository speciesRepository;
@@ -52,6 +56,53 @@ public class GbifService {
      * 2. /species/match  — resuelve sinónimos al nombre aceptado actual
      * Los resultados se fusionan y deduplicam por key.
      */
+    /**
+     * Accepted species names in a given family (GBIF backbone), for discover fallback when WSC has no hits.
+     */
+    public List<GbifSearchResultDTO> searchAcceptedSpeciesInFamily(String q, long familyKey, int limit) {
+        if (q == null || q.isBlank()) return Collections.emptyList();
+        int cap = Math.min(Math.max(limit, 1), 25);
+        try {
+            String url = UriComponentsBuilder
+                    .fromHttpUrl(GBIF_BASE + "/species/search")
+                    .queryParam("q", q)
+                    .queryParam("rank", "SPECIES")
+                    .queryParam("status", "ACCEPTED")
+                    .queryParam("familyKey", familyKey)
+                    .queryParam("limit", cap)
+                    .toUriString();
+
+            GbifSearchResponse response = restTemplate.exchange(
+                    url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<GbifSearchResponse>() {}
+            ).getBody();
+
+            List<GbifSearchResultDTO> raw = response != null && response.getResults() != null
+                    ? response.getResults()
+                    : Collections.emptyList();
+            // familyKey en /species/search no excluye ruido (p. ej. coincidencias en descripciones); filtrar por nombre de familia.
+            return keepTheraphosidaeOnly(raw);
+        } catch (RestClientException e) {
+            log.warn("GBIF family-scoped search failed for q={}: {}", q, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /** Species detail from GBIF backbone; empty if missing or error. */
+    public Optional<GbifSearchResultDTO> tryFetchSpecies(Long key) {
+        if (key == null) return Optional.empty();
+        try {
+            return Optional.of(fetchDetail(key));
+        } catch (Exception e) {
+            log.debug("GBIF species fetch failed for key={}: {}", key, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public String getVernacularNameForSpecies(Long key) {
+        return fetchVernacularName(key);
+    }
+
     public List<GbifSearchResultDTO> search(String q) {
         if (q == null || q.isBlank()) return Collections.emptyList();
 
@@ -64,7 +115,9 @@ public class GbifService {
                 boolean alreadyPresent = results.stream().anyMatch(r -> matchKey.equals(r.getKey()));
                 if (!alreadyPresent) {
                     GbifSearchResultDTO matched = fetchDetail(matchKey);
-                    results.add(0, matched); // al frente por relevancia
+                    if (isTheraphosidaeBackboneSpecies(matched)) {
+                        results.add(0, matched); // al frente por relevancia
+                    }
                 }
             }
         } catch (Exception e) {
@@ -80,6 +133,15 @@ public class GbifService {
      * Al crear nueva especie, también persiste sus sinónimos conocidos.
      */
     public SpeciesDTO importSpecies(Long key, UUID userId) {
+        if (key == null) {
+            throw new IllegalArgumentException("GBIF key requerida");
+        }
+
+        Optional<Species> byGbifKey = speciesRepository.findByGbifUsageKey(key);
+        if (byGbifKey.isPresent()) {
+            return SpeciesDTO.from(byGbifKey.get());
+        }
+
         GbifSearchResultDTO detail = fetchDetail(key);
         String canonicalName = detail.getCanonicalName() != null
                 ? detail.getCanonicalName()
@@ -89,16 +151,18 @@ public class GbifService {
             throw new IllegalArgumentException("No se pudo obtener el nombre de la especie desde GBIF");
         }
 
-        // ¿Ya existe por nombre científico?
         Optional<Species> existing = speciesRepository.findByScientificNameIgnoreCase(canonicalName);
-        if (existing.isPresent()) return SpeciesDTO.from(existing.get());
+        if (existing.isPresent()) {
+            Species e = existing.get();
+            e.setGbifUsageKey(key);
+            return SpeciesDTO.from(speciesRepository.save(e));
+        }
 
-        // ¿Ya existe por sinónimo?
         Optional<SpeciesSynonym> existingSyn = speciesSynonymRepository.findBySynonymIgnoreCase(canonicalName);
         if (existingSyn.isPresent()) {
-            return speciesRepository.findById(existingSyn.get().getSpeciesId())
-                    .map(SpeciesDTO::from)
-                    .orElseThrow();
+            Species e = speciesRepository.findById(existingSyn.get().getSpeciesId()).orElseThrow();
+            e.setGbifUsageKey(key);
+            return SpeciesDTO.from(speciesRepository.save(e));
         }
 
         // Crear nueva especie
@@ -109,6 +173,7 @@ public class GbifService {
         species.setIsCustom(true);
         species.setCreatedBy(userId);
         species.setDataSource("gbif");
+        species.setGbifUsageKey(key);
         String careEs = "Importado desde GBIF (key: " + key + ")";
         String careEn = "Imported from GBIF (key: " + key + ").";
         String careFr = "Importé depuis GBIF (clé : " + key + ").";
@@ -140,6 +205,7 @@ public class GbifService {
                     .fromHttpUrl(GBIF_BASE + "/species/match")
                     .queryParam("name", name)
                     .queryParam("rank", "SPECIES")
+                    .queryParam("familyKey", GBIF_THERAPHOSIDAE_FAMILY_KEY)
                     .toUriString();
 
             GbifMatchResponse match = restTemplate.getForObject(url, GbifMatchResponse.class);
@@ -172,13 +238,31 @@ public class GbifService {
                     new ParameterizedTypeReference<GbifSearchResponse>() {}
             ).getBody();
 
-            return response != null && response.getResults() != null
+            List<GbifSearchResultDTO> raw = response != null && response.getResults() != null
                     ? response.getResults()
                     : Collections.emptyList();
+            return keepTheraphosidaeOnly(raw);
         } catch (RestClientException e) {
             log.warn("GBIF search failed for q={}: {}", q, e.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * GBIF /species/search puede devolver taxones ajenos (p. ej. coincidencias por texto en descripciones).
+     * Para esta app solo exponemos especies con familia backbone {@code Theraphosidae}.
+     */
+    private static boolean isTheraphosidaeBackboneSpecies(GbifSearchResultDTO r) {
+        if (r == null) return false;
+        String f = r.getFamily();
+        if (f == null || f.isBlank()) return false;
+        return "theraphosidae".equalsIgnoreCase(f.trim());
+    }
+
+    private static List<GbifSearchResultDTO> keepTheraphosidaeOnly(List<GbifSearchResultDTO> list) {
+        return list.stream()
+                .filter(GbifService::isTheraphosidaeBackboneSpecies)
+                .collect(Collectors.toList());
     }
 
     private GbifSearchResultDTO fetchDetail(Long key) {

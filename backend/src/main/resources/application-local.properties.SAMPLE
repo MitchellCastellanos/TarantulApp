@@ -1,12 +1,31 @@
-# Copia este archivo a: backend/src/main/resources/application-local.properties
-# (gitignore — no subir a la nube).
+# ─── Copia a UNO de estos sitios (elige uno) ───────────────────────────────
+#
+# A) Por proyecto (gitignored):
+#    backend/src/main/resources/application-local.properties
+#
+# B) Por máquina (recomendado si OneDrive te borra/duplica configs):
+#    Windows:  %USERPROFILE%\.tarantulapp\tarantulapp-local.properties
+#    mac/Linux: ~/.tarantulapp/tarantulapp-local.properties
+#    Crea la carpeta .tarantulapp si no existe.
+#
+# NO subas nunca estos archivos con contraseña a git.
+# ───────────────────────────────────────────────────────────────────────────
 
-# Obligatorio para la semilla del usuario dev (LocalDevUserSeed):
 spring.profiles.active=local
 app.dev-seed-user=true
 
-# Login: http://localhost:5173 + backend en marcha
+# Supabase → Project Settings → Database → Connection string → URI
+# Después de copiar, cambia sslmode=require si tu cadena no lo trae.
+# Host típico: db.<project-ref>.supabase.co  (NO dejes db.REEMPLAZA… del repo)
+spring.datasource.url=jdbc:postgresql://db.TU_REF_AQUI.supabase.co:5432/postgres?sslmode=require
+spring.datasource.username=postgres
+spring.datasource.password=TU_PASSWORD_DE_SUPABASE
+
+# Alternativa: en PowerShell antes de mvn (misma sesión):
+#   $env:DB_URL="jdbc:postgresql://..."
+#   $env:DB_USERNAME="postgres"
+#   $env:DB_PASSWORD="..."
+
+# Login dev (solo si LocalDevUserSeed está activo con perfil local):
 #   Email:    dev@tarantulapp.local
 #   Password: LocalDev123!
-#
-# Nube: sin perfil local/dev, LocalDevUserSeed no existe aunque haya variables sueltas.

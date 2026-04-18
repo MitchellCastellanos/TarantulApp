@@ -5,6 +5,20 @@
  */
 let sessionTokenSnapshot = null
 
+/** Antes del primer render de React, el interceptor de axios ya puede disparar: lee storage una vez. */
+function primeSessionTokenSnapshotFromStorage() {
+  try {
+    if (typeof localStorage === 'undefined') return
+    const raw = localStorage.getItem('token')
+    if (raw != null && String(raw).trim() !== '') {
+      sessionTokenSnapshot = String(raw).trim()
+    }
+  } catch {
+    /* ignore */
+  }
+}
+primeSessionTokenSnapshotFromStorage()
+
 export function setSessionTokenSnapshot(token) {
   if (token == null || token === '') sessionTokenSnapshot = null
   else sessionTokenSnapshot = String(token).trim()

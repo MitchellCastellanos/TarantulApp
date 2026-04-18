@@ -27,6 +27,7 @@ public class SpeciesDTO {
     private Boolean isCustom;
     private String referencePhotoUrl;
     private String dataSource;
+    private Long gbifUsageKey;
 
     public static SpeciesDTO from(Species s) {
         if (s == null) return null;
@@ -50,6 +51,7 @@ public class SpeciesDTO {
         dto.isCustom = s.getIsCustom();
         dto.referencePhotoUrl = s.getReferencePhotoUrl();
         dto.dataSource = s.getDataSource();
+        dto.gbifUsageKey = s.getGbifUsageKey();
         return dto;
     }
 
@@ -73,4 +75,5 @@ public class SpeciesDTO {
     public Boolean getIsCustom() { return isCustom; }
     public String getReferencePhotoUrl() { return referencePhotoUrl; }
     public String getDataSource() { return dataSource; }
+    public Long getGbifUsageKey() { return gbifUsageKey; }
 }

@@ -81,14 +81,14 @@ export default function RemindersPage() {
       <Navbar />
       <div className="container mt-4" style={{ maxWidth: 640 }}>
         <ChitinCardFrame showSilhouettes={false}>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h4 className="fw-bold mb-0">🔔 {t('reminders.pageTitle')}</h4>
-            <p className="text-muted small mb-0">
+        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div className="min-w-0">
+            <h4 className="fw-bold mb-0 text-break">🔔 {t('reminders.pageTitle')}</h4>
+            <p className="text-muted small mb-0 text-break">
               {t('reminders.pendingCount', { count: reminders.filter(r => !r.isDone).length })}
             </p>
           </div>
-          <button className="btn btn-dark btn-sm" onClick={() => setShowForm(v => !v)}>
+          <button type="button" className="btn btn-dark btn-sm flex-shrink-0" onClick={() => setShowForm(v => !v)}>
             {showForm ? t('common.cancel') : t('reminders.new')}
           </button>
         </div>

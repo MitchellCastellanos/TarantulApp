@@ -8,7 +8,6 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
-import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.util.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,7 +27,6 @@ public class BillingController {
 
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
-    private final PlanAccessService planAccessService;
     private final BillingService billingService;
 
     @Value("${stripe.secret-key:}")
@@ -48,31 +45,27 @@ public class BillingController {
     private String baseUrl;
 
     public BillingController(UserRepository userRepository, SecurityHelper securityHelper,
-                             PlanAccessService planAccessService, BillingService billingService) {
+                             BillingService billingService) {
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
-        this.planAccessService = planAccessService;
         this.billingService = billingService;
     }
 
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getMyBilling() {
         UUID userId = securityHelper.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        return ResponseEntity.ok(billingService.getBillingMe(userId));
+    }
 
-        UserPlan plan = user.getPlan() != null ? user.getPlan() : UserPlan.FREE;
-        boolean checkoutEnabled = isStripeConfigured();
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("plan", plan.name());
-        body.put("checkoutEnabled", checkoutEnabled);
-        body.put("trialEndsAt", user.getTrialEndsAt());
-        body.put("readOnly", planAccessService.isReadOnly(user));
-        body.put("inTrial", planAccessService.isTrialActive(user));
-        body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
-        body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
-        return ResponseEntity.ok(body);
+    @PostMapping("/portal")
+    public ResponseEntity<Map<String, Object>> createPortalSession() {
+        UUID userId = securityHelper.getCurrentUserId();
+        try {
+            String url = billingService.createPortalSession(userId);
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/checkout")
@@ -100,6 +93,7 @@ public class BillingController {
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                     .setCustomerEmail(user.getEmail())
+                    .setClientReferenceId(userId.toString())
                     .addLineItem(SessionCreateParams.LineItem.builder()
                             .setPrice(priceId)
                             .setQuantity(1L)

@@ -70,6 +70,10 @@ public class Species {
     @Column(name = "data_source", nullable = false, length = 30)
     private String dataSource = "manual";
 
+    /** GBIF species usageKey cuando se importó desde GBIF (evita homónimos vs. búsqueda solo por nombre). */
+    @Column(name = "gbif_usage_key")
+    private Long gbifUsageKey;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getScientificName() { return scientificName; }
@@ -110,4 +114,6 @@ public class Species {
     public void setReferencePhotoUrl(String referencePhotoUrl) { this.referencePhotoUrl = referencePhotoUrl; }
     public String getDataSource() { return dataSource; }
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+    public Long getGbifUsageKey() { return gbifUsageKey; }
+    public void setGbifUsageKey(Long gbifUsageKey) { this.gbifUsageKey = gbifUsageKey; }
 }

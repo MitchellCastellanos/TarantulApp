@@ -78,7 +78,7 @@ export default function RemindersPanel() {
         </div>
         {showFreeUpsell && (
           <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between mb-3">
-            <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+            <p className="small mb-0 min-w-0" style={{ color: 'var(--ta-text-muted)', overflowWrap: 'anywhere' }}>
               {t('reminders.panelFreeUpsell')}
             </p>
             <Link
@@ -90,7 +90,7 @@ export default function RemindersPanel() {
           </div>
         )}
         {hasProFeatures && reminders.length > 0 && (
-          <div className="small text-muted mb-2">
+          <div className="small text-muted mb-2 min-w-0" style={{ overflowWrap: 'anywhere' }}>
             {t('reminders.panelProNotice')}
           </div>
         )}
@@ -113,7 +113,10 @@ export default function RemindersPanel() {
                       <span className="badge bg-dark ms-2" style={{ fontSize: '0.6rem' }}>PRO</span>
                     )}
                   </div>
-                  <div className={`small ${urgent ? 'text-danger fw-semibold' : 'text-muted'}`}>
+                  <div
+                    className={`small min-w-0 ${urgent ? 'text-danger fw-semibold' : 'text-muted'}`}
+                    style={{ overflowWrap: 'anywhere', lineHeight: 1.35 }}
+                  >
                     {label}
                     {r.tarantulaName && ` · ${r.tarantulaName}`}
                   </div>

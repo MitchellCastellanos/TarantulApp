@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
 import LoginPage from './pages/LoginPage'
@@ -8,11 +8,16 @@ import AddTarantulaPage from './pages/AddTarantulaPage'
 import TarantulaDetailPage from './pages/TarantulaDetailPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import RemindersPage from './pages/RemindersPage'
+import AccountPage from './pages/AccountPage'
 import ProPage from './pages/ProPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+import DiscoverPage from './pages/DiscoverPage'
+import DiscoverTaxonDetailPage from './pages/DiscoverTaxonDetailPage'
+import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
+import DiscoverComparePage from './pages/DiscoverComparePage'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -31,21 +36,47 @@ function AuthSessionBridge() {
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
-  return token ? children : <Navigate to="/login" replace />
+  const location = useLocation()
+  if (!token) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ redirectAfterAuth: location.pathname + location.search }}
+      />
+    )
+  }
+  return children
+}
+
+function LoginGate() {
+  const { token } = useAuth()
+  const location = useLocation()
+  if (token) {
+    const r = location.state?.redirectAfterAuth
+    if (typeof r === 'string' && r.startsWith('/')) {
+      return <Navigate to={r} replace />
+    }
+    return <Navigate to="/" replace />
+  }
+  return <LoginPage />
 }
 
 function AppRoutes() {
-  const { token } = useAuth()
   return (
     <Routes>
       {/* Pública */}
-      <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={<LoginGate />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
       <Route path="/pro" element={<ProPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/descubrir" element={<DiscoverPage />} />
+      <Route path="/descubrir/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
+      <Route path="/descubrir/especie/:id" element={<DiscoverSpeciesDetailPage />} />
+      <Route path="/descubrir/comparar" element={<DiscoverComparePage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -53,6 +84,7 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
+      <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

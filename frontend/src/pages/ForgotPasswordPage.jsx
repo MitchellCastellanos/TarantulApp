@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../services/api'
+import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 
 export default function ForgotPasswordPage() {
@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError('')
     try {
-      await api.post('/auth/forgot-password', { email })
+      await publicApi.post('/auth/forgot-password', { email })
       setSent(true)
     } catch {
       setError(t('common.error'))

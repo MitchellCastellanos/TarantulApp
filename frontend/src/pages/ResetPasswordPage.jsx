@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../services/api'
+import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 
 export default function ResetPasswordPage() {
@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
     setError('')
     try {
-      await api.post('/auth/reset-password', { token, password })
+      await publicApi.post('/auth/reset-password', { token, password })
       setSuccess(true)
       setTimeout(() => navigate('/login'), 3000)
     } catch (err) {

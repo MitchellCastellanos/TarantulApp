@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
+import DiscoverNavSearch from './DiscoverNavSearch'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 
@@ -108,11 +109,36 @@ export default function Navbar() {
       <Link to="/" className="navbar-brand text-decoration-none">
         🕷️ TarantulApp
       </Link>
-      <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end">
+      <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
+        {user && (
+          <div className="d-none d-md-flex flex-grow-1 ms-md-2" style={{ maxWidth: 360, minWidth: 0 }}>
+            <DiscoverNavSearch className="w-100" />
+          </div>
+        )}
+        <Link
+          to="/descubrir"
+          className="text-decoration-none small fw-semibold"
+          style={{ color: 'var(--ta-gold)' }}
+          title={t('nav.discoverLinkTitle')}
+        >
+          {t('discover.navTitle')}
+        </Link>
         {user && (
           <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
                 style={{ color: 'var(--ta-gold)' }}>
             🔔 {t('nav.reminders')}
+          </Link>
+        )}
+        {user && (
+          <Link
+            to="/account"
+            className="text-decoration-none small fw-semibold"
+            style={{ color: 'var(--ta-parchment)' }}
+            title={t('nav.accountAria')}
+            aria-label={t('nav.accountAria')}
+          >
+            <span aria-hidden="true">⚙️</span>
+            <span className="d-none d-sm-inline ms-1">{t('nav.account')}</span>
           </Link>
         )}
         {planControl}

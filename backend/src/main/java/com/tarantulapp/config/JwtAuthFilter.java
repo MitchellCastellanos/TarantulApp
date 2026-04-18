@@ -12,12 +12,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Component
+/**
+ * Solo se instancia desde {@link SecurityConfig} y se añade con {@code addFilterBefore}.
+ * No usar {@code @Component}: Spring Boot registraría el mismo filtro en el contenedor Servlet
+ * y volvería a ejecutarse en la cadena de seguridad → 401/403 erráticos en rutas públicas.
+ */
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
@@ -28,6 +31,51 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = stripContextPath(request);
+        if (uri.startsWith("/api/public/")) {
+            return true;
+        }
+        // Login / registro / reset: sin parsear Bearer (token caducado en el navegador no debe afectar POST públicos).
+        if (uri.startsWith("/api/auth/")
+                && !"/api/auth/change-password".equals(uri)) {
+            return true;
+        }
+        // Búsquedas taxonómicas: siempre sin filtro JWT (evita 401 con sesión en WSC/GBIF).
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && (uri.startsWith("/api/wsc/") || uri.startsWith("/api/gbif/"))) {
+            return true;
+        }
+        // Sin Bearer: no parsear JWT en GET /api/species (Descubrir invitado).
+        // Con Bearer: filtrar para que {@code SpeciesController} distinga sesión en GET /api/species.
+        if ("GET".equalsIgnoreCase(request.getMethod()) && !hasBearer(request) && uri.startsWith("/api/species")) {
+            return true;
+        }
+        return false;
+    }
+
+    private static String stripContextPath(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return "";
+        }
+        String ctx = request.getContextPath();
+        if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
+            uri = uri.substring(ctx.length());
+        }
+        return uri;
+    }
+
+    private static boolean hasBearer(HttpServletRequest request) {
+        String h = request.getHeader("Authorization");
+        if (h == null) {
+            return false;
+        }
+        String t = h.trim();
+        return t.regionMatches(true, 0, "Bearer", 0, 6) && t.length() > 7 && !t.substring(7).trim().isEmpty();
     }
 
     @Override
