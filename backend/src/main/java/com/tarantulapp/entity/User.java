@@ -33,6 +33,7 @@ public class User {
     @Column(name = "trial_ends_at")
     private LocalDateTime trialEndsAt;
 
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -61,4 +62,5 @@ public class User {
 
     public LocalDateTime getTrialEndsAt() { return trialEndsAt; }
     public void setTrialEndsAt(LocalDateTime trialEndsAt) { this.trialEndsAt = trialEndsAt; }
+
 }

@@ -31,7 +31,7 @@ export default function PublicShell({ children }) {
             className="text-decoration-none small fw-semibold"
             title={t('nav.discoverLinkTitle')}
             style={{
-              color: onDiscover ? 'var(--ta-gold, #c9a227)' : 'rgba(232,220,200,0.75)',
+              color: onDiscover ? 'var(--ta-gold, #c9a227)' : 'var(--ta-text-muted)',
             }}
           >
             {t('discover.navTitle')}
@@ -41,7 +41,7 @@ export default function PublicShell({ children }) {
             className="text-decoration-none small fw-semibold"
             title={t('nav.qrToolTitle')}
             style={{
-              color: onQrTool ? 'var(--ta-gold, #c9a227)' : 'rgba(232,220,200,0.75)',
+              color: onQrTool ? 'var(--ta-gold, #c9a227)' : 'var(--ta-text-muted)',
             }}
           >
             {t('nav.qrTool')}
@@ -64,7 +64,7 @@ export default function PublicShell({ children }) {
                 className="btn btn-sm px-2 py-0 border-0"
                 style={{
                   background: 'transparent',
-                  color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.4)',
+                  color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
                   fontSize: '0.72rem',
                   fontWeight: 600,
                 }}

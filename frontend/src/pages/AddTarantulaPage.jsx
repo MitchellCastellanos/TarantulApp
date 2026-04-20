@@ -61,6 +61,7 @@ export default function AddTarantulaPage() {
   const speciesSearchGenRef = useRef(0)
   const hasProFeatures = user?.hasProFeatures === true
   const isFreePlan = !hasProFeatures
+  const [newKeeperMode, setNewKeeperMode] = useState(true)
   const tarantulaLimit = 6
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
 
@@ -191,6 +192,38 @@ export default function AddTarantulaPage() {
       (s) => (s.scientificName || '').trim().toLowerCase() === q
     )
   }, [suggestions, speciesQuery])
+
+  const newKeeperChecklist = useMemo(() => {
+    const items = []
+    items.push({
+      id: 'species',
+      label: t('onboarding.pickSpecies'),
+      done: Boolean(selectedSpecies?.id),
+    })
+    items.push({
+      id: 'name',
+      label: t('onboarding.nameSpecimen'),
+      done: Boolean(form.name?.trim()),
+    })
+    items.push({
+      id: 'size',
+      label: t('onboarding.logSize'),
+      done: form.currentSizeCm !== '' && form.currentSizeCm !== null,
+    })
+    if (selectedSpecies?.habitatType === 'arboreal') {
+      items.push({ id: 'setup', label: t('onboarding.setupArboreal'), done: true })
+    } else if (selectedSpecies?.habitatType === 'fossorial') {
+      items.push({ id: 'setup', label: t('onboarding.setupFossorial'), done: true })
+    } else if (selectedSpecies?.habitatType === 'terrestrial') {
+      items.push({ id: 'setup', label: t('onboarding.setupTerrestrial'), done: true })
+    }
+    items.push({
+      id: 'post',
+      label: t('onboarding.postCreateHint'),
+      done: false,
+    })
+    return items
+  }, [selectedSpecies, form.name, form.currentSizeCm, t])
 
   const selectSpecies = (sp) => {
     speciesSearchGenRef.current += 1
@@ -369,6 +402,31 @@ export default function AddTarantulaPage() {
         <form onSubmit={handleSubmit}>
           <div className="card border-0 shadow-sm p-4 mb-3 ta-species-dropdown-card">
             <h6 className="fw-bold mb-3">{t('form.speciesSection')}</h6>
+
+            <div className="mb-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="small fw-semibold">{t('onboarding.newKeeperMode')}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setNewKeeperMode((v) => !v)}
+                >
+                  {newKeeperMode ? t('onboarding.hideGuide') : t('onboarding.showGuide')}
+                </button>
+              </div>
+              {newKeeperMode && (
+                <div className="mt-2 p-2 rounded-2 small" style={{ border: '1px dashed var(--ta-border)' }}>
+                  <p className="mb-2 text-muted">{t('onboarding.guideIntro')}</p>
+                  <ul className="list-unstyled mb-0">
+                    {newKeeperChecklist.map((item) => (
+                      <li key={item.id} className="mb-1">
+                        {item.done ? '✅' : '⬜'} {item.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             {/* Autocomplete de especie */}
             <div className="mb-3 position-relative ta-species-autocomplete-wrap">

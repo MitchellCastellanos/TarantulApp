@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { formatEventDateTime } from '../utils/dateFormat'
+import { buildEventShareText } from '../utils/shareTemplates'
+import { detectShareChannel, shareOrCopyText } from '../utils/shareUtils'
 
 const TYPE_CONFIG = {
   feeding:  { icon: '🍽️', color: '#4a8fcf' },
@@ -7,7 +9,7 @@ const TYPE_CONFIG = {
   behavior: { icon: '🔍', color: '#c09040' },
 }
 
-export default function TimelineItem({ event, onDelete }) {
+export default function TimelineItem({ event, onDelete, shareMeta }) {
   const { t, i18n } = useTranslation()
   const cfg = TYPE_CONFIG[event.type] || { icon: '📝', color: '#6c757d' }
 
@@ -16,6 +18,24 @@ export default function TimelineItem({ event, onDelete }) {
       return `${t('quickLog.behavior')}: ${t('timeline.' + event.title, event.title)}`
     }
     return t('timeline.' + event.title, event.title)
+  }
+
+  const handleShare = async () => {
+    if (!shareMeta?.tarantulaName) return
+    const text = buildEventShareText({
+      tarantulaName: shareMeta.tarantulaName,
+      speciesName: shareMeta.speciesName,
+      event,
+      t,
+      language: i18n.language,
+      profileUrl: shareMeta.profileUrl,
+      channel: detectShareChannel(),
+    })
+    try {
+      await shareOrCopyText(text)
+    } catch {
+      // no-op
+    }
   }
 
   return (
@@ -46,6 +66,17 @@ export default function TimelineItem({ event, onDelete }) {
                 aria-label={t('common.delete')}
               >
                 ×
+              </button>
+            )}
+            {shareMeta && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary py-0 px-2"
+                onClick={handleShare}
+                title={t('share.shareEvent')}
+                aria-label={t('share.shareEvent')}
+              >
+                ↗
               </button>
             )}
           </span>

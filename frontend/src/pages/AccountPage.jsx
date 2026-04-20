@@ -292,7 +292,7 @@ export default function AccountPage() {
                   className="btn btn-sm px-2 py-1 border-0"
                   style={{
                     background: 'transparent',
-                    color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.45)',
+                    color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
                     fontSize: '0.8rem',
                     fontWeight: 600,
                   }}
