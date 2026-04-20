@@ -3,9 +3,11 @@ package com.tarantulapp.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
@@ -17,6 +19,12 @@ public class EmailService {
     @Value("${app.mail.from:noreply@tarantulapp.com}")
     private String fromAddress;
 
+    @Value("${app.mail.from-name:TarantulApp}")
+    private String fromName;
+
+    @Value("${app.mail.reply-to:}")
+    private String replyToAddress;
+
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
@@ -27,11 +35,15 @@ public class EmailService {
     public void sendPasswordReset(String toEmail, String token) {
         String resetUrl = baseUrl + "/reset-password?token=" + token;
         try {
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromAddress);
-            msg.setTo(toEmail);
-            msg.setSubject("TarantulApp — Reset de contraseña / Password Reset");
-            msg.setText(
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("TarantulApp — Reset de contraseña / Password Reset");
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(
                 "Hola,\n\n" +
                 "Recibimos una solicitud para restablecer tu contraseña.\n" +
                 "Haz clic en el siguiente enlace (válido por 1 hora):\n\n" +

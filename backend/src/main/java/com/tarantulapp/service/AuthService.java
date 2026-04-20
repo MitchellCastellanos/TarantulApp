@@ -14,10 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -31,6 +34,7 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
+    private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil, PasswordResetTokenRepository resetTokenRepository,
@@ -68,6 +72,43 @@ public class AuthService {
             user.setPlan(UserPlan.FREE);
             userRepository.save(user);
         }
+        String token = jwtUtil.generateToken(user.getEmail());
+        return buildAuthResponse(token, user);
+    }
+
+    public AuthResponse googleLogin(String idToken) {
+        Map<String, Object> tokenInfo;
+        try {
+            tokenInfo = restClient.get()
+                    .uri("https://oauth2.googleapis.com/tokeninfo?id_token={idToken}", idToken)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientException e) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+        if (tokenInfo == null) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+        Object emailRaw = tokenInfo.get("email");
+        Object verifiedRaw = tokenInfo.get("email_verified");
+        String email = emailRaw == null ? "" : String.valueOf(emailRaw).trim().toLowerCase();
+        boolean verified = verifiedRaw != null && "true".equalsIgnoreCase(String.valueOf(verifiedRaw));
+        if (email.isBlank() || !verified) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User created = new User();
+            created.setEmail(email);
+            created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+            Object nameRaw = tokenInfo.get("name");
+            String displayName = nameRaw == null ? null : String.valueOf(nameRaw).trim();
+            created.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName);
+            created.setPlan(UserPlan.FREE);
+            created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+            return userRepository.save(created);
+        });
+
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }

@@ -1,6 +1,7 @@
 {
   "nav": {
     "reminders": "Reminders",
+    "login": "Sign in",
     "logout": "Sign out",
     "lang": "Language",
     "planFree": "Free plan",
@@ -183,7 +184,10 @@
     "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After the trial, subscribe to Pro for unlimited editing, smart reminders, QR quick logs, and one-click Excel export of your collection — or stay on the free plan within its limits.",
     "proTeaserTitle": "Pro at a glance",
     "proTeaserExcelLead": "Excel export:",
-    "proTeaserBody": "download your whole collection as a spreadsheet (.xlsx). Pro also includes unlimited spiders, automatic feeding reminders from your history, and per-spider QR quick actions."
+    "proTeaserBody": "download your whole collection as a spreadsheet (.xlsx). Pro also includes unlimited spiders, automatic feeding reminders from your history, and per-spider QR quick actions.",
+    "orContinueWith": "or continue with",
+    "googleLoginError": "Could not sign in with Google.",
+    "googlePendingConfig": "Google login is visible, pending client ID configuration."
   },
   "common": {
     "save": "Save",
@@ -648,6 +652,11 @@
       "legal": "Legal",
       "help": "Help",
       "about": "About"
+    },
+    "preferences": {
+      "theme": "Theme",
+      "light": "Switch to light mode",
+      "dark": "Switch to dark mode"
     },
     "profile": {
       "noName": "(no name)"

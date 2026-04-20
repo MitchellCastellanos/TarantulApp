@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
@@ -22,6 +22,7 @@ import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import { useTranslation } from 'react-i18next'
 import QrBulkPrintPage from './pages/QrBulkPrintPage'
+import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -107,14 +108,18 @@ function Footer() {
       &nbsp;·&nbsp;
       <Link to="/contact" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('nav.contact')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.4)' }}>Privacy Policy</Link>
+      <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('account.legal.privacy')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/terms" style={{ color: 'rgba(255,255,255,0.4)' }}>Terms</Link>
+      <Link to="/terms" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('account.legal.terms')}</Link>
     </footer>
   )
 }
 
 export default function App() {
+  useEffect(() => {
+    setStoredTheme(getStoredTheme())
+  }, [])
+
   return (
     <AuthProvider>
       <BrowserRouter
