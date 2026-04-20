@@ -1,31 +1,24 @@
-# ─── Copia a UNO de estos sitios (elige uno) ───────────────────────────────
+# Copia este archivo a:
+#   backend/src/main/resources/application-local.properties
+# (está en .gitignore; no subas contraseñas a git).
 #
-# A) Por proyecto (gitignored):
-#    backend/src/main/resources/application-local.properties
-#
-# B) Por máquina (recomendado si OneDrive te borra/duplica configs):
-#    Windows:  %USERPROFILE%\.tarantulapp\tarantulapp-local.properties
-#    mac/Linux: ~/.tarantulapp/tarantulapp-local.properties
-#    Crea la carpeta .tarantulapp si no existe.
-#
-# NO subas nunca estos archivos con contraseña a git.
-# ───────────────────────────────────────────────────────────────────────────
+# Misma información que en producción: solo spring.datasource.* equivalentes a DB_URL / DB_USERNAME / DB_PASSWORD.
+# Otra forma local equivalente: backend/database.local.env + VS Code launch "… (database.local.env)".
 
 spring.profiles.active=local
 app.dev-seed-user=true
 
-# Supabase → Project Settings → Database → Connection string → URI
-# Después de copiar, cambia sslmode=require si tu cadena no lo trae.
-# Host típico: db.<project-ref>.supabase.co  (NO dejes db.REEMPLAZA… del repo)
-spring.datasource.url=jdbc:postgresql://db.TU_REF_AQUI.supabase.co:5432/postgres?sslmode=require
-spring.datasource.username=postgres
-spring.datasource.password=TU_PASSWORD_DE_SUPABASE
+# Session pooler (JPA/Flyway). Ajusta región y ref desde Supabase → Connect → Session.
+# connectTimeout (s) y socketTimeout (s) evitan que Hikari espere 60–120 s colgado si el pooler no responde.
+spring.datasource.url=jdbc:postgresql://aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20&socketTimeout=300
+spring.datasource.username=postgres.TU_PROJECT_REF
+spring.datasource.password=TU_DATABASE_PASSWORD_SUPABASE
 
-# Alternativa: en PowerShell antes de mvn (misma sesión):
-#   $env:DB_URL="jdbc:postgresql://..."
-#   $env:DB_USERNAME="postgres"
-#   $env:DB_PASSWORD="..."
+# NO pongas maximum-pool-size=1: tras "Successfully validated" Flyway necesita otra conexión para migrate;
+# con un solo slot suele quedarse "Connection is not available… 120s" en bucle. Usa 2 o 3 (o borra estas líneas y deja el default del repo).
+spring.datasource.hikari.maximum-pool-size=3
+spring.datasource.hikari.minimum-idle=0
 
-# Login dev (solo si LocalDevUserSeed está activo con perfil local):
-#   Email:    dev@tarantulapp.local
-#   Password: LocalDev123!
+# Transaction pooler :6543 solo si lo necesitas; añade a la URL: &prepareThreshold=0
+
+# Usuario seed (LocalDevUserSeed): dev@tarantulapp.local / LocalDev123!

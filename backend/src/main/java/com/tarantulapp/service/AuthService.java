@@ -9,6 +9,8 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,8 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -72,10 +76,19 @@ public class AuthService {
         AuthResponse r = new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(),
                 user.getPlan() != null ? user.getPlan().name() : UserPlan.FREE.name());
         r.setTrialEndsAt(user.getTrialEndsAt());
-        r.setReadOnly(planAccessService.isReadOnly(user));
-        r.setInTrial(planAccessService.isTrialActive(user));
-        r.setOverFreeLimit(planAccessService.isOverFreeTierLimit(user));
-        r.setStrictReadOnly(planAccessService.isStrictReadOnly(user));
+        // Cupo/tarántulas: si la consulta falla (pool=1, datos viejos, plan inválido en fila), no tumbar login con 500.
+        try {
+            r.setReadOnly(planAccessService.isReadOnly(user));
+            r.setInTrial(planAccessService.isTrialActive(user));
+            r.setOverFreeLimit(planAccessService.isOverFreeTierLimit(user));
+            r.setStrictReadOnly(planAccessService.isStrictReadOnly(user));
+        } catch (Exception e) {
+            log.warn("Login: no se pudieron calcular flags de plan para userId={}: {}", user.getId(), e.getMessage());
+            r.setReadOnly(false);
+            r.setInTrial(user.getTrialEndsAt() != null && LocalDateTime.now().isBefore(user.getTrialEndsAt()));
+            r.setOverFreeLimit(false);
+            r.setStrictReadOnly(false);
+        }
         return r;
     }
 
