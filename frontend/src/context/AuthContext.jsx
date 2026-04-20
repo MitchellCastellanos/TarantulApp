@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect } from 'react'
 import billingService from '../services/billingService'
 import { setSessionTokenSnapshot } from '../services/authApiToken'
+import { initNativePush } from '../services/pushService'
 
 const AuthContext = createContext(null)
 
@@ -108,6 +109,15 @@ export function AuthProvider({ children }) {
       cancelled = true
     }
   }, [logout])
+
+  useEffect(() => {
+    if (!token) return
+    initNativePush().catch((err) => {
+      if (import.meta.env.DEV) {
+        console.warn('[TarantulApp] init native push failed', err?.message || err)
+      }
+    })
+  }, [token])
 
   const setPlan = useCallback((plan) => {
     setUser(prev => {
