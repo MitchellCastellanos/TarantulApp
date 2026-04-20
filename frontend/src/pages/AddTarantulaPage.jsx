@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -57,6 +57,7 @@ export default function AddTarantulaPage() {
   })
   const debounceRef = useRef(null)
   const discoverPrefillRef = useRef('')
+  const speciesSearchGenRef = useRef(0)
   const hasProFeatures = user?.hasProFeatures === true
   const isFreePlan = !hasProFeatures
   const tarantulaLimit = 6
@@ -130,37 +131,90 @@ export default function AddTarantulaPage() {
     }
   }, [isEdit, searchParams, t])
 
-  // Debounced species search (local + GBIF in parallel)
+  // Debounced species search (local + WSC + GBIF). No reabrir panel ni volver a pedir APIs
+  // cuando el texto ya coincide con la especie confirmada (evita el “doble clic”).
   useEffect(() => {
     clearTimeout(debounceRef.current)
-    if (speciesQuery.length < 2) { setSuggestions([]); setGbifResults([]); return }
+    if (speciesQuery.length < 2) {
+      setSuggestions([])
+      setGbifResults([])
+      setWscResults([])
+      return
+    }
+    const q = speciesQuery.trim()
+    const sel = selectedSpecies?.scientificName?.trim()
+    if (sel && q.toLowerCase() === sel.toLowerCase()) {
+      return
+    }
     debounceRef.current = setTimeout(() => {
-      speciesService.search(speciesQuery).then(setSuggestions)
+      const gen = ++speciesSearchGenRef.current
+      speciesService.search(speciesQuery).then((rows) => {
+        if (gen !== speciesSearchGenRef.current) return
+        setSuggestions(rows)
+      })
       setGbifLoading(true)
       speciesService.searchGbif(speciesQuery)
-        .then(setGbifResults)
-        .catch(() => setGbifResults([]))
-        .finally(() => setGbifLoading(false))
+        .then((rows) => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifResults(rows)
+        })
+        .catch(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifResults([])
+        })
+        .finally(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifLoading(false)
+        })
       setWscLoading(true)
       speciesService.searchWsc(speciesQuery)
-        .then(setWscResults)
-        .catch(() => setWscResults([]))
-        .finally(() => setWscLoading(false))
+        .then((rows) => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscResults(rows)
+        })
+        .catch(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscResults([])
+        })
+        .finally(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscLoading(false)
+        })
       setShowSugg(true)
     }, 300)
-  }, [speciesQuery])
+  }, [speciesQuery, selectedSpecies])
+
+  const exactLocalSpeciesHit = useMemo(() => {
+    const q = speciesQuery.trim().toLowerCase()
+    if (q.length < 2) return false
+    return suggestions.some(
+      (s) => (s.scientificName || '').trim().toLowerCase() === q
+    )
+  }, [suggestions, speciesQuery])
 
   const selectSpecies = (sp) => {
+    speciesSearchGenRef.current += 1
     setSelectedSpecies(sp)
     setForm(f => ({ ...f, speciesId: sp.id }))
     setSpeciesQuery(sp.scientificName)
     setShowSugg(false)
+    setSuggestions([])
+    setGbifResults([])
+    setWscResults([])
+    setGbifLoading(false)
+    setWscLoading(false)
   }
 
   const clearSpecies = () => {
+    speciesSearchGenRef.current += 1
     setSelectedSpecies(null)
     setForm(f => ({ ...f, speciesId: null }))
     setSpeciesQuery('')
+    setSuggestions([])
+    setGbifResults([])
+    setWscResults([])
+    setGbifLoading(false)
+    setWscLoading(false)
   }
 
   const selectGbif = async (gbifResult) => {
@@ -344,8 +398,8 @@ export default function AddTarantulaPage() {
                     </li>
                   ))}
 
-                  {/* WSC section — primary taxonomic source */}
-                  {(wscResults.length > 0 || wscLoading) && (
+                  {/* WSC — solo si no hay ya coincidencia exacta en catálogo local */}
+                  {!exactLocalSpeciesHit && (wscResults.length > 0 || wscLoading) && (
                     <>
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#f3e5ff', borderTop: '1px solid #d9b3ff', cursor: 'default' }}>
@@ -366,8 +420,7 @@ export default function AddTarantulaPage() {
                     </>
                   )}
 
-                  {/* GBIF section — distribution & synonyms */}
-                  {(gbifResults.length > 0 || gbifLoading) && (
+                  {!exactLocalSpeciesHit && (gbifResults.length > 0 || gbifLoading) && (
                     <>
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#e8f4fd', borderTop: '1px solid #bee5fb', cursor: 'default' }}>

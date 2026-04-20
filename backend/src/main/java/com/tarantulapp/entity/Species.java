@@ -74,6 +74,10 @@ public class Species {
     @Column(name = "gbif_usage_key")
     private Long gbifUsageKey;
 
+    /** {@code new_world} | {@code old_world} — hobby biogeography; null if unknown. */
+    @Column(name = "hobby_world", length = 20)
+    private String hobbyWorld;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getScientificName() { return scientificName; }
@@ -116,4 +120,6 @@ public class Species {
     public void setDataSource(String dataSource) { this.dataSource = dataSource; }
     public Long getGbifUsageKey() { return gbifUsageKey; }
     public void setGbifUsageKey(Long gbifUsageKey) { this.gbifUsageKey = gbifUsageKey; }
+    public String getHobbyWorld() { return hobbyWorld; }
+    public void setHobbyWorld(String hobbyWorld) { this.hobbyWorld = hobbyWorld; }
 }
