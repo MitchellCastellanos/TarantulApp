@@ -1,6 +1,7 @@
 package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.UserPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -13,4 +14,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
     long countByCreatedAtAfter(LocalDateTime from);
     List<User> findTop10ByOrderByCreatedAtDesc();
+    List<User> findByPlanAndTrialEndsAtBetween(
+            UserPlan plan,
+            LocalDateTime from,
+            LocalDateTime to
+    );
 }

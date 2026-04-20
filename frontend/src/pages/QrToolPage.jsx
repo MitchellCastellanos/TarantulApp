@@ -199,7 +199,7 @@ export default function QrToolPage() {
         <h1 className="h3 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>
           {t('qrTool.heading')}
         </h1>
-        <p className="small mb-4" style={{ color: 'rgba(232,220,200,0.85)', maxWidth: 520 }}>
+        <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
           {t('qrTool.intro')}
         </p>
 
@@ -207,7 +207,7 @@ export default function QrToolPage() {
           <div className="card border-0 shadow-sm" style={{ background: 'rgba(18,16,28,0.65)' }}>
             <div className="card-body p-4">
               {!token && (
-                <p className="small mb-4" style={{ color: 'rgba(232,220,200,0.9)' }}>
+                <p className="small mb-4" style={{ color: 'var(--ta-text)' }}>
                   {t('qrTool.loginRequiredBody')}{' '}
                   <Link to="/login" className="alert-link" style={{ color: 'var(--ta-gold)' }}>
                     {t('nav.login', 'Login')}
@@ -254,7 +254,7 @@ export default function QrToolPage() {
                         <p className="fw-semibold mb-0" style={{ color: 'var(--ta-parchment)' }}>
                           {getQrLabelParts(selected).name}
                         </p>
-                        <p className="small mb-0" style={{ color: 'rgba(232,220,200,0.75)' }}>
+                        <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                           {getQrLabelParts(selected).species}
                         </p>
                       </div>
@@ -294,7 +294,7 @@ export default function QrToolPage() {
           </div>
         </FangPanel>
 
-        <p className="small mt-4 mb-0" style={{ color: 'rgba(232,220,200,0.65)' }}>
+        <p className="small mt-4 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
           {t('qrTool.footerNote')}
         </p>
       </div>

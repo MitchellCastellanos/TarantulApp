@@ -104,15 +104,15 @@ function AppRoutes() {
 function Footer() {
   const { t } = useTranslation()
   return (
-    <footer className="text-center py-3 mt-5" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
+    <footer className="text-center py-3 mt-5" style={{ fontSize: '0.75rem', color: 'var(--ta-text-muted)' }}>
       © {new Date().getFullYear()} TarantulApp &nbsp;·&nbsp;
-      <Link to="/herramientas/qr" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('nav.qrTool')}</Link>
+      <Link to="/herramientas/qr" style={{ color: 'var(--ta-text-muted)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/contact" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('nav.contact')}</Link>
+      <Link to="/contact" style={{ color: 'var(--ta-text-muted)' }}>{t('nav.contact')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('account.legal.privacy')}</Link>
+      <Link to="/privacy" style={{ color: 'var(--ta-text-muted)' }}>{t('account.legal.privacy')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/terms" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('account.legal.terms')}</Link>
+      <Link to="/terms" style={{ color: 'var(--ta-text-muted)' }}>{t('account.legal.terms')}</Link>
     </footer>
   )
 }
