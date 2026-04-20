@@ -58,6 +58,7 @@ public class AuthService {
         user.setPlan(UserPlan.FREE);
         user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
         userRepository.save(user);
+        emailService.sendWelcomeTrialStarted(user.getEmail(), user.getDisplayName(), user.getTrialEndsAt());
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }
@@ -106,7 +107,9 @@ public class AuthService {
             created.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName);
             created.setPlan(UserPlan.FREE);
             created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
-            return userRepository.save(created);
+            User saved = userRepository.save(created);
+            emailService.sendWelcomeTrialStarted(saved.getEmail(), saved.getDisplayName(), saved.getTrialEndsAt());
+            return saved;
         });
 
         String token = jwtUtil.generateToken(user.getEmail());

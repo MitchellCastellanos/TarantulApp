@@ -183,7 +183,7 @@ export default function Navbar() {
               className="btn btn-sm px-1 py-0 border-0 d-inline-flex align-items-center"
               style={{
                 background: 'transparent',
-                color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.4)',
+                color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
                 fontSize: '0.72rem',
                 fontWeight: 600,
                 letterSpacing: '0.04em',

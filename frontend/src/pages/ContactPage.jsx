@@ -12,11 +12,11 @@ function ContactBlock({ title, body, email }) {
       }}
     >
       <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{title}</h2>
-      <p className="small mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.95 }}>{body}</p>
+      <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>{body}</p>
       <a
         href={`mailto:${email}`}
         className="small fw-semibold text-decoration-none"
-        style={{ color: 'var(--ta-brown-light)' }}
+        style={{ color: 'var(--ta-gold)' }}
       >
         {email}
       </a>

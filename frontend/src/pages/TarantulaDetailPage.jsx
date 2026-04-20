@@ -20,6 +20,7 @@ import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone } from '../utils/dateFormat'
+import { exportTarantulaPdf } from '../services/pdfExportService'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const defaultSpiderStyle = {
@@ -109,6 +110,17 @@ export default function TarantulaDetailPage() {
     setTarantula(updated)
     setModal(null)
   }
+
+  const handleExportPdf = () => {
+    exportTarantulaPdf({
+      tarantula,
+      species,
+      timeline,
+      t,
+      language: i18n.language,
+    })
+  }
+  const publicProfileUrl = tarantula?.shortId ? `${window.location.origin}/t/${tarantula.shortId}` : ''
 
   if (loading) return (
     <div><Navbar /><div className="container mt-4 text-muted">{t('tarantula.loading')}</div></div>
@@ -278,6 +290,9 @@ export default function TarantulaDetailPage() {
                             onClick={() => setModal('qr')}>
                       📱 {t('tarantula.qrCode')}
                     </button>
+                    <button className="btn btn-outline-secondary btn-sm flex-fill" onClick={handleExportPdf}>
+                      📄 {t('share.exportPdf')}
+                    </button>
                     {hasProFeatures ? (
                       <button
                         className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
@@ -402,7 +417,11 @@ export default function TarantulaDetailPage() {
             </div>
 
             {/* Photo gallery */}
-            <PhotoGallery tarantulaId={id} readOnly={!mayEdit} />
+            <PhotoGallery
+              tarantulaId={id}
+              readOnly={!mayEdit}
+              shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+            />
 
             {/* Timeline — pergamino */}
             <div className="ta-parchment-float-wrap">
@@ -426,7 +445,12 @@ export default function TarantulaDetailPage() {
                     <>
                       <div className="ta-parchment-events flex-grow-1">
                         {timelinePage.map(event => (
-                          <TimelineItem key={event.id} event={event} onDelete={mayEdit ? handleDeleteEvent : undefined} />
+                          <TimelineItem
+                            key={event.id}
+                            event={event}
+                            onDelete={mayEdit ? handleDeleteEvent : undefined}
+                            shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+                          />
                         ))}
                       </div>
                       {showHistoryPager && (
