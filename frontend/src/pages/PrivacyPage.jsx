@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function PrivacyPage() {
   return (
@@ -29,13 +31,24 @@ export default function PrivacyPage() {
         <p>Your data is stored in a secure PostgreSQL database hosted on Supabase. Photos are stored on Cloudinary. All connections use HTTPS/TLS encryption.</p>
 
         <h5 className="fw-bold mt-4">4. Your Rights</h5>
-        <p>You may request deletion of your account and all associated data at any time by emailing us. We will process the request within 30 days.</p>
+        <p>You may request deletion of your account and all associated data at any time by emailing{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>. We will process the request within 30 days.</p>
 
         <h5 className="fw-bold mt-4">5. Cookies</h5>
         <p>TarantulApp uses browser localStorage to store your authentication token. No third-party tracking cookies are used.</p>
 
         <h5 className="fw-bold mt-4">6. Contact</h5>
-        <p>Questions about this policy: <a href="mailto:hola@tarantulapp.com">hola@tarantulapp.com</a></p>
+        <p>Questions about this policy:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+        </p>
+        <p>Technical issues:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Partnerships &amp; press:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+        </p>
+        <p className="small text-muted mb-0">
+          <Link to="/contact">All contact options</Link>
+        </p>
 
         <hr className="my-4" />
 
@@ -63,13 +76,24 @@ export default function PrivacyPage() {
         <p>Tus datos se almacenan en una base de datos PostgreSQL segura en Supabase. Las fotos se guardan en Cloudinary. Todas las conexiones usan cifrado HTTPS/TLS.</p>
 
         <h5 className="fw-bold mt-4">4. Tus derechos</h5>
-        <p>Puedes solicitar la eliminación de tu cuenta y todos tus datos en cualquier momento escribiéndonos. Procesamos la solicitud en 30 días.</p>
+        <p>Puedes solicitar la eliminación de tu cuenta y todos tus datos en cualquier momento escribiendo a{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>. Procesamos la solicitud en 30 días.</p>
 
         <h5 className="fw-bold mt-4">5. Cookies y almacenamiento local</h5>
         <p>TarantulApp usa localStorage del navegador para guardar tu sesión. No usamos cookies de seguimiento de terceros.</p>
 
         <h5 className="fw-bold mt-4">6. Contacto</h5>
-        <p>Dudas sobre esta política: <a href="mailto:hola@tarantulapp.com">hola@tarantulapp.com</a></p>
+        <p>Dudas sobre esta política:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+        </p>
+        <p>Incidencias técnicas:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Marketing y alianzas:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+        </p>
+        <p className="small text-muted mb-0">
+          <Link to="/contact">Página de contacto</Link>
+        </p>
       </div>
     </div>
   )

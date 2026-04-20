@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
@@ -18,6 +18,8 @@ export default function AddTarantulaPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const isEdit = Boolean(id)
+  const discoverSpeciesId = searchParams.get('speciesId')
+  const discoverGbifKey = searchParams.get('gbifKey')
 
   const [form, setForm] = useState({
     name: '', speciesId: null, currentSizeCm: '', stage: '',
@@ -56,7 +58,6 @@ export default function AddTarantulaPage() {
     notes: '',
   })
   const debounceRef = useRef(null)
-  const discoverPrefillRef = useRef('')
   const speciesSearchGenRef = useRef(0)
   const hasProFeatures = user?.hasProFeatures === true
   const isFreePlan = !hasProFeatures
@@ -93,14 +94,13 @@ export default function AddTarantulaPage() {
   }, [isEdit])
 
   // Descubrir → "Agregar a colección": ?speciesId= o ?gbifKey=
+  // No usar ref “dedupe” antes del async: con React.StrictMode el 1er efecto se cancela
+  // y el 2º veía la misma clave y salía sin cargar nunca la especie.
   useEffect(() => {
     if (isEdit) return
-    const sid = searchParams.get('speciesId')
-    const gk = searchParams.get('gbifKey')
-    const key = `${sid || ''}|${gk || ''}`
+    const sid = discoverSpeciesId
+    const gk = discoverGbifKey
     if (!sid && !gk) return
-    if (discoverPrefillRef.current === key) return
-    discoverPrefillRef.current = key
 
     let cancelled = false
     ;(async () => {
@@ -129,7 +129,7 @@ export default function AddTarantulaPage() {
     return () => {
       cancelled = true
     }
-  }, [isEdit, searchParams, t])
+  }, [isEdit, discoverSpeciesId, discoverGbifKey, t])
 
   // Debounced species search (local + WSC + GBIF). No reabrir panel ni volver a pedir APIs
   // cuando el texto ya coincide con la especie confirmada (evita el “doble clic”).
@@ -549,6 +549,14 @@ export default function AddTarantulaPage() {
                       <button type="button" className="btn btn-outline-purple" style={{ color: '#6f42c1', borderColor: '#6f42c1' }} onClick={() => setPostCreateMode('molt')}>
                         {t('form.addLastMolt')}
                       </button>
+                      {createdTarantula.shortId && (
+                        <Link
+                          to={`/herramientas/qr?shortId=${encodeURIComponent(createdTarantula.shortId)}`}
+                          className="btn btn-outline-secondary"
+                        >
+                          {t('form.postCreateQrTerrarium')}
+                        </Link>
+                      )}
                       <button type="button" className="btn btn-outline-secondary" onClick={closePostCreate}>
                         {t('form.skipForNow')}
                       </button>

@@ -7,6 +7,7 @@ import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
 import com.tarantulapp.util.FileStorageService;
+import com.tarantulapp.util.SecurityHelper;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class TarantulaService {
     private final PhotoRepository photoRepository;
     private final UserRepository userRepository;
     private final PlanAccessService planAccessService;
+    private final SecurityHelper securityHelper;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -41,7 +43,8 @@ public class TarantulaService {
                             FileStorageService fileStorageService,
                             PhotoRepository photoRepository,
                             UserRepository userRepository,
-                            PlanAccessService planAccessService) {
+                            PlanAccessService planAccessService,
+                            SecurityHelper securityHelper) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -51,6 +54,7 @@ public class TarantulaService {
         this.photoRepository = photoRepository;
         this.userRepository = userRepository;
         this.planAccessService = planAccessService;
+        this.securityHelper = securityHelper;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -179,12 +183,13 @@ public class TarantulaService {
         return events;
     }
 
-    /** Public timeline — no authentication required. Only for public profiles. */
+    /** Timeline visible en la ficha por QR: público para todos si isPublic; si es privado, solo el dueño (con JWT). */
     @Transactional(readOnly = true)
     public List<TimelineEventDTO> getPublicTimeline(String shortId) {
         Tarantula t = tarantulaRepository.findByShortId(shortId)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
-        if (!Boolean.TRUE.equals(t.getIsPublic())) {
+        boolean owner = isQrProfileOwner(t);
+        if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
         }
 
@@ -202,7 +207,9 @@ public class TarantulaService {
             events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), b.getMood(), b.getNotes()));
         });
         events.sort(Comparator.comparing(TimelineEventDTO::getEventDate).reversed());
-        // Limit to last 20 events for public view
+        if (owner) {
+            return events;
+        }
         return events.size() > 20 ? events.subList(0, 20) : events;
     }
 
@@ -211,13 +218,15 @@ public class TarantulaService {
         Tarantula t = tarantulaRepository.findByShortId(shortId)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
 
-        if (!Boolean.TRUE.equals(t.getIsPublic())) {
+        boolean owner = isQrProfileOwner(t);
+        if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
         }
 
         PublicProfileDTO dto = new PublicProfileDTO();
         dto.setTarantulaId(t.getId());
         dto.setOwnerId(t.getUserId());
+        dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());
         dto.setSex(t.getSex());
@@ -240,6 +249,12 @@ public class TarantulaService {
     }
 
     // ─── Private helpers ────────────────────────────────────────────────────
+
+    private boolean isQrProfileOwner(Tarantula t) {
+        return securityHelper.tryGetCurrentUserId()
+                .map(id -> id.equals(t.getUserId()))
+                .orElse(false);
+    }
 
     private Tarantula getOwned(UUID id, UUID userId) {
         Tarantula t = tarantulaRepository.findById(id)

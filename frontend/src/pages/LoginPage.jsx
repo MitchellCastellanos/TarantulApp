@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
@@ -10,8 +10,11 @@ import { appLangBase } from '../utils/appLanguage'
 export default function LoginPage() {
   const { login, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, i18n } = useTranslation()
-  const [mode, setMode] = useState('login') // 'login' | 'register'
+  const [mode, setMode] = useState(() =>
+    location.state?.initialMode === 'register' ? 'register' : 'login'
+  ) // 'login' | 'register'
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -58,18 +61,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center px-3">
+    <div className="min-vh-100 d-flex align-items-center justify-content-center px-2 px-sm-3 py-3 py-lg-5">
       <ChitinCardFrame
         className="w-100"
-        style={{ maxWidth: 420 }}
+        style={{ maxWidth: 'min(1020px, 100%)' }}
         showSilhouettes={false}
         variant="auth"
       >
       <div className="card border-0 bg-transparent shadow-none w-100">
-        <div className="card-body p-3 p-md-4">
+        <div className="card-body p-3 p-md-4 p-lg-5">
 
           {/* Language selector — solo códigos ES / EN / FR (sin emojis: evita “GB” u otros glifos feos) */}
-          <div className="d-flex justify-content-end gap-2 mb-3 pt-3 px-2">
+          <div className="d-flex justify-content-end gap-2 mb-3 pt-1 pt-lg-2 px-lg-1">
             {APP_LANGS.map(l => (
               <button
                 key={l.code}
@@ -93,26 +96,89 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Header */}
-          <div className="text-center mb-4">
-            <div className="fs-1 mb-2">🕷️</div>
+          <header className="text-center text-lg-start mb-3 mb-lg-4 px-lg-1">
+            <p
+              className="small mb-2 text-uppercase"
+              style={{
+                letterSpacing: '0.18em',
+                color: 'var(--ta-text-muted)',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+              }}
+            >
+              {t('auth.standardEyebrow')}
+            </p>
             <h2 className="fw-bold mb-1">{t('auth.loginTitle')}</h2>
-            <p className="text-muted small mb-0">
+            <p
+              className="text-muted small mb-0 mx-auto mx-lg-0"
+              style={{ maxWidth: 640, lineHeight: 1.45 }}
+            >
               {mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
             </p>
-          </div>
+          </header>
 
+          <div className="row g-4 g-lg-5 align-items-start align-items-lg-stretch">
+            {/* Móvil: acción primero; escritorio: manifiesto a la izquierda */}
+            <div className="col-12 col-lg-5 order-2 order-lg-1">
+              <div
+                className="px-3 py-3 px-lg-4 py-lg-4 rounded-2 small h-100"
+                style={{
+                  border: '1px solid rgba(200, 170, 80, 0.22)',
+                  background: 'rgba(22, 18, 12, 0.35)',
+                  color: 'var(--ta-parchment)',
+                }}
+              >
+                <p className="fw-semibold mb-2 mb-lg-3" style={{ color: 'var(--ta-gold)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>
+                  {t('auth.standardManifestTitle')}
+                </p>
+                <p className="mb-2 mb-lg-3" style={{ opacity: 0.92, lineHeight: 1.55 }}>
+                  {t('auth.standardManifestLead')}
+                </p>
+                <ul className="list-unstyled mb-2 mb-lg-3 small" style={{ opacity: 0.9, lineHeight: 1.55 }}>
+                  {[1, 2, 3, 4].map((i) => (
+                    <li key={i} className="d-flex gap-2 mb-2">
+                      <span aria-hidden="true" style={{ color: 'var(--ta-gold)', opacity: 0.45, flexShrink: 0 }}>·</span>
+                      <span>{t(`auth.standardManifestB${i}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="fst-italic mb-0" style={{ fontSize: '0.78rem', opacity: 0.82, color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
+                  {t('auth.standardCircleKicker')}
+                </p>
+              </div>
+            </div>
+
+            <div className="col-12 col-lg-7 order-1 order-lg-2 d-flex flex-column h-100">
+              <div className="d-flex flex-column gap-3 gap-lg-4 w-100 ms-lg-auto flex-grow-1" style={{ maxWidth: 560 }}>
           {error && (
-            <div className="alert alert-danger py-2 small" role="alert">{error}</div>
+            <div className="alert alert-danger py-2 small mb-0" role="alert">{error}</div>
           )}
 
           {mode === 'register' && (
-            <div className="alert py-2 small mb-3"
+            <div className="alert py-2 small mb-0"
                  style={{ background: 'rgba(200, 170, 80, 0.15)', border: '1px solid rgba(200, 170, 80, 0.45)', color: 'var(--ta-parchment)' }}>
               <span className="fw-semibold me-1">🎁</span>
               {t('auth.trialRegisterPromo')}
             </div>
           )}
+
+          <div
+            className="p-3 p-lg-4 rounded-2 small mb-0"
+            style={{
+              border: '1px solid rgba(200, 170, 80, 0.35)',
+              background: 'rgba(30, 26, 18, 0.45)',
+              color: 'var(--ta-parchment)',
+            }}
+          >
+            <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('auth.proTeaserTitle')}</h3>
+            <p className="mb-2" style={{ opacity: 0.95, lineHeight: 1.5 }}>
+              <span className="fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('auth.proTeaserExcelLead')}</span>{' '}
+              {t('auth.proTeaserBody')}
+            </p>
+            <Link to="/pro" className="small fw-semibold text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
+              {t('pro.learnMore')} →
+            </Link>
+          </div>
 
           <form onSubmit={handleSubmit}>
             {mode === 'register' && (
@@ -154,7 +220,7 @@ export default function LoginPage() {
           </form>
 
           <div
-            className="mt-4 p-3 rounded-2"
+            className="mt-0 p-3 p-lg-4 rounded-2"
             style={{
               border: '1px solid rgba(200, 170, 80, 0.35)',
               background: 'rgba(30, 26, 18, 0.55)',
@@ -163,7 +229,7 @@ export default function LoginPage() {
             <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>
               {t('discover.loginCtaTitle')}
             </h3>
-            <p className="small mb-3" style={{ color: 'var(--ta-parchment)', opacity: 0.92 }}>
+            <p className="small mb-3" style={{ color: 'var(--ta-parchment)', opacity: 0.92, lineHeight: 1.5 }}>
               {t('discover.loginCtaBody')}
             </p>
             <button
@@ -185,7 +251,7 @@ export default function LoginPage() {
 
           <hr className="my-3" />
 
-          <p className="text-center small mb-0">
+          <p className="text-center text-lg-start small mb-0">
             {mode === 'login' ? (
               <>
                 {t('auth.noAccount')}{' '}
@@ -206,6 +272,14 @@ export default function LoginPage() {
               </>
             )}
           </p>
+          <p className="text-center text-lg-start small mt-3 mb-0">
+            <Link to="/contact" className="text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
+              {t('nav.contact')}
+            </Link>
+          </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       </ChitinCardFrame>

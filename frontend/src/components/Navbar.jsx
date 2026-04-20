@@ -105,13 +105,16 @@ export default function Navbar() {
   })()
 
   return (
-    <nav className="navbar navbar-dark px-3 px-md-4 py-2">
+    <nav className="navbar navbar-dark px-3 px-md-4 py-2" style={{ overflow: 'visible' }}>
       <Link to="/" className="navbar-brand text-decoration-none">
         🕷️ TarantulApp
       </Link>
       <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         {user && (
-          <div className="d-none d-md-flex flex-grow-1 ms-md-2" style={{ maxWidth: 360, minWidth: 0 }}>
+          <div
+            className="d-none d-md-flex flex-grow-1 ms-md-2"
+            style={{ maxWidth: 360, minWidth: 0, overflow: 'visible' }}
+          >
             <DiscoverNavSearch className="w-100" />
           </div>
         )}
@@ -122,6 +125,14 @@ export default function Navbar() {
           title={t('nav.discoverLinkTitle')}
         >
           {t('discover.navTitle')}
+        </Link>
+        <Link
+          to="/herramientas/qr"
+          className="text-decoration-none small fw-semibold"
+          style={{ color: 'var(--ta-gold)' }}
+          title={t('nav.qrToolTitle')}
+        >
+          {t('nav.qrTool')}
         </Link>
         {user && (
           <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"

@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function TermsPage() {
   return (
@@ -35,7 +37,17 @@ export default function TermsPage() {
         <p>We may update these terms. Continued use of the service after changes constitutes acceptance of the new terms.</p>
 
         <h5 className="fw-bold mt-4">6. Contact</h5>
-        <p><a href="mailto:hola@tarantulapp.com">hola@tarantulapp.com</a></p>
+        <p>General &amp; legal:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+        </p>
+        <p>Technical:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Marketing &amp; partnerships:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+        </p>
+        <p className="small text-muted mb-0">
+          <Link to="/contact">All contact options</Link>
+        </p>
 
         <hr className="my-4" />
 
@@ -69,7 +81,17 @@ export default function TermsPage() {
         <p>Podemos actualizar estos términos. El uso continuado del servicio tras los cambios implica la aceptación de los nuevos términos.</p>
 
         <h5 className="fw-bold mt-4">6. Contacto</h5>
-        <p><a href="mailto:hola@tarantulapp.com">hola@tarantulapp.com</a></p>
+        <p>General y aspectos legales:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+        </p>
+        <p>Técnico:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Marketing y alianzas:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+        </p>
+        <p className="small text-muted mb-0">
+          <Link to="/contact">Página de contacto</Link>
+        </p>
       </div>
     </div>
   )

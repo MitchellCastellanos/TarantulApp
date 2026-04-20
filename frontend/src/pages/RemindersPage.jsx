@@ -9,6 +9,11 @@ import { useAuth } from '../context/AuthContext'
 import { formatDateTimeInUserZone } from '../utils/dateFormat'
 import { datetimeLocalToOffsetISO } from '../utils/datetimeSubmit'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import {
+  readDismissedAutoKeys,
+  dismissAutomaticReminder,
+  dismissedAutoReminderKey,
+} from '../utils/dismissedAutoReminders'
 
 const TYPE_OPTS = [
   { value: 'feeding',  icon: '🍽️', labelKey: 'reminders.typeFeeding' },
@@ -31,6 +36,7 @@ export default function RemindersPage() {
   const [saving, setSaving] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [tarantulas, setTarantulas] = useState([])
+  const [dismissedAuto, setDismissedAuto] = useState(() => readDismissedAutoKeys())
   const hasProFeatures = user?.hasProFeatures === true
   const overFreeLimit = user?.overFreeLimit === true
   const lockedIds = useMemo(
@@ -63,8 +69,14 @@ export default function RemindersPage() {
     }
   }
 
-  const handleDone = async (id) => {
-    await reminderService.markDone(id)
+  const handleDoneReminder = async (r) => {
+    if (r.source === 'automatic') {
+      dismissAutomaticReminder(r)
+      setDismissedAuto(readDismissedAutoKeys())
+      return
+    }
+    if (!r.id) return
+    await reminderService.markDone(r.id)
     load()
   }
 
@@ -74,7 +86,16 @@ export default function RemindersPage() {
     load()
   }
 
-  const visible = reminders.filter(r => showDone ? true : !r.isDone)
+  const remindersActive = useMemo(
+    () =>
+      reminders.filter((r) => {
+        const k = dismissedAutoReminderKey(r)
+        return !k || !dismissedAuto.has(k)
+      }),
+    [reminders, dismissedAuto],
+  )
+
+  const visible = remindersActive.filter(r => showDone ? true : !r.isDone)
 
   return (
     <div>
@@ -85,7 +106,7 @@ export default function RemindersPage() {
           <div className="min-w-0">
             <h4 className="fw-bold mb-0 text-break">🔔 {t('reminders.pageTitle')}</h4>
             <p className="text-muted small mb-0 text-break">
-              {t('reminders.pendingCount', { count: reminders.filter(r => !r.isDone).length })}
+              {t('reminders.pendingCount', { count: remindersActive.filter(r => !r.isDone).length })}
             </p>
           </div>
           <button type="button" className="btn btn-dark btn-sm flex-shrink-0" onClick={() => setShowForm(v => !v)}>
@@ -194,13 +215,24 @@ export default function RemindersPage() {
                 <div key={r.id || `${r.type}-${r.tarantulaId}-${r.dueDate}`}
                      className="card border-0 shadow-sm"
                      style={{ opacity: r.isDone ? 0.6 : 1 }}>
-                  <div className="card-body py-2 px-3 d-flex align-items-center gap-3">
-                    <span style={{ fontSize: '1.4rem' }}>{TYPE_ICONS[r.type] ?? '📌'}</span>
-                    <div className="flex-grow-1">
-                      <div className={`fw-semibold small ${r.isDone ? 'text-decoration-line-through text-muted' : ''}`}>
-                        {r.message || r.type}
+                  <div className="card-body py-2 px-3 d-flex align-items-start gap-3" style={{ minWidth: 0 }}>
+                    <span className="flex-shrink-0 pt-1" style={{ fontSize: '1.4rem' }}>{TYPE_ICONS[r.type] ?? '📌'}</span>
+                    <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
+                      <div className={`d-flex flex-wrap align-items-start gap-1 column-gap-2 ${r.isDone ? 'text-decoration-line-through text-muted' : ''}`}>
+                        <div
+                          className="fw-semibold small flex-grow-1"
+                          style={{
+                            minWidth: 0,
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                            lineHeight: 1.35,
+                            ...(r.isDone ? {} : { color: 'var(--ta-gold-light)' }),
+                          }}
+                        >
+                          {r.message || r.type}
+                        </div>
                         {isAutomatic && (
-                          <span className="badge bg-dark ms-2" style={{ fontSize: '0.6rem' }}>PRO</span>
+                          <span className="badge bg-dark flex-shrink-0 align-self-start" style={{ fontSize: '0.6rem' }}>PRO</span>
                         )}
                       </div>
                       <div className={`small ${overdue ? 'text-danger fw-semibold' : 'text-muted'}`}>
@@ -214,11 +246,11 @@ export default function RemindersPage() {
                         </div>
                       )}
                     </div>
-                    <div className="d-flex gap-1">
-                      {!r.isDone && !isAutomatic && !isReminderLocked(r) && (
+                    <div className="d-flex gap-1 flex-shrink-0">
+                      {!r.isDone && (isAutomatic || (r.id && !isReminderLocked(r))) && (
                         <button className="btn btn-sm btn-outline-success"
                                 style={{ padding: '2px 8px' }}
-                                onClick={() => handleDone(r.id)} title={t('reminders.markDone')}>✓</button>
+                                onClick={() => handleDoneReminder(r)} title={t('reminders.markDone')}>✓</button>
                       )}
                       {!isAutomatic && !isReminderLocked(r) && (
                         <button className="btn btn-sm btn-outline-danger"
