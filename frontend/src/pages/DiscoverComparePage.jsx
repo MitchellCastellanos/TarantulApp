@@ -6,9 +6,10 @@ import speciesService from '../services/speciesService'
 import { fetchDiscoverTaxonomyHits } from '../utils/discoverTaxonomySearch'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import { useAuth } from '../context/AuthContext'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 export default function DiscoverComparePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { user } = useAuth()
@@ -33,6 +34,33 @@ export default function DiscoverComparePage() {
   const [pickHits, setPickHits] = useState([])
   const [pickCatalog, setPickCatalog] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const compareJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: t('discover.seoCompareTitle'),
+      description: t('discover.seoCompareDescription'),
+      url: origin ? `${origin}/descubrir/comparar` : '/descubrir/comparar',
+      inLanguage: i18n.language,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'TarantulApp',
+        url: origin || undefined,
+      },
+    }),
+    [t, i18n.language, origin]
+  )
+
+  usePageSeo({
+    title: t('discover.seoCompareTitle'),
+    description: t('discover.seoCompareDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
+    canonicalHref: origin ? `${origin}/descubrir/comparar` : undefined,
+    jsonLd: compareJsonLd,
+    jsonLdId: 'discover-compare-jsonld',
+  })
 
   const loadPair = useCallback(async () => {
     if (!hasPro) {

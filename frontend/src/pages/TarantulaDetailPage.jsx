@@ -311,6 +311,19 @@ export default function TarantulaDetailPage() {
                   🗑️ {t('common.delete')}
                 </button>
               </div>
+              <div className="px-3 pb-3 text-center">
+                <Link
+                  to="/tarantulas/qr-print"
+                  className="small text-decoration-none"
+                  style={{ color: 'var(--ta-gold)' }}
+                  title={t('dashboard.qrBulkPrintTitle')}
+                >
+                  {t('tarantula.qrBulkPrintLink')}
+                  {!hasProFeatures && (
+                    <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.6rem' }}>PRO</span>
+                  )}
+                </Link>
+              </div>
             </div>
             </FangPanel>
           </div>

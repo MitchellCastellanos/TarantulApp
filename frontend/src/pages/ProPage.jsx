@@ -201,6 +201,8 @@ export default function ProPage() {
                     <li>{t('pro.freeLimit')}</li>
                     <li>{t('pro.freeReminders')}</li>
                     <li>{t('pro.freeQr')}</li>
+                    <li>{t('pro.freeNoBulkQr')}</li>
+                    <li>{t('pro.freeNoExcel')}</li>
                   </ul>
                 </div>
               </div>
@@ -211,9 +213,11 @@ export default function ProPage() {
                   </span>
                   <h6 className="fw-bold mb-2">{t('pro.proTitle')}</h6>
                   <ul className="small mb-3">
+                    <li className="fw-semibold mb-1" style={{ color: 'var(--ta-gold)' }}>{t('pro.proExcelExport')}</li>
                     <li>{t('pro.proUnlimited')}</li>
                     <li>{t('pro.proAutoReminders')}</li>
                     <li>{t('pro.proQrActions')}</li>
+                    <li>{t('pro.proBulkQrWord')}</li>
                   </ul>
                   <div className="border-top pt-2">
                     <span className="fw-bold">{t('pro.priceMonthly')}</span>

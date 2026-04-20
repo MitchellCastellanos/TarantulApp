@@ -10,12 +10,13 @@ export default function PublicShell({ children }) {
   const { token } = useAuth()
   const location = useLocation()
   const onDiscover = location.pathname.startsWith('/descubrir')
+  const onQrTool = location.pathname.startsWith('/herramientas/qr')
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
       <header
         className="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 border-bottom"
-        style={{ borderColor: 'var(--ta-border, rgba(200,170,100,0.25))' }}
+        style={{ borderColor: 'var(--ta-border, rgba(200,170,100,0.25))', overflow: 'visible' }}
       >
         <div className="d-flex align-items-center gap-3 flex-shrink-0">
           <Link
@@ -34,6 +35,16 @@ export default function PublicShell({ children }) {
             }}
           >
             {t('discover.navTitle')}
+          </Link>
+          <Link
+            to="/herramientas/qr"
+            className="text-decoration-none small fw-semibold"
+            title={t('nav.qrToolTitle')}
+            style={{
+              color: onQrTool ? 'var(--ta-gold, #c9a227)' : 'rgba(232,220,200,0.75)',
+            }}
+          >
+            {t('nav.qrTool')}
           </Link>
         </div>
         {token && (

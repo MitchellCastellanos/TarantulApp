@@ -36,6 +36,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = stripContextPath(request);
+        // Ficha por QR: sin Bearer sigue siendo anónimo; con Bearer debemos poblar SecurityContext
+        // para que el backend permita al dueño ver tarántula privada en /api/public/t/{shortId}.
+        if (uri.startsWith("/api/public/t/")) {
+            return !hasBearer(request);
+        }
         if (uri.startsWith("/api/public/")) {
             return true;
         }
