@@ -66,6 +66,12 @@ export default function AddTarantulaPage() {
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
 
   useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview)
+    }
+  }, [photoPreview])
+
+  useEffect(() => {
     if (isEdit) {
       tarantulaService.getById(id).then(t => {
         if (t.locked) {
