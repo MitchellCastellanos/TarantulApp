@@ -20,7 +20,8 @@
     "discoverLinkTitle": "Página Descubrir: taxonomía oficial y catálogo",
     "qrTool": "QR terrario",
     "qrToolTitle": "Generador de códigos QR gratis para etiquetar terrarios",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "admin": "Admin"
   },
   "discover": {
     "navTitle": "Descubrir",
@@ -583,7 +584,12 @@
     "loginToAccess": "Inicia sesión para ver tu colección",
     "quickActionsProTitle": "📋 Registro rápido",
     "quickActionsProCTA": "Para registrar alimentaciones, mudas y comportamientos al escanear el QR necesitas Pro. Las cuentas nuevas tienen 7 días de prueba gratis con todo desbloqueado.",
-    "quickActionsUpgrade": "Probar Pro gratis"
+    "quickActionsUpgrade": "Probar Pro gratis",
+    "reportProfile": "Reportar perfil",
+    "reportReasonPrompt": "Motivo del reporte (spam, contenido ofensivo, etc.)",
+    "reportDetailsPrompt": "Detalles adicionales (opcional)",
+    "reportSent": "Reporte enviado. Gracias.",
+    "reportError": "No se pudo enviar el reporte."
   }
   ,
   "pro": {
@@ -640,6 +646,28 @@
     "supportBody": "Errores, algo no funciona, datos raros o si notaste un fallo: cuéntanos con capturas o pasos para reproducirlo si puedes.",
     "marketingTitle": "Marketing — alianzas y propuestas",
     "marketingBody": "Patrocinios, colaboraciones, prensa o propuestas comerciales que quieran sumarse a TarantulApp."
+  },
+  "admin": {
+    "title": "Panel admin",
+    "onlyAdmins": "Acceso solo para administradores.",
+    "loadError": "No se pudo cargar el panel admin.",
+    "usersTotal": "Usuarios totales",
+    "users7d": "Usuarios 7d",
+    "tarantulas": "Tarántulas",
+    "pendingReminders": "Recordatorios pendientes",
+    "recentUsers": "Usuarios recientes",
+    "noUsers": "No hay usuarios.",
+    "plan": "Plan",
+    "created": "Creado",
+    "openReports": "Reportes abiertos",
+    "noReports": "Sin reportes abiertos.",
+    "target": "Objetivo",
+    "reason": "Motivo",
+    "details": "Detalles",
+    "actions": "Acciones",
+    "hidePublic": "Ocultar público",
+    "dismiss": "Descartar",
+    "resolveError": "No se pudo resolver el reporte."
   },
   "account": {
     "title": "Cuenta",

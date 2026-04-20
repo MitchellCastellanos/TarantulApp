@@ -19,6 +19,11 @@ export default function Navbar() {
   const inTrial = user?.inTrial === true
   const overFreeLimit = user?.overFreeLimit === true
   const days = trialDaysLeft(user?.trialEndsAt)
+  const adminEmails = String(import.meta.env.VITE_ADMIN_EMAILS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+  const isAdmin = user?.email && adminEmails.includes(String(user.email).toLowerCase())
 
   const planControl = (() => {
     if (!user) {
@@ -151,6 +156,11 @@ export default function Navbar() {
           >
             <span aria-hidden="true">⚙️</span>
             <span className="d-none d-sm-inline ms-1">{t('nav.account')}</span>
+          </Link>
+        )}
+        {user && isAdmin && (
+          <Link to="/admin" className="text-decoration-none small fw-semibold" style={{ color: 'var(--ta-gold)' }}>
+            {t('nav.admin')}
           </Link>
         )}
         {planControl}

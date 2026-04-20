@@ -8,7 +8,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-const PUBLIC_AUTH_TAILS = ['auth/login', 'auth/register', 'auth/forgot-password', 'auth/reset-password']
+const PUBLIC_AUTH_TAILS = ['auth/login', 'auth/register', 'auth/forgot-password', 'auth/reset-password', 'auth/oauth/google']
 
 function apiPathTail(config) {
   const raw = String(config.url || '').split('?')[0]
@@ -54,7 +54,7 @@ function isPublicAuthEndpoint(config) {
   } catch {
     combined = `${base}${path}`
   }
-  return /\/api\/auth\/(login|register|forgot-password|reset-password)(\?|$|\/)/i.test(combined)
+  return /\/api\/auth\/(login|register|forgot-password|reset-password|oauth\/google)(\?|$|\/)/i.test(combined)
 }
 
 // Adjunta el JWT en cada request automáticamente (AxiosHeaders evita que se pierda en merges de POST)

@@ -22,6 +22,7 @@ import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import { useTranslation } from 'react-i18next'
 import QrBulkPrintPage from './pages/QrBulkPrintPage'
+import AdminPage from './pages/AdminPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
@@ -93,6 +94,7 @@ function AppRoutes() {
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><QrBulkPrintPage /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
