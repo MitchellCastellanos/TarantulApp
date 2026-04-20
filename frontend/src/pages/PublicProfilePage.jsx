@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -34,7 +34,6 @@ export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
   const { t, i18n } = useTranslation()
-  const navigate    = useNavigate()
 
   const [profile, setProfile]   = useState(null)
   const [timeline, setTimeline] = useState([])
@@ -123,7 +122,10 @@ export default function PublicProfilePage() {
       <div className="text-center px-4" style={{ color: 'var(--ta-parchment)', maxWidth: 380 }}>
         <div className="fs-1 mb-3">🔒</div>
         <h5 className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>TarantulApp</h5>
-        <p className="mb-4" style={{ opacity: 0.8 }}>{t('public.privateCard')}</p>
+        <p className="mb-2" style={{ opacity: 0.8 }}>{t('public.privateCard')}</p>
+        {!user && (
+          <p className="small mb-4" style={{ opacity: 0.65 }}>{t('public.privateLoginHint')}</p>
+        )}
         {user ? (
           <Link to="/" className="btn btn-outline-light btn-sm">
             {t('public.backToCollection')}
@@ -132,6 +134,7 @@ export default function PublicProfilePage() {
           <div className="d-flex flex-column align-items-center gap-2">
             <p className="small mb-2" style={{ opacity: 0.65 }}>{t('public.loginToAccess')}</p>
             <Link to="/login" className="btn btn-sm px-4"
+                  state={{ redirectAfterAuth: `/t/${shortId}` }}
                   style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}>
               {t('nav.login', 'Sign in')}
             </Link>
@@ -169,6 +172,31 @@ export default function PublicProfilePage() {
               {t('public.backToCollection')}
             </Link>
           </div>
+        )}
+
+        {isOwner && profile.isPublic === false && (
+          <FangPanel className="mb-3">
+            <div className="alert alert-warning border-0 small mb-0 py-3" style={{ color: '#3d2e12' }}>
+              {hasProFeatures ? (
+                <>
+                  <p className="mb-2">{t('public.ownerPrivateBannerPro')}</p>
+                  <Link
+                    to={`/tarantulas/${profile.tarantulaId}`}
+                    className="btn btn-sm btn-dark"
+                  >
+                    {t('public.openSpecimen')}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2">{t('public.ownerPrivateBannerFree')}</p>
+                  <ProTrialCtaLink className="btn btn-sm btn-dark">
+                    {t('public.quickActionsUpgrade')}
+                  </ProTrialCtaLink>
+                </>
+              )}
+            </div>
+          </FangPanel>
         )}
 
         {/* ─── Ficha pública ──────────────────────────── */}

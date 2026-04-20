@@ -9,6 +9,7 @@ import authService from '../services/authService'
 import tarantulaService from '../services/tarantulaService'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
+import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
 
 function formatPeriodEnd(value, lang) {
   if (value == null) return null
@@ -50,10 +51,16 @@ export default function AccountPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
 
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
-  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || ''
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
   const loadBilling = useCallback(() => {
-    if (!user) return Promise.resolve()
+    // user?.id (no el objeto user): setPlan() tras /billing/me crea un nuevo objeto user en el
+    // contexto; si dependemos de `user`, useCallback cambia → useEffect vuelve a disparar → bucle
+    // y loadingBilling queda casi siempre en true (ProPage ya usa [user?.id]).
+    if (!user?.id) {
+      setLoadingBilling(false)
+      return Promise.resolve()
+    }
     setLoadingBilling(true)
     return billingService
       .me()
@@ -64,7 +71,7 @@ export default function AccountPage() {
       })
       .catch(() => null)
       .finally(() => setLoadingBilling(false))
-  }, [user, setPlan])
+  }, [user?.id, setPlan])
 
   useEffect(() => {
     loadBilling()
@@ -333,6 +340,11 @@ export default function AccountPage() {
               <li>
                 <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>
                   {t('account.legal.terms')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>
+                  {t('nav.contact')}
                 </Link>
               </li>
             </ul>

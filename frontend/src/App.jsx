@@ -14,10 +14,14 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+import ContactPage from './pages/ContactPage'
 import DiscoverPage from './pages/DiscoverPage'
 import DiscoverTaxonDetailPage from './pages/DiscoverTaxonDetailPage'
 import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
 import DiscoverComparePage from './pages/DiscoverComparePage'
+import QrToolPage from './pages/QrToolPage'
+import { useTranslation } from 'react-i18next'
+import QrBulkPrintPage from './pages/QrBulkPrintPage'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -73,10 +77,12 @@ function AppRoutes() {
       <Route path="/pro" element={<ProPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/descubrir" element={<DiscoverPage />} />
       <Route path="/descubrir/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
       <Route path="/descubrir/especie/:id" element={<DiscoverSpeciesDetailPage />} />
       <Route path="/descubrir/comparar" element={<DiscoverComparePage />} />
+      <Route path="/herramientas/qr" element={<QrToolPage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -84,6 +90,7 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><QrBulkPrintPage /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -92,9 +99,14 @@ function AppRoutes() {
 }
 
 function Footer() {
+  const { t } = useTranslation()
   return (
     <footer className="text-center py-3 mt-5" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
       © {new Date().getFullYear()} TarantulApp &nbsp;·&nbsp;
+      <Link to="/herramientas/qr" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('nav.qrTool')}</Link>
+      &nbsp;·&nbsp;
+      <Link to="/contact" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('nav.contact')}</Link>
+      &nbsp;·&nbsp;
       <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.4)' }}>Privacy Policy</Link>
       &nbsp;·&nbsp;
       <Link to="/terms" style={{ color: 'rgba(255,255,255,0.4)' }}>Terms</Link>

@@ -8,6 +8,7 @@ import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
 import { formatDateInUserZone } from '../utils/dateFormat'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel'
 
 function daysLeftInTrial(iso) {
   if (!iso) return 0
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [stage, setStage] = useState('')
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     tarantulaService.getAll()
@@ -70,10 +72,32 @@ export default function DashboardPage() {
     { key: 'pending_feeding', label: t('dashboard.filterHungry') },
   ]
 
+  const handleExportExcel = async () => {
+    if (!tarantulas.length || exporting) return
+    setExporting(true)
+    try {
+      await exportTarantulaCollectionToExcel(tarantulas, t, i18n.language)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div>
       <Navbar />
       <div className="container mt-4">
+        <div
+          className="mb-3 px-3 py-2 rounded-1 small"
+          style={{
+            borderLeft: '3px solid rgba(200, 170, 80, 0.55)',
+            background: 'linear-gradient(90deg, rgba(40, 32, 18, 0.55) 0%, rgba(22, 18, 12, 0.2) 100%)',
+            color: 'var(--ta-parchment)',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {t('dashboard.keeperAtmosphereStrip')}
+        </div>
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div>
@@ -84,6 +108,45 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+            {hasProFeatures ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={!tarantulas.length || exporting}
+                  title={!tarantulas.length ? t('dashboard.exportEmpty') : undefined}
+                  onClick={handleExportExcel}
+                >
+                  {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
+                </button>
+                <Link
+                  to="/tarantulas/qr-print"
+                  className="btn btn-outline-secondary btn-sm"
+                  title={t('dashboard.qrBulkPrintTitle')}
+                >
+                  {t('dashboard.qrBulkPrint')}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/pro"
+                  className="btn btn-outline-secondary btn-sm position-relative"
+                  title={t('dashboard.exportExcelProOnly')}
+                >
+                  {t('dashboard.exportExcel')}
+                  <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
+                </Link>
+                <Link
+                  to="/tarantulas/qr-print"
+                  className="btn btn-outline-secondary btn-sm position-relative"
+                  title={t('dashboard.qrBulkPrintProOnly')}
+                >
+                  {t('dashboard.qrBulkPrint')}
+                  <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
+                </Link>
+              </>
+            )}
             {atLimit ? (
               <>
                 <button type="button" className="btn btn-outline-secondary btn-sm" disabled title={t('dashboard.limitReached')}>
@@ -114,6 +177,16 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+
+        <div
+          className="alert small py-2 mb-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2"
+          style={{ background: 'rgba(26,22,40,0.65)', border: '1px solid rgba(201,162,39,0.35)', color: 'var(--ta-parchment)' }}
+        >
+          <span className="mb-0">{t('dashboard.qrBannerLead')}</span>
+          <Link to="/herramientas/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
+            {t('dashboard.qrBannerLink')}
+          </Link>
+        </div>
 
         {atLimit && (
           <div className="alert alert-warning small py-2 d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-between">
