@@ -860,6 +860,30 @@ a.text-collection:hover {
   font-size: 0.9rem;
 }
 
+/* Species card footnotes: care * line + NW/OW disclaimers */
+.ta-spec-footnotes {
+  border-top: 1px solid rgba(100, 60, 200, 0.22);
+}
+.ta-spec-footnotes__care {
+  font-size: 0.7rem;
+  line-height: 1.42;
+  color: rgba(175, 165, 205, 0.92);
+}
+.ta-spec-footnotes__hobby {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(100, 60, 200, 0.18);
+}
+.ta-spec-footnotes__hobby p {
+  font-size: 0.68rem;
+  line-height: 1.42;
+  color: rgba(168, 158, 198, 0.9);
+  overflow-wrap: break-word;
+}
+.ta-spec-footnotes__hobby p + p {
+  margin-top: 0.42rem;
+}
+
 .ta-catalog-pill {
   font-size: 0.7rem !important;
   letter-spacing: 0.06em;

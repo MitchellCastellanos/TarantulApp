@@ -67,6 +67,19 @@ export default function DiscoverSpeciesProfileSnippet({
           {line2}
         </div>
       ) : null}
+      {!isTaxonOnly && species?.hobbyWorld && (
+        <div
+          className={isForm ? 'text-muted' : ''}
+          style={{
+            fontSize: '0.68rem',
+            lineHeight: 1.35,
+            marginTop: '0.35rem',
+            ...(isForm ? {} : subStyle),
+          }}
+        >
+          {t('species.hobbyWorldSnippetNote')}
+        </div>
+      )}
     </div>
   )
 }
