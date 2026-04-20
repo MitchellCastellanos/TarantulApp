@@ -20,7 +20,8 @@
     "discoverLinkTitle": "Discover: official taxonomy and in-app catalog",
     "qrTool": "Terrarium QR",
     "qrToolTitle": "Free QR code generator for tarantula enclosure labels",
-    "contact": "Contact"
+    "contact": "Contact",
+    "admin": "Admin"
   },
   "discover": {
     "navTitle": "Discover",
@@ -583,7 +584,12 @@
     "loginToAccess": "Sign in to view your collection",
     "quickActionsProTitle": "📋 Quick log",
     "quickActionsProCTA": "To log feedings, molts and behaviors when someone scans your QR you need Pro. New accounts get a 7-day free trial with everything unlocked.",
-    "quickActionsUpgrade": "Try Pro free"
+    "quickActionsUpgrade": "Try Pro free",
+    "reportProfile": "Report profile",
+    "reportReasonPrompt": "Report reason (spam, abusive content, etc.)",
+    "reportDetailsPrompt": "Additional details (optional)",
+    "reportSent": "Report sent. Thank you.",
+    "reportError": "Could not send report."
   }
   ,
   "pro": {
@@ -640,6 +646,28 @@
     "supportBody": "Bugs, something broken, odd data, or if you spotted a problem: tell us what happened and, if you can, steps to reproduce.",
     "marketingTitle": "Marketing — partnerships & proposals",
     "marketingBody": "Sponsorships, collaborations, press, or commercial ideas you would like to explore with TarantulApp."
+  },
+  "admin": {
+    "title": "Admin panel",
+    "onlyAdmins": "Admin access only.",
+    "loadError": "Could not load admin panel.",
+    "usersTotal": "Total users",
+    "users7d": "Users 7d",
+    "tarantulas": "Tarantulas",
+    "pendingReminders": "Pending reminders",
+    "recentUsers": "Recent users",
+    "noUsers": "No users found.",
+    "plan": "Plan",
+    "created": "Created",
+    "openReports": "Open reports",
+    "noReports": "No open reports.",
+    "target": "Target",
+    "reason": "Reason",
+    "details": "Details",
+    "actions": "Actions",
+    "hidePublic": "Hide public",
+    "dismiss": "Dismiss",
+    "resolveError": "Could not resolve report."
   },
   "account": {
     "title": "Account",

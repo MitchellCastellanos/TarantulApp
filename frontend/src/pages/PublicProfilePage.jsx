@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import logsService from '../services/logsService'
+import moderationService from '../services/moderationService'
 import FangPanel from '../components/FangPanel'
 import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
@@ -42,6 +43,8 @@ export default function PublicProfilePage() {
   const [saved, setSaved]       = useState('')
   const [busy, setBusy]         = useState(false)
   const [historyPageIndex, setHistoryPageIndex] = useState(0)
+  const [reporting, setReporting] = useState(false)
+  const [reportSent, setReportSent] = useState('')
 
   const [feed, setFeed]   = useState({ preyType: 'Cricket', preySize: 'medium', quantity: 1, accepted: true, notes: '' })
   const [molt, setMolt]   = useState({ preSizeCm: '', postSizeCm: '', notes: '' })
@@ -93,6 +96,21 @@ export default function PublicProfilePage() {
       setSaved(t('quickLog.error'))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const reportProfile = async () => {
+    const reason = window.prompt(t('public.reportReasonPrompt'))
+    if (!reason || !reason.trim()) return
+    const details = window.prompt(t('public.reportDetailsPrompt')) || ''
+    setReporting(true)
+    try {
+      await moderationService.reportPublicTarantula(shortId, { reason: reason.trim(), details: details.trim() })
+      setReportSent(t('public.reportSent'))
+    } catch {
+      setReportSent(t('public.reportError'))
+    } finally {
+      setReporting(false)
     }
   }
 
@@ -245,6 +263,19 @@ export default function PublicProfilePage() {
           </div>
         </div>
         </FangPanel>
+        {!isOwner && (
+          <div className="mb-3 text-center">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-light"
+              disabled={reporting}
+              onClick={reportProfile}
+            >
+              {reporting ? t('common.saving') : t('public.reportProfile')}
+            </button>
+            {reportSent && <p className="small text-muted mt-2 mb-0">{reportSent}</p>}
+          </div>
+        )}
 
         {/* ─── Historial reciente (pergamino, mismo tratamiento que detalle) ─ */}
         <div className="ta-parchment-float-wrap mb-1">

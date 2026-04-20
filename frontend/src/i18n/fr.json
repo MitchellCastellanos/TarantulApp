@@ -20,7 +20,8 @@
     "discoverLinkTitle": "Découvrir : taxonomie officielle et catalogue",
     "qrTool": "QR terrarium",
     "qrToolTitle": "Générateur de codes QR gratuits pour étiqueter les terrariums",
-    "contact": "Contact"
+    "contact": "Contact",
+    "admin": "Admin"
   },
   "discover": {
     "navTitle": "Découvrir",
@@ -583,7 +584,12 @@
     "loginToAccess": "Connectez-vous pour voir votre collection",
     "quickActionsProTitle": "📋 Saisie rapide",
     "quickActionsProCTA": "Pour enregistrer repas, mues et comportements en scannant le QR code, il faut Pro. Les nouveaux comptes ont 7 jours d'essai gratuit avec tout débloqué.",
-    "quickActionsUpgrade": "Essayer Pro gratuitement"
+    "quickActionsUpgrade": "Essayer Pro gratuitement",
+    "reportProfile": "Signaler le profil",
+    "reportReasonPrompt": "Motif du signalement (spam, contenu abusif, etc.)",
+    "reportDetailsPrompt": "Détails supplémentaires (optionnel)",
+    "reportSent": "Signalement envoyé. Merci.",
+    "reportError": "Impossible d'envoyer le signalement."
   }
   ,
   "pro": {
@@ -640,6 +646,28 @@
     "supportBody": "Bugs, dysfonctionnements, données incohérentes ou problème constaté : décrivez ce qui s’est passé et, si possible, les étapes pour le reproduire.",
     "marketingTitle": "Marketing — partenariats et propositions",
     "marketingBody": "Sponsoring, collaborations, presse ou propositions commerciales autour de TarantulApp."
+  },
+  "admin": {
+    "title": "Panneau admin",
+    "onlyAdmins": "Accès réservé aux administrateurs.",
+    "loadError": "Impossible de charger le panneau admin.",
+    "usersTotal": "Utilisateurs totaux",
+    "users7d": "Utilisateurs 7j",
+    "tarantulas": "Tarentules",
+    "pendingReminders": "Rappels en attente",
+    "recentUsers": "Utilisateurs récents",
+    "noUsers": "Aucun utilisateur.",
+    "plan": "Plan",
+    "created": "Créé",
+    "openReports": "Signalements ouverts",
+    "noReports": "Aucun signalement ouvert.",
+    "target": "Cible",
+    "reason": "Motif",
+    "details": "Détails",
+    "actions": "Actions",
+    "hidePublic": "Masquer en public",
+    "dismiss": "Ignorer",
+    "resolveError": "Impossible de traiter le signalement."
   },
   "account": {
     "title": "Compte",
