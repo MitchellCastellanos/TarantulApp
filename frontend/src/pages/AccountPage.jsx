@@ -10,6 +10,8 @@ import tarantulaService from '../services/tarantulaService'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
+import { getStoredTheme, setStoredTheme } from '../utils/themePreference'
+import ThemeToggleButton from '../components/ThemeToggleButton'
 
 function formatPeriodEnd(value, lang) {
   if (value == null) return null
@@ -49,6 +51,7 @@ export default function AccountPage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [theme, setTheme] = useState(() => getStoredTheme())
 
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
@@ -297,6 +300,20 @@ export default function AccountPage() {
                   {l.flag} {l.display}
                 </button>
               ))}
+            </div>
+            <p className="small text-muted mb-2 mt-3">{t('account.preferences.theme')}</p>
+            <div className="d-flex align-items-center gap-2">
+              <ThemeToggleButton />
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-light"
+                onClick={() => {
+                  const next = theme === 'light' ? 'dark' : 'light'
+                  setTheme(setStoredTheme(next))
+                }}
+              >
+                {theme === 'light' ? t('account.preferences.dark') : t('account.preferences.light')}
+              </button>
             </div>
           </section>
 

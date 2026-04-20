@@ -1,6 +1,7 @@
 package com.tarantulapp.config;
 
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.exception.RateLimitExceededException;
 import com.tarantulapp.exception.ReadOnlyModeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleReadOnly(ReadOnlyModeException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", "read_only", "message", e.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, String>> handleRateLimit(RateLimitExceededException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

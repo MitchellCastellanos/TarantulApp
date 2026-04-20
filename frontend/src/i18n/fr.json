@@ -1,6 +1,7 @@
 {
   "nav": {
     "reminders": "Rappels",
+    "login": "Se connecter",
     "logout": "Déconnexion",
     "lang": "Langue",
     "planFree": "Plan gratuit",
@@ -183,7 +184,10 @@
     "trialRegisterPromo": "Les nouveaux comptes incluent 7 jours d'essai avec tout Pro. Ensuite, abonnez-vous à Pro pour modifier sans limite, rappels intelligents, actions rapides par QR et export Excel de la collection en un clic — ou restez sur le plan gratuit dans ses limites.",
     "proTeaserTitle": "Pro en bref",
     "proTeaserExcelLead": "Export Excel :",
-    "proTeaserBody": "téléchargez toute votre collection en tableur (.xlsx). Pro inclut aussi un nombre illimité de tarentules, des rappels d'alimentation automatiques d'après votre historique et des QR par individu avec actions rapides."
+    "proTeaserBody": "téléchargez toute votre collection en tableur (.xlsx). Pro inclut aussi un nombre illimité de tarentules, des rappels d'alimentation automatiques d'après votre historique et des QR par individu avec actions rapides.",
+    "orContinueWith": "ou continuer avec",
+    "googleLoginError": "Connexion avec Google impossible.",
+    "googlePendingConfig": "Connexion Google visible, configuration du client ID en attente."
   },
   "common": {
     "save": "Enregistrer",
@@ -648,6 +652,11 @@
       "legal": "Mentions légales",
       "help": "Aide",
       "about": "À propos"
+    },
+    "preferences": {
+      "theme": "Thème",
+      "light": "Passer en mode clair",
+      "dark": "Passer en mode sombre"
     },
     "profile": {
       "noName": "(sans nom)"

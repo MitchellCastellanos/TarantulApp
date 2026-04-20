@@ -10,6 +10,8 @@ export default function QRModal({ tarantula, onClose }) {
   const svgRef = useRef(null)
   const url = `${window.location.origin}/t/${tarantula.shortId}`
   const [copied, setCopied] = useState(false)
+  const qrName = tarantula?.name?.trim() || tarantula?.shortId || 'Sin nombre'
+  const qrSpecies = tarantula?.species?.scientificName?.trim() || 'Especie no definida'
 
   const downloadQR = () => {
     const svg = svgRef.current?.querySelector('svg')
@@ -28,17 +30,17 @@ export default function QRModal({ tarantula, onClose }) {
       ctx.fillStyle = '#111'
       ctx.font = 'bold 16px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText(tarantula.name, 150, 285)
+      ctx.fillText(qrName, 150, 285)
       ctx.font = '12px sans-serif'
       ctx.fillStyle = '#555'
-      ctx.fillText(tarantula.species?.scientificName ?? '', 150, 305)
+      ctx.fillText(qrSpecies, 150, 305)
       ctx.fillText(tarantula.shortId, 150, 325)
       ctx.fillStyle = '#888'
       ctx.font = '11px sans-serif'
       ctx.fillText('TarantulApp', 150, 348)
 
       const link = document.createElement('a')
-      link.download = `${tarantula.name}-QR.png`
+      link.download = `${qrName}-QR.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     }
@@ -80,10 +82,8 @@ export default function QRModal({ tarantula, onClose }) {
             <div ref={svgRef} className="d-inline-block p-3 border rounded mb-3">
               <QRCode value={url} size={220} />
             </div>
-            <p className="text-muted small mb-1">
-              {tarantula.species?.scientificName}
-            </p>
-            <p className="fw-bold mb-0">{tarantula.name}</p>
+            <p className="fw-bold mb-0">{qrName}</p>
+            <p className="text-muted small mb-1">{qrSpecies}</p>
             <p className="text-muted small">ID: {tarantula.shortId}</p>
 
             {!tarantula.isPublic && (

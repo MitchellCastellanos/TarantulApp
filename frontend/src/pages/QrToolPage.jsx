@@ -8,15 +8,21 @@ import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 
-/** PNG export: QR + small TarantulApp mark only (URL is encoded in the QR). */
-function downloadQrPng({ svgEl, filenameBase }) {
+function getQrLabelParts(specimen) {
+  const name = specimen?.name?.trim() || specimen?.shortId || 'Sin nombre'
+  const species = specimen?.species?.scientificName?.trim() || 'Especie no definida'
+  return { name, species }
+}
+
+/** PNG export: QR + nombre y especie + marca TarantulApp. */
+function downloadQrPng({ svgEl, filenameBase, name, species }) {
   const svg = svgEl?.querySelector?.('svg')
   if (!svg) return
 
   const svgData = new XMLSerializer().serializeToString(svg)
   const canvas = document.createElement('canvas')
   const W = 320
-  const H = 260
+  const H = 340
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
@@ -28,10 +34,19 @@ function downloadQrPng({ svgEl, filenameBase }) {
     const ox = (W - qrSize) / 2
     ctx.drawImage(img, ox, 16, qrSize, qrSize)
 
+    ctx.fillStyle = '#111'
+    ctx.font = 'bold 15px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(name, W / 2, 266)
+
+    ctx.fillStyle = '#555'
+    ctx.font = '12px sans-serif'
+    ctx.fillText(species, W / 2, 286)
+
     ctx.font = '11px sans-serif'
     ctx.fillStyle = '#888'
     ctx.textAlign = 'center'
-    ctx.fillText('TarantulApp', W / 2, H - 14)
+    ctx.fillText('TarantulApp', W / 2, H - 16)
 
     const link = document.createElement('a')
     link.download = `${filenameBase}-QR.png`.replace(/[/\\?%*:|"<>]/g, '-')
@@ -163,10 +178,12 @@ export default function QrToolPage() {
 
   const handleDownload = () => {
     if (!parsed.ok || !selected) return
-    const base = selected.name?.trim() || selected.shortId || 'label'
+    const { name, species } = getQrLabelParts(selected)
     downloadQrPng({
       svgEl: svgRef.current,
-      filenameBase: base,
+      filenameBase: name,
+      name,
+      species,
     })
   }
 
@@ -228,9 +245,21 @@ export default function QrToolPage() {
 
               <div className="text-center mb-4">
                 {parsed.ok ? (
-                  <div ref={svgRef} className="d-inline-block p-3 border rounded" style={{ borderColor: 'rgba(200,170,100,0.35)', background: '#fff' }}>
-                    <QRCode value={parsed.href} size={220} />
-                  </div>
+                  <>
+                    <div ref={svgRef} className="d-inline-block p-3 border rounded" style={{ borderColor: 'rgba(200,170,100,0.35)', background: '#fff' }}>
+                      <QRCode value={parsed.href} size={220} />
+                    </div>
+                    {selected && (
+                      <div className="mt-2">
+                        <p className="fw-semibold mb-0" style={{ color: 'var(--ta-parchment)' }}>
+                          {getQrLabelParts(selected).name}
+                        </p>
+                        <p className="small mb-0" style={{ color: 'rgba(232,220,200,0.75)' }}>
+                          {getQrLabelParts(selected).species}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div
                     ref={svgRef}
