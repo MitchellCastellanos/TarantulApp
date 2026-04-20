@@ -23,11 +23,16 @@ public class JwtUtil {
     private long expirationMs;
 
     private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String s = secret == null ? "" : secret.trim();
+        if (s.length() < 32) {
+            throw new IllegalStateException(
+                    "JWT secret must be at least 32 bytes (configure app.jwt.secret or JWT_SECRET; check application-local.properties)");
+        }
+        return Keys.hmacShaKeyFor(s.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String email) {
-        log.info("Generating token for {} (secret length: {})", email, secret.length());
+        log.debug("Generating token for {}", email);
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())

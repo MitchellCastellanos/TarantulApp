@@ -18,7 +18,8 @@ uploads/
 # ─── IDEs ───────────────────────────────────────────────────
 .idea/
 *.iml
-.vscode/
+.vscode/*
+!.vscode/launch.json
 *.swp
 *.swo
 
