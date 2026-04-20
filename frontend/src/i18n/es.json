@@ -253,6 +253,14 @@
     "estimatedNoteWsc": " Taxonomía verificada por el World Spider Catalog.",
     "refPhoto": "Foto referencia · iNaturalist",
     "refPhotoLabel": "📸 especie",
+    "hobbyWorld": "Mundo nuevo / viejo",
+    "worldNewWorld": "Nuevo Mundo (Américas)",
+    "worldOldWorld": "Viejo Mundo (África / Asia / Oceanía)",
+    "hobbyWorldInferenceNote": "Se infiere a partir del texto de distribución en nuestro catálogo y, si hace falta, pistas de distribución en GBIF. Casos límite o datos desactualizados pueden fallar.",
+    "hobbyWorldNwContext": "Contexto de hobby: muchas especies del Nuevo Mundo se comentan junto con pelos urticantes, pero la presencia e intensidad varían por especie e individuo; no todas se comportan igual.",
+    "hobbyWorldOwContext": "Contexto de hobby: al Viejo Mundo a menudo se lo describe como más rápido o defensivo a la mordida, pero hay mucha variación; también hay individuos calmados y NW muy defensivos.",
+    "hobbyWorldContextDisclaimer": "Generalización educativa: no sustituye hechos verificados por especie, consejo médico ni tu propia investigación y manejo seguro.",
+    "hobbyWorldSnippetNote": "† Nuevo/Viejo Mundo según rango (mejor esfuerzo). En la ficha completa hay más contexto.",
     "catalog": "Catálogo"
   },
   "terrarium": {

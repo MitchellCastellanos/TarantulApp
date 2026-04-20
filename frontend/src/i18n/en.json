@@ -253,6 +253,14 @@
     "estimatedNoteWsc": " Taxonomy verified by World Spider Catalog.",
     "refPhoto": "Reference photo · iNaturalist",
     "refPhotoLabel": "📸 species",
+    "hobbyWorld": "New vs Old World",
+    "worldNewWorld": "New World (Americas)",
+    "worldOldWorld": "Old World (Africa / Asia / Oceania)",
+    "hobbyWorldInferenceNote": "Inferred from native-range text in our catalog and, when needed, GBIF distribution hints. Edge cases or outdated records can be wrong.",
+    "hobbyWorldNwContext": "Hobby context: many New World species are discussed together with urticating hairs, but presence and severity vary by species and individual—not every New World spider behaves the same.",
+    "hobbyWorldOwContext": "Hobby context: Old World species are often described as faster or more defensive biters, but behavior varies widely; some individuals are calm and some New World species are very defensive too.",
+    "hobbyWorldContextDisclaimer": "Educational generalization only—not species-specific facts, medical advice, or a substitute for your own research and safe handling.",
+    "hobbyWorldSnippetNote": "† New/Old World from range data (best-effort). See the full species profile for longer context.",
     "catalog": "Catalog"
   },
   "terrarium": {

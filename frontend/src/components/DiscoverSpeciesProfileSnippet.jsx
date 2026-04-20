@@ -24,14 +24,23 @@ export default function DiscoverSpeciesProfileSnippet({
   const { t } = useTranslation()
   const isTaxonOnly = !species?.scientificName && (title || subtitle)
   const name = species?.scientificName || title || '–'
+  const baseMeta = isTaxonOnly
+    ? ''
+    : t('discover.speciesProfileMeta', {
+        habitat: dash(species?.habitatType),
+        min: dash(species?.adultSizeCmMin),
+        max: dash(species?.adultSizeCmMax),
+        level: dash(species?.experienceLevel),
+      })
+  const worldSuffix =
+    !isTaxonOnly && species?.hobbyWorld
+      ? species.hobbyWorld === 'new_world'
+        ? t('species.worldNewWorld')
+        : t('species.worldOldWorld')
+      : ''
   const line2 = isTaxonOnly
     ? subtitle || ''
-    : t('discover.speciesProfileMeta', {
-        habitat: dash(species.habitatType),
-        min: dash(species.adultSizeCmMin),
-        max: dash(species.adultSizeCmMax),
-        level: dash(species.experienceLevel),
-      })
+    : [baseMeta, worldSuffix].filter(Boolean).join(' · ')
 
   const isForm = variant === 'form'
   const nameStyle = isForm ? undefined : { color: 'var(--ta-gold)' }
@@ -58,6 +67,19 @@ export default function DiscoverSpeciesProfileSnippet({
           {line2}
         </div>
       ) : null}
+      {!isTaxonOnly && species?.hobbyWorld && (
+        <div
+          className={isForm ? 'text-muted' : ''}
+          style={{
+            fontSize: '0.68rem',
+            lineHeight: 1.35,
+            marginTop: '0.35rem',
+            ...(isForm ? {} : subStyle),
+          }}
+        >
+          {t('species.hobbyWorldSnippetNote')}
+        </div>
+      )}
     </div>
   )
 }
