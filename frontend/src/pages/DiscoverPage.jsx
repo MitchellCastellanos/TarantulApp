@@ -122,6 +122,7 @@ export default function DiscoverPage() {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const [selectedSpecies, setSelectedSpecies] = useState(null)
+  const [selectedFallbackPhoto, setSelectedFallbackPhoto] = useState(null)
   const [panelKind, setPanelKind] = useState(null)
   const [taxonPreview, setTaxonPreview] = useState(null)
   const [panelLoading, setPanelLoading] = useState(false)
@@ -211,6 +212,7 @@ export default function DiscoverPage() {
   const clearSelection = () => {
     resetSuggestions()
     setSelectedSpecies(null)
+    setSelectedFallbackPhoto(null)
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
@@ -223,6 +225,7 @@ export default function DiscoverPage() {
   const clearSpeciesOnly = () => {
     resetSuggestions()
     setSelectedSpecies(null)
+    setSelectedFallbackPhoto(null)
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
@@ -237,18 +240,22 @@ export default function DiscoverPage() {
     setShowDropdown(false)
     setTaxonPreview(null)
     setPanelKind(null)
+    setSelectedFallbackPhoto(null)
     setActiveGbifKey(sp.gbifUsageKey != null ? Number(sp.gbifUsageKey) : null)
     setPanelLoading(true)
     try {
       const view = await speciesService.getDiscoverSpeciesView(sp.id)
       if (view?.species) {
         setSelectedSpecies(view.species)
+        setSelectedFallbackPhoto(view.fallbackPhoto || null)
       } else {
         setSelectedSpecies(sp)
+        setSelectedFallbackPhoto(null)
       }
       setPanelKind('full')
     } catch {
       setSelectedSpecies(sp)
+      setSelectedFallbackPhoto(null)
       setPanelKind('full')
     } finally {
       setPanelLoading(false)
@@ -258,6 +265,7 @@ export default function DiscoverPage() {
   const resolveFromGbifKey = useCallback(async (keyNum) => {
     setPanelLoading(true)
     setSelectedSpecies(null)
+    setSelectedFallbackPhoto(null)
     setTaxonPreview(null)
     setPanelKind(null)
     setActiveGbifKey(keyNum)
@@ -268,6 +276,7 @@ export default function DiscoverPage() {
           const view = await speciesService.getDiscoverSpeciesView(speciesId)
           if (view?.species) {
             setSelectedSpecies(view.species)
+            setSelectedFallbackPhoto(view.fallbackPhoto || null)
             setSpeciesQuery(view.species.scientificName || '')
             setPanelKind('full')
             return
@@ -316,6 +325,7 @@ export default function DiscoverPage() {
         setTaxonPreview(null)
         setPanelKind(null)
         setSelectedSpecies(null)
+        setSelectedFallbackPhoto(null)
         setActiveGbifKey(null)
         setSpecimenSizeCm('')
         setPanelLoading(true)
@@ -324,6 +334,7 @@ export default function DiscoverPage() {
           if (cancelled) return
           if (view?.species) {
             setSelectedSpecies(view.species)
+            setSelectedFallbackPhoto(view.fallbackPhoto || null)
             setSpeciesQuery(view.species.scientificName || '')
             setActiveGbifKey(
               view.species.gbifUsageKey != null ? Number(view.species.gbifUsageKey) : null
@@ -333,6 +344,7 @@ export default function DiscoverPage() {
         } catch {
           if (!cancelled) {
             setSelectedSpecies(null)
+            setSelectedFallbackPhoto(null)
             setPanelKind(null)
           }
         } finally {
@@ -435,13 +447,33 @@ export default function DiscoverPage() {
       ? computeTerrariumRecommendation(specimenSizeCm, selectedSpecies)
       : null
 
+  useEffect(() => {
+    const gbifKey = activeGbifKey ?? selectedSpecies?.gbifUsageKey
+    if (!selectedSpecies || !Number.isFinite(Number(gbifKey))) return
+    if (selectedSpecies.referencePhotoUrl) return
+    if (selectedFallbackPhoto?.url) return
+    let cancelled = false
+    speciesService
+      .discoverTaxon(Number(gbifKey))
+      .then((taxon) => {
+        if (cancelled) return
+        if (taxon?.photo?.url) {
+          setSelectedFallbackPhoto(taxon.photo)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [selectedSpecies, selectedFallbackPhoto?.url, activeGbifKey])
+
   return (
     <PublicShell>
       <div className="mx-auto" style={{ maxWidth: 920 }}>
         <h1 className="h3 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>
           {t('discover.title')}
         </h1>
-        <p className="small text-muted mb-4">{t('discover.browseIntro')}</p>
+        <p className="small mb-4" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
 
         <section className="mb-4 card border-0 shadow-sm p-4 ta-species-dropdown-card">
           <h2 className="h6 text-uppercase letter-spacing mb-3" style={{ color: 'var(--ta-gold)' }}>
@@ -461,6 +493,7 @@ export default function DiscoverPage() {
                   const v = e.target.value
                   setSpeciesQuery(v)
                   setSelectedSpecies(null)
+                  setSelectedFallbackPhoto(null)
                   setPanelKind(null)
                   setTaxonPreview(null)
                   setActiveGbifKey(null)
@@ -585,12 +618,12 @@ export default function DiscoverPage() {
             suggestions.length === 0 &&
             gbifResults.length === 0 &&
             wscResults.length === 0 && (
-              <p className="small text-muted mt-2 mb-0">{t('discover.noSearchHits')}</p>
+              <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.noSearchHits')}</p>
             )}
         </section>
 
         {panelLoading && (
-          <p className="small text-muted mb-3">{t('common.loading')}</p>
+          <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('common.loading')}</p>
         )}
 
         {selectedSpecies && panelKind === 'full' && !panelLoading && (
@@ -606,7 +639,12 @@ export default function DiscoverPage() {
               </Link>
             )}
             <ChitinCardFrame className="mb-4">
-              <SpeciesProfileCard species={selectedSpecies} tarantula={{ profilePhoto: null }} t={t} />
+              <SpeciesProfileCard
+                species={selectedSpecies}
+                tarantula={{ profilePhoto: null }}
+                fallbackPhoto={selectedFallbackPhoto}
+                t={t}
+              />
             </ChitinCardFrame>
 
             <FangPanel className="mb-4">
@@ -752,7 +790,7 @@ export default function DiscoverPage() {
           </section>
         )}
 
-        <p className="small mt-4 mb-0" style={{ color: 'rgba(255,255,255,0.45)', lineHeight: 1.45 }}>
+        <p className="small mt-4 mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.45 }}>
           {t('discover.pageFooterDisclaimer')}
         </p>
       </div>

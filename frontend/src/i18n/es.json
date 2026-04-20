@@ -1,6 +1,7 @@
 {
   "nav": {
     "reminders": "Recordatorios",
+    "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
     "lang": "Idioma",
     "planFree": "Plan Free",
@@ -183,7 +184,10 @@
     "trialRegisterPromo": "Las cuentas nuevas incluyen 7 días de prueba con todo lo de Pro. Al terminar, suscríbete a Pro para editar sin límites, recordatorios inteligentes, acciones rápidas por QR y exportar tu colección a Excel en un clic — o sigue en el plan gratis dentro de sus límites.",
     "proTeaserTitle": "Pro en resumen",
     "proTeaserExcelLead": "Exportar a Excel:",
-    "proTeaserBody": "descarga toda tu colección como hoja de cálculo (.xlsx). Pro también incluye tarántulas ilimitadas, recordatorios de alimentación automáticos según tu historial y QR por ejemplar con acciones rápidas."
+    "proTeaserBody": "descarga toda tu colección como hoja de cálculo (.xlsx). Pro también incluye tarántulas ilimitadas, recordatorios de alimentación automáticos según tu historial y QR por ejemplar con acciones rápidas.",
+    "orContinueWith": "o continúa con",
+    "googleLoginError": "No se pudo iniciar sesión con Google.",
+    "googlePendingConfig": "Login con Google visible, pendiente de configurar client ID."
   },
   "common": {
     "save": "Guardar",
@@ -648,6 +652,11 @@
       "legal": "Legal",
       "help": "Ayuda",
       "about": "Acerca de"
+    },
+    "preferences": {
+      "theme": "Tema",
+      "light": "Cambiar a modo claro",
+      "dark": "Cambiar a modo oscuro"
     },
     "profile": {
       "noName": "(sin nombre)"

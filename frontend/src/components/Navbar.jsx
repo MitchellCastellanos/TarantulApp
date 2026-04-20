@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import DiscoverNavSearch from './DiscoverNavSearch'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
+import ThemeToggleButton from './ThemeToggleButton'
 
 function trialDaysLeft(trialEndsAt) {
   if (!trialEndsAt) return 0
@@ -183,6 +184,8 @@ export default function Navbar() {
             </button>
           ))}
         </div>
+
+        <ThemeToggleButton compact />
 
         {user ? (
           <button className="btn btn-sm btn-outline-light" onClick={logout}

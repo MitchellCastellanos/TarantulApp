@@ -69,11 +69,12 @@ export default function QrBulkPrintPage() {
   const buildItems = () =>
     selectedList.slice(0, QR_BULK_MAX).map((ta) => {
       const url = specimenQrUrl(ta.shortId)
-      const sci = ta.species?.scientificName || ''
+      const name = ta.name?.trim() || ta.shortId || 'Sin nombre'
+      const sci = ta.species?.scientificName?.trim() || 'Especie no definida'
       return {
         url,
-        titleLine1: ta.name || sci || ta.shortId,
-        titleLine2: sci && ta.name ? sci : '',
+        titleLine1: name,
+        titleLine2: sci,
         subtitle: ta.shortId ? `ID: ${ta.shortId}` : '',
       }
     })

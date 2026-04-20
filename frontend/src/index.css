@@ -32,6 +32,27 @@
   --ta-sheet-bg-blend: soft-light, normal, normal;
 }
 
+:root[data-theme='light'] {
+  --ta-bg: #f6f1e6;
+  --ta-bg-deep: #efe7d8;
+  --ta-bg-card: #fffaf0;
+  --ta-bg-panel: #f8efdf;
+  --ta-bg-input: #fffdf8;
+  --ta-parchment: #2b1f0b;
+  --ta-parchment-dk: #5e4a2f;
+  --ta-text: #2b1f0b;
+  --ta-text-muted: rgba(80, 61, 35, 0.72);
+  --ta-border: rgba(130, 90, 30, 0.24);
+  --ta-border-gold: rgba(140, 105, 35, 0.3);
+  --ta-gold: #8b6a2b;
+  --ta-gold-light: #a07c31;
+  --ta-brown: #8b6a2b;
+  --ta-brown-light: #a07c31;
+  --ta-green: #2d7040;
+  --ta-green-light: #3e8d56;
+  --ta-purple: rgba(120, 90, 40, 0.25);
+}
+
 /* ─── Base ─────────────────────────────────────────────────────────────── */
 
 body {
@@ -118,12 +139,12 @@ body::after  { right: -1.5rem; }
   color: var(--ta-parchment) !important;
 }
 .form-control:focus, .form-select:focus {
-  background-color: #0c0c1e !important;
+  background-color: var(--ta-bg-input) !important;
   border-color: var(--ta-gold) !important;
   box-shadow: 0 0 0 0.2rem rgba(201,168,76,0.18) !important;
-  color: var(--ta-parchment) !important;
+  color: var(--ta-text) !important;
 }
-.form-control::placeholder { color: rgba(200,175,120,0.35) !important; }
+.form-control::placeholder { color: var(--ta-text-muted) !important; }
 .form-label { color: var(--ta-parchment) !important; }
 .form-check-label { color: var(--ta-parchment-dk) !important; }
 .form-check-input {
@@ -301,7 +322,7 @@ body::after  { right: -1.5rem; }
 
 /* ─── Text utilities ────────────────────────────────────────────────────── */
 
-.text-muted { color: rgba(200,175,120,0.52) !important; }
+.text-muted { color: var(--ta-text-muted) !important; }
 .text-dark   { color: var(--ta-parchment) !important; }
 .text-gold   { color: var(--ta-gold) !important; }
 .text-collection { color: var(--ta-gold) !important; font-weight: 600; }
@@ -535,10 +556,8 @@ a.text-collection:hover {
   color: #2a1f0a !important;
   background: none !important;
   background-image: none !important;
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.48),
-    0 8px 20px rgba(0, 0, 0, 0.32) !important;
-  transform: translateY(-3px);
+  box-shadow: none !important;
+  transform: none;
 }
 
 .ta-parchment-bg-img {
@@ -548,6 +567,9 @@ a.text-collection:hover {
   vertical-align: top;
   pointer-events: none;
   user-select: none;
+  opacity: 0.88;
+  filter: saturate(0.88) contrast(0.95) brightness(0.99);
+  mix-blend-mode: multiply;
 }
 
 /* Contenido (Historique, eventos, paginador) encima del pergamino, mismo rectángulo que la imagen */
@@ -814,8 +836,8 @@ a.text-collection:hover {
 .ta-spec-title {
   font-family: 'Cinzel', Georgia, serif;
   letter-spacing: 0.12em;
-  color: rgba(248, 244, 255, 0.96);
-  text-shadow: 0 0 18px rgba(90, 130, 255, 0.35);
+  color: #f0e2bf;
+  text-shadow: 0 1px 10px rgba(45, 24, 8, 0.34);
 }
 
 .letter-spacing-wide {
@@ -828,6 +850,8 @@ a.text-collection:hover {
   gap: 0.35rem;
   flex-wrap: wrap;
   font-size: 0.78rem;
+  color: rgba(95, 77, 50, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(255, 245, 222, 0.55);
 }
 
 .ta-spec-icon {
@@ -856,8 +880,10 @@ a.text-collection:hover {
 }
 
 .ta-spec-field__value {
-  color: rgba(232, 226, 252, 0.95);
+  color: rgba(68, 46, 20, 0.96);
   font-size: 0.9rem;
+  line-height: 1.35;
+  text-shadow: 0 1px 0 rgba(255, 245, 228, 0.5);
 }
 
 /* Species card footnotes: care * line + NW/OW disclaimers */
@@ -867,7 +893,7 @@ a.text-collection:hover {
 .ta-spec-footnotes__care {
   font-size: 0.7rem;
   line-height: 1.42;
-  color: rgba(175, 165, 205, 0.92);
+  color: rgba(88, 70, 42, 0.88);
 }
 .ta-spec-footnotes__hobby {
   margin-top: 0.65rem;
@@ -877,7 +903,7 @@ a.text-collection:hover {
 .ta-spec-footnotes__hobby p {
   font-size: 0.68rem;
   line-height: 1.42;
-  color: rgba(168, 158, 198, 0.9);
+  color: rgba(90, 73, 46, 0.86);
   overflow-wrap: break-word;
 }
 .ta-spec-footnotes__hobby p + p {

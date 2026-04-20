@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
@@ -6,6 +6,8 @@ import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
+import authService from '../services/authService'
+import ThemeToggleButton from '../components/ThemeToggleButton'
 
 export default function LoginPage() {
   const { login, logout } = useAuth()
@@ -18,6 +20,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const googleBtnRef = useRef(null)
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -60,6 +64,52 @@ export default function LoginPage() {
     }
   }
 
+  useEffect(() => {
+    if (!googleClientId || !googleBtnRef.current) return
+    const existing = document.querySelector('script[data-google-identity="1"]')
+    const initGoogle = () => {
+      if (!window.google?.accounts?.id || !googleBtnRef.current) return
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response) => {
+          if (!response?.credential) return
+          setLoading(true)
+          setError('')
+          try {
+            const data = await authService.oauthGoogle(response.credential)
+            login(data)
+          } catch (err) {
+            const d = err.response?.data
+            setError(d?.error || t('auth.googleLoginError'))
+          } finally {
+            setLoading(false)
+          }
+        },
+      })
+      googleBtnRef.current.innerHTML = ''
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        type: 'standard',
+        shape: 'pill',
+        theme: 'outline',
+        text: 'continue_with',
+        size: 'large',
+        width: 320,
+      })
+    }
+
+    if (existing) {
+      initGoogle()
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.dataset.googleIdentity = '1'
+    script.onload = initGoogle
+    document.head.appendChild(script)
+  }, [googleClientId, login, t])
+
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center px-2 px-sm-3 py-3 py-lg-5">
       <ChitinCardFrame
@@ -73,6 +123,7 @@ export default function LoginPage() {
 
           {/* Language selector — solo códigos ES / EN / FR (sin emojis: evita “GB” u otros glifos feos) */}
           <div className="d-flex justify-content-end gap-2 mb-3 pt-1 pt-lg-2 px-lg-1">
+            <ThemeToggleButton compact />
             {APP_LANGS.map(l => (
               <button
                 key={l.code}
@@ -219,6 +270,27 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {(mode === 'login' || mode === 'register') && (
+            <div className="mt-3">
+              <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
+              {googleClientId ? (
+                <div ref={googleBtnRef} className="d-flex justify-content-center justify-content-lg-start" />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-outline-light w-100 py-2 fw-semibold"
+                    disabled
+                    title={t('auth.googlePendingConfig')}
+                  >
+                    Google
+                  </button>
+                  <p className="small text-muted mt-2 mb-0">{t('auth.googlePendingConfig')}</p>
+                </>
+              )}
+            </div>
+          )}
+
           <div
             className="mt-0 p-3 p-lg-4 rounded-2"
             style={{
@@ -234,11 +306,12 @@ export default function LoginPage() {
             </p>
             <button
               type="button"
-              className="btn btn-sm w-100 fw-semibold"
+              className="btn btn-sm w-100"
               style={{
                 border: '1px solid var(--ta-gold)',
                 color: '#1a1205',
                 background: 'linear-gradient(135deg, #e8c56a 0%, #c9a227 100%)',
+                fontWeight: 700,
               }}
               onClick={() => {
                 logout()
