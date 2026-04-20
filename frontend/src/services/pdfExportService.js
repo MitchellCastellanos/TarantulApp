@@ -86,26 +86,34 @@ export function exportTarantulaPdf({ tarantula, species, timeline, t, language }
   const infoGrid = (rows) => {
     const colGap = 14
     const colWidth = (contentWidth - colGap) / 2
-    let leftY = y
-    let rightY = y
-    rows.forEach((row, idx) => {
-      const isLeft = idx % 2 === 0
-      const x = isLeft ? margin : margin + colWidth + colGap
-      const currentY = isLeft ? leftY : rightY
-      const text = `${safe(row.label)}: ${safe(row.value)}`
-      const lines = doc.splitTextToSize(text, colWidth - 20)
-      const h = Math.max(34, lines.length * 12 + 16)
-      ensureSpace(h + 6)
+    for (let i = 0; i < rows.length; i += 2) {
+      const left = rows[i]
+      const right = rows[i + 1]
+      const leftLines = doc.splitTextToSize(`${safe(left.label)}: ${safe(left.value)}`, colWidth - 20)
+      const rightLines = right
+        ? doc.splitTextToSize(`${safe(right.label)}: ${safe(right.value)}`, colWidth - 20)
+        : []
+      const leftHeight = Math.max(34, leftLines.length * 12 + 16)
+      const rightHeight = right ? Math.max(34, rightLines.length * 12 + 16) : 0
+      const rowHeight = Math.max(leftHeight, rightHeight)
+      ensureSpace(rowHeight + 8)
+
       doc.setFillColor(252, 252, 252)
       doc.setDrawColor(228, 228, 228)
-      doc.roundedRect(x, currentY - 12, colWidth, h, 6, 6, 'FD')
+
+      doc.roundedRect(margin, y - 12, colWidth, leftHeight, 6, 6, 'FD')
       doc.setFontSize(10)
       doc.setTextColor(30, 30, 30)
-      doc.text(lines, x + 10, currentY + 4)
-      if (isLeft) leftY += h + 8
-      else rightY += h + 8
-      y = Math.max(leftY, rightY)
-    })
+      doc.text(leftLines, margin + 10, y + 4)
+
+      if (right) {
+        const rightX = margin + colWidth + colGap
+        doc.roundedRect(rightX, y - 12, colWidth, rightHeight, 6, 6, 'FD')
+        doc.text(rightLines, rightX + 10, y + 4)
+      }
+
+      y += rowHeight + 8
+    }
   }
 
   const paragraph = (text) => {

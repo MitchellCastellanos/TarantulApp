@@ -7,12 +7,22 @@ export async function shareOrCopyText(text) {
     await navigator.clipboard.writeText(text)
     return 'copied'
   }
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.setAttribute('readonly', '')
+  textArea.style.position = 'fixed'
+  textArea.style.opacity = '0'
+  document.body.appendChild(textArea)
+  textArea.select()
+  const copied = document.execCommand('copy')
+  document.body.removeChild(textArea)
+  if (copied) return 'copied'
   return 'unsupported'
 }
 
 export function detectShareChannel() {
   const ua = (navigator.userAgent || '').toLowerCase()
-  if (ua.includes('instagram')) return 'instagram'
-  if (ua.includes('whatsapp') || ua.includes('wa')) return 'whatsapp'
+  if (/\binstagram\b/.test(ua)) return 'instagram'
+  if (/\bwhatsapp\b|\bwa\/\d/.test(ua)) return 'whatsapp'
   return 'default'
 }
