@@ -253,6 +253,9 @@
     "estimatedNoteWsc": " Taxonomie vérifiée par le World Spider Catalog.",
     "refPhoto": "Photo de référence · iNaturalist",
     "refPhotoLabel": "📸 espèce",
+    "hobbyWorld": "Nouveau vs vieux monde",
+    "worldNewWorld": "Nouveau Monde (Amériques)",
+    "worldOldWorld": "Ancien Monde (Afrique / Asie / Océanie)",
     "catalog": "Catalogue"
   },
   "terrarium": {

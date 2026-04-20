@@ -120,6 +120,13 @@ export default function SpeciesProfileCard({ species, tarantula, t }) {
           <FieldPlain iconClass="bi-geo-alt" iconTone="cyan" label={t('species.origin')}>
             {species.originRegion ?? t('common.unknown')}
           </FieldPlain>
+          {species.hobbyWorld && (
+            <FieldPlain iconClass="bi-globe2" iconTone="cyan" label={t('species.hobbyWorld')}>
+              {species.hobbyWorld === 'new_world'
+                ? t('species.worldNewWorld')
+                : t('species.worldOldWorld')}
+            </FieldPlain>
+          )}
           <FieldPlain iconClass="bi-tree" iconTone="cyan" label={t('species.habitat')}>
             {species.habitatType
               ? `${HABITAT_ICON[species.habitatType]} ${t(`habitat.${species.habitatType}`)}`

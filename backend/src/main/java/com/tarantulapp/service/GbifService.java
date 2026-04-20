@@ -1,12 +1,14 @@
 package com.tarantulapp.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.tarantulapp.dto.GbifSearchResultDTO;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.SpeciesSynonym;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.SpeciesSynonymRepository;
+import com.tarantulapp.util.HobbyWorldResolver;
 import com.tarantulapp.util.SpeciesNarrativeJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +21,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -128,6 +132,82 @@ public class GbifService {
     }
 
     /**
+     * Resolves New vs Old World from catalog origin text when present, otherwise from GBIF
+     * {@code /species/{key}/distributions} (best-effort).
+     */
+    public String resolveHobbyWorldForGbifSpecies(Long key, String originRegion) {
+        String fromOrigin = HobbyWorldResolver.fromOriginRegion(originRegion);
+        if (fromOrigin != null) {
+            return fromOrigin;
+        }
+        return fetchDistributionHobbyWorld(key);
+    }
+
+    private void enrichHobbyWorldIfBlank(Species species, Long gbifKey) {
+        if (species == null || gbifKey == null) {
+            return;
+        }
+        if (species.getHobbyWorld() != null && !species.getHobbyWorld().isBlank()) {
+            return;
+        }
+        String resolved = resolveHobbyWorldForGbifSpecies(gbifKey, species.getOriginRegion());
+        if (resolved != null) {
+            species.setHobbyWorld(resolved);
+        }
+    }
+
+    private String fetchDistributionHobbyWorld(Long key) {
+        try {
+            String url = GBIF_BASE + "/species/" + key + "/distributions?limit=50";
+            JsonNode root = restTemplate.getForObject(url, JsonNode.class);
+            if (root == null) {
+                return null;
+            }
+            JsonNode results = root.get("results");
+            if (results == null || !results.isArray()) {
+                return null;
+            }
+            Set<String> hints = new LinkedHashSet<>();
+            for (JsonNode row : results) {
+                String locality = textJson(row, "locality");
+                String iso = textJson(row, "countryCode");
+                if (iso == null) {
+                    String country = textJson(row, "country");
+                    if (country != null && country.length() == 2) {
+                        iso = country;
+                    }
+                }
+                String h = HobbyWorldResolver.fromGbifDistributionHints(iso, locality);
+                if (h != null) {
+                    hints.add(h);
+                }
+            }
+            if (hints.isEmpty()) {
+                return null;
+            }
+            if (hints.size() > 1) {
+                return null;
+            }
+            return hints.iterator().next();
+        } catch (Exception e) {
+            log.debug("GBIF distributions for hobby_world failed key={}: {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    private static String textJson(JsonNode node, String field) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode n = node.get(field);
+        if (n == null || !n.isTextual()) {
+            return null;
+        }
+        String v = n.asText().trim();
+        return v.isEmpty() ? null : v;
+    }
+
+    /**
      * Importa una especie de GBIF a la BD local.
      * Si ya existe (por nombre o sinónimo), regresa la existente.
      * Al crear nueva especie, también persiste sus sinónimos conocidos.
@@ -155,6 +235,7 @@ public class GbifService {
         if (existing.isPresent()) {
             Species e = existing.get();
             e.setGbifUsageKey(key);
+            enrichHobbyWorldIfBlank(e, key);
             return SpeciesDTO.from(speciesRepository.save(e));
         }
 
@@ -162,6 +243,7 @@ public class GbifService {
         if (existingSyn.isPresent()) {
             Species e = speciesRepository.findById(existingSyn.get().getSpeciesId()).orElseThrow();
             e.setGbifUsageKey(key);
+            enrichHobbyWorldIfBlank(e, key);
             return SpeciesDTO.from(speciesRepository.save(e));
         }
 
@@ -183,6 +265,8 @@ public class GbifService {
         // Foto de referencia desde iNaturalist
         String photoUrl = inatService.fetchPhotoUrl(canonicalName);
         if (photoUrl != null) species.setReferencePhotoUrl(photoUrl);
+
+        enrichHobbyWorldIfBlank(species, key);
 
         Species saved = speciesRepository.save(species);
 
