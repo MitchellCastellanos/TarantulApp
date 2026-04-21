@@ -6,6 +6,9 @@ import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,20 +22,30 @@ import java.util.stream.Collectors;
 
 @Service
 public class OfficialVendorService {
+    private static final Logger log = LoggerFactory.getLogger(OfficialVendorService.class);
 
     private final OfficialVendorRepository officialVendorRepository;
     private final OfficialVendorLeadRepository officialVendorLeadRepository;
+    private final boolean seedOnStartup;
 
     public OfficialVendorService(OfficialVendorRepository officialVendorRepository,
-                                 OfficialVendorLeadRepository officialVendorLeadRepository) {
+                                 OfficialVendorLeadRepository officialVendorLeadRepository,
+                                 @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
         this.officialVendorRepository = officialVendorRepository;
         this.officialVendorLeadRepository = officialVendorLeadRepository;
+        this.seedOnStartup = seedOnStartup;
     }
 
     @PostConstruct
     @Transactional
     public void seedDefaults() {
-        ensureSeedData();
+        if (!seedOnStartup) return;
+        try {
+            ensureSeedData();
+        } catch (Exception ex) {
+            // No tumbar todo el backend por seed cuando la BD está saturada/intermitente.
+            log.warn("Skipping official vendor seed on startup: {}", ex.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
