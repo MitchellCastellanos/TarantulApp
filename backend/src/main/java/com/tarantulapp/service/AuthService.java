@@ -10,6 +10,7 @@ import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -121,11 +122,29 @@ public class AuthService {
     private Optional<User> findByEmailWithOneRetry(String email) {
         try {
             return userRepository.findByEmail(email);
-        } catch (DataAccessResourceFailureException ex) {
-            // Railway/Supabase can intermittently drop a socket; retry once before failing auth flow.
-            log.warn("DB transient error on findByEmail, retrying once for email={}", email);
+        } catch (RuntimeException ex) {
+            if (!isTransientDbConnectivity(ex)) {
+                throw ex;
+            }
+            // Supabase pooler may reject short bursts with MaxClientsInSessionMode.
+            log.warn("Transient DB error on findByEmail, retrying once for email={}", email);
             return userRepository.findByEmail(email);
         }
+    }
+
+    private boolean isTransientDbConnectivity(RuntimeException ex) {
+        if (ex instanceof DataAccessResourceFailureException || ex instanceof JpaSystemException) {
+            return true;
+        }
+        Throwable current = ex;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null && msg.contains("MaxClientsInSessionMode")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private AuthResponse buildAuthResponse(String token, User user) {

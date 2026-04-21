@@ -3,8 +3,10 @@ package com.tarantulapp.config;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.exception.RateLimitExceededException;
 import com.tarantulapp.exception.ReadOnlyModeException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -52,6 +54,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleRateLimit(RateLimitExceededException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler({DataAccessResourceFailureException.class, JpaSystemException.class})
+    public ResponseEntity<Map<String, String>> handleDatabaseBusy(RuntimeException e) {
+        String msg = e.getMessage() == null ? "" : e.getMessage();
+        if (msg.contains("MaxClientsInSessionMode")) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DATABASE_BUSY", "message", "Base de datos ocupada, intenta de nuevo en 30-60 segundos."));
+        }
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "DATABASE_UNAVAILABLE", "message", "Base de datos temporalmente no disponible."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
