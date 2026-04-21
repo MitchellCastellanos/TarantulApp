@@ -209,12 +209,7 @@ export default function QrBulkPrintPage() {
                         disabled={!hasProFeatures}
                       />
                       <div className="flex-shrink-0 bg-white p-1 rounded border" style={{ lineHeight: 0, opacity: hasProFeatures ? 1 : 0.35 }}>
-                        <QRCode
-                          value={url || ' '}
-                          size={44}
-                          level="H"
-                          imageSettings={{ src: '/logo-black.png?v=2', height: 10, width: 10, excavate: true }}
-                        />
+                        <QRCode value={url || ' '} size={44} />
                       </div>
                       <div className="min-w-0 flex-grow-1">
                         <div className="fw-semibold text-truncate">{ta.name}</div>
@@ -253,17 +248,30 @@ export default function QrBulkPrintPage() {
                     <span className="small text-muted mb-1">{t('qrBulk.previewApprox')}</span>
                     <div className="bg-white p-2 rounded border" style={{ lineHeight: 0 }}>
                       {selectedList[0] ? (
-                        <QRCode
-                          value={specimenQrUrl(selectedList[0].shortId) || ' '}
-                          size={previewPx}
-                          level="H"
-                          imageSettings={{
-                            src: '/logo-black.png?v=2',
-                            height: Math.round(previewPx * 0.2),
-                            width: Math.round(previewPx * 0.2),
-                            excavate: true,
-                          }}
-                        />
+                        <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                          <QRCode
+                            value={specimenQrUrl(selectedList[0].shortId) || ' '}
+                            size={previewPx}
+                            level="H"
+                          />
+                          <img
+                            src="/logo-black.png?v=2"
+                            alt=""
+                            aria-hidden="true"
+                            style={{
+                              position: 'absolute',
+                              top: '50%', left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              width: Math.round(previewPx * 0.2),
+                              height: Math.round(previewPx * 0.2),
+                              objectFit: 'contain',
+                              borderRadius: '50%',
+                              background: '#fff',
+                              padding: 2,
+                              boxShadow: '0 0 0 2px #fff',
+                            }}
+                          />
+                        </div>
                       ) : (
                         <div style={{ width: previewPx, height: previewPx }} className="bg-light" />
                       )}
