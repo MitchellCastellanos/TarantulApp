@@ -9,6 +9,7 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +22,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -64,7 +66,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = findByEmailWithOneRetry(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciales inválidas");
@@ -98,7 +100,7 @@ public class AuthService {
             throw new IllegalArgumentException("Google token inválido");
         }
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+        User user = findByEmailWithOneRetry(email).orElseGet(() -> {
             User created = new User();
             created.setEmail(email);
             created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
@@ -114,6 +116,16 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
+    }
+
+    private Optional<User> findByEmailWithOneRetry(String email) {
+        try {
+            return userRepository.findByEmail(email);
+        } catch (DataAccessResourceFailureException ex) {
+            // Railway/Supabase can intermittently drop a socket; retry once before failing auth flow.
+            log.warn("DB transient error on findByEmail, retrying once for email={}", email);
+            return userRepository.findByEmail(email);
+        }
     }
 
     private AuthResponse buildAuthResponse(String token, User user) {
