@@ -44,34 +44,59 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
     if (y + needed > pageHeight - margin) addNewPage()
   }
 
-  const drawHeader = () => {
-    // Brand strip
-    doc.setFillColor(201, 168, 76)
-    doc.roundedRect(margin, y - 12, contentWidth, 10, 5, 5, 'F')
+  const drawWatermark = () => {
+    if (!brandLogo) return
+    try {
+      const wSize = 220
+      const wX = (pageWidth - wSize) / 2
+      const wY = (pageHeight - wSize) / 2
+      if (typeof doc.GState === 'function') {
+        doc.setGState(doc.GState({ opacity: 0.05 }))
+        doc.addImage(brandLogo, 'PNG', wX, wY, wSize, wSize)
+        doc.setGState(doc.GState({ opacity: 1 }))
+      }
+    } catch { /* ignore */ }
+  }
 
+  const drawHeader = () => {
+    const logoSize = 50
+    const headerH = 74
+
+    // Gold accent top strip
+    doc.setFillColor(201, 168, 76)
+    doc.roundedRect(margin, y, contentWidth, 6, 3, 3, 'F')
+    y += 6
+
+    // Dark header block
     doc.setFillColor(22, 24, 32)
-    doc.roundedRect(margin, y, contentWidth, 70, 8, 8, 'F')
+    doc.roundedRect(margin, y, contentWidth, headerH, 4, 4, 'F')
+
+    // Logo left-aligned inside header
     if (brandLogo) {
       try {
-        doc.addImage(brandLogo, 'PNG', pageWidth - margin - 52, y + 10, 44, 44)
-      } catch {
-        /* ignore bad image */
-      }
+        const logoY = y + (headerH - logoSize) / 2
+        doc.addImage(brandLogo, 'PNG', margin + 12, logoY, logoSize, logoSize)
+      } catch { /* ignore */ }
     }
+
+    // Text block to the right of the logo
+    const textX = margin + (brandLogo ? logoSize + 24 : 14)
     doc.setTextColor(245, 245, 245)
-    doc.setFontSize(19)
+    doc.setFontSize(18)
     doc.setFont(undefined, 'bold')
-    doc.text('TARANTULAPP', margin + 14, y + 24)
-    doc.setFontSize(13)
+    doc.text('TARANTULAPP', textX, y + 26)
+    doc.setFontSize(11)
     doc.setFont(undefined, 'normal')
-    doc.text(safe(t('share.careSheetTitle')), margin + 14, y + 42)
-    doc.setFontSize(9.5)
+    doc.text(safe(t('share.careSheetTitle')), textX, y + 43)
+    doc.setFontSize(8.5)
+    doc.setTextColor(200, 200, 200)
     doc.text(
       `${safe(t('share.generatedAt', { defaultValue: 'Generado' }))}: ${safe(new Date().toLocaleString(language || 'es'))}`,
-      margin + 14,
+      textX,
       y + 58,
     )
-    y += 86
+
+    y += headerH + 14
     doc.setTextColor(20, 20, 20)
   }
 
@@ -199,12 +224,12 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
   }
 
   const totalPages = doc.getNumberOfPages()
-  doc.setFontSize(9)
-  doc.setTextColor(110, 110, 110)
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
+    drawWatermark()
     doc.setDrawColor(225, 225, 225)
     doc.line(margin, pageHeight - 28, pageWidth - margin, pageHeight - 28)
+    doc.setFontSize(9)
     doc.setTextColor(88, 88, 88)
     doc.text('TarantulApp', margin, pageHeight - 16)
     doc.text(`${i}/${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' })

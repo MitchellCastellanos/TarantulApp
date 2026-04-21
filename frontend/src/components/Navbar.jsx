@@ -31,7 +31,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const isAdmin = user?.email && adminEmails.includes(String(user.email).toLowerCase())
 
   const path = location.pathname
-  const logoHome = variant === 'public' && !user ? '/descubrir' : '/'
+  const logoHome = !user ? '/login' : '/'
 
   const linkTone = (active) =>
     variant === 'public'
@@ -135,7 +135,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           : {}),
       }}
     >
-      <BrandNavbarLogo homeTo={logoHome} showIntro={variant !== 'public'} />
+      <BrandNavbarLogo homeTo={logoHome} showIntro />
       <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         {user && (
           <div
@@ -203,9 +203,13 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         {planControl}
 
         {user && (
-          <span className="small d-none d-md-inline" style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}>
+          <Link
+            to="/account"
+            className="small d-none d-md-inline text-decoration-none"
+            style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}
+          >
             {user.displayName || user.email}
-          </span>
+          </Link>
         )}
 
         <div className="d-flex gap-1 align-items-center">

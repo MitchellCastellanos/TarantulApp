@@ -134,8 +134,8 @@ export default function LoginPage() {
         <div className="card-body p-3 p-md-4 p-lg-5">
 
           <div className="d-flex flex-column align-items-center mb-3 pb-2">
-            <Link to="/descubrir" className="text-decoration-none d-flex flex-column align-items-center gap-2">
-              <BrandLogoMark size={64} showIntro={false} />
+            <Link to="/login" className="text-decoration-none d-flex flex-column align-items-center gap-2">
+              <BrandLogoMark size={64} showIntro />
               <span className="cinzel fw-semibold ta-login-brand-wordmark">TarantulApp</span>
             </Link>
           </div>
