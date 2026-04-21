@@ -13,8 +13,12 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -119,27 +123,34 @@ public class AuthService {
         return buildAuthResponse(token, user);
     }
 
-    private Optional<User> findByEmailWithOneRetry(String email) {
+    private java.util.Optional<User> findByEmailWithOneRetry(String email) {
         try {
             return userRepository.findByEmail(email);
         } catch (RuntimeException ex) {
             if (!isTransientDbConnectivity(ex)) {
                 throw ex;
             }
-            // Supabase pooler may reject short bursts with MaxClientsInSessionMode.
             log.warn("Transient DB error on findByEmail, retrying once for email={}", email);
             return userRepository.findByEmail(email);
         }
     }
 
     private boolean isTransientDbConnectivity(RuntimeException ex) {
-        if (ex instanceof DataAccessResourceFailureException || ex instanceof JpaSystemException) {
+        if (ex instanceof DataAccessResourceFailureException
+                || ex instanceof JpaSystemException
+                || ex instanceof QueryTimeoutException
+                || ex instanceof CannotCreateTransactionException) {
             return true;
         }
         Throwable current = ex;
         while (current != null) {
             String msg = current.getMessage();
-            if (msg != null && msg.contains("MaxClientsInSessionMode")) {
+            if (msg != null && (msg.contains("MaxClientsInSessionMode")
+                    || msg.contains("Connection is not available")
+                    || msg.contains("canceling statement due to statement timeout"))) {
+                return true;
+            }
+            if (current instanceof java.sql.SQLException sqlEx && "57014".equals(sqlEx.getSQLState())) {
                 return true;
             }
             current = current.getCause();
