@@ -135,11 +135,11 @@ export default function ProPage() {
         {/* Success screen */}
         {checkout === 'success' && (
           isPro ? (
-            <div className="card border-0 shadow-sm mb-4" style={{ background: 'linear-gradient(135deg,#0d2b0d,#1a3d1a)', border: '1px solid #2d6a2d' }}>
+            <div className="card border-0 shadow-sm mb-4" style={{ background: 'rgba(30,82,48,0.22)', border: '1px solid rgba(45,112,64,0.45)' }}>
               <div className="card-body p-4 text-center">
                 <div style={{ fontSize: '3rem', marginBottom: 8 }}>🎉</div>
-                <h4 className="fw-bold mb-2" style={{ color: '#a8d8b0' }}>{t('pro.checkoutSuccessTitle')}</h4>
-                <p className="mb-3" style={{ color: '#c8e8d0' }}>{t('pro.checkoutSuccessBody')}</p>
+                <h4 className="fw-bold mb-2" style={{ color: 'var(--ta-green-light)' }}>{t('pro.checkoutSuccessTitle')}</h4>
+                <p className="mb-3" style={{ color: 'var(--ta-text)' }}>{t('pro.checkoutSuccessBody')}</p>
                 <div className="d-flex justify-content-center gap-2">
                   <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#111', fontSize: '0.9rem' }}>
                     ⭐ Pro
@@ -151,8 +151,8 @@ export default function ProPage() {
               </div>
             </div>
           ) : polling ? (
-            <div className="alert mb-4 d-flex align-items-center gap-2 py-2" style={{ background: 'rgba(100,75,10,0.45)', color: '#ffdda0', border: '1px solid rgba(200,150,30,0.4)' }}>
-              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: '#c9a84c' }} role="status" />
+            <div className="alert alert-warning mb-4 d-flex align-items-center gap-2 py-2">
+              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: 'var(--ta-gold)' }} role="status" />
               <span className="small fw-semibold">{t('pro.checkoutUpdating')}</span>
             </div>
           ) : (
@@ -178,14 +178,12 @@ export default function ProPage() {
             <h4 className="fw-bold mb-2">{t('pro.title')}</h4>
             <p className="text-muted mb-2">{t('pro.subtitle')}</p>
             {!isPro && inTrial && (
-              <p className="small fw-semibold mb-3 pb-2"
-                 style={{ color: 'var(--ta-gold)', borderBottom: '1px solid rgba(200, 170, 90, 0.35)' }}>
+              <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
                 {t('pro.pricingAfterTrial')}
               </p>
             )}
             {!isPro && !inTrial && (
-              <p className="small fw-semibold mb-3 pb-2"
-                 style={{ color: 'var(--ta-gold)', borderBottom: '1px solid rgba(200, 170, 90, 0.35)' }}>
+              <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
                 {t('pro.trialThenPricing')}
               </p>
             )}
@@ -197,7 +195,7 @@ export default function ProPage() {
                     {isPro ? t('pro.freeTitleCompare') : t('pro.freeTitle')}
                   </h6>
                   <ul className="small mb-0">
-                    <li className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('pro.freeTrialLine')}</li>
+                    <li className="mb-2 fw-semibold ta-accent-heading">{t('pro.freeTrialLine')}</li>
                     <li>{t('pro.freeLimit')}</li>
                     <li>{t('pro.freeReminders')}</li>
                     <li>{t('pro.freeQr')}</li>
@@ -207,13 +205,13 @@ export default function ProPage() {
                 </div>
               </div>
               <div className="col-md-6">
-                <div className="border border-dark rounded p-3 h-100 position-relative">
+                <div className="border rounded p-3 h-100 position-relative" style={{ borderColor: 'var(--ta-border)' }}>
                   <span className="badge bg-dark position-absolute" style={{ top: -10, right: 12 }}>
                     PRO
                   </span>
                   <h6 className="fw-bold mb-2">{t('pro.proTitle')}</h6>
                   <ul className="small mb-3">
-                    <li className="fw-semibold mb-1" style={{ color: 'var(--ta-gold)' }}>{t('pro.proExcelExport')}</li>
+                    <li className="fw-semibold mb-1 ta-accent-heading">{t('pro.proExcelExport')}</li>
                     <li>{t('pro.proUnlimited')}</li>
                     <li>{t('pro.proAutoReminders')}</li>
                     <li>{t('pro.proQrActions')}</li>

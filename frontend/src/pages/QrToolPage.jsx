@@ -1,59 +1,18 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import QRCode from 'react-qr-code'
+import QRCodeSvg from 'react-qr-code'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
 import FangPanel from '../components/FangPanel'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
+import { downloadBrandedQrPng } from '../utils/qrBrandComposite'
 
 function getQrLabelParts(specimen) {
   const name = specimen?.name?.trim() || specimen?.shortId || 'Sin nombre'
   const species = specimen?.species?.scientificName?.trim() || 'Especie no definida'
   return { name, species }
-}
-
-/** PNG export: QR + nombre y especie + marca TarantulApp. */
-function downloadQrPng({ svgEl, filenameBase, name, species }) {
-  const svg = svgEl?.querySelector?.('svg')
-  if (!svg) return
-
-  const svgData = new XMLSerializer().serializeToString(svg)
-  const canvas = document.createElement('canvas')
-  const W = 320
-  const H = 340
-  canvas.width = W
-  canvas.height = H
-  const ctx = canvas.getContext('2d')
-  const img = new Image()
-  img.onload = () => {
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, W, H)
-    const qrSize = 220
-    const ox = (W - qrSize) / 2
-    ctx.drawImage(img, ox, 16, qrSize, qrSize)
-
-    ctx.fillStyle = '#111'
-    ctx.font = 'bold 15px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText(name, W / 2, 266)
-
-    ctx.fillStyle = '#555'
-    ctx.font = '12px sans-serif'
-    ctx.fillText(species, W / 2, 286)
-
-    ctx.font = '11px sans-serif'
-    ctx.fillStyle = '#888'
-    ctx.textAlign = 'center'
-    ctx.fillText('TarantulApp', W / 2, H - 16)
-
-    const link = document.createElement('a')
-    link.download = `${filenameBase}-QR.png`.replace(/[/\\?%*:|"<>]/g, '-')
-    link.href = canvas.toDataURL('image/png')
-    link.click()
-  }
-  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
 }
 
 export default function QrToolPage() {
@@ -176,14 +135,15 @@ export default function QrToolPage() {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!parsed.ok || !selected) return
     const { name, species } = getQrLabelParts(selected)
-    downloadQrPng({
-      svgEl: svgRef.current,
+    await downloadBrandedQrPng({
+      url: parsed.href,
+      nameLine: name,
+      speciesLine: species,
+      shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
       filenameBase: name,
-      name,
-      species,
     })
   }
 
@@ -247,7 +207,17 @@ export default function QrToolPage() {
                 {parsed.ok ? (
                   <>
                     <div ref={svgRef} className="d-inline-block p-3 border rounded" style={{ borderColor: 'rgba(200,170,100,0.35)', background: '#fff' }}>
-                      <QRCode value={parsed.href} size={220} />
+                      <QRCodeSvg
+                        value={parsed.href}
+                        size={220}
+                        level="H"
+                        imageSettings={{
+                          src: '/logo-black.png?v=2',
+                          height: 48,
+                          width: 48,
+                          excavate: true,
+                        }}
+                      />
                     </div>
                     {selected && (
                       <div className="mt-2">

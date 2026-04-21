@@ -7,13 +7,14 @@ import ChitinCardFrame from '../components/ChitinCardFrame'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 import authService from '../services/authService'
-import ThemeToggleButton from '../components/ThemeToggleButton'
+import BrandLogoMark from '../components/BrandLogoMark'
+import Navbar from '../components/Navbar'
 
 export default function LoginPage() {
   const { login, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [mode, setMode] = useState(() =>
     location.state?.initialMode === 'register' ? 'register' : 'login'
   ) // 'login' | 'register'
@@ -111,7 +112,9 @@ export default function LoginPage() {
   }, [googleClientId, login, t])
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center px-2 px-sm-3 py-3 py-lg-5">
+    <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
+      <Navbar variant="public" hideLoginLink />
+      <div className="flex-grow-1 d-flex align-items-center justify-content-center px-2 px-sm-3 py-3 py-lg-5">
       <ChitinCardFrame
         className="w-100"
         style={{ maxWidth: 'min(1020px, 100%)' }}
@@ -121,30 +124,11 @@ export default function LoginPage() {
       <div className="card border-0 bg-transparent shadow-none w-100">
         <div className="card-body p-3 p-md-4 p-lg-5">
 
-          {/* Language selector — solo códigos ES / EN / FR (sin emojis: evita “GB” u otros glifos feos) */}
-          <div className="d-flex justify-content-end gap-2 mb-3 pt-1 pt-lg-2 px-lg-1">
-            <ThemeToggleButton compact />
-            {APP_LANGS.map(l => (
-              <button
-                key={l.code}
-                type="button"
-                title={LOGIN_LANG_LABELS[l.code]}
-                aria-label={LOGIN_LANG_LABELS[l.code]}
-                onClick={() => i18n.changeLanguage(l.code)}
-                className="btn btn-sm px-2 py-1"
-                style={{
-                  background: 'transparent',
-                  border: appLangBase(i18n.language) === l.code ? '1px solid var(--ta-gold)' : '1px solid var(--ta-border)',
-                  color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.04em',
-                  lineHeight: 1,
-                  borderRadius: 4,
-                }}>
-                {l.display}
-              </button>
-            ))}
+          <div className="d-flex flex-column align-items-center mb-3 pb-2">
+            <Link to="/descubrir" className="text-decoration-none d-flex flex-column align-items-center gap-2">
+              <BrandLogoMark size={64} showIntro={false} />
+              <span className="cinzel fw-semibold ta-login-brand-wordmark">TarantulApp</span>
+            </Link>
           </div>
 
           <header className="text-center text-lg-start mb-3 mb-lg-4 px-lg-1">
@@ -193,8 +177,14 @@ export default function LoginPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="fst-italic mb-0" style={{ fontSize: '0.78rem', opacity: 0.82, color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
+                <p className="fst-italic mb-2" style={{ fontSize: '0.78rem', opacity: 0.82, color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
                   {t('auth.standardCircleKicker')}
+                </p>
+                <p className="mb-0 small" style={{ lineHeight: 1.5 }}>
+                  <Link to="/about" className="fw-semibold text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
+                    {t('auth.standardManifestAboutLink')}
+                  </Link>
+                  <span style={{ color: 'var(--ta-text-muted)', opacity: 0.9 }}> — {t('auth.standardManifestAboutHint')}</span>
                 </p>
               </div>
             </div>
@@ -298,7 +288,7 @@ export default function LoginPage() {
               background: 'rgba(30, 26, 18, 0.55)',
             }}
           >
-            <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>
+            <h3 className="h6 fw-bold mb-2 ta-accent-heading">
               {t('discover.loginCtaTitle')}
             </h3>
             <p className="small mb-3" style={{ color: 'var(--ta-parchment)', opacity: 0.92, lineHeight: 1.5 }}>
@@ -356,6 +346,7 @@ export default function LoginPage() {
         </div>
       </div>
       </ChitinCardFrame>
+      </div>
     </div>
   )
 }

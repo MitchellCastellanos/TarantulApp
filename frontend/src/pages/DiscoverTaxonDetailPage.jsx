@@ -135,7 +135,7 @@ export default function DiscoverTaxonDetailPage() {
           <figure className="mb-3">
             <img src={taxonImageSrc} alt="" className="img-fluid rounded border" style={{ borderColor: 'var(--ta-border)' }} />
             {photo?.attribution && (
-              <figcaption className="small mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
                 {photo.attribution}
                 {photo.licenseCode ? ` · ${photo.licenseCode}` : ''}
                 {photo.taxonPageUrl && (
@@ -154,7 +154,7 @@ export default function DiscoverTaxonDetailPage() {
         {!taxonImageSrc && <p className="small text-muted mb-3">{t('discover.noPhoto')}</p>}
 
         {data.dataAttributionNote && (
-          <p className="small" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="small" style={{ color: 'var(--ta-text-muted)' }}>
             {data.dataAttributionNote}
           </p>
         )}
@@ -174,7 +174,7 @@ export default function DiscoverTaxonDetailPage() {
             </Link>
           ) : (
             <>
-              <p className="small mb-0" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                 {t('discover.loginToAddHint')}
               </p>
               <Link
@@ -206,7 +206,7 @@ export default function DiscoverTaxonDetailPage() {
           </div>
         )}
         {!hasPro && (
-          <p className="small mt-4 mb-0" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="small mt-4 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
             {t('discover.compareProTeaser')}{' '}
             <Link to="/pro" style={{ color: 'var(--ta-gold)' }}>
               Pro

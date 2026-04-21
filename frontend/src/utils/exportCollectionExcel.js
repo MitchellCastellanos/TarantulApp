@@ -1,4 +1,5 @@
 import { formatDateInUserZone, formatDateTimeInUserZone } from './dateFormat'
+import { BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
 
 function colName(t, key) {
   return t(`dashboard.exportCols.${key}`)
@@ -19,7 +20,7 @@ function exportFilenameBase() {
  * @param {string} i18nLang
  */
 export async function exportTarantulaCollectionToExcel(tarantulas, t, i18nLang) {
-  const XLSX = await import('xlsx')
+  const ExcelJS = (await import('exceljs')).default
 
   const labelStage = (s) => (s ? t(`stages.${s}`, { defaultValue: s || '' }) : '')
   const labelSex = (s) => (s ? t(`sex.${s}`, { defaultValue: s || '' }) : '')
@@ -63,9 +64,61 @@ export async function exportTarantulaCollectionToExcel(tarantulas, t, i18nLang) 
     }
   })
 
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
+  const wb = new ExcelJS.Workbook()
   const sheetTitle = t('dashboard.exportSheetName').slice(0, 31)
-  XLSX.utils.book_append_sheet(wb, ws, sheetTitle)
-  XLSX.writeFile(wb, `${exportFilenameBase()}.xlsx`)
+  const ws = wb.addWorksheet(sheetTitle || 'Collection')
+
+  let logoBuffer = null
+  try {
+    const res = await fetch(BRAND_LOGO_FOR_LIGHT_BG)
+    if (res.ok) logoBuffer = await res.arrayBuffer()
+  } catch {
+    /* sin logo el archivo sigue siendo válido */
+  }
+  if (logoBuffer?.byteLength) {
+    const imageId = wb.addImage({ buffer: logoBuffer, extension: 'png' })
+    ws.mergeCells('A1:H3')
+    ws.addImage(imageId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: 132, height: 132 },
+    })
+    ws.getRow(1).height = 28
+    ws.getRow(2).height = 28
+    ws.getRow(3).height = 28
+  }
+
+  const headerRowIndex = logoBuffer?.byteLength ? 5 : 1
+  const keys = rows.length ? Object.keys(rows[0]) : []
+  const headerRow = ws.getRow(headerRowIndex)
+  keys.forEach((key, i) => {
+    const cell = headerRow.getCell(i + 1)
+    cell.value = key
+    cell.font = { bold: true }
+  })
+
+  rows.forEach((obj, ri) => {
+    const r = ws.getRow(headerRowIndex + 1 + ri)
+    keys.forEach((key, ci) => {
+      r.getCell(ci + 1).value = obj[key] ?? ''
+    })
+  })
+
+  keys.forEach((_, ci) => {
+    const col = ws.getColumn(ci + 1)
+    col.width = Math.min(48, Math.max(12, String(keys[ci]).length + 4))
+  })
+
+  const buf = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${exportFilenameBase()}.xlsx`
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }

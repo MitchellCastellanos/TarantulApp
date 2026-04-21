@@ -15,6 +15,17 @@ public class AuthResponse {
     private boolean inTrial;
     private boolean overFreeLimit;
     private boolean strictReadOnly;
+    private String publicHandle;
+    private String bio;
+    private String location;
+    private String featuredCollection;
+    private String contactWhatsapp;
+    private String contactInstagram;
+    private String profileCountry;
+    private String profileState;
+    private String profileCity;
+    private Integer qrPrintExports;
+    private String profilePhoto;
 
     public AuthResponse(String token, String email, String displayName, UUID userId, String plan) {
         this.token = token;
@@ -44,4 +55,27 @@ public class AuthResponse {
 
     public boolean isStrictReadOnly() { return strictReadOnly; }
     public void setStrictReadOnly(boolean strictReadOnly) { this.strictReadOnly = strictReadOnly; }
+
+    public String getPublicHandle() { return publicHandle; }
+    public void setPublicHandle(String publicHandle) { this.publicHandle = publicHandle; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+    public String getFeaturedCollection() { return featuredCollection; }
+    public void setFeaturedCollection(String featuredCollection) { this.featuredCollection = featuredCollection; }
+    public String getContactWhatsapp() { return contactWhatsapp; }
+    public void setContactWhatsapp(String contactWhatsapp) { this.contactWhatsapp = contactWhatsapp; }
+    public String getContactInstagram() { return contactInstagram; }
+    public void setContactInstagram(String contactInstagram) { this.contactInstagram = contactInstagram; }
+    public String getProfileCountry() { return profileCountry; }
+    public void setProfileCountry(String profileCountry) { this.profileCountry = profileCountry; }
+    public String getProfileState() { return profileState; }
+    public void setProfileState(String profileState) { this.profileState = profileState; }
+    public String getProfileCity() { return profileCity; }
+    public void setProfileCity(String profileCity) { this.profileCity = profileCity; }
+    public Integer getQrPrintExports() { return qrPrintExports; }
+    public void setQrPrintExports(Integer qrPrintExports) { this.qrPrintExports = qrPrintExports; }
+    public String getProfilePhoto() { return profilePhoto; }
+    public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
 }
