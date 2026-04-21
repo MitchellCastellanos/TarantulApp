@@ -38,11 +38,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    record GoogleOAuthRequest(@NotBlank String idToken) {}
+    record GoogleOAuthRequest(@NotBlank String idToken, String referralCode) {}
 
     @PostMapping("/oauth/google")
     public ResponseEntity<AuthResponse> oauthGoogle(@Valid @RequestBody GoogleOAuthRequest request) {
-        return ResponseEntity.ok(authService.googleLogin(request.idToken()));
+        return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.referralCode()));
     }
 
     record ForgotRequest(@Email @NotBlank String email) {}

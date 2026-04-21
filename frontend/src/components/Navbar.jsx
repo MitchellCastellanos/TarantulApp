@@ -135,7 +135,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           : {}),
       }}
     >
-      <BrandNavbarLogo homeTo={logoHome} showIntro />
+      <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
       <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         {user && (
           <div
@@ -169,6 +169,16 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         >
           {t('marketplace.nav')}
         </Link>
+        {user && (
+          <Link
+            to="/comunidad"
+            className="text-decoration-none small fw-semibold"
+            style={{ color: linkTone(path.startsWith('/comunidad')) }}
+            title={t('social.navTitle')}
+          >
+            {t('nav.community')}
+          </Link>
+        )}
         <Link
           to="/about"
           className="text-decoration-none small fw-semibold"
