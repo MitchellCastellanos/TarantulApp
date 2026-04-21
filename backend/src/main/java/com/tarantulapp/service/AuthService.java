@@ -9,10 +9,16 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -21,6 +27,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -64,7 +71,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = findByEmailWithOneRetry(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciales inválidas");
@@ -98,7 +105,7 @@ public class AuthService {
             throw new IllegalArgumentException("Google token inválido");
         }
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+        User user = findByEmailWithOneRetry(email).orElseGet(() -> {
             User created = new User();
             created.setEmail(email);
             created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
@@ -114,6 +121,41 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
+    }
+
+    private java.util.Optional<User> findByEmailWithOneRetry(String email) {
+        try {
+            return userRepository.findByEmail(email);
+        } catch (RuntimeException ex) {
+            if (!isTransientDbConnectivity(ex)) {
+                throw ex;
+            }
+            log.warn("Transient DB error on findByEmail, retrying once for email={}", email);
+            return userRepository.findByEmail(email);
+        }
+    }
+
+    private boolean isTransientDbConnectivity(RuntimeException ex) {
+        if (ex instanceof DataAccessResourceFailureException
+                || ex instanceof JpaSystemException
+                || ex instanceof QueryTimeoutException
+                || ex instanceof CannotCreateTransactionException) {
+            return true;
+        }
+        Throwable current = ex;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null && (msg.contains("MaxClientsInSessionMode")
+                    || msg.contains("Connection is not available")
+                    || msg.contains("canceling statement due to statement timeout"))) {
+                return true;
+            }
+            if (current instanceof java.sql.SQLException sqlEx && "57014".equals(sqlEx.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private AuthResponse buildAuthResponse(String token, User user) {
