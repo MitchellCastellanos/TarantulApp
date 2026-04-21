@@ -2,6 +2,7 @@ package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.Tarantula;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,8 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     /** Orden estable: las 6 primeras son las del cupo Free cuando no hay Pro/prueba. */
     List<Tarantula> findByUserIdOrderByCreatedAtAscIdAsc(UUID userId);
     long countByUserId(UUID userId);
+    @Query("select count(distinct t.species.id) from Tarantula t where t.userId = :userId and t.species is not null")
+    long countDistinctSpeciesByUserId(UUID userId);
     Optional<Tarantula> findByShortId(String shortId);
     boolean existsByShortId(String shortId);
 }

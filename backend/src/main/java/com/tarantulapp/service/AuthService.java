@@ -133,6 +133,17 @@ public class AuthService {
             r.setOverFreeLimit(false);
             r.setStrictReadOnly(false);
         }
+        r.setPublicHandle(user.getPublicHandle());
+        r.setBio(user.getBio());
+        r.setLocation(user.getLocation());
+        r.setFeaturedCollection(user.getFeaturedCollection());
+        r.setContactWhatsapp(user.getContactWhatsapp());
+        r.setContactInstagram(user.getContactInstagram());
+        r.setProfileCountry(user.getProfileCountry());
+        r.setProfileState(user.getProfileState());
+        r.setProfileCity(user.getProfileCity());
+        r.setQrPrintExports(user.getQrPrintExports());
+        r.setProfilePhoto(user.getProfilePhoto());
         return r;
     }
 

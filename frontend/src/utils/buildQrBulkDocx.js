@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { compositeQrPngDataUrl, BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
 import {
   AlignmentType,
   Document,
@@ -37,10 +38,21 @@ async function pngBufferForQr(text, rasterSize) {
   const dataUrl = await QRCode.toDataURL(text, {
     width: rasterSize,
     margin: 1,
-    errorCorrectionLevel: 'M',
+    errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
-  return dataUrlToUint8Array(dataUrl)
+  const composed = await compositeQrPngDataUrl(dataUrl, rasterSize)
+  return dataUrlToUint8Array(composed)
+}
+
+async function tryBrandLogoBytes() {
+  try {
+    const r = await fetch(BRAND_LOGO_FOR_LIGHT_BG)
+    if (!r.ok) return null
+    return new Uint8Array(await r.arrayBuffer())
+  } catch {
+    return null
+  }
 }
 
 function labelParagraphs(titleLine1, titleLine2, subtitle) {
@@ -136,6 +148,23 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
   const displayPxFlex = cmToDocxDisplayPx(2.8)
 
   const intro = []
+  const logoBytes = await tryBrandLogoBytes()
+  if (logoBytes?.length) {
+    intro.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: logoBytes,
+            transformation: { width: 88, height: 88 },
+            altText: { name: 'TarantulApp', description: 'TarantulApp', title: 'TarantulApp' },
+          }),
+        ],
+      }),
+    )
+  }
   if (docTitle) {
     intro.push(
       new Paragraph({

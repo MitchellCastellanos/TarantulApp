@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
+import Navbar from '../components/Navbar'
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation()
@@ -33,7 +34,9 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center px-3">
+    <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
+      <Navbar variant="public" hideLoginLink />
+      <div className="flex-grow-1 d-flex align-items-center justify-content-center px-3 py-3">
       <ChitinCardFrame
         className="w-100"
         style={{ maxWidth: 420 }}
@@ -57,7 +60,7 @@ export default function ResetPasswordPage() {
               {error && <div className="alert alert-danger py-2 small">{error}</div>}
               {!token && (
                 <div className="alert alert-warning py-2 small">
-                  Token inválido. Solicita un nuevo enlace.
+                  {t('auth.invalidResetToken')}
                 </div>
               )}
               <form onSubmit={handleSubmit}>
@@ -87,6 +90,7 @@ export default function ResetPasswordPage() {
         </div>
       </div>
       </ChitinCardFrame>
+      </div>
     </div>
   )
 }

@@ -12,7 +12,26 @@ function mergePlanFields(raw) {
   const hasProFeatures = plan === 'PRO' || inTrial
   const overFreeLimit = plan === 'PRO' ? false : (raw?.overFreeLimit === true)
   const strictReadOnly = plan === 'PRO' ? false : (raw?.strictReadOnly === true)
-  return { ...raw, plan, inTrial, readOnly, hasProFeatures, overFreeLimit, strictReadOnly }
+  return {
+    ...raw,
+    plan,
+    inTrial,
+    readOnly,
+    hasProFeatures,
+    overFreeLimit,
+    strictReadOnly,
+    publicHandle: raw?.publicHandle || '',
+    bio: raw?.bio || '',
+    location: raw?.location || '',
+    featuredCollection: raw?.featuredCollection || '',
+    contactWhatsapp: raw?.contactWhatsapp || '',
+    contactInstagram: raw?.contactInstagram || '',
+    profileCountry: raw?.profileCountry || '',
+    profileState: raw?.profileState || '',
+    profileCity: raw?.profileCity || '',
+    qrPrintExports: Number(raw?.qrPrintExports || 0),
+    profilePhoto: raw?.profilePhoto || '',
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -49,6 +68,17 @@ export function AuthProvider({ children }) {
       trialEndsAt: authData.trialEndsAt ?? null,
       overFreeLimit: authData.overFreeLimit,
       strictReadOnly: authData.strictReadOnly,
+      publicHandle: authData.publicHandle,
+      bio: authData.bio,
+      location: authData.location,
+      featuredCollection: authData.featuredCollection,
+      contactWhatsapp: authData.contactWhatsapp,
+      contactInstagram: authData.contactInstagram,
+      profileCountry: authData.profileCountry,
+      profileState: authData.profileState,
+      profileCity: authData.profileCity,
+      qrPrintExports: authData.qrPrintExports,
+      profilePhoto: authData.profilePhoto,
     })
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(payload))
@@ -128,8 +158,17 @@ export function AuthProvider({ children }) {
     })
   }, [])
 
+  const updateUserProfile = useCallback((profilePatch) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = mergePlanFields({ ...prev, ...profilePatch })
+      localStorage.setItem('user', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, setPlan }}>
+    <AuthContext.Provider value={{ token, user, login, logout, setPlan, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   )

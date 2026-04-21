@@ -36,7 +36,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
   const safeProfileUrl = cleanInlineText(profileUrl, '')
   if (channel === 'instagram') {
     return [
-      `🕷️ ${shortText(safeName, 50)} · ${shortText(safeSpecies, 70)}`,
+      `${shortText(safeName, 50)} · ${shortText(safeSpecies, 70)}`,
       `${shortText(safeLabel, 40)} · ${safeDate}`,
       shortText(summary, 180),
       '#TarantulApp #TarantulaHobby #MoltLog',
@@ -45,7 +45,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
 
   if (channel === 'whatsapp') {
     return [
-      `*🕷️ ${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}*`,
+      `*${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 90)}`,
       `• ${t('share.eventLabel', { defaultValue: 'Evento' })}: ${shortText(safeLabel, 50)}`,
@@ -58,7 +58,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
 
   return [
     '━━━━━━━━━━━━━━━━━━━━',
-    `🕷️ ${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}`,
+    `${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}`,
     '━━━━━━━━━━━━━━━━━━━━',
     `📌 ${t('form.name')}: ${shortText(safeName, 90)}`,
     `🔬 ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 110)}`,

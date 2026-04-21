@@ -1,6 +1,23 @@
 import { jsPDF } from 'jspdf'
 
-export function exportTarantulaPdf({ tarantula, species, timeline, t, language }) {
+async function fetchBrandLogoDataUrl() {
+  try {
+    const r = await fetch('/logo-black.png?v=2')
+    if (!r.ok) return null
+    const blob = await r.blob()
+    return await new Promise((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(fr.result)
+      fr.onerror = reject
+      fr.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+export async function exportTarantulaPdf({ tarantula, species, timeline, t, language }) {
+  const brandLogo = await fetchBrandLogoDataUrl()
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -34,6 +51,13 @@ export function exportTarantulaPdf({ tarantula, species, timeline, t, language }
 
     doc.setFillColor(22, 24, 32)
     doc.roundedRect(margin, y, contentWidth, 70, 8, 8, 'F')
+    if (brandLogo) {
+      try {
+        doc.addImage(brandLogo, 'PNG', pageWidth - margin - 52, y + 10, 44, 44)
+      } catch {
+        /* ignore bad image */
+      }
+    }
     doc.setTextColor(245, 245, 245)
     doc.setFontSize(19)
     doc.setFont(undefined, 'bold')

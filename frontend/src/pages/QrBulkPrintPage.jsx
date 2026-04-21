@@ -13,6 +13,7 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx.js'
+import marketplaceService from '../services/marketplaceService'
 
 function specimenQrUrl(shortId) {
   if (!shortId || typeof window === 'undefined') return ''
@@ -92,6 +93,7 @@ export default function QrBulkPrintPage() {
         footerNote: t('qrBulk.docFooterNote'),
       })
       triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
+      await marketplaceService.registerQrPrint().catch(() => {})
     } finally {
       setBusy(false)
       setBusyKind('')
@@ -111,6 +113,7 @@ export default function QrBulkPrintPage() {
         footerNote: t('qrBulk.docFooterNoteFlex'),
       })
       triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
+      await marketplaceService.registerQrPrint().catch(() => {})
     } finally {
       setBusy(false)
       setBusyKind('')

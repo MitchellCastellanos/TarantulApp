@@ -8,10 +8,10 @@
 spring.profiles.active=local
 app.dev-seed-user=true
 
-# Session pooler (JPA/Flyway). Ajusta región y ref desde Supabase → Connect → Session.
-# connectTimeout (s) y socketTimeout (s) evitan que Hikari espere 60–120 s colgado si el pooler no responde.
-spring.datasource.url=jdbc:postgresql://aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20&socketTimeout=300
-spring.datasource.username=postgres.TU_PROJECT_REF
+# Conexión directa (recomendado local / Flyway): Supabase → Connect → Direct.
+# Host db.<TU_REFERENCE_ID>.supabase.co:5432, usuario postgres, password = Database password.
+spring.datasource.url=jdbc:postgresql://db.TU_REFERENCE_ID.supabase.co:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20
+spring.datasource.username=postgres
 spring.datasource.password=TU_DATABASE_PASSWORD_SUPABASE
 
 # NO pongas maximum-pool-size=1: tras "Successfully validated" Flyway necesita otra conexión para migrate;
