@@ -2,7 +2,11 @@ import { useState } from 'react'
 import QRCodeSvg from 'react-qr-code'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { downloadBrandedQrPng } from '../utils/qrBrandComposite'
+import {
+  BRAND_LOGO_FOR_LIGHT_BG,
+  downloadBrandedQrPng,
+  qrCenterLogoOverlayStyles,
+} from '../utils/qrBrandComposite'
 
 export default function QRModal({ tarantula, onClose }) {
   const { t } = useTranslation()
@@ -59,20 +63,10 @@ export default function QRModal({ tarantula, onClose }) {
               <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
                 <QRCodeSvg value={url} size={220} level="H" />
                 <img
-                  src="/logo-black.png?v=2"
+                  src={BRAND_LOGO_FOR_LIGHT_BG}
                   alt=""
                   aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: 46, height: 46,
-                    objectFit: 'contain',
-                    borderRadius: '50%',
-                    background: '#fff',
-                    padding: 3,
-                    boxShadow: '0 0 0 2px #fff',
-                  }}
+                  style={qrCenterLogoOverlayStyles(220)}
                 />
               </div>
             </div>

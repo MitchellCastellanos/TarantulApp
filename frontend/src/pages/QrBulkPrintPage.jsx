@@ -13,6 +13,7 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx.js'
+import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrBrandComposite'
 import marketplaceService from '../services/marketplaceService'
 
 function specimenQrUrl(shortId) {
@@ -209,7 +210,15 @@ export default function QrBulkPrintPage() {
                         disabled={!hasProFeatures}
                       />
                       <div className="flex-shrink-0 bg-white p-1 rounded border" style={{ lineHeight: 0, opacity: hasProFeatures ? 1 : 0.35 }}>
-                        <QRCode value={url || ' '} size={44} />
+                        <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                          <QRCode value={url || ' '} size={44} level="H" />
+                          <img
+                            src={BRAND_LOGO_FOR_LIGHT_BG}
+                            alt=""
+                            aria-hidden="true"
+                            style={qrCenterLogoOverlayStyles(44)}
+                          />
+                        </div>
                       </div>
                       <div className="min-w-0 flex-grow-1">
                         <div className="fw-semibold text-truncate">{ta.name}</div>
@@ -255,21 +264,10 @@ export default function QrBulkPrintPage() {
                             level="H"
                           />
                           <img
-                            src="/logo-black.png?v=2"
+                            src={BRAND_LOGO_FOR_LIGHT_BG}
                             alt=""
                             aria-hidden="true"
-                            style={{
-                              position: 'absolute',
-                              top: '50%', left: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              width: Math.round(previewPx * 0.2),
-                              height: Math.round(previewPx * 0.2),
-                              objectFit: 'contain',
-                              borderRadius: '50%',
-                              background: '#fff',
-                              padding: 2,
-                              boxShadow: '0 0 0 2px #fff',
-                            }}
+                            style={qrCenterLogoOverlayStyles(previewPx)}
                           />
                         </div>
                       ) : (
