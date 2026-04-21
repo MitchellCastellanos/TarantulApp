@@ -23,6 +23,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const googleBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const loginRef = useRef(login)
+  const tRef = useRef(t)
+  loginRef.current = login
+  tRef.current = t
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -78,10 +82,10 @@ export default function LoginPage() {
           setError('')
           try {
             const data = await authService.oauthGoogle(response.credential)
-            login(data)
+            loginRef.current(data)
           } catch (err) {
             const d = err.response?.data
-            setError(d?.error || t('auth.googleLoginError'))
+            setError(d?.error || tRef.current('auth.googleLoginError'))
           } finally {
             setLoading(false)
           }
@@ -109,7 +113,12 @@ export default function LoginPage() {
     script.dataset.googleIdentity = '1'
     script.onload = initGoogle
     document.head.appendChild(script)
-  }, [googleClientId, login, t])
+    return () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.cancel()
+      }
+    }
+  }, [googleClientId])
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
