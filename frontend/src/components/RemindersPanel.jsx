@@ -5,6 +5,11 @@ import reminderService from '../services/reminderService'
 import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
 import ChitinCardFrame from './ChitinCardFrame'
+import {
+  readDismissedAutoKeys,
+  dismissAutomaticReminder,
+  dismissedAutoReminderKey,
+} from '../utils/dismissedAutoReminders'
 
 const TYPE_ICONS = {
   feeding: '🍽️',
@@ -13,6 +18,8 @@ const TYPE_ICONS = {
   checkup: '🔍',
   custom: '📌',
 }
+
+const DASHBOARD_REMINDER_LIMIT = 3
 
 function formatDue(iso, t) {
   const d = new Date(iso)
@@ -30,6 +37,7 @@ export default function RemindersPanel() {
   const { user } = useAuth()
   const [reminders, setReminders] = useState([])
   const [tarantulas, setTarantulas] = useState([])
+  const [dismissedAuto, setDismissedAuto] = useState(() => readDismissedAutoKeys())
   const hasProFeatures = user?.hasProFeatures === true
   const showFreeUpsell = Boolean(user) && !hasProFeatures
   const lockedIds = useMemo(
@@ -49,12 +57,34 @@ export default function RemindersPanel() {
 
   useEffect(() => { load() }, [])
 
-  const handleDone = async (id) => {
-    await reminderService.markDone(id)
+  const activeReminders = useMemo(
+    () =>
+      reminders.filter((r) => {
+        const k = dismissedAutoReminderKey(r)
+        return !k || !dismissedAuto.has(k)
+      }),
+    [reminders, dismissedAuto],
+  )
+
+  const panelReminders = useMemo(
+    () => activeReminders.slice(0, DASHBOARD_REMINDER_LIMIT),
+    [activeReminders],
+  )
+
+  const hasMoreReminders = activeReminders.length > DASHBOARD_REMINDER_LIMIT
+
+  const handleDone = async (r) => {
+    if (r.source === 'automatic') {
+      dismissAutomaticReminder(r)
+      setDismissedAuto(readDismissedAutoKeys())
+      return
+    }
+    if (!r.id) return
+    await reminderService.markDone(r.id)
     load()
   }
 
-  if (reminders.length === 0 && !showFreeUpsell) return null
+  if (activeReminders.length === 0 && !showFreeUpsell) return null
 
   return (
     <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
@@ -89,28 +119,50 @@ export default function RemindersPanel() {
             </Link>
           </div>
         )}
-        {hasProFeatures && reminders.length > 0 && (
+        {hasProFeatures && activeReminders.length > 0 && (
           <div className="small text-muted mb-2 min-w-0" style={{ overflowWrap: 'anywhere' }}>
             {t('reminders.panelProNotice')}
           </div>
         )}
         <div className="d-flex flex-column gap-2">
-          {reminders.map(r => {
+          {panelReminders.map((r) => {
             const { label, urgent } = formatDue(r.dueDate, t)
             const isAutomatic = r.source === 'automatic'
+            const showDoneBtn = isAutomatic || (r.id && !isReminderLocked(r))
             return (
-              <div key={r.id || `${r.type}-${r.tarantulaId}-${r.dueDate}`}
-                   className="d-flex align-items-center gap-2 p-2 rounded-2"
-                   style={{
-                     background: 'var(--ta-bg-input)',
-                     border: `1px solid ${urgent ? 'rgba(201,168,76,0.42)' : 'rgba(100,60,200,0.35)'}`,
-                   }}>
-                <span style={{ fontSize: '1.1rem' }}>{TYPE_ICONS[r.type] ?? '📌'}</span>
-                <div className="flex-grow-1 min-w-0">
-                  <div className="small fw-semibold text-truncate">
-                    {r.message || r.type}
+              <div
+                key={r.id || `${r.type}-${r.tarantulaId}-${r.dueDate}`}
+                className="d-flex align-items-start gap-2 p-2 rounded-2"
+                style={{
+                  background: 'var(--ta-bg-input)',
+                  border: `1px solid ${urgent ? 'rgba(201,168,76,0.42)' : 'rgba(100,60,200,0.35)'}`,
+                  minWidth: 0,
+                }}
+              >
+                <span className="flex-shrink-0 pt-1" style={{ fontSize: '1.1rem' }}>
+                  {TYPE_ICONS[r.type] ?? '📌'}
+                </span>
+                <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
+                  <div className="d-flex flex-wrap align-items-start gap-1 column-gap-2 row-gap-1">
+                    <div
+                      className="small fw-semibold flex-grow-1"
+                      style={{
+                        minWidth: 0,
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
+                        color: 'var(--ta-gold-light)',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {r.message || r.type}
+                    </div>
                     {isAutomatic && (
-                      <span className="badge bg-dark ms-2" style={{ fontSize: '0.6rem' }}>PRO</span>
+                      <span
+                        className="badge bg-dark flex-shrink-0 align-self-start"
+                        style={{ fontSize: '0.6rem' }}
+                      >
+                        PRO
+                      </span>
                     )}
                   </div>
                   <div
@@ -121,10 +173,14 @@ export default function RemindersPanel() {
                     {r.tarantulaName && ` · ${r.tarantulaName}`}
                   </div>
                 </div>
-                {!isAutomatic && !isReminderLocked(r) && (
-                  <button className="btn btn-sm btn-outline-secondary py-0 px-2"
-                          style={{ fontSize: '0.75rem' }}
-                          onClick={() => handleDone(r.id)} title={t('reminders.markDone')}>
+                {showDoneBtn && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary py-0 px-2 flex-shrink-0 align-self-start"
+                    style={{ fontSize: '0.75rem' }}
+                    onClick={() => handleDone(r)}
+                    title={t('reminders.markDone')}
+                  >
                     ✓
                   </button>
                 )}
@@ -132,6 +188,16 @@ export default function RemindersPanel() {
             )
           })}
         </div>
+        {hasMoreReminders && (
+          <div className="mt-3 text-center">
+            <Link
+              to="/reminders"
+              className="btn btn-outline-secondary btn-sm"
+            >
+              {t('reminders.viewMore')}
+            </Link>
+          </div>
+        )}
       </div>
       </div>
     </ChitinCardFrame>

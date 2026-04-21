@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import tarantulaService from '../services/tarantulaService'
@@ -18,6 +18,8 @@ export default function AddTarantulaPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const isEdit = Boolean(id)
+  const discoverSpeciesId = searchParams.get('speciesId')
+  const discoverGbifKey = searchParams.get('gbifKey')
 
   const [form, setForm] = useState({
     name: '', speciesId: null, currentSizeCm: '', stage: '',
@@ -56,11 +58,18 @@ export default function AddTarantulaPage() {
     notes: '',
   })
   const debounceRef = useRef(null)
-  const discoverPrefillRef = useRef('')
+  const speciesSearchGenRef = useRef(0)
   const hasProFeatures = user?.hasProFeatures === true
   const isFreePlan = !hasProFeatures
+  const [newKeeperMode, setNewKeeperMode] = useState(true)
   const tarantulaLimit = 6
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview)
+    }
+  }, [photoPreview])
 
   useEffect(() => {
     if (isEdit) {
@@ -92,14 +101,13 @@ export default function AddTarantulaPage() {
   }, [isEdit])
 
   // Descubrir → "Agregar a colección": ?speciesId= o ?gbifKey=
+  // No usar ref “dedupe” antes del async: con React.StrictMode el 1er efecto se cancela
+  // y el 2º veía la misma clave y salía sin cargar nunca la especie.
   useEffect(() => {
     if (isEdit) return
-    const sid = searchParams.get('speciesId')
-    const gk = searchParams.get('gbifKey')
-    const key = `${sid || ''}|${gk || ''}`
+    const sid = discoverSpeciesId
+    const gk = discoverGbifKey
     if (!sid && !gk) return
-    if (discoverPrefillRef.current === key) return
-    discoverPrefillRef.current = key
 
     let cancelled = false
     ;(async () => {
@@ -128,39 +136,124 @@ export default function AddTarantulaPage() {
     return () => {
       cancelled = true
     }
-  }, [isEdit, searchParams, t])
+  }, [isEdit, discoverSpeciesId, discoverGbifKey, t])
 
-  // Debounced species search (local + GBIF in parallel)
+  // Debounced species search (local + WSC + GBIF). No reabrir panel ni volver a pedir APIs
+  // cuando el texto ya coincide con la especie confirmada (evita el “doble clic”).
   useEffect(() => {
     clearTimeout(debounceRef.current)
-    if (speciesQuery.length < 2) { setSuggestions([]); setGbifResults([]); return }
+    if (speciesQuery.length < 2) {
+      setSuggestions([])
+      setGbifResults([])
+      setWscResults([])
+      return
+    }
+    const q = speciesQuery.trim()
+    const sel = selectedSpecies?.scientificName?.trim()
+    if (sel && q.toLowerCase() === sel.toLowerCase()) {
+      return
+    }
     debounceRef.current = setTimeout(() => {
-      speciesService.search(speciesQuery).then(setSuggestions)
+      const gen = ++speciesSearchGenRef.current
+      speciesService.search(speciesQuery).then((rows) => {
+        if (gen !== speciesSearchGenRef.current) return
+        setSuggestions(rows)
+      })
       setGbifLoading(true)
       speciesService.searchGbif(speciesQuery)
-        .then(setGbifResults)
-        .catch(() => setGbifResults([]))
-        .finally(() => setGbifLoading(false))
+        .then((rows) => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifResults(rows)
+        })
+        .catch(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifResults([])
+        })
+        .finally(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setGbifLoading(false)
+        })
       setWscLoading(true)
       speciesService.searchWsc(speciesQuery)
-        .then(setWscResults)
-        .catch(() => setWscResults([]))
-        .finally(() => setWscLoading(false))
+        .then((rows) => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscResults(rows)
+        })
+        .catch(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscResults([])
+        })
+        .finally(() => {
+          if (gen !== speciesSearchGenRef.current) return
+          setWscLoading(false)
+        })
       setShowSugg(true)
     }, 300)
-  }, [speciesQuery])
+  }, [speciesQuery, selectedSpecies])
+
+  const exactLocalSpeciesHit = useMemo(() => {
+    const q = speciesQuery.trim().toLowerCase()
+    if (q.length < 2) return false
+    return suggestions.some(
+      (s) => (s.scientificName || '').trim().toLowerCase() === q
+    )
+  }, [suggestions, speciesQuery])
+
+  const newKeeperChecklist = useMemo(() => {
+    const items = []
+    items.push({
+      id: 'species',
+      label: t('onboarding.pickSpecies'),
+      done: Boolean(selectedSpecies?.id),
+    })
+    items.push({
+      id: 'name',
+      label: t('onboarding.nameSpecimen'),
+      done: Boolean(form.name?.trim()),
+    })
+    items.push({
+      id: 'size',
+      label: t('onboarding.logSize'),
+      done: form.currentSizeCm !== '' && form.currentSizeCm !== null,
+    })
+    if (selectedSpecies?.habitatType === 'arboreal') {
+      items.push({ id: 'setup', label: t('onboarding.setupArboreal'), done: true })
+    } else if (selectedSpecies?.habitatType === 'fossorial') {
+      items.push({ id: 'setup', label: t('onboarding.setupFossorial'), done: true })
+    } else if (selectedSpecies?.habitatType === 'terrestrial') {
+      items.push({ id: 'setup', label: t('onboarding.setupTerrestrial'), done: true })
+    }
+    items.push({
+      id: 'post',
+      label: t('onboarding.postCreateHint'),
+      done: false,
+    })
+    return items
+  }, [selectedSpecies, form.name, form.currentSizeCm, t])
 
   const selectSpecies = (sp) => {
+    speciesSearchGenRef.current += 1
     setSelectedSpecies(sp)
     setForm(f => ({ ...f, speciesId: sp.id }))
     setSpeciesQuery(sp.scientificName)
     setShowSugg(false)
+    setSuggestions([])
+    setGbifResults([])
+    setWscResults([])
+    setGbifLoading(false)
+    setWscLoading(false)
   }
 
   const clearSpecies = () => {
+    speciesSearchGenRef.current += 1
     setSelectedSpecies(null)
     setForm(f => ({ ...f, speciesId: null }))
     setSpeciesQuery('')
+    setSuggestions([])
+    setGbifResults([])
+    setWscResults([])
+    setGbifLoading(false)
+    setWscLoading(false)
   }
 
   const selectGbif = async (gbifResult) => {
@@ -316,6 +409,31 @@ export default function AddTarantulaPage() {
           <div className="card border-0 shadow-sm p-4 mb-3 ta-species-dropdown-card">
             <h6 className="fw-bold mb-3">{t('form.speciesSection')}</h6>
 
+            <div className="mb-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="small fw-semibold">{t('onboarding.newKeeperMode')}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setNewKeeperMode((v) => !v)}
+                >
+                  {newKeeperMode ? t('onboarding.hideGuide') : t('onboarding.showGuide')}
+                </button>
+              </div>
+              {newKeeperMode && (
+                <div className="mt-2 p-2 rounded-2 small" style={{ border: '1px dashed var(--ta-border)' }}>
+                  <p className="mb-2 text-muted">{t('onboarding.guideIntro')}</p>
+                  <ul className="list-unstyled mb-0">
+                    {newKeeperChecklist.map((item) => (
+                      <li key={item.id} className="mb-1">
+                        {item.done ? '✅' : '⬜'} {item.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
             {/* Autocomplete de especie */}
             <div className="mb-3 position-relative ta-species-autocomplete-wrap">
               <label className="form-label small fw-semibold">{t('form.searchSpecies')}</label>
@@ -344,8 +462,8 @@ export default function AddTarantulaPage() {
                     </li>
                   ))}
 
-                  {/* WSC section — primary taxonomic source */}
-                  {(wscResults.length > 0 || wscLoading) && (
+                  {/* WSC — solo si no hay ya coincidencia exacta en catálogo local */}
+                  {!exactLocalSpeciesHit && (wscResults.length > 0 || wscLoading) && (
                     <>
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#f3e5ff', borderTop: '1px solid #d9b3ff', cursor: 'default' }}>
@@ -366,8 +484,7 @@ export default function AddTarantulaPage() {
                     </>
                   )}
 
-                  {/* GBIF section — distribution & synonyms */}
-                  {(gbifResults.length > 0 || gbifLoading) && (
+                  {!exactLocalSpeciesHit && (gbifResults.length > 0 || gbifLoading) && (
                     <>
                       <li className="list-group-item py-1 px-3"
                           style={{ background: '#e8f4fd', borderTop: '1px solid #bee5fb', cursor: 'default' }}>
@@ -496,6 +613,14 @@ export default function AddTarantulaPage() {
                       <button type="button" className="btn btn-outline-purple" style={{ color: '#6f42c1', borderColor: '#6f42c1' }} onClick={() => setPostCreateMode('molt')}>
                         {t('form.addLastMolt')}
                       </button>
+                      {createdTarantula.shortId && (
+                        <Link
+                          to={`/herramientas/qr?shortId=${encodeURIComponent(createdTarantula.shortId)}`}
+                          className="btn btn-outline-secondary"
+                        >
+                          {t('form.postCreateQrTerrarium')}
+                        </Link>
+                      )}
                       <button type="button" className="btn btn-outline-secondary" onClick={closePostCreate}>
                         {t('form.skipForNow')}
                       </button>

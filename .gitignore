@@ -18,9 +18,13 @@ uploads/
 # ─── IDEs ───────────────────────────────────────────────────
 .idea/
 *.iml
-.vscode/
+.vscode/*
+!.vscode/launch.json
 *.swp
 *.swo
+
+# ─── Cursor / assets locales (no versionar) ─────────────────
+Assets/
 
 # ─── OS ─────────────────────────────────────────────────────
 .DS_Store

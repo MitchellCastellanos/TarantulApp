@@ -12,4 +12,5 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
     List<Reminder> findByUserIdOrderByDueDateAsc(UUID userId);
     List<Reminder> findByUserIdAndIsDoneFalseAndDueDateBeforeOrderByDueDateAsc(UUID userId, Instant cutoff);
     Optional<Reminder> findByIdAndUserId(UUID id, UUID userId);
+    long countByIsDoneFalse();
 }

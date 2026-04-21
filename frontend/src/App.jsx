@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
@@ -14,10 +14,19 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+import ContactPage from './pages/ContactPage'
+import AboutPage from './pages/AboutPage'
 import DiscoverPage from './pages/DiscoverPage'
 import DiscoverTaxonDetailPage from './pages/DiscoverTaxonDetailPage'
 import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
 import DiscoverComparePage from './pages/DiscoverComparePage'
+import QrToolPage from './pages/QrToolPage'
+import MarketplacePage from './pages/MarketplacePage'
+import KeeperProfilePage from './pages/KeeperProfilePage'
+import { useTranslation } from 'react-i18next'
+import QrBulkPrintPage from './pages/QrBulkPrintPage'
+import AdminPage from './pages/AdminPage'
+import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -73,10 +82,15 @@ function AppRoutes() {
       <Route path="/pro" element={<ProPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/descubrir" element={<DiscoverPage />} />
       <Route path="/descubrir/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
       <Route path="/descubrir/especie/:id" element={<DiscoverSpeciesDetailPage />} />
       <Route path="/descubrir/comparar" element={<DiscoverComparePage />} />
+      <Route path="/herramientas/qr" element={<QrToolPage />} />
+      <Route path="/marketplace" element={<MarketplacePage />} />
+      <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -84,7 +98,9 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><QrBulkPrintPage /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -92,17 +108,35 @@ function AppRoutes() {
 }
 
 function Footer() {
+  const { t } = useTranslation()
   return (
-    <footer className="text-center py-3 mt-5" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
+    <footer
+      className="text-center py-3 mt-5"
+      style={{
+        fontSize: '0.78rem',
+        color: 'var(--ta-parchment-dk)',
+        borderTop: '1px solid var(--ta-border)',
+      }}
+    >
       © {new Date().getFullYear()} TarantulApp &nbsp;·&nbsp;
-      <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.4)' }}>Privacy Policy</Link>
+      <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
-      <Link to="/terms" style={{ color: 'rgba(255,255,255,0.4)' }}>Terms</Link>
+      <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
+      &nbsp;·&nbsp;
+      <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
+      &nbsp;·&nbsp;
+      <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
+      &nbsp;·&nbsp;
+      <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
     </footer>
   )
 }
 
 export default function App() {
+  useEffect(() => {
+    setStoredTheme(getStoredTheme())
+  }, [])
+
   return (
     <AuthProvider>
       <BrowserRouter

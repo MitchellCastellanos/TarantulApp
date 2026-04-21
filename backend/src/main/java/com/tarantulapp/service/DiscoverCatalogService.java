@@ -3,7 +3,9 @@ package com.tarantulapp.service;
 import com.tarantulapp.dto.DiscoverLocalSpeciesViewDTO;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.entity.Species;
+import com.tarantulapp.entity.SpeciesSynonym;
 import com.tarantulapp.repository.SpeciesRepository;
+import com.tarantulapp.repository.SpeciesSynonymRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,10 +20,14 @@ public class DiscoverCatalogService {
 
     private final SpeciesRepository speciesRepository;
     private final InatService inatService;
+    private final SpeciesSynonymRepository speciesSynonymRepository;
 
-    public DiscoverCatalogService(SpeciesRepository speciesRepository, InatService inatService) {
+    public DiscoverCatalogService(SpeciesRepository speciesRepository,
+                                  InatService inatService,
+                                  SpeciesSynonymRepository speciesSynonymRepository) {
         this.speciesRepository = speciesRepository;
         this.inatService = inatService;
+        this.speciesSynonymRepository = speciesSynonymRepository;
     }
 
     public Page<SpeciesDTO> findCatalogPage(
@@ -59,6 +65,16 @@ public class DiscoverCatalogService {
         if (s.getScientificName() != null
                 && (s.getReferencePhotoUrl() == null || s.getReferencePhotoUrl().isBlank())) {
             inatService.resolveDiscoverPhoto(s.getScientificName()).ifPresent(view::setFallbackPhoto);
+            if (view.getFallbackPhoto() == null && s.getId() != null) {
+                for (SpeciesSynonym syn : speciesSynonymRepository.findAllBySpeciesId(s.getId())) {
+                    if (syn == null || syn.getSynonym() == null || syn.getSynonym().isBlank()) continue;
+                    var maybePhoto = inatService.resolveDiscoverPhoto(syn.getSynonym());
+                    if (maybePhoto.isPresent()) {
+                        view.setFallbackPhoto(maybePhoto.get());
+                        break;
+                    }
+                }
+            }
         }
         return Optional.of(view);
     }

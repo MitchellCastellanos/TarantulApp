@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
@@ -6,6 +6,63 @@ import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileS
 import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { usePageSeo } from '../hooks/usePageSeo'
+
+function DiscoverTaxonDetailSeo({ data, gbifKeyParam }) {
+  const { t, i18n } = useTranslation()
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const path = `/descubrir/taxon/${gbifKeyParam}`
+  const canonicalHref = origin ? `${origin}${path}` : undefined
+  const displayName = data.canonicalName || data.scientificName || '–'
+  const title = useMemo(
+    () => t('discover.seoTaxonTitle', { name: displayName }),
+    [displayName, t, i18n.language]
+  )
+  const description = useMemo(
+    () => t('discover.seoTaxonDescription', { name: displayName }),
+    [displayName, t, i18n.language]
+  )
+  const photo = data.photo
+  const taxonImageSrc = photo?.url ? imgUrl(photo.url) : null
+  const ogImage =
+    taxonImageSrc ||
+    (origin ? `${origin}/icon-512.png` : null)
+
+  const jsonLd = useMemo(() => {
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    const pageUrl = canonicalHref || (base ? `${base}${path}` : path)
+    const gbifUrl = data.gbifKey != null ? `https://www.gbif.org/species/${data.gbifKey}` : null
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: pageUrl,
+      inLanguage: i18n.language,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'TarantulApp',
+        url: base || undefined,
+      },
+      about: {
+        '@type': 'Taxon',
+        name: displayName,
+        ...(data.vernacularName ? { alternateName: data.vernacularName } : {}),
+        ...(gbifUrl ? { sameAs: gbifUrl } : {}),
+      },
+    }
+  }, [title, description, canonicalHref, path, displayName, data.vernacularName, data.gbifKey, i18n.language])
+
+  usePageSeo({
+    title,
+    description,
+    imageUrl: ogImage,
+    canonicalHref,
+    jsonLd,
+    jsonLdId: 'discover-taxon-jsonld',
+  })
+  return null
+}
 
 export default function DiscoverTaxonDetailPage() {
   const { gbifKey } = useParams()
@@ -51,6 +108,7 @@ export default function DiscoverTaxonDetailPage() {
 
   return (
     <PublicShell>
+      <DiscoverTaxonDetailSeo data={data} gbifKeyParam={gbifKey} />
       <div className="mx-auto" style={{ maxWidth: 640 }}>
         <button
           type="button"
@@ -62,6 +120,7 @@ export default function DiscoverTaxonDetailPage() {
         </button>
         <DiscoverSpeciesProfileSnippet
           variant="discover"
+          nameAs="h1"
           title={data.canonicalName || data.scientificName}
           subtitle={[
             data.vernacularName,
@@ -76,7 +135,7 @@ export default function DiscoverTaxonDetailPage() {
           <figure className="mb-3">
             <img src={taxonImageSrc} alt="" className="img-fluid rounded border" style={{ borderColor: 'var(--ta-border)' }} />
             {photo?.attribution && (
-              <figcaption className="small mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
                 {photo.attribution}
                 {photo.licenseCode ? ` · ${photo.licenseCode}` : ''}
                 {photo.taxonPageUrl && (
@@ -95,7 +154,7 @@ export default function DiscoverTaxonDetailPage() {
         {!taxonImageSrc && <p className="small text-muted mb-3">{t('discover.noPhoto')}</p>}
 
         {data.dataAttributionNote && (
-          <p className="small" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="small" style={{ color: 'var(--ta-text-muted)' }}>
             {data.dataAttributionNote}
           </p>
         )}
@@ -115,7 +174,7 @@ export default function DiscoverTaxonDetailPage() {
             </Link>
           ) : (
             <>
-              <p className="small mb-0" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                 {t('discover.loginToAddHint')}
               </p>
               <Link
@@ -147,7 +206,7 @@ export default function DiscoverTaxonDetailPage() {
           </div>
         )}
         {!hasPro && (
-          <p className="small mt-4 mb-0" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="small mt-4 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
             {t('discover.compareProTeaser')}{' '}
             <Link to="/pro" style={{ color: 'var(--ta-gold)' }}>
               Pro

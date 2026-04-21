@@ -1,10 +1,73 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import speciesService from '../services/speciesService'
 import { useAuth } from '../context/AuthContext'
+import { usePageSeo } from '../hooks/usePageSeo'
+import { discoverHeroImageAbsoluteUrl, formatDiscoverSeoMetaLine } from '../utils/discoverSeo'
+
+function DiscoverSpeciesDetailSeo({ view, speciesId }) {
+  const { t, i18n } = useTranslation()
+  const sp = view.species
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const path = `/descubrir/especie/${speciesId}`
+  const canonicalHref = origin ? `${origin}${path}` : undefined
+  const fallback512 = origin ? `${origin}/icon-512.png` : null
+  const ogImage = discoverHeroImageAbsoluteUrl(sp, view.fallbackPhoto) || fallback512
+
+  const metaLine = useMemo(() => formatDiscoverSeoMetaLine(sp, t), [sp, t, i18n.language])
+
+  const description = useMemo(() => {
+    const commonFrag = sp.commonName ? t('discover.seoCommonFragment', { common: sp.commonName }) : ''
+    return t('discover.seoSpeciesDescription', {
+      name: sp.scientificName,
+      common: commonFrag,
+      meta: metaLine,
+    })
+  }, [sp.scientificName, sp.commonName, metaLine, t, i18n.language])
+
+  const title = useMemo(
+    () => t('discover.seoSpeciesTitle', { name: sp.scientificName }),
+    [sp.scientificName, t, i18n.language]
+  )
+
+  const jsonLd = useMemo(() => {
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    const pageUrl = canonicalHref || (base ? `${base}${path}` : path)
+    const gbif = sp.gbifUsageKey != null ? `https://www.gbif.org/species/${sp.gbifUsageKey}` : null
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: pageUrl,
+      inLanguage: i18n.language,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'TarantulApp',
+        url: base || undefined,
+      },
+      about: {
+        '@type': 'Taxon',
+        name: sp.scientificName,
+        ...(sp.commonName ? { alternateName: sp.commonName } : {}),
+        ...(gbif ? { sameAs: gbif } : {}),
+      },
+    }
+  }, [title, description, canonicalHref, path, sp, i18n.language])
+
+  usePageSeo({
+    title,
+    description,
+    imageUrl: ogImage,
+    canonicalHref,
+    jsonLd,
+    jsonLdId: 'discover-species-jsonld',
+  })
+  return null
+}
 
 export default function DiscoverSpeciesDetailPage() {
   const { id } = useParams()
@@ -49,6 +112,7 @@ export default function DiscoverSpeciesDetailPage() {
 
   return (
     <PublicShell>
+      <DiscoverSpeciesDetailSeo view={view} speciesId={id} />
       <div className="mx-auto" style={{ maxWidth: 720 }}>
         <button
           type="button"
@@ -59,9 +123,13 @@ export default function DiscoverSpeciesDetailPage() {
           {t('common.back')}
         </button>
 
-        <DiscoverSpeciesProfileSnippet species={sp} variant="discover" />
+        <DiscoverSpeciesProfileSnippet species={sp} variant="discover" nameAs="h1" />
 
-        <p className="small mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text)' }}>
+          {t('discover.seoSpeciesLead')}
+        </p>
+
+        <p className="small mt-3" style={{ color: 'var(--ta-text-muted)' }}>
           {t('discover.dataDisclaimer')}
         </p>
 
@@ -80,7 +148,7 @@ export default function DiscoverSpeciesDetailPage() {
             </Link>
           ) : (
             <>
-              <p className="small mb-0" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                 {t('discover.loginToAddHint')}
               </p>
               <Link
@@ -111,7 +179,7 @@ export default function DiscoverSpeciesDetailPage() {
           </div>
         )}
         {!hasPro && (
-          <p className="small mt-3 mb-0" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="small mt-3 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
             {t('discover.compareProTeaser')}{' '}
             <Link to="/pro" style={{ color: 'var(--ta-gold)' }}>
               Pro

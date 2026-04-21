@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -20,6 +22,9 @@ public class InatService {
 
     private static final Logger log = LoggerFactory.getLogger(InatService.class);
     private static final String INAT_BASE = "https://api.inaturalist.org/v1";
+    private static final Map<String, String> LEGACY_NAME_FALLBACKS = Map.of(
+            "grammostola porteri", "Grammostola rosea"
+    );
 
     private final RestTemplate restTemplate;
 
@@ -39,7 +44,15 @@ public class InatService {
         try {
             Optional<DiscoverPhotoDTO> exact = findPhotoDto(scientificName, true);
             if (exact.isPresent()) return exact;
-            return findPhotoDto(scientificName, false);
+            Optional<DiscoverPhotoDTO> broad = findPhotoDto(scientificName, false);
+            if (broad.isPresent()) return broad;
+            String alias = LEGACY_NAME_FALLBACKS.get(scientificName.trim().toLowerCase(Locale.ROOT));
+            if (alias != null && !alias.isBlank()) {
+                Optional<DiscoverPhotoDTO> aliasExact = findPhotoDto(alias, true);
+                if (aliasExact.isPresent()) return aliasExact;
+                return findPhotoDto(alias, false);
+            }
+            return Optional.empty();
         } catch (Exception e) {
             log.warn("iNaturalist photo lookup failed for '{}': {}", scientificName, e.getMessage());
             return Optional.empty();

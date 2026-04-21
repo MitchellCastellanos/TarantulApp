@@ -32,6 +32,27 @@
   --ta-sheet-bg-blend: soft-light, normal, normal;
 }
 
+:root[data-theme='light'] {
+  --ta-bg: #f6f1e6;
+  --ta-bg-deep: #efe7d8;
+  --ta-bg-card: #fffaf0;
+  --ta-bg-panel: #f8efdf;
+  --ta-bg-input: #fffdf8;
+  --ta-parchment: #2b1f0b;
+  --ta-parchment-dk: #5e4a2f;
+  --ta-text: #2b1f0b;
+  --ta-text-muted: rgba(80, 61, 35, 0.72);
+  --ta-border: rgba(130, 90, 30, 0.24);
+  --ta-border-gold: rgba(140, 105, 35, 0.3);
+  --ta-gold: #8b6a2b;
+  --ta-gold-light: #a07c31;
+  --ta-brown: #8b6a2b;
+  --ta-brown-light: #a07c31;
+  --ta-green: #2d7040;
+  --ta-green-light: #3e8d56;
+  --ta-purple: rgba(120, 90, 40, 0.25);
+}
+
 /* ─── Base ─────────────────────────────────────────────────────────────── */
 
 body {
@@ -60,19 +81,24 @@ h1, h2, h3, h4, h5, h6,
   color: var(--ta-parchment);
 }
 
+/* Marcas de lienzo muy suaves (sin emoji): legibles en claro y oscuro */
 body::before,
 body::after {
-  content: '🕷️';
+  content: '';
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 8rem;
-  opacity: 0.04;
+  width: min(22vw, 11rem);
+  height: min(22vw, 11rem);
+  border-radius: 50%;
   pointer-events: none;
   z-index: 0;
+  background: radial-gradient(circle at 40% 40%, rgba(160, 124, 48, 0.11) 0%, transparent 72%);
+  opacity: 0.85;
+  filter: blur(0.5px);
 }
-body::before { left: -1.5rem; }
-body::after  { right: -1.5rem; }
+body::before { left: -2rem; }
+body::after { right: -2rem; }
 
 /* ─── Cards — dark obsidian with purple glow ───────────────────────────── */
 
@@ -118,12 +144,12 @@ body::after  { right: -1.5rem; }
   color: var(--ta-parchment) !important;
 }
 .form-control:focus, .form-select:focus {
-  background-color: #0c0c1e !important;
+  background-color: var(--ta-bg-input) !important;
   border-color: var(--ta-gold) !important;
   box-shadow: 0 0 0 0.2rem rgba(201,168,76,0.18) !important;
-  color: var(--ta-parchment) !important;
+  color: var(--ta-text) !important;
 }
-.form-control::placeholder { color: rgba(200,175,120,0.35) !important; }
+.form-control::placeholder { color: var(--ta-text-muted) !important; }
 .form-label { color: var(--ta-parchment) !important; }
 .form-check-label { color: var(--ta-parchment-dk) !important; }
 .form-check-input {
@@ -301,7 +327,7 @@ body::after  { right: -1.5rem; }
 
 /* ─── Text utilities ────────────────────────────────────────────────────── */
 
-.text-muted { color: rgba(200,175,120,0.52) !important; }
+.text-muted { color: var(--ta-text-muted) !important; }
 .text-dark   { color: var(--ta-parchment) !important; }
 .text-gold   { color: var(--ta-gold) !important; }
 .text-collection { color: var(--ta-gold) !important; font-weight: 600; }
@@ -531,14 +557,12 @@ a.text-collection:hover {
 .ta-parchment-scroll {
   position: relative;
   padding: 0 !important;
-  overflow: visible;
+  overflow: hidden;
   color: #2a1f0a !important;
   background: none !important;
   background-image: none !important;
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.48),
-    0 8px 20px rgba(0, 0, 0, 0.32) !important;
-  transform: translateY(-3px);
+  box-shadow: none !important;
+  transform: none;
 }
 
 .ta-parchment-bg-img {
@@ -548,6 +572,9 @@ a.text-collection:hover {
   vertical-align: top;
   pointer-events: none;
   user-select: none;
+  opacity: 0.88;
+  filter: saturate(0.88) contrast(0.95) brightness(0.99);
+  mix-blend-mode: multiply;
 }
 
 /* Contenido (Historique, eventos, paginador) encima del pergamino, mismo rectángulo que la imagen */
@@ -709,6 +736,144 @@ a.text-collection:hover {
   outline-offset: 1px;
 }
 
+.ta-parchment-scroll .ta-history-share-inline {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.1rem 0.45rem !important;
+  line-height: 1.1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2f1d0d !important;
+  background: rgba(255, 248, 228, 0.34) !important;
+  border: 1px solid rgba(55, 40, 24, 0.44) !important;
+  box-shadow: none !important;
+  border-radius: 0.35rem;
+}
+.ta-parchment-scroll .ta-history-share-inline:hover {
+  color: #1e1208 !important;
+  background: rgba(75, 55, 30, 0.2) !important;
+  border-color: rgba(55, 40, 24, 0.62) !important;
+}
+.ta-parchment-scroll .ta-history-share-inline:focus-visible {
+  outline: 2px solid rgba(55, 40, 24, 0.45);
+  outline-offset: 1px;
+}
+
+@media (max-width: 576px) {
+  .ta-parchment-scroll-inner {
+    padding-top: clamp(2.25rem, 8vw, 2.8rem);
+    padding-bottom: clamp(1rem, 4vw, 1.4rem);
+    padding-left: clamp(1.15rem, 4.2vw, 1.45rem);
+    padding-right: clamp(1.15rem, 4.2vw, 1.45rem);
+  }
+
+  .ta-parchment-page-title {
+    gap: 0.35rem;
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.4rem;
+    font-size: clamp(0.62rem, 2.7vw, 0.74rem);
+    letter-spacing: 0.09em;
+  }
+  .ta-parchment-page-title__text {
+    letter-spacing: 0.08em;
+  }
+
+  .ta-parchment-scroll .ta-timeline-row {
+    gap: 0.5rem !important;
+  }
+  .ta-parchment-scroll .ta-timeline-icon-col {
+    padding-top: 0.1rem;
+  }
+  .ta-parchment-scroll .ta-timeline-marker {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .ta-parchment-scroll .ta-timeline-head-row {
+    align-items: flex-start;
+    row-gap: 0.18rem;
+  }
+  .ta-parchment-scroll .ta-timeline-meta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    width: 100%;
+  }
+  .ta-parchment-scroll .ta-history-meta {
+    font-size: 0.72rem;
+    white-space: normal !important;
+    line-height: 1.2;
+  }
+  .ta-parchment-scroll .ta-history-title {
+    font-size: 0.86rem;
+    line-height: 1.2;
+  }
+  .ta-parchment-scroll .ta-history-summary {
+    font-size: 0.76rem;
+    line-height: 1.28;
+  }
+}
+
+@media (max-width: 390px) {
+  .ta-parchment-scroll-inner {
+    padding-top: 2rem;
+    padding-bottom: 0.9rem;
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+
+  .ta-parchment-page-title {
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.07em;
+  }
+
+  .ta-parchment-scroll .ta-timeline-row {
+    gap: 0.45rem !important;
+  }
+  .ta-parchment-scroll .ta-timeline-marker {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .ta-parchment-scroll .ta-timeline-marker > span {
+    font-size: 0.8rem !important;
+  }
+
+  .ta-parchment-scroll .ta-timeline-head-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.18rem;
+  }
+  .ta-parchment-scroll .ta-history-title {
+    width: 100%;
+    font-size: 0.8rem;
+    line-height: 1.18;
+  }
+  .ta-parchment-scroll .ta-timeline-meta-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .ta-parchment-scroll .ta-history-meta {
+    font-size: 0.67rem;
+    margin-right: 0.12rem;
+  }
+  .ta-parchment-scroll .ta-history-delete-inline {
+    font-size: 1rem;
+    padding: 0 0.18rem !important;
+  }
+  .ta-parchment-scroll .ta-history-share-inline {
+    font-size: 0.72rem;
+    padding: 0.05rem 0.34rem !important;
+  }
+  .ta-parchment-scroll .ta-history-summary {
+    font-size: 0.72rem;
+    line-height: 1.24;
+  }
+}
+
 /* Autocomplete especies: el .card global usa overflow:hidden */
 .card.ta-species-dropdown-card {
   overflow: visible !important;
@@ -814,8 +979,48 @@ a.text-collection:hover {
 .ta-spec-title {
   font-family: 'Cinzel', Georgia, serif;
   letter-spacing: 0.12em;
-  color: rgba(248, 244, 255, 0.96);
-  text-shadow: 0 0 18px rgba(90, 130, 255, 0.35);
+  color: #fff6e4;
+  text-shadow:
+    0 0 18px rgba(201, 168, 76, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.95);
+}
+:root[data-theme='light'] .ta-spec-title {
+  color: #3d2a0c !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Títulos “dorados” sobre fondos oscuros o pergamino (login CTA, secciones Descubrir, Pro…) */
+.ta-accent-heading {
+  color: #ffeccd !important;
+  text-shadow:
+    0 0 20px rgba(201, 168, 76, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.9);
+}
+:root[data-theme='light'] .ta-accent-heading {
+  color: #4a3208 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.ta-login-brand-wordmark {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: #fff4dc;
+  text-shadow: 0 0 16px rgba(201, 168, 76, 0.35), 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+:root[data-theme='light'] .ta-login-brand-wordmark {
+  color: #3d2a0c;
+  text-shadow: none;
+}
+
+.ta-species-snippet-footnote {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgba(232, 225, 255, 0.94);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+:root[data-theme='light'] .ta-species-snippet-footnote {
+  color: rgba(55, 42, 28, 0.88);
+  text-shadow: none;
 }
 
 .letter-spacing-wide {
@@ -828,6 +1033,8 @@ a.text-collection:hover {
   gap: 0.35rem;
   flex-wrap: wrap;
   font-size: 0.78rem;
+  color: rgba(95, 77, 50, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(255, 245, 222, 0.55);
 }
 
 .ta-spec-icon {
@@ -856,8 +1063,34 @@ a.text-collection:hover {
 }
 
 .ta-spec-field__value {
-  color: rgba(232, 226, 252, 0.95);
+  color: rgba(68, 46, 20, 0.96);
   font-size: 0.9rem;
+  line-height: 1.35;
+  text-shadow: 0 1px 0 rgba(255, 245, 228, 0.5);
+}
+
+/* Species card footnotes: care * line + NW/OW disclaimers */
+.ta-spec-footnotes {
+  border-top: 1px solid rgba(100, 60, 200, 0.22);
+}
+.ta-spec-footnotes__care {
+  font-size: 0.7rem;
+  line-height: 1.42;
+  color: rgba(88, 70, 42, 0.88);
+}
+.ta-spec-footnotes__hobby {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(100, 60, 200, 0.18);
+}
+.ta-spec-footnotes__hobby p {
+  font-size: 0.68rem;
+  line-height: 1.42;
+  color: rgba(90, 73, 46, 0.86);
+  overflow-wrap: break-word;
+}
+.ta-spec-footnotes__hobby p + p {
+  margin-top: 0.42rem;
 }
 
 .ta-catalog-pill {
@@ -912,4 +1145,292 @@ a.text-collection:hover {
 }
 .ta-level-chitin--muted .ta-level-chitin__text {
   color: rgba(220, 215, 235, 0.88);
+}
+
+/* ─── Marketplace — official partners & apply CTA (theme-safe contrast) ─── */
+
+.marketplace-official-apply-panel {
+  position: relative;
+  border-radius: 0.5rem;
+  background: linear-gradient(145deg, rgba(22, 16, 42, 0.96) 0%, rgba(10, 9, 24, 0.99) 100%);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 160, 0.1),
+    0 10px 36px rgba(0, 0, 0, 0.5);
+  color: var(--ta-text);
+}
+.marketplace-official-apply-panel__title {
+  color: var(--ta-gold-light) !important;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+.marketplace-official-apply-panel__blurb {
+  color: var(--ta-text-muted) !important;
+}
+
+:root[data-theme='light'] .marketplace-official-apply-panel {
+  background: linear-gradient(145deg, #fffaf2 0%, #efe4d2 100%);
+  border-color: rgba(120, 88, 32, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 8px 26px rgba(50, 35, 12, 0.12);
+}
+:root[data-theme='light'] .marketplace-official-apply-panel__title {
+  color: var(--ta-brown) !important;
+}
+
+.official-vendor-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem !important;
+  background: linear-gradient(160deg, rgba(26, 18, 48, 0.96) 0%, rgba(11, 11, 24, 0.98) 55%, rgba(7, 7, 18, 1) 100%) !important;
+  border: 1px solid rgba(130, 85, 220, 0.38) !important;
+  box-shadow:
+    0 0 0 1px rgba(201, 168, 76, 0.14),
+    0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.official-vendor-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 100% 60% at 15% -5%, rgba(201, 168, 76, 0.18), transparent 58%);
+  pointer-events: none;
+}
+.official-vendor-card__inner {
+  position: relative;
+  z-index: 1;
+}
+.official-partner-shield {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 14px rgba(201, 168, 76, 0.4));
+}
+.official-vendor-card__ribbon {
+  font-size: 0.62rem;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(95deg, #e8c86a, #c9a84c);
+  color: #1c1208 !important;
+  border: 1px solid rgba(90, 62, 18, 0.55);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:root[data-theme='light'] .official-vendor-card {
+  background: linear-gradient(160deg, #fffdf8 0%, #efe6d6 100%) !important;
+  border-color: rgba(110, 78, 28, 0.3) !important;
+  box-shadow: 0 8px 28px rgba(45, 30, 10, 0.12);
+}
+:root[data-theme='light'] .official-vendor-card::before {
+  background: radial-gradient(ellipse 100% 55% at 20% 0%, rgba(201, 168, 76, 0.2), transparent 55%);
+}
+:root[data-theme='light'] .official-vendor-card__ribbon {
+  background: linear-gradient(95deg, #6b4f1f, #4a3412);
+  color: #fff6e0 !important;
+  border-color: rgba(50, 36, 12, 0.65);
+}
+
+.marketplace-official-header-shield {
+  filter: drop-shadow(0 0 12px rgba(201, 168, 76, 0.35));
+}
+
+.ta-marketplace-reputation-strip {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border: 1px solid var(--ta-border) !important;
+  color: var(--ta-text) !important;
+}
+:root[data-theme='light'] .ta-marketplace-reputation-strip {
+  background: rgba(80, 55, 20, 0.06) !important;
+  border-color: rgba(130, 90, 30, 0.22) !important;
+}
+
+.ta-marketplace-community-intro {
+  border: 1px solid var(--ta-border);
+  background: var(--ta-bg-card);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+}
+:root[data-theme='light'] .ta-marketplace-community-intro {
+  box-shadow: 0 6px 22px rgba(40, 28, 8, 0.08);
+}
+
+.ta-marketplace-official-strip {
+  position: relative;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.85rem 0.85rem;
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  background: linear-gradient(155deg, rgba(22, 16, 42, 0.92) 0%, rgba(8, 7, 18, 0.97) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 160, 0.08),
+    0 10px 32px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme='light'] .ta-marketplace-official-strip {
+  background: linear-gradient(155deg, #fffdf8 0%, #f2e8d4 100%);
+  border-color: rgba(120, 88, 32, 0.32);
+  box-shadow: 0 8px 26px rgba(45, 30, 10, 0.1);
+}
+
+.ta-marketplace-official-strip__scroll {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.25rem;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ta-marketplace-official-strip__item {
+  flex: 0 0 min(100%, 288px);
+  max-width: 300px;
+}
+
+/* Logo de marca en cabecera de socios (dorado / glow; sin duplicar escudo por tarjeta) */
+.ta-marketplace-official-strip-header-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 168, 76, 0.45);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 220, 160, 0.2), transparent 62%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 0 18px rgba(201, 168, 76, 0.25);
+}
+.ta-marketplace-official-strip-header-logo .ta-brand-logo-img {
+  filter: drop-shadow(0 0 5px rgba(232, 200, 120, 0.55));
+}
+:root[data-theme='light'] .ta-marketplace-official-strip-header-logo .ta-brand-logo-img {
+  filter: sepia(0.45) saturate(1.35) hue-rotate(352deg) brightness(0.92) contrast(1.05);
+}
+:root[data-theme='light'] .ta-marketplace-official-strip-header-logo {
+  background: radial-gradient(circle at 35% 30%, rgba(201, 168, 76, 0.18), rgba(255, 252, 245, 0.9));
+  border-color: rgba(140, 105, 40, 0.35);
+  box-shadow: 0 0 0 1px rgba(90, 70, 30, 0.08), 0 4px 14px rgba(120, 90, 40, 0.12);
+}
+
+.official-vendor-card--strip .official-vendor-card__inner {
+  min-height: 100%;
+}
+
+.ta-marketplace-official-strip__note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ta-marketplace-official-strip__badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #2a1a48, #120a20);
+  color: #f2d98c;
+  border: 1px solid rgba(210, 180, 90, 0.45);
+}
+:root[data-theme='light'] .ta-marketplace-official-strip__badge {
+  background: linear-gradient(120deg, #fff8ec, #e8dcc4);
+  color: #3d2e12;
+  border-color: rgba(110, 78, 28, 0.35);
+}
+
+.official-vendor-card--strip {
+  border-radius: 0.45rem !important;
+}
+
+details.ta-marketplace-official-apply-details > summary {
+  list-style: none;
+}
+details.ta-marketplace-official-apply-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ta-discover-marketplace-hub {
+  border-color: var(--ta-border) !important;
+  background: linear-gradient(168deg, rgba(24, 18, 40, 0.72), rgba(10, 8, 18, 0.94));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='light'] .ta-discover-marketplace-hub {
+  background: linear-gradient(168deg, #fffdf8, #efe6d4);
+  box-shadow: 0 8px 22px rgba(45, 30, 10, 0.1);
+}
+
+/* ─── Navbar brand — circular logos + intro ring sweep ─────────────────── */
+
+.ta-brand-nav-link {
+  gap: 0.55rem !important;
+}
+.ta-brand-logo-wordmark {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--ta-parchment) !important;
+}
+.ta-brand-logo-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.ta-brand-logo-img {
+  position: relative;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 0 0 1px rgba(100, 60, 200, 0.35), 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme='light'] .ta-brand-logo-img {
+  box-shadow: 0 0 0 1px rgba(130, 90, 30, 0.28), 0 4px 14px rgba(40, 28, 10, 0.12);
+}
+.ta-brand-logo-ring {
+  position: absolute;
+  inset: -7px;
+  z-index: 1;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 278deg,
+    rgba(140, 90, 255, 0.15) 300deg,
+    rgba(110, 220, 255, 0.85) 338deg,
+    rgba(255, 215, 150, 0.95) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 2.5px), transparent 100%);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 2.5px), transparent 100%);
+  filter: drop-shadow(0 0 6px rgba(160, 120, 255, 0.45));
+}
+:root[data-theme='light'] .ta-brand-logo-ring {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 285deg,
+    rgba(160, 110, 40, 0.2) 320deg,
+    rgba(139, 106, 43, 0.95) 360deg
+  );
+  filter: drop-shadow(0 0 5px rgba(180, 130, 50, 0.35));
+}
+.ta-brand-logo-wrap--intro .ta-brand-logo-ring {
+  animation: ta-brand-ring-orbit 2.75s cubic-bezier(0.33, 0.02, 0.18, 1) 1 forwards;
+}
+@keyframes ta-brand-ring-orbit {
+  0% {
+    transform: rotate(-28deg) scale(0.94);
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(332deg) scale(1);
+    opacity: 0;
+  }
 }

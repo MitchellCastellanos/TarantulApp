@@ -9,17 +9,31 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -27,6 +41,7 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
+    private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil, PasswordResetTokenRepository resetTokenRepository,
@@ -50,12 +65,13 @@ public class AuthService {
         user.setPlan(UserPlan.FREE);
         user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
         userRepository.save(user);
+        emailService.sendWelcomeTrialStarted(user.getEmail(), user.getDisplayName(), user.getTrialEndsAt());
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = findByEmailWithOneRetry(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciales inválidas");
@@ -68,14 +84,108 @@ public class AuthService {
         return buildAuthResponse(token, user);
     }
 
+    public AuthResponse googleLogin(String idToken) {
+        Map<String, Object> tokenInfo;
+        try {
+            tokenInfo = restClient.get()
+                    .uri("https://oauth2.googleapis.com/tokeninfo?id_token={idToken}", idToken)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientException e) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+        if (tokenInfo == null) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+        Object emailRaw = tokenInfo.get("email");
+        Object verifiedRaw = tokenInfo.get("email_verified");
+        String email = emailRaw == null ? "" : String.valueOf(emailRaw).trim().toLowerCase();
+        boolean verified = verifiedRaw != null && "true".equalsIgnoreCase(String.valueOf(verifiedRaw));
+        if (email.isBlank() || !verified) {
+            throw new IllegalArgumentException("Google token inválido");
+        }
+
+        User user = findByEmailWithOneRetry(email).orElseGet(() -> {
+            User created = new User();
+            created.setEmail(email);
+            created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+            Object nameRaw = tokenInfo.get("name");
+            String displayName = nameRaw == null ? null : String.valueOf(nameRaw).trim();
+            created.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName);
+            created.setPlan(UserPlan.FREE);
+            created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+            User saved = userRepository.save(created);
+            emailService.sendWelcomeTrialStarted(saved.getEmail(), saved.getDisplayName(), saved.getTrialEndsAt());
+            return saved;
+        });
+
+        String token = jwtUtil.generateToken(user.getEmail());
+        return buildAuthResponse(token, user);
+    }
+
+    private java.util.Optional<User> findByEmailWithOneRetry(String email) {
+        try {
+            return userRepository.findByEmail(email);
+        } catch (RuntimeException ex) {
+            if (!isTransientDbConnectivity(ex)) {
+                throw ex;
+            }
+            log.warn("Transient DB error on findByEmail, retrying once for email={}", email);
+            return userRepository.findByEmail(email);
+        }
+    }
+
+    private boolean isTransientDbConnectivity(RuntimeException ex) {
+        if (ex instanceof DataAccessResourceFailureException
+                || ex instanceof JpaSystemException
+                || ex instanceof QueryTimeoutException
+                || ex instanceof CannotCreateTransactionException) {
+            return true;
+        }
+        Throwable current = ex;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null && (msg.contains("MaxClientsInSessionMode")
+                    || msg.contains("Connection is not available")
+                    || msg.contains("canceling statement due to statement timeout"))) {
+                return true;
+            }
+            if (current instanceof java.sql.SQLException sqlEx && "57014".equals(sqlEx.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
     private AuthResponse buildAuthResponse(String token, User user) {
         AuthResponse r = new AuthResponse(token, user.getEmail(), user.getDisplayName(), user.getId(),
                 user.getPlan() != null ? user.getPlan().name() : UserPlan.FREE.name());
         r.setTrialEndsAt(user.getTrialEndsAt());
-        r.setReadOnly(planAccessService.isReadOnly(user));
-        r.setInTrial(planAccessService.isTrialActive(user));
-        r.setOverFreeLimit(planAccessService.isOverFreeTierLimit(user));
-        r.setStrictReadOnly(planAccessService.isStrictReadOnly(user));
+        // Cupo/tarántulas: si la consulta falla (pool=1, datos viejos, plan inválido en fila), no tumbar login con 500.
+        try {
+            r.setReadOnly(planAccessService.isReadOnly(user));
+            r.setInTrial(planAccessService.isTrialActive(user));
+            r.setOverFreeLimit(planAccessService.isOverFreeTierLimit(user));
+            r.setStrictReadOnly(planAccessService.isStrictReadOnly(user));
+        } catch (Exception e) {
+            log.warn("Login: no se pudieron calcular flags de plan para userId={}: {}", user.getId(), e.getMessage());
+            r.setReadOnly(false);
+            r.setInTrial(user.getTrialEndsAt() != null && LocalDateTime.now().isBefore(user.getTrialEndsAt()));
+            r.setOverFreeLimit(false);
+            r.setStrictReadOnly(false);
+        }
+        r.setPublicHandle(user.getPublicHandle());
+        r.setBio(user.getBio());
+        r.setLocation(user.getLocation());
+        r.setFeaturedCollection(user.getFeaturedCollection());
+        r.setContactWhatsapp(user.getContactWhatsapp());
+        r.setContactInstagram(user.getContactInstagram());
+        r.setProfileCountry(user.getProfileCountry());
+        r.setProfileState(user.getProfileState());
+        r.setProfileCity(user.getProfileCity());
+        r.setQrPrintExports(user.getQrPrintExports());
+        r.setProfilePhoto(user.getProfilePhoto());
         return r;
     }
 

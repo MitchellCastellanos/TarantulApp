@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import tarantulaService from '../services/tarantulaService'
 import { imgUrl } from '../services/api'
+import { buildPhotoShareText } from '../utils/shareTemplates'
+import { detectShareChannel, shareOrCopyText } from '../utils/shareUtils'
 
-export default function PhotoGallery({ tarantulaId, readOnly = false }) {
+export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta = null }) {
   const { t } = useTranslation()
   const [photos, setPhotos] = useState([])
   const [file, setFile] = useState(null)
@@ -35,6 +37,23 @@ export default function PhotoGallery({ tarantulaId, readOnly = false }) {
     if (!confirm(t('gallery.deleteConfirm'))) return
     await tarantulaService.deletePhoto(tarantulaId, photoId)
     load()
+  }
+
+  const handleShare = async (photo) => {
+    if (!shareMeta?.tarantulaName) return
+    const text = buildPhotoShareText({
+      tarantulaName: shareMeta.tarantulaName,
+      speciesName: shareMeta.speciesName,
+      caption: photo?.caption,
+      t,
+      profileUrl: shareMeta.profileUrl,
+      channel: detectShareChannel(),
+    })
+    try {
+      await shareOrCopyText(text)
+    } catch {
+      // ignore
+    }
   }
 
   return (
@@ -85,6 +104,16 @@ export default function PhotoGallery({ tarantulaId, readOnly = false }) {
                     title={t('gallery.deletePhoto')}>
                     ✕
                   </button>
+                  )}
+                  {shareMeta && (
+                    <button
+                      className="btn btn-sm btn-outline-light position-absolute"
+                      style={{ top: 4, left: 4, padding: '1px 6px', fontSize: '0.7rem', lineHeight: 1.4 }}
+                      onClick={() => handleShare(p)}
+                      title={t('share.sharePhoto')}
+                    >
+                      ↗
+                    </button>
                   )}
                   {p.caption && (
                     <div className="position-absolute bottom-0 start-0 end-0 px-1 py-1"

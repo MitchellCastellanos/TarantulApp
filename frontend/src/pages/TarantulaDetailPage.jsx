@@ -20,6 +20,8 @@ import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone } from '../utils/dateFormat'
+import { exportTarantulaPdf } from '../services/pdfExportService'
+import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const defaultSpiderStyle = {
@@ -110,6 +112,17 @@ export default function TarantulaDetailPage() {
     setModal(null)
   }
 
+  const handleExportPdf = () => {
+    exportTarantulaPdf({
+      tarantula,
+      species,
+      timeline,
+      t,
+      language: i18n.language,
+    }).catch(() => {})
+  }
+  const publicProfileUrl = tarantula?.shortId ? `${window.location.origin}/t/${tarantula.shortId}` : ''
+
   if (loading) return (
     <div><Navbar /><div className="container mt-4 text-muted">{t('tarantula.loading')}</div></div>
   )
@@ -123,33 +136,7 @@ export default function TarantulaDetailPage() {
     : (species?.referencePhotoUrl ?? null)
 
   // ─── Terrarium recommendation ──────────────────────────────────────────────
-  const terrariumRec = (() => {
-    if (!tarantula.currentSizeCm || !species) return null
-    const body = Number(tarantula.currentSizeCm)
-    const legSpan = body * 2        // rough estimate: leg span ≈ 2× body length
-    const { habitatType, adultSizeCmMax } = species
-
-    let enclosureI18n
-    if (habitatType === 'arboreal') {
-      const w = Math.ceil(legSpan * 1.5)
-      const h = Math.ceil(legSpan * 3)
-      enclosureI18n = { key: 'terrarium.enclosureArboreal', params: { w, h } }
-    } else if (habitatType === 'fossorial') {
-      const floor = Math.ceil(legSpan * 2)
-      const substrate = Math.ceil(body * 3)
-      enclosureI18n = { key: 'terrarium.enclosureFossorial', params: { floor, substrate } }
-    } else {
-      const floor = Math.ceil(legSpan * 2.5)
-      const height = Math.ceil(legSpan * 1.2)
-      enclosureI18n = { key: 'terrarium.enclosureTerrestrial', params: { floor, height } }
-    }
-
-    const pct = adultSizeCmMax
-      ? Math.min(100, Math.round((body / Number(adultSizeCmMax)) * 100))
-      : null
-
-    return { enclosureI18n, pct, adultSizeCmMax }
-  })()
+  const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
 
   return (
     <div>
@@ -278,6 +265,9 @@ export default function TarantulaDetailPage() {
                             onClick={() => setModal('qr')}>
                       📱 {t('tarantula.qrCode')}
                     </button>
+                    <button className="btn btn-outline-secondary btn-sm flex-fill" onClick={handleExportPdf}>
+                      📄 {t('share.exportPdf')}
+                    </button>
                     {hasProFeatures ? (
                       <button
                         className={`btn btn-sm flex-fill ${tarantula.isPublic ? 'btn-success' : 'btn-outline-secondary'}`}
@@ -289,14 +279,14 @@ export default function TarantulaDetailPage() {
                     ) : (
                       <ProTrialCtaLink
                         className="btn btn-sm flex-fill btn-outline-secondary"
-                        style={{ background: 'transparent', color: 'rgba(201,168,76,0.95)', borderColor: 'rgba(180,120,30,0.45)' }}
+                        style={{ background: 'transparent', color: 'var(--ta-gold)', borderColor: 'var(--ta-border-gold)' }}
                         title={t('pro.publicToggleProOnlyHint')}
                       >
                         {t('pro.publicToggleProOnly')}
                       </ProTrialCtaLink>
                     )}
                     <button className="btn btn-sm flex-fill btn-outline-secondary"
-                            style={{ borderColor: 'rgba(180,120,30,0.4)', color: 'rgba(201,168,76,0.7)' }}
+                            style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
                             onClick={() => mayEdit && setModal('deceased')}
                             disabled={!mayEdit}
                             title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
@@ -310,6 +300,19 @@ export default function TarantulaDetailPage() {
                         title={!canDeleteSpider ? t('tarantula.lockedEditHint') : undefined}>
                   🗑️ {t('common.delete')}
                 </button>
+              </div>
+              <div className="px-3 pb-3 text-center">
+                <Link
+                  to="/tarantulas/qr-print"
+                  className="small text-decoration-none"
+                  style={{ color: 'var(--ta-gold)' }}
+                  title={t('dashboard.qrBulkPrintTitle')}
+                >
+                  {t('tarantula.qrBulkPrintLink')}
+                  {!hasProFeatures && (
+                    <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.6rem' }}>PRO</span>
+                  )}
+                </Link>
               </div>
             </div>
             </FangPanel>
@@ -389,7 +392,11 @@ export default function TarantulaDetailPage() {
             </div>
 
             {/* Photo gallery */}
-            <PhotoGallery tarantulaId={id} readOnly={!mayEdit} />
+            <PhotoGallery
+              tarantulaId={id}
+              readOnly={!mayEdit}
+              shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+            />
 
             {/* Timeline — pergamino */}
             <div className="ta-parchment-float-wrap">
@@ -413,7 +420,12 @@ export default function TarantulaDetailPage() {
                     <>
                       <div className="ta-parchment-events flex-grow-1">
                         {timelinePage.map(event => (
-                          <TimelineItem key={event.id} event={event} onDelete={mayEdit ? handleDeleteEvent : undefined} />
+                          <TimelineItem
+                            key={event.id}
+                            event={event}
+                            onDelete={mayEdit ? handleDeleteEvent : undefined}
+                            shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+                          />
                         ))}
                       </div>
                       {showHistoryPager && (

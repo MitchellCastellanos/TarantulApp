@@ -7,8 +7,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 import authService from '../services/authService'
 import tarantulaService from '../services/tarantulaService'
+import marketplaceService from '../services/marketplaceService'
+import { imgUrl } from '../services/api'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
+import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
+import { getStoredTheme, setStoredTheme } from '../utils/themePreference'
+import ThemeToggleButton from '../components/ThemeToggleButton'
 
 function formatPeriodEnd(value, lang) {
   if (value == null) return null
@@ -35,7 +40,7 @@ function mapRequestError(error, t) {
 
 export default function AccountPage() {
   const { t, i18n } = useTranslation()
-  const { user, logout, setPlan } = useAuth()
+  const { user, logout, setPlan, updateUserProfile } = useAuth()
   const navigate = useNavigate()
   const [billing, setBilling] = useState(null)
   const [tarantulas, setTarantulas] = useState([])
@@ -48,12 +53,34 @@ export default function AccountPage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [theme, setTheme] = useState(() => getStoredTheme())
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [profileForm, setProfileForm] = useState({
+    displayName: user?.displayName || '',
+    publicHandle: user?.publicHandle || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
+    featuredCollection: user?.featuredCollection || '',
+    contactWhatsapp: user?.contactWhatsapp || '',
+    contactInstagram: user?.contactInstagram || '',
+    profileCountry: user?.profileCountry || '',
+    profileState: user?.profileState || '',
+    profileCity: user?.profileCity || '',
+  })
 
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
-  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || ''
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
   const loadBilling = useCallback(() => {
-    if (!user) return Promise.resolve()
+    // user?.id (no el objeto user): setPlan() tras /billing/me crea un nuevo objeto user en el
+    // contexto; si dependemos de `user`, useCallback cambia → useEffect vuelve a disparar → bucle
+    // y loadingBilling queda casi siempre en true (ProPage ya usa [user?.id]).
+    if (!user?.id) {
+      setLoadingBilling(false)
+      return Promise.resolve()
+    }
     setLoadingBilling(true)
     return billingService
       .me()
@@ -64,7 +91,7 @@ export default function AccountPage() {
       })
       .catch(() => null)
       .finally(() => setLoadingBilling(false))
-  }, [user, setPlan])
+  }, [user?.id, setPlan])
 
   useEffect(() => {
     loadBilling()
@@ -79,6 +106,76 @@ export default function AccountPage() {
   }, [user])
 
   const plan = billing?.plan || user?.plan || 'FREE'
+  useEffect(() => {
+    setProfileForm({
+      displayName: user?.displayName || '',
+      publicHandle: user?.publicHandle || '',
+      bio: user?.bio || '',
+      location: user?.location || '',
+      featuredCollection: user?.featuredCollection || '',
+      contactWhatsapp: user?.contactWhatsapp || '',
+      contactInstagram: user?.contactInstagram || '',
+      profileCountry: user?.profileCountry || '',
+      profileState: user?.profileState || '',
+      profileCity: user?.profileCity || '',
+    })
+  }, [user])
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault()
+    setProfileSaving(true)
+    setProfileMessage('')
+    try {
+      await marketplaceService.saveMyProfile({
+        displayName: profileForm.displayName,
+        handle: profileForm.publicHandle,
+        bio: profileForm.bio,
+        location: profileForm.location,
+        featuredCollection: profileForm.featuredCollection,
+        contactWhatsapp: profileForm.contactWhatsapp,
+        contactInstagram: profileForm.contactInstagram,
+        country: profileForm.profileCountry,
+        state: profileForm.profileState,
+        city: profileForm.profileCity,
+      })
+      updateUserProfile({
+        displayName: profileForm.displayName,
+        publicHandle: profileForm.publicHandle,
+        bio: profileForm.bio,
+        location: profileForm.location,
+        featuredCollection: profileForm.featuredCollection,
+        contactWhatsapp: profileForm.contactWhatsapp,
+        contactInstagram: profileForm.contactInstagram,
+        profileCountry: profileForm.profileCountry,
+        profileState: profileForm.profileState,
+        profileCity: profileForm.profileCity,
+      })
+      setProfileMessage(t('common.save'))
+    } catch (err) {
+      setProfileMessage(err?.response?.data?.error || t('account.errors.generic'))
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoUploading(true)
+    setProfileMessage('')
+    try {
+      const updated = await marketplaceService.uploadProfilePhoto(file)
+      updateUserProfile({
+        profilePhoto: updated?.profilePhoto || '',
+      })
+      setProfileMessage('Foto de perfil actualizada.')
+    } catch (err) {
+      setProfileMessage(err?.response?.data?.error || t('account.errors.generic'))
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   const isPro = plan === 'PRO'
   const publicSpiders = tarantulas.filter((x) => x?.isPublic && x?.shortId)
 
@@ -146,10 +243,74 @@ export default function AccountPage() {
               <span className="text-muted">{t('auth.email')}: </span>
               <span>{user.email}</span>
             </p>
-            <p className="small mb-0">
-              <span className="text-muted">{t('auth.name')}: </span>
-              <span>{user.displayName || t('account.profile.noName')}</span>
-            </p>
+            <form className="small mt-2" onSubmit={handleSaveProfile}>
+              <div className="mb-2 d-flex align-items-center gap-2">
+                <img
+                  src={imgUrl(user?.profilePhoto) || imgUrl(user?.profilePhoto || '') || '/spider-default.png'}
+                  alt={t('account.profile.avatarAlt')}
+                  style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 999, border: '1px solid var(--ta-border)' }}
+                />
+                <div>
+                  <input type="file" accept="image/*" className="form-control form-control-sm" onChange={handleProfilePhotoUpload} />
+                  {photoUploading && <div className="small text-muted mt-1">{t('common.saving')}</div>}
+                </div>
+              </div>
+              <div className="mb-2">
+                <label className="form-label mb-1">{t('auth.name')}</label>
+                <input className="form-control form-control-sm" value={profileForm.displayName}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, displayName: e.target.value }))} />
+              </div>
+              <div className="mb-2">
+                <label className="form-label mb-1">{t('account.profile.publicHandleLabel')}</label>
+                <input className="form-control form-control-sm" value={profileForm.publicHandle}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, publicHandle: e.target.value }))} placeholder={t('account.profile.publicHandlePlaceholder')} />
+              </div>
+              <div className="mb-2">
+                <label className="form-label mb-1">{t('account.profile.bioLabel')}</label>
+                <textarea className="form-control form-control-sm" rows={2} value={profileForm.bio}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))} />
+              </div>
+              <div className="row g-2">
+                <div className="col-md-6">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.locationPlaceholder')}
+                    value={profileForm.location} onChange={(e) => setProfileForm((f) => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div className="col-md-6">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.featuredCollectionPlaceholder')}
+                    value={profileForm.featuredCollection} onChange={(e) => setProfileForm((f) => ({ ...f, featuredCollection: e.target.value }))} />
+                </div>
+              </div>
+              <div className="row g-2 mt-1">
+                <div className="col-md-6">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.whatsappPlaceholder')}
+                    value={profileForm.contactWhatsapp} onChange={(e) => setProfileForm((f) => ({ ...f, contactWhatsapp: e.target.value }))} />
+                </div>
+                <div className="col-md-6">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.instagramPlaceholder')}
+                    value={profileForm.contactInstagram} onChange={(e) => setProfileForm((f) => ({ ...f, contactInstagram: e.target.value }))} />
+                </div>
+              </div>
+              <div className="row g-2 mt-1">
+                <div className="col-md-4">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.countryPlaceholder')}
+                    value={profileForm.profileCountry} onChange={(e) => setProfileForm((f) => ({ ...f, profileCountry: e.target.value }))} />
+                </div>
+                <div className="col-md-4">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.statePlaceholder')}
+                    value={profileForm.profileState} onChange={(e) => setProfileForm((f) => ({ ...f, profileState: e.target.value }))} />
+                </div>
+                <div className="col-md-4">
+                  <input className="form-control form-control-sm" placeholder={t('account.profile.cityPlaceholder')}
+                    value={profileForm.profileCity} onChange={(e) => setProfileForm((f) => ({ ...f, profileCity: e.target.value }))} />
+                </div>
+              </div>
+              <div className="d-flex align-items-center gap-2 mt-2">
+                <button className="btn btn-sm btn-outline-light" disabled={profileSaving}>
+                  {profileSaving ? t('common.saving') : t('common.save')}
+                </button>
+                {profileMessage && <span className="small text-muted">{profileMessage}</span>}
+              </div>
+            </form>
           </section>
 
           <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
@@ -282,7 +443,7 @@ export default function AccountPage() {
                   className="btn btn-sm px-2 py-1 border-0"
                   style={{
                     background: 'transparent',
-                    color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'rgba(255,255,255,0.45)',
+                    color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
                     fontSize: '0.8rem',
                     fontWeight: 600,
                   }}
@@ -290,6 +451,20 @@ export default function AccountPage() {
                   {l.flag} {l.display}
                 </button>
               ))}
+            </div>
+            <p className="small text-muted mb-2 mt-3">{t('account.preferences.theme')}</p>
+            <div className="d-flex align-items-center gap-2">
+              <ThemeToggleButton />
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-light"
+                onClick={() => {
+                  const next = theme === 'light' ? 'dark' : 'light'
+                  setTheme(setStoredTheme(next))
+                }}
+              >
+                {theme === 'light' ? t('account.preferences.dark') : t('account.preferences.light')}
+              </button>
             </div>
           </section>
 
@@ -333,6 +508,11 @@ export default function AccountPage() {
               <li>
                 <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>
                   {t('account.legal.terms')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>
+                  {t('nav.contact')}
                 </Link>
               </li>
             </ul>

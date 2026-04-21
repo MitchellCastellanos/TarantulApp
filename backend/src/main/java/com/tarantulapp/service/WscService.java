@@ -193,6 +193,12 @@ public class WscService {
         String photoUrl = inatService.fetchPhotoUrl(name);
         if (photoUrl != null) species.setReferencePhotoUrl(photoUrl);
 
+        Long gbifKey = resolveAcceptedGbifKey(name);
+        if (gbifKey != null) {
+            String hw = gbifService.resolveHobbyWorldForGbifSpecies(gbifKey, null);
+            species.setHobbyWorld(hw);
+        }
+
         Species saved = speciesRepository.save(species);
         return SpeciesDTO.from(saved);
     }

@@ -1,13 +1,13 @@
 package com.tarantulapp.config;
 
 import com.tarantulapp.util.JwtUtil;
+import com.tarantulapp.security.AuthRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -43,34 +44,10 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOriginsStr;
 
-    /**
-     * Cadena con prioridad: rutas que deben ser anónimas sin pasar por {@link JwtAuthFilter}.
-     * En algunos entornos, {@code authorizeHttpRequests(... permitAll)} en la cadena principal no
-     * aplicaba a GET /api/gbif/search y /api/wsc/search (401); un {@code securityMatcher} explícito lo evita.
-     */
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain publicSearchAndAuthSurfaceChain(HttpSecurity http,
-                                                               CorsConfigurationSource corsConfigurationSource)
-            throws Exception {
-        http.securityMatcher(
-                        "/api/gbif/search",
-                        "/api/wsc/search",
-                        "/api/auth/login",
-                        "/api/auth/register",
-                        "/api/auth/forgot-password",
-                        "/api/auth/reset-password")
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-        return http.build();
-    }
-
     @Bean
     @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http, JwtUtil jwtUtil, UserDetailsService userDetailsService,
+                                           AuthRateLimitFilter authRateLimitFilter,
                                             CorsConfigurationSource corsConfigurationSource) throws Exception {
         JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtUtil, userDetailsService);
         http
@@ -81,11 +58,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
+                        // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.
                         .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/register"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/forgot-password"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/reset-password"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/oauth/google"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/login"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/register"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/forgot-password"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/oauth/google")
                         ).permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
@@ -95,6 +79,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gbif/**", "/api/wsc/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class)
                 .exceptionHandling(ex -> ex
                         .accessDeniedHandler((req, res, exDenied) -> {
                             if (log.isWarnEnabled()) {

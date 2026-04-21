@@ -7,12 +7,15 @@ import com.stripe.model.billingportal.Session;
 import com.stripe.param.billingportal.SessionCreateParams;
 import com.tarantulapp.dto.BillingStatusResponse;
 import com.tarantulapp.dto.CheckoutSessionResponse;
+import com.tarantulapp.entity.BillingEmailEvent;
 import com.tarantulapp.entity.Subscription;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.repository.BillingEmailEventRepository;
 import com.tarantulapp.repository.SubscriptionRepository;
 import com.tarantulapp.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -40,6 +43,8 @@ public class BillingService {
     private final SubscriptionRepository subscriptionRepository;
     private final ObjectMapper objectMapper;
     private final PlanAccessService planAccessService;
+    private final EmailService emailService;
+    private final BillingEmailEventRepository billingEmailEventRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${stripe.secret-key:}")
@@ -64,11 +69,15 @@ public class BillingService {
     public BillingService(UserRepository userRepository,
                           SubscriptionRepository subscriptionRepository,
                           ObjectMapper objectMapper,
-                          PlanAccessService planAccessService) {
+                          PlanAccessService planAccessService,
+                          EmailService emailService,
+                          BillingEmailEventRepository billingEmailEventRepository) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
         this.planAccessService = planAccessService;
+        this.emailService = emailService;
+        this.billingEmailEventRepository = billingEmailEventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -213,6 +222,10 @@ public class BillingService {
                 upsertFromCheckoutCompleted(object);
                 return;
             }
+            if ("invoice.paid".equals(type)) {
+                handleInvoicePaid(object);
+                return;
+            }
             if ("customer.subscription.created".equals(type)
                     || "customer.subscription.updated".equals(type)
                     || "customer.subscription.deleted".equals(type)) {
@@ -236,6 +249,7 @@ public class BillingService {
         UUID userId = UUID.fromString(userIdRaw);
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return;
+        boolean wasPro = UserPlan.PRO.equals(user.getPlan());
 
         Subscription sub = subscriptionRepository.findByProviderSubscriptionId(subscriptionId)
                 .orElseGet(Subscription::new);
@@ -251,6 +265,21 @@ public class BillingService {
 
         user.setPlan(UserPlan.PRO);
         userRepository.save(user);
+        if (!wasPro) {
+            emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+        }
+        long amountTotal = checkout.path("amount_total").asLong(0L);
+        String currency = checkout.path("currency").asText("usd");
+        String sessionId = checkout.path("id").asText("");
+        if (amountTotal > 0 && !sessionId.isBlank()) {
+            sendPaymentReceiptOnce(
+                    user,
+                    "PAYMENT_RECEIPT_CHECKOUT:" + sessionId,
+                    amountTotal,
+                    currency,
+                    ""
+            );
+        }
     }
 
     private void upsertFromSubscriptionObject(JsonNode subscriptionObj) {
@@ -275,14 +304,70 @@ public class BillingService {
 
         User user = userRepository.findById(sub.getUserId()).orElse(null);
         if (user == null) return;
+        boolean wasPro = UserPlan.PRO.equals(user.getPlan());
         if (isActiveStripeStatus(status)) {
             user.setPlan(UserPlan.PRO);
+            if (!wasPro) {
+                emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+            }
         } else {
             user.setPlan(UserPlan.FREE);
             // Tras cancelar Pro: no aplicar "prueba vencida" por fecha; el modo lectura por >6 tarántulas lo gestiona PlanAccessService.
             user.setTrialEndsAt(null);
+            if (wasPro) {
+                String dedupeKey = "PRO_EXPIRED:" + sub.getProviderSubscriptionId() + ":" + status + ":" + sub.getCurrentPeriodEnd();
+                sendProExpiredOnce(user, dedupeKey);
+            }
         }
         userRepository.save(user);
+    }
+
+    private void handleInvoicePaid(JsonNode invoiceObj) {
+        String invoiceId = invoiceObj.path("id").asText("");
+        String subscriptionId = invoiceObj.path("subscription").asText("");
+        String customerId = invoiceObj.path("customer").asText("");
+        long amountPaid = invoiceObj.path("amount_paid").asLong(0L);
+        String currency = invoiceObj.path("currency").asText("usd");
+        String hostedInvoiceUrl = invoiceObj.path("hosted_invoice_url").asText("");
+
+        if (invoiceId.isBlank() || amountPaid <= 0) return;
+
+        Subscription sub = null;
+        if (!subscriptionId.isBlank()) {
+            sub = subscriptionRepository.findByProviderSubscriptionId(subscriptionId).orElse(null);
+        }
+        if (sub == null && !customerId.isBlank()) {
+            sub = subscriptionRepository.findFirstByProviderCustomerIdOrderByCreatedAtDesc(customerId).orElse(null);
+        }
+        if (sub == null) return;
+
+        User user = userRepository.findById(sub.getUserId()).orElse(null);
+        if (user == null) return;
+
+        sendPaymentReceiptOnce(user, "PAYMENT_RECEIPT_INVOICE:" + invoiceId, amountPaid, currency, hostedInvoiceUrl);
+    }
+
+    private void sendProExpiredOnce(User user, String eventKey) {
+        if (billingEmailEventRepository.existsByEventKey(eventKey)) return;
+        emailService.sendProExpired(user.getEmail(), user.getDisplayName());
+        persistBillingEmailEvent(user.getId(), eventKey);
+    }
+
+    private void sendPaymentReceiptOnce(User user, String eventKey, long amountCents, String currency, String receiptUrl) {
+        if (billingEmailEventRepository.existsByEventKey(eventKey)) return;
+        emailService.sendPaymentReceipt(user.getEmail(), user.getDisplayName(), amountCents, currency, receiptUrl);
+        persistBillingEmailEvent(user.getId(), eventKey);
+    }
+
+    private void persistBillingEmailEvent(UUID userId, String eventKey) {
+        try {
+            BillingEmailEvent event = new BillingEmailEvent();
+            event.setUserId(userId);
+            event.setEventKey(eventKey);
+            billingEmailEventRepository.save(event);
+        } catch (DataIntegrityViolationException ignored) {
+            // Duplicate by concurrent webhook delivery.
+        }
     }
 
     private boolean isActiveStripeStatus(String status) {

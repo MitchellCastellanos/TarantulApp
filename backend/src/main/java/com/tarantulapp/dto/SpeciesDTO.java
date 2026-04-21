@@ -1,6 +1,7 @@
 package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.Species;
+import com.tarantulapp.util.HobbyWorldResolver;
 import com.tarantulapp.util.SpeciesNarrativeJson;
 
 import java.math.BigDecimal;
@@ -28,6 +29,8 @@ public class SpeciesDTO {
     private String referencePhotoUrl;
     private String dataSource;
     private Long gbifUsageKey;
+    /** {@code new_world} | {@code old_world} — from DB or inferred from {@code origin_region}. */
+    private String hobbyWorld;
 
     public static SpeciesDTO from(Species s) {
         if (s == null) return null;
@@ -52,6 +55,11 @@ public class SpeciesDTO {
         dto.referencePhotoUrl = s.getReferencePhotoUrl();
         dto.dataSource = s.getDataSource();
         dto.gbifUsageKey = s.getGbifUsageKey();
+        String hw = s.getHobbyWorld();
+        if (hw == null || hw.isBlank()) {
+            hw = HobbyWorldResolver.fromOriginRegion(s.getOriginRegion());
+        }
+        dto.hobbyWorld = hw;
         return dto;
     }
 
@@ -76,4 +84,5 @@ public class SpeciesDTO {
     public String getReferencePhotoUrl() { return referencePhotoUrl; }
     public String getDataSource() { return dataSource; }
     public Long getGbifUsageKey() { return gbifUsageKey; }
+    public String getHobbyWorld() { return hobbyWorld; }
 }

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { getSpeciesCatalogOverride } from '../data/speciesCatalogTranslations'
 import { toSpeciesSlug } from '../utils/speciesSlug'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
+import { imgUrl } from '../services/api'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const LEVEL_COLOR = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
@@ -68,7 +69,7 @@ function LevelChitin({ badgeColor, label }) {
   )
 }
 
-export default function SpeciesProfileCard({ species, tarantula, t }) {
+export default function SpeciesProfileCard({ species, tarantula, t, fallbackPhoto = null }) {
   const { i18n } = useTranslation()
   const slug = toSpeciesSlug(species.scientificName)
   const catalog = getSpeciesCatalogOverride(slug, i18n.language)
@@ -92,6 +93,8 @@ export default function SpeciesProfileCard({ species, tarantula, t }) {
     : t('common.unknown')
   const badgeColor = LEVEL_COLOR[species.experienceLevel] ?? 'secondary'
 
+  const displayPhotoUrl = imgUrl(species.referencePhotoUrl || fallbackPhoto?.url)
+
   return (
     <>
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 ta-spec-header-row">
@@ -101,17 +104,24 @@ export default function SpeciesProfileCard({ species, tarantula, t }) {
         <SourceCatalog species={species} t={t} />
       </div>
 
-      {species.referencePhotoUrl && !tarantula.profilePhoto && (
+      {displayPhotoUrl && !tarantula.profilePhoto && (
         <div className="mb-3 text-center position-relative">
           <img
-            src={species.referencePhotoUrl}
+            src={displayPhotoUrl}
             alt={species.scientificName}
             className="rounded w-100"
             style={{ maxHeight: 180, objectFit: 'cover' }}
           />
           <div className="text-muted" style={{ fontSize: '0.65rem', marginTop: 2 }}>
             {t('species.refPhoto')}
+            {!species.referencePhotoUrl && fallbackPhoto?.source ? ` · ${fallbackPhoto.source.toUpperCase()}` : ''}
           </div>
+          {!species.referencePhotoUrl && fallbackPhoto?.attribution && (
+            <div className="text-muted" style={{ fontSize: '0.6rem', marginTop: 2 }}>
+              {fallbackPhoto.attribution}
+              {fallbackPhoto.licenseCode ? ` · ${fallbackPhoto.licenseCode}` : ''}
+            </div>
+          )}
         </div>
       )}
 
@@ -120,6 +130,13 @@ export default function SpeciesProfileCard({ species, tarantula, t }) {
           <FieldPlain iconClass="bi-geo-alt" iconTone="cyan" label={t('species.origin')}>
             {species.originRegion ?? t('common.unknown')}
           </FieldPlain>
+          {species.hobbyWorld && (
+            <FieldPlain iconClass="bi-globe2" iconTone="cyan" label={t('species.hobbyWorld')}>
+              {species.hobbyWorld === 'new_world'
+                ? t('species.worldNewWorld')
+                : t('species.worldOldWorld')}
+            </FieldPlain>
+          )}
           <FieldPlain iconClass="bi-tree" iconTone="cyan" label={t('species.habitat')}>
             {species.habitatType
               ? `${HABITAT_ICON[species.habitatType]} ${t(`habitat.${species.habitatType}`)}`
@@ -180,11 +197,24 @@ export default function SpeciesProfileCard({ species, tarantula, t }) {
         </div>
       )}
 
-      <p className="text-muted mb-0 mt-3 pt-2 small" style={{ fontSize: '0.7rem' }}>
-        {t('species.estimatedNote')}
-        {(species.dataSource === 'gbif' || species.dataSource === 'seed') && t('species.estimatedNoteGbif')}
-        {species.dataSource === 'wsc' && t('species.estimatedNoteWsc')}
-      </p>
+      <div className="ta-spec-footnotes text-muted mt-3 pt-3 small">
+        <p className="mb-0 ta-spec-footnotes__care">
+          {t('species.estimatedNote')}
+          {(species.dataSource === 'gbif' || species.dataSource === 'seed') && t('species.estimatedNoteGbif')}
+          {species.dataSource === 'wsc' && t('species.estimatedNoteWsc')}
+        </p>
+        {species.hobbyWorld && (
+          <div className="ta-spec-footnotes__hobby">
+            <p className="mb-0">{t('species.hobbyWorldInferenceNote')}</p>
+            <p className="mb-0">
+              {species.hobbyWorld === 'new_world'
+                ? t('species.hobbyWorldNwContext')
+                : t('species.hobbyWorldOwContext')}
+            </p>
+            <p className="mb-0">{t('species.hobbyWorldContextDisclaimer')}</p>
+          </div>
+        )}
+      </div>
     </>
   )
 }
