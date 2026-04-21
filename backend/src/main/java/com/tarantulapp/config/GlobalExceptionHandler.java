@@ -58,13 +58,24 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({DataAccessResourceFailureException.class, JpaSystemException.class})
     public ResponseEntity<Map<String, String>> handleDatabaseBusy(RuntimeException e) {
-        String msg = e.getMessage() == null ? "" : e.getMessage();
-        if (msg.contains("MaxClientsInSessionMode")) {
+        if (causeChainContains(e, "MaxClientsInSessionMode")
+                || causeChainContains(e, "max clients reached")) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("error", "DATABASE_BUSY", "message", "Base de datos ocupada, intenta de nuevo en 30-60 segundos."));
         }
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of("error", "DATABASE_UNAVAILABLE", "message", "Base de datos temporalmente no disponible."));
+    }
+
+    /** Supabase session pooler errors often sit on nested SQLException, not on JpaSystemException.getMessage(). */
+    private static boolean causeChainContains(Throwable e, String substring) {
+        for (Throwable cur = e; cur != null; cur = cur.getCause()) {
+            String m = cur.getMessage();
+            if (m != null && m.contains(substring)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
