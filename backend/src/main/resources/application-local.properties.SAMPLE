@@ -19,6 +19,11 @@ spring.datasource.password=TU_DATABASE_PASSWORD_SUPABASE
 spring.datasource.hikari.maximum-pool-size=2
 spring.datasource.hikari.minimum-idle=0
 
+# Normalmente no hace falta en local, pero si quieres separar migraciones:
+# spring.flyway.url=${spring.datasource.url}
+# spring.flyway.user=${spring.datasource.username}
+# spring.flyway.password=${spring.datasource.password}
+
 # Transaction pooler :6543 solo si lo necesitas; añade a la URL: &prepareThreshold=0
 
 # Usuario seed (LocalDevUserSeed): dev@tarantulapp.local / LocalDev123!
