@@ -40,6 +40,20 @@ public class ModerationController {
         return ResponseEntity.ok(Map.of("message", "ok"));
     }
 
+    @PostMapping("/public/reports/marketplace/{listingId}")
+    public ResponseEntity<Map<String, String>> reportMarketplaceListing(@PathVariable UUID listingId,
+                                                                        @Valid @RequestBody PublicReportRequest req) {
+        moderationService.reportMarketplaceListing(listingId, req.reason(), req.details());
+        return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
+    @PostMapping("/public/reports/keeper/{keeperUserId}")
+    public ResponseEntity<Map<String, String>> reportKeeperProfile(@PathVariable UUID keeperUserId,
+                                                                   @Valid @RequestBody PublicReportRequest req) {
+        moderationService.reportKeeperProfile(keeperUserId, req.reason(), req.details());
+        return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
     @GetMapping("/admin/reports")
     public ResponseEntity<List<Map<String, Object>>> adminReports(@RequestParam(required = false) String status) {
         adminAccessService.assertCurrentUserIsAdmin();

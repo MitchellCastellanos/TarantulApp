@@ -16,6 +16,7 @@
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
     "docx": "^9.6.1",
+    "exceljs": "^4.4.0",
     "i18next": "^23.10.0",
     "i18next-browser-languagedetector": "^7.2.1",
     "jspdf": "^4.2.1",

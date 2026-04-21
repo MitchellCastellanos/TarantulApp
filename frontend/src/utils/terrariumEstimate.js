@@ -1,5 +1,5 @@
 /**
- * Heurística de terrario alineada con {@link ../pages/TarantulaDetailPage} (leg span ≈ 2× cuerpo).
+ * Heurística de terrario con leg-span adaptable (no fijo 2x).
  * @param {number|string|null|undefined} currentSizeCm
  * @param {{ habitatType?: string, adultSizeCmMax?: unknown }} species
  * @returns {{ enclosureI18n: { key: string, params: Record<string, number> }, pct: number|null, adultSizeCmMax: unknown }|null}
@@ -9,8 +9,24 @@ export function computeTerrariumRecommendation(currentSizeCm, species) {
   const body = Number(currentSizeCm)
   if (!Number.isFinite(body) || body <= 0) return null
 
-  const legSpan = body * 2
   const { habitatType, adultSizeCmMax } = species
+  const adultMax = Number(adultSizeCmMax)
+  const hasAdultMax = Number.isFinite(adultMax) && adultMax > 0
+
+  // Evita sobreestimar en ejemplares grandes: el factor baja al acercarse al tamaño adulto.
+  const legSpanFactor = hasAdultMax
+    ? (() => {
+      const ratioToAdult = body / adultMax
+      if (ratioToAdult >= 0.55) return 1.1
+      if (ratioToAdult >= 0.35) return 1.4
+      return 1.8
+    })()
+    : (() => {
+      if (body >= 10) return 1.2
+      if (body >= 6) return 1.5
+      return 2
+    })()
+  const legSpan = body * legSpanFactor
 
   let enclosureI18n
   if (habitatType === 'arboreal') {

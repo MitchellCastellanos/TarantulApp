@@ -125,11 +125,11 @@ export default function DiscoverSpeciesDetailPage() {
 
         <DiscoverSpeciesProfileSnippet species={sp} variant="discover" nameAs="h1" />
 
-        <p className="small mt-2 mb-0" style={{ color: 'rgba(218, 208, 245, 0.88)' }}>
+        <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text)' }}>
           {t('discover.seoSpeciesLead')}
         </p>
 
-        <p className="small mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <p className="small mt-3" style={{ color: 'var(--ta-text-muted)' }}>
           {t('discover.dataDisclaimer')}
         </p>
 
@@ -148,7 +148,7 @@ export default function DiscoverSpeciesDetailPage() {
             </Link>
           ) : (
             <>
-              <p className="small mb-0" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                 {t('discover.loginToAddHint')}
               </p>
               <Link
@@ -179,7 +179,7 @@ export default function DiscoverSpeciesDetailPage() {
           </div>
         )}
         {!hasPro && (
-          <p className="small mt-3 mb-0" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="small mt-3 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
             {t('discover.compareProTeaser')}{' '}
             <Link to="/pro" style={{ color: 'var(--ta-gold)' }}>
               Pro

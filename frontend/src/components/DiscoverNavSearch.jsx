@@ -121,7 +121,7 @@ export default function DiscoverNavSearch({ className = '' }) {
             wscResults.length === 0 && (
               <li
                 className="list-group-item py-2 px-3 small"
-                style={{ background: 'rgba(12,18,32,0.98)', color: 'rgba(200,190,230,0.9)', cursor: 'default' }}
+                style={{ background: 'var(--ta-bg-panel)', color: 'var(--ta-text)', cursor: 'default' }}
               >
                 {t('common.loading')}
               </li>
@@ -131,7 +131,7 @@ export default function DiscoverNavSearch({ className = '' }) {
               key={sp.id}
               role="option"
               className="list-group-item list-group-item-action py-2 px-3"
-              style={{ cursor: 'pointer', background: 'rgba(12,18,32,0.98)', color: 'var(--ta-parchment)' }}
+              style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
               onMouseDown={(e) => {
                 e.preventDefault()
                 goSpecies(sp.id)
@@ -139,7 +139,7 @@ export default function DiscoverNavSearch({ className = '' }) {
             >
               <span className="fw-semibold small">{sp.scientificName}</span>
               {sp.commonName && <span className="text-muted small ms-2">· {sp.commonName}</span>}
-              <span className="badge ms-2" style={{ background: '#2a4a6a', fontSize: '0.65rem' }}>
+              <span className="badge ms-2" style={{ background: 'var(--ta-purple)', color: 'var(--ta-text)', fontSize: '0.65rem' }}>
                 {t('discover.badgeCatalog')}
               </span>
             </li>
@@ -149,9 +149,9 @@ export default function DiscoverNavSearch({ className = '' }) {
             <>
               <li
                 className="list-group-item py-1 px-3"
-                style={{ background: '#2a1f3a', borderTop: '1px solid #5a3d7a', cursor: 'default' }}
+                style={{ background: 'var(--ta-bg-panel)', borderTop: '1px solid var(--ta-border)', cursor: 'default' }}
               >
-                <span className="small fw-semibold" style={{ color: '#d0bfff' }}>
+                <span className="small fw-semibold" style={{ color: 'var(--ta-gold)' }}>
                   {wscLoading ? t('form.wscLoading') : t('form.wscLabel')}
                 </span>
               </li>
@@ -160,7 +160,7 @@ export default function DiscoverNavSearch({ className = '' }) {
                   key={wr.taxonId ?? wr.name}
                   role="option"
                   className="list-group-item list-group-item-action py-2 px-3"
-                  style={{ cursor: 'pointer', background: 'rgba(35,22,48,0.98)', color: 'var(--ta-parchment)' }}
+                  style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
                   onMouseDown={(e) => {
                     e.preventDefault()
                     const key = wr.taxonId != null ? Number(String(wr.taxonId).trim()) : NaN
@@ -170,7 +170,7 @@ export default function DiscoverNavSearch({ className = '' }) {
                 >
                   <span className="fw-semibold small">{wr.name}</span>
                   {wr.family && (
-                    <span className="badge ms-2" style={{ background: '#6a1b9a', fontSize: '0.65rem' }}>
+                    <span className="badge ms-2" style={{ background: 'var(--ta-purple)', color: 'var(--ta-text)', fontSize: '0.65rem' }}>
                       {wr.family}
                     </span>
                   )}
@@ -183,9 +183,9 @@ export default function DiscoverNavSearch({ className = '' }) {
             <>
               <li
                 className="list-group-item py-1 px-3"
-                style={{ background: '#152238', borderTop: '1px solid #2a5080', cursor: 'default' }}
+                style={{ background: 'var(--ta-bg-panel)', borderTop: '1px solid var(--ta-border)', cursor: 'default' }}
               >
-                <span className="small fw-semibold" style={{ color: '#9ec5fe' }}>
+                <span className="small fw-semibold" style={{ color: 'var(--ta-gold)' }}>
                   {gbifLoading ? t('form.gbifLoading') : t('form.gbifLabel')}
                 </span>
               </li>
@@ -194,7 +194,7 @@ export default function DiscoverNavSearch({ className = '' }) {
                   key={gr.key}
                   role="option"
                   className="list-group-item list-group-item-action py-2 px-3"
-                  style={{ cursor: 'pointer', background: 'rgba(18,28,48,0.98)', color: 'var(--ta-parchment)' }}
+                  style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
                   onMouseDown={(e) => {
                     e.preventDefault()
                     goGbifKey(Number(gr.key))
@@ -210,7 +210,7 @@ export default function DiscoverNavSearch({ className = '' }) {
           {q.trim().length >= 2 && !searchBusy && !gbifLoading && !wscLoading && suggestions.length === 0 && gbifResults.length === 0 && wscResults.length === 0 && (
             <li
               className="list-group-item py-2 px-3 small text-muted"
-              style={{ background: 'rgba(12,18,32,0.98)', cursor: 'default' }}
+              style={{ background: 'var(--ta-bg-panel)', cursor: 'default' }}
             >
               {t('discover.noSearchHits')}
             </li>

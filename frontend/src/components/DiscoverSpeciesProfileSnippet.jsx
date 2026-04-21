@@ -1,9 +1,5 @@
 import { useTranslation } from 'react-i18next'
-
-function dash(v) {
-  if (v === null || v === undefined || v === '') return '–'
-  return String(v)
-}
+import { formatDiscoverSeoMetaLine } from '../utils/discoverSeo'
 
 /**
  * Ficha compacta (nombre + meta + nota hobby) sobre panel oscuro legible en formulario y Descubrir.
@@ -25,14 +21,7 @@ export default function DiscoverSpeciesProfileSnippet({
   const { t } = useTranslation()
   const isTaxonOnly = !species?.scientificName && (title || subtitle)
   const name = species?.scientificName || title || '–'
-  const baseMeta = isTaxonOnly
-    ? ''
-    : t('discover.speciesProfileMeta', {
-        habitat: dash(species?.habitatType),
-        min: dash(species?.adultSizeCmMin),
-        max: dash(species?.adultSizeCmMax),
-        level: dash(species?.experienceLevel),
-      })
+  const baseMeta = isTaxonOnly ? '' : formatDiscoverSeoMetaLine(species, t)
   const worldSuffix =
     !isTaxonOnly && species?.hobbyWorld
       ? species.hobbyWorld === 'new_world'
@@ -50,13 +39,6 @@ export default function DiscoverSpeciesProfileSnippet({
   }
   const nameStyle = { color: 'var(--ta-gold)' }
   const subStyle = { color: 'rgba(218, 208, 245, 0.82)' }
-  const noteStyle = {
-    fontSize: '0.68rem',
-    lineHeight: 1.35,
-    marginTop: '0.35rem',
-    color: 'rgba(190, 180, 220, 0.78)',
-  }
-
   const NameTag = nameAs === 'h1' ? 'h1' : 'div'
   const nameClass =
     nameAs === 'h1' ? 'fw-bold h4 mb-0' : 'fw-bold'
@@ -71,7 +53,7 @@ export default function DiscoverSpeciesProfileSnippet({
       </NameTag>
       {line2 ? <div style={subStyle}>{line2}</div> : null}
       {!isTaxonOnly && species?.hobbyWorld && (
-        <div style={noteStyle}>
+        <div className="ta-species-snippet-footnote mt-1">
           {t('species.hobbyWorldSnippetNote')}
         </div>
       )}

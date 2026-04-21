@@ -1,18 +1,23 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import DiscoverNavSearch from './DiscoverNavSearch'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 import ThemeToggleButton from './ThemeToggleButton'
+import BrandNavbarLogo from './BrandNavbarLogo'
 
 function trialDaysLeft(trialEndsAt) {
   if (!trialEndsAt) return 0
   return Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
 }
 
-export default function Navbar() {
+/**
+ * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
+ */
+export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { user, logout } = useAuth()
+  const location = useLocation()
   const { t, i18n } = useTranslation()
   const plan = user?.plan || 'FREE'
   const isPro = plan === 'PRO'
@@ -24,6 +29,16 @@ export default function Navbar() {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
   const isAdmin = user?.email && adminEmails.includes(String(user.email).toLowerCase())
+
+  const path = location.pathname
+  const logoHome = variant === 'public' && !user ? '/descubrir' : '/'
+
+  const linkTone = (active) =>
+    variant === 'public'
+      ? active
+        ? 'var(--ta-gold)'
+        : 'var(--ta-text-muted)'
+      : 'var(--ta-gold)'
 
   const planControl = (() => {
     if (!user) {
@@ -111,10 +126,16 @@ export default function Navbar() {
   })()
 
   return (
-    <nav className="navbar navbar-dark px-3 px-md-4 py-2" style={{ overflow: 'visible' }}>
-      <Link to="/" className="navbar-brand text-decoration-none">
-        🕷️ TarantulApp
-      </Link>
+    <nav
+      className="navbar navbar-dark px-3 px-md-4 py-2"
+      style={{
+        overflow: 'visible',
+        ...(variant === 'public'
+          ? { borderBottom: '1px solid var(--ta-border, rgba(200,170,100,0.25))' }
+          : {}),
+      }}
+    >
+      <BrandNavbarLogo homeTo={logoHome} showIntro={variant !== 'public'} />
       <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         {user && (
           <div
@@ -127,7 +148,7 @@ export default function Navbar() {
         <Link
           to="/descubrir"
           className="text-decoration-none small fw-semibold"
-          style={{ color: 'var(--ta-gold)' }}
+          style={{ color: linkTone(path.startsWith('/descubrir')) }}
           title={t('nav.discoverLinkTitle')}
         >
           {t('discover.navTitle')}
@@ -135,10 +156,26 @@ export default function Navbar() {
         <Link
           to="/herramientas/qr"
           className="text-decoration-none small fw-semibold"
-          style={{ color: 'var(--ta-gold)' }}
+          style={{ color: linkTone(path.startsWith('/herramientas/qr')) }}
           title={t('nav.qrToolTitle')}
         >
           {t('nav.qrTool')}
+        </Link>
+        <Link
+          to="/marketplace"
+          className="text-decoration-none small fw-semibold"
+          style={{ color: linkTone(path.startsWith('/marketplace')) }}
+          title={t('marketplace.title')}
+        >
+          {t('marketplace.nav')}
+        </Link>
+        <Link
+          to="/about"
+          className="text-decoration-none small fw-semibold"
+          style={{ color: linkTone(path.startsWith('/about')) }}
+          title={t('nav.aboutTitle')}
+        >
+          {t('nav.about')}
         </Link>
         {user && (
           <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
@@ -171,7 +208,6 @@ export default function Navbar() {
           </span>
         )}
 
-        {/* Language selector */}
         <div className="d-flex gap-1 align-items-center">
           {APP_LANGS.map(l => (
             <button
@@ -202,6 +238,19 @@ export default function Navbar() {
                   style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>
             {t('nav.logout')}
           </button>
+        ) : hideLoginLink ? (
+          <Link
+            to="/descubrir"
+            className="btn btn-sm"
+            style={{
+              border: '1px solid var(--ta-border)',
+              color: 'var(--ta-parchment)',
+              background: 'transparent',
+              fontSize: '0.8rem',
+            }}
+          >
+            {t('nav.continueDiscover')}
+          </Link>
         ) : (
           <Link to="/login" className="btn btn-sm btn-outline-light"
                 style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
+import Navbar from '../components/Navbar'
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation()
@@ -26,7 +27,9 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center px-3">
+    <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
+      <Navbar variant="public" hideLoginLink />
+      <div className="flex-grow-1 d-flex align-items-center justify-content-center px-3 py-3">
       <ChitinCardFrame
         className="w-100"
         style={{ maxWidth: 420 }}
@@ -68,6 +71,7 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
       </ChitinCardFrame>
+      </div>
     </div>
   )
 }

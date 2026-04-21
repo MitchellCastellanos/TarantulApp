@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
+import BrandLogoMark from '../components/BrandLogoMark'
+import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import SpeciesProfileCard from '../components/SpeciesProfileCard'
@@ -37,7 +39,7 @@ function DiscoverCollectionCtas({ addHref, token, user, collectionLoading, colle
   if (!token) {
     return (
       <div className="d-flex flex-column gap-2 align-items-start">
-        <p className="small mb-0" style={{ color: 'rgba(200,190,230,0.92)', maxWidth: 440 }}>
+        <p className="small mb-0" style={{ color: 'var(--ta-text)', maxWidth: 440 }}>
           {t('discover.addGuestCtaBody')}
         </p>
         <div className="d-flex flex-wrap gap-2">
@@ -94,7 +96,7 @@ function DiscoverCollectionCtas({ addHref, token, user, collectionLoading, colle
           </button>
           <ProTrialCtaLink className="btn btn-sm align-self-center" />
         </div>
-        <p className="small mb-0" style={{ color: 'rgba(180,170,200,0.9)' }}>
+        <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
           {t('discover.addLimitReached')}
         </p>
       </div>
@@ -470,13 +472,18 @@ export default function DiscoverPage() {
   return (
     <PublicShell>
       <div className="mx-auto" style={{ maxWidth: 920 }}>
-        <h1 className="h3 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>
+        <div className="d-flex justify-content-center mb-3" aria-hidden>
+          <BrandLogoMark size={72} showIntro />
+        </div>
+        <h1 className="h3 fw-bold mb-2 text-center text-md-start" style={{ color: 'var(--ta-parchment)' }}>
           {t('discover.title')}
         </h1>
-        <p className="small mb-4" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
+        <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
 
-        <section className="mb-4 card border-0 shadow-sm p-4 ta-species-dropdown-card">
-          <h2 className="h6 text-uppercase letter-spacing mb-3" style={{ color: 'var(--ta-gold)' }}>
+        <div className="row g-3 mb-4 align-items-stretch">
+          <div className="col-lg-7 d-flex">
+        <section className="mb-0 flex-grow-1 w-100 card border-0 shadow-sm p-4 ta-species-dropdown-card h-100">
+          <h2 className="h6 text-uppercase letter-spacing mb-3 ta-accent-heading">
             {t('discover.sectionSearch')}
           </h2>
           <div className="mb-0 position-relative ta-species-autocomplete-wrap">
@@ -534,12 +541,12 @@ export default function DiscoverPage() {
                     <li
                       key={sp.id}
                       className="list-group-item list-group-item-action"
-                      style={{ cursor: 'pointer', background: 'rgba(12,18,32,0.95)', color: 'var(--ta-parchment)' }}
+                      style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
                       onMouseDown={() => selectLocalSpecies(sp)}
                     >
                       <span className="fw-semibold small">{sp.scientificName}</span>
                       {sp.commonName && <span className="text-muted small ms-2">· {sp.commonName}</span>}
-                      <span className="badge ms-2" style={{ background: '#2a4a6a', fontSize: '0.65rem' }}>
+                      <span className="badge ms-2" style={{ background: 'var(--ta-purple)', color: 'var(--ta-text)', fontSize: '0.65rem' }}>
                         {t('discover.badgeCatalog')}
                       </span>
                     </li>
@@ -549,9 +556,9 @@ export default function DiscoverPage() {
                     <>
                       <li
                         className="list-group-item py-1 px-3"
-                        style={{ background: '#2a1f3a', borderTop: '1px solid #5a3d7a', cursor: 'default' }}
+                        style={{ background: 'var(--ta-bg-panel)', borderTop: '1px solid var(--ta-border)', cursor: 'default' }}
                       >
-                        <span className="small fw-semibold" style={{ color: '#d0bfff' }}>
+                        <span className="small fw-semibold" style={{ color: 'var(--ta-gold)' }}>
                           {wscLoading ? t('form.wscLoading') : t('form.wscLabel')}
                         </span>
                       </li>
@@ -559,12 +566,12 @@ export default function DiscoverPage() {
                         <li
                           key={wr.taxonId ?? wr.name}
                           className="list-group-item list-group-item-action"
-                          style={{ cursor: 'pointer', background: 'rgba(35,22,48,0.95)', color: 'var(--ta-parchment)' }}
+                          style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
                           onMouseDown={() => selectWsc(wr)}
                         >
                           <span className="fw-semibold small">{wr.name}</span>
                           {wr.family && (
-                            <span className="badge ms-2" style={{ background: '#6a1b9a', fontSize: '0.65rem' }}>
+                            <span className="badge ms-2" style={{ background: 'var(--ta-purple)', color: 'var(--ta-text)', fontSize: '0.65rem' }}>
                               {wr.family}
                             </span>
                           )}
@@ -582,9 +589,9 @@ export default function DiscoverPage() {
                     <>
                       <li
                         className="list-group-item py-1 px-3"
-                        style={{ background: '#152238', borderTop: '1px solid #2a5080', cursor: 'default' }}
+                        style={{ background: 'var(--ta-bg-panel)', borderTop: '1px solid var(--ta-border)', cursor: 'default' }}
                       >
-                        <span className="small fw-semibold" style={{ color: '#9ec5fe' }}>
+                        <span className="small fw-semibold" style={{ color: 'var(--ta-gold)' }}>
                           {gbifLoading ? t('form.gbifLoading') : t('form.gbifLabel')}
                         </span>
                       </li>
@@ -592,7 +599,7 @@ export default function DiscoverPage() {
                         <li
                           key={gr.key}
                           className="list-group-item list-group-item-action"
-                          style={{ cursor: 'pointer', background: 'rgba(18,28,48,0.95)', color: 'var(--ta-parchment)' }}
+                          style={{ cursor: 'pointer', background: 'var(--ta-bg-card)', color: 'var(--ta-text)' }}
                           onMouseDown={() => selectGbif(gr)}
                         >
                           <span className="fw-semibold small">{gr.canonicalName || gr.scientificName}</span>
@@ -621,6 +628,35 @@ export default function DiscoverPage() {
               <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.noSearchHits')}</p>
             )}
         </section>
+          </div>
+          <div className="col-lg-5 d-flex">
+            <section className="ta-discover-marketplace-hub w-100 rounded-3 border p-4 d-flex flex-column">
+              <div className="d-flex align-items-start gap-2 mb-2">
+                <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />
+                <h2 className="h6 text-uppercase letter-spacing mb-0 ta-accent-heading" style={{ lineHeight: 1.35 }}>
+                  {t('discover.marketplaceHubTitle')}
+                </h2>
+              </div>
+              <p className="small flex-grow-1 mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
+                {t('discover.marketplaceHubBody')}
+              </p>
+              <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
+                {t('discover.marketplaceHubOfficial')}
+              </p>
+              <Link
+                to="/marketplace"
+                className="btn btn-sm mt-auto align-self-start fw-semibold"
+                style={{
+                  border: '1px solid var(--ta-gold)',
+                  color: 'var(--ta-gold)',
+                  background: 'transparent',
+                }}
+              >
+                {t('discover.marketplaceHubCta')}
+              </Link>
+            </section>
+          </div>
+        </div>
 
         {panelLoading && (
           <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('common.loading')}</p>
@@ -653,7 +689,7 @@ export default function DiscoverPage() {
                   <div className="ta-section-header mb-2">
                     <span style={{ color: 'var(--ta-parchment)' }}>🏠 {t('terrarium.title')}</span>
                   </div>
-                  <p className="small mb-2" style={{ color: 'rgba(200,190,230,0.85)' }}>
+                  <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>
                     {t('discover.terrariumSizeHint')}
                   </p>
                   <div className="row g-2 align-items-end mb-3">
@@ -677,7 +713,7 @@ export default function DiscoverPage() {
                         }}
                       />
                       {maxSpecimenCm != null && (
-                        <p className="small mt-1 mb-0" style={{ color: 'rgba(160,150,190,0.85)' }}>
+                        <p className="small mt-1 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
                           {t('discover.specimenMaxHint', { max: maxSpecimenCm })}
                         </p>
                       )}
@@ -690,7 +726,7 @@ export default function DiscoverPage() {
                       </div>
                       {terrariumRec.pct !== null && (
                         <div>
-                          <div className="d-flex justify-content-between small mb-1" style={{ color: 'rgba(180,170,210,0.9)' }}>
+                          <div className="d-flex justify-content-between small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
                             <span>{t('terrarium.growthToAdult')}</span>
                             <span>{terrariumRec.pct}%</span>
                           </div>
@@ -704,7 +740,7 @@ export default function DiscoverPage() {
                       )}
                     </>
                   )}
-                  <p className="mb-0 mt-2 small" style={{ color: 'rgba(160,150,190,0.85)', fontSize: '0.7rem' }}>
+                  <p className="mb-0 mt-2 small" style={{ color: 'var(--ta-text-muted)', fontSize: '0.7rem' }}>
                     {t('terrarium.estimatedNote')}
                   </p>
                 </div>
@@ -758,7 +794,7 @@ export default function DiscoverPage() {
                   style={{ borderColor: 'var(--ta-border)', maxHeight: 200 }}
                 />
                 {taxonPreview.photo.attribution && (
-                  <figcaption className="small mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
                     {taxonPreview.photo.attribution}
                   </figcaption>
                 )}

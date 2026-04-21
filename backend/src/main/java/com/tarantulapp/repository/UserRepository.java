@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<User> findByPublicHandleIgnoreCase(String publicHandle);
+    boolean existsByPublicHandleIgnoreCaseAndIdNot(String publicHandle, UUID id);
     long countByCreatedAtAfter(LocalDateTime from);
     List<User> findTop10ByOrderByCreatedAtDesc();
     List<User> findByPlanAndTrialEndsAtBetween(
