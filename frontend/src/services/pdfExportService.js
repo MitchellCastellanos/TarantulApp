@@ -101,9 +101,10 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
   }
 
   const sectionTitle = (title, subtitle = '') => {
-    ensureSpace(24)
+    const boxH = subtitle ? 44 : 26
+    ensureSpace(boxH + 6)
     doc.setFillColor(245, 245, 245)
-    doc.roundedRect(margin, y - 12, contentWidth, 26, 6, 6, 'F')
+    doc.roundedRect(margin, y - 12, contentWidth, boxH, 6, 6, 'F')
     doc.setFontSize(14)
     doc.setFont(undefined, 'bold')
     doc.setTextColor(45, 45, 45)
@@ -112,8 +113,8 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
       doc.setFontSize(9.5)
       doc.setFont(undefined, 'normal')
       doc.setTextColor(90, 90, 90)
-      doc.text(safe(subtitle), margin + 10, y + 18)
-      y += 30
+      doc.text(safe(subtitle), margin + 10, y + 21)
+      y += 38
       return
     }
     y += 22
