@@ -56,17 +56,25 @@ export default function QRModal({ tarantula, onClose }) {
           </div>
           <div className="modal-body text-center">
             <div className="d-inline-block p-3 border rounded mb-3" style={{ background: '#fff' }}>
-              <QRCodeSvg
-                value={url}
-                size={220}
-                level="H"
-                imageSettings={{
-                  src: '/logo-black.png?v=2',
-                  height: 48,
-                  width: 48,
-                  excavate: true,
-                }}
-              />
+              <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                <QRCodeSvg value={url} size={220} level="H" />
+                <img
+                  src="/logo-black.png?v=2"
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 46, height: 46,
+                    objectFit: 'contain',
+                    borderRadius: '50%',
+                    background: '#fff',
+                    padding: 3,
+                    boxShadow: '0 0 0 2px #fff',
+                  }}
+                />
+              </div>
             </div>
             <p className="fw-bold mb-0">{qrName}</p>
             <p className="text-muted small mb-1">{qrSpecies}</p>
