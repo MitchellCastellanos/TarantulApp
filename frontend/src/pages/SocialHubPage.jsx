@@ -389,18 +389,18 @@ export default function SocialHubPage() {
         {tab === TAB_FEED && (
           <>
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
-              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Opina en temas y discusiones</h2>
+              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
               <div className="d-flex gap-2 overflow-auto pb-1">
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Sex ID</div>
-                  <div className="small text-muted mb-2">Modo votación rápida</div>
+                  <div className="small text-muted mb-2">{t('social.sexIdQuickMode')}</div>
                   <button type="button" className="btn btn-sm btn-outline-secondary w-100" onClick={() => setTab(TAB_SEX_ID)}>
-                    Ir a Sex ID
+                    {t('social.goToSexId')}
                   </button>
                 </div>
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Enclosure check</div>
-                  <div className="small text-muted mb-2">Discusión abierta</div>
+                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
@@ -409,12 +409,12 @@ export default function SocialHubPage() {
                       setComposerOpen(true)
                     }}
                   >
-                    Crear discusión
+                    {t('social.createDiscussion')}
                   </button>
                 </div>
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Is my spider okay?</div>
-                  <div className="small text-muted mb-2">Discusión abierta</div>
+                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
@@ -423,23 +423,23 @@ export default function SocialHubPage() {
                       setComposerOpen(true)
                     }}
                   >
-                    Crear discusión
+                    {t('social.createDiscussion')}
                   </button>
                 </div>
               </div>
               <p className="small text-muted mb-0 mt-2">
-                Usa Sex ID para votación, o abre discusiones públicas desde este carrusel.
+                {t('social.carouselHint')}
               </p>
             </div>
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.10)' }}>
               <div className="d-flex align-items-center justify-content-between mb-2">
-                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Sex ID activos</h2>
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.activeSexIdCases')}</h2>
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setTab(TAB_SEX_ID)}>
-                  Ver todos
+                  {t('social.seeAll')}
                 </button>
               </div>
               {(publicSexIdCases.content || []).length === 0 ? (
-                <p className="small text-muted mb-0">Aún no hay casos activos.</p>
+                <p className="small text-muted mb-0">{t('social.noActiveCases')}</p>
               ) : (
                 <div className="d-flex gap-2 overflow-auto pb-1">
                   {(publicSexIdCases.content || []).slice(0, 8).map((c) => (
@@ -452,7 +452,7 @@ export default function SocialHubPage() {
                         {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
                       </div>
                       <div className="small text-muted mb-2">{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</div>
-                      <Link to={`/sex-id/${c.id}`} className="btn btn-sm btn-dark w-100">Abrir caso</Link>
+                      <Link to={`/sex-id/${c.id}`} className="btn btn-sm btn-dark w-100">{t('social.openCase')}</Link>
                     </div>
                   ))}
                 </div>
