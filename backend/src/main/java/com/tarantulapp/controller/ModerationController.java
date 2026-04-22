@@ -54,6 +54,13 @@ public class ModerationController {
         return ResponseEntity.ok(Map.of("message", "ok"));
     }
 
+    @PostMapping("/public/reports/activity-post/{postId}")
+    public ResponseEntity<Map<String, String>> reportActivityPost(@PathVariable UUID postId,
+                                                                  @Valid @RequestBody PublicReportRequest req) {
+        moderationService.reportActivityPost(postId, req.reason(), req.details());
+        return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
     @GetMapping("/admin/reports")
     public ResponseEntity<List<Map<String, Object>>> adminReports(@RequestParam(required = false) String status) {
         adminAccessService.assertCurrentUserIsAdmin();

@@ -12,7 +12,7 @@ export function getStoredTheme() {
 function syncBrandedIcons(theme) {
   if (typeof document === 'undefined') return
   const href = theme === 'light' ? '/logo-black.png' : '/logo-neon.png'
-  const full = `${href}?v=2`
+  const full = theme === 'light' ? `${href}?v=2` : `${href}?v=3`
   const fav = document.getElementById('tarantulapp-favicon')
   if (fav) fav.setAttribute('href', full)
 }

@@ -346,6 +346,27 @@ export default function MarketplacePage() {
                         <Link to={`/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
                           {t('marketplace.viewSeller')}
                         </Link>
+                        {String(user?.id || '') !== String(l.sellerUserId) && (
+                          user ? (
+                            <Link
+                              to={`/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
+                              className="btn btn-sm btn-dark"
+                            >
+                              {t('marketplace.messageSeller')}
+                            </Link>
+                          ) : (
+                            <Link
+                              to="/login"
+                              state={{
+                                redirectAfterAuth:
+                                  `/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`,
+                              }}
+                              className="btn btn-sm btn-dark"
+                            >
+                              {t('marketplace.messageSeller')}
+                            </Link>
+                          )
+                        )}
                         {user && String(user.id) !== String(l.sellerUserId) && (
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => reportListing(l.id)}>
                             {t('marketplace.report')}

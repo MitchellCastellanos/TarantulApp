@@ -226,6 +226,7 @@ public class TarantulaService {
         PublicProfileDTO dto = new PublicProfileDTO();
         dto.setTarantulaId(t.getId());
         dto.setOwnerId(t.getUserId());
+        dto.setViewerIsOwner(owner);
         dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());

@@ -6,7 +6,9 @@ import { initNativePush } from '../services/pushService'
 const AuthContext = createContext(null)
 
 function mergePlanFields(raw) {
-  const plan = raw?.plan || 'FREE'
+  const rawPlan = raw?.plan != null && String(raw.plan).trim() !== '' ? String(raw.plan).trim() : 'FREE'
+  const u = rawPlan.toUpperCase()
+  const plan = u === 'PRO' ? 'PRO' : (u === 'FREE' ? 'FREE' : rawPlan)
   const inTrial = raw?.inTrial === true
   const readOnly = plan === 'PRO' ? false : (raw?.readOnly === true)
   const hasProFeatures = plan === 'PRO' || inTrial

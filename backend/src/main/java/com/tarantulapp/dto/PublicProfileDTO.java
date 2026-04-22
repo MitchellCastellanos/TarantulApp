@@ -7,6 +7,8 @@ import java.util.UUID;
 public class PublicProfileDTO {
     private UUID tarantulaId;
     private UUID ownerId;
+    /** true si la petición va con JWT del dueño (misma identidad que {@link #ownerId}). */
+    private boolean viewerIsOwner;
     /** false cuando el dueño abre su propia ficha privada por QR (sesión con JWT). */
     private Boolean isPublic;
     private String name;
@@ -25,6 +27,8 @@ public class PublicProfileDTO {
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public UUID getOwnerId() { return ownerId; }
     public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+    public boolean isViewerIsOwner() { return viewerIsOwner; }
+    public void setViewerIsOwner(boolean viewerIsOwner) { this.viewerIsOwner = viewerIsOwner; }
     public Boolean getIsPublic() { return isPublic; }
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getName() { return name; }

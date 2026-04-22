@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
@@ -14,11 +14,16 @@ export default function LoginPage() {
   const { login, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { t } = useTranslation()
   const [mode, setMode] = useState(() =>
     location.state?.initialMode === 'register' ? 'register' : 'login'
   ) // 'login' | 'register'
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
+  const [referralCode, setReferralCode] = useState(() => {
+    const r = new URLSearchParams(location.search).get('ref')
+    return r ? String(r).trim().toUpperCase() : ''
+  })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const googleBtnRef = useRef(null)
@@ -27,6 +32,13 @@ export default function LoginPage() {
   const tRef = useRef(t)
   loginRef.current = login
   tRef.current = t
+
+  useEffect(() => {
+    const r = searchParams.get('ref')
+    if (r && String(r).trim()) {
+      setReferralCode(String(r).trim().toUpperCase())
+    }
+  }, [searchParams])
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -49,7 +61,12 @@ export default function LoginPage() {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
       const body = mode === 'login'
         ? { email, password }
-        : { email, password, displayName: form.displayName?.trim() || undefined }
+        : {
+            email,
+            password,
+            displayName: form.displayName?.trim() || undefined,
+            referralCode: referralCode.trim() || undefined,
+          }
       const { data } = await publicApi.post(endpoint, body)
       login(data)
     } catch (err) {
@@ -81,7 +98,11 @@ export default function LoginPage() {
           setLoading(true)
           setError('')
           try {
-            const data = await authService.oauthGoogle(response.credential)
+            const ref = new URLSearchParams(window.location.search).get('ref')
+            const data = await authService.oauthGoogle(
+              response.credential,
+              ref ? String(ref).trim().toUpperCase() : undefined
+            )
             loginRef.current(data)
           } catch (err) {
             const d = err.response?.data
@@ -237,6 +258,21 @@ export default function LoginPage() {
                 <input type="text" name="displayName" className="form-control"
                        value={form.displayName} onChange={handleChange}
                        placeholder={t('auth.namePlaceholder')} autoComplete="name" />
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <div className="mb-3">
+                <label className="form-label fw-semibold small">{t('auth.referralCodeOptional')}</label>
+                <input
+                  type="text"
+                  className="form-control text-uppercase"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.trim().toUpperCase())}
+                  placeholder={t('auth.referralCodePlaceholder')}
+                  maxLength={32}
+                  autoComplete="off"
+                />
               </div>
             )}
 
