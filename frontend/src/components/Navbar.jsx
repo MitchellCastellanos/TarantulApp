@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +23,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileOpenGroup, setMobileOpenGroup] = useState('explore')
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
   const [notifRows, setNotifRows] = useState([])
@@ -43,10 +44,101 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const path = location.pathname
   const logoHome = !token ? '/login' : '/'
   const closeMobileMenu = () => setMobileMenuOpen(false)
+  const isRouteActive = (routeMatchers) => routeMatchers.some((matcher) => path.startsWith(matcher))
+  const mobileGroups = useMemo(() => {
+    const groups = [
+      {
+        key: 'explore',
+        title: t('nav.mobileExplore'),
+        items: [
+          {
+            to: '/descubrir',
+            label: t('discover.navTitle'),
+            title: t('nav.discoverLinkTitle'),
+            routeMatchers: ['/descubrir'],
+          },
+          {
+            to: '/marketplace',
+            label: t('marketplace.nav'),
+            title: t('marketplace.title'),
+            routeMatchers: ['/marketplace'],
+          },
+          {
+            to: '/comunidad',
+            label: t('nav.community'),
+            title: t('social.navTitle'),
+            routeMatchers: ['/comunidad'],
+          },
+          {
+            to: '/about',
+            label: t('nav.about'),
+            title: t('nav.aboutTitle'),
+            routeMatchers: ['/about'],
+          },
+        ],
+      },
+      {
+        key: 'mySpace',
+        title: t('nav.mobileMySpace'),
+        hidden: !token,
+        items: [
+          {
+            to: '/',
+            label: t('discover.myCollection', 'Mi colección'),
+            className: 'btn btn-sm fw-semibold ta-mobile-collection-cta',
+            routeMatchers: ['/'],
+            exact: true,
+          },
+          {
+            to: '/herramientas/qr',
+            label: t('nav.qrTool'),
+            title: t('nav.qrToolTitle'),
+            routeMatchers: ['/herramientas/qr', '/tarantulas/qr-print'],
+          },
+          {
+            to: '/reminders',
+            label: t('nav.reminders'),
+            routeMatchers: ['/reminders'],
+          },
+          {
+            to: '/account',
+            label: t('nav.account'),
+            routeMatchers: ['/account'],
+          },
+          ...(user && isAdmin
+            ? [
+                {
+                  to: '/admin',
+                  label: t('nav.admin'),
+                  routeMatchers: ['/admin'],
+                },
+              ]
+            : []),
+        ],
+      },
+      {
+        key: 'preferences',
+        title: t('nav.mobilePreferences'),
+        items: [],
+      },
+    ]
+    return groups.filter((group) => !group.hidden)
+  }, [isAdmin, t, token, user])
+  const activeGroupKey =
+    mobileGroups.find((group) =>
+      group.items.some((item) =>
+        item.exact ? path === item.to : isRouteActive(item.routeMatchers || [item.to]),
+      ),
+    )?.key || 'explore'
 
   useEffect(() => {
     closeMobileMenu()
   }, [path])
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    setMobileOpenGroup(activeGroupKey)
+  }, [activeGroupKey, mobileMenuOpen])
 
   useEffect(() => {
     if (!token) {
@@ -164,6 +256,21 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const menuPillStyle = (active) => ({
     ...pillStyle(active),
     padding: '0.42rem 0.82rem',
+  })
+  const mobileSectionButtonStyle = (active) => ({
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 10,
+    border: `1px solid ${active ? 'rgba(220, 178, 76, 0.8)' : 'var(--ta-border)'}`,
+    background: active ? 'rgba(201, 168, 76, 0.18)' : 'rgba(18, 18, 36, 0.66)',
+    color: active ? 'var(--ta-gold)' : 'var(--ta-parchment)',
+    padding: '0.48rem 0.62rem',
+    fontWeight: 600,
+    letterSpacing: '0.02em',
+    fontSize: '0.8rem',
+    textAlign: 'left',
   })
 
   const planControl = (() => {
@@ -305,69 +412,54 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         className={`d-md-none w-100 mt-2 p-2 rounded-3 ta-mobile-nav-panel ${mobileMenuOpen ? 'is-open' : ''}`}
         aria-hidden={!mobileMenuOpen}
       >
-          <div className="small fw-semibold mb-1 ta-mobile-nav-section-title">
-            Explorar
-          </div>
-          <div className="d-flex flex-wrap gap-2 pb-1">
-            <Link onClick={closeMobileMenu} to="/descubrir" style={menuPillStyle(path.startsWith('/descubrir'))} title={t('nav.discoverLinkTitle')}>
-              {t('discover.navTitle')}
-            </Link>
-            <Link onClick={closeMobileMenu} to="/marketplace" style={menuPillStyle(path.startsWith('/marketplace'))} title={t('marketplace.title')}>
-              {t('marketplace.nav')}
-            </Link>
-            <Link
-              onClick={closeMobileMenu}
-              to="/comunidad"
-              style={menuPillStyle(path.startsWith('/comunidad'))}
-              title={t('social.navTitle')}
-            >
-              {t('nav.community')}
-            </Link>
-            <Link onClick={closeMobileMenu} to="/about" style={menuPillStyle(path.startsWith('/about'))} title={t('nav.aboutTitle')}>
-              {t('nav.about')}
-            </Link>
-          </div>
-
-          {token && (
-            <>
-              <div className="small fw-semibold mb-1 mt-2 ta-mobile-nav-section-title">
-                Mi espacio
-              </div>
-              <div className="d-flex flex-wrap gap-2 pb-1">
-                <Link
-                  to="/"
-                  onClick={closeMobileMenu}
-                  className="btn btn-sm fw-semibold ta-mobile-collection-cta"
-                  style={{ fontSize: '0.8rem' }}
+        <div className="d-flex flex-column gap-2">
+          {mobileGroups.map((group) => {
+            const groupIsActive = group.key === activeGroupKey
+            const groupIsOpen = mobileOpenGroup === group.key
+            return (
+              <div key={group.key} className="ta-mobile-nav-group">
+                <button
+                  type="button"
+                  className="ta-mobile-nav-group-toggle"
+                  style={mobileSectionButtonStyle(groupIsActive)}
+                  onClick={() => setMobileOpenGroup((prev) => (prev === group.key ? '' : group.key))}
+                  aria-expanded={groupIsOpen}
+                  aria-label={t('nav.mobileSectionToggleAria', { section: group.title })}
                 >
-                  {t('discover.myCollection', 'Mi colección')}
-                </Link>
-                <Link
-                  onClick={closeMobileMenu}
-                  to="/herramientas/qr"
-                  style={menuPillStyle(path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print'))}
-                  title={t('nav.qrToolTitle')}
-                >
-                  {t('nav.qrTool')}
-                </Link>
-                <Link onClick={closeMobileMenu} to="/reminders" style={menuPillStyle(path.startsWith('/reminders'))}>
-                  {t('nav.reminders')}
-                </Link>
-                <Link onClick={closeMobileMenu} to="/account" style={menuPillStyle(path.startsWith('/account'))}>
-                  {t('nav.account')}
-                </Link>
-                {user && isAdmin && (
-                  <Link onClick={closeMobileMenu} to="/admin" style={menuPillStyle(path.startsWith('/admin'))}>
-                    {t('nav.admin')}
-                  </Link>
+                  <span>{group.title}</span>
+                  <span className="ta-mobile-nav-group-caret" aria-hidden="true">
+                    {groupIsOpen ? '▾' : '▸'}
+                  </span>
+                </button>
+                {group.items.length > 0 && (
+                  <div className={`ta-mobile-nav-sublist ${groupIsOpen ? 'is-open' : ''}`} aria-hidden={!groupIsOpen}>
+                    {group.items.map((item) => {
+                      const isActive = item.exact
+                        ? path === item.to
+                        : isRouteActive(item.routeMatchers || [item.to])
+                      return (
+                        <Link
+                          key={item.to}
+                          onClick={closeMobileMenu}
+                          to={item.to}
+                          className={item.className}
+                          style={item.className ? { fontSize: '0.8rem' } : menuPillStyle(isActive)}
+                          title={item.title}
+                        >
+                          {item.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
-            </>
-          )}
+            )
+          })}
+        </div>
 
-          <div className="small fw-semibold mb-1 mt-2 ta-mobile-nav-section-title">
-            Preferencias
-          </div>
+        <div className="small fw-semibold mb-1 mt-3 ta-mobile-nav-section-title">
+          {t('nav.mobilePreferences')}
+        </div>
           <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div>{planControl}</div>
             <div className="d-flex align-items-center gap-2">

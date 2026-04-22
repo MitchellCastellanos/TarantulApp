@@ -405,6 +405,28 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   text-transform: uppercase;
 }
 
+.ta-mobile-nav-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ta-mobile-nav-sublist {
+  display: none;
+  margin-left: 0.65rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid rgba(201, 168, 76, 0.28);
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ta-mobile-nav-sublist.is-open {
+  display: flex;
+}
+
+.ta-mobile-nav-group-toggle:hover {
+  filter: brightness(1.05);
+}
+
 /* ─── Tarantula card hover ──────────────────────────────────────────────── */
 
 .tarantula-card {
