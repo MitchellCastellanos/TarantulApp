@@ -49,7 +49,8 @@ public class MarketplaceController {
             String state,
             String country,
             String imageUrl,
-            String pedigreeRef
+            String pedigreeRef,
+            Boolean requestListingBoost
     ) {}
 
     record UpdateListingStatusRequest(@NotBlank String status) {}
@@ -110,7 +111,8 @@ public class MarketplaceController {
                 req.state(),
                 req.country(),
                 req.imageUrl(),
-                req.pedigreeRef()
+                req.pedigreeRef(),
+                Boolean.TRUE.equals(req.requestListingBoost())
         ));
     }
 

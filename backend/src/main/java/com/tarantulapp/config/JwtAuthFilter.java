@@ -41,6 +41,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (uri.startsWith("/api/public/t/")) {
             return !hasBearer(request);
         }
+        if (uri.startsWith("/api/public/sex-id-cases")) {
+            return !hasBearer(request);
+        }
         if (uri.startsWith("/api/public/")) {
             return true;
         }

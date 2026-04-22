@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
@@ -10,11 +10,14 @@ import chatService from '../services/chatService'
 import userPublicService from '../services/userPublicService'
 import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
+import sexIdCaseService from '../services/sexIdCaseService'
+import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { useAuth } from '../context/AuthContext'
 
 const TAB_FEED = 'feed'
 const TAB_SPOOD = 'spood'
+const TAB_SEX_ID = 'sexId'
 const TAB_INVITE = 'invite'
 
 /** UUID v4 (case-insensitive). */
@@ -50,6 +53,10 @@ export default function SocialHubPage() {
   const [spoodBody, setSpoodBody] = useState('')
 
   const [referral, setReferral] = useState(null)
+
+  const [sexIdForm, setSexIdForm] = useState({ title: '', speciesHint: '', imageUrl: '' })
+  const [sexIdCases, setSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
+  const [sexIdUploading, setSexIdUploading] = useState(false)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -96,6 +103,9 @@ export default function SocialHubPage() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
+    if (tabParam === 'sexId') {
+      setTab(TAB_SEX_ID)
+    }
     const openSeller = searchParams.get('openSeller')
     const openListing = searchParams.get('openListing')
     if (tabParam !== 'spood' || !openSeller?.trim() || !user?.id) return
@@ -142,6 +152,11 @@ export default function SocialHubPage() {
     setReferral(data)
   }, [])
 
+  const loadSexIdCases = useCallback(async () => {
+    const data = await sexIdCaseService.mine(0, 30)
+    setSexIdCases(data)
+  }, [])
+
   useEffect(() => {
     loadFeed().catch(() => setErr(t('social.loadError')))
   }, [loadFeed, t])
@@ -159,7 +174,13 @@ export default function SocialHubPage() {
     if (tab === TAB_INVITE) {
       loadReferral().catch(() => setErr(t('social.loadError')))
     }
-  }, [tab, loadMine, loadThreads, loadReferral, t, user?.id])
+    if (tab === TAB_SEX_ID) {
+      loadReferral().catch(() => {})
+      if (user?.id) {
+        loadSexIdCases().catch(() => setErr(t('sexIdCase.loadCasesError')))
+      }
+    }
+  }, [tab, loadMine, loadThreads, loadReferral, loadSexIdCases, t, user?.id])
 
   const submitPost = async (e) => {
     e.preventDefault()
@@ -307,6 +328,52 @@ export default function SocialHubPage() {
     }
   }
 
+  const submitSexIdCase = async (e) => {
+    e.preventDefault()
+    setErr('')
+    setMsg('')
+    const imageUrl = (sexIdForm.imageUrl || '').trim()
+    if (!imageUrl) {
+      setErr(t('sexIdCase.formHint'))
+      return
+    }
+    try {
+      const row = await sexIdCaseService.create({
+        title: sexIdForm.title.trim() || undefined,
+        imageUrl,
+        speciesHint: sexIdForm.speciesHint.trim() || undefined,
+      })
+      setMsg(t('sexIdCase.caseCreated'))
+      setSexIdForm({ title: '', speciesHint: '', imageUrl: '' })
+      await loadSexIdCases()
+      let refCode = referral?.code
+      if (!refCode) {
+        const r2 = await referralService.me().catch(() => null)
+        refCode = r2?.code
+        if (r2?.code) setReferral(r2)
+      }
+      const ref = refCode ? `?ref=${encodeURIComponent(refCode)}` : ''
+      navigate(`/sex-id/${row.id}${ref}`)
+    } catch (e2) {
+      setErr(e2?.response?.data?.error || t('social.saveError'))
+    }
+  }
+
+  const onSexIdPhoto = async (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setErr('')
+    setSexIdUploading(true)
+    try {
+      const r = await marketplaceService.uploadListingImage(f)
+      if (r?.imageUrl) setSexIdForm((s) => ({ ...s, imageUrl: r.imageUrl }))
+    } catch (e2) {
+      setErr(e2?.response?.data?.error || t('social.saveError'))
+    } finally {
+      setSexIdUploading(false)
+    }
+  }
+
   const tabBtn = (key, label) => (
     <button
       type="button"
@@ -415,6 +482,7 @@ export default function SocialHubPage() {
         <div className="d-flex flex-wrap gap-2 mb-3">
           {tabBtn(TAB_FEED, t('social.tabFeed'))}
           {tabBtn(TAB_SPOOD, t('social.tabSpood'))}
+          {tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
           {tabBtn(TAB_INVITE, t('social.tabInvite'))}
         </div>
 
@@ -574,6 +642,81 @@ export default function SocialHubPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {tab === TAB_SEX_ID && (
+          <>
+            <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
+              <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+                <div className="card-body py-3 px-3 px-md-4">
+                  <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('sexIdCase.formTitle')}</h2>
+                  <p className="small text-muted mb-3" style={{ lineHeight: 1.55 }}>{t('sexIdCase.formHint')}</p>
+                  <form onSubmit={submitSexIdCase} className="small">
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldTitle')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.title}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder={t('sexIdCase.fieldTitlePh')}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldSpecies')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.speciesHint}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, speciesHint: e.target.value }))}
+                        placeholder={t('sexIdCase.fieldSpeciesPh')}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.uploadPhoto')}</label>
+                      <input
+                        type="file"
+                        className="form-control form-control-sm"
+                        accept="image/*"
+                        disabled={sexIdUploading}
+                        onChange={onSexIdPhoto}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.imageUrl')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.imageUrl}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                        placeholder="/uploads/ù"
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-sm btn-dark" disabled={sexIdUploading}>
+                      {t('sexIdCase.create')}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </ChitinCardFrame>
+            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('sexIdCase.myCases')}</h2>
+            {(sexIdCases.content || []).length === 0 ? (
+              <p className="text-muted small">{t('sexIdCase.myCasesEmpty')}</p>
+            ) : (
+              (sexIdCases.content || []).map((c) => (
+                <div
+                  key={c.id}
+                  className="d-flex flex-wrap align-items-center justify-content-between gap-2 rounded-3 p-2 mb-2"
+                  style={{ border: '1px solid var(--ta-border)' }}
+                >
+                  <div className="small" style={{ color: 'var(--ta-text)' }}>
+                    {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
+                    <span className="text-muted ms-1">{'\u00a0ù\u00a0'}{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</span>
+                  </div>
+                  <Link className="btn btn-sm btn-outline-secondary" to={`/sex-id/${c.id}`}>
+                    {t('sexIdCase.openCase')}
+                  </Link>
+                </div>
+              ))
+            )}
+          </>
         )}
 
         {tab === TAB_INVITE && referral && (

@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import QrBulkPrintPage from './pages/QrBulkPrintPage'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
+import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
@@ -92,6 +93,7 @@ function AppRoutes() {
       <Route path="/herramientas/qr" element={<QrToolPage />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
+      <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

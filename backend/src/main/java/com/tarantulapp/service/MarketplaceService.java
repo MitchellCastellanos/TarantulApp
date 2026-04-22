@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -40,6 +41,7 @@ public class MarketplaceService {
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
     private final FileStorageService fileStorageService;
+    private final BillingService billingService;
 
     public MarketplaceService(MarketplaceListingRepository marketplaceListingRepository,
                               SellerReviewRepository sellerReviewRepository,
@@ -48,7 +50,8 @@ public class MarketplaceService {
                               FeedingLogRepository feedingLogRepository,
                               MoltLogRepository moltLogRepository,
                               BehaviorLogRepository behaviorLogRepository,
-                              FileStorageService fileStorageService) {
+                              FileStorageService fileStorageService,
+                              BillingService billingService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.sellerReviewRepository = sellerReviewRepository;
         this.userRepository = userRepository;
@@ -57,6 +60,7 @@ public class MarketplaceService {
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
         this.fileStorageService = fileStorageService;
+        this.billingService = billingService;
     }
 
     @Transactional
@@ -92,10 +96,16 @@ public class MarketplaceService {
         return out;
     }
 
+    @Transactional(readOnly = true)
+    public boolean isListingBoostOffered() {
+        return billingService.isListingBoostCheckoutAvailable();
+    }
+
     @Transactional
     public Map<String, Object> createListing(UUID userId, String title, String description, String speciesName,
                                              String stage, String sex, BigDecimal priceAmount, String currency,
-                                             String city, String state, String country, String imageUrl, String pedigreeRef) {
+                                             String city, String state, String country, String imageUrl, String pedigreeRef,
+                                             boolean requestListingBoost) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Titulo requerido");
         }
@@ -114,7 +124,21 @@ public class MarketplaceService {
         listing.setImageUrl(cleanText(imageUrl, 350));
         listing.setPedigreeRef(cleanText(pedigreeRef, 180));
         listing.setStatus("active");
-        return mapListing(marketplaceListingRepository.save(listing));
+        listing = marketplaceListingRepository.save(listing);
+        Map<String, Object> out = mapListing(listing);
+        out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
+        if (requestListingBoost && billingService.isListingBoostCheckoutAvailable()) {
+            User u = userRepository.findById(userId).orElse(null);
+            if (u != null) {
+                try {
+                    String url = billingService.createListingBoostCheckoutSession(userId, u.getEmail(), listing.getId());
+                    out.put("boostCheckoutUrl", url);
+                } catch (Exception ignored) {
+                    // Listing is still published; boost checkout can be retried later if we add that flow.
+                }
+            }
+        }
+        return out;
     }
 
     @Transactional
@@ -168,10 +192,17 @@ public class MarketplaceService {
                 .filter(m -> filterCountry == null || normalizeFilter(m.getCountry()).equals(filterCountry))
                 .filter(m -> filterState == null || normalizeFilter(m.getState()).equals(filterState))
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
-                .sorted((a, b) -> Integer.compare(
-                        proximityScore(b, nearCountryNorm, nearStateNorm, nearCityNorm),
-                        proximityScore(a, nearCountryNorm, nearStateNorm, nearCityNorm)
-                ))
+                .sorted((a, b) -> {
+                    boolean ab = isListingBoostedNow(a);
+                    boolean bb = isListingBoostedNow(b);
+                    if (ab != bb) {
+                        return ab ? -1 : 1;
+                    }
+                    return Integer.compare(
+                            proximityScore(b, nearCountryNorm, nearStateNorm, nearCityNorm),
+                            proximityScore(a, nearCountryNorm, nearStateNorm, nearCityNorm)
+                    );
+                })
                 .limit(100)
                 .map(this::mapListing)
                 .collect(Collectors.toList());
@@ -282,7 +313,13 @@ public class MarketplaceService {
         out.put("imageUrl", l.getImageUrl() == null ? "" : l.getImageUrl());
         out.put("pedigreeRef", l.getPedigreeRef() == null ? "" : l.getPedigreeRef());
         out.put("createdAt", l.getCreatedAt());
+        out.put("boostedUntil", l.getBoostedUntil());
+        out.put("boosted", isListingBoostedNow(l));
         return out;
+    }
+
+    private boolean isListingBoostedNow(MarketplaceListing m) {
+        return m.getBoostedUntil() != null && m.getBoostedUntil().isAfter(Instant.now());
     }
 
     private Map<String, Object> mapUserProfile(User p) {

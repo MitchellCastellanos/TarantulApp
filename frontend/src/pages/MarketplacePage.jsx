@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
@@ -23,6 +23,7 @@ const EMPTY_LISTING_FORM = {
   country: 'Mexico',
   imageUrl: '',
   pedigreeRef: '',
+  requestBoost: false,
 }
 
 const EMPTY_PROFILE_FORM = {
@@ -190,6 +191,7 @@ function getDemoListings({ query, country, state, city, nearCountry }) {
 export default function MarketplacePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [listings, setListings] = useState([])
   const [officialVendors, setOfficialVendors] = useState([])
@@ -205,6 +207,7 @@ export default function MarketplacePage() {
   const [message, setMessage] = useState('')
   const [myReputation, setMyReputation] = useState(null)
   const [myBadgesProgress, setMyBadgesProgress] = useState(null)
+  const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
@@ -332,6 +335,27 @@ export default function MarketplacePage() {
   }, [])
 
   useEffect(() => {
+    marketplaceService
+      .getListingBoostOffer()
+      .then((d) => setListingBoostAvailable(!!d?.available))
+      .catch(() => setListingBoostAvailable(false))
+  }, [])
+
+  useEffect(() => {
+    const lb = searchParams.get('listingBoost')
+    if (!lb) return
+    if (lb === 'success') {
+      setMessage(t('marketplace.listingBoostPaid'))
+    } else if (lb === 'cancel') {
+      setMessage(t('marketplace.listingBoostCancelled'))
+    }
+    const next = new URLSearchParams(searchParams)
+    next.delete('listingBoost')
+    next.delete('session_id')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams, t])
+
+  useEffect(() => {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
   }, [filters, query, myProfile.country, myProfile.state, myProfile.city])
 
@@ -342,10 +366,16 @@ export default function MarketplacePage() {
     setSavingListing(true)
     setMessage('')
     try {
-      await marketplaceService.createListing({
-        ...listingForm,
+      const { requestBoost, ...rest } = listingForm
+      const data = await marketplaceService.createListing({
+        ...rest,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
+        requestListingBoost: !!requestBoost,
       })
+      if (data?.boostCheckoutUrl) {
+        window.location.assign(data.boostCheckoutUrl)
+        return
+      }
       setListingForm(EMPTY_LISTING_FORM)
       await Promise.all([loadPublicListings(), loadMine()])
       setMessage(t('marketplace.createdOk'))
@@ -538,6 +568,9 @@ export default function MarketplacePage() {
                         {l.isDemo && (
                           <span className="badge bg-secondary">{t('marketplace.demoListingBadge', { defaultValue: 'Demo' })}</span>
                         )}
+                        {!l.isDemo && l.boosted && (
+                          <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
+                        )}
                       </h6>
                       <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
                       <p className="small mb-2">{l.description || '-'}</p>
@@ -651,6 +684,21 @@ export default function MarketplacePage() {
                         onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))}
                       />
                       {uploadingListingImage && <p className="small text-muted mb-1">{t('marketplace.uploadingImage')}</p>}
+                      {listingBoostAvailable && (
+                        <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="listing-request-boost"
+                            checked={!!listingForm.requestBoost}
+                            onChange={(e) => setListingForm((f) => ({ ...f, requestBoost: e.target.checked }))}
+                          />
+                          <label className="form-check-label" htmlFor="listing-request-boost" style={{ cursor: 'pointer' }}>
+                            {t('marketplace.listingBoostLabel')}
+                            <span className="d-block small text-muted mt-1">{t('marketplace.listingBoostHint')}</span>
+                          </label>
+                        </div>
+                      )}
                       <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>
                         {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                       </button>
