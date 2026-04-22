@@ -49,7 +49,8 @@ public class MarketplaceController {
             String state,
             String country,
             String imageUrl,
-            String pedigreeRef
+            String pedigreeRef,
+            Boolean requestListingBoost
     ) {}
 
     record UpdateListingStatusRequest(@NotBlank String status) {}
@@ -64,7 +65,8 @@ public class MarketplaceController {
             String contactInstagram,
             String country,
             String state,
-            String city
+            String city,
+            Boolean searchVisible
     ) {}
 
     record CreateReviewRequest(
@@ -86,7 +88,8 @@ public class MarketplaceController {
                 req.contactInstagram(),
                 req.country(),
                 req.state(),
-                req.city()
+                req.city(),
+                req.searchVisible()
         ));
     }
 
@@ -110,7 +113,8 @@ public class MarketplaceController {
                 req.state(),
                 req.country(),
                 req.imageUrl(),
-                req.pedigreeRef()
+                req.pedigreeRef(),
+                Boolean.TRUE.equals(req.requestListingBoost())
         ));
     }
 
@@ -118,6 +122,11 @@ public class MarketplaceController {
     public ResponseEntity<Map<String, String>> registerQrPrint() {
         marketplaceService.registerQrPrintExport(securityHelper.getCurrentUserId());
         return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
+    @PostMapping(value = "/listings/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadListingImage(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(marketplaceService.uploadListingImage(securityHelper.getCurrentUserId(), file));
     }
 
     @PostMapping(value = "/keeper-profile/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

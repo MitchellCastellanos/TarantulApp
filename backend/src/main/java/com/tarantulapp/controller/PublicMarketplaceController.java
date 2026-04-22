@@ -92,4 +92,9 @@ public class PublicMarketplaceController {
     public ResponseEntity<List<Map<String, Object>>> sellerReviews(@PathVariable UUID sellerUserId) {
         return ResponseEntity.ok(marketplaceService.sellerReviews(sellerUserId));
     }
+
+    @GetMapping("/listing-boost-offer")
+    public ResponseEntity<Map<String, Object>> listingBoostOffer() {
+        return ResponseEntity.ok(Map.of("available", marketplaceService.isListingBoostOffered()));
+    }
 }

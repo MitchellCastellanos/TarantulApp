@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.dto.DiscoverLocalSpeciesViewDTO;
+import com.tarantulapp.dto.DiscoverPhotoDTO;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.SpeciesSynonym;
@@ -53,6 +54,17 @@ public class DiscoverCatalogService {
         return speciesRepository.findByGbifUsageKey(gbifUsageKey)
                 .filter(DiscoverCatalogService::isPublicCatalogRow)
                 .map(Species::getId);
+    }
+
+    /**
+     * Foto comunitaria (iNat) por nombre, para clientes sin clave GBIF o como segunda oportunidad
+     * cuando el catálogo no pudo resolver la URL en el mismo request.
+     */
+    public Optional<DiscoverPhotoDTO> photoFallbackByScientificName(String scientificName) {
+        if (scientificName == null || scientificName.isBlank()) {
+            return Optional.empty();
+        }
+        return inatService.resolveDiscoverPhoto(scientificName.trim());
     }
 
     /** Same as {@link #findPublicCatalogById(int)} plus iNat fallback photo metadata when URL missing. */

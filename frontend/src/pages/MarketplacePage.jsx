@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
+import chatService from '../services/chatService'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import BrandLogoMark from '../components/BrandLogoMark'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 const EMPTY_LISTING_FORM = {
   title: '',
@@ -22,6 +24,7 @@ const EMPTY_LISTING_FORM = {
   country: 'Mexico',
   imageUrl: '',
   pedigreeRef: '',
+  requestBoost: false,
 }
 
 const EMPTY_PROFILE_FORM = {
@@ -48,9 +51,150 @@ const EMPTY_VENDOR_LEAD_FORM = {
   note: '',
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+const DEMO_LISTINGS = [
+  {
+    id: 'demo-1',
+    title: 'Brachypelma hamorii juvenil F3',
+    description: 'Come excelente, muda estable y va con registro de alimentacion + fotos de referencia.',
+    speciesName: 'Brachypelma hamorii',
+    priceAmount: 2100,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'CDMX',
+    city: 'Ciudad de Mexico',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-2',
+    title: 'Tliltocatl vagans juvenil sexada',
+    description: 'Linea nacional, aclimatada y activa. Entrega por punto seguro en ZMG.',
+    speciesName: 'Tliltocatl vagans',
+    priceAmount: 1450,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Jalisco',
+    city: 'Guadalajara',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-3',
+    title: 'Aphonopelma seemanni subadulta',
+    description: 'Caracter tranquilo, bien comida, ideal para keeper que quiere una terrestre noble.',
+    speciesName: 'Aphonopelma seemanni',
+    priceAmount: 1650,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Nuevo Leon',
+    city: 'Monterrey',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-4',
+    title: 'Caribena versicolor sling 2.8 cm',
+    description: 'Linea de cria local y seguimiento de crecimiento. Envio nacional coordinado.',
+    speciesName: 'Caribena versicolor',
+    priceAmount: 1180,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Quintana Roo',
+    city: 'Cancun',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-5',
+    title: 'Grammostola pulchra sling',
+    description: 'Cria controlada, bitacora de mudas y pickup en Hermosillo.',
+    speciesName: 'Grammostola pulchra',
+    priceAmount: 2200,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Sonora',
+    city: 'Hermosillo',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-6',
+    title: 'Poecilotheria metallica juvenile',
+    description: 'Solo keeper con experiencia OW. Manejo serio y entrega en Houston metro.',
+    speciesName: 'Poecilotheria metallica',
+    priceAmount: 185,
+    currency: 'USD',
+    country: 'United States',
+    state: 'Texas',
+    city: 'Houston',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-7',
+    title: 'Chromatopelma cyaneopubescens juvenile',
+    description: 'Green bottle blue bien establecida, come dubias y grillo. Pickup LA o envio US.',
+    speciesName: 'Chromatopelma cyaneopubescens',
+    priceAmount: 220,
+    currency: 'USD',
+    country: 'United States',
+    state: 'California',
+    city: 'Los Angeles',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-8',
+    title: 'Lasiodora parahybana subadulta',
+    description: 'Salmon pink grande y comelona. Coordinamos entrega en Toronto GTA.',
+    speciesName: 'Lasiodora parahybana',
+    priceAmount: 165,
+    currency: 'CAD',
+    country: 'Canada',
+    state: 'Ontario',
+    city: 'Toronto',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-9',
+    title: 'Brachypelma albopilosum juvenile',
+    description: 'Curly hair tranquila, ideal para display. Meet Vancouver area.',
+    speciesName: 'Tliltocatl albopilosum',
+    priceAmount: 140,
+    currency: 'CAD',
+    country: 'Canada',
+    state: 'British Columbia',
+    city: 'Vancouver',
+    imageUrl: '',
+    isDemo: true,
+  },
+]
+
+/**
+ * Anuncios demo: no usamos estado/ciudad del perfil (“cerca de mí”) para filtrar,
+ * porque los ejemplos solo cubren unas ciudades y un keeper real en otra región
+ * dejaba el grid vacío. Solo se respeta `nearCountry` (sesgo por país) y los
+ * filtros explícitos del tablero + búsqueda. El API real sigue usando near completo.
+ */
+function getDemoListings({ query, country, state, city, nearCountry }) {
+  const q = String(query || '').trim().toLowerCase()
+  return DEMO_LISTINGS.filter((item) => {
+    const inQuery = !q || [item.title, item.description, item.speciesName].join(' ').toLowerCase().includes(q)
+    const inCountry = !country || item.country === country
+    const inState = !state || item.state === state
+    const inCity = !city || item.city === city
+    const nearCountryMatch = !nearCountry || item.country === nearCountry
+    return inQuery && inCountry && inState && inCity && nearCountryMatch
+  })
+}
+
 export default function MarketplacePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [listings, setListings] = useState([])
   const [officialVendors, setOfficialVendors] = useState([])
@@ -60,27 +204,66 @@ export default function MarketplacePage() {
   const [vendorLeadForm, setVendorLeadForm] = useState(EMPTY_VENDOR_LEAD_FORM)
   const [loading, setLoading] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
-  const [savingProfile, setSavingProfile] = useState(false)
+  const [uploadingListingImage, setUploadingListingImage] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
   const [myReputation, setMyReputation] = useState(null)
   const [myBadgesProgress, setMyBadgesProgress] = useState(null)
+  const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
+  const [threads, setThreads] = useState({ content: [] })
+  const [activeThread, setActiveThread] = useState(null)
+  const [threadMessages, setThreadMessages] = useState({ content: [] })
+  const [chatBody, setChatBody] = useState('')
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
   const nearCity = filters.nearMe ? (myProfile.city || user?.profileCity || '') : undefined
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const mpJsonLd = useMemo(() => {
+    if (!origin) return null
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: t('marketplace.seoTitle'),
+      description: t('marketplace.metaDescription'),
+      url: `${origin}/marketplace`,
+    }
+  }, [t, origin])
+
+  usePageSeo({
+    title: t('marketplace.seoTitle'),
+    description: t('marketplace.metaDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
+    canonicalHref: origin ? `${origin}/marketplace` : undefined,
+    jsonLd: mpJsonLd,
+    jsonLdId: 'marketplace-page-jsonld',
+  })
+
   const loadPublicListings = async () => {
-    const data = await marketplaceService.listPublic({
-      q: query || undefined,
-      country: filters.country || undefined,
-      state: filters.state || undefined,
-      city: filters.city || undefined,
-      nearCountry,
-      nearState,
-      nearCity,
-    })
-    setListings(Array.isArray(data) ? data : [])
+    try {
+      const data = await marketplaceService.listPublic({
+        q: query || undefined,
+        country: filters.country || undefined,
+        state: filters.state || undefined,
+        city: filters.city || undefined,
+        nearCountry,
+        nearState,
+        nearCity,
+      })
+      const normalized = Array.isArray(data) ? data : []
+      if (normalized.length > 0) {
+        setListings(normalized)
+        return
+      }
+      setListings(
+        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
+      )
+    } catch {
+      setListings(
+        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
+      )
+    }
   }
 
   const loadOfficialVendors = async () => {
@@ -117,24 +300,94 @@ export default function MarketplacePage() {
     setMyReputation(profile?.reputation || null)
     setMyBadgesProgress(profile?.badgesProgress || null)
   }
-  const uploadProfilePhoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      const updated = await marketplaceService.uploadProfilePhoto(file)
-      setMyProfile((f) => ({ ...f, profilePhoto: updated?.profilePhoto || '' }))
-      setMessage(t('marketplace.photoUpdated'))
-    } catch (err) {
-      setMessage(err?.response?.data?.error || t('marketplace.error'))
+
+  const loadThreads = useCallback(async () => {
+    if (!user?.id) return
+    const data = await chatService.threads(0, 30)
+    const onlyMarketplace = {
+      ...(data || {}),
+      content: (data?.content || []).filter((th) => !!th.listingId),
     }
-  }
+    setThreads(onlyMarketplace)
+  }, [user?.id])
+  const onListingImageFile = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      setUploadingListingImage(true)
+      setMessage('')
+      try {
+        const data = await marketplaceService.uploadListingImage(file)
+        const u = data?.imageUrl
+        if (u) setListingForm((f) => ({ ...f, imageUrl: u }))
+        else setMessage(t('marketplace.error'))
+      } catch (err) {
+        setMessage(err?.response?.data?.message || err?.response?.data?.error || t('marketplace.error'))
+      } finally {
+        setUploadingListingImage(false)
+      }
+    },
+    [t]
+  )
 
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})])
+    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {}), loadThreads().catch(() => {})])
       .finally(() => setLoading(false))
+  }, [loadThreads])
+
+  useEffect(() => {
+    marketplaceService
+      .getListingBoostOffer()
+      .then((d) => setListingBoostAvailable(!!d?.available))
+      .catch(() => setListingBoostAvailable(false))
   }, [])
+
+  useEffect(() => {
+    const lb = searchParams.get('listingBoost')
+    if (!lb) return
+    if (lb === 'success') {
+      setMessage(t('marketplace.listingBoostPaid'))
+    } else if (lb === 'cancel') {
+      setMessage(t('marketplace.listingBoostCancelled'))
+    }
+    const next = new URLSearchParams(searchParams)
+    next.delete('listingBoost')
+    next.delete('session_id')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams, t])
+
+  useEffect(() => {
+    const openSeller = searchParams.get('openSeller')
+    const openListing = searchParams.get('openListing')
+    if (!user?.id || !openSeller?.trim()) return
+    const sellerId = openSeller.trim()
+    if (String(sellerId) === String(user.id)) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const listingId = openListing && UUID_REGEX.test(String(openListing).trim())
+          ? String(openListing).trim()
+          : null
+        const row = await chatService.openThread(sellerId, listingId)
+        if (cancelled) return
+        setActiveThread(row)
+        const msgs = await chatService.messages(row.id, 0, 50)
+        if (!cancelled) setThreadMessages(msgs)
+        await loadThreads()
+      } catch (err) {
+        if (!cancelled) setMessage(err?.response?.data?.error || t('marketplace.error'))
+      } finally {
+        const next = new URLSearchParams(searchParams)
+        next.delete('openSeller')
+        next.delete('openListing')
+        setSearchParams(next, { replace: true })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [searchParams, setSearchParams, loadThreads, user?.id, t])
 
   useEffect(() => {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
@@ -147,10 +400,16 @@ export default function MarketplacePage() {
     setSavingListing(true)
     setMessage('')
     try {
-      await marketplaceService.createListing({
-        ...listingForm,
+      const { requestBoost, ...rest } = listingForm
+      const data = await marketplaceService.createListing({
+        ...rest,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
+        requestListingBoost: !!requestBoost,
       })
+      if (data?.boostCheckoutUrl) {
+        window.location.assign(data.boostCheckoutUrl)
+        return
+      }
       setListingForm(EMPTY_LISTING_FORM)
       await Promise.all([loadPublicListings(), loadMine()])
       setMessage(t('marketplace.createdOk'))
@@ -161,23 +420,35 @@ export default function MarketplacePage() {
     }
   }
 
-  const saveProfile = async (e) => {
-    e.preventDefault()
-    setSavingProfile(true)
-    setMessage('')
-    try {
-      await marketplaceService.saveMyProfile(myProfile)
-      setMessage(t('marketplace.profileSaved'))
-    } catch (err) {
-      setMessage(err?.response?.data?.error || t('marketplace.error'))
-    } finally {
-      setSavingProfile(false)
-    }
-  }
-
   const markSold = async (listingId) => {
     await marketplaceService.updateListingStatus(listingId, 'sold')
     await Promise.all([loadPublicListings(), loadMine()])
+  }
+
+  const pickThread = async (thread) => {
+    setActiveThread(thread)
+    try {
+      const msgs = await chatService.messages(thread.id, 0, 50)
+      setThreadMessages(msgs)
+    } catch {
+      setMessage(t('marketplace.error'))
+    }
+  }
+
+  const sendMarketplaceMessage = async (e) => {
+    e.preventDefault()
+    if (!activeThread?.id) return
+    const text = (chatBody || '').trim()
+    if (!text) return
+    try {
+      await chatService.sendMessage(activeThread.id, text)
+      setChatBody('')
+      const msgs = await chatService.messages(activeThread.id, 0, 50)
+      setThreadMessages(msgs)
+      await loadThreads()
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
   }
 
   const reportListing = async (listingId) => {
@@ -211,50 +482,9 @@ export default function MarketplacePage() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <div className="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
-          <h4 className="mb-0">{t('marketplace.title')}</h4>
-          <div className="d-flex gap-2 flex-wrap">
-            <input
-              className="form-control form-control-sm"
-              placeholder={t('marketplace.searchPlaceholder')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <select className="form-select form-select-sm" value={filters.country}
-              onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-              <option value="">{t('marketplace.anyCountry')}</option>
-              {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="form-select form-select-sm" value={filters.state}
-              onChange={(e) => setFilters((f) => ({ ...f, state: e.target.value, city: '' }))}>
-              <option value="">{t('marketplace.anyState')}</option>
-              {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select className="form-select form-select-sm" value={filters.city}
-              onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}>
-              <option value="">{t('marketplace.anyCity')}</option>
-              {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <div className="form-check d-flex align-items-center ms-1">
-              <input className="form-check-input me-1" type="checkbox" id="nearMe"
-                checked={filters.nearMe} onChange={(e) => setFilters((f) => ({ ...f, nearMe: e.target.checked }))} />
-              <label className="form-check-label small" htmlFor="nearMe">
-                {t('marketplace.nearMe')}
-              </label>
-            </div>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
-              {t('common.search')}
-            </button>
-          </div>
-        </div>
+        <h4 className="mb-3">{t('marketplace.title')}</h4>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
-
-        <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
-          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.pageFocusTitle')}</h2>
-          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
-          <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
-        </div>
 
         <section className="ta-marketplace-official-strip mb-4" aria-label={t('marketplace.officialTitle')}>
           <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
@@ -315,11 +545,103 @@ export default function MarketplacePage() {
           </div>
         </section>
 
+        <div className="row g-3 mb-4">
+          <div className="col-lg-4">
+            {user ? (
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body p-3">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 46, height: 46, borderRadius: 999, objectFit: 'cover' }} />
+                    <div className="min-w-0">
+                      <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
+                      <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
+                    </div>
+                  </div>
+                  <div className="small text-muted">
+                    {[myProfile.city, myProfile.state, myProfile.country].filter(Boolean).join(' · ') || 'Ubicacion no definida'}
+                  </div>
+                  {myReputation && (
+                    <div className="small mt-2">
+                      <span className="fw-semibold">{t('marketplace.reputationTitle')}:</span>{' '}
+                      {t('marketplace.reputationLine', { tier: myReputation.tier, score: myReputation.score })}
+                    </div>
+                  )}
+                  <div className="d-flex gap-2 flex-wrap mt-3">
+                    <Link to="/account" className="btn btn-sm btn-outline-secondary">Editar en Cuenta</Link>
+                    {!!(myProfile.handle || user.publicHandle) && (
+                      <Link to={`/u/${encodeURIComponent(myProfile.handle || user.publicHandle)}`} className="btn btn-sm btn-outline-dark">
+                        Ver perfil publico
+                      </Link>
+                    )}
+                  </div>
+                  <p className="small text-muted mb-0 mt-2">
+                    Tu perfil de keeper aparece aqui en compacto para no saturar la barra derecha.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body p-3 small">
+                  <div className="fw-semibold mb-1">Perfil de keeper</div>
+                  <p className="text-muted mb-2">Inicia sesion para activar tu perfil publico y publicar listings.</p>
+                  <Link to="/login" className="btn btn-sm btn-dark">Entrar</Link>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="col-lg-8">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body p-3">
+                <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Buscar listings</h2>
+                <div className="d-flex gap-2 flex-wrap">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.searchPlaceholder')}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                  <select className="form-select form-select-sm" value={filters.country}
+                    onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
+                    <option value="">{t('marketplace.anyCountry')}</option>
+                    {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select className="form-select form-select-sm" value={filters.state}
+                    onChange={(e) => setFilters((f) => ({ ...f, state: e.target.value, city: '' }))}>
+                    <option value="">{t('marketplace.anyState')}</option>
+                    {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select className="form-select form-select-sm" value={filters.city}
+                    onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}>
+                    <option value="">{t('marketplace.anyCity')}</option>
+                    {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <div className="form-check d-flex align-items-center ms-1">
+                    <input className="form-check-input me-1" type="checkbox" id="nearMe"
+                      checked={filters.nearMe} onChange={(e) => setFilters((f) => ({ ...f, nearMe: e.target.checked }))} />
+                    <label className="form-check-label small" htmlFor="nearMe">
+                      {t('marketplace.nearMe')}
+                    </label>
+                  </div>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
+                    {t('common.search')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
+          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Peer listings</h2>
+          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
+          <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
+        </div>
+
         <div className="row g-4">
           <div className="col-lg-8">
             <div className="mb-3 pb-2 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
-              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.communityTitle')}</h3>
-              <p className="small text-muted mb-0">{t('marketplace.communitySubtitle')}</p>
+              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>Community marketplace listings</h3>
+              <p className="small text-muted mb-0">Peer listings de la comunidad ordenados por relevancia.</p>
             </div>
             <div className="row g-3">
               {loading && <p className="text-muted small">{t('common.loading')}</p>}
@@ -330,10 +652,23 @@ export default function MarketplacePage() {
                 <div className="col-md-6" key={l.id}>
                   <div className="card border-0 shadow-sm h-100">
                     {l.imageUrl ? (
-                      <img src={l.imageUrl} alt={l.title} className="card-img-top" style={{ maxHeight: 200, objectFit: 'cover' }} />
+                      <img
+                        src={imgUrl(l.imageUrl) || l.imageUrl}
+                        alt={l.title}
+                        className="card-img-top"
+                        style={{ maxHeight: 200, objectFit: 'cover' }}
+                      />
                     ) : null}
                     <div className="card-body">
-                      <h6 className="fw-bold">{l.title}</h6>
+                      <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
+                        <span>{l.title}</span>
+                        {l.isDemo && (
+                          <span className="badge bg-secondary">{t('marketplace.demoListingBadge', { defaultValue: 'Demo' })}</span>
+                        )}
+                        {!l.isDemo && l.boosted && (
+                          <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
+                        )}
+                      </h6>
                       <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
                       <p className="small mb-2">{l.description || '-'}</p>
                       <div className="small text-muted mb-2">
@@ -343,13 +678,15 @@ export default function MarketplacePage() {
                         {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
-                        <Link to={`/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
-                          {t('marketplace.viewSeller')}
-                        </Link>
-                        {String(user?.id || '') !== String(l.sellerUserId) && (
+                        {!l.isDemo && (
+                          <Link to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
+                            {t('marketplace.viewSeller')}
+                          </Link>
+                        )}
+                        {!l.isDemo && String(user?.id || '') !== String(l.sellerUserId) && (
                           user ? (
                             <Link
-                              to={`/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
+                              to={`/marketplace?openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
                               className="btn btn-sm btn-dark"
                             >
                               {t('marketplace.messageSeller')}
@@ -359,7 +696,7 @@ export default function MarketplacePage() {
                               to="/login"
                               state={{
                                 redirectAfterAuth:
-                                  `/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`,
+                                  `/marketplace?openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`,
                               }}
                               className="btn btn-sm btn-dark"
                             >
@@ -367,10 +704,13 @@ export default function MarketplacePage() {
                             </Link>
                           )
                         )}
-                        {user && String(user.id) !== String(l.sellerUserId) && (
+                        {!l.isDemo && user && String(user.id) !== String(l.sellerUserId) && (
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => reportListing(l.id)}>
                             {t('marketplace.report')}
                           </button>
+                        )}
+                        {l.isDemo && (
+                          <span className="small text-muted">{t('marketplace.demoListingHint', { defaultValue: 'Ejemplo visual mientras entran mas anuncios reales.' })}</span>
                         )}
                       </div>
                     </div>
@@ -426,8 +766,36 @@ export default function MarketplacePage() {
                         <option value="">{t('marketplace.fieldCity')}</option>
                         {listingCities.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldImage')}
-                        value={listingForm.imageUrl} onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))} />
+                      <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>{t('marketplace.fieldImageUpload')}</label>
+                      <input
+                        type="file"
+                        className="form-control form-control-sm mb-2"
+                        accept="image/*"
+                        disabled={uploadingListingImage}
+                        onChange={onListingImageFile}
+                      />
+                      <input
+                        className="form-control form-control-sm mb-2"
+                        placeholder={t('marketplace.fieldImage')}
+                        value={listingForm.imageUrl}
+                        onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                      />
+                      {uploadingListingImage && <p className="small text-muted mb-1">{t('marketplace.uploadingImage')}</p>}
+                      {listingBoostAvailable && (
+                        <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="listing-request-boost"
+                            checked={!!listingForm.requestBoost}
+                            onChange={(e) => setListingForm((f) => ({ ...f, requestBoost: e.target.checked }))}
+                          />
+                          <label className="form-check-label" htmlFor="listing-request-boost" style={{ cursor: 'pointer' }}>
+                            {t('marketplace.listingBoostLabel')}
+                            <span className="d-block small text-muted mt-1">{t('marketplace.listingBoostHint')}</span>
+                          </label>
+                        </div>
+                      )}
                       <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>
                         {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                       </button>
@@ -435,69 +803,51 @@ export default function MarketplacePage() {
                   </div>
                 </div>
 
-                <div className="card border-0 shadow-sm mb-3">
-                  <div className="card-body">
-                    <h6>{t('marketplace.keeperProfileTitle')}</h6>
-                    {myReputation && (
-                      <div className="p-2 rounded mb-2 ta-marketplace-reputation-strip">
-                        <div className="small fw-semibold">
-                          {t('marketplace.reputationTitle')}: {t('marketplace.reputationLine', { tier: myReputation.tier, score: myReputation.score })}
-                        </div>
-                        <div className="progress mt-1" style={{ height: 7 }}>
-                          <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(myReputation.score || 0))}%` }} />
-                        </div>
+                <div className="card border-0 shadow-sm">
+                  <div className="card-body small">
+                    <h6>Mensajería de marketplace</h6>
+                    <p className="text-muted mb-2">Spood ahora se usa para likes en comunidad. Aquí quedan los mensajes de compra/venta.</p>
+                    {(threads.content || []).length === 0 ? (
+                      <p className="text-muted mb-2">Aún no hay conversaciones.</p>
+                    ) : (
+                      <div className="mb-2" style={{ maxHeight: 190, overflowY: 'auto' }}>
+                        {(threads.content || []).map((th) => (
+                          <button
+                            key={th.id}
+                            type="button"
+                            className={`btn btn-sm w-100 text-start mb-1 ${activeThread?.id === th.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                            onClick={() => pickThread(th)}
+                          >
+                            <div className="fw-semibold">{th.otherDisplayName || th.otherHandle || 'Keeper'}</div>
+                            <div className="small text-truncate">{th.lastMessagePreview || '—'}</div>
+                          </button>
+                        ))}
                       </div>
                     )}
-                    {myBadgesProgress && (
-                      <div className="mb-2">
-                        {Object.entries(myBadgesProgress).map(([key, p]) => {
-                          const target = Number(p?.target || 0)
-                          const current = Number(p?.current || 0)
-                          const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
-                          return (
-                            <div key={key} className="mb-1">
-                              <div className="small">{p?.nextLabel}</div>
-                              <div className="progress" style={{ height: 5 }}>
-                                <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
-                              </div>
+                    {activeThread ? (
+                      <>
+                        <div className="border rounded p-2 mb-2" style={{ maxHeight: 160, overflowY: 'auto', background: 'rgba(0,0,0,0.08)' }}>
+                          {(threadMessages.content || []).map((m) => (
+                            <div key={m.id} className="small mb-1">
+                              {m.body}
                             </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <form onSubmit={saveProfile} className="small">
-                      <div className="d-flex align-items-center gap-2 mb-2">
-                        <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="profile" style={{ width: 48, height: 48, borderRadius: 999, objectFit: 'cover' }} />
-                        <input type="file" className="form-control form-control-sm" accept="image/*" onChange={uploadProfilePhoto} />
-                      </div>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldHandle')}
-                        value={myProfile.handle} onChange={(e) => setMyProfile((f) => ({ ...f, handle: e.target.value }))} />
-                      <textarea className="form-control form-control-sm mb-2" rows={2} placeholder={t('marketplace.fieldBio')}
-                        value={myProfile.bio} onChange={(e) => setMyProfile((f) => ({ ...f, bio: e.target.value }))} />
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.country} onChange={(e) => setMyProfile((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-                        {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.state} onChange={(e) => setMyProfile((f) => ({ ...f, state: e.target.value, city: '' }))}>
-                        <option value="">{t('marketplace.fieldState')}</option>
-                        {(STATES_BY_COUNTRY[myProfile.country] || []).map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.city} onChange={(e) => setMyProfile((f) => ({ ...f, city: e.target.value }))}>
-                        <option value="">{t('marketplace.fieldCity')}</option>
-                        {(CITIES_BY_STATE[myProfile.state] || []).map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldFeatured')}
-                        value={myProfile.featuredCollection} onChange={(e) => setMyProfile((f) => ({ ...f, featuredCollection: e.target.value }))} />
-                      <button className="btn btn-sm btn-outline-dark w-100" disabled={savingProfile}>
-                        {savingProfile ? t('common.saving') : t('marketplace.saveProfile')}
-                      </button>
-                    </form>
+                          ))}
+                        </div>
+                        <form className="input-group input-group-sm" onSubmit={sendMarketplaceMessage}>
+                          <input
+                            className="form-control"
+                            value={chatBody}
+                            onChange={(e) => setChatBody(e.target.value)}
+                            placeholder="Escribe un mensaje..."
+                          />
+                          <button className="btn btn-dark" type="submit">Enviar</button>
+                        </form>
+                      </>
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="card border-0 shadow-sm">
+                <div className="card border-0 shadow-sm mt-3">
                   <div className="card-body small">
                     <h6>{t('marketplace.myListings')}</h6>
                     {myListings.length === 0 && <p className="text-muted mb-0">{t('marketplace.noneMine')}</p>}

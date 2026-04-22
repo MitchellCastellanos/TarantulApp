@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import com.tarantulapp.util.FileStorageService;
+import com.tarantulapp.util.PublicHandleRules;
 
 @Service
 public class MarketplaceService {
@@ -39,6 +41,7 @@ public class MarketplaceService {
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
     private final FileStorageService fileStorageService;
+    private final BillingService billingService;
 
     public MarketplaceService(MarketplaceListingRepository marketplaceListingRepository,
                               SellerReviewRepository sellerReviewRepository,
@@ -47,7 +50,8 @@ public class MarketplaceService {
                               FeedingLogRepository feedingLogRepository,
                               MoltLogRepository moltLogRepository,
                               BehaviorLogRepository behaviorLogRepository,
-                              FileStorageService fileStorageService) {
+                              FileStorageService fileStorageService,
+                              BillingService billingService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.sellerReviewRepository = sellerReviewRepository;
         this.userRepository = userRepository;
@@ -56,12 +60,14 @@ public class MarketplaceService {
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
         this.fileStorageService = fileStorageService;
+        this.billingService = billingService;
     }
 
     @Transactional
     public Map<String, Object> upsertMyProfile(UUID userId, String displayName, String handle, String bio, String location,
                                                String featuredCollection, String contactWhatsapp,
-                                               String contactInstagram, String country, String state, String city) {
+                                               String contactInstagram, String country, String state, String city,
+                                               Boolean searchVisible) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
@@ -78,6 +84,7 @@ public class MarketplaceService {
         profile.setProfileCountry(cleanText(country, 80));
         profile.setProfileState(cleanText(state, 80));
         profile.setProfileCity(cleanText(city, 80));
+        profile.setSearchVisible(searchVisible == null ? Boolean.TRUE : searchVisible);
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -91,10 +98,16 @@ public class MarketplaceService {
         return out;
     }
 
+    @Transactional(readOnly = true)
+    public boolean isListingBoostOffered() {
+        return billingService.isListingBoostCheckoutAvailable();
+    }
+
     @Transactional
     public Map<String, Object> createListing(UUID userId, String title, String description, String speciesName,
                                              String stage, String sex, BigDecimal priceAmount, String currency,
-                                             String city, String state, String country, String imageUrl, String pedigreeRef) {
+                                             String city, String state, String country, String imageUrl, String pedigreeRef,
+                                             boolean requestListingBoost) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Titulo requerido");
         }
@@ -113,7 +126,21 @@ public class MarketplaceService {
         listing.setImageUrl(cleanText(imageUrl, 350));
         listing.setPedigreeRef(cleanText(pedigreeRef, 180));
         listing.setStatus("active");
-        return mapListing(marketplaceListingRepository.save(listing));
+        listing = marketplaceListingRepository.save(listing);
+        Map<String, Object> out = mapListing(listing);
+        out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
+        if (requestListingBoost && billingService.isListingBoostCheckoutAvailable()) {
+            User u = userRepository.findById(userId).orElse(null);
+            if (u != null) {
+                try {
+                    String url = billingService.createListingBoostCheckoutSession(userId, u.getEmail(), listing.getId());
+                    out.put("boostCheckoutUrl", url);
+                } catch (Exception ignored) {
+                    // Listing is still published; boost checkout can be retried later if we add that flow.
+                }
+            }
+        }
+        return out;
     }
 
     @Transactional
@@ -167,10 +194,17 @@ public class MarketplaceService {
                 .filter(m -> filterCountry == null || normalizeFilter(m.getCountry()).equals(filterCountry))
                 .filter(m -> filterState == null || normalizeFilter(m.getState()).equals(filterState))
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
-                .sorted((a, b) -> Integer.compare(
-                        proximityScore(b, nearCountryNorm, nearStateNorm, nearCityNorm),
-                        proximityScore(a, nearCountryNorm, nearStateNorm, nearCityNorm)
-                ))
+                .sorted((a, b) -> {
+                    boolean ab = isListingBoostedNow(a);
+                    boolean bb = isListingBoostedNow(b);
+                    if (ab != bb) {
+                        return ab ? -1 : 1;
+                    }
+                    return Integer.compare(
+                            proximityScore(b, nearCountryNorm, nearStateNorm, nearCityNorm),
+                            proximityScore(a, nearCountryNorm, nearStateNorm, nearCityNorm)
+                    );
+                })
                 .limit(100)
                 .map(this::mapListing)
                 .collect(Collectors.toList());
@@ -240,6 +274,15 @@ public class MarketplaceService {
     }
 
     @Transactional
+    public Map<String, String> uploadListingImage(UUID userId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Imagen requerida");
+        }
+        String path = fileStorageService.saveFile(file, "listings/" + userId);
+        return Map.of("imageUrl", path);
+    }
+
+    @Transactional
     public Map<String, Object> uploadProfilePhoto(UUID userId, MultipartFile file) throws IOException {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String path = fileStorageService.saveFile(file, "keepers/" + userId);
@@ -258,6 +301,7 @@ public class MarketplaceService {
         out.put("id", l.getId());
         out.put("sellerUserId", l.getSellerUserId());
         out.put("sellerName", seller == null ? "Keeper" : (seller.getDisplayName() == null || seller.getDisplayName().isBlank() ? seller.getEmail() : seller.getDisplayName()));
+        out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
         out.put("speciesName", l.getSpeciesName() == null ? "" : l.getSpeciesName());
@@ -272,7 +316,13 @@ public class MarketplaceService {
         out.put("imageUrl", l.getImageUrl() == null ? "" : l.getImageUrl());
         out.put("pedigreeRef", l.getPedigreeRef() == null ? "" : l.getPedigreeRef());
         out.put("createdAt", l.getCreatedAt());
+        out.put("boostedUntil", l.getBoostedUntil());
+        out.put("boosted", isListingBoostedNow(l));
         return out;
+    }
+
+    private boolean isListingBoostedNow(MarketplaceListing m) {
+        return m.getBoostedUntil() != null && m.getBoostedUntil().isAfter(Instant.now());
     }
 
     private Map<String, Object> mapUserProfile(User p) {
@@ -289,6 +339,7 @@ public class MarketplaceService {
         out.put("state", p.getProfileState() == null ? "" : p.getProfileState());
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
+        out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         return out;
     }
 
@@ -410,10 +461,7 @@ public class MarketplaceService {
     }
 
     private String normalizeHandle(String raw) {
-        String c = cleanText(raw, 60);
-        if (c == null) return null;
-        String out = c.toLowerCase().replaceAll("[^a-z0-9._-]", "");
-        return out.isBlank() ? null : out;
+        return PublicHandleRules.normalize(raw);
     }
 
     private String cleanCurrency(String raw) {

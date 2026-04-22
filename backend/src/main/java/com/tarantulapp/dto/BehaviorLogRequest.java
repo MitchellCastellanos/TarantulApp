@@ -11,6 +11,7 @@ public class BehaviorLogRequest {
 
     private String mood;   // calm | defensive | active | hiding | pre_molt
     private String notes;
+    private Boolean publishToFeed;
 
     public OffsetDateTime getLoggedAt() { return loggedAt; }
     public void setLoggedAt(OffsetDateTime loggedAt) { this.loggedAt = loggedAt; }
@@ -18,4 +19,6 @@ public class BehaviorLogRequest {
     public void setMood(String mood) { this.mood = mood; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Boolean getPublishToFeed() { return publishToFeed; }
+    public void setPublishToFeed(Boolean publishToFeed) { this.publishToFeed = publishToFeed; }
 }

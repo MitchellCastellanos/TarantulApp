@@ -32,19 +32,21 @@ export default function PrivacyPage() {
 
         <h5 className="fw-bold mt-4">4. Your Rights</h5>
         <p>You may request deletion of your account and all associated data at any time by emailing{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>. We will process the request within 30 days.</p>
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>. We will process the request within 30 days.</p>
 
         <h5 className="fw-bold mt-4">5. Cookies</h5>
         <p>TarantulApp uses browser localStorage to store your authentication token. No third-party tracking cookies are used.</p>
 
         <h5 className="fw-bold mt-4">6. Contact</h5>
         <p>Questions about this policy:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
         </p>
         <p>Technical issues:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Billing &amp; Stripe:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
           {' · '}Partnerships &amp; press:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+          <a href={`mailto:${PUBLIC_CONTACT.partners}`}>{PUBLIC_CONTACT.partners}</a>
         </p>
         <p className="small text-muted mb-0">
           <Link to="/contact">All contact options</Link>
@@ -77,19 +79,21 @@ export default function PrivacyPage() {
 
         <h5 className="fw-bold mt-4">4. Tus derechos</h5>
         <p>Puedes solicitar la eliminación de tu cuenta y todos tus datos en cualquier momento escribiendo a{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>. Procesamos la solicitud en 30 días.</p>
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>. Procesamos la solicitud en 30 días.</p>
 
         <h5 className="fw-bold mt-4">5. Cookies y almacenamiento local</h5>
         <p>TarantulApp usa localStorage del navegador para guardar tu sesión. No usamos cookies de seguimiento de terceros.</p>
 
         <h5 className="fw-bold mt-4">6. Contacto</h5>
         <p>Dudas sobre esta política:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
         </p>
         <p>Incidencias técnicas:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
-          {' · '}Marketing y alianzas:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+          {' · '}Billing y Stripe:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
+          {' · '}Alianzas:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.partners}`}>{PUBLIC_CONTACT.partners}</a>
         </p>
         <p className="small text-muted mb-0">
           <Link to="/contact">Página de contacto</Link>

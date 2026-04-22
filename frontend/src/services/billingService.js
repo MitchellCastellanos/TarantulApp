@@ -5,6 +5,8 @@ const billingService = {
   me: () => api.get('/billing/me', { skipAuthRedirect: true }).then(r => r.data),
   createCheckoutSession: (interval) => api.post('/billing/checkout', { interval }).then(r => r.data),
   verifySession: (sessionId) => api.post('/billing/verify-session', { sessionId }).then(r => r.data),
+  verifyGooglePlayPurchase: ({ purchaseToken, productId }) =>
+    api.post('/billing/google-play/verify', { purchaseToken, productId }).then(r => r.data),
   createPortalSession: () => api.post('/billing/portal').then(r => r.data),
 }
 

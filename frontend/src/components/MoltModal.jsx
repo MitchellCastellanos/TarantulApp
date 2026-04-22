@@ -7,7 +7,7 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     moltedAt: nowLocalDatetimeInputValue(),
-    preSizeCm: '', postSizeCm: '', notes: ''
+    preSizeCm: '', postSizeCm: '', notes: '', publishToFeed: false
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -67,6 +67,20 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
                   <input type="text" className="form-control form-control-sm"
                          value={form.notes} onChange={e => set('notes', e.target.value)}
                          placeholder={t('logModals.optional')} />
+                </div>
+                <div className="col-12">
+                  <div className="form-check">
+                    <input
+                      id="molt-publish-feed"
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={!!form.publishToFeed}
+                      onChange={(e) => set('publishToFeed', e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor="molt-publish-feed">
+                      {t('logModals.publishToFeed')}
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

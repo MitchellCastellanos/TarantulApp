@@ -25,6 +25,13 @@ public class ReferralService {
     private static final Logger log = LoggerFactory.getLogger(ReferralService.class);
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+    /** Consecutive referral counts that unlock one-time extra trial days for the referrer. */
+    private static final int[] MILESTONE_COUNTS = {1, 3, 5, 10, 25};
+    /** Extra Pro trial days granted once when the referrer reaches each count (0 = badge-only step). */
+    private static final int[] MILESTONE_EXTRA_DAYS = {7, 14, 30, 90, 0};
+    /** Bit in {@code users.referral_milestone_mask} for each milestone tier (order matches arrays above). */
+    private static final int[] MILESTONE_BITS = {1, 2, 4, 8, 16};
+
     private final ReferralCodeRepository referralCodeRepository;
     private final ReferralRedemptionRepository referralRedemptionRepository;
     private final UserRepository userRepository;
@@ -56,6 +63,9 @@ public class ReferralService {
         out.put("shareQuery", "?ref=" + code.getCode());
         out.put("refereeBonusDays", refereeBonusDays);
         out.put("referrerBonusDays", referrerBonusDays);
+        out.put("founderKeeper", userRepository.findById(userId)
+                .map(u -> Boolean.TRUE.equals(u.getFounderKeeper()))
+                .orElse(false));
         return out;
     }
 
@@ -115,7 +125,45 @@ public class ReferralService {
         extendTrial(referrer, referrerBonusDays);
         userRepository.save(referee);
         userRepository.save(referrer);
+        applyReferrerMilestoneBonuses(referrerId);
         log.info("Referral applied referee={} referrer={}", newUserId, referrerId);
+    }
+
+    /**
+     * One-time ladder bonuses for the referrer (short, stackable trial extensions).
+     * Does not change the per-signup +3/+3 base handled above.
+     */
+    private void applyReferrerMilestoneBonuses(UUID referrerId) {
+        User referrer = userRepository.findById(referrerId).orElse(null);
+        if (referrer == null) {
+            return;
+        }
+        long count = referralRedemptionRepository.countByReferrerUserId(referrerId);
+        int mask = referrer.getReferralMilestoneMask() == null ? 0 : referrer.getReferralMilestoneMask();
+        boolean changed = false;
+        for (int i = 0; i < MILESTONE_COUNTS.length; i++) {
+            if (count < MILESTONE_COUNTS[i]) {
+                break;
+            }
+            int bit = MILESTONE_BITS[i];
+            if ((mask & bit) != 0) {
+                continue;
+            }
+            mask |= bit;
+            int extra = MILESTONE_EXTRA_DAYS[i];
+            if (extra > 0) {
+                extendTrial(referrer, extra);
+            }
+            if (i == MILESTONE_COUNTS.length - 1) {
+                referrer.setFounderKeeper(Boolean.TRUE);
+            }
+            changed = true;
+        }
+        if (changed) {
+            referrer.setReferralMilestoneMask(mask);
+            userRepository.save(referrer);
+            log.info("Referral milestones applied referrer={} count={} mask={}", referrerId, count, mask);
+        }
     }
 
     private void extendTrial(User user, int days) {

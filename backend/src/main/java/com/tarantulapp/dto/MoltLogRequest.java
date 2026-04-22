@@ -13,6 +13,7 @@ public class MoltLogRequest {
     private BigDecimal preSizeCm;
     private BigDecimal postSizeCm;
     private String notes;
+    private Boolean publishToFeed;
 
     public OffsetDateTime getMoltedAt() { return moltedAt; }
     public void setMoltedAt(OffsetDateTime moltedAt) { this.moltedAt = moltedAt; }
@@ -22,4 +23,6 @@ public class MoltLogRequest {
     public void setPostSizeCm(BigDecimal postSizeCm) { this.postSizeCm = postSizeCm; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Boolean getPublishToFeed() { return publishToFeed; }
+    public void setPublishToFeed(Boolean publishToFeed) { this.publishToFeed = publishToFeed; }
 }
