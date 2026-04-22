@@ -413,24 +413,6 @@ export default function MarketplacePage() {
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
-        {user && (
-          <div className="card border-0 shadow-sm mb-3" style={{ maxWidth: 380 }}>
-            <div className="card-body p-3">
-              <div className="d-flex align-items-center gap-2">
-                <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 42, height: 42, borderRadius: 999, objectFit: 'cover' }} />
-                <div className="min-w-0">
-                  <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
-                  <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
-                </div>
-              </div>
-              <div className="small text-muted mt-2">
-                Keeper profile visible en marketplace. Edicion completa desde Cuenta.
-              </div>
-              <Link to="/account" className="btn btn-sm btn-outline-secondary mt-2">Editar en Cuenta</Link>
-            </div>
-          </div>
-        )}
-
         <section className="ta-marketplace-official-strip mb-4" aria-label={t('marketplace.officialTitle')}>
           <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
             <div className="d-flex align-items-start gap-2 min-w-0">
