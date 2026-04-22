@@ -41,6 +41,7 @@ export default function SocialHubPage() {
     imageUrl: '',
     tarantulaId: '',
   })
+  const [composerOpen, setComposerOpen] = useState(false)
   const [myTarantulas, setMyTarantulas] = useState([])
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
@@ -491,86 +492,112 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
-            <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
-              <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
-                <div className="card-body py-3 px-3 px-md-4">
-                  <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
-                  <form onSubmit={submitPost} className="small">
-                    <textarea
-                      className="form-control form-control-sm mb-2"
-                      rows={3}
-                      required
-                      value={composer.body}
-                      onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
-                      placeholder={t('social.composerBodyPh')}
-                    />
-                    <div className="mb-2">
-                      <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
-                      <select
-                        className="form-select form-select-sm"
-                        value={composer.tarantulaId}
-                        onChange={(e) => setComposer((c) => ({ ...c, tarantulaId: e.target.value }))}
-                      >
-                        <option value="">{t('social.linkedTarantulaNone')}</option>
-                        {(myTarantulas || []).map((tar) => (
-                          <option key={tar.id} value={tar.id}>
-                            {(tar.name || '?')
-                              + (tar.species?.scientificName ? ` ù ${tar.species.scientificName}` : '')}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="row g-2 mb-2">
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.visibility')}</label>
-                        <select
-                          className="form-select form-select-sm"
-                          value={composer.visibility}
-                          onChange={(e) => setComposer((c) => ({ ...c, visibility: e.target.value }))}
-                        >
-                          <option value="public">{t('social.visPublic')}</option>
-                          <option value="private">{t('social.visPrivate')}</option>
-                          <option value="followers">{t('social.visFollowers')}</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.milestoneKind')}</label>
-                        <input
-                          className="form-control form-control-sm"
-                          value={composer.milestoneKind}
-                          onChange={(e) => setComposer((c) => ({ ...c, milestoneKind: e.target.value }))}
-                          placeholder={t('social.milestonePh')}
+            <div className="ta-social-feed-shell mb-4">
+              <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <div className="small ta-social-feed-shell__intro">
+                  {t('social.publicFeed')} - {(feed.content || []).length}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setComposerOpen((v) => !v)}
+                  aria-expanded={composerOpen}
+                >
+                  {t('social.composerTitle')}
+                </button>
+              </div>
+              {composerOpen && (
+                <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-3">
+                  <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+                    <div className="card-body py-3 px-3 px-md-4">
+                      <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
+                      <form onSubmit={submitPost} className="small">
+                        <textarea
+                          className="form-control form-control-sm mb-2"
+                          rows={3}
+                          required
+                          value={composer.body}
+                          onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
+                          placeholder={t('social.composerBodyPh')}
                         />
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.imageUrl')}</label>
-                        <input
-                          className="form-control form-control-sm"
-                          value={composer.imageUrl}
-                          onChange={(e) => setComposer((c) => ({ ...c, imageUrl: e.target.value }))}
-                          placeholder="https://..."
-                        />
-                      </div>
+                        <div className="mb-2">
+                          <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
+                          <select
+                            className="form-select form-select-sm"
+                            value={composer.tarantulaId}
+                            onChange={(e) => setComposer((c) => ({ ...c, tarantulaId: e.target.value }))}
+                          >
+                            <option value="">{t('social.linkedTarantulaNone')}</option>
+                            {(myTarantulas || []).map((tar) => (
+                              <option key={tar.id} value={tar.id}>
+                                {(tar.name || '?')
+                                  + (tar.species?.scientificName ? ` - ${tar.species.scientificName}` : '')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="row g-2 mb-2">
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.visibility')}</label>
+                            <select
+                              className="form-select form-select-sm"
+                              value={composer.visibility}
+                              onChange={(e) => setComposer((c) => ({ ...c, visibility: e.target.value }))}
+                            >
+                              <option value="public">{t('social.visPublic')}</option>
+                              <option value="private">{t('social.visPrivate')}</option>
+                              <option value="followers">{t('social.visFollowers')}</option>
+                            </select>
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.milestoneKind')}</label>
+                            <input
+                              className="form-control form-control-sm"
+                              value={composer.milestoneKind}
+                              onChange={(e) => setComposer((c) => ({ ...c, milestoneKind: e.target.value }))}
+                              placeholder={t('social.milestonePh')}
+                            />
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.imageUrl')}</label>
+                            <input
+                              className="form-control form-control-sm"
+                              value={composer.imageUrl}
+                              onChange={(e) => setComposer((c) => ({ ...c, imageUrl: e.target.value }))}
+                              placeholder="https://..."
+                            />
+                          </div>
+                        </div>
+                        <button type="submit" className="btn btn-sm btn-dark">{t('social.publish')}</button>
+                      </form>
                     </div>
-                    <button type="submit" className="btn btn-sm btn-dark">{t('social.publish')}</button>
-                  </form>
+                  </div>
+                </ChitinCardFrame>
+              )}
+
+              <div className="row g-3">
+                <div className="col-lg-8">
+                  <section className="ta-social-feed-section ta-social-feed-section--community">
+                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.publicFeed')}</h2>
+                    {(feed.content || []).length === 0 ? (
+                      <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                    ) : (
+                      (feed.content || []).map((p) => renderPostCard(p, { showDelete: false }))
+                    )}
+                  </section>
+                </div>
+                <div className="col-lg-4">
+                  <aside className="ta-social-feed-section ta-social-feed-section--mine">
+                    <h2 className="h6 fw-bold mb-2 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
+                    {(mine.content || []).length === 0 ? (
+                      <p className="text-muted small mb-0">{t('social.myPostsEmpty')}</p>
+                    ) : (
+                      (mine.content || []).map((p) => renderPostCard(p, { showDelete: true }))
+                    )}
+                  </aside>
                 </div>
               </div>
-            </ChitinCardFrame>
-
-            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.publicFeed')}</h2>
-            {(feed.content || []).length === 0 ? (
-              <p className="text-muted small">{t('social.feedEmpty')}</p>
-            ) : (
-              (feed.content || []).map((p) => renderPostCard(p, { showDelete: false }))
-            )}
-
-            <h2 className="h6 fw-bold mb-2 mt-4" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
-            {(mine.content || []).length === 0 ? (
-              <p className="text-muted small">{t('social.myPostsEmpty')}</p>
-            ) : (
-              (mine.content || []).map((p) => renderPostCard(p, { showDelete: true }))
-            )}
+            </div>
           </>
         )}
 
@@ -686,7 +713,7 @@ export default function SocialHubPage() {
                         className="form-control form-control-sm"
                         value={sexIdForm.imageUrl}
                         onChange={(e) => setSexIdForm((f) => ({ ...f, imageUrl: e.target.value }))}
-                        placeholder="/uploads/ù"
+                        placeholder="/uploads/?"
                       />
                     </div>
                     <button type="submit" className="btn btn-sm btn-dark" disabled={sexIdUploading}>
@@ -708,7 +735,7 @@ export default function SocialHubPage() {
                 >
                   <div className="small" style={{ color: 'var(--ta-text)' }}>
                     {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
-                    <span className="text-muted ms-1">{'\u00a0ù\u00a0'}{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</span>
+                    <span className="text-muted ms-1">{'\u00a0?\u00a0'}{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</span>
                   </div>
                   <Link className="btn btn-sm btn-outline-secondary" to={`/sex-id/${c.id}`}>
                     {t('sexIdCase.openCase')}
