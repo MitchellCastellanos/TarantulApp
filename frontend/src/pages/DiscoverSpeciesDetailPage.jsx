@@ -78,6 +78,11 @@ export default function DiscoverSpeciesDetailPage() {
   const hasPro = user?.hasProFeatures === true
   const [view, setView] = useState(null)
   const [err, setErr] = useState(false)
+  const [clientPhoto, setClientPhoto] = useState(null)
+
+  useEffect(() => {
+    setClientPhoto(null)
+  }, [id])
 
   useEffect(() => {
     const sid = Number(id)
@@ -90,6 +95,23 @@ export default function DiscoverSpeciesDetailPage() {
       .then(setView)
       .catch(() => setErr(true))
   }, [id])
+
+  useEffect(() => {
+    if (!view?.species) return
+    const sp = view.species
+    const hasRef = sp.referencePhotoUrl && String(sp.referencePhotoUrl).trim() !== ''
+    if (hasRef) return
+    if (view.fallbackPhoto?.url) return
+    const n = (sp.scientificName || '').trim()
+    if (!n) return
+    let cancelled = false
+    speciesService.photoFallback(n).then((p) => {
+      if (!cancelled && p?.url) setClientPhoto(p)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [view?.species?.id, view?.fallbackPhoto?.url, view?.species?.referencePhotoUrl, view?.species?.scientificName])
 
   if (err) {
     return (
@@ -110,8 +132,8 @@ export default function DiscoverSpeciesDetailPage() {
 
   const sp = view.species
   const addNewHref = `/tarantulas/new?speciesId=${sp.id}`
-  const photoSrc = imgUrl(sp.referencePhotoUrl || view.fallbackPhoto?.url)
-  const credit = view.fallbackPhoto
+  const photoSrc = imgUrl(sp.referencePhotoUrl || view.fallbackPhoto?.url || clientPhoto?.url)
+  const credit = view.fallbackPhoto || clientPhoto
 
   return (
     <PublicShell>

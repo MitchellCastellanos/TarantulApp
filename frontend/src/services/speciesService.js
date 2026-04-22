@@ -21,6 +21,12 @@ const speciesService = {
   },
   discoverTaxon: (gbifKey) =>
     publicApi.get('/species/discover-taxon', { params: { gbifKey } }).then((r) => r.data),
+  /** iNat (etc.) por nombre. 404 u error → null. */
+  photoFallback: (scientificName) =>
+    publicApi
+      .get('/species/photo-fallback', { params: { scientificName } })
+      .then((r) => r.data)
+      .catch(() => null),
   /** {@code { speciesId: number | null }} — ficha de cuidados en catálogo público para esa clave GBIF. */
   getPublicSpeciesIdByGbif: (gbifKey) =>
     publicApi.get('/species/public-id-by-gbif', { params: { gbifKey } }).then((r) => r.data),
