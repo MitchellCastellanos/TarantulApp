@@ -65,6 +65,41 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Frontend estático/SPA: si esto cae en auth, los chunks .js regresan 401 y la app redirige a login.
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/assets/**",
+                                "/static/**",
+                                "/manifest.json",
+                                "/manifest.webmanifest",
+                                "/favicon.ico",
+                                "/favicon-*.png",
+                                "/apple-touch-icon*.png",
+                                "/robots.txt",
+                                "/sitemap.xml",
+                                "/sw.js",
+                                "/workbox-*.js",
+                                "/logo*.png",
+                                "/icon-*.png"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/login",
+                                "/forgot-password",
+                                "/reset-password",
+                                "/about",
+                                "/contact",
+                                "/privacy",
+                                "/terms",
+                                "/pro",
+                                "/descubrir",
+                                "/descubrir/**",
+                                "/herramientas/qr",
+                                "/marketplace",
+                                "/marketplace/**",
+                                "/sex-id/**",
+                                "/t/**"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
                         // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.
                         .requestMatchers(
