@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface SexIdCaseVoteRepository extends JpaRepository<SexIdCaseVote, UUID> {
 
+    List<SexIdCaseVote> findByCaseId(UUID caseId);
+
     Optional<SexIdCaseVote> findByCaseIdAndVoterUserId(UUID caseId, UUID voterUserId);
 
     @Query("select v.choice, count(v) from SexIdCaseVote v where v.caseId = :caseId group by v.choice")

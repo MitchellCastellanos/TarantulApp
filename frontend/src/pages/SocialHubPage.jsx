@@ -55,7 +55,13 @@ export default function SocialHubPage() {
 
   const [referral, setReferral] = useState(null)
 
-  const [sexIdForm, setSexIdForm] = useState({ title: '', speciesHint: '', imageUrl: '' })
+  const [sexIdForm, setSexIdForm] = useState({
+    title: '',
+    speciesHint: '',
+    imageUrl: '',
+    imageType: 'ventral',
+    stage: '',
+  })
   const [sexIdCases, setSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
   const [sexIdUploading, setSexIdUploading] = useState(false)
 
@@ -343,9 +349,11 @@ export default function SocialHubPage() {
         title: sexIdForm.title.trim() || undefined,
         imageUrl,
         speciesHint: sexIdForm.speciesHint.trim() || undefined,
+        imageType: sexIdForm.imageType || 'ventral',
+        stage: sexIdForm.stage || undefined,
       })
       setMsg(t('sexIdCase.caseCreated'))
-      setSexIdForm({ title: '', speciesHint: '', imageUrl: '' })
+      setSexIdForm({ title: '', speciesHint: '', imageUrl: '', imageType: 'ventral', stage: '' })
       await loadSexIdCases()
       let refCode = referral?.code
       if (!refCode) {
@@ -689,6 +697,17 @@ export default function SocialHubPage() {
                       />
                     </div>
                     <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldImageType')}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={sexIdForm.imageType}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, imageType: e.target.value }))}
+                      >
+                        <option value="ventral">{t('sexIdCase.imageTypeVentral')}</option>
+                        <option value="exuvia">{t('sexIdCase.imageTypeExuvia')}</option>
+                      </select>
+                    </div>
+                    <div className="mb-2">
                       <label className="form-label small mb-0">{t('sexIdCase.fieldSpecies')}</label>
                       <input
                         className="form-control form-control-sm"
@@ -696,6 +715,19 @@ export default function SocialHubPage() {
                         onChange={(e) => setSexIdForm((f) => ({ ...f, speciesHint: e.target.value }))}
                         placeholder={t('sexIdCase.fieldSpeciesPh')}
                       />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldStage')}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={sexIdForm.stage}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, stage: e.target.value }))}
+                      >
+                        <option value="">{t('sexIdCase.stageOptional')}</option>
+                        <option value="sling">{t('stages.sling')}</option>
+                        <option value="juvenile">{t('stages.juvenile')}</option>
+                        <option value="adult">{t('stages.adult')}</option>
+                      </select>
                     </div>
                     <div className="mb-2">
                       <label className="form-label small mb-0">{t('sexIdCase.uploadPhoto')}</label>

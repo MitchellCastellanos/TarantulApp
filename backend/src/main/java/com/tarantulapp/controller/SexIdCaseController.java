@@ -31,7 +31,9 @@ public class SexIdCaseController {
     record CreateCaseRequest(
             @Size(max = 200) String title,
             @jakarta.validation.constraints.NotBlank @Size(max = 500) String imageUrl,
-            @Size(max = 200) String speciesHint
+            @Size(max = 200) String speciesHint,
+            @Size(max = 20) String stage,
+            @Size(max = 20) String imageType
     ) {}
 
     record VoteRequest(
@@ -41,7 +43,14 @@ public class SexIdCaseController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody CreateCaseRequest req) {
         UUID uid = securityHelper.getCurrentUserId();
-        return ResponseEntity.ok(sexIdCaseService.create(uid, req.title(), req.imageUrl(), req.speciesHint()));
+        return ResponseEntity.ok(sexIdCaseService.create(
+                uid,
+                req.title(),
+                req.imageUrl(),
+                req.speciesHint(),
+                req.stage(),
+                req.imageType()
+        ));
     }
 
     @GetMapping("/mine")

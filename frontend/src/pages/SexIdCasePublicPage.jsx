@@ -147,6 +147,9 @@ export default function SexIdCasePublicPage() {
   const totals = data.totals || {}
   const pct = data.percentages || {}
   const totalVotes = data.totalVotes ?? 0
+  const ai = data.aiOpinion || {}
+  const community = data.communityOpinion || {}
+  const finalOpinion = data.finalOpinion || {}
 
   return (
     <div>
@@ -179,16 +182,27 @@ export default function SexIdCasePublicPage() {
               {err && <div className="alert alert-danger small py-2">{err}</div>}
 
               <h2 className="h6 fw-bold mt-2" style={{ color: 'var(--ta-gold)' }}>
-                {t('sexIdCase.resultsTitle')}
+                {t('sexIdCase.aiTitle')}
+              </h2>
+              <p className="small mb-1" style={{ color: 'var(--ta-text)' }}>
+                {ai.message || t('sexIdCase.aiFallback')}
+              </p>
+              <p className="small text-muted mb-1">
+                {t('sexIdCase.aiConfidenceLabel', { level: ai.confidenceLabel || 'medium' })}
+              </p>
+              <p className="small text-muted mb-3">{ai.explanation || ''}</p>
+
+              <h2 className="h6 fw-bold mt-2" style={{ color: 'var(--ta-gold)' }}>
+                {t('sexIdCase.communityTitle')}
               </h2>
               <p className="small text-muted mb-2">
-                {t('sexIdCase.totalVotes', { count: totalVotes })}
-                {data.leadingChoice
-                  ? ` ù ${t('sexIdCase.leading', { choice: t(`sexIdCase.choice.${String(data.leadingChoice).toLowerCase()}`) })}`
-                  : ''}
-                {totalVotes > 0 && data.confidence != null
-                  ? ` ù ${t('sexIdCase.confidence', { p: Math.round((data.confidence || 0) * 100) })}`
-                  : ''}
+                {community.leadingChoice
+                  ? t('sexIdCase.communityLine', {
+                      p: Math.round((Math.max(community.maleProbability || 0, community.femaleProbability || 0, community.uncertainProbability || 0)) * 100),
+                      choice: t(`sexIdCase.choice.${String(community.leadingChoice).toLowerCase()}`),
+                      count: community.rawVotes ?? totalVotes,
+                    })
+                  : t('sexIdCase.totalVotes', { count: totalVotes })}
               </p>
               {CHOICES.map((key) => {
                 const n = totals[key] ?? 0
@@ -222,6 +236,19 @@ export default function SexIdCasePublicPage() {
                   </div>
                 )
               })}
+
+              <h2 className="h6 fw-bold mt-3" style={{ color: 'var(--ta-gold)' }}>
+                {t('sexIdCase.finalTitle')}
+              </h2>
+              <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>
+                {finalOpinion.leadingChoice
+                  ? t('sexIdCase.finalLine', {
+                      p: finalOpinion.scorePercent ?? 0,
+                      choice: t(`sexIdCase.choice.${String(finalOpinion.leadingChoice).toLowerCase()}`),
+                      confidence: finalOpinion.confidenceLabel || 'medium',
+                    })
+                  : t('sexIdCase.finalPending')}
+              </p>
 
               {isAuthor && (
                 <p className="small text-muted mt-3 mb-0">{t('sexIdCase.authorNoVote')}</p>
@@ -269,11 +296,15 @@ export default function SexIdCasePublicPage() {
                 <p className="small fw-semibold mb-2" style={{ color: 'var(--ta-gold)' }}>
                   {t('sexIdCase.shareCta')}
                 </p>
+                <p className="small text-muted mb-2">{t('sexIdCase.moreVotesBetter')}</p>
                 {shareUrl ? (
                   <div className="d-flex flex-wrap gap-2 align-items-center">
                     <button type="button" className="btn btn-sm btn-outline-secondary" onClick={copyShare}>
                       {t('sexIdCase.copyLink')}
                     </button>
+                    <Link className="btn btn-sm btn-dark" to="/comunidad?tab=invite">
+                      {t('sexIdCase.inviteKeepers')}
+                    </Link>
                     <code className="small user-select-all text-break" style={{ color: 'var(--ta-text-muted)' }}>
                       {shareUrl}
                     </code>
