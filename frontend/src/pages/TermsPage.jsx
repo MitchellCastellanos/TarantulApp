@@ -39,11 +39,15 @@ export default function TermsPage() {
         <h5 className="fw-bold mt-4">6. Contact</h5>
         <p>General &amp; legal:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+          {' · '}
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
         </p>
         <p>Technical:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+          {' · '}Billing:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
           {' · '}Marketing &amp; partnerships:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+          <a href={`mailto:${PUBLIC_CONTACT.partners}`}>{PUBLIC_CONTACT.partners}</a>
         </p>
         <p className="small text-muted mb-0">
           <Link to="/contact">All contact options</Link>
@@ -83,11 +87,15 @@ export default function TermsPage() {
         <h5 className="fw-bold mt-4">6. Contacto</h5>
         <p>General y aspectos legales:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
+          {' · '}
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
         </p>
         <p>Técnico:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
-          {' · '}Marketing y alianzas:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.marketing}`}>{PUBLIC_CONTACT.marketing}</a>
+          {' · '}Billing:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
+          {' · '}Alianzas:{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.partners}`}>{PUBLIC_CONTACT.partners}</a>
         </p>
         <p className="small text-muted mb-0">
           <Link to="/contact">Página de contacto</Link>
