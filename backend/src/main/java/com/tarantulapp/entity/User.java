@@ -70,11 +70,24 @@ public class User {
     @Column(name = "referred_by_user_id", columnDefinition = "uuid")
     private UUID referredByUserId;
 
+    /** Bits para hitos de referidos ya otorgados (ver ReferralService). */
+    @Column(name = "referral_milestone_mask", nullable = false)
+    private Integer referralMilestoneMask = 0;
+
+    @Column(name = "founder_keeper", nullable = false)
+    private Boolean founderKeeper = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (plan == null) {
             plan = UserPlan.FREE;
+        }
+        if (referralMilestoneMask == null) {
+            referralMilestoneMask = 0;
+        }
+        if (founderKeeper == null) {
+            founderKeeper = false;
         }
     }
 
@@ -134,5 +147,11 @@ public class User {
 
     public UUID getReferredByUserId() { return referredByUserId; }
     public void setReferredByUserId(UUID referredByUserId) { this.referredByUserId = referredByUserId; }
+
+    public Integer getReferralMilestoneMask() { return referralMilestoneMask; }
+    public void setReferralMilestoneMask(Integer referralMilestoneMask) { this.referralMilestoneMask = referralMilestoneMask; }
+
+    public Boolean getFounderKeeper() { return founderKeeper; }
+    public void setFounderKeeper(Boolean founderKeeper) { this.founderKeeper = founderKeeper; }
 
 }

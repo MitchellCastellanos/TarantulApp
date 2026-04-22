@@ -30,7 +30,7 @@ export default function ProPage() {
 
   const loadBilling = () => {
     return billingService.me()
-      .then(data => {
+      .then((data) => {
         setBilling(data)
         setPlan(data.plan)
         return data
@@ -42,7 +42,6 @@ export default function ProPage() {
     if (user) loadBilling()
   }, [user?.id])
 
-  // Verify plan upgrade after successful checkout
   useEffect(() => {
     if (checkout !== 'success' || !user) return
     if (user.plan === 'PRO') return
@@ -51,13 +50,12 @@ export default function ProPage() {
     setPolling(true)
 
     const verifyAndUpgrade = async () => {
-      // If Stripe passed back a session_id, verify directly — no webhook dependency
       if (sessionId) {
         try {
           const data = await billingService.verifySession(sessionId)
           if (!pollingRef.current) return
           if (data.plan === 'PRO') {
-            setBilling(prev => ({ ...(prev || {}), plan: 'PRO', checkoutEnabled: true }))
+            setBilling((prev) => ({ ...(prev || {}), plan: 'PRO', checkoutEnabled: true }))
             setPlan('PRO')
             setPolling(false)
             return
@@ -67,13 +65,12 @@ export default function ProPage() {
         }
       }
 
-      // Fallback: poll billingService.me() up to 6 times
       let attempts = 0
       const poll = () => {
         if (!pollingRef.current) return
         attempts++
         billingService.me()
-          .then(data => {
+          .then((data) => {
             if (!pollingRef.current) return
             if (data.plan === 'PRO') {
               setBilling(data)
@@ -94,7 +91,9 @@ export default function ProPage() {
     }
 
     verifyAndUpgrade()
-    return () => { pollingRef.current = false }
+    return () => {
+      pollingRef.current = false
+    }
   }, [checkout, user?.id, sessionId])
 
   const handleUpgrade = async () => {
@@ -114,179 +113,228 @@ export default function ProPage() {
     }
   }
 
+  const tierCard = ({ toneClass = '', titleKey, priceKey, taglineKey, listKeys, corner = null, footer = null }) => (
+    <div className={`border rounded p-3 h-100 position-relative ${toneClass}`}>
+      {corner}
+      <h6 className="fw-bold mb-1">{t(titleKey)}</h6>
+      {priceKey && <div className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t(priceKey)}</div>}
+      {taglineKey && <p className="small text-muted mb-2" style={{ lineHeight: 1.45 }}>{t(taglineKey)}</p>}
+      <ul className="small mb-0 ps-3" style={{ lineHeight: 1.5 }}>
+        {listKeys.map((k) => (
+          <li key={k} className="mb-1">{t(k)}</li>
+        ))}
+      </ul>
+      {footer}
+    </div>
+  )
+
   return (
     <div>
       <Navbar />
-      <div className="container mt-4" style={{ maxWidth: 720 }}>
+      <div className="container mt-4" style={{ maxWidth: 1040 }}>
         <ChitinCardFrame showSilhouettes={false}>
-        <div className="mb-3">
-          <span className="badge bg-dark me-2">TarantulApp</span>
-          <span className={`badge ${isPro ? 'bg-success' : 'bg-secondary'}`}>
-            {isPro ? t('pro.currentPro') : t('pro.currentFree')}
-          </span>
-        </div>
-
-        {user && inTrial && !isPro && (
-          <div className="alert alert-info small py-2 mb-3">
-            {t('dashboard.trialBanner')} · {t('pro.trialDaysLeft', { count: trialDaysLeft })}
+          <div className="mb-3">
+            <span className="badge bg-dark me-2">TarantulApp</span>
+            <span className={`badge ${isPro ? 'bg-success' : 'bg-secondary'}`}>
+              {isPro ? t('pro.currentPro') : t('pro.currentFree')}
+            </span>
           </div>
-        )}
 
-        {/* Success screen */}
-        {checkout === 'success' && (
-          isPro ? (
-            <div className="card border-0 shadow-sm mb-4" style={{ background: 'rgba(30,82,48,0.22)', border: '1px solid rgba(45,112,64,0.45)' }}>
-              <div className="card-body p-4 text-center">
-                <div style={{ fontSize: '3rem', marginBottom: 8 }}>🎉</div>
-                <h4 className="fw-bold mb-2" style={{ color: 'var(--ta-green-light)' }}>{t('pro.checkoutSuccessTitle')}</h4>
-                <p className="mb-3" style={{ color: 'var(--ta-text)' }}>{t('pro.checkoutSuccessBody')}</p>
-                <div className="d-flex justify-content-center gap-2">
-                  <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#111', fontSize: '0.9rem' }}>
-                    ⭐ Pro
-                  </span>
-                </div>
-                <div className="mt-3">
-                  <Link to="/" className="btn btn-sm btn-outline-light">{t('public.backToCollection')}</Link>
-                </div>
-              </div>
+          {user && inTrial && !isPro && (
+            <div className="alert alert-info small py-2 mb-3">
+              {t('dashboard.trialBanner')} · {t('pro.trialDaysLeft', { count: trialDaysLeft })}
             </div>
-          ) : polling ? (
-            <div className="alert alert-warning mb-4 d-flex align-items-center gap-2 py-2">
-              <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: 'var(--ta-gold)' }} role="status" />
-              <span className="small fw-semibold">{t('pro.checkoutUpdating')}</span>
-            </div>
-          ) : (
-            <div className="alert alert-success small py-2">
-              {t('pro.checkoutSuccess')}
-            </div>
-          )
-        )}
+          )}
 
-        {checkout === 'cancel' && (
-          <div className="alert alert-warning small py-2">
-            {t('pro.checkoutCancel')}
-          </div>
-        )}
-        {error && (
-          <div className="alert alert-danger small py-2">
-            {error}
-          </div>
-        )}
-
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body">
-            <h4 className="fw-bold mb-2">{t('pro.title')}</h4>
-            <p className="text-muted mb-2">{t('pro.subtitle')}</p>
-            {!isPro && inTrial && (
-              <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
-                {t('pro.pricingAfterTrial')}
-              </p>
-            )}
-            {!isPro && !inTrial && (
-              <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
-                {t('pro.trialThenPricing')}
-              </p>
-            )}
-
-            <div className="row g-3">
-              <div className="col-md-6">
-                <div className="border rounded p-3 h-100">
-                  <h6 className="fw-bold mb-2">
-                    {isPro ? t('pro.freeTitleCompare') : t('pro.freeTitle')}
-                  </h6>
-                  <ul className="small mb-0">
-                    <li className="mb-2 fw-semibold ta-accent-heading">{t('pro.freeTrialLine')}</li>
-                    <li>{t('pro.freeLimit')}</li>
-                    <li>{t('pro.freeReminders')}</li>
-                    <li>{t('pro.freeQr')}</li>
-                    <li>{t('pro.freeNoBulkQr')}</li>
-                    <li>{t('pro.freeNoExcel')}</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="border rounded p-3 h-100 position-relative" style={{ borderColor: 'var(--ta-border)' }}>
-                  <span className="badge bg-dark position-absolute" style={{ top: -10, right: 12 }}>
-                    PRO
-                  </span>
-                  <h6 className="fw-bold mb-2">{t('pro.proTitle')}</h6>
-                  <ul className="small mb-3">
-                    <li className="fw-semibold mb-1 ta-accent-heading">{t('pro.proExcelExport')}</li>
-                    <li>{t('pro.proUnlimited')}</li>
-                    <li>{t('pro.proAutoReminders')}</li>
-                    <li>{t('pro.proQrActions')}</li>
-                    <li>{t('pro.proBulkQrWord')}</li>
-                  </ul>
-                  <div className="border-top pt-2">
-                    <span className="fw-bold">{t('pro.priceMonthly')}</span>
-                    <span className="text-muted small ms-2">{t('pro.priceOr')}</span>
-                    <div className="small text-muted">
-                      {t('pro.priceYearly')}{' '}
-                      <span className="badge bg-success" style={{ fontSize: '0.65rem' }}>
-                        {t('pro.priceSaveLabel')}
-                      </span>
-                    </div>
+          {checkout === 'success' && (
+            isPro ? (
+              <div className="card border-0 shadow-sm mb-4" style={{ background: 'rgba(30,82,48,0.22)', border: '1px solid rgba(45,112,64,0.45)' }}>
+                <div className="card-body p-4 text-center">
+                  <div style={{ fontSize: '3rem', marginBottom: 8 }}>🎉</div>
+                  <h4 className="fw-bold mb-2" style={{ color: 'var(--ta-green-light)' }}>{t('pro.checkoutSuccessTitle')}</h4>
+                  <p className="mb-3" style={{ color: 'var(--ta-text)' }}>{t('pro.checkoutSuccessBody')}</p>
+                  <div className="d-flex justify-content-center gap-2">
+                    <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#111', fontSize: '0.9rem' }}>
+                      ⭐ Pro
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <Link to="/" className="btn btn-sm btn-outline-light">{t('public.backToCollection')}</Link>
                   </div>
                 </div>
               </div>
+            ) : polling ? (
+              <div className="alert alert-warning mb-4 d-flex align-items-center gap-2 py-2">
+                <div className="spinner-border spinner-border-sm flex-shrink-0" style={{ color: 'var(--ta-gold)' }} role="status" />
+                <span className="small fw-semibold">{t('pro.checkoutUpdating')}</span>
+              </div>
+            ) : (
+              <div className="alert alert-success small py-2">
+                {t('pro.checkoutSuccess')}
+              </div>
+            )
+          )}
+
+          {checkout === 'cancel' && (
+            <div className="alert alert-warning small py-2">
+              {t('pro.checkoutCancel')}
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-danger small py-2">
+              {error}
+            </div>
+          )}
+
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <h4 className="fw-bold mb-2">{t('pro.title')}</h4>
+              <p className="text-muted mb-3">{t('pro.subtitle')}</p>
+              {!isPro && inTrial && (
+                <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
+                  {t('pro.pricingAfterTrial')}
+                </p>
+              )}
+              {!isPro && !inTrial && (
+                <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
+                  {t('pro.trialThenPricing')}
+                </p>
+              )}
+
+              <p className="small mb-3" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
+
+              <div className="row g-3 mb-3">
+                <div className="col-lg-3 col-md-6">
+                  {tierCard({
+                    titleKey: 'pro.tierFreeTitle',
+                    taglineKey: 'pro.tierFreeTagline',
+                    listKeys: ['pro.tierFreeLi1', 'pro.tierFreeLi2', 'pro.tierFreeLi3', 'pro.tierFreeLi4', 'pro.tierFreeLi5'],
+                  })}
+                </div>
+                <div className="col-lg-3 col-md-6">
+                  {tierCard({
+                    titleKey: 'pro.tierProTitle',
+                    priceKey: 'pro.tierProPrice',
+                    taglineKey: 'pro.tierProTagline',
+                    listKeys: ['pro.tierProLi1', 'pro.tierProLi2', 'pro.tierProLi3', 'pro.tierProLi4', 'pro.tierProLi5', 'pro.tierProLi6'],
+                    corner: <span className="badge bg-dark position-absolute" style={{ top: 8, right: 10 }}>PRO</span>,
+                  })}
+                </div>
+                <div className="col-lg-3 col-md-6">
+                  {tierCard({
+                    titleKey: 'pro.tierProPlusTitle',
+                    priceKey: 'pro.tierProPlusPrice',
+                    taglineKey: 'pro.tierProPlusTagline',
+                    listKeys: ['pro.tierProPlusLi1', 'pro.tierProPlusLi2', 'pro.tierProPlusLi3', 'pro.tierProPlusLi4', 'pro.tierProPlusLi5'],
+                    footer: (
+                      <div className="mt-2">
+                        <span className="badge bg-secondary">{t('pro.tierSoon')}</span>
+                      </div>
+                    ),
+                  })}
+                </div>
+                <div className="col-lg-3 col-md-6">
+                  {tierCard({
+                    titleKey: 'pro.tierVendorTitle',
+                    priceKey: 'pro.tierVendorPrice',
+                    taglineKey: 'pro.tierVendorTagline',
+                    listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4'],
+                    footer: (
+                      <div className="mt-2">
+                        <span className="badge bg-secondary">{t('pro.tierSoon')}</span>
+                      </div>
+                    ),
+                  })}
+                </div>
+              </div>
+
+              <div className="border rounded p-3 mb-3" style={{ borderColor: 'var(--ta-border)' }}>
+                <h6 className="fw-bold mb-2">{t('pro.extrasTitle')}</h6>
+                <p className="small text-muted mb-2" style={{ lineHeight: 1.5 }}>{t('pro.extrasIntro')}</p>
+                <ul className="small mb-0 ps-3">
+                  <li>{t('pro.extrasLi1')}</li>
+                  <li>{t('pro.extrasLi2')}</li>
+                  <li>{t('pro.extrasLi3')}</li>
+                </ul>
+              </div>
+
+              <div className="border rounded p-3 mb-0" style={{ borderColor: 'var(--ta-border)' }}>
+                <h6 className="fw-bold mb-2">{t('pro.referralsBlockTitle')}</h6>
+                <p className="small mb-2" style={{ lineHeight: 1.55 }}>{t('pro.referralsKeyline')}</p>
+                <p className="small text-muted mb-2">{t('pro.referralsIntro')}</p>
+                <ul className="small mb-2 ps-3">
+                  <li>{t('pro.referralsL1')}</li>
+                  <li>{t('pro.referralsL2')}</li>
+                  <li>{t('pro.referralsL3')}</li>
+                  <li>{t('pro.referralsL4')}</li>
+                  <li>{t('pro.referralsL5')}</li>
+                </ul>
+                <p className="small text-muted mb-0">{t('pro.referralsBase')}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card border-0 shadow-sm">
-          <div className="card-body">
-            <h6 className="fw-bold mb-2">{t('pro.statusTitle')}</h6>
-            <p className="small text-muted mb-2">
-              {isPro ? t('pro.statusPro') : t('pro.statusFree')}
-            </p>
-            {!isPro && user && !inTrial && (
-              <p className="small text-muted mb-3">{t('pro.ctaRegisterTrialReminder')}</p>
-            )}
-            {!isPro && (
-              <div className="d-flex flex-column gap-3">
-                <div className="d-flex gap-2">
-                  <button
-                    className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                    onClick={() => setInterval('month')}
-                  >
-                    {t('pro.priceMonthly')}
-                  </button>
-                  <button
-                    className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                    onClick={() => setInterval('year')}
-                  >
-                    {t('pro.priceYearly')}{' '}
-                    <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
-                      {t('pro.priceSaveLabel')}
-                    </span>
-                  </button>
-                </div>
-                {!user ? (
-                  <button
-                    type="button"
-                    className="btn btn-dark btn-sm align-self-start"
-                    onClick={() => navigate('/login')}
-                  >
-                    {t('pro.loginToUpgrade', 'Login to upgrade')}
-                  </button>
-                ) : (
-                  <>
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h6 className="fw-bold mb-2">{t('pro.statusTitle')}</h6>
+              <p className="small text-muted mb-2">
+                {isPro ? t('pro.statusPro') : t('pro.statusFree')}
+              </p>
+              {!isPro && user && !inTrial && (
+                <p className="small text-muted mb-3">{t('pro.ctaRegisterTrialReminder')}</p>
+              )}
+              {!isPro && (
+                <div className="d-flex flex-column gap-3">
+                  <div>
+                    <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
+                    <div className="d-flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setInterval('month')}
+                      >
+                        {t('pro.priceMonthly')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setInterval('year')}
+                      >
+                        {t('pro.priceYearly')}{' '}
+                        <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
+                          {t('pro.priceSaveLabel')}
+                        </span>
+                      </button>
+                    </div>
+                    <div className="small text-muted mt-1">{t('pro.priceYearlyNote')}</div>
+                  </div>
+                  {!user ? (
                     <button
+                      type="button"
                       className="btn btn-dark btn-sm align-self-start"
-                      onClick={handleUpgrade}
-                      disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                      onClick={() => navigate('/login')}
                     >
-                      {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                      {t('pro.loginToUpgrade', 'Login to upgrade')}
                     </button>
-                    {billing?.checkoutEnabled === false && (
-                      <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-dark btn-sm align-self-start"
+                        onClick={handleUpgrade}
+                        disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                      >
+                        {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                      </button>
+                      {billing?.checkoutEnabled === false && (
+                        <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </ChitinCardFrame>
       </div>
     </div>

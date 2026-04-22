@@ -579,6 +579,20 @@ export default function SocialHubPage() {
                 <p className="mb-2 text-muted">
                   {t('social.inviteBonusLine', { referee: referral.refereeBonusDays, referrer: referral.referrerBonusDays })}
                 </p>
+                <p className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('social.referralKeyline')}</p>
+                <p className="mb-1 text-muted">{t('social.referralLadderIntro')}</p>
+                <ul className="mb-2 ps-3 text-muted" style={{ lineHeight: 1.45 }}>
+                  <li>{t('social.referralLadder1')}</li>
+                  <li>{t('social.referralLadder2')}</li>
+                  <li>{t('social.referralLadder3')}</li>
+                  <li>{t('social.referralLadder4')}</li>
+                  <li>{t('social.referralLadder5')}</li>
+                </ul>
+                {referral.founderKeeper && (
+                  <p className="mb-2">
+                    <span className="badge bg-warning text-dark">{t('social.founderKeeperBadge')}</span>
+                  </p>
+                )}
                 <p className="mb-2 text-muted">{t('social.invitedCount', { count: referral.invitedCount ?? 0 })}</p>
                 <div className="d-flex flex-wrap gap-2">
                   <button type="button" className="btn btn-sm btn-dark" onClick={copyInvite}>{t('social.copyInviteLink')}</button>
