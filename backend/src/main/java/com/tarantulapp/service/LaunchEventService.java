@@ -3,8 +3,10 @@ package com.tarantulapp.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarantulapp.entity.LaunchEventEmailEvent;
+import com.tarantulapp.entity.LaunchEventFutureInterest;
 import com.tarantulapp.entity.LaunchEventRegistration;
 import com.tarantulapp.repository.LaunchEventEmailEventRepository;
+import com.tarantulapp.repository.LaunchEventFutureInterestRepository;
 import com.tarantulapp.repository.LaunchEventRegistrationRepository;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +47,7 @@ public class LaunchEventService {
 
     private final LaunchEventRegistrationRepository registrationRepository;
     private final LaunchEventEmailEventRepository emailEventRepository;
+    private final LaunchEventFutureInterestRepository futureInterestRepository;
     private final JavaMailSender mailSender;
     private final ObjectMapper objectMapper;
 
@@ -60,7 +63,7 @@ public class LaunchEventService {
     @Value("${app.mail.reply-to:}")
     private String replyToAddress;
 
-    @Value("${app.launch-event.capacity:45}")
+    @Value("${app.launch-event.capacity:50}")
     private int capacity;
 
     @Value("${app.launch-event.datetime-local:2026-05-09T15:00:00}")
@@ -80,10 +83,12 @@ public class LaunchEventService {
 
     public LaunchEventService(LaunchEventRegistrationRepository registrationRepository,
                               LaunchEventEmailEventRepository emailEventRepository,
+                              LaunchEventFutureInterestRepository futureInterestRepository,
                               JavaMailSender mailSender,
                               ObjectMapper objectMapper) {
         this.registrationRepository = registrationRepository;
         this.emailEventRepository = emailEventRepository;
+        this.futureInterestRepository = futureInterestRepository;
         this.mailSender = mailSender;
         this.objectMapper = objectMapper;
     }
@@ -93,10 +98,6 @@ public class LaunchEventService {
         String email = clean(req.email(), 255);
         if (email == null || !email.contains("@")) {
             throw new IllegalArgumentException("Valid email is required");
-        }
-        Optional<LaunchEventRegistration> existing = registrationRepository.findByEmailIgnoreCase(email);
-        if (existing.isPresent()) {
-            return buildResponse(existing.get(), true);
         }
         if (!Boolean.TRUE.equals(req.willAttend())) {
             throw new IllegalArgumentException("Please confirm attendance");
@@ -108,7 +109,20 @@ public class LaunchEventService {
         }
 
         entityManager.createNativeQuery("LOCK TABLE launch_event_registrations IN EXCLUSIVE MODE").executeUpdate();
+
+        Optional<LaunchEventRegistration> existing = registrationRepository.findByEmailIgnoreCase(email);
+        if (existing.isPresent()) {
+            LaunchEventRegistration prior = existing.get();
+            if (prior.getStatus() == LaunchEventRegistration.Status.RESERVED) {
+                return buildReservedResponse(prior, true);
+            }
+            return buildSoldOutResponse();
+        }
+
         long reservedCount = registrationRepository.countByStatus(LaunchEventRegistration.Status.RESERVED);
+        if (reservedCount >= capacity) {
+            return buildSoldOutResponse();
+        }
 
         LaunchEventRegistration registration = new LaunchEventRegistration();
         registration.setFullName(fullName);
@@ -123,31 +137,38 @@ public class LaunchEventService {
         registration.setLanguage(normalizeLanguage(req.language()));
         registration.setSourcePath(clean(req.sourcePath(), 80));
 
-        if (reservedCount < capacity) {
-            int nextSeat = registrationRepository.findMaxReservationIndex() + 1;
-            registration.setStatus(LaunchEventRegistration.Status.RESERVED);
-            registration.setReservationIndex(nextSeat);
-        } else {
-            registration.setStatus(LaunchEventRegistration.Status.WAITLIST);
-            registration.setReservationIndex(null);
-        }
+        int nextSeat = registrationRepository.findMaxReservationIndex() + 1;
+        registration.setStatus(LaunchEventRegistration.Status.RESERVED);
+        registration.setReservationIndex(nextSeat);
+
         LaunchEventRegistration saved = registrationRepository.save(registration);
-        if (saved.getStatus() == LaunchEventRegistration.Status.RESERVED) {
-            sendEmailOnce(saved, EVENT_KEY_CONFIRM, buildConfirmationSubject(saved), buildConfirmationBody(saved));
+        sendEmailOnce(saved, EVENT_KEY_CONFIRM, buildConfirmationSubject(saved), buildConfirmationBody(saved));
+        return buildReservedResponse(saved, false);
+    }
+
+    @Transactional
+    public Map<String, Object> submitFutureInterest(String email, String language) {
+        String e = clean(email, 255);
+        if (e == null || !e.contains("@")) {
+            throw new IllegalArgumentException("Valid email is required");
         }
-        return buildResponse(saved, false);
+        if (futureInterestRepository.existsByEmailIgnoreCase(e)) {
+            return Map.of("ok", true, "duplicate", true);
+        }
+        LaunchEventFutureInterest row = new LaunchEventFutureInterest();
+        row.setEmail(e);
+        row.setLanguage(normalizeLanguage(language));
+        try {
+            futureInterestRepository.save(row);
+        } catch (DataIntegrityViolationException ignored) {
+            // concurrent duplicate
+        }
+        return Map.of("ok", true, "duplicate", false);
     }
 
     public Map<String, Object> status() {
         long reserved = registrationRepository.countByStatus(LaunchEventRegistration.Status.RESERVED);
-        long waitlist = registrationRepository.countByStatus(LaunchEventRegistration.Status.WAITLIST);
-        long remaining = Math.max(0, capacity - reserved);
-        return Map.of(
-                "capacity", capacity,
-                "reserved", reserved,
-                "remaining", remaining,
-                "waitlist", waitlist
-        );
+        return Map.of("acceptingApplications", reserved < capacity);
     }
 
     public Map<String, Object> checkQuebecEligibility(HttpServletRequest request) {
@@ -327,17 +348,19 @@ public class LaunchEventService {
                 + "See you in Montreal.";
     }
 
-    private Map<String, Object> buildResponse(LaunchEventRegistration registration, boolean alreadyRegistered) {
-        long reserved = registrationRepository.countByStatus(LaunchEventRegistration.Status.RESERVED);
-        long remaining = Math.max(0, capacity - reserved);
+    private Map<String, Object> buildSoldOutResponse() {
         Map<String, Object> out = new LinkedHashMap<>();
+        out.put("soldOut", true);
+        out.put("isReserved", false);
+        out.put("alreadyRegistered", false);
+        return out;
+    }
+
+    private Map<String, Object> buildReservedResponse(LaunchEventRegistration registration, boolean alreadyRegistered) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("soldOut", false);
         out.put("alreadyRegistered", alreadyRegistered);
-        out.put("status", registration.getStatus().name());
-        out.put("isReserved", registration.getStatus() == LaunchEventRegistration.Status.RESERVED);
-        out.put("reservationIndex", registration.getReservationIndex());
-        out.put("capacity", capacity);
-        out.put("reserved", reserved);
-        out.put("remaining", remaining);
+        out.put("isReserved", true);
         return out;
     }
 

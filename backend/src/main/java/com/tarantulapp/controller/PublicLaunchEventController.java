@@ -51,6 +51,16 @@ public class PublicLaunchEventController {
         )));
     }
 
+    @PostMapping("/notify-future")
+    public ResponseEntity<Map<String, Object>> notifyFuture(@Valid @RequestBody FutureInterestRequest req) {
+        return ResponseEntity.ok(launchEventService.submitFutureInterest(req.email(), req.language()));
+    }
+
+    record FutureInterestRequest(
+            @NotBlank @Email String email,
+            String language
+    ) {}
+
     record LaunchEventRegistrationRequest(
             @NotBlank String fullName,
             @NotBlank @Email String email,

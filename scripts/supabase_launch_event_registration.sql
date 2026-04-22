@@ -1,5 +1,5 @@
--- TarantulApp launch event registration (Montreal)
--- Safe to run in Supabase SQL editor.
+-- TarantulApp: Montreal launch registrations + future interest (Supabase SQL editor)
+-- Run once. If you already created launch_event_registrations with capacity 45, the ALTER below upgrades to 50.
 
 CREATE TABLE IF NOT EXISTS public.launch_event_registrations (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -24,10 +24,19 @@ CREATE TABLE IF NOT EXISTS public.launch_event_registrations (
         CHECK (tarantula_count IS NULL OR tarantula_count >= 0),
     CONSTRAINT launch_event_registrations_reservation_chk
         CHECK (
-            (status = 'RESERVED' AND reservation_index IS NOT NULL AND reservation_index BETWEEN 1 AND 45)
+            (status = 'RESERVED' AND reservation_index IS NOT NULL AND reservation_index BETWEEN 1 AND 50)
             OR (status = 'WAITLIST' AND reservation_index IS NULL)
         )
 );
+
+ALTER TABLE public.launch_event_registrations
+    DROP CONSTRAINT IF EXISTS launch_event_registrations_reservation_chk;
+
+ALTER TABLE public.launch_event_registrations
+    ADD CONSTRAINT launch_event_registrations_reservation_chk CHECK (
+        (status = 'RESERVED' AND reservation_index IS NOT NULL AND reservation_index BETWEEN 1 AND 50)
+        OR (status = 'WAITLIST' AND reservation_index IS NULL)
+    );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_launch_event_registrations_email_lower
     ON public.launch_event_registrations ((lower(email)));
@@ -49,3 +58,14 @@ CREATE TABLE IF NOT EXISTS public.launch_event_email_events (
 
 CREATE INDEX IF NOT EXISTS ix_launch_event_email_events_event_key
     ON public.launch_event_email_events (event_key, sent_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.launch_event_future_interest (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    email character varying(255) NOT NULL,
+    language character varying(8) NOT NULL DEFAULT 'en',
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT ux_launch_event_future_interest_email_lower UNIQUE ((lower((email)::text)))
+);
+
+CREATE INDEX IF NOT EXISTS ix_launch_event_future_interest_created
+    ON public.launch_event_future_interest (created_at DESC);
