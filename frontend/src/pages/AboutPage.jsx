@@ -43,21 +43,6 @@ export default function AboutPage() {
 
         <section className="mb-4">
           <h2 className="h6 fw-bold mb-2 text-uppercase" style={{ color: 'var(--ta-gold)', letterSpacing: '0.04em' }}>
-            {t('about.sectionRoadmapTitle', { defaultValue: 'En qué vamos y qué sigue' })}
-          </h2>
-          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
-            {t('about.sectionRoadmapBody', { defaultValue: 'Hoy ya corren colección, discover, marketplace y comunidad (feed + casos). La mensajería queda enfocada a marketplace; el siguiente bloque cierra notificaciones sociales, follows y moderación profunda para completar el loop keeper → comunidad → decisión.' })}
-          </p>
-          <div className="d-flex flex-wrap gap-2">
-            <span className="badge bg-light text-dark border">Tool mode</span>
-            <span className="badge bg-light text-dark border">Help/Cases activo</span>
-            <span className="badge bg-light text-dark border">Community activo</span>
-            <span className="badge bg-light text-dark border">Mensajería en Marketplace</span>
-          </div>
-        </section>
-
-        <section className="mb-4">
-          <h2 className="h6 fw-bold mb-2 text-uppercase" style={{ color: 'var(--ta-gold)', letterSpacing: '0.04em' }}>
             {t('about.sectionContactOpsTitle', { defaultValue: 'Canales de contacto operativos' })}
           </h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
