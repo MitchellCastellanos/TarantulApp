@@ -22,7 +22,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 
 export default function SocialHubPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(TAB_FEED)
@@ -78,16 +78,20 @@ export default function SocialHubPage() {
   }, [])
 
   const loadMine = useCallback(async () => {
+    if (!token) {
+      setMine({ content: [], number: 0, totalPages: 0 })
+      return
+    }
     const data = await communityService.myPosts(0, 30)
     setMine(data)
-  }, [])
+  }, [token])
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam === 'sexId') {
+    if (tabParam === 'sexId' && token) {
       setTab(TAB_SEX_ID)
     }
-  }, [searchParams])
+  }, [searchParams, token])
 
   const loadReferral = useCallback(async () => {
     const data = await referralService.me()
@@ -111,21 +115,26 @@ export default function SocialHubPage() {
 
   useEffect(() => {
     if (tab === TAB_FEED) {
-      loadMine().catch(() => {})
       if (user?.id) {
+        loadMine().catch(() => {})
         tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
+      } else {
+        setMine({ content: [], number: 0, totalPages: 0 })
+        setMyTarantulas([])
       }
     }
     if (tab === TAB_INVITE) {
+      if (!token) return
       loadReferral().catch(() => setErr(t('social.loadError')))
     }
     if (tab === TAB_SEX_ID) {
+      if (!token) return
       loadReferral().catch(() => {})
       if (user?.id) {
         loadSexIdCases().catch(() => setErr(t('sexIdCase.loadCasesError')))
       }
     }
-  }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id])
+  }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id, token])
 
   const submitPost = async (e) => {
     e.preventDefault()
@@ -149,6 +158,10 @@ export default function SocialHubPage() {
   }
 
   const onToggleLike = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     setErr('')
     try {
       const updated = await communityService.toggleLike(postId)
@@ -162,6 +175,10 @@ export default function SocialHubPage() {
   }
 
   const toggleExpand = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     setExpanded((ex) => ({ ...ex, [postId]: !ex[postId] }))
     if (!commentsByPost[postId] && !expanded[postId]) {
       try {
@@ -174,6 +191,10 @@ export default function SocialHubPage() {
   }
 
   const submitComment = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     const text = (commentDraft[postId] || '').trim()
     if (!text) return
     setErr('')
@@ -189,6 +210,10 @@ export default function SocialHubPage() {
   }
 
   const deletePost = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     if (!window.confirm(t('social.confirmDeletePost'))) return
     try {
       await communityService.deletePost(postId)
@@ -200,6 +225,10 @@ export default function SocialHubPage() {
   }
 
   const reportPost = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     const reason = window.prompt(t('marketplace.reportReason'))
     if (!reason || !reason.trim()) return
     try {
@@ -222,6 +251,10 @@ export default function SocialHubPage() {
 
   const submitSexIdCase = async (e) => {
     e.preventDefault()
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      return
+    }
     setErr('')
     setMsg('')
     const imageUrl = (sexIdForm.imageUrl || '').trim()
@@ -254,6 +287,10 @@ export default function SocialHubPage() {
   }
 
   const onSexIdPhoto = async (e) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      return
+    }
     const f = e.target.files?.[0]
     if (!f) return
     setErr('')
@@ -424,9 +461,22 @@ export default function SocialHubPage() {
 
         <div className="d-flex flex-wrap gap-2 mb-3">
           {tabBtn(TAB_FEED, t('social.tabFeed'))}
-          {tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
-          {tabBtn(TAB_INVITE, t('social.tabInvite'))}
+          {token && tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
+          {token && tabBtn(TAB_INVITE, t('social.tabInvite'))}
         </div>
+
+        {!token && (
+          <div className="alert alert-info small py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span>Comunidad abierta: puedes leer posts. Para publicar, comentar o votar necesitas iniciar sesi?n.</span>
+            <button
+              type="button"
+              className="btn btn-sm btn-dark"
+              onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+            >
+              Iniciar sesi?n para participar
+            </button>
+          </div>
+        )}
 
         {err && <div className="alert alert-danger small py-2">{err}</div>}
         {msg && <div className="alert alert-success small py-2">{msg}</div>}
@@ -470,7 +520,17 @@ export default function SocialHubPage() {
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Sex ID</div>
                   <div className="small text-muted mb-2">{t('social.sexIdQuickMode')}</div>
-                  <button type="button" className="btn btn-sm btn-outline-secondary w-100" onClick={() => setTab(TAB_SEX_ID)}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                        return
+                      }
+                      setTab(TAB_SEX_ID)
+                    }}
+                  >
                     {t('social.goToSexId')}
                   </button>
                 </div>
@@ -481,6 +541,10 @@ export default function SocialHubPage() {
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
                     onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+                        return
+                      }
                       setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))
                       setComposerOpen(true)
                     }}
@@ -495,6 +559,10 @@ export default function SocialHubPage() {
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
                     onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+                        return
+                      }
                       setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))
                       setComposerOpen(true)
                     }}
@@ -510,7 +578,17 @@ export default function SocialHubPage() {
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.10)' }}>
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.activeSexIdCases')}</h2>
-                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setTab(TAB_SEX_ID)}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => {
+                    if (!token) {
+                      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                      return
+                    }
+                    setTab(TAB_SEX_ID)
+                  }}
+                >
                   {t('social.seeAll')}
                 </button>
               </div>
@@ -539,14 +617,24 @@ export default function SocialHubPage() {
                 <div className="small ta-social-feed-shell__intro">
                   Secciones visibles - {(activeFeedList || []).length}
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => setComposerOpen((v) => !v)}
-                  aria-expanded={composerOpen}
-                >
-                  {t('social.composerTitle')}
-                </button>
+                  {token ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setComposerOpen((v) => !v)}
+                      aria-expanded={composerOpen}
+                    >
+                      {t('social.composerTitle')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-dark"
+                      onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+                    >
+                      Iniciar sesi?n para publicar
+                    </button>
+                  )}
               </div>
               <div className="ta-social-section-tabs mb-3">
                 {feedSections.map((section) => (
@@ -560,7 +648,7 @@ export default function SocialHubPage() {
                   </button>
                 ))}
               </div>
-              {composerOpen && (
+              {token && composerOpen && (
                 <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-3">
                   <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
                     <div className="card-body py-3 px-3 px-md-4">

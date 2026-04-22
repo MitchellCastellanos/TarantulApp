@@ -317,8 +317,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
             </Link>
             <Link
               onClick={closeMobileMenu}
-              to={token ? '/comunidad' : '/login'}
-              state={token ? undefined : { redirectAfterAuth: '/comunidad' }}
+              to="/comunidad"
               style={menuPillStyle(path.startsWith('/comunidad'))}
               title={t('social.navTitle')}
             >
@@ -471,8 +470,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           {t('marketplace.nav')}
         </Link>
         <Link
-          to={token ? '/comunidad' : '/login'}
-          state={token ? undefined : { redirectAfterAuth: '/comunidad' }}
+          to="/comunidad"
           className="text-decoration-none small fw-semibold d-none d-md-inline"
           style={{ color: linkTone(path.startsWith('/comunidad')) }}
           title={t('social.navTitle')}

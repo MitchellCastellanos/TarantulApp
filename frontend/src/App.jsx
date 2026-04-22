@@ -105,7 +105,7 @@ function AppRoutes() {
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/herramientas/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-      <Route path="/comunidad" element={<PrivateRoute><SocialHubPage /></PrivateRoute>} />
+      <Route path="/comunidad" element={<SocialHubPage />} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
