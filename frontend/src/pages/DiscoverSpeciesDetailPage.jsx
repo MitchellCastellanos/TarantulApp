@@ -7,6 +7,7 @@ import speciesService from '../services/speciesService'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { discoverHeroImageAbsoluteUrl, formatDiscoverSeoMetaLine } from '../utils/discoverSeo'
+import { imgUrl } from '../services/api'
 
 function DiscoverSpeciesDetailSeo({ view, speciesId }) {
   const { t, i18n } = useTranslation()
@@ -109,6 +110,8 @@ export default function DiscoverSpeciesDetailPage() {
 
   const sp = view.species
   const addNewHref = `/tarantulas/new?speciesId=${sp.id}`
+  const photoSrc = imgUrl(sp.referencePhotoUrl || view.fallbackPhoto?.url)
+  const credit = view.fallbackPhoto
 
   return (
     <PublicShell>
@@ -124,6 +127,31 @@ export default function DiscoverSpeciesDetailPage() {
         </button>
 
         <DiscoverSpeciesProfileSnippet species={sp} variant="discover" nameAs="h1" />
+
+        {photoSrc && (
+          <figure className="mt-3 mb-3">
+            <img
+              src={photoSrc}
+              alt=""
+              className="img-fluid rounded border"
+              style={{ borderColor: 'var(--ta-border)' }}
+            />
+            {!sp.referencePhotoUrl && credit?.attribution && (
+              <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
+                {credit.attribution}
+                {credit.licenseCode ? ` · ${credit.licenseCode}` : ''}
+                {credit.taxonPageUrl && (
+                  <>
+                    {' '}
+                    <a href={credit.taxonPageUrl} target="_blank" rel="noreferrer" className="text-reset">
+                      {t('discover.sourceLink')}
+                    </a>
+                  </>
+                )}
+              </figcaption>
+            )}
+          </figure>
+        )}
 
         <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text)' }}>
           {t('discover.seoSpeciesLead')}
