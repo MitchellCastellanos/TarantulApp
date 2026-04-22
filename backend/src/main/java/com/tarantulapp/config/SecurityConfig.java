@@ -86,10 +86,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gbif/search", "/api/wsc/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gbif/**", "/api/wsc/**").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(publicFeedRateLimitFilter, JwtAuthFilter.class)
-                .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class)
+                .addFilterBefore(publicFeedRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(chatMessageRateLimitFilter, JwtAuthFilter.class)
+                .addFilterAfter(chatMessageRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .accessDeniedHandler((req, res, exDenied) -> {
                             if (log.isWarnEnabled()) {
