@@ -184,6 +184,9 @@ export default function SexIdCasePublicPage() {
               <h2 className="h6 fw-bold mt-2" style={{ color: 'var(--ta-gold)' }}>
                 {t('sexIdCase.aiTitle')}
               </h2>
+              <p className="small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                Esto piensa TarantulApp: estimación basada en nuestro propio algoritmo (no reemplaza una confirmación experta).
+              </p>
               <p className="small mb-1" style={{ color: 'var(--ta-text)' }}>
                 {ai.message || t('sexIdCase.aiFallback')}
               </p>

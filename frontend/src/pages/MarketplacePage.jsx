@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
+import chatService from '../services/chatService'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import BrandLogoMark from '../components/BrandLogoMark'
@@ -49,6 +50,8 @@ const EMPTY_VENDOR_LEAD_FORM = {
   shippingScope: 'national',
   note: '',
 }
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const DEMO_LISTINGS = [
   {
@@ -207,6 +210,10 @@ export default function MarketplacePage() {
   const [myReputation, setMyReputation] = useState(null)
   const [myBadgesProgress, setMyBadgesProgress] = useState(null)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
+  const [threads, setThreads] = useState({ content: [] })
+  const [activeThread, setActiveThread] = useState(null)
+  const [threadMessages, setThreadMessages] = useState({ content: [] })
+  const [chatBody, setChatBody] = useState('')
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
@@ -293,6 +300,16 @@ export default function MarketplacePage() {
     setMyReputation(profile?.reputation || null)
     setMyBadgesProgress(profile?.badgesProgress || null)
   }
+
+  const loadThreads = useCallback(async () => {
+    if (!user?.id) return
+    const data = await chatService.threads(0, 30)
+    const onlyMarketplace = {
+      ...(data || {}),
+      content: (data?.content || []).filter((th) => !!th.listingId),
+    }
+    setThreads(onlyMarketplace)
+  }, [user?.id])
   const onListingImageFile = useCallback(
     async (e) => {
       const file = e.target.files?.[0]
@@ -317,9 +334,9 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})])
+    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {}), loadThreads().catch(() => {})])
       .finally(() => setLoading(false))
-  }, [])
+  }, [loadThreads])
 
   useEffect(() => {
     marketplaceService
@@ -341,6 +358,36 @@ export default function MarketplacePage() {
     next.delete('session_id')
     setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams, t])
+
+  useEffect(() => {
+    const openSeller = searchParams.get('openSeller')
+    const openListing = searchParams.get('openListing')
+    if (!user?.id || !openSeller?.trim()) return
+    const sellerId = openSeller.trim()
+    if (String(sellerId) === String(user.id)) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const listingId = openListing && UUID_REGEX.test(String(openListing).trim())
+          ? String(openListing).trim()
+          : null
+        const row = await chatService.openThread(sellerId, listingId)
+        if (cancelled) return
+        setActiveThread(row)
+        const msgs = await chatService.messages(row.id, 0, 50)
+        if (!cancelled) setThreadMessages(msgs)
+        await loadThreads()
+      } catch (err) {
+        if (!cancelled) setMessage(err?.response?.data?.error || t('marketplace.error'))
+      } finally {
+        const next = new URLSearchParams(searchParams)
+        next.delete('openSeller')
+        next.delete('openListing')
+        setSearchParams(next, { replace: true })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [searchParams, setSearchParams, loadThreads, user?.id, t])
 
   useEffect(() => {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
@@ -376,6 +423,32 @@ export default function MarketplacePage() {
   const markSold = async (listingId) => {
     await marketplaceService.updateListingStatus(listingId, 'sold')
     await Promise.all([loadPublicListings(), loadMine()])
+  }
+
+  const pickThread = async (thread) => {
+    setActiveThread(thread)
+    try {
+      const msgs = await chatService.messages(thread.id, 0, 50)
+      setThreadMessages(msgs)
+    } catch {
+      setMessage(t('marketplace.error'))
+    }
+  }
+
+  const sendMarketplaceMessage = async (e) => {
+    e.preventDefault()
+    if (!activeThread?.id) return
+    const text = (chatBody || '').trim()
+    if (!text) return
+    try {
+      await chatService.sendMessage(activeThread.id, text)
+      setChatBody('')
+      const msgs = await chatService.messages(activeThread.id, 0, 50)
+      setThreadMessages(msgs)
+      await loadThreads()
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
   }
 
   const reportListing = async (listingId) => {
@@ -613,7 +686,7 @@ export default function MarketplacePage() {
                         {!l.isDemo && String(user?.id || '') !== String(l.sellerUserId) && (
                           user ? (
                             <Link
-                              to={`/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
+                              to={`/marketplace?openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
                               className="btn btn-sm btn-dark"
                             >
                               {t('marketplace.messageSeller')}
@@ -623,7 +696,7 @@ export default function MarketplacePage() {
                               to="/login"
                               state={{
                                 redirectAfterAuth:
-                                  `/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`,
+                                  `/marketplace?openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`,
                               }}
                               className="btn btn-sm btn-dark"
                             >
@@ -731,6 +804,50 @@ export default function MarketplacePage() {
                 </div>
 
                 <div className="card border-0 shadow-sm">
+                  <div className="card-body small">
+                    <h6>Mensajería de marketplace</h6>
+                    <p className="text-muted mb-2">Spood ahora se usa para likes en comunidad. Aquí quedan los mensajes de compra/venta.</p>
+                    {(threads.content || []).length === 0 ? (
+                      <p className="text-muted mb-2">Aún no hay conversaciones.</p>
+                    ) : (
+                      <div className="mb-2" style={{ maxHeight: 190, overflowY: 'auto' }}>
+                        {(threads.content || []).map((th) => (
+                          <button
+                            key={th.id}
+                            type="button"
+                            className={`btn btn-sm w-100 text-start mb-1 ${activeThread?.id === th.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                            onClick={() => pickThread(th)}
+                          >
+                            <div className="fw-semibold">{th.otherDisplayName || th.otherHandle || 'Keeper'}</div>
+                            <div className="small text-truncate">{th.lastMessagePreview || '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {activeThread ? (
+                      <>
+                        <div className="border rounded p-2 mb-2" style={{ maxHeight: 160, overflowY: 'auto', background: 'rgba(0,0,0,0.08)' }}>
+                          {(threadMessages.content || []).map((m) => (
+                            <div key={m.id} className="small mb-1">
+                              {m.body}
+                            </div>
+                          ))}
+                        </div>
+                        <form className="input-group input-group-sm" onSubmit={sendMarketplaceMessage}>
+                          <input
+                            className="form-control"
+                            value={chatBody}
+                            onChange={(e) => setChatBody(e.target.value)}
+                            placeholder="Escribe un mensaje..."
+                          />
+                          <button className="btn btn-dark" type="submit">Enviar</button>
+                        </form>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="card border-0 shadow-sm mt-3">
                   <div className="card-body small">
                     <h6>{t('marketplace.myListings')}</h6>
                     {myListings.length === 0 && <p className="text-muted mb-0">{t('marketplace.noneMine')}</p>}

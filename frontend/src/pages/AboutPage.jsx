@@ -46,12 +46,13 @@ export default function AboutPage() {
             {t('about.sectionRoadmapTitle', { defaultValue: 'En qué vamos y qué sigue' })}
           </h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
-            {t('about.sectionRoadmapBody', { defaultValue: 'Hoy ya corren colección, discover, marketplace y comunidad (feed + Spood + referidos). El siguiente bloque cierra follows/visibilidad, contenido rico y moderación profunda para que el ciclo completo keeper → comunidad → decisión quede redondo.' })}
+            {t('about.sectionRoadmapBody', { defaultValue: 'Hoy ya corren colección, discover, marketplace y comunidad (feed + casos). La mensajería queda enfocada a marketplace; el siguiente bloque cierra notificaciones sociales, follows y moderación profunda para completar el loop keeper → comunidad → decisión.' })}
           </p>
           <div className="d-flex flex-wrap gap-2">
             <span className="badge bg-light text-dark border">Tool mode</span>
-            <span className="badge bg-light text-dark border">Help/Cases en progreso</span>
+            <span className="badge bg-light text-dark border">Help/Cases activo</span>
             <span className="badge bg-light text-dark border">Community activo</span>
+            <span className="badge bg-light text-dark border">Mensajería en Marketplace</span>
           </div>
         </section>
 

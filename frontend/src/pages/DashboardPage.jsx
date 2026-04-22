@@ -151,7 +151,7 @@ export default function DashboardPage() {
             <div className="col-md-4">
               <div className="ta-home-pillar h-100">
                 <div className="small fw-semibold">{t('dashboard.homePillarCommunityTitle', { defaultValue: 'Community mode' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + Spood + referrals para cerrar el loop.' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + casos + referrals; mensajería enfocada al marketplace.' })}</div>
               </div>
             </div>
           </div>

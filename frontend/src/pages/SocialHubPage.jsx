@@ -6,8 +6,6 @@ import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
 import communityService from '../services/communityService'
-import chatService from '../services/chatService'
-import userPublicService from '../services/userPublicService'
 import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
 import sexIdCaseService from '../services/sexIdCaseService'
@@ -16,7 +14,6 @@ import moderationService from '../services/moderationService'
 import { useAuth } from '../context/AuthContext'
 
 const TAB_FEED = 'feed'
-const TAB_SPOOD = 'spood'
 const TAB_SEX_ID = 'sexId'
 const TAB_INVITE = 'invite'
 
@@ -46,14 +43,6 @@ export default function SocialHubPage() {
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
-
-  const [threads, setThreads] = useState({ content: [] })
-  const [otherUserHandle, setOtherUserHandle] = useState('')
-  const [profileSuggestions, setProfileSuggestions] = useState([])
-  const [searchingProfiles, setSearchingProfiles] = useState(false)
-  const [activeThread, setActiveThread] = useState(null)
-  const [threadMessages, setThreadMessages] = useState({ content: [] })
-  const [spoodBody, setSpoodBody] = useState('')
 
   const [referral, setReferral] = useState(null)
 
@@ -91,87 +80,12 @@ export default function SocialHubPage() {
     setMine(data)
   }, [])
 
-  const loadThreads = useCallback(async () => {
-    const data = await chatService.threads(0, 30)
-    setThreads(data)
-  }, [])
-
-  const resolveOtherUserId = useCallback(async (raw) => {
-    const s = raw.trim()
-    if (!s) return null
-    const handle = s.startsWith('@') ? s.slice(1).trim() : s
-    if (!handle) return null
-    try {
-      const row = await userPublicService.byHandle(handle)
-      return row?.id || null
-    } catch {
-      return null
-    }
-  }, [])
-
-  useEffect(() => {
-    if (tab !== TAB_SPOOD) return undefined
-    const q = otherUserHandle.trim()
-    if (q.length < 2) {
-      setProfileSuggestions([])
-      setSearchingProfiles(false)
-      return undefined
-    }
-    const timer = setTimeout(() => {
-      setSearchingProfiles(true)
-      userPublicService.search(q, 8)
-        .then((rows) => setProfileSuggestions(Array.isArray(rows) ? rows : []))
-        .catch(() => setProfileSuggestions([]))
-        .finally(() => setSearchingProfiles(false))
-    }, 220)
-    return () => clearTimeout(timer)
-  }, [otherUserHandle, tab])
-
   useEffect(() => {
     const tabParam = searchParams.get('tab')
     if (tabParam === 'sexId') {
       setTab(TAB_SEX_ID)
     }
-    const openSeller = searchParams.get('openSeller')
-    const openListing = searchParams.get('openListing')
-    if (tabParam !== 'spood' || !openSeller?.trim() || !user?.id) return
-
-    const sellerId = openSeller.trim()
-    if (String(user.id) === sellerId) {
-      navigate('/comunidad', { replace: true })
-      return
-    }
-
-    let cancelled = false
-    ;(async () => {
-      setErr('')
-      setMsg('')
-      try {
-        const listingId =
-          openListing && UUID_REGEX.test(String(openListing).trim())
-            ? String(openListing).trim()
-            : null
-        const row = await chatService.openThread(sellerId, listingId)
-        if (cancelled) return
-        setTab(TAB_SPOOD)
-        setActiveThread(row)
-        const msgs = await chatService.messages(row.id, 0, 50)
-        if (!cancelled) setThreadMessages(msgs)
-        await loadThreads()
-        setMsg(listingId ? t('social.threadOpenedListing') : t('social.threadOpened'))
-      } catch (e2) {
-        if (!cancelled) {
-          setTab(TAB_SPOOD)
-          setErr(e2?.response?.data?.error || t('social.saveError'))
-        }
-      } finally {
-        if (!cancelled) navigate('/comunidad', { replace: true })
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [searchParams, user?.id, navigate, t, loadThreads])
+  }, [searchParams])
 
   const loadReferral = useCallback(async () => {
     const data = await referralService.me()
@@ -194,9 +108,6 @@ export default function SocialHubPage() {
         tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
       }
     }
-    if (tab === TAB_SPOOD) {
-      loadThreads().catch(() => setErr(t('social.loadError')))
-    }
     if (tab === TAB_INVITE) {
       loadReferral().catch(() => setErr(t('social.loadError')))
     }
@@ -206,7 +117,7 @@ export default function SocialHubPage() {
         loadSexIdCases().catch(() => setErr(t('sexIdCase.loadCasesError')))
       }
     }
-  }, [tab, loadMine, loadThreads, loadReferral, loadSexIdCases, t, user?.id])
+  }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id])
 
   const submitPost = async (e) => {
     e.preventDefault()
@@ -288,60 +199,6 @@ export default function SocialHubPage() {
       setMsg(t('marketplace.reportSent'))
     } catch {
       setErr(t('social.saveError'))
-    }
-  }
-
-  const openSpood = async (e) => {
-    e.preventDefault()
-    setErr('')
-    const raw = otherUserHandle.trim()
-    if (!raw) {
-      setErr(t('social.spoodNeedIdentifier'))
-      return
-    }
-    try {
-      const resolved = await resolveOtherUserId(raw)
-      if (!resolved) {
-        setErr(t('social.spoodResolveError'))
-        return
-      }
-      const row = await chatService.openThread(resolved, null)
-      setActiveThread(row)
-      setOtherUserHandle('')
-      setProfileSuggestions([])
-      const msgs = await chatService.messages(row.id, 0, 50)
-      setThreadMessages(msgs)
-      await loadThreads()
-      setMsg(t('social.threadOpened'))
-    } catch (e2) {
-      setErr(e2?.response?.data?.error || t('social.saveError'))
-    }
-  }
-
-  const pickThread = async (row) => {
-    setActiveThread(row)
-    try {
-      const msgs = await chatService.messages(row.id, 0, 50)
-      setThreadMessages(msgs)
-    } catch {
-      setErr(t('social.loadError'))
-    }
-  }
-
-  const sendSpood = async (e) => {
-    e.preventDefault()
-    if (!activeThread?.id) return
-    const text = spoodBody.trim()
-    if (!text) return
-    setErr('')
-    try {
-      await chatService.sendMessage(activeThread.id, text)
-      setSpoodBody('')
-      const msgs = await chatService.messages(activeThread.id, 0, 50)
-      setThreadMessages(msgs)
-      await loadThreads()
-    } catch (e2) {
-      setErr(e2?.response?.data?.error || t('social.saveError'))
     }
   }
 
@@ -435,12 +292,12 @@ export default function SocialHubPage() {
             type="button"
             className={`btn btn-sm ${p.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
             onClick={() => onToggleLike(p.id)}
-            title={t('social.like')}
+            title={t('social.spoodLike')}
             aria-pressed={!!p.likedByMe}
-            aria-label={t('social.like')}
+            aria-label={t('social.spoodLike')}
           >
             <span className="me-1" style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>{'\u{1F577}\u{FE0F}'}</span>
-            <span className="small">{p.likeCount ?? 0}</span>
+            <span className="small">{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
           </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => toggleExpand(p.id)}>
             {t('social.comments')} ({p.commentsCount ?? 0})
@@ -515,7 +372,6 @@ export default function SocialHubPage() {
 
         <div className="d-flex flex-wrap gap-2 mb-3">
           {tabBtn(TAB_FEED, t('social.tabFeed'))}
-          {tabBtn(TAB_SPOOD, t('social.tabSpood'))}
           {tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
           {tabBtn(TAB_INVITE, t('social.tabInvite'))}
         </div>
@@ -525,6 +381,23 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
+            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
+              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Opina en temas y discusiones</h2>
+              <div className="d-flex gap-2 overflow-auto pb-1">
+                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setTab(TAB_SEX_ID)}>
+                  Sex ID (votaci?n)
+                </button>
+                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))}>
+                  Enclosure check (discusi?n abierta)
+                </button>
+                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))}>
+                  Is my spider okay? (discusi?n abierta)
+                </button>
+              </div>
+              <p className="small text-muted mb-0 mt-2">
+                Vota r?pido en Sex ID o abre discusi?n p?blica desde el composer.
+              </p>
+            </div>
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div className="small ta-social-feed-shell__intro">
@@ -632,94 +505,6 @@ export default function SocialHubPage() {
               </div>
             </div>
           </>
-        )}
-
-        {tab === TAB_SPOOD && (
-          <div className="row g-3">
-            <div className="col-md-5">
-              <div className="p-3 rounded-3 h-100" style={{ border: '1px solid var(--ta-border)' }}>
-                <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.spoodNewTitle')}</h2>
-                <form onSubmit={openSpood} className="small">
-                  <label className="form-label small">Buscar keeper por @handle</label>
-                  <input
-                    className="form-control form-control-sm mb-2"
-                    value={otherUserHandle}
-                    onChange={(e) => setOtherUserHandle(e.target.value)}
-                    placeholder="@keeper"
-                  />
-                  {searchingProfiles && (
-                    <div className="small text-muted mb-2">Buscando perfiles...</div>
-                  )}
-                  {!searchingProfiles && profileSuggestions.length > 0 && (
-                    <div className="rounded border border-secondary-subtle mb-2" style={{ maxHeight: 170, overflowY: 'auto' }}>
-                      {profileSuggestions.map((row) => (
-                        <button
-                          key={`${row.id}`}
-                          type="button"
-                          className="btn btn-sm text-start w-100 border-0 rounded-0"
-                          onClick={() => setOtherUserHandle(`@${row.publicHandle || ''}`)}
-                        >
-                          <div className="fw-semibold">@{row.publicHandle || 'keeper'}</div>
-                          {row.displayName ? <div className="small text-muted">{row.displayName}</div> : null}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <button type="submit" className="btn btn-sm btn-dark w-100">{t('social.spoodOpen')}</button>
-                </form>
-                <hr />
-                <h3 className="h6 fw-bold mb-2">{t('social.spoodThreads')}</h3>
-                {(threads.content || []).map((th) => (
-                  <button
-                    key={th.id}
-                    type="button"
-                    className={`btn btn-sm w-100 text-start mb-2 ${activeThread?.id === th.id ? 'btn-dark' : 'btn-outline-secondary'}`}
-                    onClick={() => pickThread(th)}
-                  >
-                    <div className="fw-semibold">{th.otherDisplayName || th.otherHandle || th.otherUserId}</div>
-                    <div className="small text-truncate">{th.lastMessagePreview || '\u2014'}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="col-md-7">
-              <div className="p-3 rounded-3 h-100 d-flex flex-column" style={{ border: '1px solid var(--ta-border)', minHeight: 320 }}>
-                {!activeThread && <p className="text-muted small mb-0">{t('social.spoodPickThread')}</p>}
-                {activeThread && (
-                  <>
-                    <div className="small text-muted mb-2">
-                      {t('social.spoodWith')}: {activeThread.otherDisplayName || activeThread.otherUserId}
-                    </div>
-                    <div className="flex-grow-1 overflow-auto mb-2" style={{ maxHeight: 360 }}>
-                      {(threadMessages.content || []).map((m) => (
-                        <div
-                          key={m.id}
-                          className="small mb-2 p-2 rounded-2"
-                          style={{
-                            marginLeft: m.senderUserId === user?.id ? '2rem' : 0,
-                            marginRight: m.senderUserId === user?.id ? 0 : '2rem',
-                            background: m.senderUserId === user?.id ? 'rgba(200,170,80,0.15)' : 'rgba(0,0,0,0.2)',
-                            color: 'var(--ta-text)',
-                          }}
-                        >
-                          {m.body}
-                        </div>
-                      ))}
-                    </div>
-                    <form onSubmit={sendSpood} className="input-group input-group-sm">
-                      <input
-                        className="form-control"
-                        value={spoodBody}
-                        onChange={(e) => setSpoodBody(e.target.value)}
-                        placeholder={t('social.spoodPlaceholder')}
-                      />
-                      <button type="submit" className="btn btn-dark">{t('social.spoodSend')}</button>
-                    </form>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
         )}
 
         {tab === TAB_SEX_ID && (
