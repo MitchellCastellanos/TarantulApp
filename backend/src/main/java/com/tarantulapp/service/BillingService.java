@@ -45,6 +45,7 @@ public class BillingService {
     private final PlanAccessService planAccessService;
     private final EmailService emailService;
     private final BillingEmailEventRepository billingEmailEventRepository;
+    private final AdminAccessService adminAccessService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${stripe.secret-key:}")
@@ -71,13 +72,15 @@ public class BillingService {
                           ObjectMapper objectMapper,
                           PlanAccessService planAccessService,
                           EmailService emailService,
-                          BillingEmailEventRepository billingEmailEventRepository) {
+                          BillingEmailEventRepository billingEmailEventRepository,
+                          AdminAccessService adminAccessService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
         this.planAccessService = planAccessService;
         this.emailService = emailService;
         this.billingEmailEventRepository = billingEmailEventRepository;
+        this.adminAccessService = adminAccessService;
     }
 
     @Transactional(readOnly = true)
@@ -113,6 +116,7 @@ public class BillingService {
         body.put("inTrial", planAccessService.isTrialActive(user));
         body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
         body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
+        body.put("admin", adminAccessService.isAdminEmail(user.getEmail()));
 
         Optional<Subscription> optSub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
         if (optSub.isPresent()) {

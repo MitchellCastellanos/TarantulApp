@@ -33,6 +33,7 @@ function mergePlanFields(raw) {
     profileCity: raw?.profileCity || '',
     qrPrintExports: Number(raw?.qrPrintExports || 0),
     profilePhoto: raw?.profilePhoto || '',
+    admin: raw?.admin === true,
   }
 }
 
@@ -81,6 +82,7 @@ export function AuthProvider({ children }) {
       profileCity: authData.profileCity,
       qrPrintExports: authData.qrPrintExports,
       profilePhoto: authData.profilePhoto,
+      admin: authData.admin === true,
     })
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(payload))
@@ -115,6 +117,8 @@ export function AuthProvider({ children }) {
         if (cancelled || !data?.plan) return
         setUser((prev) => {
           if (!prev) return prev
+          const admin =
+            typeof data.admin === 'boolean' ? data.admin : prev.admin === true
           const next = mergePlanFields({
             ...prev,
             plan: data.plan,
@@ -123,6 +127,7 @@ export function AuthProvider({ children }) {
             trialEndsAt: data.trialEndsAt ?? prev.trialEndsAt ?? null,
             overFreeLimit: data.overFreeLimit,
             strictReadOnly: data.strictReadOnly,
+            admin,
           })
           localStorage.setItem('user', JSON.stringify(next))
           return next

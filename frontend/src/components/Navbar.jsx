@@ -28,7 +28,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
-  const isAdmin = user?.email && adminEmails.includes(String(user.email).toLowerCase())
+  const isAdmin =
+    user?.admin === true ||
+    (user?.email && adminEmails.includes(String(user.email).toLowerCase()))
 
   const path = location.pathname
   const logoHome = !user ? '/login' : '/'
@@ -196,13 +198,18 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         {user && (
           <Link
             to="/account"
-            className="text-decoration-none small fw-semibold"
-            style={{ color: 'var(--ta-parchment)' }}
+            className="d-inline-flex align-items-center gap-1 text-decoration-none small fw-semibold"
+            style={{
+              color: 'var(--ta-parchment)',
+              maxWidth: 'min(200px, 32vw)',
+            }}
             title={t('nav.accountAria')}
             aria-label={t('nav.accountAria')}
           >
-            <span aria-hidden="true">⚙️</span>
-            <span className="d-none d-sm-inline ms-1">{t('nav.account')}</span>
+            <span className="text-truncate">{user.displayName || user.email}</span>
+            <span className="flex-shrink-0" aria-hidden="true">
+              ⚙️
+            </span>
           </Link>
         )}
         {user && isAdmin && (
@@ -211,16 +218,6 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           </Link>
         )}
         {planControl}
-
-        {user && (
-          <Link
-            to="/account"
-            className="small d-none d-md-inline text-decoration-none"
-            style={{ color: 'var(--ta-parchment)', opacity: 0.9 }}
-          >
-            {user.displayName || user.email}
-          </Link>
-        )}
 
         <div className="d-flex gap-1 align-items-center">
           {APP_LANGS.map(l => (

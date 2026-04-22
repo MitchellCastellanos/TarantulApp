@@ -40,12 +40,16 @@ public class AuthService {
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
     private final ReferralService referralService;
+    private final PublicHandleService publicHandleService;
+    private final AdminAccessService adminAccessService;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil, PasswordResetTokenRepository resetTokenRepository,
                        EmailService emailService, PlanAccessService planAccessService,
-                       ReferralService referralService) {
+                       ReferralService referralService,
+                       PublicHandleService publicHandleService,
+                       AdminAccessService adminAccessService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -53,6 +57,8 @@ public class AuthService {
         this.emailService = emailService;
         this.planAccessService = planAccessService;
         this.referralService = referralService;
+        this.publicHandleService = publicHandleService;
+        this.adminAccessService = adminAccessService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -66,6 +72,7 @@ public class AuthService {
         user.setPlan(UserPlan.FREE);
         user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
         userRepository.save(user);
+        publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
         referralService.applyReferralForNewAccount(user.getId(), request.getReferralCode());
         referralService.ensureReferralCodeForUser(user.getId());
         User refreshed = userRepository.findById(user.getId()).orElseThrow();
@@ -83,6 +90,10 @@ public class AuthService {
         if (user.getPlan() == null) {
             user.setPlan(UserPlan.FREE);
             userRepository.save(user);
+        }
+        if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+            user = userRepository.findById(user.getId()).orElse(user);
         }
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
@@ -119,12 +130,18 @@ public class AuthService {
             created.setPlan(UserPlan.FREE);
             created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
             User saved = userRepository.save(created);
+            publicHandleService.assignInitialPublicHandleIfMissing(saved.getId());
             referralService.applyReferralForNewAccount(saved.getId(), referralCode);
             referralService.ensureReferralCodeForUser(saved.getId());
             User refreshed = userRepository.findById(saved.getId()).orElseThrow();
             emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
             return refreshed;
         });
+
+        if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+            user = userRepository.findById(user.getId()).orElse(user);
+        }
 
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
@@ -193,6 +210,7 @@ public class AuthService {
         r.setProfileCity(user.getProfileCity());
         r.setQrPrintExports(user.getQrPrintExports());
         r.setProfilePhoto(user.getProfilePhoto());
+        r.setAdmin(adminAccessService.isAdminEmail(user.getEmail()));
         return r;
     }
 

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import com.tarantulapp.util.FileStorageService;
+import com.tarantulapp.util.PublicHandleRules;
 
 @Service
 public class MarketplaceService {
@@ -410,10 +411,7 @@ public class MarketplaceService {
     }
 
     private String normalizeHandle(String raw) {
-        String c = cleanText(raw, 60);
-        if (c == null) return null;
-        String out = c.toLowerCase().replaceAll("[^a-z0-9._-]", "");
-        return out.isBlank() ? null : out;
+        return PublicHandleRules.normalize(raw);
     }
 
     private String cleanCurrency(String raw) {

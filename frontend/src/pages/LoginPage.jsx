@@ -258,6 +258,9 @@ export default function LoginPage() {
                 <input type="text" name="displayName" className="form-control"
                        value={form.displayName} onChange={handleChange}
                        placeholder={t('auth.namePlaceholder')} autoComplete="name" />
+                <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>
+                  {t('auth.registerKeeperHint')}
+                </p>
               </div>
             )}
 

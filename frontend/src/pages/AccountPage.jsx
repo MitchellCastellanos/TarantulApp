@@ -2,12 +2,13 @@ import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 import authService from '../services/authService'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
+import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
 import { imgUrl } from '../services/api'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
@@ -56,6 +57,8 @@ export default function AccountPage() {
   const [theme, setTheme] = useState(() => getStoredTheme())
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMessage, setProfileMessage] = useState('')
+  const [handleAvailability, setHandleAvailability] = useState({ status: 'idle', normalized: '' })
+  const handleAvailTimerRef = useRef(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [profileForm, setProfileForm] = useState({
     displayName: user?.displayName || '',
@@ -120,6 +123,47 @@ export default function AccountPage() {
       profileCity: user?.profileCity || '',
     })
   }, [user])
+
+  useEffect(() => {
+    if (!user?.id) return undefined
+    const raw = profileForm.publicHandle ?? ''
+    if (handleAvailTimerRef.current) clearTimeout(handleAvailTimerRef.current)
+    const trimmed = raw.trim()
+    if (!trimmed) {
+      setHandleAvailability({ status: 'idle', normalized: '' })
+      return undefined
+    }
+    const norm = normalizePublicHandle(raw)
+    const currentNorm = normalizePublicHandle(user.publicHandle || '')
+    if (norm.length < 3) {
+      setHandleAvailability({ status: 'invalid', normalized: norm })
+      return undefined
+    }
+    if (norm && currentNorm && norm === currentNorm) {
+      setHandleAvailability({ status: 'yours', normalized: norm })
+      return undefined
+    }
+    setHandleAvailability((prev) => ({ ...prev, status: 'checking', normalized: norm }))
+    handleAvailTimerRef.current = setTimeout(() => {
+      userPublicService
+        .checkHandleAvailability(trimmed)
+        .then((data) => {
+          const n = data?.normalized || norm
+          if (!data?.valid) {
+            setHandleAvailability({ status: 'invalid', normalized: n })
+            return
+          }
+          setHandleAvailability({
+            status: data.available ? 'available' : 'taken',
+            normalized: n,
+          })
+        })
+        .catch(() => setHandleAvailability({ status: 'idle', normalized: norm }))
+    }, 450)
+    return () => {
+      if (handleAvailTimerRef.current) clearTimeout(handleAvailTimerRef.current)
+    }
+  }, [profileForm.publicHandle, user?.id, user?.publicHandle])
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -264,6 +308,25 @@ export default function AccountPage() {
                 <label className="form-label mb-1">{t('account.profile.publicHandleLabel')}</label>
                 <input className="form-control form-control-sm" value={profileForm.publicHandle}
                   onChange={(e) => setProfileForm((f) => ({ ...f, publicHandle: e.target.value }))} placeholder={t('account.profile.publicHandlePlaceholder')} />
+                {handleAvailability.status === 'checking' && (
+                  <div className="small text-muted mt-1">{t('account.profile.handleAvailabilityChecking')}</div>
+                )}
+                {handleAvailability.status === 'available' && (
+                  <div className="small mt-1" style={{ color: 'var(--ta-green-light)' }}>
+                    {t('account.profile.handleAvailabilityAvailable', { handle: handleAvailability.normalized })}
+                  </div>
+                )}
+                {handleAvailability.status === 'taken' && (
+                  <div className="small mt-1" style={{ color: '#f0a4a4' }}>
+                    {t('account.profile.handleAvailabilityTaken', { handle: handleAvailability.normalized })}
+                  </div>
+                )}
+                {handleAvailability.status === 'invalid' && (
+                  <div className="small mt-1 text-muted">{t('account.profile.handleAvailabilityInvalid')}</div>
+                )}
+                {handleAvailability.status === 'yours' && (
+                  <div className="small mt-1 text-muted">{t('account.profile.handleAvailabilityYours')}</div>
+                )}
               </div>
               <div className="mb-2">
                 <label className="form-label mb-1">{t('account.profile.bioLabel')}</label>
