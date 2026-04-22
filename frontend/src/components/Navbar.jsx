@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +20,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { token, user, logout } = useAuth()
   const location = useLocation()
   const { t, i18n } = useTranslation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const plan = user?.plan || 'FREE'
   const isPro = plan === 'PRO'
   const inTrial = user?.inTrial === true
@@ -34,6 +36,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
 
   const path = location.pathname
   const logoHome = !token ? '/login' : '/'
+  const closeMobileMenu = () => setMobileMenuOpen(false)
+
+  useEffect(() => {
+    closeMobileMenu()
+  }, [path])
 
   const linkTone = (active) =>
     variant === 'public'
@@ -54,6 +61,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     fontSize: '0.78rem',
     fontWeight: 600,
     textDecoration: 'none',
+  })
+  const menuPillStyle = (active) => ({
+    ...pillStyle(active),
+    padding: '0.42rem 0.82rem',
   })
 
   const planControl = (() => {
@@ -168,138 +179,158 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       }}
     >
       <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
-      <div className="d-md-none w-100 mt-2">
-        <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-text-muted)' }}>
-          Explorar
-        </div>
-        <div
-          className="d-flex gap-2 pb-1"
-          style={{ overflowX: 'auto', scrollbarWidth: 'thin' }}
-        >
-          <Link
-            to="/descubrir"
-            style={pillStyle(path.startsWith('/descubrir'))}
-            title={t('nav.discoverLinkTitle')}
-          >
-            {t('discover.navTitle')}
-          </Link>
-          <Link
-            to="/marketplace"
-            style={pillStyle(path.startsWith('/marketplace'))}
-            title={t('marketplace.title')}
-          >
-            {t('marketplace.nav')}
-          </Link>
-          <Link
-            to={token ? '/comunidad' : '/login'}
-            state={token ? undefined : { redirectAfterAuth: '/comunidad' }}
-            style={pillStyle(path.startsWith('/comunidad'))}
-            title={t('social.navTitle')}
-          >
-            {t('nav.community')}
-          </Link>
-          <Link
-            to="/about"
-            style={pillStyle(path.startsWith('/about'))}
-            title={t('nav.aboutTitle')}
-          >
-            {t('nav.about')}
-          </Link>
-        </div>
-
+      <div className="d-md-none ms-auto d-flex align-items-center gap-2">
         {token && (
-          <>
-            <div className="small fw-semibold mb-1 mt-2" style={{ color: 'var(--ta-text-muted)' }}>
-              Mi espacio
-            </div>
-            <div
-              className="d-flex gap-2 pb-1"
-              style={{ overflowX: 'auto', scrollbarWidth: 'thin' }}
+          <Link
+            to="/"
+            onClick={closeMobileMenu}
+            className="btn btn-sm fw-semibold ta-mobile-collection-cta"
+            style={{
+              fontSize: '0.78rem',
+            }}
+          >
+            {t('discover.myCollection', 'Mi colección')}
+          </Link>
+        )}
+        <button
+          type="button"
+          className="btn btn-sm ta-mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          aria-expanded={mobileMenuOpen}
+          aria-label={mobileMenuOpen ? t('nav.close', 'Cerrar menú') : t('nav.open', 'Abrir menú')}
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+      <div
+        className={`d-md-none w-100 mt-2 p-2 rounded-3 ta-mobile-nav-panel ${mobileMenuOpen ? 'is-open' : ''}`}
+        aria-hidden={!mobileMenuOpen}
+      >
+          <div className="small fw-semibold mb-1 ta-mobile-nav-section-title">
+            Explorar
+          </div>
+          <div className="d-flex flex-wrap gap-2 pb-1">
+            <Link onClick={closeMobileMenu} to="/descubrir" style={menuPillStyle(path.startsWith('/descubrir'))} title={t('nav.discoverLinkTitle')}>
+              {t('discover.navTitle')}
+            </Link>
+            <Link onClick={closeMobileMenu} to="/marketplace" style={menuPillStyle(path.startsWith('/marketplace'))} title={t('marketplace.title')}>
+              {t('marketplace.nav')}
+            </Link>
+            <Link
+              onClick={closeMobileMenu}
+              to={token ? '/comunidad' : '/login'}
+              state={token ? undefined : { redirectAfterAuth: '/comunidad' }}
+              style={menuPillStyle(path.startsWith('/comunidad'))}
+              title={t('social.navTitle')}
             >
-              <Link to="/" style={pillStyle(path === '/')}>
-                {t('discover.myCollection', 'Mi colección')}
-              </Link>
-              <Link
-                to="/herramientas/qr"
-                style={pillStyle(path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print'))}
-                title={t('nav.qrToolTitle')}
-              >
-                {t('nav.qrTool')}
-              </Link>
-              <Link to="/reminders" style={pillStyle(path.startsWith('/reminders'))}>
-                {t('nav.reminders')}
-              </Link>
-              <Link to="/account" style={pillStyle(path.startsWith('/account'))}>
-                {t('nav.account')}
-              </Link>
-              {user && isAdmin && (
-                <Link to="/admin" style={pillStyle(path.startsWith('/admin'))}>
-                  {t('nav.admin')}
+              {t('nav.community')}
+            </Link>
+            <Link onClick={closeMobileMenu} to="/about" style={menuPillStyle(path.startsWith('/about'))} title={t('nav.aboutTitle')}>
+              {t('nav.about')}
+            </Link>
+          </div>
+
+          {token && (
+            <>
+              <div className="small fw-semibold mb-1 mt-2 ta-mobile-nav-section-title">
+                Mi espacio
+              </div>
+              <div className="d-flex flex-wrap gap-2 pb-1">
+                <Link
+                  to="/"
+                  onClick={closeMobileMenu}
+                  className="btn btn-sm fw-semibold ta-mobile-collection-cta"
+                  style={{ fontSize: '0.8rem' }}
+                >
+                  {t('discover.myCollection', 'Mi colección')}
+                </Link>
+                <Link
+                  onClick={closeMobileMenu}
+                  to="/herramientas/qr"
+                  style={menuPillStyle(path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print'))}
+                  title={t('nav.qrToolTitle')}
+                >
+                  {t('nav.qrTool')}
+                </Link>
+                <Link onClick={closeMobileMenu} to="/reminders" style={menuPillStyle(path.startsWith('/reminders'))}>
+                  {t('nav.reminders')}
+                </Link>
+                <Link onClick={closeMobileMenu} to="/account" style={menuPillStyle(path.startsWith('/account'))}>
+                  {t('nav.account')}
+                </Link>
+                {user && isAdmin && (
+                  <Link onClick={closeMobileMenu} to="/admin" style={menuPillStyle(path.startsWith('/admin'))}>
+                    {t('nav.admin')}
+                  </Link>
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="small fw-semibold mb-1 mt-2 ta-mobile-nav-section-title">
+            Preferencias
+          </div>
+          <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div>{planControl}</div>
+            <div className="d-flex align-items-center gap-2">
+              <div className="d-flex gap-1 align-items-center">
+                {APP_LANGS.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    title={LOGIN_LANG_LABELS[l.code]}
+                    aria-label={LOGIN_LANG_LABELS[l.code]}
+                    onClick={() => i18n.changeLanguage(l.code)}
+                    className="btn btn-sm px-1 py-0 border-0 d-inline-flex align-items-center"
+                    style={{
+                      background: 'transparent',
+                      color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      lineHeight: 1,
+                      transition: 'color 0.15s',
+                    }}
+                  >
+                    {l.display}
+                  </button>
+                ))}
+              </div>
+              <ThemeToggleButton compact />
+              {token ? (
+                <button
+                  className="btn btn-sm btn-outline-light"
+                  onClick={logout}
+                  style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
+                >
+                  {t('nav.logout')}
+                </button>
+              ) : hideLoginLink ? (
+                <Link
+                  to="/descubrir"
+                  onClick={closeMobileMenu}
+                  className="btn btn-sm"
+                  style={{
+                    border: '1px solid var(--ta-border)',
+                    color: 'var(--ta-parchment)',
+                    background: 'transparent',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  {t('nav.continueDiscover')}
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={closeMobileMenu}
+                  className="btn btn-sm btn-outline-light"
+                  style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
+                >
+                  {t('nav.login', 'Login')}
                 </Link>
               )}
             </div>
-          </>
-        )}
-
-        <div className="d-flex align-items-center justify-content-between gap-2 mt-2 flex-wrap">
-          <div>{planControl}</div>
-          <div className="d-flex align-items-center gap-2">
-            <div className="d-flex gap-1 align-items-center">
-              {APP_LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  title={LOGIN_LANG_LABELS[l.code]}
-                  aria-label={LOGIN_LANG_LABELS[l.code]}
-                  onClick={() => i18n.changeLanguage(l.code)}
-                  className="btn btn-sm px-1 py-0 border-0 d-inline-flex align-items-center"
-                  style={{
-                    background: 'transparent',
-                    color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                    lineHeight: 1,
-                    transition: 'color 0.15s',
-                  }}
-                >
-                  {l.display}
-                </button>
-              ))}
-            </div>
-            <ThemeToggleButton compact />
-            {token ? (
-              <button
-                className="btn btn-sm btn-outline-light"
-                onClick={logout}
-                style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
-              >
-                {t('nav.logout')}
-              </button>
-            ) : hideLoginLink ? (
-              <Link
-                to="/descubrir"
-                className="btn btn-sm"
-                style={{
-                  border: '1px solid var(--ta-border)',
-                  color: 'var(--ta-parchment)',
-                  background: 'transparent',
-                  fontSize: '0.8rem',
-                }}
-              >
-                {t('nav.continueDiscover')}
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="btn btn-sm btn-outline-light"
-                style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
-              >
-                {t('nav.login', 'Login')}
-              </Link>
-            )}
           </div>
-        </div>
       </div>
       <div className="d-none d-md-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         {token && (
@@ -351,6 +382,20 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         >
           {t('nav.about')}
         </Link>
+        {token && (
+          <Link
+            to="/"
+            className="btn btn-sm fw-semibold d-none d-md-inline-flex align-items-center"
+            style={{
+              background: 'var(--ta-gold)',
+              color: '#111',
+              border: '1px solid var(--ta-gold)',
+              fontSize: '0.78rem',
+            }}
+          >
+            {t('discover.myCollection', 'Mi colección')}
+          </Link>
+        )}
         {token && (
           <Link to="/reminders" className="text-decoration-none d-none d-md-inline small fw-semibold"
                 style={{ color: 'var(--ta-gold)' }}>

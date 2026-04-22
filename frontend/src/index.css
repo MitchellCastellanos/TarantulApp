@@ -358,6 +358,43 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   letter-spacing: 1.5px;
 }
 
+.ta-mobile-menu-toggle {
+  border: 1px solid var(--ta-border) !important;
+  color: var(--ta-parchment) !important;
+  min-width: 42px;
+}
+
+.ta-mobile-collection-cta {
+  background: linear-gradient(135deg, #e8c56a 0%, #c9a227 100%) !important;
+  color: #111 !important;
+  border: 1px solid rgba(220, 178, 76, 0.9) !important;
+  box-shadow: 0 0 12px rgba(220, 175, 70, 0.3);
+}
+
+.ta-mobile-nav-panel {
+  border: 1px solid var(--ta-border);
+  background: radial-gradient(circle at top right, rgba(201, 168, 76, 0.12), rgba(10, 10, 24, 0.96) 46%);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: max-height 260ms ease, opacity 220ms ease, transform 220ms ease, margin-top 220ms ease;
+  pointer-events: none;
+}
+
+.ta-mobile-nav-panel.is-open {
+  max-height: 85vh;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.ta-mobile-nav-section-title {
+  color: var(--ta-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 /* ─── Tarantula card hover ──────────────────────────────────────────────── */
 
 .tarantula-card {
