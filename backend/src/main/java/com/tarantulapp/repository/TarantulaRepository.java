@@ -3,6 +3,7 @@ package com.tarantulapp.repository;
 import com.tarantulapp.entity.Tarantula;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +19,7 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     long countDistinctSpeciesByUserId(UUID userId);
     Optional<Tarantula> findByShortId(String shortId);
     boolean existsByShortId(String shortId);
+
+    @Query("select distinct t from Tarantula t left join fetch t.species where t.id in :ids")
+    List<Tarantula> findAllWithSpeciesByIdIn(@Param("ids") List<UUID> ids);
 }

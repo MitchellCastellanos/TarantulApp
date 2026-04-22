@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
 import communityService from '../services/communityService'
 import chatService from '../services/chatService'
+import userPublicService from '../services/userPublicService'
+import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
 import moderationService from '../services/moderationService'
 import { useAuth } from '../context/AuthContext'
@@ -13,16 +16,28 @@ const TAB_FEED = 'feed'
 const TAB_SPOOD = 'spood'
 const TAB_INVITE = 'invite'
 
+/** UUID v4 (case-insensitive). */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export default function SocialHubPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(TAB_FEED)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
   const [feed, setFeed] = useState({ content: [], number: 0, totalPages: 0 })
   const [mine, setMine] = useState({ content: [], number: 0, totalPages: 0 })
-  const [composer, setComposer] = useState({ body: '', visibility: 'public', milestoneKind: '', imageUrl: '' })
+  const [composer, setComposer] = useState({
+    body: '',
+    visibility: 'public',
+    milestoneKind: '',
+    imageUrl: '',
+    tarantulaId: '',
+  })
+  const [myTarantulas, setMyTarantulas] = useState([])
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
@@ -56,6 +71,63 @@ export default function SocialHubPage() {
     setThreads(data)
   }, [])
 
+  const resolveOtherUserId = useCallback(async (raw) => {
+    const s = raw.trim()
+    if (!s) return null
+    if (UUID_REGEX.test(s)) return s
+    const handle = s.startsWith('@') ? s.slice(1).trim() : s
+    if (!handle) return null
+    try {
+      const row = await userPublicService.byHandle(handle)
+      return row?.id || null
+    } catch {
+      return null
+    }
+  }, [])
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    const openSeller = searchParams.get('openSeller')
+    const openListing = searchParams.get('openListing')
+    if (tabParam !== 'spood' || !openSeller?.trim() || !user?.id) return
+
+    const sellerId = openSeller.trim()
+    if (String(user.id) === sellerId) {
+      navigate('/comunidad', { replace: true })
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      setErr('')
+      setMsg('')
+      try {
+        const listingId =
+          openListing && UUID_REGEX.test(String(openListing).trim())
+            ? String(openListing).trim()
+            : null
+        const row = await chatService.openThread(sellerId, listingId)
+        if (cancelled) return
+        setTab(TAB_SPOOD)
+        setActiveThread(row)
+        const msgs = await chatService.messages(row.id, 0, 50)
+        if (!cancelled) setThreadMessages(msgs)
+        await loadThreads()
+        setMsg(listingId ? t('social.threadOpenedListing') : t('social.threadOpened'))
+      } catch (e2) {
+        if (!cancelled) {
+          setTab(TAB_SPOOD)
+          setErr(e2?.response?.data?.error || t('social.saveError'))
+        }
+      } finally {
+        if (!cancelled) navigate('/comunidad', { replace: true })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, user?.id, navigate, t, loadThreads])
+
   const loadReferral = useCallback(async () => {
     const data = await referralService.me()
     setReferral(data)
@@ -68,6 +140,9 @@ export default function SocialHubPage() {
   useEffect(() => {
     if (tab === TAB_FEED) {
       loadMine().catch(() => {})
+      if (user?.id) {
+        tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
+      }
     }
     if (tab === TAB_SPOOD) {
       loadThreads().catch(() => setErr(t('social.loadError')))
@@ -75,21 +150,22 @@ export default function SocialHubPage() {
     if (tab === TAB_INVITE) {
       loadReferral().catch(() => setErr(t('social.loadError')))
     }
-  }, [tab, loadMine, loadThreads, loadReferral, t])
+  }, [tab, loadMine, loadThreads, loadReferral, t, user?.id])
 
   const submitPost = async (e) => {
     e.preventDefault()
     setErr('')
     setMsg('')
     try {
+      const tid = (composer.tarantulaId || '').trim()
       await communityService.createPost({
         body: composer.body.trim(),
         visibility: composer.visibility,
         milestoneKind: composer.milestoneKind.trim() || undefined,
         imageUrl: composer.imageUrl.trim() || undefined,
-        tarantulaId: null,
+        tarantulaId: tid && UUID_REGEX.test(tid) ? tid : undefined,
       })
-      setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '' }))
+      setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '', tarantulaId: '' }))
       setMsg(t('social.postCreated'))
       await Promise.all([loadFeed(), loadMine()])
     } catch (e2) {
@@ -164,11 +240,16 @@ export default function SocialHubPage() {
     setErr('')
     const raw = otherUserId.trim()
     if (!raw) {
-      setErr(t('social.spoodNeedUuid'))
+      setErr(t('social.spoodNeedIdentifier'))
       return
     }
     try {
-      const row = await chatService.openThread(raw, null)
+      const resolved = await resolveOtherUserId(raw)
+      if (!resolved) {
+        setErr(t('social.spoodResolveError'))
+        return
+      }
+      const row = await chatService.openThread(resolved, null)
       setActiveThread(row)
       setOtherUserId('')
       const msgs = await chatService.messages(row.id, 0, 50)
@@ -236,7 +317,7 @@ export default function SocialHubPage() {
     >
       <div className="d-flex justify-content-between gap-2 flex-wrap">
         <div className="small text-muted">
-          {(p.authorDisplayName || p.authorHandle || 'keeper') + ' ¬∑ '}
+          {(p.authorDisplayName || p.authorHandle || 'keeper') + '\u00a0\u00b7\u00a0'}
           <span className="text-uppercase" style={{ fontSize: '0.65rem' }}>{p.visibility}</span>
         </div>
         <div className="d-flex gap-1 flex-wrap">
@@ -266,6 +347,13 @@ export default function SocialHubPage() {
       </div>
       {p.milestoneKind ? (
         <div className="small mt-1" style={{ color: 'var(--ta-gold)' }}>{p.milestoneKind}</div>
+      ) : null}
+      {p.tarantulaName ? (
+        <div className="small mt-1 text-muted">
+          <span className="fw-semibold" style={{ color: 'var(--ta-text-muted)' }}>{t('social.postLinkedSpider')}:</span>{' '}
+          {p.tarantulaName}
+          {p.tarantulaScientificName ? ` \u2014 ${p.tarantulaScientificName}` : ''}
+        </div>
       ) : null}
       <p className="mb-2 mt-2 small" style={{ color: 'var(--ta-text)', whiteSpace: 'pre-wrap' }}>{p.body}</p>
       {p.imageUrl ? (
@@ -339,6 +427,22 @@ export default function SocialHubPage() {
                       onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
                       placeholder={t('social.composerBodyPh')}
                     />
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={composer.tarantulaId}
+                        onChange={(e) => setComposer((c) => ({ ...c, tarantulaId: e.target.value }))}
+                      >
+                        <option value="">{t('social.linkedTarantulaNone')}</option>
+                        {(myTarantulas || []).map((tar) => (
+                          <option key={tar.id} value={tar.id}>
+                            {(tar.name || '?')
+                              + (tar.species?.scientificName ? ` ù ${tar.species.scientificName}` : '')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="row g-2 mb-2">
                       <div className="col-md-4">
                         <label className="form-label small mb-0">{t('social.visibility')}</label>
@@ -399,12 +503,12 @@ export default function SocialHubPage() {
               <div className="p-3 rounded-3 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                 <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.spoodNewTitle')}</h2>
                 <form onSubmit={openSpood} className="small">
-                  <label className="form-label small">{t('social.spoodOtherUuid')}</label>
+                  <label className="form-label small">{t('social.spoodOtherHandleOrUuid')}</label>
                   <input
                     className="form-control form-control-sm mb-2"
                     value={otherUserId}
                     onChange={(e) => setOtherUserId(e.target.value)}
-                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                    placeholder={t('social.spoodHandlePlaceholder')}
                   />
                   <button type="submit" className="btn btn-sm btn-dark w-100">{t('social.spoodOpen')}</button>
                 </form>

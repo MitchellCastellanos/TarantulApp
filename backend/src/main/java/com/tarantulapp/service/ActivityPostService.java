@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -89,7 +90,10 @@ public class ActivityPostService {
         post.setTarantulaId(tarantulaId);
         ActivityPost saved = activityPostRepository.save(post);
         User author = userRepository.findById(authorId).orElse(null);
-        return toPostDto(saved, Optional.of(authorId), author);
+        Tarantula spider = saved.getTarantulaId() == null
+                ? null
+                : tarantulaRepository.findById(saved.getTarantulaId()).orElse(null);
+        return toPostDto(saved, Optional.of(authorId), author, spider);
     }
 
     @Transactional
@@ -119,7 +123,10 @@ public class ActivityPostService {
         }
         post = activityPostRepository.findById(postId).orElseThrow();
         User author = userRepository.findById(post.getAuthorUserId()).orElse(null);
-        return toPostDto(post, Optional.of(userId), author);
+        Tarantula spider = post.getTarantulaId() == null
+                ? null
+                : tarantulaRepository.findById(post.getTarantulaId()).orElse(null);
+        return toPostDto(post, Optional.of(userId), author, spider);
     }
 
     @Transactional(readOnly = true)
@@ -172,9 +179,11 @@ public class ActivityPostService {
     private Map<String, Object> pageToDto(Page<ActivityPost> rows, Optional<UUID> viewerId) {
         Set<UUID> authorIds = rows.getContent().stream().map(ActivityPost::getAuthorUserId).collect(Collectors.toSet());
         Map<UUID, User> authors = loadUsers(authorIds);
+        Map<UUID, Tarantula> spiders = loadTarantulasForPosts(rows.getContent());
         List<Map<String, Object>> content = new ArrayList<>();
         for (ActivityPost p : rows.getContent()) {
-            content.add(toPostDto(p, viewerId, authors.get(p.getAuthorUserId())));
+            Tarantula spider = p.getTarantulaId() == null ? null : spiders.get(p.getTarantulaId());
+            content.add(toPostDto(p, viewerId, authors.get(p.getAuthorUserId()), spider));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("content", content);
@@ -185,7 +194,7 @@ public class ActivityPostService {
         return out;
     }
 
-    private Map<String, Object> toPostDto(ActivityPost p, Optional<UUID> viewerId, User author) {
+    private Map<String, Object> toPostDto(ActivityPost p, Optional<UUID> viewerId, User author, Tarantula spider) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId());
         m.put("body", p.getBody());
@@ -197,6 +206,18 @@ public class ActivityPostService {
         m.put("authorUserId", p.getAuthorUserId());
         m.put("authorDisplayName", author != null && author.getDisplayName() != null ? author.getDisplayName() : "");
         m.put("authorHandle", author != null && author.getPublicHandle() != null ? author.getPublicHandle() : "");
+        String tName = "";
+        String tSci = "";
+        if (spider != null && spider.getUserId().equals(p.getAuthorUserId())) {
+            if (spider.getName() != null) {
+                tName = spider.getName();
+            }
+            if (spider.getSpecies() != null && spider.getSpecies().getScientificName() != null) {
+                tSci = spider.getSpecies().getScientificName();
+            }
+        }
+        m.put("tarantulaName", tName);
+        m.put("tarantulaScientificName", tSci);
         long likes = activityPostLikeRepository.countByPostId(p.getId());
         m.put("likeCount", likes);
         boolean liked = viewerId.map(uid -> activityPostLikeRepository.existsByPostIdAndUserId(p.getId(), uid)).orElse(false);
@@ -204,6 +225,19 @@ public class ActivityPostService {
         long comments = activityPostCommentRepository.countByPostIdAndHiddenAtIsNull(p.getId());
         m.put("commentsCount", comments);
         return m;
+    }
+
+    private Map<UUID, Tarantula> loadTarantulasForPosts(List<ActivityPost> posts) {
+        List<UUID> ids = posts.stream()
+                .map(ActivityPost::getTarantulaId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return tarantulaRepository.findAllWithSpeciesByIdIn(ids).stream()
+                .collect(Collectors.toMap(Tarantula::getId, t -> t, (a, b) -> a));
     }
 
     private Map<String, Object> commentToDto(ActivityPostComment c, User author) {
