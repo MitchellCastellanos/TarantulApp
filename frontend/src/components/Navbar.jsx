@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 import ThemeToggleButton from './ThemeToggleButton'
 import BrandNavbarLogo from './BrandNavbarLogo'
+import notificationsService from '../services/notificationsService'
 
 function trialDaysLeft(trialEndsAt) {
   if (!trialEndsAt) return 0
@@ -21,6 +22,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifUnread, setNotifUnread] = useState(0)
+  const [notifRows, setNotifRows] = useState([])
+  const notifWrapRef = useRef(null)
   const plan = user?.plan || 'FREE'
   const isPro = plan === 'PRO'
   const inTrial = user?.inTrial === true
@@ -41,6 +46,83 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   useEffect(() => {
     closeMobileMenu()
   }, [path])
+
+  useEffect(() => {
+    if (!token) {
+      setNotifUnread(0)
+      setNotifRows([])
+      setNotifOpen(false)
+      return
+    }
+    let cancelled = false
+    const pull = async () => {
+      try {
+        const [count, page] = await Promise.all([
+          notificationsService.unreadCount(),
+          notificationsService.list(0, 8),
+        ])
+        if (!cancelled) {
+          setNotifUnread(Number(count || 0))
+          setNotifRows(page?.content || [])
+        }
+      } catch {
+        if (!cancelled) {
+          setNotifUnread(0)
+          setNotifRows([])
+        }
+      }
+    }
+    pull()
+    const timer = setInterval(pull, 30000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [token])
+
+  useEffect(() => {
+    const onDocClick = (event) => {
+      if (!notifWrapRef.current) return
+      if (!notifWrapRef.current.contains(event.target)) {
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [])
+
+  const openNotifications = async () => {
+    const next = !notifOpen
+    setNotifOpen(next)
+    if (!next) return
+    try {
+      const page = await notificationsService.list(0, 8)
+      setNotifRows(page?.content || [])
+      setNotifUnread(Number(page?.unreadCount || 0))
+    } catch {
+      // noop
+    }
+  }
+
+  const markOneRead = async (id) => {
+    try {
+      await notificationsService.markRead(id)
+      setNotifRows((rows) => rows.map((r) => (r.id === id ? { ...r, readAt: new Date().toISOString() } : r)))
+      setNotifUnread((n) => Math.max(0, n - 1))
+    } catch {
+      // noop
+    }
+  }
+
+  const markAllRead = async () => {
+    try {
+      await notificationsService.markAllRead()
+      setNotifRows((rows) => rows.map((r) => ({ ...r, readAt: r.readAt || new Date().toISOString() })))
+      setNotifUnread(0)
+    } catch {
+      // noop
+    }
+  }
 
   const linkTone = (active) =>
     variant === 'public'
@@ -273,6 +355,12 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div>{planControl}</div>
             <div className="d-flex align-items-center gap-2">
+                <div className="position-relative">
+                  <Link onClick={closeMobileMenu} to="/account" className="btn btn-sm btn-outline-light">
+                    🔔 {t('nav.notifications')}
+                    {notifUnread > 0 ? ` (${notifUnread})` : ''}
+                  </Link>
+                </div>
               <div className="d-flex gap-1 align-items-center">
                 {APP_LANGS.map((l) => (
                   <button
@@ -397,9 +485,64 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           </Link>
         )}
         {token && (
+          <div className="position-relative d-none d-md-block" ref={notifWrapRef}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-light position-relative"
+              onClick={openNotifications}
+              style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
+            >
+              🔔 {t('nav.notifications')}
+              {notifUnread > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '0.62rem' }}
+                >
+                  {notifUnread > 99 ? '99+' : notifUnread}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div
+                className="position-absolute end-0 mt-2 p-2 rounded-3 shadow"
+                style={{ width: 320, zIndex: 1100, background: 'var(--ta-surface,#1b1a18)', border: '1px solid var(--ta-border)' }}
+              >
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <div className="small fw-semibold">{t('nav.notifications')}</div>
+                  <button type="button" className="btn btn-sm btn-outline-secondary py-0 px-2" onClick={markAllRead}>
+                    {t('nav.markAllRead')}
+                  </button>
+                </div>
+                {notifRows.length === 0 ? (
+                  <div className="small text-muted">{t('nav.notificationsEmpty')}</div>
+                ) : (
+                  <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                    {notifRows.map((n) => (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => markOneRead(n.id)}
+                        className="btn btn-sm text-start w-100 mb-1"
+                        style={{
+                          border: '1px solid var(--ta-border)',
+                          background: n.readAt ? 'transparent' : 'rgba(200,170,80,0.12)',
+                          color: 'var(--ta-parchment)',
+                        }}
+                      >
+                        <div className="fw-semibold small">{n.title || t('nav.notificationFallbackTitle')}</div>
+                        <div className="small text-muted">{n.body || ''}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {token && (
           <Link to="/reminders" className="text-decoration-none d-none d-md-inline small fw-semibold"
                 style={{ color: 'var(--ta-gold)' }}>
-            🔔 {t('nav.reminders')}
+            ⏰ {t('nav.reminders')}
           </Link>
         )}
         {token && (

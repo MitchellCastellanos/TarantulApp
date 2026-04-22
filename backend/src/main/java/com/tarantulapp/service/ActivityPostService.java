@@ -39,17 +39,20 @@ public class ActivityPostService {
     private final ActivityPostCommentRepository activityPostCommentRepository;
     private final TarantulaRepository tarantulaRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ActivityPostService(ActivityPostRepository activityPostRepository,
                                ActivityPostLikeRepository activityPostLikeRepository,
                                ActivityPostCommentRepository activityPostCommentRepository,
                                TarantulaRepository tarantulaRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               NotificationService notificationService) {
         this.activityPostRepository = activityPostRepository;
         this.activityPostLikeRepository = activityPostLikeRepository;
         this.activityPostCommentRepository = activityPostCommentRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -113,13 +116,22 @@ public class ActivityPostService {
         if (!canView(post, Optional.of(userId))) {
             throw new AccessDeniedException("No autorizado");
         }
-        if (activityPostLikeRepository.existsByPostIdAndUserId(postId, userId)) {
+        boolean hadLike = activityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+        if (hadLike) {
             activityPostLikeRepository.deleteByPostIdAndUserId(postId, userId);
         } else {
             ActivityPostLike like = new ActivityPostLike();
             like.setPostId(postId);
             like.setUserId(userId);
             activityPostLikeRepository.save(like);
+            notificationService.create(
+                    post.getAuthorUserId(),
+                    userId,
+                    "SPOOD_RECEIVED",
+                    "Nuevo Spood",
+                    "Tu post recibio un Spood.",
+                    Map.of("postId", String.valueOf(postId))
+            );
         }
         post = activityPostRepository.findById(postId).orElseThrow();
         User author = userRepository.findById(post.getAuthorUserId()).orElse(null);
@@ -162,6 +174,17 @@ public class ActivityPostService {
         c.setAuthorUserId(userId);
         c.setBody(text);
         ActivityPostComment saved = activityPostCommentRepository.save(c);
+        notificationService.create(
+                post.getAuthorUserId(),
+                userId,
+                "POST_COMMENT",
+                "Nuevo comentario",
+                "Comentaron tu post en comunidad.",
+                Map.of(
+                        "postId", String.valueOf(postId),
+                        "commentId", String.valueOf(saved.getId())
+                )
+        );
         User u = userRepository.findById(userId).orElse(null);
         return commentToDto(saved, u);
     }

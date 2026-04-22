@@ -45,6 +45,7 @@ public class SexIdCaseService {
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
     private final SexIdExplanationService sexIdExplanationService;
+    private final NotificationService notificationService;
 
     public SexIdCaseService(SexIdCaseRepository sexIdCaseRepository,
                             SexIdCaseVoteRepository sexIdCaseVoteRepository,
@@ -53,7 +54,8 @@ public class SexIdCaseService {
                             FeedingLogRepository feedingLogRepository,
                             MoltLogRepository moltLogRepository,
                             BehaviorLogRepository behaviorLogRepository,
-                            SexIdExplanationService sexIdExplanationService) {
+                            SexIdExplanationService sexIdExplanationService,
+                            NotificationService notificationService) {
         this.sexIdCaseRepository = sexIdCaseRepository;
         this.sexIdCaseVoteRepository = sexIdCaseVoteRepository;
         this.userRepository = userRepository;
@@ -62,6 +64,7 @@ public class SexIdCaseService {
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
         this.sexIdExplanationService = sexIdExplanationService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -164,6 +167,14 @@ public class SexIdCaseService {
             v.setChoice(choice);
             sexIdCaseVoteRepository.save(v);
         }
+        notificationService.create(
+                c.getAuthorUserId(),
+                voterId,
+                "SEX_ID_VOTE",
+                "Nuevo voto en tu caso",
+                "Un keeper voto en tu caso de Sex ID.",
+                Map.of("caseId", String.valueOf(caseId))
+        );
         return getPublicCase(caseId, Optional.of(voterId));
     }
 

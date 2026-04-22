@@ -25,7 +25,11 @@
     "about": "À propos",
     "aboutTitle": "TarantulApp : mission, communauté et données ouvertes",
     "community": "Communauté",
-    "continueDiscover": "Continuer sur Découvrir"
+    "continueDiscover": "Continuer sur Découvrir",
+    "notifications": "Notifications",
+    "markAllRead": "Tout marquer",
+    "notificationsEmpty": "Aucune notification pour le moment.",
+    "notificationFallbackTitle": "Nouvelle activité"
   },
   "social": {
     "pageTitle": "Communauté",
@@ -69,7 +73,7 @@
     "commentPlaceholder": "Écrire un commentaire…",
     "sendComment": "Envoyer",
     "delete": "Supprimer",
-    "spoodNewTitle": "Nouveau Spood",
+    "spoodNewTitle": "Nouvelle conversation",
     "spoodOtherUuid": "UUID de l’autre keeper (pour l’instant)",
     "spoodOtherHandleOrUuid": "@handle du keeper ou UUID utilisateur",
     "spoodHandlePlaceholder": "@keeper ou UUID",
@@ -77,7 +81,7 @@
     "spoodThreads": "Conversations",
     "spoodPickThread": "Choisissez un fil ou ouvrez-en un nouveau.",
     "spoodWith": "Discussion avec",
-    "spoodPlaceholder": "Envoyer un Spood…",
+    "spoodPlaceholder": "Écrire un message…",
     "spoodSend": "Envoyer",
     "spoodNeedUuid": "Collez un UUID utilisateur valide.",
     "spoodNeedIdentifier": "Entrez un @handle ou un UUID utilisateur.",
@@ -828,7 +832,8 @@
     "sizeExample": "ex. {{n}}",
     "behaviorTitle": "🔍 Enregistrer un comportement",
     "moodLabel": "Humeur / état",
-    "behaviorNotesPlaceholder": "Décrivez ce que vous avez observé…"
+    "behaviorNotesPlaceholder": "Décrivez ce que vous avez observé…",
+    "publishToFeed": "Publier cet événement dans mon feed communauté"
   },
   "public": {
     "notFound": "Profil introuvable ou non public.",

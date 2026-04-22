@@ -54,6 +54,7 @@ export default function SocialHubPage() {
     stage: '',
   })
   const [sexIdCases, setSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
+  const [publicSexIdCases, setPublicSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
   const [sexIdUploading, setSexIdUploading] = useState(false)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -97,9 +98,15 @@ export default function SocialHubPage() {
     setSexIdCases(data)
   }, [])
 
+  const loadPublicSexIdCases = useCallback(async () => {
+    const data = await sexIdCaseService.listPublic(0, 12)
+    setPublicSexIdCases(data || { content: [] })
+  }, [])
+
   useEffect(() => {
     loadFeed().catch(() => setErr(t('social.loadError')))
-  }, [loadFeed, t])
+    loadPublicSexIdCases().catch(() => {})
+  }, [loadFeed, loadPublicSexIdCases, t])
 
   useEffect(() => {
     if (tab === TAB_FEED) {
@@ -384,19 +391,72 @@ export default function SocialHubPage() {
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
               <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Opina en temas y discusiones</h2>
               <div className="d-flex gap-2 overflow-auto pb-1">
-                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setTab(TAB_SEX_ID)}>
-                  Sex ID (votaci?n)
-                </button>
-                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))}>
-                  Enclosure check (discusi?n abierta)
-                </button>
-                <button type="button" className="btn btn-sm btn-outline-secondary text-nowrap" onClick={() => setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))}>
-                  Is my spider okay? (discusi?n abierta)
-                </button>
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Sex ID</div>
+                  <div className="small text-muted mb-2">Modo votación rápida</div>
+                  <button type="button" className="btn btn-sm btn-outline-secondary w-100" onClick={() => setTab(TAB_SEX_ID)}>
+                    Ir a Sex ID
+                  </button>
+                </div>
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Enclosure check</div>
+                  <div className="small text-muted mb-2">Discusión abierta</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))
+                      setComposerOpen(true)
+                    }}
+                  >
+                    Crear discusión
+                  </button>
+                </div>
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Is my spider okay?</div>
+                  <div className="small text-muted mb-2">Discusión abierta</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))
+                      setComposerOpen(true)
+                    }}
+                  >
+                    Crear discusión
+                  </button>
+                </div>
               </div>
               <p className="small text-muted mb-0 mt-2">
-                Vota r?pido en Sex ID o abre discusi?n p?blica desde el composer.
+                Usa Sex ID para votación, o abre discusiones públicas desde este carrusel.
               </p>
+            </div>
+            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.10)' }}>
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Sex ID activos</h2>
+                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setTab(TAB_SEX_ID)}>
+                  Ver todos
+                </button>
+              </div>
+              {(publicSexIdCases.content || []).length === 0 ? (
+                <p className="small text-muted mb-0">Aún no hay casos activos.</p>
+              ) : (
+                <div className="d-flex gap-2 overflow-auto pb-1">
+                  {(publicSexIdCases.content || []).slice(0, 8).map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded p-2"
+                      style={{ minWidth: 240, border: '1px solid var(--ta-border)' }}
+                    >
+                      <div className="small fw-semibold text-truncate mb-1">
+                        {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
+                      </div>
+                      <div className="small text-muted mb-2">{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</div>
+                      <Link to={`/sex-id/${c.id}`} className="btn btn-sm btn-dark w-100">Abrir caso</Link>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">

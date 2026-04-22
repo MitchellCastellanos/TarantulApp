@@ -25,7 +25,11 @@
     "about": "Acerca de",
     "aboutTitle": "TarantulApp: misión, comunidad y datos abiertos",
     "community": "Comunidad",
-    "continueDiscover": "Seguir en Descubrir"
+    "continueDiscover": "Seguir en Descubrir",
+    "notifications": "Notificaciones",
+    "markAllRead": "Marcar todo",
+    "notificationsEmpty": "Aún no tienes notificaciones.",
+    "notificationFallbackTitle": "Actividad nueva"
   },
   "social": {
     "pageTitle": "Comunidad",
@@ -69,7 +73,7 @@
     "commentPlaceholder": "Escribe un comentario…",
     "sendComment": "Enviar",
     "delete": "Eliminar",
-    "spoodNewTitle": "Nuevo Spood",
+    "spoodNewTitle": "Nueva conversación",
     "spoodOtherUuid": "UUID del otro keeper (por ahora)",
     "spoodOtherHandleOrUuid": "@handle del keeper o UUID de usuario",
     "spoodHandlePlaceholder": "@keeper o UUID",
@@ -77,7 +81,7 @@
     "spoodThreads": "Conversaciones",
     "spoodPickThread": "Elige un hilo o abre uno nuevo.",
     "spoodWith": "Chateando con",
-    "spoodPlaceholder": "Mandar un spood…",
+    "spoodPlaceholder": "Escribe un mensaje…",
     "spoodSend": "Enviar",
     "spoodNeedUuid": "Pega un UUID de usuario válido.",
     "spoodNeedIdentifier": "Escribe un @handle o UUID de usuario.",
@@ -829,6 +833,8 @@
     "behaviorTitle": "🔍 Registrar comportamiento",
     "moodLabel": "Estado / humor",
     "behaviorNotesPlaceholder": "Describe lo que observaste..."
+    ,
+    "publishToFeed": "Publicar este evento en mi feed de comunidad"
   },
   "public": {
     "notFound": "Perfil no encontrado o no es público.",

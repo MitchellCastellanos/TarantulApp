@@ -9,7 +9,7 @@ export default function BehaviorModal({ tarantulaId, onClose, onSaved }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     loggedAt: nowLocalDatetimeInputValue(),
-    mood: '', notes: ''
+    mood: '', notes: '', publishToFeed: false
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -68,6 +68,20 @@ export default function BehaviorModal({ tarantulaId, onClose, onSaved }) {
                   <textarea className="form-control form-control-sm" rows={2}
                             value={form.notes} onChange={e => set('notes', e.target.value)}
                             placeholder={t('logModals.behaviorNotesPlaceholder')} />
+                </div>
+                <div className="col-12">
+                  <div className="form-check">
+                    <input
+                      id="behavior-publish-feed"
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={!!form.publishToFeed}
+                      onChange={(e) => set('publishToFeed', e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor="behavior-publish-feed">
+                      {t('logModals.publishToFeed')}
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

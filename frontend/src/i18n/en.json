@@ -25,7 +25,11 @@
     "about": "About",
     "aboutTitle": "TarantulApp: mission, community, and open data",
     "community": "Community",
-    "continueDiscover": "Continue on Discover"
+    "continueDiscover": "Continue on Discover",
+    "notifications": "Notifications",
+    "markAllRead": "Mark all",
+    "notificationsEmpty": "No notifications yet.",
+    "notificationFallbackTitle": "New activity"
   },
   "social": {
     "pageTitle": "Community",
@@ -69,7 +73,7 @@
     "commentPlaceholder": "Write a comment…",
     "sendComment": "Send",
     "delete": "Delete",
-    "spoodNewTitle": "New Spood",
+    "spoodNewTitle": "New conversation",
     "spoodOtherUuid": "Other keeper's user UUID (for now)",
     "spoodOtherHandleOrUuid": "Keeper @handle or user UUID",
     "spoodHandlePlaceholder": "@keeper or UUID",
@@ -77,7 +81,7 @@
     "spoodThreads": "Threads",
     "spoodPickThread": "Pick a thread or start a new one.",
     "spoodWith": "Chatting with",
-    "spoodPlaceholder": "Send a spood…",
+    "spoodPlaceholder": "Write a message…",
     "spoodSend": "Send",
     "spoodNeedUuid": "Paste a valid user UUID.",
     "spoodNeedIdentifier": "Enter a @handle or user UUID.",
@@ -828,7 +832,8 @@
     "sizeExample": "e.g. {{n}}",
     "behaviorTitle": "🔍 Log behavior",
     "moodLabel": "Mood / state",
-    "behaviorNotesPlaceholder": "Describe what you observed…"
+    "behaviorNotesPlaceholder": "Describe what you observed…",
+    "publishToFeed": "Publish this event on my community feed"
   },
   "public": {
     "notFound": "Profile not found or not public.",
