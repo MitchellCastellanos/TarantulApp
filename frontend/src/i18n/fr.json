@@ -29,6 +29,8 @@
   },
   "social": {
     "pageTitle": "Communauté",
+    "seoTitle": "Communauté | TarantulApp",
+    "metaDescription": "Fil, Spood et invitations : espace privé pour keepers connectés. Connecte-toi pour participer.",
     "navTitle": "Communauté : photos, mues et étapes",
     "tagline": "Le rendez-vous en ligne pour celles et ceux qui vivent vraiment le rack.",
     "lead": "Partagez photos de vos mygales, mues et étapes. La visibilité se règle par publication — ce n’est pas la même chose que vendre sur la marketplace.",
@@ -306,6 +308,8 @@
   },
   "marketplace": {
     "nav": "Marketplace",
+    "seoTitle": "Marketplace des keepers | TarantulApp",
+    "metaDescription": "Annonces de la communauté, partenaires officiels et profils d’éleveurs au Mexique, aux É.-U. et au Canada. TarantulApp n’est pas intermédiaire : contact direct entre keepers.",
     "title": "Marketplace des keepers",
     "pageFocusTitle": "Annonces entre keepers",
     "communityIntro": "Ici la communauté publie ventes, échanges ou ce que vous arrangez entre vous. TarantulApp n’est pas intermédiaire : pas de commission sur l’accord, pas de vérification d’identité en face à face, pas de garantie d’expédition. En attendant de remplir le tableau au Mexique, aux États-Unis et au Canada, des annonces démo dans les grandes villes montrent le flux.",
@@ -352,6 +356,8 @@
     "fieldPrice": "Prix (facultatif)",
     "fieldCurrency": "Devise (ex. MXN, USD)",
     "fieldImage": "URL de l’image (facultatif)",
+    "fieldImageUpload": "Photo (téléverser, facultatif)",
+    "uploadingImage": "Téléversement…",
     "fieldPedigree": "Référence pedigree (facultatif)",
     "publishBtn": "Publier",
     "createdOk": "Annonce publiée avec succès.",

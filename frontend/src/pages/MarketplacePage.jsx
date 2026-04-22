@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -8,6 +8,7 @@ import moderationService from '../services/moderationService'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import BrandLogoMark from '../components/BrandLogoMark'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 const EMPTY_LISTING_FORM = {
   title: '',
@@ -194,6 +195,7 @@ export default function MarketplacePage() {
   const [vendorLeadForm, setVendorLeadForm] = useState(EMPTY_VENDOR_LEAD_FORM)
   const [loading, setLoading] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
+  const [uploadingListingImage, setUploadingListingImage] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
@@ -203,6 +205,27 @@ export default function MarketplacePage() {
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
   const nearCity = filters.nearMe ? (myProfile.city || user?.profileCity || '') : undefined
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const mpJsonLd = useMemo(() => {
+    if (!origin) return null
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: t('marketplace.seoTitle'),
+      description: t('marketplace.metaDescription'),
+      url: `${origin}/marketplace`,
+    }
+  }, [t, origin])
+
+  usePageSeo({
+    title: t('marketplace.seoTitle'),
+    description: t('marketplace.metaDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
+    canonicalHref: origin ? `${origin}/marketplace` : undefined,
+    jsonLd: mpJsonLd,
+    jsonLdId: 'marketplace-page-jsonld',
+  })
 
   const loadPublicListings = async () => {
     try {
@@ -271,6 +294,27 @@ export default function MarketplacePage() {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     }
   }
+
+  const onListingImageFile = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      setUploadingListingImage(true)
+      setMessage('')
+      try {
+        const data = await marketplaceService.uploadListingImage(file)
+        const u = data?.imageUrl
+        if (u) setListingForm((f) => ({ ...f, imageUrl: u }))
+        else setMessage(t('marketplace.error'))
+      } catch (err) {
+        setMessage(err?.response?.data?.message || err?.response?.data?.error || t('marketplace.error'))
+      } finally {
+        setUploadingListingImage(false)
+      }
+    },
+    [t]
+  )
 
 
   useEffect(() => {
@@ -473,7 +517,12 @@ export default function MarketplacePage() {
                 <div className="col-md-6" key={l.id}>
                   <div className="card border-0 shadow-sm h-100">
                     {l.imageUrl ? (
-                      <img src={l.imageUrl} alt={l.title} className="card-img-top" style={{ maxHeight: 200, objectFit: 'cover' }} />
+                      <img
+                        src={imgUrl(l.imageUrl) || l.imageUrl}
+                        alt={l.title}
+                        className="card-img-top"
+                        style={{ maxHeight: 200, objectFit: 'cover' }}
+                      />
                     ) : null}
                     <div className="card-body">
                       <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
@@ -579,8 +628,21 @@ export default function MarketplacePage() {
                         <option value="">{t('marketplace.fieldCity')}</option>
                         {listingCities.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldImage')}
-                        value={listingForm.imageUrl} onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))} />
+                      <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>{t('marketplace.fieldImageUpload')}</label>
+                      <input
+                        type="file"
+                        className="form-control form-control-sm mb-2"
+                        accept="image/*"
+                        disabled={uploadingListingImage}
+                        onChange={onListingImageFile}
+                      />
+                      <input
+                        className="form-control form-control-sm mb-2"
+                        placeholder={t('marketplace.fieldImage')}
+                        value={listingForm.imageUrl}
+                        onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                      />
+                      {uploadingListingImage && <p className="small text-muted mb-1">{t('marketplace.uploadingImage')}</p>}
                       <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>
                         {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                       </button>

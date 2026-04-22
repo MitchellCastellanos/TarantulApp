@@ -29,6 +29,8 @@
   },
   "social": {
     "pageTitle": "Comunidad",
+    "seoTitle": "Comunidad | TarantulApp",
+    "metaDescription": "Feed, Spood e invitaciones: espacio privado para keepers conectados. Inicia sesión para participar.",
     "navTitle": "Comunidad: fotos, mudas e hitos",
     "tagline": "El hangout en línea para quienes de verdad viven el tubo.",
     "lead": "Comparte fotos de tus arañas, mudas e hitos. La visibilidad de cada publicación la eliges tú; es independiente de vender en el marketplace.",
@@ -306,6 +308,8 @@
   },
   "marketplace": {
     "nav": "Marketplace",
+    "seoTitle": "Marketplace de keepers | TarantulApp",
+    "metaDescription": "Anuncios de la comunidad, socios oficiales y perfiles de breeders en MX, US y Canadá. TarantulApp no es intermediario: contacto directo entre keepers.",
     "title": "Marketplace de keepers",
     "pageFocusTitle": "Keeper marketplace",
     "communityIntro": "Aquí la comunidad publica anuncios para venta, intercambio o lo que acuerden entre ustedes. TarantulApp no es intermediario: no cobramos comisiones por el trato, no verificamos identidades en persona ni garantizamos entregas. Mientras crece el tablón en México, Estados Unidos y Canadá, puedes ver anuncios demo en ciudades grandes para visualizar el flujo.",
@@ -352,6 +356,8 @@
     "fieldPrice": "Precio (opcional)",
     "fieldCurrency": "Moneda (ej. MXN, USD)",
     "fieldImage": "URL de imagen (opcional)",
+    "fieldImageUpload": "Foto (subir imagen, opcional)",
+    "uploadingImage": "Subiendo foto…",
     "fieldPedigree": "Referencia de pedigree (opcional)",
     "publishBtn": "Publicar",
     "createdOk": "Anuncio publicado correctamente.",

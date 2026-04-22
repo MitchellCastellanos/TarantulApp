@@ -11,6 +11,7 @@ export default function AboutPage() {
   usePageSeo({
     title: t('about.pageTitle'),
     description: t('about.metaDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
     canonicalHref: origin ? `${origin}/about` : undefined,
   })
 

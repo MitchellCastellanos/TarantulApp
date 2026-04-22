@@ -26,8 +26,17 @@ function removeJsonLd(id) {
 
 /**
  * Actualiza &lt;title&gt;, meta OG/Twitter y JSON-LD. Al desmontar restaura los valores por defecto del sitio.
+ * @param {{ noindex?: boolean }} opts — `noindex` evita indexar rutas autenticadas o borradores.
  */
-export function usePageSeo({ title, description, imageUrl, canonicalHref, jsonLd, jsonLdId = 'page-jsonld' }) {
+export function usePageSeo({
+  title,
+  description,
+  imageUrl,
+  canonicalHref,
+  jsonLd,
+  jsonLdId = 'page-jsonld',
+  noindex = false,
+}) {
   useEffect(() => {
     const prevTitle = document.title
     if (title) document.title = title
@@ -70,6 +79,10 @@ export function usePageSeo({ title, description, imageUrl, canonicalHref, jsonLd
       document.head.appendChild(script)
     }
 
+    if (noindex) {
+      upsertMeta('name', 'robots', 'noindex, nofollow')
+    }
+
     return () => {
       document.title = SITE_DEFAULT_TITLE
       upsertMeta('name', 'description', SITE_DEFAULT_DESCRIPTION)
@@ -81,6 +94,7 @@ export function usePageSeo({ title, description, imageUrl, canonicalHref, jsonLd
       removeMeta('name', 'twitter:title')
       removeMeta('name', 'twitter:description')
       removeMeta('name', 'twitter:image')
+      if (noindex) removeMeta('name', 'robots')
       removeJsonLd(jsonLdId)
 
       const lc = document.querySelector('link[rel="canonical"]')
@@ -90,5 +104,5 @@ export function usePageSeo({ title, description, imageUrl, canonicalHref, jsonLd
         else lc.remove()
       }
     }
-  }, [title, description, imageUrl, canonicalHref, jsonLd, jsonLdId])
+  }, [title, description, imageUrl, canonicalHref, jsonLd, jsonLdId, noindex])
 }

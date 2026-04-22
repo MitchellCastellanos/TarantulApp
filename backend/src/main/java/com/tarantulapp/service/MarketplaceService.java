@@ -241,6 +241,15 @@ public class MarketplaceService {
     }
 
     @Transactional
+    public Map<String, String> uploadListingImage(UUID userId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Imagen requerida");
+        }
+        String path = fileStorageService.saveFile(file, "listings/" + userId);
+        return Map.of("imageUrl", path);
+    }
+
+    @Transactional
     public Map<String, Object> uploadProfilePhoto(UUID userId, MultipartFile file) throws IOException {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String path = fileStorageService.saveFile(file, "keepers/" + userId);

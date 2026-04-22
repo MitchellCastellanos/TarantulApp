@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageSeo } from '../hooks/usePageSeo'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
@@ -49,6 +50,14 @@ export default function SocialHubPage() {
   const [spoodBody, setSpoodBody] = useState('')
 
   const [referral, setReferral] = useState(null)
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: t('social.seoTitle'),
+    description: t('social.metaDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
+    noindex: true,
+  })
 
   const inviteLink = useMemo(() => {
     if (!referral?.code) return ''

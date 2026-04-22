@@ -120,6 +120,11 @@ public class MarketplaceController {
         return ResponseEntity.ok(Map.of("message", "ok"));
     }
 
+    @PostMapping(value = "/listings/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadListingImage(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(marketplaceService.uploadListingImage(securityHelper.getCurrentUserId(), file));
+    }
+
     @PostMapping(value = "/keeper-profile/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> uploadProfilePhoto(@RequestParam("file") MultipartFile file) throws IOException {
         return ResponseEntity.ok(marketplaceService.uploadProfilePhoto(securityHelper.getCurrentUserId(), file));

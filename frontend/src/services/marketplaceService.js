@@ -18,6 +18,11 @@ const marketplaceService = {
     form.append('file', file, file.name || 'keeper-profile.jpg')
     return api.post('/marketplace/keeper-profile/photo', form).then((r) => r.data)
   },
+  uploadListingImage: (file) => {
+    const form = new FormData()
+    form.append('file', file, file.name || 'listing.jpg')
+    return api.post('/marketplace/listings/photo', form).then((r) => r.data)
+  },
 
   getKeeperPublic: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}`).then((r) => r.data),
   getKeeperReviews: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}/reviews`).then((r) => r.data),

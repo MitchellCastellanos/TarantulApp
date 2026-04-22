@@ -29,6 +29,8 @@
   },
   "social": {
     "pageTitle": "Community",
+    "seoTitle": "Community | TarantulApp",
+    "metaDescription": "Feed, Spood, and invites: a private space for signed-in keepers.",
     "navTitle": "Community: photos, molts, and milestones",
     "tagline": "The online hangout for keepers who actually live the tub life.",
     "lead": "Share spider photos, molts, and milestones. Each post has its own visibility — separate from selling on the marketplace.",
@@ -306,6 +308,8 @@
   },
   "marketplace": {
     "nav": "Marketplace",
+    "seoTitle": "Keeper marketplace | TarantulApp",
+    "metaDescription": "Community listings, official partners, and breeder profiles in MX, US, and Canada. TarantulApp is not a middleman: keepers connect directly.",
     "title": "Keeper marketplace",
     "pageFocusTitle": "Peer listings",
     "communityIntro": "Keepers post listings for sale, swaps, or whatever you agree privately. TarantulApp is not a middleman: we do not take a cut, verify identities in person, or guarantee shipments. While the board fills across Mexico, the United States, and Canada, demo listings in major metros preview the full flow.",
@@ -352,6 +356,8 @@
     "fieldPrice": "Price (optional)",
     "fieldCurrency": "Currency (e.g. MXN, USD)",
     "fieldImage": "Image URL (optional)",
+    "fieldImageUpload": "Photo (upload, optional)",
+    "uploadingImage": "Uploading photo…",
     "fieldPedigree": "Pedigree reference (optional)",
     "publishBtn": "Publish",
     "createdOk": "Listing published successfully.",
