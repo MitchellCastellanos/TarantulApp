@@ -103,6 +103,15 @@ export function AuthProvider({ children }) {
     setSessionTokenSnapshot(token)
   }, [token])
 
+  // Token sin JSON de usuario (storage corrupto o clave borrada) deja la UI a medias; limpiar y volver a login.
+  useLayoutEffect(() => {
+    if (!token) return
+    const raw = localStorage.getItem('user')
+    if (raw == null || String(raw).trim() === '') {
+      logout()
+    }
+  }, [token, logout])
+
   // Solo al montar el provider: sincronizar plan desde DB si había sesión en localStorage.
   // NO depender de [token]: justo después de login() el mismo efecto disparaba billing/me en caliente
   // y a veces 401 + logout(), borrando la sesión recién creada (login ya trae plan en AuthResponse).

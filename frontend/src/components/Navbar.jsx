@@ -16,7 +16,7 @@ function trialDaysLeft(trialEndsAt) {
  * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
  */
 export default function Navbar({ variant = 'app', hideLoginLink = false }) {
-  const { user, logout } = useAuth()
+  const { token, user, logout } = useAuth()
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const plan = user?.plan || 'FREE'
@@ -33,7 +33,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     (user?.email && adminEmails.includes(String(user.email).toLowerCase()))
 
   const path = location.pathname
-  const logoHome = !user ? '/login' : '/'
+  const logoHome = !token ? '/login' : '/'
 
   const linkTone = (active) =>
     variant === 'public'
@@ -43,6 +43,22 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       : 'var(--ta-gold)'
 
   const planControl = (() => {
+    if (!token) {
+      return (
+        <Link
+          to="/pro"
+          className="btn btn-sm"
+          style={{
+            background: 'transparent',
+            color: 'var(--ta-gold)',
+            border: '1px solid var(--ta-gold)',
+            fontSize: '0.75rem',
+          }}
+        >
+          {t('nav.planFreeDiscover')}
+        </Link>
+      )
+    }
     if (!user) {
       return (
         <Link
@@ -139,7 +155,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     >
       <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
       <div className="d-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
-        {user && (
+        {token && (
           <div
             className="d-none d-md-flex flex-grow-1 ms-md-2"
             style={{ maxWidth: 360, minWidth: 0, overflow: 'visible' }}
@@ -171,16 +187,15 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         >
           {t('marketplace.nav')}
         </Link>
-        {user && (
-          <Link
-            to="/comunidad"
-            className="text-decoration-none small fw-semibold"
-            style={{ color: linkTone(path.startsWith('/comunidad')) }}
-            title={t('social.navTitle')}
-          >
-            {t('nav.community')}
-          </Link>
-        )}
+        <Link
+          to={token ? '/comunidad' : '/login'}
+          state={token ? undefined : { redirectAfterAuth: '/comunidad' }}
+          className="text-decoration-none small fw-semibold"
+          style={{ color: linkTone(path.startsWith('/comunidad')) }}
+          title={t('social.navTitle')}
+        >
+          {t('nav.community')}
+        </Link>
         <Link
           to="/about"
           className="text-decoration-none small fw-semibold"
@@ -189,13 +204,13 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         >
           {t('nav.about')}
         </Link>
-        {user && (
+        {token && (
           <Link to="/reminders" className="text-decoration-none d-none d-sm-inline small fw-semibold"
                 style={{ color: 'var(--ta-gold)' }}>
             🔔 {t('nav.reminders')}
           </Link>
         )}
-        {user && (
+        {token && (
           <Link
             to="/account"
             className="d-inline-flex align-items-center gap-1 text-decoration-none small fw-semibold"
@@ -206,7 +221,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
             title={t('nav.accountAria')}
             aria-label={t('nav.accountAria')}
           >
-            <span className="text-truncate">{user.displayName || user.email}</span>
+            <span className="text-truncate">
+              {user?.displayName || user?.email || t('nav.account')}
+            </span>
             <span className="flex-shrink-0" aria-hidden="true">
               ⚙️
             </span>
@@ -244,7 +261,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
 
         <ThemeToggleButton compact />
 
-        {user ? (
+        {token ? (
           <button className="btn btn-sm btn-outline-light" onClick={logout}
                   style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>
             {t('nav.logout')}
