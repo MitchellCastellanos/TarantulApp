@@ -91,7 +91,7 @@
     "metaDescription": "TarantulApp: a serious logbook for your spiders, sourced taxonomy (WSC/GBIF), terrarium QR labels, and a community marketplace.",
     "title": "About TarantulApp",
     "tagline": "Method in the rack. Names you can defend.",
-    "lead": "We built the app we wanted above our enclosures: less flex, more traceability. Your daily notes, care sheets that cite sources, and practical tools (reminders, QR, exports) — without mystical taxonomy or bro-science packaging.",
+    "lead": "We built the app we wanted above our enclosures: less flex, more traceability. Your daily notes, source-backed sheets, marketplace, and community now live together here; the next phases complete help cases and collective decision workflows in one place.",
     "section1Title": "Why TarantulApp exists",
     "section1Body": "Paper logs are fine until a molt date walks away from you. We pair the real pace of each tub with a calm UI: what it ate, when it molted, how the enclosure looks — plus optional public pages so you can teach without leaking what you want private.",
     "section2Title": "Discover: taxonomy without shortcuts",
@@ -299,7 +299,7 @@
     "nav": "Marketplace",
     "title": "Keeper marketplace",
     "pageFocusTitle": "Peer listings",
-    "communityIntro": "Keepers post listings for sale, swaps, or whatever you agree privately. TarantulApp is not a middleman: we do not take a cut, verify identities in person, or guarantee shipments.",
+    "communityIntro": "Keepers post listings for sale, swaps, or whatever you agree privately. TarantulApp is not a middleman: we do not take a cut, verify identities in person, or guarantee shipments. While we keep filling each region with real inventory, you may see demo listings to preview the full flow.",
     "communityDisclaimer": "Meet in safe places when possible, keep chat receipts, check local wildlife/shipping rules, and avoid risky prepayments. If something looks off, use Report or contact us.",
     "officialStripLabel": "Certified partners",
     "officialStripSub": "Shops and breeders reviewed by our team, linking straight to their site. The marketplace is still mostly community-driven — this is an optional shortcut when you want a vetted storefront.",
@@ -398,7 +398,7 @@
     "fossorial": "Fossorial"
   },
   "dashboard": {
-    "keeperAtmosphereStrip": "Your spiders and molt cadence run the show here—not the timeline. Welcome to the place for people who actually live Theraphosidae.",
+    "keeperAtmosphereStrip": "Your spiders and molt cadence run the show here—not the timeline. Marketplace and community are now part of the same home flow.",
     "title": "My Tarantulas",
     "inCollection": "in your collection",
     "planUsage": "used on your free plan",

@@ -91,7 +91,7 @@
     "metaDescription": "TarantulApp : carnet sérieux pour vos mygales, taxonomie sourcée (WSC/GBIF), QR terrarium et marketplace communautaire.",
     "title": "À propos de TarantulApp",
     "tagline": "Méthode au rack. Des noms que vous pouvez défendre.",
-    "lead": "On a codé l’app qu’on voulait au-dessus des terras : moins de posture, plus de traçabilité. Bitacora du quotidien, fiches qui citent leurs sources, rappels, QR et exports — sans taxonomie « magique » ni marketing broscience.",
+    "lead": "On a codé l’app qu’on voulait au-dessus des terras : moins de posture, plus de traçabilité. Carnet, fiches sourcées, marketplace et communauté vivent déjà ensemble ; les prochaines phases bouclent les cas d’aide et la décision collective dans le même flux.",
     "section1Title": "Pourquoi TarantulApp existe",
     "section1Body": "Le papier va bien jusqu’à ce qu’une date de mue s’évapore. On relie le vrai rythme de chaque boîte à une interface sobre : repas, mue, état du décor — et des fiches publiques optionnelles pour montrer sans tout dévoiler.",
     "section2Title": "Découvrir : taxonomie sans raccourcis",
@@ -299,7 +299,7 @@
     "nav": "Marketplace",
     "title": "Marketplace des keepers",
     "pageFocusTitle": "Annonces entre keepers",
-    "communityIntro": "Ici la communauté publie ventes, échanges ou ce que vous arrangez entre vous. TarantulApp n’est pas intermédiaire : pas de commission sur l’accord, pas de vérification d’identité en face à face, pas de garantie d’expédition.",
+    "communityIntro": "Ici la communauté publie ventes, échanges ou ce que vous arrangez entre vous. TarantulApp n’est pas intermédiaire : pas de commission sur l’accord, pas de vérification d’identité en face à face, pas de garantie d’expédition. En attendant de remplir chaque zone avec plus d’annonces réelles, vous pouvez voir des annonces démo pour visualiser le flux.",
     "communityDisclaimer": "Privilégiez les lieux sûrs, gardez des captures d’écran, vérifiez la réglementation locale (faune, envois, quarantaine) et évitez les paiements anticipés risqués. En cas de doute, signalez l’annonce ou écrivez-nous.",
     "officialStripLabel": "Partenaires certifiés",
     "officialStripSub": "Boutiques et éleveurs relus par l’équipe : lien direct vers leur site. Le cœur du marketplace reste communautaire ; c’est un plus pour une vitrine déjà validée.",
@@ -398,7 +398,7 @@
     "fossorial": "Fossorial"
   },
   "dashboard": {
-    "keeperAtmosphereStrip": "Ici, ce sont vos sujets et le calendrier des mues qui mènent le jeu, pas le fil d’actualité. Bienvenue là où on vit vraiment les Theraphosidae.",
+    "keeperAtmosphereStrip": "Ici, ce sont vos sujets et le calendrier des mues qui mènent le jeu, pas le fil d’actualité. Marketplace et communauté font désormais partie du même home.",
     "title": "Mes Tarentules",
     "inCollection": "dans votre collection",
     "planUsage": "utilisées sur votre plan gratuit",

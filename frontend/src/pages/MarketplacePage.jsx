@@ -48,6 +48,75 @@ const EMPTY_VENDOR_LEAD_FORM = {
   note: '',
 }
 
+const DEMO_LISTINGS = [
+  {
+    id: 'demo-1',
+    title: 'Brachypelma hamorii juvenile (captivo)',
+    description: 'Come muy bien, muda estable, entrego bitacora de alimentacion y fotos recientes.',
+    speciesName: 'Brachypelma hamorii',
+    priceAmount: 1850,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Jalisco',
+    city: 'Guadalajara',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-2',
+    title: 'Caribena versicolor sling 2.5cm',
+    description: 'Linea de cria local, envio nacional con clima seguro.',
+    speciesName: 'Caribena versicolor',
+    priceAmount: 120,
+    currency: 'USD',
+    country: 'United States',
+    state: 'Texas',
+    city: 'Houston',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-3',
+    title: 'Aphonopelma seemanni subadulta',
+    description: 'Manejo tranquilo, lista para crecer a hembra adulta.',
+    speciesName: 'Aphonopelma seemanni',
+    priceAmount: 950,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Ciudad de Mexico',
+    city: 'Ciudad de Mexico',
+    imageUrl: '',
+    isDemo: true,
+  },
+  {
+    id: 'demo-4',
+    title: 'Pterinochilus murinus (RCF) juvenil',
+    description: 'Solo para keeper con experiencia OW, bien alimentada y activa.',
+    speciesName: 'Pterinochilus murinus',
+    priceAmount: 1500,
+    currency: 'MXN',
+    country: 'Mexico',
+    state: 'Nuevo Leon',
+    city: 'Monterrey',
+    imageUrl: '',
+    isDemo: true,
+  },
+]
+
+function getDemoListings({ query, country, state, city, nearCountry, nearState, nearCity }) {
+  const q = String(query || '').trim().toLowerCase()
+  return DEMO_LISTINGS.filter((item) => {
+    const inQuery = !q || [item.title, item.description, item.speciesName].join(' ').toLowerCase().includes(q)
+    const inCountry = !country || item.country === country
+    const inState = !state || item.state === state
+    const inCity = !city || item.city === city
+    const nearCountryMatch = !nearCountry || item.country === nearCountry
+    const nearStateMatch = !nearState || item.state === nearState
+    const nearCityMatch = !nearCity || item.city === nearCity
+    return inQuery && inCountry && inState && inCity && nearCountryMatch && nearStateMatch && nearCityMatch
+  })
+}
+
 export default function MarketplacePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -71,16 +140,25 @@ export default function MarketplacePage() {
   const nearCity = filters.nearMe ? (myProfile.city || user?.profileCity || '') : undefined
 
   const loadPublicListings = async () => {
-    const data = await marketplaceService.listPublic({
-      q: query || undefined,
-      country: filters.country || undefined,
-      state: filters.state || undefined,
-      city: filters.city || undefined,
-      nearCountry,
-      nearState,
-      nearCity,
-    })
-    setListings(Array.isArray(data) ? data : [])
+    try {
+      const data = await marketplaceService.listPublic({
+        q: query || undefined,
+        country: filters.country || undefined,
+        state: filters.state || undefined,
+        city: filters.city || undefined,
+        nearCountry,
+        nearState,
+        nearCity,
+      })
+      const normalized = Array.isArray(data) ? data : []
+      if (normalized.length > 0) {
+        setListings(normalized)
+        return
+      }
+      setListings(getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry, nearState, nearCity }))
+    } catch {
+      setListings(getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry, nearState, nearCity }))
+    }
   }
 
   const loadOfficialVendors = async () => {
@@ -333,7 +411,12 @@ export default function MarketplacePage() {
                       <img src={l.imageUrl} alt={l.title} className="card-img-top" style={{ maxHeight: 200, objectFit: 'cover' }} />
                     ) : null}
                     <div className="card-body">
-                      <h6 className="fw-bold">{l.title}</h6>
+                      <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
+                        <span>{l.title}</span>
+                        {l.isDemo && (
+                          <span className="badge bg-secondary">{t('marketplace.demoListingBadge', { defaultValue: 'Demo' })}</span>
+                        )}
+                      </h6>
                       <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
                       <p className="small mb-2">{l.description || '-'}</p>
                       <div className="small text-muted mb-2">
@@ -343,10 +426,12 @@ export default function MarketplacePage() {
                         {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
-                        <Link to={`/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
-                          {t('marketplace.viewSeller')}
-                        </Link>
-                        {String(user?.id || '') !== String(l.sellerUserId) && (
+                        {!l.isDemo && (
+                          <Link to={`/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
+                            {t('marketplace.viewSeller')}
+                          </Link>
+                        )}
+                        {!l.isDemo && String(user?.id || '') !== String(l.sellerUserId) && (
                           user ? (
                             <Link
                               to={`/comunidad?tab=spood&openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
@@ -367,10 +452,13 @@ export default function MarketplacePage() {
                             </Link>
                           )
                         )}
-                        {user && String(user.id) !== String(l.sellerUserId) && (
+                        {!l.isDemo && user && String(user.id) !== String(l.sellerUserId) && (
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => reportListing(l.id)}>
                             {t('marketplace.report')}
                           </button>
+                        )}
+                        {l.isDemo && (
+                          <span className="small text-muted">{t('marketplace.demoListingHint', { defaultValue: 'Ejemplo visual mientras entran mas anuncios reales.' })}</span>
                         )}
                       </div>
                     </div>

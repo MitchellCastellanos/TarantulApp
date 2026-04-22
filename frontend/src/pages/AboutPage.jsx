@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { useAuth } from '../context/AuthContext'
 
 export default function AboutPage() {
   const { t } = useTranslation()
+  const { token } = useAuth()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
     title: t('about.pageTitle'),
@@ -36,6 +38,20 @@ export default function AboutPage() {
             </p>
           </section>
         ))}
+
+        <section className="mb-4">
+          <h2 className="h6 fw-bold mb-2 text-uppercase" style={{ color: 'var(--ta-gold)', letterSpacing: '0.04em' }}>
+            {t('about.sectionRoadmapTitle', { defaultValue: 'En qué vamos y qué sigue' })}
+          </h2>
+          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
+            {t('about.sectionRoadmapBody', { defaultValue: 'Hoy ya corren colección, discover, marketplace y comunidad (feed + Spood + referidos). El siguiente bloque cierra follows/visibilidad, contenido rico y moderación profunda para que el ciclo completo keeper → comunidad → decisión quede redondo.' })}
+          </p>
+          <div className="d-flex flex-wrap gap-2">
+            <span className="badge bg-light text-dark border">Tool mode</span>
+            <span className="badge bg-light text-dark border">Help/Cases en progreso</span>
+            <span className="badge bg-light text-dark border">Community activo</span>
+          </div>
+        </section>
 
         <div
           className="rounded-3 p-3 p-md-4 mt-4"
@@ -69,6 +85,17 @@ export default function AboutPage() {
               }}
             >
               {t('marketplace.nav')}
+            </Link>
+            <Link
+              to={token ? '/comunidad' : '/login'}
+              className="btn btn-sm"
+              style={{
+                border: '1px solid var(--ta-gold)',
+                color: 'var(--ta-gold)',
+                background: 'transparent',
+              }}
+            >
+              {t('nav.community')}
             </Link>
             <Link
               to="/contact"

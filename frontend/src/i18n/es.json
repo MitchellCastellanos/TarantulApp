@@ -91,7 +91,7 @@
     "metaDescription": "TarantulApp: bitácora seria para tu colección, taxonomía con fuentes (WSC/GBIF), QR de terrario y marketplace con la comunidad.",
     "title": "Acerca de TarantulApp",
     "tagline": "Terrario con método. Nombres que aguantan revisión.",
-    "lead": "Hacemos la app que quisiéramos tener en el rack: menos postureo, más trazabilidad. Aquí conviven tu bitácora, fichas que citan fuentes y herramientas para el día a día (recordatorios, QR, exportar) sin venderte humo ni “magia” taxonómica.",
+    "lead": "Hacemos la app que quisiéramos tener en el rack: menos postureo, más trazabilidad. Ya conviven tu bitácora, fichas con fuentes, marketplace y comunidad; lo siguiente termina de integrar casos de ayuda y decisión colectiva para que todo el flujo keeper viva en un solo lugar.",
     "section1Title": "Por qué existe TarantulApp",
     "section1Body": "Porque anotar en papel está bien, pero perder el hilo entre mudas no lo está. Unimos el ritmo real del tubo con una interfaz sobria: lo que comió, cuándo mudó, cómo se ve el terrario — y un espacio público para enseñar sin regalar datos sensibles si no quieres.",
     "section2Title": "Descubrir: taxonomía sin atajos",
@@ -299,7 +299,7 @@
     "nav": "Marketplace",
     "title": "Marketplace de keepers",
     "pageFocusTitle": "Keeper marketplace",
-    "communityIntro": "Aquí la comunidad publica anuncios para venta, intercambio o lo que acuerden entre ustedes. TarantulApp no es intermediario: no cobramos comisiones por el trato, no verificamos identidades en persona ni garantizamos entregas.",
+    "communityIntro": "Aquí la comunidad publica anuncios para venta, intercambio o lo que acuerden entre ustedes. TarantulApp no es intermediario: no cobramos comisiones por el trato, no verificamos identidades en persona ni garantizamos entregas. Mientras terminamos de poblar por completo cada ciudad, puedes ver anuncios demo para visualizar el flujo.",
     "communityDisclaimer": "Recomendamos acordar en lugares seguros, conservar capturas del chat, revisar regulación local (fauna, envíos, cuarentena) y nunca enviar dinero por adelantado sin criterio. Si algo se ve sospechoso, usa «Reportar» o escríbenos.",
     "officialStripLabel": "Socios certificados",
     "officialStripSub": "Tiendas y breeders que el equipo revisó: enlazo directo a su sitio. El grueso del marketplace sigue siendo la comunidad; esto es un extra para quien quiere una referencia ya curada.",
@@ -398,7 +398,7 @@
     "fossorial": "Fosorial"
   },
   "dashboard": {
-    "keeperAtmosphereStrip": "Aquí mandan tus ejemplares y el calendario de mudas, no el algoritmo. Bienvenido al sitio para quienes de verdad viven el Theraphosidae.",
+    "keeperAtmosphereStrip": "Aquí mandan tus ejemplares y el calendario de mudas, no el algoritmo. Ahora también conectas directo con marketplace y comunidad desde este mismo home.",
     "title": "Mis Tarántulas",
     "inCollection": "en tu colección",
     "planUsage": "ocupando tu plan gratis",

@@ -107,6 +107,56 @@ export default function DashboardPage() {
     <div>
       <Navbar />
       <div className="container mt-4">
+        <section className="ta-home-hero mb-4 p-3 p-md-4">
+          <div className="row g-3 align-items-center">
+            <div className="col-lg-7">
+              <p className="small text-uppercase mb-2 ta-home-hero__eyebrow">
+                {t('dashboard.homeHeroEyebrow', { defaultValue: 'Nueva etapa TarantulApp' })}
+              </p>
+              <h1 className="h4 fw-bold mb-2">
+                {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, todo en un mismo flujo' })}
+              </h1>
+              <p className="small mb-3" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
+                {t('dashboard.homeHeroBody', { defaultValue: 'Tu coleccion sigue siendo el centro, pero ahora ya conecta con marketplace y comunidad. Lo que viene cierra la capa de cases, reputacion y decision colectiva para resolver dudas reales del hobby.' })}
+              </p>
+              <div className="d-flex flex-wrap gap-2">
+                <Link to="/descubrir" className="btn btn-sm btn-outline-secondary">{t('discover.navTitle')}</Link>
+                <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">{t('marketplace.nav')}</Link>
+                <Link to="/comunidad" className="btn btn-sm btn-dark">{t('nav.community')}</Link>
+              </div>
+            </div>
+            <div className="col-lg-5">
+              <div className="ta-home-hero__logo-wrap d-flex align-items-center justify-content-center flex-column">
+                <BrandLogoMark size={74} showIntro />
+                <span className="cinzel mt-2 ta-login-brand-wordmark">TarantulApp</span>
+                <small className="text-muted mt-1">
+                  {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Datos serios. Comunidad viva.' })}
+                </small>
+              </div>
+            </div>
+          </div>
+          <div className="row g-2 mt-2">
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarToolTitle', { defaultValue: 'Tool mode' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarToolBody', { defaultValue: 'Coleccion, QR, recordatorios y trazabilidad diaria.' })}</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarHelpTitle', { defaultValue: 'Help mode (siguiente)' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarHelpBody', { defaultValue: 'Cases de sexing/salud + votacion y reputacion.' })}</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarCommunityTitle', { defaultValue: 'Community mode' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + Spood + referrals para cerrar el loop.' })}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div
           className="mb-3 px-3 py-2 rounded-1 small ta-dashboard-atmosphere-strip"
           style={{

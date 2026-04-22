@@ -111,6 +111,7 @@ function AppRoutes() {
 
 function Footer() {
   const { t } = useTranslation()
+  const { token } = useAuth()
   return (
     <footer
       className="text-center py-3 mt-5"
@@ -124,6 +125,8 @@ function Footer() {
       <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
       <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
+      &nbsp;·&nbsp;
+      <Link to={token ? '/comunidad' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
       &nbsp;·&nbsp;
       <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
       &nbsp;·&nbsp;
