@@ -43,6 +43,7 @@ export default function SocialHubPage() {
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
+  const [feedSection, setFeedSection] = useState('all')
 
   const [referral, setReferral] = useState(null)
 
@@ -278,6 +279,50 @@ export default function SocialHubPage() {
     </button>
   )
 
+  const feedSections = [
+    { key: 'all', label: 'Para ti' },
+    { key: 'questions', label: 'Preguntas' },
+    { key: 'milestones', label: 'Hitos' },
+    { key: 'photos', label: 'Con foto' },
+    { key: 'mine', label: 'Mis posts' },
+  ]
+
+  const publicPosts = feed.content || []
+  const questionPosts = useMemo(
+    () => publicPosts.filter((p) => (p.body || '').includes('?')).slice(0, 8),
+    [publicPosts]
+  )
+  const milestonePosts = useMemo(
+    () => publicPosts.filter((p) => !!p.milestoneKind).slice(0, 8),
+    [publicPosts]
+  )
+  const photoPosts = useMemo(
+    () => publicPosts.filter((p) => !!p.imageUrl).slice(0, 8),
+    [publicPosts]
+  )
+  const featuredPosts = useMemo(() => publicPosts.slice(0, 2), [publicPosts])
+
+  const activeFeedList = useMemo(() => {
+    if (feedSection === 'questions') return questionPosts
+    if (feedSection === 'milestones') return milestonePosts
+    if (feedSection === 'photos') return photoPosts
+    if (feedSection === 'mine') return mine.content || []
+    return publicPosts
+  }, [feedSection, milestonePosts, mine.content, photoPosts, publicPosts, questionPosts])
+
+  const renderCompactPost = (p) => (
+    <div key={p.id} className="ta-social-compact-post">
+      <div className="small fw-semibold text-truncate mb-1" style={{ color: 'var(--ta-parchment)' }}>
+        {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+      </div>
+      <p className="small mb-2 ta-social-compact-post__body">{(p.body || '').slice(0, 115) || '...'}</p>
+      <div className="small text-muted d-flex justify-content-between">
+        <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
+        <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
+      </div>
+    </div>
+  )
+
   const renderPostCard = (p, { showDelete } = {}) => (
     <div
       key={p.id}
@@ -388,6 +433,37 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
+            <div className="ta-social-highlights mb-3">
+              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Destacados del dia</h2>
+                <span className="small text-muted">Actualizado en tiempo real</span>
+              </div>
+              <div className="row g-2">
+                {featuredPosts.length === 0 ? (
+                  <div className="col-12">
+                    <div className="ta-social-highlight-card">
+                      <p className="small text-muted mb-0">{t('social.feedEmpty')}</p>
+                    </div>
+                  </div>
+                ) : (
+                  featuredPosts.map((p) => (
+                    <div key={p.id} className="col-md-6">
+                      <div className="ta-social-highlight-card">
+                        <div className="small text-muted mb-1">
+                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+                        </div>
+                        <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>{(p.body || '').slice(0, 180)}</p>
+                        <div className="small text-muted d-flex justify-content-between">
+                          <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
+                          <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
               <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
               <div className="d-flex gap-2 overflow-auto pb-1">
@@ -461,7 +537,7 @@ export default function SocialHubPage() {
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div className="small ta-social-feed-shell__intro">
-                  {t('social.publicFeed')} - {(feed.content || []).length}
+                  Secciones visibles - {(activeFeedList || []).length}
                 </div>
                 <button
                   type="button"
@@ -471,6 +547,18 @@ export default function SocialHubPage() {
                 >
                   {t('social.composerTitle')}
                 </button>
+              </div>
+              <div className="ta-social-section-tabs mb-3">
+                {feedSections.map((section) => (
+                  <button
+                    key={section.key}
+                    type="button"
+                    className={`btn btn-sm ${feedSection === section.key ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setFeedSection(section.key)}
+                  >
+                    {section.label}
+                  </button>
+                ))}
               </div>
               {composerOpen && (
                 <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-3">
@@ -544,22 +632,49 @@ export default function SocialHubPage() {
               <div className="row g-3">
                 <div className="col-lg-8">
                   <section className="ta-social-feed-section ta-social-feed-section--community">
-                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.publicFeed')}</h2>
-                    {(feed.content || []).length === 0 ? (
+                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Feed principal</h2>
+                    {(activeFeedList || []).length === 0 ? (
                       <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
                     ) : (
-                      (feed.content || []).map((p) => renderPostCard(p, { showDelete: false }))
+                      (activeFeedList || []).map((p) => renderPostCard(p, { showDelete: feedSection === 'mine' }))
                     )}
                   </section>
                 </div>
                 <div className="col-lg-4">
-                  <aside className="ta-social-feed-section ta-social-feed-section--mine">
-                    <h2 className="h6 fw-bold mb-2 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
-                    {(mine.content || []).length === 0 ? (
-                      <p className="text-muted small mb-0">{t('social.myPostsEmpty')}</p>
-                    ) : (
-                      (mine.content || []).map((p) => renderPostCard(p, { showDelete: true }))
-                    )}
+                  <aside className="d-flex flex-column gap-3">
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Preguntas recientes</h2>
+                        <span className="small text-muted">{questionPosts.length}</span>
+                      </div>
+                      {questionPosts.length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                      ) : (
+                        questionPosts.slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Con foto</h2>
+                        <span className="small text-muted">{photoPosts.length}</span>
+                      </div>
+                      {photoPosts.length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                      ) : (
+                        photoPosts.slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
+                        <span className="small text-muted">{(mine.content || []).length}</span>
+                      </div>
+                      {(mine.content || []).length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.myPostsEmpty')}</p>
+                      ) : (
+                        (mine.content || []).slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
                   </aside>
                 </div>
               </div>
