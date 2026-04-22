@@ -214,6 +214,12 @@ export default function TarantulaDetailPage() {
               </div>
 
               <div className="card-body">
+                {!mayEdit && (
+                  <div className="alert alert-warning small py-2 mb-2">
+                    Esta tarantula esta bloqueada por limite Free. Sigue visible, pero para editarla necesitas liberar cupo o pasar a Pro.
+                    <ProTrialCtaLink className="btn btn-sm ms-2">{t('pro.upgradeNow')}</ProTrialCtaLink>
+                  </div>
+                )}
                 <div className="d-flex justify-content-between align-items-start mb-2">
                   <h5 className="fw-bold mb-0">{tarantula.name}</h5>
                   <StatusBadge status={tarantula.status} />

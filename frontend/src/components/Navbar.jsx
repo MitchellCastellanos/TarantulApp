@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import DiscoverNavSearch from './DiscoverNavSearch'
@@ -20,6 +20,7 @@ function trialDaysLeft(trialEndsAt) {
 export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { token, user, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -112,6 +113,22 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     } catch {
       // noop
     }
+  }
+
+  const routeFromNotification = (n) => {
+    const route = typeof n?.data?.route === 'string' ? n.data.route.trim() : ''
+    if (route.startsWith('/')) return route
+    const type = String(n?.type || '').toUpperCase()
+    if (type === 'SEX_ID_VOTE' && n?.data?.caseId) return `/sex-id/${n.data.caseId}`
+    if (type === 'SPOOD_RECEIVED' || type === 'POST_COMMENT') return '/comunidad'
+    return '/account'
+  }
+
+  const openNotification = async (n) => {
+    if (!n?.id) return
+    await markOneRead(n.id)
+    setNotifOpen(false)
+    navigate(routeFromNotification(n))
   }
 
   const markAllRead = async () => {
@@ -521,7 +538,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                       <button
                         key={n.id}
                         type="button"
-                        onClick={() => markOneRead(n.id)}
+                        onClick={() => openNotification(n)}
                         className="btn btn-sm text-start w-100 mb-1"
                         style={{
                           border: '1px solid var(--ta-border)',
@@ -531,6 +548,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                       >
                         <div className="fw-semibold small">{n.title || t('nav.notificationFallbackTitle')}</div>
                         <div className="small text-muted">{n.body || ''}</div>
+                        <div className="small text-muted mt-1">
+                          {(n.type || '').replaceAll('_', ' ').toLowerCase()}
+                        </div>
                       </button>
                     ))}
                   </div>

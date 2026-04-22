@@ -295,6 +295,17 @@ export default function DashboardPage() {
         {overFreeLimit && (
           <div className="alert alert-warning small py-2 mb-3">
             {t('readOnly.overLimitBanner')}{' '}
+            <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
+            ejemplares en Free.{' '}
+            <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
+          </div>
+        )}
+
+        {!overFreeLimit && isFreePlan && (
+          <div className="alert alert-secondary small py-2 mb-3">
+            Plan Free activo: <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
+            usados. Te quedan <strong>{Math.max(0, tarantulaLimit - tarantulas.length)}</strong>{' '}
+            espacios antes del gate.{' '}
             <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
           </div>
         )}

@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import userPublicService from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
+import { usePageSeo } from '../hooks/usePageSeo'
+import { buildKeeperProfileShareText } from '../utils/shareTemplates'
 
 export default function PublicKeeperProfilePage() {
+  const { t } = useTranslation()
   const { handle } = useParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [profile, setProfile] = useState(null)
   const [keeperData, setKeeperData] = useState(null)
+  const [shareMsg, setShareMsg] = useState('')
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const profileUrl = useMemo(() => {
+    const safeHandle = String(handle || '').trim()
+    return safeHandle && origin ? `${origin}/u/${encodeURIComponent(safeHandle)}` : ''
+  }, [handle, origin])
+
+  usePageSeo({
+    title: profile?.displayName
+      ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - TarantulApp`
+      : 'Perfil keeper - TarantulApp',
+    description: profile?.bio || 'Perfil publico keeper en TarantulApp: reputacion, listings y contacto.',
+    imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
+    canonicalHref: profileUrl || undefined,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -36,6 +56,41 @@ export default function PublicKeeperProfilePage() {
     return () => { cancelled = true }
   }, [handle])
 
+  const shareText = buildKeeperProfileShareText({
+    displayName: profile?.displayName,
+    handle: profile?.publicHandle || handle,
+    bio: profile?.bio,
+    location: profile?.location,
+    profileUrl,
+    t,
+    channel: 'default',
+  })
+
+  const copyProfileShare = async () => {
+    if (!shareText) return
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setShareMsg('Plantilla copiada.')
+    } catch {
+      setShareMsg('No se pudo copiar automaticamente.')
+    }
+  }
+
+  const shareWhatsApp = () => {
+    const text = buildKeeperProfileShareText({
+      displayName: profile?.displayName,
+      handle: profile?.publicHandle || handle,
+      bio: profile?.bio,
+      location: profile?.location,
+      profileUrl,
+      t,
+      channel: 'whatsapp',
+    })
+    if (!text) return
+    const target = `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(target, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div>
       <Navbar variant="public" />
@@ -59,6 +114,15 @@ export default function PublicKeeperProfilePage() {
                 </div>
                 {profile.location ? <p className="small mb-1 text-muted">{profile.location}</p> : null}
                 <p className="small mb-0">{profile.bio || 'Este keeper aun no comparte bio publica.'}</p>
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={copyProfileShare}>
+                    Copiar plantilla
+                  </button>
+                  <button type="button" className="btn btn-sm btn-dark" onClick={shareWhatsApp}>
+                    WhatsApp
+                  </button>
+                </div>
+                {shareMsg && <div className="small text-muted mt-2">{shareMsg}</div>}
               </div>
             </div>
 

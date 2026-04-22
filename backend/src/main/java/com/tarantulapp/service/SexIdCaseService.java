@@ -167,13 +167,21 @@ public class SexIdCaseService {
             v.setChoice(choice);
             sexIdCaseVoteRepository.save(v);
         }
+        User actor = userRepository.findById(voterId).orElse(null);
+        String actorLabel = actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()
+                ? actor.getDisplayName()
+                : "Un keeper";
         notificationService.create(
                 c.getAuthorUserId(),
                 voterId,
                 "SEX_ID_VOTE",
-                "Nuevo voto en tu caso",
-                "Un keeper voto en tu caso de Sex ID.",
-                Map.of("caseId", String.valueOf(caseId))
+                actorLabel + " voto tu caso Sex ID",
+                "Voto: " + choice,
+                Map.of(
+                        "caseId", String.valueOf(caseId),
+                        "choice", choice,
+                        "route", "/sex-id/" + caseId
+                )
         );
         return getPublicCase(caseId, Optional.of(voterId));
     }

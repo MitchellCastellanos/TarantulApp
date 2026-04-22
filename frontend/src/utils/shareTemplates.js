@@ -108,3 +108,52 @@ export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, pr
     '#TarantulApp #TarantulaPhoto',
   ].filter(Boolean).join('\n')
 }
+
+export function buildKeeperProfileShareText({
+  displayName,
+  handle,
+  bio,
+  location,
+  profileUrl,
+  t,
+  channel = 'default',
+}) {
+  const safeName = cleanInlineText(displayName, 'Keeper')
+  const safeHandle = cleanInlineText(handle ? `@${String(handle).replace(/^@+/, '')}` : '', '@keeper')
+  const safeBio = shortText(cleanInlineText(bio, t('share.noSummary', { defaultValue: 'Perfil keeper en TarantulApp' })), 220)
+  const safeLocation = cleanInlineText(location, '')
+  const safeUrl = cleanInlineText(profileUrl, '')
+
+  if (channel === 'instagram') {
+    return [
+      `${safeName} · ${safeHandle}`,
+      safeLocation ? `📍 ${shortText(safeLocation, 70)}` : null,
+      safeBio,
+      '#TarantulApp #KeeperProfile #TarantulaCommunity',
+    ].filter(Boolean).join('\n')
+  }
+
+  if (channel === 'whatsapp') {
+    return [
+      `*${t('share.keeperCardTitle', { defaultValue: 'Perfil keeper en TarantulApp' })}*`,
+      `• ${t('form.name')}: ${shortText(safeName, 70)}`,
+      `• ${t('account.profile.publicHandleLabel', { defaultValue: 'Handle' })}: ${shortText(safeHandle, 80)}`,
+      safeLocation ? `• ${t('share.locationLabel', { defaultValue: 'Ubicación' })}: ${shortText(safeLocation, 90)}` : null,
+      `• ${t('share.summaryLabel', { defaultValue: 'Resumen' })}: ${shortText(safeBio, 220)}`,
+      safeUrl ? `• ${safeUrl}` : null,
+      '#TarantulApp',
+    ].filter(Boolean).join('\n')
+  }
+
+  return [
+    '━━━━━━━━━━━━━━━━━━━━',
+    t('share.keeperCardTitle', { defaultValue: 'Perfil keeper en TarantulApp' }),
+    '━━━━━━━━━━━━━━━━━━━━',
+    `👤 ${shortText(safeName, 90)} · ${shortText(safeHandle, 90)}`,
+    safeLocation ? `📍 ${shortText(safeLocation, 120)}` : null,
+    `💬 ${shortText(safeBio, 260)}`,
+    safeUrl ? `🔗 ${safeUrl}` : null,
+    '',
+    '#TarantulApp #KeeperProfile',
+  ].filter(Boolean).join('\n')
+}

@@ -1,6 +1,6 @@
 # TarantulApp — Roadmap
 
-Última revisión: 2026-04-22 (Sprint 1 cerrado en código)
+Última revisión: 2026-04-22 (Sprint 2 y pre-sprint técnico cerrados en código)
 
 ---
 
@@ -46,13 +46,19 @@
 
 ---
 
-## Lo que falta (no está / pendiente)
+## Lo que falta (pendiente real)
 
-### Próximo sprint (Sprint 2 — sugerido: diferenciación viral)
+### Sprint 3 — Monetización real (próximo)
 
-- **Cases / “Sex ID guess” (MVP)**: entidad o modelo claro, votos agregados, reglas, URL pública compartible, CTA a compartir + `?ref=`.
-- **Alinear monetización** con narrativa: Stripe/Pro estable en producción; Pro+/Vendor cuando estén acotados en producto/DB.
-- (Si el doc histórico abajo ya está cubierto en el código, se archiva: feed público, Spood, referidos con códigos — comprobar en `SocialHub` / Cuenta / `BillingService` y tachar en la siguiente revisión del roadmap.)
+- **Stripe real en entorno**: cargar y validar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY` y (opcional) `STRIPE_PRICE_ID_LISTING_BOOST`.
+- **Go-live de billing**: validar checkout/verify/webhook/portal en modo test end-to-end con eventos reales de Stripe.
+- **Gates Free vs Pro**: confirmar UX final de paywall/límites y mensajes de upgrade en pantallas clave (sin reescribir arquitectura).
+- **Pro+ / Vendor**: mantenerlos en narrativa/copy y configuración separada, sin forzar estados no soportados en DB por ahora.
+
+### Sprint 2 — Diferenciación viral (estado)
+
+- **Cases / Sex ID guess (MVP)**: implementado (modelo, votos agregados, reglas, URL pública compartible y CTA de share con `?ref=`).
+- **Social/feed/referrals base**: implementado en rutas y servicios actuales; queda mantener pruebas de regresión al avanzar Sprint 3.
 
 ### Cierre fase 1 (documento heredado — parte ya obsoleta)
 

@@ -62,7 +62,7 @@ export default function SocialHubPage() {
   usePageSeo({
     title: t('social.seoTitle'),
     description: t('social.metaDescription'),
-    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
+    imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
     noindex: true,
   })
 

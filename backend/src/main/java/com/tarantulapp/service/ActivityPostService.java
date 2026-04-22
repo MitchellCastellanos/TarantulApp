@@ -124,13 +124,21 @@ public class ActivityPostService {
             like.setPostId(postId);
             like.setUserId(userId);
             activityPostLikeRepository.save(like);
+            User actor = userRepository.findById(userId).orElse(null);
+            String actorLabel = actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()
+                    ? actor.getDisplayName()
+                    : "Un keeper";
+            String postPreview = snippet(post.getBody(), 90);
             notificationService.create(
                     post.getAuthorUserId(),
                     userId,
                     "SPOOD_RECEIVED",
-                    "Nuevo Spood",
-                    "Tu post recibio un Spood.",
-                    Map.of("postId", String.valueOf(postId))
+                    actorLabel + " reacciono a tu post",
+                    postPreview.isBlank() ? "Tu publicacion recibio un Spood." : postPreview,
+                    Map.of(
+                            "postId", String.valueOf(postId),
+                            "route", "/comunidad"
+                    )
             );
         }
         post = activityPostRepository.findById(postId).orElseThrow();
@@ -174,15 +182,20 @@ public class ActivityPostService {
         c.setAuthorUserId(userId);
         c.setBody(text);
         ActivityPostComment saved = activityPostCommentRepository.save(c);
+        User actor = userRepository.findById(userId).orElse(null);
+        String actorLabel = actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()
+                ? actor.getDisplayName()
+                : "Un keeper";
         notificationService.create(
                 post.getAuthorUserId(),
                 userId,
                 "POST_COMMENT",
-                "Nuevo comentario",
-                "Comentaron tu post en comunidad.",
+                actorLabel + " comento tu post",
+                snippet(text, 120),
                 Map.of(
                         "postId", String.valueOf(postId),
-                        "commentId", String.valueOf(saved.getId())
+                        "commentId", String.valueOf(saved.getId()),
+                        "route", "/comunidad"
                 )
         );
         User u = userRepository.findById(userId).orElse(null);
@@ -321,5 +334,19 @@ public class ActivityPostService {
             return null;
         }
         return out.length() > maxLen ? out.substring(0, maxLen) : out;
+    }
+
+    private String snippet(String value, int maxLen) {
+        if (value == null) {
+            return "";
+        }
+        String out = value.trim().replaceAll("\\s+", " ");
+        if (out.isEmpty()) {
+            return "";
+        }
+        if (out.length() <= maxLen) {
+            return out;
+        }
+        return out.substring(0, Math.max(0, maxLen - 1)).trim() + "…";
     }
 }
