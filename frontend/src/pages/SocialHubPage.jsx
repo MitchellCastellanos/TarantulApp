@@ -48,7 +48,9 @@ export default function SocialHubPage() {
   const [commentDraft, setCommentDraft] = useState({})
 
   const [threads, setThreads] = useState({ content: [] })
-  const [otherUserId, setOtherUserId] = useState('')
+  const [otherUserHandle, setOtherUserHandle] = useState('')
+  const [profileSuggestions, setProfileSuggestions] = useState([])
+  const [searchingProfiles, setSearchingProfiles] = useState(false)
   const [activeThread, setActiveThread] = useState(null)
   const [threadMessages, setThreadMessages] = useState({ content: [] })
   const [spoodBody, setSpoodBody] = useState('')
@@ -97,7 +99,6 @@ export default function SocialHubPage() {
   const resolveOtherUserId = useCallback(async (raw) => {
     const s = raw.trim()
     if (!s) return null
-    if (UUID_REGEX.test(s)) return s
     const handle = s.startsWith('@') ? s.slice(1).trim() : s
     if (!handle) return null
     try {
@@ -107,6 +108,24 @@ export default function SocialHubPage() {
       return null
     }
   }, [])
+
+  useEffect(() => {
+    if (tab !== TAB_SPOOD) return undefined
+    const q = otherUserHandle.trim()
+    if (q.length < 2) {
+      setProfileSuggestions([])
+      setSearchingProfiles(false)
+      return undefined
+    }
+    const timer = setTimeout(() => {
+      setSearchingProfiles(true)
+      userPublicService.search(q, 8)
+        .then((rows) => setProfileSuggestions(Array.isArray(rows) ? rows : []))
+        .catch(() => setProfileSuggestions([]))
+        .finally(() => setSearchingProfiles(false))
+    }, 220)
+    return () => clearTimeout(timer)
+  }, [otherUserHandle, tab])
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
@@ -275,7 +294,7 @@ export default function SocialHubPage() {
   const openSpood = async (e) => {
     e.preventDefault()
     setErr('')
-    const raw = otherUserId.trim()
+    const raw = otherUserHandle.trim()
     if (!raw) {
       setErr(t('social.spoodNeedIdentifier'))
       return
@@ -288,7 +307,8 @@ export default function SocialHubPage() {
       }
       const row = await chatService.openThread(resolved, null)
       setActiveThread(row)
-      setOtherUserId('')
+      setOtherUserHandle('')
+      setProfileSuggestions([])
       const msgs = await chatService.messages(row.id, 0, 50)
       setThreadMessages(msgs)
       await loadThreads()
@@ -615,13 +635,31 @@ export default function SocialHubPage() {
               <div className="p-3 rounded-3 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                 <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.spoodNewTitle')}</h2>
                 <form onSubmit={openSpood} className="small">
-                  <label className="form-label small">{t('social.spoodOtherHandleOrUuid')}</label>
+                  <label className="form-label small">Buscar keeper por @handle</label>
                   <input
                     className="form-control form-control-sm mb-2"
-                    value={otherUserId}
-                    onChange={(e) => setOtherUserId(e.target.value)}
-                    placeholder={t('social.spoodHandlePlaceholder')}
+                    value={otherUserHandle}
+                    onChange={(e) => setOtherUserHandle(e.target.value)}
+                    placeholder="@keeper"
                   />
+                  {searchingProfiles && (
+                    <div className="small text-muted mb-2">Buscando perfiles...</div>
+                  )}
+                  {!searchingProfiles && profileSuggestions.length > 0 && (
+                    <div className="rounded border border-secondary-subtle mb-2" style={{ maxHeight: 170, overflowY: 'auto' }}>
+                      {profileSuggestions.map((row) => (
+                        <button
+                          key={`${row.id}`}
+                          type="button"
+                          className="btn btn-sm text-start w-100 border-0 rounded-0"
+                          onClick={() => setOtherUserHandle(`@${row.publicHandle || ''}`)}
+                        >
+                          <div className="fw-semibold">@{row.publicHandle || 'keeper'}</div>
+                          {row.displayName ? <div className="small text-muted">{row.displayName}</div> : null}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <button type="submit" className="btn btn-sm btn-dark w-100">{t('social.spoodOpen')}</button>
                 </form>
                 <hr />

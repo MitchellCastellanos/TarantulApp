@@ -21,6 +21,10 @@ const userPublicService = {
   /** @param {string} handle */
   checkHandleAvailability: (handle) =>
     publicApi.get('public/users/handle-availability', { params: { handle } }).then((r) => r.data),
+
+  /** @param {string} query */
+  search: (query, limit = 8) =>
+    publicApi.get('public/users/search', { params: { q: query, limit } }).then((r) => r.data),
 }
 
 export default userPublicService

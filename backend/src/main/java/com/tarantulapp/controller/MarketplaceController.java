@@ -65,7 +65,8 @@ public class MarketplaceController {
             String contactInstagram,
             String country,
             String state,
-            String city
+            String city,
+            Boolean searchVisible
     ) {}
 
     record CreateReviewRequest(
@@ -87,7 +88,8 @@ public class MarketplaceController {
                 req.contactInstagram(),
                 req.country(),
                 req.state(),
-                req.city()
+                req.city(),
+                req.searchVisible()
         ));
     }
 

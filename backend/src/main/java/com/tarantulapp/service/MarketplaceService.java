@@ -66,7 +66,8 @@ public class MarketplaceService {
     @Transactional
     public Map<String, Object> upsertMyProfile(UUID userId, String displayName, String handle, String bio, String location,
                                                String featuredCollection, String contactWhatsapp,
-                                               String contactInstagram, String country, String state, String city) {
+                                               String contactInstagram, String country, String state, String city,
+                                               Boolean searchVisible) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
@@ -83,6 +84,7 @@ public class MarketplaceService {
         profile.setProfileCountry(cleanText(country, 80));
         profile.setProfileState(cleanText(state, 80));
         profile.setProfileCity(cleanText(city, 80));
+        profile.setSearchVisible(searchVisible == null ? Boolean.TRUE : searchVisible);
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -336,6 +338,7 @@ public class MarketplaceService {
         out.put("state", p.getProfileState() == null ? "" : p.getProfileState());
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
+        out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         return out;
     }
 

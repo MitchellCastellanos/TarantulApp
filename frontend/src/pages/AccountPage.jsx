@@ -71,6 +71,7 @@ export default function AccountPage() {
     profileCountry: user?.profileCountry || '',
     profileState: user?.profileState || '',
     profileCity: user?.profileCity || '',
+    searchVisible: user?.searchVisible !== false,
   })
 
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
@@ -121,6 +122,7 @@ export default function AccountPage() {
       profileCountry: user?.profileCountry || '',
       profileState: user?.profileState || '',
       profileCity: user?.profileCity || '',
+      searchVisible: user?.searchVisible !== false,
     })
   }, [user])
 
@@ -181,6 +183,7 @@ export default function AccountPage() {
         country: profileForm.profileCountry,
         state: profileForm.profileState,
         city: profileForm.profileCity,
+        searchVisible: profileForm.searchVisible,
       })
       updateUserProfile({
         displayName: profileForm.displayName,
@@ -193,6 +196,7 @@ export default function AccountPage() {
         profileCountry: profileForm.profileCountry,
         profileState: profileForm.profileState,
         profileCity: profileForm.profileCity,
+        searchVisible: profileForm.searchVisible,
       })
       setProfileMessage(t('common.save'))
     } catch (err) {
@@ -368,6 +372,18 @@ export default function AccountPage() {
                 </div>
               </div>
               <div className="d-flex align-items-center gap-2 mt-2">
+                <div className="form-check m-0">
+                  <input
+                    id="account-search-visible"
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={profileForm.searchVisible !== false}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, searchVisible: e.target.checked }))}
+                  />
+                  <label className="form-check-label small" htmlFor="account-search-visible">
+                    Aparecer en resultados de busqueda publica de keepers
+                  </label>
+                </div>
                 <button className="btn btn-sm btn-outline-light" disabled={profileSaving}>
                   {profileSaving ? t('common.saving') : t('common.save')}
                 </button>

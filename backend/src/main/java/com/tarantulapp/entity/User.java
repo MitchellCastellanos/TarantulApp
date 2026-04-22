@@ -55,6 +55,9 @@ public class User {
     @Column(name = "profile_photo", length = 500)
     private String profilePhoto;
 
+    @Column(name = "search_visible", nullable = false)
+    private Boolean searchVisible = true;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan;
@@ -88,6 +91,9 @@ public class User {
         }
         if (founderKeeper == null) {
             founderKeeper = false;
+        }
+        if (searchVisible == null) {
+            searchVisible = true;
         }
     }
 
@@ -135,6 +141,9 @@ public class User {
 
     public String getProfilePhoto() { return profilePhoto; }
     public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
+
+    public Boolean getSearchVisible() { return searchVisible; }
+    public void setSearchVisible(Boolean searchVisible) { this.searchVisible = searchVisible; }
 
     public UserPlan getPlan() { return plan; }
     public void setPlan(UserPlan plan) { this.plan = plan; }

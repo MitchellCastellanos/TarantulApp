@@ -4,6 +4,7 @@ import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.PublicHandleRules;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -63,5 +65,30 @@ public class PublicUserController {
         m.put("available", !taken);
         m.put("reason", taken ? "TAKEN" : null);
         return ResponseEntity.ok(m);
+    }
+
+    /** Public user search for @keeper autocomplete (only profiles that allow discoverability). */
+    @GetMapping("/search")
+    public ResponseEntity<List<Map<String, Object>>> search(
+            @RequestParam("q") String q,
+            @RequestParam(name = "limit", defaultValue = "8") int limit
+    ) {
+        String query = q == null ? "" : q.trim();
+        if (query.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        int safeLimit = Math.max(1, Math.min(limit, 20));
+        List<Map<String, Object>> rows = userRepository.searchPublicProfiles(query, PageRequest.of(0, safeLimit))
+                .stream()
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", u.getId());
+                    m.put("displayName", u.getDisplayName() != null ? u.getDisplayName() : "");
+                    m.put("publicHandle", u.getPublicHandle() != null ? u.getPublicHandle() : "");
+                    m.put("profilePhoto", u.getProfilePhoto() != null ? u.getProfilePhoto() : "");
+                    return m;
+                })
+                .toList();
+        return ResponseEntity.ok(rows);
     }
 }
