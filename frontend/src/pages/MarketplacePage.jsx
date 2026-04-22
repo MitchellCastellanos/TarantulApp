@@ -169,7 +169,13 @@ const DEMO_LISTINGS = [
   },
 ]
 
-function getDemoListings({ query, country, state, city, nearCountry, nearState, nearCity }) {
+/**
+ * Anuncios demo: no usamos estado/ciudad del perfil (“cerca de mí”) para filtrar,
+ * porque los ejemplos solo cubren unas ciudades y un keeper real en otra región
+ * dejaba el grid vacío. Solo se respeta `nearCountry` (sesgo por país) y los
+ * filtros explícitos del tablero + búsqueda. El API real sigue usando near completo.
+ */
+function getDemoListings({ query, country, state, city, nearCountry }) {
   const q = String(query || '').trim().toLowerCase()
   return DEMO_LISTINGS.filter((item) => {
     const inQuery = !q || [item.title, item.description, item.speciesName].join(' ').toLowerCase().includes(q)
@@ -177,9 +183,7 @@ function getDemoListings({ query, country, state, city, nearCountry, nearState, 
     const inState = !state || item.state === state
     const inCity = !city || item.city === city
     const nearCountryMatch = !nearCountry || item.country === nearCountry
-    const nearStateMatch = !nearState || item.state === nearState
-    const nearCityMatch = !nearCity || item.city === nearCity
-    return inQuery && inCountry && inState && inCity && nearCountryMatch && nearStateMatch && nearCityMatch
+    return inQuery && inCountry && inState && inCity && nearCountryMatch
   })
 }
 
@@ -243,9 +247,13 @@ export default function MarketplacePage() {
         setListings(normalized)
         return
       }
-      setListings(getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry, nearState, nearCity }))
+      setListings(
+        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
+      )
     } catch {
-      setListings(getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry, nearState, nearCity }))
+      setListings(
+        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
+      )
     }
   }
 
