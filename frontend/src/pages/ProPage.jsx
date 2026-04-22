@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
 
 export default function ProPage() {
@@ -17,6 +18,11 @@ export default function ProPage() {
   const [interval, setInterval] = useState('month')
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
+  const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+  const [androidToken, setAndroidToken] = useState('')
+  const [androidProductId, setAndroidProductId] = useState(import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || '')
+  const [androidSyncing, setAndroidSyncing] = useState(false)
+  const [androidMessage, setAndroidMessage] = useState('')
 
   const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
@@ -97,6 +103,7 @@ export default function ProPage() {
   }, [checkout, user?.id, sessionId])
 
   const handleUpgrade = async () => {
+    if (isAndroidNative) return
     if (!user) {
       navigate('/login')
       return
@@ -110,6 +117,41 @@ export default function ProPage() {
     } catch (e) {
       setError(t('pro.checkoutError'))
       setLoadingCheckout(false)
+    }
+  }
+
+  const handleAndroidSync = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    setAndroidMessage('')
+    setError('')
+    if (!androidToken.trim()) {
+      setAndroidMessage(t('pro.androidTokenRequired'))
+      return
+    }
+    setAndroidSyncing(true)
+    try {
+      const data = await billingService.verifyGooglePlayPurchase({
+        purchaseToken: androidToken.trim(),
+        productId: androidProductId.trim(),
+      })
+      if (data?.plan === 'PRO') {
+        await loadBilling()
+        setAndroidMessage(t('pro.androidPurchaseSynced'))
+      } else {
+        setAndroidMessage(t('pro.androidPurchasePending'))
+      }
+    } catch (e) {
+      const backendError = e?.response?.data?.error
+      setAndroidMessage(
+        t('pro.androidSyncErrorWithCode', {
+          code: backendError || 'UNKNOWN',
+        }),
+      )
+    } finally {
+      setAndroidSyncing(false)
     }
   }
 
@@ -262,49 +304,97 @@ export default function ProPage() {
               )}
               {!isPro && (
                 <div className="d-flex flex-column gap-3">
-                  <div>
-                    <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
-                    <div className="d-flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                        onClick={() => setInterval('month')}
-                      >
-                        {t('pro.priceMonthly')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                        onClick={() => setInterval('year')}
-                      >
-                        {t('pro.priceYearly')}{' '}
-                        <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
-                          {t('pro.priceSaveLabel')}
-                        </span>
-                      </button>
+                  {isAndroidNative ? (
+                    <div className="border rounded p-3" style={{ borderColor: 'var(--ta-border)' }}>
+                      <p className="small mb-2">{t('pro.androidPurchaseUnavailable')}</p>
+                      <p className="small text-muted mb-3">{t('pro.androidPlaceholderHelp')}</p>
+                      {!user ? (
+                        <button
+                          type="button"
+                          className="btn btn-dark btn-sm align-self-start"
+                          onClick={() => navigate('/login')}
+                        >
+                          {t('pro.loginToUpgrade', 'Login to upgrade')}
+                        </button>
+                      ) : (
+                        <div className="d-flex flex-column gap-2">
+                          <label className="small mb-0">{t('pro.androidProductIdLabel')}</label>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={androidProductId}
+                            onChange={(e) => setAndroidProductId(e.target.value)}
+                            placeholder="tarantulapp_pro_monthly"
+                          />
+                          <label className="small mb-0 mt-1">{t('pro.androidTokenLabel')}</label>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={androidToken}
+                            onChange={(e) => setAndroidToken(e.target.value)}
+                            placeholder="test_..."
+                          />
+                          <div className="d-flex gap-2 mt-2">
+                            <button
+                              type="button"
+                              className="btn btn-dark btn-sm"
+                              onClick={handleAndroidSync}
+                              disabled={androidSyncing}
+                            >
+                              {androidSyncing ? t('common.loading') : t('pro.androidSyncButton')}
+                            </button>
+                          </div>
+                          {androidMessage && <p className="small text-muted mb-0">{androidMessage}</p>}
+                        </div>
+                      )}
                     </div>
-                    <div className="small text-muted mt-1">{t('pro.priceYearlyNote')}</div>
-                  </div>
-                  {!user ? (
-                    <button
-                      type="button"
-                      className="btn btn-dark btn-sm align-self-start"
-                      onClick={() => navigate('/login')}
-                    >
-                      {t('pro.loginToUpgrade', 'Login to upgrade')}
-                    </button>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        className="btn btn-dark btn-sm align-self-start"
-                        onClick={handleUpgrade}
-                        disabled={loadingCheckout || billing?.checkoutEnabled === false}
-                      >
-                        {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
-                      </button>
-                      {billing?.checkoutEnabled === false && (
-                        <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                      <div>
+                        <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
+                        <div className="d-flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                            onClick={() => setInterval('month')}
+                          >
+                            {t('pro.priceMonthly')}
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                            onClick={() => setInterval('year')}
+                          >
+                            {t('pro.priceYearly')}{' '}
+                            <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
+                              {t('pro.priceSaveLabel')}
+                            </span>
+                          </button>
+                        </div>
+                        <div className="small text-muted mt-1">{t('pro.priceYearlyNote')}</div>
+                      </div>
+                      {!user ? (
+                        <button
+                          type="button"
+                          className="btn btn-dark btn-sm align-self-start"
+                          onClick={() => navigate('/login')}
+                        >
+                          {t('pro.loginToUpgrade', 'Login to upgrade')}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-dark btn-sm align-self-start"
+                            onClick={handleUpgrade}
+                            disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                          >
+                            {loadingCheckout ? t('common.loading') : t('pro.upgradeNow')}
+                          </button>
+                          {billing?.checkoutEnabled === false && (
+                            <p className="small text-muted mb-0">{t('pro.checkoutNotConfigured')}</p>
+                          )}
+                        </>
                       )}
                     </>
                   )}

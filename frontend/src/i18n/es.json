@@ -932,6 +932,15 @@
     "checkoutCancel": "Checkout cancelado. Tu plan actual no cambió.",
     "checkoutError": "No se pudo iniciar el checkout en este momento.",
     "checkoutNotConfigured": "Stripe checkout aún no está configurado en este entorno.",
+    "androidPurchaseUnavailable": "Las compras de Pro dentro de la app Android están temporalmente desactivadas mientras terminamos la integración con Google Play Billing.",
+    "androidPlaceholderHelp": "Flujo temporal para desarrollo: pega un token de compra de prueba (por ahora valores que empiecen con test_, sandbox_ o fake_) y sincronízalo con tu cuenta.",
+    "androidProductIdLabel": "Product ID de Google Play",
+    "androidTokenLabel": "Token de compra",
+    "androidSyncButton": "Sincronizar compra Android",
+    "androidTokenRequired": "Primero ingresa un token de compra.",
+    "androidPurchaseSynced": "Compra Android sincronizada. Tu plan ya está en Pro.",
+    "androidPurchasePending": "Compra recibida pero todavía pendiente de confirmación.",
+    "androidSyncErrorWithCode": "Error sincronizando Android ({{code}}).",
     "publicToggleProOnly": "🔒 Función Pro",
     "publicToggleProOnlyHint": "Actualiza a Pro para hacer tu ficha escaneable por cualquiera.",
     "trialDaysLeft": "Te quedan {{count}} día(s) de prueba",
@@ -1025,6 +1034,14 @@
     "setupFossorial": "Setup sugerido: más sustrato para excavar (fosorial)",
     "setupTerrestrial": "Setup sugerido: base amplia y poca altura (terrestre)",
     "postCreateHint": "Tras crear: agrega último feeding o molt para mejor seguimiento"
+  },
+  "ratePrompt": {
+    "title": "¿Disfrutando TarantulApp?",
+    "body": "Si TarantulApp te está ayudando con tu colección, ¿nos dejas una reseña rápida en Google Play?",
+    "rateNow": "Calificar ahora",
+    "later": "Tal vez después",
+    "never": "No volver a preguntar",
+    "close": "Cerrar"
   },
   "account": {
     "title": "Cuenta",

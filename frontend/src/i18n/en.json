@@ -931,6 +931,15 @@
     "checkoutCancel": "Checkout cancelled. Your current plan did not change.",
     "checkoutError": "Could not start checkout right now.",
     "checkoutNotConfigured": "Stripe checkout is not configured in this environment yet.",
+    "androidPurchaseUnavailable": "In-app Pro purchases are temporarily unavailable on Android while we finish Google Play Billing integration.",
+    "androidPlaceholderHelp": "Temporary developer flow: paste a test purchase token (for now use values starting with test_, sandbox_, or fake_) and sync it to your account.",
+    "androidProductIdLabel": "Google Play product ID",
+    "androidTokenLabel": "Purchase token",
+    "androidSyncButton": "Sync Android purchase",
+    "androidTokenRequired": "Enter a purchase token first.",
+    "androidPurchaseSynced": "Android purchase synced. Your plan is now Pro.",
+    "androidPurchasePending": "Purchase received but still pending confirmation.",
+    "androidSyncErrorWithCode": "Android sync failed ({{code}}).",
     "publicToggleProOnly": "🔒 Pro feature",
     "publicToggleProOnlyHint": "Upgrade to Pro to make this card scannable by anyone.",
     "trialDaysLeft": "{{count}} day(s) left in your trial",
@@ -1024,6 +1033,14 @@
     "setupFossorial": "Suggested setup: deeper substrate for burrowing (fossorial)",
     "setupTerrestrial": "Suggested setup: wider floor space and low height (terrestrial)",
     "postCreateHint": "After create: add last feeding or molt for better tracking"
+  },
+  "ratePrompt": {
+    "title": "Enjoying TarantulApp?",
+    "body": "If TarantulApp is helping with your collection, would you like to leave a quick rating on Google Play?",
+    "rateNow": "Rate now",
+    "later": "Maybe later",
+    "never": "Don't ask again",
+    "close": "Close"
   },
   "account": {
     "title": "Account",

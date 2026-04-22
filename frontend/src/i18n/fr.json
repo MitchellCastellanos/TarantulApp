@@ -931,6 +931,15 @@
     "checkoutCancel": "Paiement annulé. Votre plan actuel n'a pas changé.",
     "checkoutError": "Impossible de démarrer le paiement pour le moment.",
     "checkoutNotConfigured": "Le paiement Stripe n'est pas encore configuré dans cet environnement.",
+    "androidPurchaseUnavailable": "Les achats Pro dans l'app Android sont temporairement désactivés pendant que nous finalisons l'intégration Google Play Billing.",
+    "androidPlaceholderHelp": "Flux temporaire pour développement : collez un jeton d'achat de test (pour l'instant commençant par test_, sandbox_ ou fake_) puis synchronisez-le avec votre compte.",
+    "androidProductIdLabel": "ID produit Google Play",
+    "androidTokenLabel": "Jeton d'achat",
+    "androidSyncButton": "Synchroniser l'achat Android",
+    "androidTokenRequired": "Saisissez d'abord un jeton d'achat.",
+    "androidPurchaseSynced": "Achat Android synchronisé. Votre plan est maintenant Pro.",
+    "androidPurchasePending": "Achat reçu mais encore en attente de confirmation.",
+    "androidSyncErrorWithCode": "Échec de la synchronisation Android ({{code}}).",
     "publicToggleProOnly": "🔒 Fonction Pro",
     "publicToggleProOnlyHint": "Passez à Pro pour rendre votre fiche scannable par tout le monde.",
     "trialDaysLeft": "Il reste {{count}} jour(s) d'essai",
@@ -1024,6 +1033,14 @@
     "setupFossorial": "Setup conseillé : plus de substrat pour creuser (fossorial)",
     "setupTerrestrial": "Setup conseillé : base large et faible hauteur (terrestre)",
     "postCreateHint": "Après création : ajoutez dernier feeding ou molt pour un meilleur suivi"
+  },
+  "ratePrompt": {
+    "title": "Vous aimez TarantulApp ?",
+    "body": "Si TarantulApp vous aide pour votre collection, voulez-vous laisser une note rapide sur Google Play ?",
+    "rateNow": "Noter maintenant",
+    "later": "Plus tard",
+    "never": "Ne plus demander",
+    "close": "Fermer"
   },
   "account": {
     "title": "Compte",

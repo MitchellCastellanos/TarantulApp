@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,7 +55,10 @@ public class BillingController {
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getMyBilling() {
         UUID userId = securityHelper.getCurrentUserId();
-        return ResponseEntity.ok(billingService.getBillingMe(userId));
+        Map<String, Object> payload = new LinkedHashMap<>(billingService.getBillingMe(userId));
+        payload.put("androidBillingEnabled", billingService.isGooglePlayEnabled());
+        payload.put("androidBillingMode", billingService.getGooglePlayMode());
+        return ResponseEntity.ok(payload);
     }
 
     @PostMapping("/portal")
@@ -156,6 +160,20 @@ public class BillingController {
             log.error("Error verifying Stripe session {}: {}", sessionId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Could not verify session"));
+        }
+    }
+
+    @PostMapping("/google-play/verify")
+    public ResponseEntity<Map<String, Object>> verifyGooglePlayPurchase(
+            @RequestBody(required = false) Map<String, String> body) {
+        UUID userId = securityHelper.getCurrentUserId();
+        String purchaseToken = body != null ? body.getOrDefault("purchaseToken", "") : "";
+        String productId = body != null ? body.getOrDefault("productId", "") : "";
+        try {
+            Map<String, Object> result = billingService.verifyGooglePlaySubscription(userId, productId, purchaseToken);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

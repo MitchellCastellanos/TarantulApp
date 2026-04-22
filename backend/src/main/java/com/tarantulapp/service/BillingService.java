@@ -76,6 +76,21 @@ public class BillingService {
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
+    @Value("${billing.google-play.enabled:false}")
+    private boolean googlePlayEnabled;
+
+    @Value("${billing.google-play.mode:stub}")
+    private String googlePlayMode;
+
+    @Value("${billing.google-play.allow-test-tokens:true}")
+    private boolean googlePlayAllowTestTokens;
+
+    @Value("${billing.google-play.package-name:}")
+    private String googlePlayPackageName;
+
+    @Value("${billing.google-play.subscription-product-id:}")
+    private String googlePlaySubscriptionProductId;
+
     public BillingService(UserRepository userRepository,
                           SubscriptionRepository subscriptionRepository,
                           ObjectMapper objectMapper,
@@ -537,6 +552,85 @@ public class BillingService {
         } catch (Exception e) {
             throw new IllegalArgumentException("No se pudo validar firma del webhook");
         }
+    }
+
+    @Transactional
+    public Map<String, Object> verifyGooglePlaySubscription(UUID userId, String productId, String purchaseToken) {
+        if (!googlePlayEnabled) {
+            throw new IllegalArgumentException("GOOGLE_PLAY_BILLING_DISABLED");
+        }
+        if (purchaseToken == null || purchaseToken.isBlank()) {
+            throw new IllegalArgumentException("GOOGLE_PLAY_PURCHASE_TOKEN_REQUIRED");
+        }
+
+        String trimmedToken = purchaseToken.trim();
+        String resolvedProductId = (productId == null || productId.isBlank())
+                ? googlePlaySubscriptionProductId
+                : productId.trim();
+
+        if (resolvedProductId == null || resolvedProductId.isBlank()) {
+            throw new IllegalArgumentException("GOOGLE_PLAY_PRODUCT_ID_REQUIRED");
+        }
+        if (googlePlayPackageName == null || googlePlayPackageName.isBlank()) {
+            throw new IllegalArgumentException("GOOGLE_PLAY_PACKAGE_NAME_REQUIRED");
+        }
+
+        boolean acceptedInStub = false;
+        if ("stub".equalsIgnoreCase(googlePlayMode)) {
+            boolean looksTestToken = trimmedToken.startsWith("test_")
+                    || trimmedToken.startsWith("sandbox_")
+                    || trimmedToken.startsWith("fake_");
+            if (googlePlayAllowTestTokens && looksTestToken) {
+                acceptedInStub = true;
+            } else {
+                throw new IllegalArgumentException("GOOGLE_PLAY_STUB_TOKEN_REJECTED");
+            }
+        } else {
+            throw new IllegalArgumentException("GOOGLE_PLAY_REAL_MODE_NOT_IMPLEMENTED");
+        }
+
+        if (!acceptedInStub) {
+            throw new IllegalArgumentException("GOOGLE_PLAY_VERIFICATION_FAILED");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        boolean wasPro = UserPlan.PRO.equals(user.getPlan());
+
+        Subscription sub = subscriptionRepository.findByProviderSubscriptionId(trimmedToken)
+                .orElseGet(Subscription::new);
+        sub.setUserId(userId);
+        sub.setProvider("google_play");
+        sub.setProviderCustomerId(null);
+        sub.setProviderSubscriptionId(trimmedToken);
+        sub.setProviderPriceId(resolvedProductId);
+        sub.setStatus("active");
+        sub.setCancelAtPeriodEnd(false);
+        sub.setCurrentPeriodEnd(LocalDateTime.now().plusDays(30));
+        subscriptionRepository.save(sub);
+
+        user.setPlan(UserPlan.PRO);
+        userRepository.save(user);
+        if (!wasPro) {
+            emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("verified", true);
+        response.put("provider", "google_play");
+        response.put("mode", googlePlayMode);
+        response.put("productId", resolvedProductId);
+        response.put("plan", "PRO");
+        response.put("currentPeriodEnd", sub.getCurrentPeriodEnd());
+        return response;
+    }
+
+    public boolean isGooglePlayEnabled() {
+        return googlePlayEnabled;
+    }
+
+    public String getGooglePlayMode() {
+        return googlePlayMode;
     }
 }
 

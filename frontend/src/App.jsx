@@ -29,6 +29,7 @@ import SocialHubPage from './pages/SocialHubPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
+import RateAppPrompt from './components/RateAppPrompt'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -155,6 +156,7 @@ export default function App() {
       >
         <AuthSessionBridge />
         <AppRoutes />
+        <RateAppPrompt />
         <Footer />
       </BrowserRouter>
     </AuthProvider>
