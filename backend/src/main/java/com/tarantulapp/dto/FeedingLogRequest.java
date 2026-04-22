@@ -14,6 +14,7 @@ public class FeedingLogRequest {
     private Integer quantity;
     private Boolean accepted;
     private String notes;
+    private Boolean publishToFeed;
 
     public OffsetDateTime getFedAt() { return fedAt; }
     public void setFedAt(OffsetDateTime fedAt) { this.fedAt = fedAt; }
@@ -27,4 +28,6 @@ public class FeedingLogRequest {
     public void setAccepted(Boolean accepted) { this.accepted = accepted; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Boolean getPublishToFeed() { return publishToFeed; }
+    public void setPublishToFeed(Boolean publishToFeed) { this.publishToFeed = publishToFeed; }
 }

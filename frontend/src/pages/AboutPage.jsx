@@ -2,13 +2,17 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { useAuth } from '../context/AuthContext'
+import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function AboutPage() {
   const { t } = useTranslation()
+  const { token } = useAuth()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
     title: t('about.pageTitle'),
     description: t('about.metaDescription'),
+    imageUrl: origin ? `${origin}/icon-512.png` : undefined,
     canonicalHref: origin ? `${origin}/about` : undefined,
   })
 
@@ -36,6 +40,24 @@ export default function AboutPage() {
             </p>
           </section>
         ))}
+
+        <section className="mb-4">
+          <h2 className="h6 fw-bold mb-2 text-uppercase" style={{ color: 'var(--ta-gold)', letterSpacing: '0.04em' }}>
+            {t('about.sectionContactOpsTitle', { defaultValue: 'Canales de contacto operativos' })}
+          </h2>
+          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
+            {t('about.sectionContactOpsBody', { defaultValue: 'Usamos inboxes por tema para responder más rápido: soporte técnico, facturación Stripe, marketplace/comunidad, newsletter y temas de confianza/plataformas.' })}
+          </p>
+          <p className="small mb-0" style={{ color: 'var(--ta-text)' }}>
+            <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
+            {' · '}
+            <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
+            {' · '}
+            <a href={`mailto:${PUBLIC_CONTACT.marketplace}`}>{PUBLIC_CONTACT.marketplace}</a>
+            {' · '}
+            <a href={`mailto:${PUBLIC_CONTACT.platformOps}`}>{PUBLIC_CONTACT.platformOps}</a>
+          </p>
+        </section>
 
         <div
           className="rounded-3 p-3 p-md-4 mt-4"
@@ -69,6 +91,17 @@ export default function AboutPage() {
               }}
             >
               {t('marketplace.nav')}
+            </Link>
+            <Link
+              to={token ? '/comunidad' : '/login'}
+              className="btn btn-sm"
+              style={{
+                border: '1px solid var(--ta-gold)',
+                color: 'var(--ta-gold)',
+                background: 'transparent',
+              }}
+            >
+              {t('nav.community')}
             </Link>
             <Link
               to="/contact"

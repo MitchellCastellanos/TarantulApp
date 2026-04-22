@@ -28,9 +28,16 @@ public class AdminAccessService {
 
     public void assertCurrentUserIsAdmin() {
         String email = securityHelper.getCurrentUserEmail();
-        String normalized = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
-        if (!adminEmails.contains(normalized)) {
+        if (!isAdminEmail(email)) {
             throw new AccessDeniedException("Acceso solo para administradores");
         }
+    }
+
+    /** True if {@code email} is listed in {@code app.admin.emails} (CSV), case-insensitive. */
+    public boolean isAdminEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        return adminEmails.contains(email.trim().toLowerCase(Locale.ROOT));
     }
 }

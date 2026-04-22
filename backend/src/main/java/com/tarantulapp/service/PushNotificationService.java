@@ -13,6 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -57,6 +58,10 @@ public class PushNotificationService {
     }
 
     public int sendReminderPushToUser(UUID userId, String title, String body) {
+        return sendEventPushToUser(userId, title, body, "REMINDER", Map.of());
+    }
+
+    public int sendEventPushToUser(UUID userId, String title, String body, String type, Map<String, Object> data) {
         if (!pushEnabled || fcmServerKey == null || fcmServerKey.isBlank()) {
             return 0;
         }
@@ -66,16 +71,20 @@ public class PushNotificationService {
             if (!"android".equals(device.getPlatform())) {
                 continue;
             }
-            if (sendFcm(device.getToken(), title, body)) {
+            if (sendFcm(device.getToken(), title, body, type, data)) {
                 delivered++;
             }
         }
         return delivered;
     }
 
-    private boolean sendFcm(String deviceToken, String title, String body) {
+    private boolean sendFcm(String deviceToken, String title, String body, String type, Map<String, Object> data) {
+        String route = data != null && data.get("route") != null ? String.valueOf(data.get("route")) : "/account";
         String payload = "{\"to\":\"" + escape(deviceToken) + "\",\"notification\":{\"title\":\""
-                + escape(title) + "\",\"body\":\"" + escape(body) + "\"},\"priority\":\"high\"}";
+                + escape(title) + "\",\"body\":\"" + escape(body)
+                + "\"},\"data\":{\"type\":\"" + escape(type == null ? "" : type)
+                + "\",\"route\":\"" + escape(route)
+                + "\"},\"priority\":\"high\"}";
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://fcm.googleapis.com/fcm/send"))
                 .header("Authorization", "key=" + fcmServerKey)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)

@@ -55,6 +55,9 @@ public class User {
     @Column(name = "profile_photo", length = 500)
     private String profilePhoto;
 
+    @Column(name = "search_visible", nullable = false)
+    private Boolean searchVisible = true;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan;
@@ -70,11 +73,27 @@ public class User {
     @Column(name = "referred_by_user_id", columnDefinition = "uuid")
     private UUID referredByUserId;
 
+    /** Bits para hitos de referidos ya otorgados (ver ReferralService). */
+    @Column(name = "referral_milestone_mask", nullable = false)
+    private Integer referralMilestoneMask = 0;
+
+    @Column(name = "founder_keeper", nullable = false)
+    private Boolean founderKeeper = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (plan == null) {
             plan = UserPlan.FREE;
+        }
+        if (referralMilestoneMask == null) {
+            referralMilestoneMask = 0;
+        }
+        if (founderKeeper == null) {
+            founderKeeper = false;
+        }
+        if (searchVisible == null) {
+            searchVisible = true;
         }
     }
 
@@ -123,6 +142,9 @@ public class User {
     public String getProfilePhoto() { return profilePhoto; }
     public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
 
+    public Boolean getSearchVisible() { return searchVisible; }
+    public void setSearchVisible(Boolean searchVisible) { this.searchVisible = searchVisible; }
+
     public UserPlan getPlan() { return plan; }
     public void setPlan(UserPlan plan) { this.plan = plan; }
 
@@ -134,5 +156,11 @@ public class User {
 
     public UUID getReferredByUserId() { return referredByUserId; }
     public void setReferredByUserId(UUID referredByUserId) { this.referredByUserId = referredByUserId; }
+
+    public Integer getReferralMilestoneMask() { return referralMilestoneMask; }
+    public void setReferralMilestoneMask(Integer referralMilestoneMask) { this.referralMilestoneMask = referralMilestoneMask; }
+
+    public Boolean getFounderKeeper() { return founderKeeper; }
+    public void setFounderKeeper(Boolean founderKeeper) { this.founderKeeper = founderKeeper; }
 
 }

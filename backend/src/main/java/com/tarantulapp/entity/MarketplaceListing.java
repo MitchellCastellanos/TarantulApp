@@ -70,6 +70,10 @@ public class MarketplaceListing {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /** When set and in the future, listing is sorted above others in the peer feed. */
+    @Column(name = "boosted_until")
+    private Instant boostedUntil;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -114,4 +118,6 @@ public class MarketplaceListing {
     public void setPedigreeRef(String pedigreeRef) { this.pedigreeRef = pedigreeRef; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getBoostedUntil() { return boostedUntil; }
+    public void setBoostedUntil(Instant boostedUntil) { this.boostedUntil = boostedUntil; }
 }

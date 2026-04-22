@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageSeo } from '../hooks/usePageSeo'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
 import communityService from '../services/communityService'
-import chatService from '../services/chatService'
-import userPublicService from '../services/userPublicService'
 import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
+import sexIdCaseService from '../services/sexIdCaseService'
+import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { useAuth } from '../context/AuthContext'
 
 const TAB_FEED = 'feed'
-const TAB_SPOOD = 'spood'
+const TAB_SEX_ID = 'sexId'
 const TAB_INVITE = 'invite'
 
 /** UUID v4 (case-insensitive). */
@@ -21,7 +22,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 
 export default function SocialHubPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(TAB_FEED)
@@ -37,18 +38,33 @@ export default function SocialHubPage() {
     imageUrl: '',
     tarantulaId: '',
   })
+  const [composerOpen, setComposerOpen] = useState(false)
   const [myTarantulas, setMyTarantulas] = useState([])
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
-
-  const [threads, setThreads] = useState({ content: [] })
-  const [otherUserId, setOtherUserId] = useState('')
-  const [activeThread, setActiveThread] = useState(null)
-  const [threadMessages, setThreadMessages] = useState({ content: [] })
-  const [spoodBody, setSpoodBody] = useState('')
+  const [feedSection, setFeedSection] = useState('all')
 
   const [referral, setReferral] = useState(null)
+
+  const [sexIdForm, setSexIdForm] = useState({
+    title: '',
+    speciesHint: '',
+    imageUrl: '',
+    imageType: 'ventral',
+    stage: '',
+  })
+  const [sexIdCases, setSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
+  const [publicSexIdCases, setPublicSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
+  const [sexIdUploading, setSexIdUploading] = useState(false)
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: t('social.seoTitle'),
+    description: t('social.metaDescription'),
+    imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
+    noindex: true,
+  })
 
   const inviteLink = useMemo(() => {
     if (!referral?.code) return ''
@@ -62,95 +78,63 @@ export default function SocialHubPage() {
   }, [])
 
   const loadMine = useCallback(async () => {
+    if (!token) {
+      setMine({ content: [], number: 0, totalPages: 0 })
+      return
+    }
     const data = await communityService.myPosts(0, 30)
     setMine(data)
-  }, [])
-
-  const loadThreads = useCallback(async () => {
-    const data = await chatService.threads(0, 30)
-    setThreads(data)
-  }, [])
-
-  const resolveOtherUserId = useCallback(async (raw) => {
-    const s = raw.trim()
-    if (!s) return null
-    if (UUID_REGEX.test(s)) return s
-    const handle = s.startsWith('@') ? s.slice(1).trim() : s
-    if (!handle) return null
-    try {
-      const row = await userPublicService.byHandle(handle)
-      return row?.id || null
-    } catch {
-      return null
-    }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    const openSeller = searchParams.get('openSeller')
-    const openListing = searchParams.get('openListing')
-    if (tabParam !== 'spood' || !openSeller?.trim() || !user?.id) return
-
-    const sellerId = openSeller.trim()
-    if (String(user.id) === sellerId) {
-      navigate('/comunidad', { replace: true })
-      return
+    if (tabParam === 'sexId' && token) {
+      setTab(TAB_SEX_ID)
     }
-
-    let cancelled = false
-    ;(async () => {
-      setErr('')
-      setMsg('')
-      try {
-        const listingId =
-          openListing && UUID_REGEX.test(String(openListing).trim())
-            ? String(openListing).trim()
-            : null
-        const row = await chatService.openThread(sellerId, listingId)
-        if (cancelled) return
-        setTab(TAB_SPOOD)
-        setActiveThread(row)
-        const msgs = await chatService.messages(row.id, 0, 50)
-        if (!cancelled) setThreadMessages(msgs)
-        await loadThreads()
-        setMsg(listingId ? t('social.threadOpenedListing') : t('social.threadOpened'))
-      } catch (e2) {
-        if (!cancelled) {
-          setTab(TAB_SPOOD)
-          setErr(e2?.response?.data?.error || t('social.saveError'))
-        }
-      } finally {
-        if (!cancelled) navigate('/comunidad', { replace: true })
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [searchParams, user?.id, navigate, t, loadThreads])
+  }, [searchParams, token])
 
   const loadReferral = useCallback(async () => {
     const data = await referralService.me()
     setReferral(data)
   }, [])
 
+  const loadSexIdCases = useCallback(async () => {
+    const data = await sexIdCaseService.mine(0, 30)
+    setSexIdCases(data)
+  }, [])
+
+  const loadPublicSexIdCases = useCallback(async () => {
+    const data = await sexIdCaseService.listPublic(0, 12)
+    setPublicSexIdCases(data || { content: [] })
+  }, [])
+
   useEffect(() => {
     loadFeed().catch(() => setErr(t('social.loadError')))
-  }, [loadFeed, t])
+    loadPublicSexIdCases().catch(() => {})
+  }, [loadFeed, loadPublicSexIdCases, t])
 
   useEffect(() => {
     if (tab === TAB_FEED) {
-      loadMine().catch(() => {})
       if (user?.id) {
+        loadMine().catch(() => {})
         tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
+      } else {
+        setMine({ content: [], number: 0, totalPages: 0 })
+        setMyTarantulas([])
       }
     }
-    if (tab === TAB_SPOOD) {
-      loadThreads().catch(() => setErr(t('social.loadError')))
-    }
     if (tab === TAB_INVITE) {
+      if (!token) return
       loadReferral().catch(() => setErr(t('social.loadError')))
     }
-  }, [tab, loadMine, loadThreads, loadReferral, t, user?.id])
+    if (tab === TAB_SEX_ID) {
+      if (!token) return
+      loadReferral().catch(() => {})
+      if (user?.id) {
+        loadSexIdCases().catch(() => setErr(t('sexIdCase.loadCasesError')))
+      }
+    }
+  }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id, token])
 
   const submitPost = async (e) => {
     e.preventDefault()
@@ -174,6 +158,10 @@ export default function SocialHubPage() {
   }
 
   const onToggleLike = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     setErr('')
     try {
       const updated = await communityService.toggleLike(postId)
@@ -187,6 +175,10 @@ export default function SocialHubPage() {
   }
 
   const toggleExpand = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     setExpanded((ex) => ({ ...ex, [postId]: !ex[postId] }))
     if (!commentsByPost[postId] && !expanded[postId]) {
       try {
@@ -199,6 +191,10 @@ export default function SocialHubPage() {
   }
 
   const submitComment = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     const text = (commentDraft[postId] || '').trim()
     if (!text) return
     setErr('')
@@ -214,6 +210,10 @@ export default function SocialHubPage() {
   }
 
   const deletePost = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     if (!window.confirm(t('social.confirmDeletePost'))) return
     try {
       await communityService.deletePost(postId)
@@ -225,6 +225,10 @@ export default function SocialHubPage() {
   }
 
   const reportPost = async (postId) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      return
+    }
     const reason = window.prompt(t('marketplace.reportReason'))
     if (!reason || !reason.trim()) return
     try {
@@ -235,59 +239,6 @@ export default function SocialHubPage() {
     }
   }
 
-  const openSpood = async (e) => {
-    e.preventDefault()
-    setErr('')
-    const raw = otherUserId.trim()
-    if (!raw) {
-      setErr(t('social.spoodNeedIdentifier'))
-      return
-    }
-    try {
-      const resolved = await resolveOtherUserId(raw)
-      if (!resolved) {
-        setErr(t('social.spoodResolveError'))
-        return
-      }
-      const row = await chatService.openThread(resolved, null)
-      setActiveThread(row)
-      setOtherUserId('')
-      const msgs = await chatService.messages(row.id, 0, 50)
-      setThreadMessages(msgs)
-      await loadThreads()
-      setMsg(t('social.threadOpened'))
-    } catch (e2) {
-      setErr(e2?.response?.data?.error || t('social.saveError'))
-    }
-  }
-
-  const pickThread = async (row) => {
-    setActiveThread(row)
-    try {
-      const msgs = await chatService.messages(row.id, 0, 50)
-      setThreadMessages(msgs)
-    } catch {
-      setErr(t('social.loadError'))
-    }
-  }
-
-  const sendSpood = async (e) => {
-    e.preventDefault()
-    if (!activeThread?.id) return
-    const text = spoodBody.trim()
-    if (!text) return
-    setErr('')
-    try {
-      await chatService.sendMessage(activeThread.id, text)
-      setSpoodBody('')
-      const msgs = await chatService.messages(activeThread.id, 0, 50)
-      setThreadMessages(msgs)
-      await loadThreads()
-    } catch (e2) {
-      setErr(e2?.response?.data?.error || t('social.saveError'))
-    }
-  }
-
   const copyInvite = async () => {
     if (!inviteLink) return
     try {
@@ -295,6 +246,62 @@ export default function SocialHubPage() {
       setMsg(t('social.copiedInvite'))
     } catch {
       setMsg(inviteLink)
+    }
+  }
+
+  const submitSexIdCase = async (e) => {
+    e.preventDefault()
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      return
+    }
+    setErr('')
+    setMsg('')
+    const imageUrl = (sexIdForm.imageUrl || '').trim()
+    if (!imageUrl) {
+      setErr(t('sexIdCase.formHint'))
+      return
+    }
+    try {
+      const row = await sexIdCaseService.create({
+        title: sexIdForm.title.trim() || undefined,
+        imageUrl,
+        speciesHint: sexIdForm.speciesHint.trim() || undefined,
+        imageType: sexIdForm.imageType || 'ventral',
+        stage: sexIdForm.stage || undefined,
+      })
+      setMsg(t('sexIdCase.caseCreated'))
+      setSexIdForm({ title: '', speciesHint: '', imageUrl: '', imageType: 'ventral', stage: '' })
+      await loadSexIdCases()
+      let refCode = referral?.code
+      if (!refCode) {
+        const r2 = await referralService.me().catch(() => null)
+        refCode = r2?.code
+        if (r2?.code) setReferral(r2)
+      }
+      const ref = refCode ? `?ref=${encodeURIComponent(refCode)}` : ''
+      navigate(`/sex-id/${row.id}${ref}`)
+    } catch (e2) {
+      setErr(e2?.response?.data?.error || t('social.saveError'))
+    }
+  }
+
+  const onSexIdPhoto = async (e) => {
+    if (!token) {
+      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      return
+    }
+    const f = e.target.files?.[0]
+    if (!f) return
+    setErr('')
+    setSexIdUploading(true)
+    try {
+      const r = await marketplaceService.uploadListingImage(f)
+      if (r?.imageUrl) setSexIdForm((s) => ({ ...s, imageUrl: r.imageUrl }))
+    } catch (e2) {
+      setErr(e2?.response?.data?.error || t('social.saveError'))
+    } finally {
+      setSexIdUploading(false)
     }
   }
 
@@ -309,6 +316,50 @@ export default function SocialHubPage() {
     </button>
   )
 
+  const feedSections = [
+    { key: 'all', label: 'Para ti' },
+    { key: 'questions', label: 'Preguntas' },
+    { key: 'milestones', label: 'Hitos' },
+    { key: 'photos', label: 'Con foto' },
+    { key: 'mine', label: 'Mis posts' },
+  ]
+
+  const publicPosts = feed.content || []
+  const questionPosts = useMemo(
+    () => publicPosts.filter((p) => (p.body || '').includes('?')).slice(0, 8),
+    [publicPosts]
+  )
+  const milestonePosts = useMemo(
+    () => publicPosts.filter((p) => !!p.milestoneKind).slice(0, 8),
+    [publicPosts]
+  )
+  const photoPosts = useMemo(
+    () => publicPosts.filter((p) => !!p.imageUrl).slice(0, 8),
+    [publicPosts]
+  )
+  const featuredPosts = useMemo(() => publicPosts.slice(0, 2), [publicPosts])
+
+  const activeFeedList = useMemo(() => {
+    if (feedSection === 'questions') return questionPosts
+    if (feedSection === 'milestones') return milestonePosts
+    if (feedSection === 'photos') return photoPosts
+    if (feedSection === 'mine') return mine.content || []
+    return publicPosts
+  }, [feedSection, milestonePosts, mine.content, photoPosts, publicPosts, questionPosts])
+
+  const renderCompactPost = (p) => (
+    <div key={p.id} className="ta-social-compact-post">
+      <div className="small fw-semibold text-truncate mb-1" style={{ color: 'var(--ta-parchment)' }}>
+        {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+      </div>
+      <p className="small mb-2 ta-social-compact-post__body">{(p.body || '').slice(0, 115) || '...'}</p>
+      <div className="small text-muted d-flex justify-content-between">
+        <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
+        <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
+      </div>
+    </div>
+  )
+
   const renderPostCard = (p, { showDelete } = {}) => (
     <div
       key={p.id}
@@ -317,7 +368,12 @@ export default function SocialHubPage() {
     >
       <div className="d-flex justify-content-between gap-2 flex-wrap">
         <div className="small text-muted">
-          {(p.authorDisplayName || p.authorHandle || 'keeper') + '\u00a0\u00b7\u00a0'}
+          {p.authorHandle ? (
+            <Link to={`/u/${encodeURIComponent(p.authorHandle)}`} className="text-decoration-none">
+              @{p.authorHandle}
+            </Link>
+          ) : (p.authorDisplayName || 'keeper')}
+          {'\u00a0\u00b7\u00a0'}
           <span className="text-uppercase" style={{ fontSize: '0.65rem' }}>{p.visibility}</span>
         </div>
         <div className="d-flex gap-1 flex-wrap">
@@ -325,12 +381,12 @@ export default function SocialHubPage() {
             type="button"
             className={`btn btn-sm ${p.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
             onClick={() => onToggleLike(p.id)}
-            title={t('social.like')}
+            title={t('social.spoodLike')}
             aria-pressed={!!p.likedByMe}
-            aria-label={t('social.like')}
+            aria-label={t('social.spoodLike')}
           >
             <span className="me-1" style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>{'\u{1F577}\u{FE0F}'}</span>
-            <span className="small">{p.likeCount ?? 0}</span>
+            <span className="small">{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
           </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => toggleExpand(p.id)}>
             {t('social.comments')} ({p.commentsCount ?? 0})
@@ -405,166 +461,412 @@ export default function SocialHubPage() {
 
         <div className="d-flex flex-wrap gap-2 mb-3">
           {tabBtn(TAB_FEED, t('social.tabFeed'))}
-          {tabBtn(TAB_SPOOD, t('social.tabSpood'))}
-          {tabBtn(TAB_INVITE, t('social.tabInvite'))}
+          {token && tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
+          {token && tabBtn(TAB_INVITE, t('social.tabInvite'))}
         </div>
+
+        {!token && (
+          <div className="alert alert-info small py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span>Comunidad abierta: puedes leer posts. Para publicar, comentar o votar necesitas iniciar sesi?n.</span>
+            <button
+              type="button"
+              className="btn btn-sm btn-dark"
+              onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+            >
+              Iniciar sesi?n para participar
+            </button>
+          </div>
+        )}
 
         {err && <div className="alert alert-danger small py-2">{err}</div>}
         {msg && <div className="alert alert-success small py-2">{msg}</div>}
 
         {tab === TAB_FEED && (
           <>
+            <div className="ta-social-highlights mb-3">
+              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Destacados del dia</h2>
+                <span className="small text-muted">Actualizado en tiempo real</span>
+              </div>
+              <div className="row g-2">
+                {featuredPosts.length === 0 ? (
+                  <div className="col-12">
+                    <div className="ta-social-highlight-card">
+                      <p className="small text-muted mb-0">{t('social.feedEmpty')}</p>
+                    </div>
+                  </div>
+                ) : (
+                  featuredPosts.map((p) => (
+                    <div key={p.id} className="col-md-6">
+                      <div className="ta-social-highlight-card">
+                        <div className="small text-muted mb-1">
+                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+                        </div>
+                        <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>{(p.body || '').slice(0, 180)}</p>
+                        <div className="small text-muted d-flex justify-content-between">
+                          <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
+                          <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
+              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
+              <div className="d-flex gap-2 overflow-auto pb-1">
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Sex ID</div>
+                  <div className="small text-muted mb-2">{t('social.sexIdQuickMode')}</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                        return
+                      }
+                      setTab(TAB_SEX_ID)
+                    }}
+                  >
+                    {t('social.goToSexId')}
+                  </button>
+                </div>
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Enclosure check</div>
+                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+                        return
+                      }
+                      setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))
+                      setComposerOpen(true)
+                    }}
+                  >
+                    {t('social.createDiscussion')}
+                  </button>
+                </div>
+                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
+                  <div className="small fw-semibold mb-1">Is my spider okay?</div>
+                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary w-100"
+                    onClick={() => {
+                      if (!token) {
+                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+                        return
+                      }
+                      setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))
+                      setComposerOpen(true)
+                    }}
+                  >
+                    {t('social.createDiscussion')}
+                  </button>
+                </div>
+              </div>
+              <p className="small text-muted mb-0 mt-2">
+                {t('social.carouselHint')}
+              </p>
+            </div>
+            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.10)' }}>
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.activeSexIdCases')}</h2>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => {
+                    if (!token) {
+                      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                      return
+                    }
+                    setTab(TAB_SEX_ID)
+                  }}
+                >
+                  {t('social.seeAll')}
+                </button>
+              </div>
+              {(publicSexIdCases.content || []).length === 0 ? (
+                <p className="small text-muted mb-0">{t('social.noActiveCases')}</p>
+              ) : (
+                <div className="d-flex gap-2 overflow-auto pb-1">
+                  {(publicSexIdCases.content || []).slice(0, 8).map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded p-2"
+                      style={{ minWidth: 240, border: '1px solid var(--ta-border)' }}
+                    >
+                      <div className="small fw-semibold text-truncate mb-1">
+                        {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
+                      </div>
+                      <div className="small text-muted mb-2">{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</div>
+                      <Link to={`/sex-id/${c.id}`} className="btn btn-sm btn-dark w-100">{t('social.openCase')}</Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="ta-social-feed-shell mb-4">
+              <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <div className="small ta-social-feed-shell__intro">
+                  Secciones visibles - {(activeFeedList || []).length}
+                </div>
+                  {token ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setComposerOpen((v) => !v)}
+                      aria-expanded={composerOpen}
+                    >
+                      {t('social.composerTitle')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-dark"
+                      onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+                    >
+                      Iniciar sesi?n para publicar
+                    </button>
+                  )}
+              </div>
+              <div className="ta-social-section-tabs mb-3">
+                {feedSections.map((section) => (
+                  <button
+                    key={section.key}
+                    type="button"
+                    className={`btn btn-sm ${feedSection === section.key ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setFeedSection(section.key)}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+              {token && composerOpen && (
+                <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-3">
+                  <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+                    <div className="card-body py-3 px-3 px-md-4">
+                      <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
+                      <form onSubmit={submitPost} className="small">
+                        <textarea
+                          className="form-control form-control-sm mb-2"
+                          rows={3}
+                          required
+                          value={composer.body}
+                          onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
+                          placeholder={t('social.composerBodyPh')}
+                        />
+                        <div className="mb-2">
+                          <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
+                          <select
+                            className="form-select form-select-sm"
+                            value={composer.tarantulaId}
+                            onChange={(e) => setComposer((c) => ({ ...c, tarantulaId: e.target.value }))}
+                          >
+                            <option value="">{t('social.linkedTarantulaNone')}</option>
+                            {(myTarantulas || []).map((tar) => (
+                              <option key={tar.id} value={tar.id}>
+                                {(tar.name || '?')
+                                  + (tar.species?.scientificName ? ` - ${tar.species.scientificName}` : '')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="row g-2 mb-2">
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.visibility')}</label>
+                            <select
+                              className="form-select form-select-sm"
+                              value={composer.visibility}
+                              onChange={(e) => setComposer((c) => ({ ...c, visibility: e.target.value }))}
+                            >
+                              <option value="public">{t('social.visPublic')}</option>
+                              <option value="private">{t('social.visPrivate')}</option>
+                              <option value="followers">{t('social.visFollowers')}</option>
+                            </select>
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.milestoneKind')}</label>
+                            <input
+                              className="form-control form-control-sm"
+                              value={composer.milestoneKind}
+                              onChange={(e) => setComposer((c) => ({ ...c, milestoneKind: e.target.value }))}
+                              placeholder={t('social.milestonePh')}
+                            />
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label small mb-0">{t('social.imageUrl')}</label>
+                            <input
+                              className="form-control form-control-sm"
+                              value={composer.imageUrl}
+                              onChange={(e) => setComposer((c) => ({ ...c, imageUrl: e.target.value }))}
+                              placeholder="https://..."
+                            />
+                          </div>
+                        </div>
+                        <button type="submit" className="btn btn-sm btn-dark">{t('social.publish')}</button>
+                      </form>
+                    </div>
+                  </div>
+                </ChitinCardFrame>
+              )}
+
+              <div className="row g-3">
+                <div className="col-lg-8">
+                  <section className="ta-social-feed-section ta-social-feed-section--community">
+                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Feed principal</h2>
+                    {(activeFeedList || []).length === 0 ? (
+                      <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                    ) : (
+                      (activeFeedList || []).map((p) => renderPostCard(p, { showDelete: feedSection === 'mine' }))
+                    )}
+                  </section>
+                </div>
+                <div className="col-lg-4">
+                  <aside className="d-flex flex-column gap-3">
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Preguntas recientes</h2>
+                        <span className="small text-muted">{questionPosts.length}</span>
+                      </div>
+                      {questionPosts.length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                      ) : (
+                        questionPosts.slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Con foto</h2>
+                        <span className="small text-muted">{photoPosts.length}</span>
+                      </div>
+                      {photoPosts.length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                      ) : (
+                        photoPosts.slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
+                    <section className="ta-social-feed-section ta-social-feed-section--mine">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
+                        <span className="small text-muted">{(mine.content || []).length}</span>
+                      </div>
+                      {(mine.content || []).length === 0 ? (
+                        <p className="text-muted small mb-0">{t('social.myPostsEmpty')}</p>
+                      ) : (
+                        (mine.content || []).slice(0, 4).map(renderCompactPost)
+                      )}
+                    </section>
+                  </aside>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab === TAB_SEX_ID && (
+          <>
             <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
               <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
                 <div className="card-body py-3 px-3 px-md-4">
-                  <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
-                  <form onSubmit={submitPost} className="small">
-                    <textarea
-                      className="form-control form-control-sm mb-2"
-                      rows={3}
-                      required
-                      value={composer.body}
-                      onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
-                      placeholder={t('social.composerBodyPh')}
-                    />
+                  <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('sexIdCase.formTitle')}</h2>
+                  <p className="small text-muted mb-3" style={{ lineHeight: 1.55 }}>{t('sexIdCase.formHint')}</p>
+                  <form onSubmit={submitSexIdCase} className="small">
                     <div className="mb-2">
-                      <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldTitle')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.title}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder={t('sexIdCase.fieldTitlePh')}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldImageType')}</label>
                       <select
                         className="form-select form-select-sm"
-                        value={composer.tarantulaId}
-                        onChange={(e) => setComposer((c) => ({ ...c, tarantulaId: e.target.value }))}
+                        value={sexIdForm.imageType}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, imageType: e.target.value }))}
                       >
-                        <option value="">{t('social.linkedTarantulaNone')}</option>
-                        {(myTarantulas || []).map((tar) => (
-                          <option key={tar.id} value={tar.id}>
-                            {(tar.name || '?')
-                              + (tar.species?.scientificName ? ` ù ${tar.species.scientificName}` : '')}
-                          </option>
-                        ))}
+                        <option value="ventral">{t('sexIdCase.imageTypeVentral')}</option>
+                        <option value="exuvia">{t('sexIdCase.imageTypeExuvia')}</option>
                       </select>
                     </div>
-                    <div className="row g-2 mb-2">
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.visibility')}</label>
-                        <select
-                          className="form-select form-select-sm"
-                          value={composer.visibility}
-                          onChange={(e) => setComposer((c) => ({ ...c, visibility: e.target.value }))}
-                        >
-                          <option value="public">{t('social.visPublic')}</option>
-                          <option value="private">{t('social.visPrivate')}</option>
-                          <option value="followers">{t('social.visFollowers')}</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.milestoneKind')}</label>
-                        <input
-                          className="form-control form-control-sm"
-                          value={composer.milestoneKind}
-                          onChange={(e) => setComposer((c) => ({ ...c, milestoneKind: e.target.value }))}
-                          placeholder={t('social.milestonePh')}
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small mb-0">{t('social.imageUrl')}</label>
-                        <input
-                          className="form-control form-control-sm"
-                          value={composer.imageUrl}
-                          onChange={(e) => setComposer((c) => ({ ...c, imageUrl: e.target.value }))}
-                          placeholder="https://..."
-                        />
-                      </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldSpecies')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.speciesHint}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, speciesHint: e.target.value }))}
+                        placeholder={t('sexIdCase.fieldSpeciesPh')}
+                      />
                     </div>
-                    <button type="submit" className="btn btn-sm btn-dark">{t('social.publish')}</button>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.fieldStage')}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={sexIdForm.stage}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, stage: e.target.value }))}
+                      >
+                        <option value="">{t('sexIdCase.stageOptional')}</option>
+                        <option value="sling">{t('stages.sling')}</option>
+                        <option value="juvenile">{t('stages.juvenile')}</option>
+                        <option value="adult">{t('stages.adult')}</option>
+                      </select>
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.uploadPhoto')}</label>
+                      <input
+                        type="file"
+                        className="form-control form-control-sm"
+                        accept="image/*"
+                        disabled={sexIdUploading}
+                        onChange={onSexIdPhoto}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label small mb-0">{t('sexIdCase.imageUrl')}</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={sexIdForm.imageUrl}
+                        onChange={(e) => setSexIdForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                        placeholder="/uploads/?"
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-sm btn-dark" disabled={sexIdUploading}>
+                      {t('sexIdCase.create')}
+                    </button>
                   </form>
                 </div>
               </div>
             </ChitinCardFrame>
-
-            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.publicFeed')}</h2>
-            {(feed.content || []).length === 0 ? (
-              <p className="text-muted small">{t('social.feedEmpty')}</p>
+            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('sexIdCase.myCases')}</h2>
+            {(sexIdCases.content || []).length === 0 ? (
+              <p className="text-muted small">{t('sexIdCase.myCasesEmpty')}</p>
             ) : (
-              (feed.content || []).map((p) => renderPostCard(p, { showDelete: false }))
-            )}
-
-            <h2 className="h6 fw-bold mb-2 mt-4" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
-            {(mine.content || []).length === 0 ? (
-              <p className="text-muted small">{t('social.myPostsEmpty')}</p>
-            ) : (
-              (mine.content || []).map((p) => renderPostCard(p, { showDelete: true }))
+              (sexIdCases.content || []).map((c) => (
+                <div
+                  key={c.id}
+                  className="d-flex flex-wrap align-items-center justify-content-between gap-2 rounded-3 p-2 mb-2"
+                  style={{ border: '1px solid var(--ta-border)' }}
+                >
+                  <div className="small" style={{ color: 'var(--ta-text)' }}>
+                    {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
+                    <span className="text-muted ms-1">{'\u00a0?\u00a0'}{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</span>
+                  </div>
+                  <Link className="btn btn-sm btn-outline-secondary" to={`/sex-id/${c.id}`}>
+                    {t('sexIdCase.openCase')}
+                  </Link>
+                </div>
+              ))
             )}
           </>
-        )}
-
-        {tab === TAB_SPOOD && (
-          <div className="row g-3">
-            <div className="col-md-5">
-              <div className="p-3 rounded-3 h-100" style={{ border: '1px solid var(--ta-border)' }}>
-                <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.spoodNewTitle')}</h2>
-                <form onSubmit={openSpood} className="small">
-                  <label className="form-label small">{t('social.spoodOtherHandleOrUuid')}</label>
-                  <input
-                    className="form-control form-control-sm mb-2"
-                    value={otherUserId}
-                    onChange={(e) => setOtherUserId(e.target.value)}
-                    placeholder={t('social.spoodHandlePlaceholder')}
-                  />
-                  <button type="submit" className="btn btn-sm btn-dark w-100">{t('social.spoodOpen')}</button>
-                </form>
-                <hr />
-                <h3 className="h6 fw-bold mb-2">{t('social.spoodThreads')}</h3>
-                {(threads.content || []).map((th) => (
-                  <button
-                    key={th.id}
-                    type="button"
-                    className={`btn btn-sm w-100 text-start mb-2 ${activeThread?.id === th.id ? 'btn-dark' : 'btn-outline-secondary'}`}
-                    onClick={() => pickThread(th)}
-                  >
-                    <div className="fw-semibold">{th.otherDisplayName || th.otherHandle || th.otherUserId}</div>
-                    <div className="small text-truncate">{th.lastMessagePreview || '\u2014'}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="col-md-7">
-              <div className="p-3 rounded-3 h-100 d-flex flex-column" style={{ border: '1px solid var(--ta-border)', minHeight: 320 }}>
-                {!activeThread && <p className="text-muted small mb-0">{t('social.spoodPickThread')}</p>}
-                {activeThread && (
-                  <>
-                    <div className="small text-muted mb-2">
-                      {t('social.spoodWith')}: {activeThread.otherDisplayName || activeThread.otherUserId}
-                    </div>
-                    <div className="flex-grow-1 overflow-auto mb-2" style={{ maxHeight: 360 }}>
-                      {(threadMessages.content || []).map((m) => (
-                        <div
-                          key={m.id}
-                          className="small mb-2 p-2 rounded-2"
-                          style={{
-                            marginLeft: m.senderUserId === user?.id ? '2rem' : 0,
-                            marginRight: m.senderUserId === user?.id ? 0 : '2rem',
-                            background: m.senderUserId === user?.id ? 'rgba(200,170,80,0.15)' : 'rgba(0,0,0,0.2)',
-                            color: 'var(--ta-text)',
-                          }}
-                        >
-                          {m.body}
-                        </div>
-                      ))}
-                    </div>
-                    <form onSubmit={sendSpood} className="input-group input-group-sm">
-                      <input
-                        className="form-control"
-                        value={spoodBody}
-                        onChange={(e) => setSpoodBody(e.target.value)}
-                        placeholder={t('social.spoodPlaceholder')}
-                      />
-                      <button type="submit" className="btn btn-dark">{t('social.spoodSend')}</button>
-                    </form>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
         )}
 
         {tab === TAB_INVITE && referral && (
@@ -579,6 +881,20 @@ export default function SocialHubPage() {
                 <p className="mb-2 text-muted">
                   {t('social.inviteBonusLine', { referee: referral.refereeBonusDays, referrer: referral.referrerBonusDays })}
                 </p>
+                <p className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('social.referralKeyline')}</p>
+                <p className="mb-1 text-muted">{t('social.referralLadderIntro')}</p>
+                <ul className="mb-2 ps-3 text-muted" style={{ lineHeight: 1.45 }}>
+                  <li>{t('social.referralLadder1')}</li>
+                  <li>{t('social.referralLadder2')}</li>
+                  <li>{t('social.referralLadder3')}</li>
+                  <li>{t('social.referralLadder4')}</li>
+                  <li>{t('social.referralLadder5')}</li>
+                </ul>
+                {referral.founderKeeper && (
+                  <p className="mb-2">
+                    <span className="badge bg-warning text-dark">{t('social.founderKeeperBadge')}</span>
+                  </p>
+                )}
                 <p className="mb-2 text-muted">{t('social.invitedCount', { count: referral.invitedCount ?? 0 })}</p>
                 <div className="d-flex flex-wrap gap-2">
                   <button type="button" className="btn btn-sm btn-dark" onClick={copyInvite}>{t('social.copyInviteLink')}</button>

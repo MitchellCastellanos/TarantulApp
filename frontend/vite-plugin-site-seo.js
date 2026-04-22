@@ -10,6 +10,8 @@ const PUBLIC_ROUTES = [
   '/descubrir',
   '/descubrir/comparar',
   '/herramientas/qr',
+  '/about',
+  '/marketplace',
   '/pro',
   '/privacy',
   '/terms',
@@ -41,9 +43,15 @@ function buildSitemapXml(base) {
   const body = PUBLIC_ROUTES.map((route) => {
     const loc = escapeXml(locForRoute(base, route))
     const priority =
-      route === '/' ? '1.0' : route === '/herramientas/qr' || route === '/descubrir' ? '0.9' : '0.65'
+      route === '/'
+        ? '1.0'
+        : route === '/herramientas/qr' || route === '/descubrir' || route === '/marketplace' || route === '/about'
+          ? '0.9'
+          : '0.65'
     const changefreq =
-      route === '/' || route === '/descubrir' || route === '/herramientas/qr' ? 'weekly' : 'monthly'
+      route === '/' || route === '/descubrir' || route === '/herramientas/qr' || route === '/marketplace'
+        ? 'weekly'
+        : 'monthly'
     return `  <url>
     <loc>${loc}</loc>
     <lastmod>${today}</lastmod>

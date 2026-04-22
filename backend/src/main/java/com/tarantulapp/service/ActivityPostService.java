@@ -39,17 +39,20 @@ public class ActivityPostService {
     private final ActivityPostCommentRepository activityPostCommentRepository;
     private final TarantulaRepository tarantulaRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ActivityPostService(ActivityPostRepository activityPostRepository,
                                ActivityPostLikeRepository activityPostLikeRepository,
                                ActivityPostCommentRepository activityPostCommentRepository,
                                TarantulaRepository tarantulaRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               NotificationService notificationService) {
         this.activityPostRepository = activityPostRepository;
         this.activityPostLikeRepository = activityPostLikeRepository;
         this.activityPostCommentRepository = activityPostCommentRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -113,13 +116,30 @@ public class ActivityPostService {
         if (!canView(post, Optional.of(userId))) {
             throw new AccessDeniedException("No autorizado");
         }
-        if (activityPostLikeRepository.existsByPostIdAndUserId(postId, userId)) {
+        boolean hadLike = activityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+        if (hadLike) {
             activityPostLikeRepository.deleteByPostIdAndUserId(postId, userId);
         } else {
             ActivityPostLike like = new ActivityPostLike();
             like.setPostId(postId);
             like.setUserId(userId);
             activityPostLikeRepository.save(like);
+            User actor = userRepository.findById(userId).orElse(null);
+            String actorLabel = actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()
+                    ? actor.getDisplayName()
+                    : "Un keeper";
+            String postPreview = snippet(post.getBody(), 90);
+            notificationService.create(
+                    post.getAuthorUserId(),
+                    userId,
+                    "SPOOD_RECEIVED",
+                    actorLabel + " reacciono a tu post",
+                    postPreview.isBlank() ? "Tu publicacion recibio un Spood." : postPreview,
+                    Map.of(
+                            "postId", String.valueOf(postId),
+                            "route", "/comunidad"
+                    )
+            );
         }
         post = activityPostRepository.findById(postId).orElseThrow();
         User author = userRepository.findById(post.getAuthorUserId()).orElse(null);
@@ -162,6 +182,22 @@ public class ActivityPostService {
         c.setAuthorUserId(userId);
         c.setBody(text);
         ActivityPostComment saved = activityPostCommentRepository.save(c);
+        User actor = userRepository.findById(userId).orElse(null);
+        String actorLabel = actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()
+                ? actor.getDisplayName()
+                : "Un keeper";
+        notificationService.create(
+                post.getAuthorUserId(),
+                userId,
+                "POST_COMMENT",
+                actorLabel + " comento tu post",
+                snippet(text, 120),
+                Map.of(
+                        "postId", String.valueOf(postId),
+                        "commentId", String.valueOf(saved.getId()),
+                        "route", "/comunidad"
+                )
+        );
         User u = userRepository.findById(userId).orElse(null);
         return commentToDto(saved, u);
     }
@@ -298,5 +334,19 @@ public class ActivityPostService {
             return null;
         }
         return out.length() > maxLen ? out.substring(0, maxLen) : out;
+    }
+
+    private String snippet(String value, int maxLen) {
+        if (value == null) {
+            return "";
+        }
+        String out = value.trim().replaceAll("\\s+", " ");
+        if (out.isEmpty()) {
+            return "";
+        }
+        if (out.length() <= maxLen) {
+            return out;
+        }
+        return out.substring(0, Math.max(0, maxLen - 1)).trim() + "…";
     }
 }

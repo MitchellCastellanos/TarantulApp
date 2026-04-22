@@ -23,11 +23,14 @@ import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
 import KeeperProfilePage from './pages/KeeperProfilePage'
+import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
-import QrBulkPrintPage from './pages/QrBulkPrintPage'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
+import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
+import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
+import RateAppPrompt from './components/RateAppPrompt'
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -92,6 +95,10 @@ function AppRoutes() {
       <Route path="/herramientas/qr" element={<QrToolPage />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
+      <Route path="/launch" element={<LaunchRegistrationPage />} />
+      <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
+      <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
+      <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -99,9 +106,9 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
-      <Route path="/tarantulas/qr-print" element={<PrivateRoute><QrBulkPrintPage /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/herramientas/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-      <Route path="/comunidad" element={<PrivateRoute><SocialHubPage /></PrivateRoute>} />
+      <Route path="/comunidad" element={<SocialHubPage />} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -111,6 +118,7 @@ function AppRoutes() {
 
 function Footer() {
   const { t } = useTranslation()
+  const { token } = useAuth()
   return (
     <footer
       className="text-center py-3 mt-5"
@@ -124,6 +132,8 @@ function Footer() {
       <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
       <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
+      &nbsp;·&nbsp;
+      <Link to={token ? '/comunidad' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
       &nbsp;·&nbsp;
       <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
       &nbsp;·&nbsp;
@@ -149,6 +159,7 @@ export default function App() {
       >
         <AuthSessionBridge />
         <AppRoutes />
+        <RateAppPrompt />
         <Footer />
       </BrowserRouter>
     </AuthProvider>

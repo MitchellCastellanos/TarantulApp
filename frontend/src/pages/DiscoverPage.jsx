@@ -449,21 +449,41 @@ export default function DiscoverPage() {
       ? computeTerrariumRecommendation(specimenSizeCm, selectedSpecies)
       : null
 
+  // Si el catálogo no trajo fallbackPhoto, rellenar: primero taxon (iNat+GBIF media) si hay clave GBIF, si no o si sigue vacío, iNat por nombre.
   useEffect(() => {
-    const gbifKey = activeGbifKey ?? selectedSpecies?.gbifUsageKey
-    if (!selectedSpecies || !Number.isFinite(Number(gbifKey))) return
-    if (selectedSpecies.referencePhotoUrl) return
+    if (!selectedSpecies) return
     if (selectedFallbackPhoto?.url) return
+    const hasRef = selectedSpecies.referencePhotoUrl && String(selectedSpecies.referencePhotoUrl).trim() !== ''
+    if (hasRef) return
+
+    const name = (selectedSpecies.scientificName || '').trim()
+    if (!name) return
+
+    const gbifKey = activeGbifKey ?? selectedSpecies?.gbifUsageKey
     let cancelled = false
-    speciesService
-      .discoverTaxon(Number(gbifKey))
-      .then((taxon) => {
-        if (cancelled) return
-        if (taxon?.photo?.url) {
-          setSelectedFallbackPhoto(taxon.photo)
-        }
+
+    const tryNameOnly = () =>
+      speciesService.photoFallback(name).then((photo) => {
+        if (cancelled || !photo?.url) return
+        setSelectedFallbackPhoto(photo)
       })
-      .catch(() => {})
+
+    if (Number.isFinite(Number(gbifKey))) {
+      speciesService
+        .discoverTaxon(Number(gbifKey))
+        .then((taxon) => {
+          if (cancelled) return
+          if (taxon?.photo?.url) {
+            setSelectedFallbackPhoto(taxon.photo)
+          } else {
+            return tryNameOnly()
+          }
+        })
+        .catch(() => tryNameOnly())
+    } else {
+      tryNameOnly()
+    }
+
     return () => {
       cancelled = true
     }
@@ -480,8 +500,9 @@ export default function DiscoverPage() {
         </h1>
         <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
 
+        {/* Buscador primero, hub marketplace después (móvil y desktop). */}
         <div className="row g-3 mb-4 align-items-stretch">
-          <div className="col-lg-7 d-flex">
+          <div className="col-lg-7 d-flex order-1">
         <section className="mb-0 flex-grow-1 w-100 card border-0 shadow-sm p-4 ta-species-dropdown-card h-100">
           <h2 className="h6 text-uppercase letter-spacing mb-3 ta-accent-heading">
             {t('discover.sectionSearch')}
@@ -629,7 +650,7 @@ export default function DiscoverPage() {
             )}
         </section>
           </div>
-          <div className="col-lg-5 d-flex">
+          <div className="col-lg-5 d-flex order-2">
             <section className="ta-discover-marketplace-hub w-100 rounded-3 border p-4 d-flex flex-column">
               <div className="d-flex align-items-start gap-2 mb-2">
                 <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />

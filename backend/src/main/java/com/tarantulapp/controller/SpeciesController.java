@@ -1,6 +1,7 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.dto.DiscoverLocalSpeciesViewDTO;
+import com.tarantulapp.dto.DiscoverPhotoDTO;
 import com.tarantulapp.dto.DiscoverSearchHitDTO;
 import com.tarantulapp.dto.DiscoverTaxonDetailDTO;
 import com.tarantulapp.dto.SpeciesDTO;
@@ -93,6 +94,14 @@ public class SpeciesController {
         return discoverCatalogService.findPublicCatalogViewById(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Especie no encontrada"));
+    }
+
+    /** iNaturalist (u opciones futuras) por nombre científico; 404 si no hay foto. */
+    @GetMapping("/photo-fallback")
+    public ResponseEntity<DiscoverPhotoDTO> photoFallback(@RequestParam String scientificName) {
+        return discoverCatalogService.photoFallbackByScientificName(scientificName)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /** Descubrir: id de ficha en catálogo público para una clave GBIF, o {@code null} si no está enlazada. */

@@ -33,6 +33,7 @@ function mergePlanFields(raw) {
     profileCity: raw?.profileCity || '',
     qrPrintExports: Number(raw?.qrPrintExports || 0),
     profilePhoto: raw?.profilePhoto || '',
+    admin: raw?.admin === true,
   }
 }
 
@@ -81,6 +82,7 @@ export function AuthProvider({ children }) {
       profileCity: authData.profileCity,
       qrPrintExports: authData.qrPrintExports,
       profilePhoto: authData.profilePhoto,
+      admin: authData.admin === true,
     })
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(payload))
@@ -101,6 +103,15 @@ export function AuthProvider({ children }) {
     setSessionTokenSnapshot(token)
   }, [token])
 
+  // Token sin JSON de usuario (storage corrupto o clave borrada) deja la UI a medias; limpiar y volver a login.
+  useLayoutEffect(() => {
+    if (!token) return
+    const raw = localStorage.getItem('user')
+    if (raw == null || String(raw).trim() === '') {
+      logout()
+    }
+  }, [token, logout])
+
   // Solo al montar el provider: sincronizar plan desde DB si había sesión en localStorage.
   // NO depender de [token]: justo después de login() el mismo efecto disparaba billing/me en caliente
   // y a veces 401 + logout(), borrando la sesión recién creada (login ya trae plan en AuthResponse).
@@ -115,6 +126,8 @@ export function AuthProvider({ children }) {
         if (cancelled || !data?.plan) return
         setUser((prev) => {
           if (!prev) return prev
+          const admin =
+            typeof data.admin === 'boolean' ? data.admin : prev.admin === true
           const next = mergePlanFields({
             ...prev,
             plan: data.plan,
@@ -123,6 +136,7 @@ export function AuthProvider({ children }) {
             trialEndsAt: data.trialEndsAt ?? prev.trialEndsAt ?? null,
             overFreeLimit: data.overFreeLimit,
             strictReadOnly: data.strictReadOnly,
+            admin,
           })
           localStorage.setItem('user', JSON.stringify(next))
           return next

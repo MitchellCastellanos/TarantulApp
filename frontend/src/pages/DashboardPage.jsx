@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatDateInUserZone } from '../utils/dateFormat'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel'
+import { downloadCollectionJson, importCollectionJsonFile } from '../utils/exportCollectionJson'
 import { imgUrl } from '../services/api'
 
 function daysLeftInTrial(iso) {
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [jsonBusy, setJsonBusy] = useState(false)
+  const importInputRef = useRef(null)
   const [keeperProfile, setKeeperProfile] = useState(null)
 
   useEffect(() => {
@@ -103,10 +106,92 @@ export default function DashboardPage() {
     }
   }
 
+  const handleExportJson = () => {
+    if (!tarantulas.length || jsonBusy) return
+    setJsonBusy(true)
+    try {
+      downloadCollectionJson(tarantulas)
+    } finally {
+      setJsonBusy(false)
+    }
+  }
+
+  const handleImportJsonClick = () => {
+    importInputRef.current?.click()
+  }
+
+  const handleImportJsonFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setJsonBusy(true)
+    try {
+      const result = await importCollectionJsonFile(file)
+      const list = await tarantulaService.getAll()
+      setTarantulas(Array.isArray(list) ? list : [])
+      const msg = `Importación JSON: ${result.created} creados, ${result.skipped} omitidos.`
+      window.alert(msg)
+    } catch {
+      window.alert('No se pudo importar el archivo JSON.')
+    } finally {
+      setJsonBusy(false)
+    }
+  }
+
   return (
     <div>
       <Navbar />
       <div className="container mt-4">
+        <section className="ta-home-hero mb-4 p-3 p-md-4">
+          <div className="row g-3 align-items-center">
+            <div className="col-lg-7">
+              <p className="small text-uppercase mb-2 ta-home-hero__eyebrow">
+                {t('dashboard.homeHeroEyebrow', { defaultValue: 'Nueva etapa TarantulApp' })}
+              </p>
+              <h1 className="h4 fw-bold mb-2">
+                {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, todo en un mismo flujo' })}
+              </h1>
+              <p className="small mb-3" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
+                {t('dashboard.homeHeroBody', { defaultValue: 'Tu coleccion sigue siendo el centro, pero ahora ya conecta con marketplace y comunidad. Lo que viene cierra la capa de cases, reputacion y decision colectiva para resolver dudas reales del hobby.' })}
+              </p>
+              <div className="d-flex flex-wrap gap-2">
+                <Link to="/descubrir" className="btn btn-sm btn-outline-secondary">{t('discover.navTitle')}</Link>
+                <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">{t('marketplace.nav')}</Link>
+                <Link to="/comunidad" className="btn btn-sm btn-dark">{t('nav.community')}</Link>
+              </div>
+            </div>
+            <div className="col-lg-5">
+              <div className="ta-home-hero__logo-wrap d-flex align-items-center justify-content-center flex-column">
+                <BrandLogoMark size={74} showIntro />
+                <span className="cinzel mt-2 ta-login-brand-wordmark">TarantulApp</span>
+                <small className="text-muted mt-1">
+                  {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Datos serios. Comunidad viva.' })}
+                </small>
+              </div>
+            </div>
+          </div>
+          <div className="row g-2 mt-2">
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarToolTitle', { defaultValue: 'Tool mode' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarToolBody', { defaultValue: 'Coleccion, QR, recordatorios y trazabilidad diaria.' })}</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarHelpTitle', { defaultValue: 'Help mode (siguiente)' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarHelpBody', { defaultValue: 'Cases de sexing/salud + votacion y reputacion.' })}</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="ta-home-pillar h-100">
+                <div className="small fw-semibold">{t('dashboard.homePillarCommunityTitle', { defaultValue: 'Community mode' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + casos + referrals; mensajería enfocada al marketplace.' })}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div
           className="mb-3 px-3 py-2 rounded-1 small ta-dashboard-atmosphere-strip"
           style={{
@@ -139,8 +224,31 @@ export default function DashboardPage() {
                 >
                   {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={!tarantulas.length || jsonBusy}
+                  onClick={handleExportJson}
+                >
+                  {jsonBusy ? t('common.loading') : 'Export JSON'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={jsonBusy}
+                  onClick={handleImportJsonClick}
+                >
+                  {jsonBusy ? t('common.loading') : 'Import JSON'}
+                </button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="d-none"
+                  onChange={handleImportJsonFile}
+                />
                 <Link
-                  to="/tarantulas/qr-print"
+                  to="/herramientas/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm"
                   title={t('dashboard.qrBulkPrintTitle')}
                 >
@@ -158,7 +266,15 @@ export default function DashboardPage() {
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
-                  to="/tarantulas/qr-print"
+                  to="/pro"
+                  className="btn btn-outline-secondary btn-sm position-relative"
+                  title="Disponible en Pro"
+                >
+                  Export/Import JSON
+                  <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
+                </Link>
+                <Link
+                  to="/herramientas/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title={t('dashboard.qrBulkPrintProOnly')}
                 >
@@ -245,6 +361,17 @@ export default function DashboardPage() {
         {overFreeLimit && (
           <div className="alert alert-warning small py-2 mb-3">
             {t('readOnly.overLimitBanner')}{' '}
+            <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
+            ejemplares en Free.{' '}
+            <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
+          </div>
+        )}
+
+        {!overFreeLimit && isFreePlan && (
+          <div className="alert alert-secondary small py-2 mb-3">
+            Plan Free activo: <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
+            usados. Te quedan <strong>{Math.max(0, tarantulaLimit - tarantulas.length)}</strong>{' '}
+            espacios antes del gate.{' '}
             <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
           </div>
         )}
