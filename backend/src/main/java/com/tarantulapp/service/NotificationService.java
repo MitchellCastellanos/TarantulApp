@@ -30,10 +30,14 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final PushNotificationService pushNotificationService;
 
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               UserRepository userRepository,
+                               PushNotificationService pushNotificationService) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @Transactional
@@ -48,6 +52,13 @@ public class NotificationService {
         n.setBody(clean(body, 600));
         n.setData(data == null ? Collections.emptyMap() : data);
         notificationRepository.save(n);
+        pushNotificationService.sendEventPushToUser(
+                userId,
+                n.getTitle() == null ? "Nueva notificacion" : n.getTitle(),
+                n.getBody() == null ? "Tienes actividad nueva en tu cuenta." : n.getBody(),
+                n.getType(),
+                n.getData()
+        );
     }
 
     @Transactional(readOnly = true)

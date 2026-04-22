@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatDateInUserZone } from '../utils/dateFormat'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel'
+import { downloadCollectionJson, importCollectionJsonFile } from '../utils/exportCollectionJson'
 import { imgUrl } from '../services/api'
 
 function daysLeftInTrial(iso) {
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [jsonBusy, setJsonBusy] = useState(false)
+  const importInputRef = useRef(null)
   const [keeperProfile, setKeeperProfile] = useState(null)
 
   useEffect(() => {
@@ -100,6 +103,38 @@ export default function DashboardPage() {
       await exportTarantulaCollectionToExcel(tarantulas, t, i18n.language)
     } finally {
       setExporting(false)
+    }
+  }
+
+  const handleExportJson = () => {
+    if (!tarantulas.length || jsonBusy) return
+    setJsonBusy(true)
+    try {
+      downloadCollectionJson(tarantulas)
+    } finally {
+      setJsonBusy(false)
+    }
+  }
+
+  const handleImportJsonClick = () => {
+    importInputRef.current?.click()
+  }
+
+  const handleImportJsonFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setJsonBusy(true)
+    try {
+      const result = await importCollectionJsonFile(file)
+      const list = await tarantulaService.getAll()
+      setTarantulas(Array.isArray(list) ? list : [])
+      const msg = `Importación JSON: ${result.created} creados, ${result.skipped} omitidos.`
+      window.alert(msg)
+    } catch {
+      window.alert('No se pudo importar el archivo JSON.')
+    } finally {
+      setJsonBusy(false)
     }
   }
 
@@ -189,6 +224,29 @@ export default function DashboardPage() {
                 >
                   {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={!tarantulas.length || jsonBusy}
+                  onClick={handleExportJson}
+                >
+                  {jsonBusy ? t('common.loading') : 'Export JSON'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={jsonBusy}
+                  onClick={handleImportJsonClick}
+                >
+                  {jsonBusy ? t('common.loading') : 'Import JSON'}
+                </button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="d-none"
+                  onChange={handleImportJsonFile}
+                />
                 <Link
                   to="/herramientas/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm"
@@ -205,6 +263,14 @@ export default function DashboardPage() {
                   title={t('dashboard.exportExcelProOnly')}
                 >
                   {t('dashboard.exportExcel')}
+                  <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
+                </Link>
+                <Link
+                  to="/pro"
+                  className="btn btn-outline-secondary btn-sm position-relative"
+                  title="Disponible en Pro"
+                >
+                  Export/Import JSON
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link

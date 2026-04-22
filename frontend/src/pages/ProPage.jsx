@@ -204,14 +204,14 @@ export default function ProPage() {
               <p className="small mb-3" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
 
               <div className="row g-3 mb-3">
-                <div className="col-lg-3 col-md-6">
+                <div className="col-lg-4 col-md-6">
                   {tierCard({
                     titleKey: 'pro.tierFreeTitle',
                     taglineKey: 'pro.tierFreeTagline',
                     listKeys: ['pro.tierFreeLi1', 'pro.tierFreeLi2', 'pro.tierFreeLi3', 'pro.tierFreeLi4', 'pro.tierFreeLi5'],
                   })}
                 </div>
-                <div className="col-lg-3 col-md-6">
+                <div className="col-lg-4 col-md-6">
                   {tierCard({
                     titleKey: 'pro.tierProTitle',
                     priceKey: 'pro.tierProPrice',
@@ -220,20 +220,7 @@ export default function ProPage() {
                     corner: <span className="badge bg-dark position-absolute" style={{ top: 8, right: 10 }}>PRO</span>,
                   })}
                 </div>
-                <div className="col-lg-3 col-md-6">
-                  {tierCard({
-                    titleKey: 'pro.tierProPlusTitle',
-                    priceKey: 'pro.tierProPlusPrice',
-                    taglineKey: 'pro.tierProPlusTagline',
-                    listKeys: ['pro.tierProPlusLi1', 'pro.tierProPlusLi2', 'pro.tierProPlusLi3', 'pro.tierProPlusLi4', 'pro.tierProPlusLi5'],
-                    footer: (
-                      <div className="mt-2">
-                        <span className="badge bg-secondary">{t('pro.tierSoon')}</span>
-                      </div>
-                    ),
-                  })}
-                </div>
-                <div className="col-lg-3 col-md-6">
+                <div className="col-lg-4 col-md-6">
                   {tierCard({
                     titleKey: 'pro.tierVendorTitle',
                     priceKey: 'pro.tierVendorPrice',

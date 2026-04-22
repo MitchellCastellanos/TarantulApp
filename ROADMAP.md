@@ -1,6 +1,6 @@
 # TarantulApp — Roadmap
 
-Última revisión: 2026-04-22 (Sprint 2 y pre-sprint técnico cerrados en código)
+Última revisión: 2026-04-22 (Sprint 2 + backlog técnico principal cerrados; pendiente Stripe real)
 
 ---
 
@@ -17,6 +17,12 @@
 - **Descubrir (homepage pública)**: Columna marketplace + socios certificados y CTA; layout en dos columnas con búsqueda; **orden móvil** explícito (buscador arriba, hub marketplace abajo).
 - **Componentes**: `OfficialPartnerShield` reutilizable; logos públicos en assets si aplica.
 - **Social (inicio)**: Ruta privada `/comunidad` (`SocialHubPage`), copy de marca + teaser “spood”, hero con logo con intro y estilos **light/dark** (`.ta-social-hub-hero`). Enlace “Comunidad” en navbar solo con sesión.
+- **Notificaciones de comunidad (enriquecidas)**: Eventos `SPOOD_RECEIVED`, `POST_COMMENT`, `SEX_ID_VOTE` con payload contextual (`route`, ids, snippet), deep-link desde campana y script SQL idempotente para backfill/índices en Supabase (`scripts/supabase_notifications_hardening.sql`).
+- **Push enriquecido por evento**: `NotificationService` dispara push con `type` + `route` para navegación contextual en app nativa (Android activo; iOS preparado por token/plataforma).
+- **Share keeper profile (plantillas)**: Plantillas de compartir para perfil keeper (`default` / WhatsApp / Instagram) e integración en `/u/:handle` con botón de copiar + CTA WhatsApp.
+- **Social OG específico**: OG social usando `logo-neon.png` en comunidad y SEO específico en perfil público keeper.
+- **Paywall / gates Free vs Pro (UX)**: Mensajes de límite más claros en dashboard y detalle de tarántula bloqueada, con CTA directo a upgrade/pro trial.
+- **Export / import beyond Excel**: export/import JSON de colección en dashboard (Pro), además de export Excel/PDF ya existente.
 - **Datos y moderación (cimiento)**: Migración `V30` — `activity_posts` (visibilidad `private` | `followers` | `public`, `hidden_at` para moderación), `chat_threads` / `chat_messages` (DM 1:1 + `listing_id` opcional), `referral_codes`, `referral_redemptions`, `users.referred_by_user_id`. Entidades JPA + repos. Reporte público `POST /api/public/reports/activity-post/{id}`; admin `hide_activity_post` y `hide_keeper_profile` (quita `public_handle` del usuario reportado como keeper).
 
 ---
@@ -52,8 +58,7 @@
 
 - **Stripe real en entorno**: cargar y validar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY` y (opcional) `STRIPE_PRICE_ID_LISTING_BOOST`.
 - **Go-live de billing**: validar checkout/verify/webhook/portal en modo test end-to-end con eventos reales de Stripe.
-- **Gates Free vs Pro**: confirmar UX final de paywall/límites y mensajes de upgrade en pantallas clave (sin reescribir arquitectura).
-- **Pro+ / Vendor**: mantenerlos en narrativa/copy y configuración separada, sin forzar estados no soportados en DB por ahora.
+- **Vendor / Business (próximamente)**: mantener “coming soon” con precio de entrada más bajo y validar demanda antes de activar checkout.
 
 ### Sprint 2 — Diferenciación viral (estado)
 
@@ -66,7 +71,4 @@
 
 ### Backlog (ideas, sin fecha)
 
-- Notificaciones push enriquecidas por tipo de evento.
-- Export / import de colección más allá de Excel.
-- Perfil keeper público: compartir en redes con plantillas i18n.
-- Logo secundario solo para área social (asset + OG).
+- Logo secundario solo para área social (asset + OG), si se decide crear uno distinto a `logo-neon`.
