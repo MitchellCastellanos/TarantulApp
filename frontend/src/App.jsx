@@ -24,7 +24,6 @@ import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
 import KeeperProfilePage from './pages/KeeperProfilePage'
 import { useTranslation } from 'react-i18next'
-import QrBulkPrintPage from './pages/QrBulkPrintPage'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
@@ -101,7 +100,7 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
-      <Route path="/tarantulas/qr-print" element={<PrivateRoute><QrBulkPrintPage /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/herramientas/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/comunidad" element={<PrivateRoute><SocialHubPage /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />

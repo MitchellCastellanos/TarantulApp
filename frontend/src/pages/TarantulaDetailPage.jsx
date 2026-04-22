@@ -303,7 +303,7 @@ export default function TarantulaDetailPage() {
               </div>
               <div className="px-3 pb-3 text-center">
                 <Link
-                  to="/tarantulas/qr-print"
+                  to="/herramientas/qr?mode=bulk"
                   className="small text-decoration-none"
                   style={{ color: 'var(--ta-gold)' }}
                   title={t('dashboard.qrBulkPrintTitle')}

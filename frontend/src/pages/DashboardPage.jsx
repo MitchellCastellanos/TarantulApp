@@ -190,7 +190,7 @@ export default function DashboardPage() {
                   {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
                 </button>
                 <Link
-                  to="/tarantulas/qr-print"
+                  to="/herramientas/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm"
                   title={t('dashboard.qrBulkPrintTitle')}
                 >
@@ -208,7 +208,7 @@ export default function DashboardPage() {
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
-                  to="/tarantulas/qr-print"
+                  to="/herramientas/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title={t('dashboard.qrBulkPrintProOnly')}
                 >
