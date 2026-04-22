@@ -409,42 +409,7 @@ export default function MarketplacePage() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <div className="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
-          <h4 className="mb-0">{t('marketplace.title')}</h4>
-          <div className="d-flex gap-2 flex-wrap">
-            <input
-              className="form-control form-control-sm"
-              placeholder={t('marketplace.searchPlaceholder')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <select className="form-select form-select-sm" value={filters.country}
-              onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-              <option value="">{t('marketplace.anyCountry')}</option>
-              {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="form-select form-select-sm" value={filters.state}
-              onChange={(e) => setFilters((f) => ({ ...f, state: e.target.value, city: '' }))}>
-              <option value="">{t('marketplace.anyState')}</option>
-              {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select className="form-select form-select-sm" value={filters.city}
-              onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}>
-              <option value="">{t('marketplace.anyCity')}</option>
-              {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <div className="form-check d-flex align-items-center ms-1">
-              <input className="form-check-input me-1" type="checkbox" id="nearMe"
-                checked={filters.nearMe} onChange={(e) => setFilters((f) => ({ ...f, nearMe: e.target.checked }))} />
-              <label className="form-check-label small" htmlFor="nearMe">
-                {t('marketplace.nearMe')}
-              </label>
-            </div>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
-              {t('common.search')}
-            </button>
-          </div>
-        </div>
+        <h4 className="mb-3">{t('marketplace.title')}</h4>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
@@ -524,6 +489,92 @@ export default function MarketplacePage() {
             ))}
           </div>
         </section>
+
+        <div className="row g-3 mb-4">
+          <div className="col-lg-4">
+            {user ? (
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body p-3">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 46, height: 46, borderRadius: 999, objectFit: 'cover' }} />
+                    <div className="min-w-0">
+                      <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
+                      <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
+                    </div>
+                  </div>
+                  <div className="small text-muted">
+                    {[myProfile.city, myProfile.state, myProfile.country].filter(Boolean).join(' · ') || 'Ubicacion no definida'}
+                  </div>
+                  {myReputation && (
+                    <div className="small mt-2">
+                      <span className="fw-semibold">{t('marketplace.reputationTitle')}:</span>{' '}
+                      {t('marketplace.reputationLine', { tier: myReputation.tier, score: myReputation.score })}
+                    </div>
+                  )}
+                  <div className="d-flex gap-2 flex-wrap mt-3">
+                    <Link to="/account" className="btn btn-sm btn-outline-secondary">Editar en Cuenta</Link>
+                    {!!(myProfile.handle || user.publicHandle) && (
+                      <Link to={`/u/${encodeURIComponent(myProfile.handle || user.publicHandle)}`} className="btn btn-sm btn-outline-dark">
+                        Ver perfil publico
+                      </Link>
+                    )}
+                  </div>
+                  <p className="small text-muted mb-0 mt-2">
+                    Tu perfil de keeper aparece aqui en compacto para no saturar la barra derecha.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body p-3 small">
+                  <div className="fw-semibold mb-1">Perfil de keeper</div>
+                  <p className="text-muted mb-2">Inicia sesion para activar tu perfil publico y publicar listings.</p>
+                  <Link to="/login" className="btn btn-sm btn-dark">Entrar</Link>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="col-lg-8">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body p-3">
+                <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Buscar listings</h2>
+                <div className="d-flex gap-2 flex-wrap">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.searchPlaceholder')}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                  <select className="form-select form-select-sm" value={filters.country}
+                    onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
+                    <option value="">{t('marketplace.anyCountry')}</option>
+                    {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select className="form-select form-select-sm" value={filters.state}
+                    onChange={(e) => setFilters((f) => ({ ...f, state: e.target.value, city: '' }))}>
+                    <option value="">{t('marketplace.anyState')}</option>
+                    {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select className="form-select form-select-sm" value={filters.city}
+                    onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}>
+                    <option value="">{t('marketplace.anyCity')}</option>
+                    {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <div className="form-check d-flex align-items-center ms-1">
+                    <input className="form-check-input me-1" type="checkbox" id="nearMe"
+                      checked={filters.nearMe} onChange={(e) => setFilters((f) => ({ ...f, nearMe: e.target.checked }))} />
+                    <label className="form-check-label small" htmlFor="nearMe">
+                      {t('marketplace.nearMe')}
+                    </label>
+                  </div>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
+                    {t('common.search')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
           <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Peer listings</h2>
@@ -694,41 +745,6 @@ export default function MarketplacePage() {
                         {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                       </button>
                     </form>
-                  </div>
-                </div>
-
-                <div className="card border-0 shadow-sm mb-3">
-                  <div className="card-body small">
-                    <h6 className="mb-1">{t('marketplace.keeperProfileTitle')}</h6>
-                    <p className="text-muted mb-2">Este panel ahora es solo lectura en Marketplace.</p>
-                    {myReputation && (
-                      <div className="p-2 rounded mb-2 ta-marketplace-reputation-strip">
-                        <div className="small fw-semibold">
-                          {t('marketplace.reputationTitle')}: {t('marketplace.reputationLine', { tier: myReputation.tier, score: myReputation.score })}
-                        </div>
-                        <div className="progress mt-1" style={{ height: 7 }}>
-                          <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(myReputation.score || 0))}%` }} />
-                        </div>
-                      </div>
-                    )}
-                    {myBadgesProgress && (
-                      <div className="mb-2">
-                        {Object.entries(myBadgesProgress).map(([key, p]) => {
-                          const target = Number(p?.target || 0)
-                          const current = Number(p?.current || 0)
-                          const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
-                          return (
-                            <div key={key} className="mb-1">
-                              <div className="small">{p?.nextLabel}</div>
-                              <div className="progress" style={{ height: 5 }}>
-                                <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <Link className="btn btn-sm btn-outline-dark w-100" to="/account">Editar keeper profile</Link>
                   </div>
                 </div>
 
