@@ -422,7 +422,12 @@ export default function SocialHubPage() {
     >
       <div className="d-flex justify-content-between gap-2 flex-wrap">
         <div className="small text-muted">
-          {(p.authorDisplayName || p.authorHandle || 'keeper') + '\u00a0\u00b7\u00a0'}
+          {p.authorHandle ? (
+            <Link to={`/u/${encodeURIComponent(p.authorHandle)}`} className="text-decoration-none">
+              @{p.authorHandle}
+            </Link>
+          ) : (p.authorDisplayName || 'keeper')}
+          {'\u00a0\u00b7\u00a0'}
           <span className="text-uppercase" style={{ fontSize: '0.65rem' }}>{p.visibility}</span>
         </div>
         <div className="d-flex gap-1 flex-wrap">

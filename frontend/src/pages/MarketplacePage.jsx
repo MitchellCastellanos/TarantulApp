@@ -202,7 +202,6 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
   const [uploadingListingImage, setUploadingListingImage] = useState(false)
-  const [savingProfile, setSavingProfile] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
   const [myReputation, setMyReputation] = useState(null)
@@ -294,18 +293,6 @@ export default function MarketplacePage() {
     setMyReputation(profile?.reputation || null)
     setMyBadgesProgress(profile?.badgesProgress || null)
   }
-  const uploadProfilePhoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      const updated = await marketplaceService.uploadProfilePhoto(file)
-      setMyProfile((f) => ({ ...f, profilePhoto: updated?.profilePhoto || '' }))
-      setMessage(t('marketplace.photoUpdated'))
-    } catch (err) {
-      setMessage(err?.response?.data?.error || t('marketplace.error'))
-    }
-  }
-
   const onListingImageFile = useCallback(
     async (e) => {
       const file = e.target.files?.[0]
@@ -386,20 +373,6 @@ export default function MarketplacePage() {
     }
   }
 
-  const saveProfile = async (e) => {
-    e.preventDefault()
-    setSavingProfile(true)
-    setMessage('')
-    try {
-      await marketplaceService.saveMyProfile(myProfile)
-      setMessage(t('marketplace.profileSaved'))
-    } catch (err) {
-      setMessage(err?.response?.data?.error || t('marketplace.error'))
-    } finally {
-      setSavingProfile(false)
-    }
-  }
-
   const markSold = async (listingId) => {
     await marketplaceService.updateListingStatus(listingId, 'sold')
     await Promise.all([loadPublicListings(), loadMine()])
@@ -475,11 +448,23 @@ export default function MarketplacePage() {
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
-        <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
-          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.pageFocusTitle')}</h2>
-          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
-          <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
-        </div>
+        {user && (
+          <div className="card border-0 shadow-sm mb-3" style={{ maxWidth: 380 }}>
+            <div className="card-body p-3">
+              <div className="d-flex align-items-center gap-2">
+                <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 42, height: 42, borderRadius: 999, objectFit: 'cover' }} />
+                <div className="min-w-0">
+                  <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
+                  <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
+                </div>
+              </div>
+              <div className="small text-muted mt-2">
+                Keeper profile visible en marketplace. Edicion completa desde Cuenta.
+              </div>
+              <Link to="/account" className="btn btn-sm btn-outline-secondary mt-2">Editar en Cuenta</Link>
+            </div>
+          </div>
+        )}
 
         <section className="ta-marketplace-official-strip mb-4" aria-label={t('marketplace.officialTitle')}>
           <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
@@ -540,11 +525,17 @@ export default function MarketplacePage() {
           </div>
         </section>
 
+        <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
+          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Peer listings</h2>
+          <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
+          <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
+        </div>
+
         <div className="row g-4">
           <div className="col-lg-8">
             <div className="mb-3 pb-2 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
-              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.communityTitle')}</h3>
-              <p className="small text-muted mb-0">{t('marketplace.communitySubtitle')}</p>
+              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>Community marketplace listings</h3>
+              <p className="small text-muted mb-0">Peer listings de la comunidad ordenados por relevancia.</p>
             </div>
             <div className="row g-3">
               {loading && <p className="text-muted small">{t('common.loading')}</p>}
@@ -582,7 +573,7 @@ export default function MarketplacePage() {
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
                         {!l.isDemo && (
-                          <Link to={`/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
+                          <Link to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
                             {t('marketplace.viewSeller')}
                           </Link>
                         )}
@@ -707,8 +698,9 @@ export default function MarketplacePage() {
                 </div>
 
                 <div className="card border-0 shadow-sm mb-3">
-                  <div className="card-body">
-                    <h6>{t('marketplace.keeperProfileTitle')}</h6>
+                  <div className="card-body small">
+                    <h6 className="mb-1">{t('marketplace.keeperProfileTitle')}</h6>
+                    <p className="text-muted mb-2">Este panel ahora es solo lectura en Marketplace.</p>
                     {myReputation && (
                       <div className="p-2 rounded mb-2 ta-marketplace-reputation-strip">
                         <div className="small fw-semibold">
@@ -736,35 +728,7 @@ export default function MarketplacePage() {
                         })}
                       </div>
                     )}
-                    <form onSubmit={saveProfile} className="small">
-                      <div className="d-flex align-items-center gap-2 mb-2">
-                        <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="profile" style={{ width: 48, height: 48, borderRadius: 999, objectFit: 'cover' }} />
-                        <input type="file" className="form-control form-control-sm" accept="image/*" onChange={uploadProfilePhoto} />
-                      </div>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldHandle')}
-                        value={myProfile.handle} onChange={(e) => setMyProfile((f) => ({ ...f, handle: e.target.value }))} />
-                      <textarea className="form-control form-control-sm mb-2" rows={2} placeholder={t('marketplace.fieldBio')}
-                        value={myProfile.bio} onChange={(e) => setMyProfile((f) => ({ ...f, bio: e.target.value }))} />
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.country} onChange={(e) => setMyProfile((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-                        {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.state} onChange={(e) => setMyProfile((f) => ({ ...f, state: e.target.value, city: '' }))}>
-                        <option value="">{t('marketplace.fieldState')}</option>
-                        {(STATES_BY_COUNTRY[myProfile.country] || []).map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <select className="form-select form-select-sm mb-2"
-                        value={myProfile.city} onChange={(e) => setMyProfile((f) => ({ ...f, city: e.target.value }))}>
-                        <option value="">{t('marketplace.fieldCity')}</option>
-                        {(CITIES_BY_STATE[myProfile.state] || []).map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldFeatured')}
-                        value={myProfile.featuredCollection} onChange={(e) => setMyProfile((f) => ({ ...f, featuredCollection: e.target.value }))} />
-                      <button className="btn btn-sm btn-outline-dark w-100" disabled={savingProfile}>
-                        {savingProfile ? t('common.saving') : t('marketplace.saveProfile')}
-                      </button>
-                    </form>
+                    <Link className="btn btn-sm btn-outline-dark w-100" to="/account">Editar keeper profile</Link>
                   </div>
                 </div>
 

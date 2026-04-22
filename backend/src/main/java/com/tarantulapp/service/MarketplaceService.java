@@ -301,6 +301,7 @@ public class MarketplaceService {
         out.put("id", l.getId());
         out.put("sellerUserId", l.getSellerUserId());
         out.put("sellerName", seller == null ? "Keeper" : (seller.getDisplayName() == null || seller.getDisplayName().isBlank() ? seller.getEmail() : seller.getDisplayName()));
+        out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
         out.put("speciesName", l.getSpeciesName() == null ? "" : l.getSpeciesName());

@@ -42,6 +42,9 @@ public class PublicUserController {
         m.put("id", u.getId());
         m.put("displayName", u.getDisplayName() != null ? u.getDisplayName() : "");
         m.put("publicHandle", u.getPublicHandle());
+        m.put("bio", u.getBio() != null ? u.getBio() : "");
+        m.put("location", u.getLocation() != null ? u.getLocation() : "");
+        m.put("profilePhoto", u.getProfilePhoto() != null ? u.getProfilePhoto() : "");
         return ResponseEntity.ok(m);
     }
 
