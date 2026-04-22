@@ -23,6 +23,7 @@ import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
 import KeeperProfilePage from './pages/KeeperProfilePage'
+import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
@@ -94,6 +95,8 @@ function AppRoutes() {
       <Route path="/herramientas/qr" element={<QrToolPage />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
+      <Route path="/launch" element={<LaunchRegistrationPage />} />
+      <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
       <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
       <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
 

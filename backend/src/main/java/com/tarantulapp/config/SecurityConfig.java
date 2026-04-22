@@ -92,6 +92,8 @@ public class SecurityConfig {
                                 "/privacy",
                                 "/terms",
                                 "/pro",
+                                "/launch",
+                                "/launch_registration",
                                 "/descubrir",
                                 "/descubrir/**",
                                 "/herramientas/qr",
