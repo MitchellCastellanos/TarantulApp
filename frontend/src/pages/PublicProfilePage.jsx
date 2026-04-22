@@ -87,9 +87,11 @@ export default function PublicProfilePage() {
   const timelinePage = timeline.slice(historyPageStart, historyPageStart + PARCHMENT_HISTORY_PAGE_SIZE)
   const showHistoryPager = timeline.length > PARCHMENT_HISTORY_PAGE_SIZE
 
-  const isOwner = !!(user && profile && String(user.id) === String(profile.ownerId))
-  /** Pro o periodo de prueba activo: mismas capacidades que Pro (p. ej. registro rápido desde QR). */
-  const hasProFeatures = user?.hasProFeatures === true
+  /** El backend marca al dueño con el JWT de la petición (más fiable que comparar UUID en el cliente). */
+  const isOwner = profile?.viewerIsOwner === true
+    || !!(user && profile?.ownerId != null && String(user.id) === String(profile.ownerId))
+  /** Pro o periodo de prueba: no depender solo de {@code user.hasProFeatures} por si la sesión quedó desactualizada. */
+  const hasProFeatures = (String(user?.plan || 'FREE').trim().toUpperCase() === 'PRO') || user?.inTrial === true
   const canUseQrQuickLog = isOwner && hasProFeatures
 
   const doSave = async (fn) => {
@@ -382,17 +384,24 @@ export default function PublicProfilePage() {
         </div>
         </div>
 
-        {/* ─── Teaser para propietarios free ─────────────── */}
+        {/* ─── Plan Free: ficha + historial por QR, sin mutaciones; edición desde la colección ─── */}
         {isOwner && !hasProFeatures && (
           <FangPanel>
           <div className="card shadow-sm">
             <div className="card-body p-3 text-center">
-              <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🔒</div>
+              <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>📋</div>
               <p className="fw-semibold mb-1 small" style={{ color: 'var(--ta-brown)' }}>
-                {t('public.quickActionsProTitle')}
+                {t('public.freeOwnerQrReadOnlyTitle')}
               </p>
-              <p className="text-muted small mb-3">{t('public.quickActionsProCTA')}</p>
-              <ProTrialCtaLink className="btn btn-sm px-3 align-self-center">
+              <p className="text-muted small mb-3">{t('public.freeOwnerQrReadOnlyBody')}</p>
+              <Link
+                to={`/tarantulas/${profile.tarantulaId}`}
+                className="btn btn-sm btn-dark w-100 mb-3"
+              >
+                {t('public.freeOwnerOpenInCollection')}
+              </Link>
+              <p className="text-muted small mb-2">{t('public.quickActionsProCTA')}</p>
+              <ProTrialCtaLink className="btn btn-sm px-3 align-self-center btn-outline-secondary">
                 {t('public.quickActionsUpgrade')}
               </ProTrialCtaLink>
             </div>

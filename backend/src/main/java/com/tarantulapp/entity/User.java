@@ -66,6 +66,9 @@ public class User {
     @Column(name = "trial_ends_at")
     private LocalDateTime trialEndsAt;
 
+    /** Usuario que invitó (referidos); null si registro orgánico. */
+    @Column(name = "referred_by_user_id", columnDefinition = "uuid")
+    private UUID referredByUserId;
 
     @PrePersist
     protected void onCreate() {
@@ -128,5 +131,8 @@ public class User {
 
     public LocalDateTime getTrialEndsAt() { return trialEndsAt; }
     public void setTrialEndsAt(LocalDateTime trialEndsAt) { this.trialEndsAt = trialEndsAt; }
+
+    public UUID getReferredByUserId() { return referredByUserId; }
+    public void setReferredByUserId(UUID referredByUserId) { this.referredByUserId = referredByUserId; }
 
 }

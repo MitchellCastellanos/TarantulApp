@@ -1,12 +1,15 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.entity.ActivityPost;
 import com.tarantulapp.entity.ModerationReport;
 import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.repository.ActivityPostRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.ModerationReportRepository;
 import com.tarantulapp.repository.TarantulaRepository;
+import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.SecurityHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +27,21 @@ public class ModerationService {
     private final ModerationReportRepository moderationReportRepository;
     private final TarantulaRepository tarantulaRepository;
     private final MarketplaceListingRepository marketplaceListingRepository;
+    private final ActivityPostRepository activityPostRepository;
+    private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
 
     public ModerationService(ModerationReportRepository moderationReportRepository,
                              TarantulaRepository tarantulaRepository,
                              MarketplaceListingRepository marketplaceListingRepository,
+                             ActivityPostRepository activityPostRepository,
+                             UserRepository userRepository,
                              SecurityHelper securityHelper) {
         this.moderationReportRepository = moderationReportRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.marketplaceListingRepository = marketplaceListingRepository;
+        this.activityPostRepository = activityPostRepository;
+        this.userRepository = userRepository;
         this.securityHelper = securityHelper;
     }
 
@@ -75,6 +84,24 @@ public class ModerationService {
         moderationReportRepository.save(r);
     }
 
+    @Transactional
+    public void reportActivityPost(UUID postId, String reason, String details) {
+        ActivityPost target = activityPostRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
+        String ref = target.getBody() == null ? "" : target.getBody();
+        if (ref.length() > 80) {
+            ref = ref.substring(0, 80) + "…";
+        }
+        ModerationReport r = new ModerationReport();
+        r.setReporterUserId(securityHelper.tryGetCurrentUserId().orElse(null));
+        r.setTargetType("activity_post");
+        r.setTargetId(target.getId());
+        r.setTargetRef(ref);
+        r.setReason(reason == null || reason.isBlank() ? "other" : reason.trim());
+        r.setDetails(details == null ? null : details.trim());
+        moderationReportRepository.save(r);
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> adminList(String status) {
         List<ModerationReport> rows = (status == null || status.isBlank())
@@ -98,6 +125,18 @@ public class ModerationService {
             marketplaceListingRepository.findById(report.getTargetId()).ifPresent(l -> {
                 l.setStatus("hidden");
                 marketplaceListingRepository.save(l);
+            });
+            report.setStatus("resolved_hidden");
+        } else if ("hide_activity_post".equals(normalizedAction) && report.getTargetId() != null) {
+            activityPostRepository.findById(report.getTargetId()).ifPresent(p -> {
+                p.setHiddenAt(Instant.now());
+                activityPostRepository.save(p);
+            });
+            report.setStatus("resolved_hidden");
+        } else if ("hide_keeper_profile".equals(normalizedAction) && report.getTargetId() != null) {
+            userRepository.findById(report.getTargetId()).ifPresent(u -> {
+                u.setPublicHandle(null);
+                userRepository.save(u);
             });
             report.setStatus("resolved_hidden");
         } else {

@@ -9,8 +9,6 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
-import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -41,17 +39,20 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
+    private final ReferralService referralService;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil, PasswordResetTokenRepository resetTokenRepository,
-                       EmailService emailService, PlanAccessService planAccessService) {
+                       EmailService emailService, PlanAccessService planAccessService,
+                       ReferralService referralService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.resetTokenRepository = resetTokenRepository;
         this.emailService = emailService;
         this.planAccessService = planAccessService;
+        this.referralService = referralService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -65,9 +66,12 @@ public class AuthService {
         user.setPlan(UserPlan.FREE);
         user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
         userRepository.save(user);
-        emailService.sendWelcomeTrialStarted(user.getEmail(), user.getDisplayName(), user.getTrialEndsAt());
-        String token = jwtUtil.generateToken(user.getEmail());
-        return buildAuthResponse(token, user);
+        referralService.applyReferralForNewAccount(user.getId(), request.getReferralCode());
+        referralService.ensureReferralCodeForUser(user.getId());
+        User refreshed = userRepository.findById(user.getId()).orElseThrow();
+        emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
+        String token = jwtUtil.generateToken(refreshed.getEmail());
+        return buildAuthResponse(token, refreshed);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -84,7 +88,7 @@ public class AuthService {
         return buildAuthResponse(token, user);
     }
 
-    public AuthResponse googleLogin(String idToken) {
+    public AuthResponse googleLogin(String idToken, String referralCode) {
         Map<String, Object> tokenInfo;
         try {
             tokenInfo = restClient.get()
@@ -115,8 +119,11 @@ public class AuthService {
             created.setPlan(UserPlan.FREE);
             created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
             User saved = userRepository.save(created);
-            emailService.sendWelcomeTrialStarted(saved.getEmail(), saved.getDisplayName(), saved.getTrialEndsAt());
-            return saved;
+            referralService.applyReferralForNewAccount(saved.getId(), referralCode);
+            referralService.ensureReferralCodeForUser(saved.getId());
+            User refreshed = userRepository.findById(saved.getId()).orElseThrow();
+            emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
+            return refreshed;
         });
 
         String token = jwtUtil.generateToken(user.getEmail());

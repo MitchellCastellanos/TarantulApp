@@ -2,6 +2,8 @@ package com.tarantulapp.config;
 
 import com.tarantulapp.util.JwtUtil;
 import com.tarantulapp.security.AuthRateLimitFilter;
+import com.tarantulapp.security.ChatMessageRateLimitFilter;
+import com.tarantulapp.security.PublicFeedRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +47,17 @@ public class SecurityConfig {
     private String allowedOriginsStr;
 
     @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+        return new JwtAuthFilter(jwtUtil, userDetailsService);
+    }
+
+    @Bean
     @Order(1)
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtil jwtUtil, UserDetailsService userDetailsService,
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter,
                                            AuthRateLimitFilter authRateLimitFilter,
+                                           PublicFeedRateLimitFilter publicFeedRateLimitFilter,
+                                           ChatMessageRateLimitFilter chatMessageRateLimitFilter,
                                             CorsConfigurationSource corsConfigurationSource) throws Exception {
-        JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtUtil, userDetailsService);
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
@@ -78,8 +86,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gbif/search", "/api/wsc/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gbif/**", "/api/wsc/**").permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(publicFeedRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class)
+                .addFilterAfter(chatMessageRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .accessDeniedHandler((req, res, exDenied) -> {
                             if (log.isWarnEnabled()) {

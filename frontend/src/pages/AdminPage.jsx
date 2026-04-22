@@ -50,6 +50,8 @@ export default function AdminPage() {
 
   const hideActionForReport = (report) => {
     if (report?.targetType === 'marketplace_listing') return 'hide_listing'
+    if (report?.targetType === 'activity_post') return 'hide_activity_post'
+    if (report?.targetType === 'keeper_profile') return 'hide_keeper_profile'
     return 'hide_tarantula'
   }
 
@@ -199,6 +201,7 @@ export default function AdminPage() {
                 <thead>
                   <tr>
                     <th>{t('admin.target')}</th>
+                    <th>{t('admin.targetType')}</th>
                     <th>{t('admin.reason')}</th>
                     <th>{t('admin.details')}</th>
                     <th>{t('admin.created')}</th>
@@ -209,6 +212,7 @@ export default function AdminPage() {
                   {reports.map((r) => (
                     <tr key={r.id}>
                       <td>{r.targetRef || r.targetId || '-'}</td>
+                      <td className="text-muted small">{r.targetType || '-'}</td>
                       <td>{r.reason}</td>
                       <td>{r.details || '-'}</td>
                       <td>{r.createdAt ? new Date(r.createdAt).toLocaleString() : '-'}</td>

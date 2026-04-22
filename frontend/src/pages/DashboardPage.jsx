@@ -108,10 +108,9 @@ export default function DashboardPage() {
       <Navbar />
       <div className="container mt-4">
         <div
-          className="mb-3 px-3 py-2 rounded-1 small"
+          className="mb-3 px-3 py-2 rounded-1 small ta-dashboard-atmosphere-strip"
           style={{
             borderLeft: '3px solid rgba(200, 170, 80, 0.55)',
-            background: 'linear-gradient(90deg, rgba(40, 32, 18, 0.55) 0%, rgba(22, 18, 12, 0.2) 100%)',
             color: 'var(--ta-parchment)',
             fontFamily: 'Georgia, "Times New Roman", serif',
             letterSpacing: '0.02em',
@@ -328,7 +327,7 @@ export default function DashboardPage() {
         ) : tarantulas.length === 0 ? (
           <div className="card border-0 shadow-sm text-center py-5">
             <div className="d-flex justify-content-center mb-3">
-              <BrandLogoMark size={56} showIntro={false} />
+              <BrandLogoMark size={56} showIntro />
             </div>
             <p className="fw-semibold mb-1">{t('dashboard.empty')}</p>
             <p className="text-collection small mb-3">{t('dashboard.emptyDesc')}</p>
