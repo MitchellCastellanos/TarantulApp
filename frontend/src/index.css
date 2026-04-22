@@ -90,15 +90,25 @@ body::after {
   transform: translateY(-50%);
   width: min(22vw, 11rem);
   height: min(22vw, 11rem);
-  border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(circle at 40% 40%, rgba(160, 124, 48, 0.11) 0%, transparent 72%);
-  opacity: 0.85;
-  filter: blur(0.5px);
+  background-image:
+    var(--ta-url-spider-silhouette, url('/card-spider-silhouette.png')),
+    radial-gradient(circle at 40% 40%, rgba(160, 124, 48, 0.08) 0%, transparent 74%);
+  background-size: contain, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  opacity: 0.22;
+  filter: saturate(0.78) contrast(1.06) brightness(0.93) blur(0.15px);
 }
 body::before { left: -2rem; }
 body::after { right: -2rem; }
+
+:root[data-theme='light'] body::before,
+:root[data-theme='light'] body::after {
+  opacity: 0.14;
+  filter: sepia(0.28) saturate(1.05) contrast(1.12) brightness(0.78) blur(0.1px);
+}
 
 /* ─── Cards — dark obsidian with purple glow ───────────────────────────── */
 
@@ -955,9 +965,10 @@ a.text-collection:hover {
   z-index: 1;
   width: min(38%, 200px);
   height: auto;
-  opacity: 0.16;
+  opacity: 0.3;
   pointer-events: none;
   object-fit: contain;
+  filter: saturate(0.95) contrast(1.08) brightness(0.92);
 }
 .ta-chitin-frame__silhouette--l {
   left: 0;
@@ -967,6 +978,11 @@ a.text-collection:hover {
   right: 0;
   top: 22%;
   transform: scaleX(-1);
+}
+
+:root[data-theme='light'] .ta-chitin-frame__silhouette {
+  opacity: 0.2;
+  filter: sepia(0.34) saturate(1.02) contrast(1.12) brightness(0.74);
 }
 
 .ta-chitin-frame__content {
