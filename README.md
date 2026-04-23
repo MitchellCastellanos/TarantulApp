@@ -108,3 +108,11 @@ Importante:
 Pipeline en `.github/workflows/ci.yml`:
 - Job backend: `mvn -B clean test`
 - Job frontend: `npm run test:e2e` (incluye build + smoke Playwright)
+
+## GitHub Pages (si lo tienes encendido)
+
+Si en el repo activaste **GitHub Pages** con publicacion desde la rama `main` (raiz o `/docs`), GitHub intenta pasar el contenido por **Jekyll** y aparece el workflow `pages-build-deployment` con logs de `jekyll-theme-primer`.
+
+Este proyecto **no es un sitio Jekyll**: el frontend es Vite/React en `frontend/`. En la raiz hay un archivo **`.nojekyll`** para indicar a Pages que **no** use Jekyll y sirva archivos estaticos tal cual.
+
+Si solo quieres hosting del SPA compilado, lo habitual es publicar `frontend/dist` con **GitHub Actions** (Settings > Pages > Source: GitHub Actions) y un workflow propio; si no usas Pages, desactivalo en Settings para evitar builds extra.
