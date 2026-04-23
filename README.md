@@ -16,16 +16,43 @@ Repositorio monorepo de TarantulApp con:
 
 ### 1) Backend
 
-1. Copia `backend/database.local.env.SAMPLE` a `backend/database.local.env` y completa variables.
-2. Ajusta `backend/src/main/resources/application.properties` o crea un profile local segun tu entorno.
-3. Ejecuta:
+Necesitas **PostgreSQL** y un archivo local **solo en tu PC** (no se sube a git):
+
+1. **Docker (recomendado)** — una vez; cambia `TU_PASSWORD_DOCKER` por la clave que quieras (la misma luego en el paso 2):
+
+```bash
+docker run --name tarantulapp-pg -e POSTGRES_PASSWORD=TU_PASSWORD_DOCKER -e POSTGRES_DB=tarantulapp -p 5432:5432 -d postgres:16
+```
+
+2. Copia `backend/src/main/resources/application-local.properties.SAMPLE` a `backend/src/main/resources/application-local.properties` y sustituye `TU_PASSWORD_DOCKER` en `spring.datasource.password` por la misma del paso 1. Si cambiaste base o puerto, ajusta `spring.datasource.url` (ver comentarios en el `.SAMPLE`).
+
+3. Arranca el API (el perfil `local` suele ir ya en `application-local.properties`; si quieres forzarlo por CLI):
 
 ```bash
 cd backend
-mvn clean spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
+En **Windows PowerShell** hay que **entrecomillar** el `-D` o Maven recibe mal el argumento (`Unknown lifecycle phase ".run.profiles=local"`):
+
+```powershell
+cd backend
+mvn "-Dspring-boot.run.profiles=local" spring-boot:run
+```
+
+Alternativa sin `-D`: `$env:SPRING_PROFILES_ACTIVE="local"; mvn spring-boot:run`
+
+**Supabase en local:** en `application-local.properties` comenta el bloque Docker y descomenta el de Supabase; datos del panel (Direct), no inventados. Detalle en el `.SAMPLE`.
+
+**Produccion (Railway, etc.):** sigue usando variables `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` en el panel del host; no uses `application-local.properties` alli.
+
 Flyway corre automaticamente al iniciar el backend.
+
+**Windows / OneDrive — problemas al arrancar el backend**
+
+- **`Found more than one migration with version 35` apuntando a `target\classes\db\migration`:** en `src\main\resources\db\migration` no debería haber dos `V35__...`; el duplicado suele ser un **.sql viejo** que quedó solo en `backend\target` tras renombrar un archivo. Borra la carpeta **`backend\target`** entera y vuelve a compilar (ver siguiente punto si `mvn clean` falla).
+
+- **`mvn clean` no puede borrar `target\...` (p. ej. `mockito-extensions`):** algún proceso tiene archivos abiertos (Java/Spring aún en ejecución, IDE, indexador). Cierra la app, el terminal que dejó colgado `spring-boot:run`, y en el Administrador de tareas termina procesos **`java.exe`**. Luego borra **a mano** la carpeta `backend\target` en el Explorador o con PowerShell: `Remove-Item -Recurse -Force .\target` desde `backend`. Si el repo está en OneDrive y sigue bloqueado, prueba “Pausar sincronización” un momento o reiniciar.
 
 ### 2) Frontend
 

@@ -125,6 +125,8 @@ export default function DiscoverPage() {
 
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [selectedFallbackPhoto, setSelectedFallbackPhoto] = useState(null)
+  /** Stored {@code reference_photo_url} failed to load — allow client iNat/GBIF fallback fetch. */
+  const [dbSpeciesRefBroken, setDbSpeciesRefBroken] = useState(false)
   const [panelKind, setPanelKind] = useState(null)
   const [taxonPreview, setTaxonPreview] = useState(null)
   const [panelLoading, setPanelLoading] = useState(false)
@@ -211,10 +213,15 @@ export default function DiscoverPage() {
     }
   }, [token])
 
+  useEffect(() => {
+    setDbSpeciesRefBroken(false)
+  }, [selectedSpecies?.id])
+
   const clearSelection = () => {
     resetSuggestions()
     setSelectedSpecies(null)
     setSelectedFallbackPhoto(null)
+    setDbSpeciesRefBroken(false)
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
@@ -228,6 +235,7 @@ export default function DiscoverPage() {
     resetSuggestions()
     setSelectedSpecies(null)
     setSelectedFallbackPhoto(null)
+    setDbSpeciesRefBroken(false)
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
@@ -453,7 +461,8 @@ export default function DiscoverPage() {
   useEffect(() => {
     if (!selectedSpecies) return
     if (selectedFallbackPhoto?.url) return
-    const hasRef = selectedSpecies.referencePhotoUrl && String(selectedSpecies.referencePhotoUrl).trim() !== ''
+    const hasRef =
+      Boolean(selectedSpecies.referencePhotoUrl?.trim()) && !dbSpeciesRefBroken
     if (hasRef) return
 
     const name = (selectedSpecies.scientificName || '').trim()
@@ -487,7 +496,7 @@ export default function DiscoverPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedSpecies, selectedFallbackPhoto?.url, activeGbifKey])
+  }, [selectedSpecies, selectedFallbackPhoto?.url, activeGbifKey, dbSpeciesRefBroken])
 
   return (
     <PublicShell>
@@ -700,6 +709,7 @@ export default function DiscoverPage() {
                 species={selectedSpecies}
                 tarantula={{ profilePhoto: null }}
                 fallbackPhoto={selectedFallbackPhoto}
+                onStoredReferencePhotoError={() => setDbSpeciesRefBroken(true)}
                 t={t}
               />
             </ChitinCardFrame>

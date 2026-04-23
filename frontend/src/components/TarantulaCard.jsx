@@ -6,23 +6,15 @@ import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
-const defaultSpiderStyle = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'contain',
-  objectPosition: 'center',
-  opacity: 0.95,
-  padding: '4px',
-  boxSizing: 'border-box',
-}
 
 export default function TarantulaCard({ tarantula }) {
   const { t } = useTranslation()
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
-  // Use own photo first, then species reference photo from iNaturalist, then placeholder
-  const displayPhoto = profilePhoto
+  const placeholder = publicUrl('spider-default.png')
+  // Own upload first, then species reference (DB / iNat URL), then placeholder; broken URLs fall back on error.
+  const primarySrc = profilePhoto
     ? imgUrl(profilePhoto)
-    : species?.referencePhotoUrl ?? null
+    : imgUrl(species?.referencePhotoUrl) || placeholder
 
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
@@ -31,21 +23,23 @@ export default function TarantulaCard({ tarantula }) {
         {/* Foto o placeholder */}
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative"
              style={{ height: '160px', background: 'linear-gradient(135deg, #0c0c1e 0%, #1a1040 100%)' }}>
-          {displayPhoto ? (
-            <>
-              <img src={displayPhoto} alt={name}
-                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              {!profilePhoto && species?.referencePhotoUrl && (
-                <span className="position-absolute bottom-0 end-0 m-1 badge"
-                      style={{ background: 'rgba(0,0,0,0.6)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
-                      title={t('species.refPhoto')}>
-                  {t('species.refPhotoLabel')}
-                </span>
-              )}
-            </>
-          ) : (
-            <img src={publicUrl('spider-default.png')} alt="spider"
-                 style={defaultSpiderStyle} />
+          <img
+            src={primarySrc}
+            alt={name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.onerror = null
+              e.currentTarget.src = placeholder
+            }}
+          />
+          {!profilePhoto && species?.referencePhotoUrl?.trim() && (
+            <span
+              className="position-absolute bottom-0 end-0 m-1 badge"
+              style={{ background: 'rgba(0,0,0,0.6)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
+              title={t('species.refPhoto')}
+            >
+              {t('species.refPhotoLabel')}
+            </span>
           )}
         </div>
 
