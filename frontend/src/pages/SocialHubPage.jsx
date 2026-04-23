@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -39,6 +39,10 @@ export default function SocialHubPage() {
     tarantulaId: '',
   })
   const [composerOpen, setComposerOpen] = useState(false)
+  /** Solo true al abrir desde el carrusel de temas: evita scroll brusco al usar el botón normal del feed. */
+  const pendingComposerScrollRef = useRef(false)
+  const composerSectionRef = useRef(null)
+  const composerBodyRef = useRef(null)
   const [myTarantulas, setMyTarantulas] = useState([])
   const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
@@ -135,6 +139,46 @@ export default function SocialHubPage() {
       }
     }
   }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id, token])
+
+  useEffect(() => {
+    if (!token) return
+    if (!composerOpen) {
+      pendingComposerScrollRef.current = false
+      return
+    }
+    if (!pendingComposerScrollRef.current) return
+    pendingComposerScrollRef.current = false
+    let cancelled = false
+    const id1 = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (cancelled) return
+        composerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const ta = composerBodyRef.current
+        if (ta && typeof ta.focus === 'function') {
+          ta.focus({ preventScroll: true })
+        }
+      })
+    })
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(id1)
+    }
+  }, [token, composerOpen])
+
+  const openComposerFromTopic = useCallback(
+    (bodyPrefix) => {
+      if (!token) {
+        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+        return
+      }
+      setErr('')
+      setMsg('')
+      pendingComposerScrollRef.current = true
+      setComposer((c) => ({ ...c, body: bodyPrefix, visibility: 'public' }))
+      setComposerOpen(true)
+    },
+    [token, navigate]
+  )
 
   const submitPost = async (e) => {
     e.preventDefault()
@@ -540,14 +584,7 @@ export default function SocialHubPage() {
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
-                    onClick={() => {
-                      if (!token) {
-                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
-                        return
-                      }
-                      setComposer((c) => ({ ...c, body: 'Is my enclosure missing anything?\n\n', visibility: 'public' }))
-                      setComposerOpen(true)
-                    }}
+                    onClick={() => openComposerFromTopic('Is my enclosure missing anything?\n\n')}
                   >
                     {t('social.createDiscussion')}
                   </button>
@@ -558,14 +595,7 @@ export default function SocialHubPage() {
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
-                    onClick={() => {
-                      if (!token) {
-                        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
-                        return
-                      }
-                      setComposer((c) => ({ ...c, body: 'Is my spider okay?\n\n', visibility: 'public' }))
-                      setComposerOpen(true)
-                    }}
+                    onClick={() => openComposerFromTopic('Is my spider okay?\n\n')}
                   >
                     {t('social.createDiscussion')}
                   </button>
@@ -649,12 +679,14 @@ export default function SocialHubPage() {
                 ))}
               </div>
               {token && composerOpen && (
-                <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-3">
+                <div ref={composerSectionRef} className="mb-3">
+                  <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-0">
                   <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
                     <div className="card-body py-3 px-3 px-md-4">
                       <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
                       <form onSubmit={submitPost} className="small">
                         <textarea
+                          ref={composerBodyRef}
                           className="form-control form-control-sm mb-2"
                           rows={3}
                           required
@@ -715,6 +747,7 @@ export default function SocialHubPage() {
                     </div>
                   </div>
                 </ChitinCardFrame>
+                </div>
               )}
 
               <div className="row g-3">
