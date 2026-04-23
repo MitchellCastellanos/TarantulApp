@@ -56,6 +56,47 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
+## Android Studio (Capacitor)
+
+El proyecto Android vive en `frontend/android` y es generado/sincronizado desde el frontend web.
+
+Flujo recomendado:
+
+```bash
+cd frontend
+npm ci
+npm run build
+npx cap sync android
+npx cap open android
+```
+
+Notas:
+- Si cambias codigo web (React/Vite), vuelve a correr `npm run build` + `npx cap sync android`.
+- Abre Android Studio siempre sobre `frontend/android` (no sobre la raiz del repo).
+- El package id actual es `com.tarantulapp.app` (ver `frontend/capacitor.config.ts` y `frontend/android/app/build.gradle`).
+- Si usas notificaciones push, agrega `google-services.json` en `frontend/android/app/`.
+
+## Branching recomendado (simple y estable)
+
+Para evitar drift entre ramas:
+
+- `main`: estable / release candidate.
+- `dev_mitch_android`: rama de integracion diaria (web + Android).
+- `feature/*`: ramas cortas por tarea, saliendo de `dev_mitch_android`.
+- `hotfix/*`: fixes urgentes, salen de `main` y luego se backportean a `dev_mitch_android`.
+
+Flujo diario sugerido:
+
+1. Crear `feature/<tema>` desde `dev_mitch_android`.
+2. Hacer cambios y PR a `dev_mitch_android`.
+3. Validar backend + frontend + Android sync (`npm run build && npx cap sync android`).
+4. Cuando toque release, merge/cherry-pick limpio de `dev_mitch_android` a `main`.
+
+Importante:
+- Evita trabajar en paralelo en varias ramas largas (`claude/*`, `dev/*`, `main`) para la misma feature.
+- Si necesitas ramas auxiliares de IA, usalas temporales y luego consolida todo en `dev_mitch_android`.
+- Mantener una sola rama de integracion reduce conflictos de SQL/migraciones y de assets Android.
+
 ## Migraciones y base de datos
 
 - Las migraciones SQL viven en `backend/src/main/resources/db/migration`.
