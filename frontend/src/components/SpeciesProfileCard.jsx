@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getSpeciesCatalogOverride } from '../data/speciesCatalogTranslations'
 import { toSpeciesSlug } from '../utils/speciesSlug'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
-import { imgUrl } from '../services/api'
+import SpeciesReferenceImage from './SpeciesReferenceImage'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const LEVEL_COLOR = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
@@ -69,8 +70,19 @@ function LevelChitin({ badgeColor, label }) {
   )
 }
 
-export default function SpeciesProfileCard({ species, tarantula, t, fallbackPhoto = null }) {
+export default function SpeciesProfileCard({
+  species,
+  tarantula,
+  t,
+  fallbackPhoto = null,
+  onStoredReferencePhotoError,
+}) {
   const { i18n } = useTranslation()
+  const [storedFailed, setStoredFailed] = useState(false)
+
+  useEffect(() => {
+    setStoredFailed(false)
+  }, [species.id, species.referencePhotoUrl])
   const slug = toSpeciesSlug(species.scientificName)
   const catalog = getSpeciesCatalogOverride(slug, i18n.language)
   const lang = i18n.language
@@ -93,7 +105,9 @@ export default function SpeciesProfileCard({ species, tarantula, t, fallbackPhot
     : t('common.unknown')
   const badgeColor = LEVEL_COLOR[species.experienceLevel] ?? 'secondary'
 
-  const displayPhotoUrl = imgUrl(species.referencePhotoUrl || fallbackPhoto?.url)
+  const showPhotoSection =
+    !tarantula.profilePhoto &&
+    (Boolean(species.referencePhotoUrl?.trim()) || Boolean(fallbackPhoto?.url))
 
   return (
     <>
@@ -104,19 +118,26 @@ export default function SpeciesProfileCard({ species, tarantula, t, fallbackPhot
         <SourceCatalog species={species} t={t} />
       </div>
 
-      {displayPhotoUrl && !tarantula.profilePhoto && (
+      {showPhotoSection && (
         <div className="mb-3 text-center position-relative">
-          <img
-            src={displayPhotoUrl}
+          <SpeciesReferenceImage
+            storedUrl={species.referencePhotoUrl}
+            fallbackUrl={fallbackPhoto?.url}
             alt={species.scientificName}
             className="rounded w-100"
             style={{ maxHeight: 180, objectFit: 'cover' }}
+            onStoredUrlFailed={() => {
+              setStoredFailed(true)
+              onStoredReferencePhotoError?.()
+            }}
           />
           <div className="text-muted" style={{ fontSize: '0.65rem', marginTop: 2 }}>
             {t('species.refPhoto')}
-            {!species.referencePhotoUrl && fallbackPhoto?.source ? ` · ${fallbackPhoto.source.toUpperCase()}` : ''}
+            {(!species.referencePhotoUrl?.trim() || storedFailed) && fallbackPhoto?.source
+              ? ` · ${fallbackPhoto.source.toUpperCase()}`
+              : ''}
           </div>
-          {!species.referencePhotoUrl && fallbackPhoto?.attribution && (
+          {(!species.referencePhotoUrl?.trim() || storedFailed) && fallbackPhoto?.attribution && (
             <div className="text-muted" style={{ fontSize: '0.6rem', marginTop: 2 }}>
               {fallbackPhoto.attribution}
               {fallbackPhoto.licenseCode ? ` · ${fallbackPhoto.licenseCode}` : ''}
