@@ -74,8 +74,7 @@ public class DiscoverCatalogService {
         SpeciesDTO s = opt.get();
         DiscoverLocalSpeciesViewDTO view = new DiscoverLocalSpeciesViewDTO();
         view.setSpecies(s);
-        if (s.getScientificName() != null
-                && (s.getReferencePhotoUrl() == null || s.getReferencePhotoUrl().isBlank())) {
+        if (s.getScientificName() != null && lacksBlockingReferencePhoto(s.getReferencePhotoUrl())) {
             inatService.resolveDiscoverPhoto(s.getScientificName()).ifPresent(view::setFallbackPhoto);
             if (view.getFallbackPhoto() == null && s.getId() != null) {
                 for (SpeciesSynonym syn : speciesSynonymRepository.findAllBySpeciesId(s.getId())) {
@@ -89,6 +88,18 @@ public class DiscoverCatalogService {
             }
         }
         return Optional.of(view);
+    }
+
+    /**
+     * When {@code reference_photo_url} is missing, blank, or not an absolute {@code http(s)} URL,
+     * the API may still resolve a community photo (iNat) instead of serving a broken relative value.
+     */
+    static boolean lacksBlockingReferencePhoto(String referencePhotoUrl) {
+        if (referencePhotoUrl == null || referencePhotoUrl.isBlank()) {
+            return true;
+        }
+        String t = referencePhotoUrl.trim();
+        return !(t.startsWith("http://") || t.startsWith("https://"));
     }
 
     public static boolean isPublicCatalogRow(Species s) {

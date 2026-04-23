@@ -24,15 +24,6 @@ import { exportTarantulaPdf } from '../services/pdfExportService'
 import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
-const defaultSpiderStyle = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'contain',
-  objectPosition: 'center',
-  opacity: 0.95,
-  padding: '6px',
-  boxSizing: 'border-box',
-}
 
 export default function TarantulaDetailPage() {
   const { id } = useParams()
@@ -131,9 +122,10 @@ export default function TarantulaDetailPage() {
   )
 
   const { species } = tarantula
+  const spiderPlaceholder = publicUrl('spider-default.png')
   const displayProfilePhoto = tarantula.profilePhoto
     ? imgUrl(tarantula.profilePhoto)
-    : (species?.referencePhotoUrl ?? null)
+    : imgUrl(species?.referencePhotoUrl) || spiderPlaceholder
 
   // ─── Terrarium recommendation ──────────────────────────────────────────────
   const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
@@ -204,13 +196,15 @@ export default function TarantulaDetailPage() {
               {/* Foto */}
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                    style={{ height: 220, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
-                {displayProfilePhoto ? (
-                  <img src={displayProfilePhoto} alt={tarantula.name}
-                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <img src={publicUrl('spider-default.png')} alt="spider"
-                       style={defaultSpiderStyle} />
-                )}
+                <img
+                  src={displayProfilePhoto}
+                  alt={tarantula.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null
+                    e.currentTarget.src = spiderPlaceholder
+                  }}
+                />
               </div>
 
               <div className="card-body">
