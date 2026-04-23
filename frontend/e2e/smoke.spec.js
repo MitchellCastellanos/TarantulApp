@@ -21,9 +21,10 @@ test.describe('Sprint 1 public routes', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 
-  test('Community route redirects to login when logged out', async ({ page }) => {
+  test('Community route is public when logged out (no redirect to login)', async ({ page }) => {
     await page.goto('/comunidad')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/comunidad/)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 })
 
