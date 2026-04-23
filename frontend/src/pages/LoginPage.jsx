@@ -169,6 +169,12 @@ export default function LoginPage() {
   }, [googleClientId])
 
   const isLight = theme === 'light'
+  const loginFeatures = [
+    { title: t('auth.loginPage.featureDiscoverTitle'), bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')] },
+    { title: t('auth.loginPage.featureCollectionTitle'), bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')] },
+    { title: t('auth.loginPage.featureMarketplaceTitle'), bullets: [t('auth.loginPage.featureMarketplaceB1'), t('auth.loginPage.featureMarketplaceB2')] },
+    { title: t('auth.loginPage.featureCommunityTitle'), bullets: [t('auth.loginPage.featureCommunityB1'), t('auth.loginPage.featureCommunityB2')] },
+  ]
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
@@ -191,33 +197,27 @@ export default function LoginPage() {
                 <BrandLogoMark size={56} showIntro />
                 <div>
                   <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
-                    Keeper operating system
+                    {t('auth.loginPage.heroEyebrow')}
                   </p>
-                  <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>TarantulApp</h1>
+                  <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('auth.loginTitle')}</h1>
                 </div>
               </div>
               <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
-                Tu colección, comunidad y marketplace en un solo flujo.
+                {t('auth.loginPage.heroTagline')}
               </h2>
               <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.6 }}>
-                Sin ruido visual ni pantallas de relleno. Solo herramientas reales: Discover oficial, control diario de ejemplares,
-                QR por terrario, comunidad pública y capa comercial lista para escalar.
+                {t('auth.loginPage.heroLead')}
               </p>
               <div className="d-flex flex-wrap gap-2">
-                <Link to="/descubrir" className="btn btn-sm btn-outline-light">Discover</Link>
-                <Link to="/marketplace" className="btn btn-sm btn-outline-light">Marketplace</Link>
-                <Link to="/comunidad" className="btn btn-sm btn-dark">Comunidad pública</Link>
+                <Link to="/descubrir" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
+                <Link to="/comunidad" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
               </div>
             </div>
 
             <div className="row g-3 mb-3">
-              {[
-                ['Discover', ['Catálogos oficiales y taxonomía limpia.', 'Comparación de especies para decisiones keeper (Pro).']],
-                ['Your Collection', ['Logs de feeding/muda/comportamiento por ejemplar.', 'QR single y QR masivo Word para terrarios (Pro).']],
-                ['Marketplace', ['Listings locales + chat seller-buyer.', 'Socios certificados y perfil keeper con reputación.']],
-                ['Community', ['Feed público para que cualquiera vea valor.', 'Participación activa con sesión: publicar, comentar, votar.']],
-              ].map(([title, bullets]) => (
-                <div className="col-12 col-md-6" key={title}>
+              {loginFeatures.map((block) => (
+                <div className="col-12 col-md-6" key={block.title}>
                   <div
                     className="h-100 rounded-3 p-3"
                     style={{
@@ -225,9 +225,9 @@ export default function LoginPage() {
                       background: isLight ? 'rgba(255,250,240,0.9)' : 'rgba(26,22,17,0.78)',
                     }}
                   >
-                    <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{title}</h3>
+                    <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{block.title}</h3>
                     <ul className="small mb-0 ps-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
-                      {bullets.map((b) => <li key={b}>{b}</li>)}
+                      {block.bullets.map((b) => <li key={b}>{b}</li>)}
                     </ul>
                   </div>
                 </div>
@@ -242,20 +242,20 @@ export default function LoginPage() {
               }}
             >
               <div className="d-flex align-items-center justify-content-between mb-2">
-                <h3 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Vista previa de comunidad</h3>
-                <Link to="/comunidad" className="btn btn-sm btn-outline-secondary">Ver todo</Link>
+                <h3 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('auth.loginPage.previewTitle')}</h3>
+                <Link to="/comunidad" className="btn btn-sm btn-outline-secondary">{t('social.seeAll')}</Link>
               </div>
               <p className="small text-muted mb-3">
-                La comunidad ya es pública: cualquier persona puede leer posts antes de crear cuenta.
+                {t('auth.loginPage.previewLead')}
               </p>
               <div className="row g-2">
                 {communityLoading ? (
                   <div className="col-12">
-                    <div className="small text-muted">Cargando posts...</div>
+                    <div className="small text-muted">{t('auth.loginPage.loadingPosts')}</div>
                   </div>
                 ) : communityPreview.length === 0 ? (
                   <div className="col-12">
-                    <div className="small text-muted">Todavía no hay posts públicos.</div>
+                    <div className="small text-muted">{t('auth.loginPage.noPublicPosts')}</div>
                   </div>
                 ) : (
                   communityPreview.map((p) => (
@@ -268,13 +268,13 @@ export default function LoginPage() {
                         }}
                       >
                         <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || t('auth.loginPage.keeperFallback')}
                         </div>
                         <p className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-                          {(p.body || '').slice(0, 140) || '...'}
+                          {(p.body || '').slice(0, 140) || t('auth.loginPage.postExcerptEmpty')}
                         </p>
                         <div className="small text-muted">
-                          {p.likeCount ?? 0} spoods · {p.commentsCount ?? 0} comentarios
+                          {t('auth.loginPage.postStats', { spoods: p.likeCount ?? 0, comments: p.commentsCount ?? 0 })}
                         </div>
                       </div>
                     </div>
@@ -437,10 +437,10 @@ export default function LoginPage() {
               <BrandLogoMark size={82} showIntro />
             </div>
             <div className="cinzel fw-semibold mb-1" style={{ color: 'var(--ta-parchment)', letterSpacing: '0.08em' }}>
-              TarantulApp
+              {t('auth.loginTitle')}
             </div>
             <div className="small" style={{ color: 'var(--ta-text-muted)' }}>
-              Keeper operating system
+              {t('auth.loginPage.heroEyebrow')}
             </div>
           </div>
           <style>{`@keyframes fadeOutIntro { to { opacity: 0; visibility: hidden; } }`}</style>
