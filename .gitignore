@@ -8,6 +8,7 @@ frontend/dist/
 frontend/.env
 frontend/test-results/
 frontend/playwright-report/
+/package-lock.json
 
 # ─── Secrets / env ──────────────────────────────────────────
 .env
