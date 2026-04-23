@@ -34,27 +34,27 @@ DROP TABLE IF EXISTS _ta_ap_names;
 CREATE TEMP TABLE _ta_ap_names (vname text NOT NULL PRIMARY KEY);
 
 INSERT INTO _ta_ap_names (vname)
-SELECT DISTINCT c.obj
+SELECT DISTINCT sub.obj::text
 FROM (
   WITH RECURSIVE c (obj) AS (
-    SELECT 'activity_posts'::text
+    SELECT 'activity_posts'::text COLLATE "C"
     UNION
-    SELECT u.view_name::text
+    SELECT u.view_name::text COLLATE "C"
     FROM information_schema.view_table_usage u
     INNER JOIN c
       ON u.table_schema = 'public'
-     AND u.table_name = c.obj
+     AND u.table_name::text COLLATE "C" = c.obj
      AND u.view_schema = 'public'
   )
   SELECT c.obj
   FROM c
 ) sub (obj)
 WHERE sub.obj IS NOT NULL
-  AND sub.obj <> 'activity_posts'
+  AND sub.obj <> ('activity_posts'::text COLLATE "C")
   AND EXISTS (
     SELECT 1
     FROM information_schema.views v
-    WHERE v.table_schema = 'public' AND v.table_name = sub.obj
+    WHERE v.table_schema = 'public' AND v.table_name::text COLLATE "C" = sub.obj
   );
 
 DROP TABLE IF EXISTS _ta_ap_views;
