@@ -1,15 +1,16 @@
 import api from './api'
+import publicApi from './publicApi'
 
 /** Feed publico (Bearer opcional: likedByMe si hay sesion). */
 const communityService = {
   publicFeed: (page = 0, size = 20) =>
-    api.get('/public/community/feed', { params: { page, size } }).then((r) => r.data),
+    publicApi.get('/public/community/feed', { params: { page, size } }).then((r) => r.data),
   publicFeedByTopic: (topicKey, page = 0, size = 20) =>
-    api.get(`/public/community/topics/${encodeURIComponent(topicKey)}/posts`, { params: { page, size } }).then((r) => r.data),
+    publicApi.get(`/public/community/topics/${encodeURIComponent(topicKey)}/posts`, { params: { page, size } }).then((r) => r.data),
   publicPostById: (postId) =>
-    api.get(`/public/community/posts/${postId}`).then((r) => r.data),
+    publicApi.get(`/public/community/posts/${postId}`).then((r) => r.data),
   publicComments: (postId) =>
-    api.get(`/public/community/posts/${postId}/comments`).then((r) => r.data),
+    publicApi.get(`/public/community/posts/${postId}/comments`).then((r) => r.data),
 
   createPost: (payload) => api.post('/community/posts', payload).then((r) => r.data),
 
@@ -26,7 +27,7 @@ const communityService = {
     api.post(`/community/posts/${postId}/comments`, { body }).then((r) => r.data),
 
   listLikes: (postId, limit = 40) =>
-    api.get(`/public/community/posts/${postId}/likes`, { params: { limit } }).then((r) => r.data),
+    publicApi.get(`/public/community/posts/${postId}/likes`, { params: { limit } }).then((r) => r.data),
 
   deleteComment: (commentId) =>
     api.delete(`/community/comments/${commentId}`).then((r) => r.data),

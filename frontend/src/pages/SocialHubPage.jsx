@@ -22,6 +22,18 @@ const TAB_INVITE = 'invite'
 /** UUID v4 (case-insensitive). */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+function timeAgoLabel(iso, t) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const diff = Date.now() - d.getTime()
+  const min = Math.max(1, Math.floor(diff / 60000))
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.floor(hr / 24)
+  return `${day}d ago`
+}
+
 export default function SocialHubPage() {
   const { t } = useTranslation()
   const { user, token } = useAuth()
@@ -154,10 +166,7 @@ export default function SocialHubPage() {
 
   useEffect(() => {
     if (tab === TAB_FEED) {
-      if (user?.id) {
-        loadMine().catch(() => {})
-        tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
-      } else {
+      if (!user?.id) {
         setMine({ content: [], number: 0, totalPages: 0 })
         setMyTarantulas([])
       }
@@ -174,6 +183,16 @@ export default function SocialHubPage() {
       }
     }
   }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id, token])
+
+  useEffect(() => {
+    if (!token || !composerOpen || (myTarantulas || []).length > 0) return
+    tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
+  }, [token, composerOpen, myTarantulas])
+
+  useEffect(() => {
+    if (!token || feedSection !== 'mine') return
+    loadMine().catch(() => {})
+  }, [token, feedSection, loadMine])
 
   useEffect(() => {
     if (!token) return
@@ -329,11 +348,15 @@ export default function SocialHubPage() {
 
   const copyInvite = async () => {
     if (!inviteLink) return
+    const inviteMessage = t('social.inviteShareMessage', {
+      link: inviteLink,
+      defaultValue: "I organize my tarantulas, molts, feedings, and enclosures in TarantulApp. Free app, free QR for each T, and we both get perks if you join with my link: {{link}}",
+    })
     try {
-      await navigator.clipboard.writeText(inviteLink)
+      await navigator.clipboard.writeText(inviteMessage)
       setMsg(t('social.copiedInvite'))
     } catch {
-      setMsg(inviteLink)
+      setMsg(inviteMessage)
     }
   }
 
@@ -392,17 +415,6 @@ export default function SocialHubPage() {
       setSexIdUploading(false)
     }
   }
-
-  const tabBtn = (key, label) => (
-    <button
-      type="button"
-      key={key}
-      className={`btn btn-sm ${tab === key ? 'btn-dark' : 'btn-outline-secondary'}`}
-      onClick={() => { setTab(key); setErr(''); setMsg('') }}
-    >
-      {label}
-    </button>
-  )
 
   const feedSections = [
     { key: 'all', label: t('social.sectionForYou') },
@@ -477,6 +489,21 @@ export default function SocialHubPage() {
         <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
       </div>
     </button>
+  )
+
+  const renderTopicDots = (count, activeIndex, onPick) => (
+    <div className="d-flex align-items-center justify-content-center gap-1 mt-2">
+      {Array.from({ length: Math.min(count, 8) }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          className={`btn p-0 rounded-circle ${i === activeIndex ? 'bg-warning' : 'bg-secondary'}`}
+          style={{ width: 8, height: 8, border: 'none' }}
+          onClick={() => onPick(i)}
+          aria-label={`slide-${i + 1}`}
+        />
+      ))}
+    </div>
   )
 
   const renderPostCard = (p, { showDelete } = {}) => (
@@ -663,12 +690,6 @@ export default function SocialHubPage() {
           </div>
         </header>
 
-        <div className="d-flex flex-wrap gap-2 mb-3">
-          {tabBtn(TAB_FEED, t('social.tabFeed'))}
-          {token && tabBtn(TAB_SEX_ID, t('social.tabSexId'))}
-          {token && tabBtn(TAB_INVITE, t('social.tabInvite'))}
-        </div>
-
         {!token && (
           <div className="alert alert-info small py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span>{t('social.communityOpenBanner')}</span>
@@ -694,8 +715,20 @@ export default function SocialHubPage() {
                   <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Sex ID</div>
                     {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl ? (
-                      <img src={imgUrl((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl) || (publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                      <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => navigate(`/sex-id/${(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.id}`)}>
+                        <img src={imgUrl((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl) || (publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
+                      </button>
                     ) : <div className="small text-muted mb-2">{t('social.noActiveCases')}</div>}
+                    {(publicSexIdCases.content || [])[topicCarouselIndex.sexId] && (
+                      <div className="small text-muted mb-2">
+                        {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle ? (
+                          <Link to={`/u/${encodeURIComponent((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle)}`} className="text-decoration-none">
+                            @{(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle}
+                          </Link>
+                        ) : 'keeper'} · {timeAgoLabel((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.createdAt, t)}
+                      </div>
+                    )}
+                    {renderTopicDots((publicSexIdCases.content || []).length, topicCarouselIndex.sexId, (i) => setTopicCarouselIndex((p) => ({ ...p, sexId: i })))}
                     <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setTab(TAB_SEX_ID)}>View list</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => setTab(TAB_SEX_ID)}>Create yours</button>
                   </div>
@@ -704,8 +737,20 @@ export default function SocialHubPage() {
                   <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Enclosure Check</div>
                     {enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl ? (
-                      <img src={imgUrl(enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl) || enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                      <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(enclosurePosts[topicCarouselIndex.enclosure]?.id, true)}>
+                        <img src={imgUrl(enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl) || enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
+                      </button>
                     ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    {enclosurePosts[topicCarouselIndex.enclosure] && (
+                      <div className="small text-muted mb-2">
+                        {enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle ? (
+                          <Link to={`/u/${encodeURIComponent(enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle)}`} className="text-decoration-none">
+                            @{enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle}
+                          </Link>
+                        ) : 'keeper'} · {timeAgoLabel(enclosurePosts[topicCarouselIndex.enclosure]?.createdAt, t)}
+                      </div>
+                    )}
+                    {renderTopicDots(enclosurePosts.length, topicCarouselIndex.enclosure, (i) => setTopicCarouselIndex((p) => ({ ...p, enclosure: i })))}
                     <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Enclosure check:\n\n', 'enclosure_check')}>Create yours</button>
                   </div>
@@ -714,8 +759,20 @@ export default function SocialHubPage() {
                   <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Is my spider okay?</div>
                     {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl ? (
-                      <img src={imgUrl(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl) || spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                      <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.id, true)}>
+                        <img src={imgUrl(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl) || spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
+                      </button>
                     ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    {spiderOkayPosts[topicCarouselIndex.spiderOkay] && (
+                      <div className="small text-muted mb-2">
+                        {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle ? (
+                          <Link to={`/u/${encodeURIComponent(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle)}`} className="text-decoration-none">
+                            @{spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle}
+                          </Link>
+                        ) : 'keeper'} · {timeAgoLabel(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.createdAt, t)}
+                      </div>
+                    )}
+                    {renderTopicDots(spiderOkayPosts.length, topicCarouselIndex.spiderOkay, (i) => setTopicCarouselIndex((p) => ({ ...p, spiderOkay: i })))}
                     <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Is my spider okay?\n\n', 'spider_okay')}>Create yours</button>
                   </div>
@@ -724,8 +781,30 @@ export default function SocialHubPage() {
                   <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Meet my Ts</div>
                     {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl ? (
-                      <img src={imgUrl(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl) || meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                      <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id, true)}>
+                        <img src={imgUrl(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl) || meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
+                      </button>
                     ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    {meetMyTsPosts[topicCarouselIndex.meetMyTs] && (
+                      <div className="small text-muted mb-2">
+                        {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle ? (
+                          <Link to={`/u/${encodeURIComponent(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle)}`} className="text-decoration-none">
+                            @{meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle}
+                          </Link>
+                        ) : 'keeper'} · {timeAgoLabel(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.createdAt, t)}
+                      </div>
+                    )}
+                    {renderTopicDots(meetMyTsPosts.length, topicCarouselIndex.meetMyTs, (i) => setTopicCarouselIndex((p) => ({ ...p, meetMyTs: i })))}
+                    {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id && (
+                      <button
+                        type="button"
+                        className={`btn btn-sm w-100 mb-1 ${meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => onToggleLike(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id)}
+                        title={t('social.spoodLike')}
+                      >
+                        🕷️ {t('social.spoodCount', { count: meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likeCount ?? 0 })}
+                      </button>
+                    )}
                     <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => {
                       setComposerOpen(true)
@@ -737,15 +816,43 @@ export default function SocialHubPage() {
             </div>
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                {token ? (
-                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setComposerOpen((v) => !v)} aria-expanded={composerOpen}>
-                    {t('social.composerTitle')}
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-sm btn-dark" onClick={() => navigate('/login', { state: { redirectAfterAuth: '/community' } })}>
-                    {t('social.loginToPublish')}
-                  </button>
-                )}
+                <div className="ms-auto d-flex align-items-center gap-2">
+                  {token && (
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${tab === TAB_INVITE ? 'btn-dark' : 'btn-outline-secondary'}`}
+                      onClick={() => { setTab(TAB_INVITE); setErr(''); setMsg('') }}
+                    >
+                      {t('social.tabInvite')}
+                    </button>
+                  )}
+                  <div className="position-relative" style={{ width: 240 }}>
+                    <input
+                      className="form-control form-control-sm"
+                      placeholder={t('social.searchProfilesPlaceholder')}
+                      value={profileQuery}
+                      onChange={(e) => setProfileQuery(e.target.value)}
+                    />
+                    {(profileSearching || profileResults.length > 0) && (
+                      <div
+                        className="position-absolute start-0 end-0 mt-1 rounded p-1"
+                        style={{ zIndex: 25, border: '1px solid var(--ta-border)', background: 'rgba(15,15,18,0.98)' }}
+                      >
+                        {profileSearching && <div className="small text-muted px-2 py-1">{t('common.loading')}</div>}
+                        {!profileSearching && profileResults.map((row) => (
+                          <Link
+                            key={row.id}
+                            to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
+                            className="d-flex align-items-center gap-2 text-decoration-none rounded px-2 py-1"
+                          >
+                            <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 22, height: 22, borderRadius: 999, objectFit: 'cover' }} />
+                            <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               {token && composerOpen && (
                 <div ref={composerSectionRef} className="mb-3">
@@ -841,50 +948,40 @@ export default function SocialHubPage() {
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Community feed</h2>
                   {token && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-dark"
-                      onClick={() => {
-                        setComposerOpen(true)
-                        setComposer((c) => ({ ...c, milestoneKind: '' }))
-                      }}
-                    >
-                      Create post
-                    </button>
-                  )}
-                </div>
-                <div className="mb-3 p-2 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.08)' }}>
-                  <label className="form-label small mb-1">{t('social.searchProfilesLabel')}</label>
-                  <input
-                    className="form-control form-control-sm"
-                    placeholder={t('social.searchProfilesPlaceholder')}
-                    value={profileQuery}
-                    onChange={(e) => setProfileQuery(e.target.value)}
-                  />
-                  {profileSearching && <div className="small text-muted mt-1">{t('common.loading')}</div>}
-                  {!profileSearching && profileQuery.trim().length >= 2 && profileResults.length === 0 && (
-                    <div className="small text-muted mt-1">{t('common.noResults')}</div>
-                  )}
-                  {profileResults.length > 0 && (
-                    <div className="d-flex flex-column gap-1 mt-2">
-                      {profileResults.map((row) => (
-                        <Link
-                          key={row.id}
-                          to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
-                          className="d-flex align-items-center gap-2 text-decoration-none rounded p-1"
-                          style={{ border: '1px solid var(--ta-border)' }}
-                        >
-                          <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 24, height: 24, borderRadius: 999, objectFit: 'cover' }} />
-                          <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
-                          <span className="small text-muted">{row.displayName || 'Keeper'}</span>
-                        </Link>
-                      ))}
+                    <div className="btn-group btn-group-sm" role="group" aria-label="feed-switch">
+                      <button
+                        type="button"
+                        className={`btn ${feedSection === 'all' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setFeedSection('all')}
+                      >
+                        Community
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${feedSection === 'mine' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setFeedSection('mine')}
+                      >
+                        My posts
+                      </button>
                     </div>
                   )}
                 </div>
-                {generalPosts.length === 0
+                {token && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary w-100 text-start mb-3 py-2"
+                    onClick={() => {
+                      setComposerOpen(true)
+                      setComposer((c) => ({ ...c, milestoneKind: '' }))
+                    }}
+                  >
+                    <span className="fw-semibold">New post</span>
+                    <span className="d-block small text-muted">Start writing your post...</span>
+                  </button>
+                )}
+                {(feedSection === 'mine' ? (mine.content || []) : generalPosts).length === 0
                   ? <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
-                  : generalPosts.map((p) => renderPostCard(p))}
+                  : (feedSection === 'mine' ? (mine.content || []) : generalPosts).map((p) => renderPostCard(p, { showDelete: feedSection === 'mine' }))}
               </section>
             </div>
           </>
