@@ -118,6 +118,7 @@
     "invitedCount": "Invitations confirmées : {{count}}",
     "copyInviteLink": "Copier le lien d’invitation",
     "copiedInvite": "Lien copié dans le presse-papiers.",
+    "inviteShareMessage": "J’organise mes tarentules, mues, nourrissages et terrariums dans TarantulApp. C’est gratuit, avec QR gratuits pour chaque T, et on gagne tous les deux des perks si tu rejoins via mon lien : {{link}}",
     "dailyHighlights": "Daily highlights",
     "realtimeUpdated": "Updated in real time",
     "visibleSections": "Visible sections - {{count}}",

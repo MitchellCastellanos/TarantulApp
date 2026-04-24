@@ -118,6 +118,7 @@
     "invitedCount": "Confirmed invites: {{count}}",
     "copyInviteLink": "Copy invite link",
     "copiedInvite": "Link copied to clipboard.",
+    "inviteShareMessage": "I organize my tarantulas, molts, feedings, and enclosures in TarantulApp. It's free, includes free QR labels for each T, and we both get perks if you join with my link: {{link}}",
     "dailyHighlights": "Daily highlights",
     "realtimeUpdated": "Updated in real time",
     "visibleSections": "Visible sections - {{count}}",
