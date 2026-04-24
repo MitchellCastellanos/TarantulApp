@@ -156,6 +156,37 @@ export default function PublicKeeperProfilePage() {
                       ))}
                     </div>
                   )}
+                  <hr className="my-3" />
+                  <h3 className="h6 mb-2">Public collection</h3>
+                  {keeperData?.collectionPublic !== true ? (
+                    <p className="small text-muted mb-0">This user has a private collection.</p>
+                  ) : (keeperData?.publicCollection || []).length === 0 ? (
+                    <p className="small text-muted mb-0">No public specimens yet.</p>
+                  ) : (
+                    <div className="row g-2">
+                      {(keeperData.publicCollection || []).map((tar) => (
+                        <div key={tar.id} className="col-md-6">
+                          <Link
+                            to={`/t/${encodeURIComponent(tar.shortId)}`}
+                            className="text-decoration-none"
+                            style={{ color: 'inherit' }}
+                          >
+                            <div className="border rounded p-2 h-100 small d-flex align-items-center gap-2">
+                              <img
+                                src={imgUrl(tar.profilePhoto) || '/spider-default.png'}
+                                alt={tar.name || 'specimen'}
+                                style={{ width: 40, height: 40, borderRadius: 999, objectFit: 'cover' }}
+                              />
+                              <div>
+                                <div className="fw-semibold">{tar.name || 'Specimen'}</div>
+                                <div className="text-muted">{tar.speciesName || '-'}</div>
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

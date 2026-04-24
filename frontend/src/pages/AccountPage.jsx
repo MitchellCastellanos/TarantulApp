@@ -72,6 +72,7 @@ export default function AccountPage() {
     profileState: user?.profileState || '',
     profileCity: user?.profileCity || '',
     searchVisible: user?.searchVisible !== false,
+    collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
   })
 
   const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
@@ -123,6 +124,7 @@ export default function AccountPage() {
       profileState: user?.profileState || '',
       profileCity: user?.profileCity || '',
       searchVisible: user?.searchVisible !== false,
+      collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
     })
   }, [user])
 
@@ -184,6 +186,7 @@ export default function AccountPage() {
         state: profileForm.profileState,
         city: profileForm.profileCity,
         searchVisible: profileForm.searchVisible,
+        communityProfileVisibility: profileForm.collectionPublic ? 'public_full' : 'preview_only',
       })
       updateUserProfile({
         displayName: profileForm.displayName,
@@ -197,6 +200,7 @@ export default function AccountPage() {
         profileState: profileForm.profileState,
         profileCity: profileForm.profileCity,
         searchVisible: profileForm.searchVisible,
+        communityProfileVisibility: profileForm.collectionPublic ? 'public_full' : 'preview_only',
       })
       setProfileMessage(t('common.save'))
     } catch (err) {
@@ -382,6 +386,20 @@ export default function AccountPage() {
                   />
                   <label className="form-check-label small" htmlFor="account-search-visible">
                     Aparecer en resultados de busqueda publica de keepers
+                  </label>
+                </div>
+              </div>
+              <div className="d-flex align-items-center gap-2 mt-2">
+                <div className="form-check m-0">
+                  <input
+                    id="account-collection-public"
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={profileForm.collectionPublic === true}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, collectionPublic: e.target.checked }))}
+                  />
+                  <label className="form-check-label small" htmlFor="account-collection-public">
+                    Mostrar mi coleccion publica en mi perfil keeper
                   </label>
                 </div>
                 <button className="btn btn-sm btn-outline-light" disabled={profileSaving}>
