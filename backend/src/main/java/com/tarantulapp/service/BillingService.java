@@ -3,20 +3,27 @@ package com.tarantulapp.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.Stripe;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
 import com.stripe.model.billingportal.Session;
+import com.stripe.net.Webhook;
 import com.stripe.param.billingportal.SessionCreateParams;
 import com.tarantulapp.dto.BillingStatusResponse;
 import com.tarantulapp.dto.CheckoutSessionResponse;
 import com.tarantulapp.entity.BillingEmailEvent;
 import com.tarantulapp.entity.MarketplaceListing;
+import com.tarantulapp.entity.ProcessedWebhookEvent;
 import com.tarantulapp.entity.Subscription;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.BillingEmailEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
+import com.tarantulapp.repository.ProcessedWebhookEventRepository;
 import com.tarantulapp.repository.SubscriptionRepository;
 import com.tarantulapp.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -27,10 +34,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.security.access.AccessDeniedException;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -43,6 +46,8 @@ import java.util.UUID;
 @Service
 public class BillingService {
 
+    private static final Logger log = LoggerFactory.getLogger(BillingService.class);
+
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final ObjectMapper objectMapper;
@@ -51,6 +56,7 @@ public class BillingService {
     private final BillingEmailEventRepository billingEmailEventRepository;
     private final AdminAccessService adminAccessService;
     private final MarketplaceListingRepository marketplaceListingRepository;
+    private final ProcessedWebhookEventRepository processedWebhookEventRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /** One-time payment price for marketplace listing boost ($2); optional. */
@@ -91,6 +97,18 @@ public class BillingService {
     @Value("${billing.google-play.subscription-product-id:}")
     private String googlePlaySubscriptionProductId;
 
+    /**
+     * When true and the deploy looks like production, refuse Play Billing verification while
+     * the provider is still in {@code stub} mode. Prevents the `enabled=true + mode=stub`
+     * misconfiguration from auto-upgrading any caller to PRO with a {@code test_*} token.
+     */
+    @Value("${billing.google-play.production-stub-guard:true}")
+    private boolean googlePlayProductionStubGuard;
+
+    /** Falls back to {@code spring.profiles.active} so existing deployments keep working. */
+    @Value("${app.environment:${spring.profiles.active:development}}")
+    private String appEnvironment;
+
     public BillingService(UserRepository userRepository,
                           SubscriptionRepository subscriptionRepository,
                           ObjectMapper objectMapper,
@@ -98,7 +116,8 @@ public class BillingService {
                           EmailService emailService,
                           BillingEmailEventRepository billingEmailEventRepository,
                           AdminAccessService adminAccessService,
-                          MarketplaceListingRepository marketplaceListingRepository) {
+                          MarketplaceListingRepository marketplaceListingRepository,
+                          ProcessedWebhookEventRepository processedWebhookEventRepository) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -107,6 +126,7 @@ public class BillingService {
         this.billingEmailEventRepository = billingEmailEventRepository;
         this.adminAccessService = adminAccessService;
         this.marketplaceListingRepository = marketplaceListingRepository;
+        this.processedWebhookEventRepository = processedWebhookEventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -292,14 +312,42 @@ public class BillingService {
         if (stripeWebhookSecret == null || stripeWebhookSecret.isBlank()) {
             throw new IllegalArgumentException("Webhook secret no configurado");
         }
-        if (!verifyStripeSignature(payload, signatureHeader, stripeWebhookSecret)) {
+
+        // constructEvent verifies the v1 signature AND enforces a 5-minute timestamp tolerance,
+        // so a captured payload cannot be replayed indefinitely. Both checks were previously DIY.
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret);
+        } catch (SignatureVerificationException e) {
             throw new IllegalArgumentException("Firma de webhook inválida");
         }
 
+        String eventId = event.getId();
+        String type = event.getType() == null ? "" : event.getType();
+
+        if (eventId == null || eventId.isBlank()) {
+            log.warn("Stripe webhook missing event id; type={}", type);
+        } else {
+            if (processedWebhookEventRepository.existsById(eventId)) {
+                log.debug("Stripe webhook duplicate event_id={} type={}", eventId, type);
+                return;
+            }
+            ProcessedWebhookEvent record = new ProcessedWebhookEvent();
+            record.setEventId(eventId);
+            record.setSource("stripe");
+            record.setEventType(type);
+            try {
+                processedWebhookEventRepository.saveAndFlush(record);
+            } catch (DataIntegrityViolationException dup) {
+                // Concurrent delivery beat us to the insert: ack and skip.
+                log.debug("Stripe webhook race-duplicate event_id={} type={}", eventId, type);
+                return;
+            }
+        }
+
         try {
-            JsonNode event = objectMapper.readTree(payload);
-            String type = event.path("type").asText("");
-            JsonNode object = event.path("data").path("object");
+            JsonNode payloadNode = objectMapper.readTree(payload);
+            JsonNode object = payloadNode.path("data").path("object");
 
             if ("checkout.session.completed".equals(type)) {
                 upsertFromCheckoutCompleted(object);
@@ -315,6 +363,7 @@ public class BillingService {
                 upsertFromSubscriptionObject(object);
             }
         } catch (Exception e) {
+            // Rolls back both the side effects and the idempotency row, so Stripe can retry.
             throw new IllegalArgumentException("Webhook inválido");
         }
     }
@@ -521,39 +570,6 @@ public class BillingService {
         return "";
     }
 
-    private boolean verifyStripeSignature(String payload, String signatureHeader, String webhookSecret) {
-        if (signatureHeader == null || signatureHeader.isBlank()) return false;
-
-        String timestamp = null;
-        String v1 = null;
-        for (String part : signatureHeader.split(",")) {
-            String[] kv = part.split("=", 2);
-            if (kv.length != 2) continue;
-            if ("t".equals(kv[0])) timestamp = kv[1];
-            if ("v1".equals(kv[0])) v1 = kv[1];
-        }
-        if (timestamp == null || v1 == null) return false;
-
-        String signedPayload = timestamp + "." + payload;
-        String expected = hmacSha256Hex(webhookSecret, signedPayload);
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), v1.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String hmacSha256Hex(String secret, String payload) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte b : digest) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("No se pudo validar firma del webhook");
-        }
-    }
-
     @Transactional
     public Map<String, Object> verifyGooglePlaySubscription(UUID userId, String productId, String purchaseToken) {
         if (!googlePlayEnabled) {
@@ -577,6 +593,13 @@ public class BillingService {
 
         boolean acceptedInStub = false;
         if ("stub".equalsIgnoreCase(googlePlayMode)) {
+            // Production safety net: a stub-mode deployment in prod would let any caller
+            // upgrade themselves to PRO with a `test_*` token. Refuse unless explicitly opted out.
+            if (googlePlayProductionStubGuard && isProductionEnvironment()) {
+                log.error("Refusing Google Play stub verification in production environment={} mode={} (set PLAY_BILLING_PRODUCTION_STUB_GUARD=false to override)",
+                        appEnvironment, googlePlayMode);
+                throw new IllegalArgumentException("GOOGLE_PLAY_STUB_DISABLED_IN_PRODUCTION");
+            }
             boolean looksTestToken = trimmedToken.startsWith("test_")
                     || trimmedToken.startsWith("sandbox_")
                     || trimmedToken.startsWith("fake_");
@@ -631,6 +654,14 @@ public class BillingService {
 
     public String getGooglePlayMode() {
         return googlePlayMode;
+    }
+
+    private boolean isProductionEnvironment() {
+        if (appEnvironment == null) return false;
+        String e = appEnvironment.toLowerCase().trim();
+        // Matches "production", "prod", "prd" — not "preprod" by accident:
+        return e.equals("prod") || e.equals("prd") || e.equals("production")
+                || e.startsWith("prod,") || e.startsWith("production,");
     }
 }
 
