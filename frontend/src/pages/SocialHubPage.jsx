@@ -60,16 +60,17 @@ export default function SocialHubPage() {
   const composerSectionRef = useRef(null)
   const composerBodyRef = useRef(null)
   const [myTarantulas, setMyTarantulas] = useState([])
-  const [expanded, setExpanded] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
   const [feedSection, setFeedSection] = useState('all')
-  const [likesOpenForPost, setLikesOpenForPost] = useState(null)
   const [likesByPost, setLikesByPost] = useState({})
   const [loadingLikesForPost, setLoadingLikesForPost] = useState({})
+  const [likesHoverPostId, setLikesHoverPostId] = useState(null)
   const [profileQuery, setProfileQuery] = useState('')
   const [profileResults, setProfileResults] = useState([])
   const [profileSearching, setProfileSearching] = useState(false)
+  const [authorPreviewByHandle, setAuthorPreviewByHandle] = useState({})
+  const [loadingAuthorPreviewByHandle, setLoadingAuthorPreviewByHandle] = useState({})
   const [topicCarouselIndex, setTopicCarouselIndex] = useState({
     sexId: 0,
     enclosure: 0,
@@ -278,22 +279,6 @@ export default function SocialHubPage() {
       setMine((m) => ({ ...m, content: merge(m.content) }))
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('social.saveError'))
-    }
-  }
-
-  const toggleExpand = async (postId) => {
-    if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/community' } })
-      return
-    }
-    setExpanded((ex) => ({ ...ex, [postId]: !ex[postId] }))
-    if (!commentsByPost[postId] && !expanded[postId]) {
-      try {
-        const list = await communityService.getComments(postId)
-        setCommentsByPost((c) => ({ ...c, [postId]: list }))
-      } catch {
-        setErr(t('social.loadError'))
-      }
     }
   }
 
@@ -506,83 +491,238 @@ export default function SocialHubPage() {
     </div>
   )
 
-  const renderPostCard = (p, { showDelete } = {}) => (
-    <div
-      key={p.id}
-      className="rounded-3 p-3 mb-3"
-      style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}
-    >
-      <div className="d-flex justify-content-between gap-2 flex-wrap">
-        <div className="small text-muted">
-          {p.authorHandle ? (
-            <Link to={`/u/${encodeURIComponent(p.authorHandle)}`} className="text-decoration-none">
-              @{p.authorHandle}
+  const formatPostDateTime = (iso) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d)
+  }
+
+  const loadAuthorPreview = useCallback(async (handle) => {
+    const clean = (handle || '').trim()
+    if (!clean || authorPreviewByHandle[clean] || loadingAuthorPreviewByHandle[clean]) return
+    setLoadingAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: true }))
+    try {
+      const row = await userPublicService.byHandle(clean)
+      setAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: row || null }))
+    } catch {
+      setAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: null }))
+    } finally {
+      setLoadingAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: false }))
+    }
+  }, [authorPreviewByHandle, loadingAuthorPreviewByHandle])
+
+  const renderAuthorHoverCard = (handle) => {
+    const clean = (handle || '').trim()
+    if (!clean) return null
+    const preview = authorPreviewByHandle[clean]
+    const badges = Array.isArray(preview?.badges) ? preview.badges.slice(0, 4) : []
+    return (
+      <span className="ta-social-author-hover-card">
+        {preview?.profilePhoto ? (
+          <img
+            src={imgUrl(preview.profilePhoto) || '/spider-default.png'}
+            alt={`@${clean}`}
+            className="ta-social-author-hover-card__avatar"
+          />
+        ) : null}
+        <span className="d-block fw-semibold mb-1">{preview?.displayName || 'Keeper'}</span>
+        <span className="d-block small text-muted mb-1">@{clean}</span>
+        {loadingAuthorPreviewByHandle[clean] && (
+          <span className="d-block small text-muted">{t('common.loading')}</span>
+        )}
+        {!loadingAuthorPreviewByHandle[clean] && badges.length > 0 && (
+          <span className="d-flex flex-wrap gap-1 mt-1">
+            {badges.map((b, idx) => (
+              <span key={`${b?.key || b?.label || 'badge'}-${idx}`} className="badge text-bg-secondary">
+                {b?.label || b?.key || 'Badge'}
+              </span>
+            ))}
+          </span>
+        )}
+      </span>
+    )
+  }
+
+  const renderPostAuthor = (p) => {
+    const handle = p.authorHandle || ''
+    const display = p.authorDisplayName || 'keeper'
+    const profilePhoto = p.authorProfilePhoto || p.profilePhoto || null
+    return (
+      <div
+        className="d-flex align-items-center gap-2 ta-social-author-anchor"
+        onMouseEnter={() => loadAuthorPreview(handle)}
+        onFocus={() => loadAuthorPreview(handle)}
+      >
+        <img
+          src={imgUrl(profilePhoto) || '/spider-default.png'}
+          alt={handle ? `@${handle}` : display}
+          className="ta-social-post-author-avatar"
+        />
+        <div className="small d-flex align-items-center gap-2 flex-wrap">
+          {handle ? (
+            <Link to={`/u/${encodeURIComponent(handle)}`} className="text-decoration-none fw-semibold">
+              @{handle}
             </Link>
-          ) : (p.authorDisplayName || 'keeper')}
-          {'\u00a0\u00b7\u00a0'}
-          <span className="text-uppercase" style={{ fontSize: '0.65rem' }}>{p.visibility}</span>
+          ) : (
+            <span className="fw-semibold">{display}</span>
+          )}
+          <span className="text-uppercase ta-social-post-privacy-tag">{p.visibility}</span>
+          {p.createdAt && (
+            <span className="text-muted">{formatPostDateTime(p.createdAt)}</span>
+          )}
         </div>
-        <div className="d-flex gap-1 flex-wrap">
-          <button
-            type="button"
-            className={`btn btn-sm ${p.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
-            onClick={() => onToggleLike(p.id)}
-            title={t('social.spoodLike')}
-            aria-pressed={!!p.likedByMe}
-            aria-label={t('social.spoodLike')}
-          >
-            <span className="me-1" style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>{'\u{1F577}\u{FE0F}'}</span>
-            <span className="small">{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            onClick={() => openLikesModal(p.id)}
-          >
-            {t('social.viewSpood')}
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => toggleExpand(p.id)}>
-            {t('social.comments')} ({p.commentsCount ?? 0})
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openPostThread(p.id, true)}>
-            {t('social.openThread')}
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => reportPost(p.id)}>
-            {t('marketplace.report')}
-          </button>
+        {handle && renderAuthorHoverCard(handle)}
+      </div>
+    )
+  }
+
+  const loadLikesPreview = useCallback(async (postId) => {
+    if (!postId || likesByPost[postId] || loadingLikesForPost[postId]) return
+    setLoadingLikesForPost((s) => ({ ...s, [postId]: true }))
+    try {
+      const rows = await communityService.listLikes(postId, 12)
+      setLikesByPost((prev) => ({ ...prev, [postId]: rows || [] }))
+    } catch {
+      setLikesByPost((prev) => ({ ...prev, [postId]: [] }))
+    } finally {
+      setLoadingLikesForPost((s) => ({ ...s, [postId]: false }))
+    }
+  }, [likesByPost, loadingLikesForPost])
+
+  useEffect(() => {
+    const list = feedSection === 'mine' ? (mine.content || []) : generalPosts
+    const targets = list.slice(0, 6).filter((p) => p?.id && !commentsByPost[p.id])
+    if (targets.length === 0) return
+    targets.forEach((p) => {
+      communityService.getComments(p.id)
+        .then((rows) => {
+          setCommentsByPost((prev) => (prev[p.id] ? prev : { ...prev, [p.id]: Array.isArray(rows) ? rows : [] }))
+        })
+        .catch(() => {})
+    })
+  }, [feedSection, mine.content, generalPosts, commentsByPost])
+
+  const renderPostCard = (p, { showDelete } = {}) => {
+    const previewComments = (commentsByPost[p.id] || []).slice(0, 2)
+    const likePreview = likesByPost[p.id] || []
+    const likePreviewLimit = 8
+    const hiddenLikeCount = Math.max(0, (p.likeCount || 0) - likePreview.length)
+    return (
+      <div
+        key={p.id}
+        className="rounded-3 p-3 mb-3 ta-social-post-card"
+      >
+        <div className="d-flex justify-content-between gap-2 flex-wrap align-items-start mb-2">
+          {renderPostAuthor(p)}
           {showDelete && p.authorUserId === user?.id && (
             <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => deletePost(p.id)}>
               {t('social.delete')}
             </button>
           )}
         </div>
-      </div>
-      {p.milestoneKind ? (
-        <div className="small mt-1" style={{ color: 'var(--ta-gold)' }}>{p.milestoneKind}</div>
-      ) : null}
-      {p.tarantulaName ? (
-        <div className="small mt-1 text-muted">
-          <span className="fw-semibold" style={{ color: 'var(--ta-text-muted)' }}>{t('social.postLinkedSpider')}:</span>{' '}
-          {p.tarantulaName}
-          {p.tarantulaScientificName ? ` \u2014 ${p.tarantulaScientificName}` : ''}
-        </div>
-      ) : null}
-      <p className="mb-2 mt-2 small" style={{ color: 'var(--ta-text)', whiteSpace: 'pre-wrap' }}>{p.body}</p>
-      {p.imageUrl ? (
-        <div className="mb-2">
-          <img src={p.imageUrl} alt="" className="img-fluid rounded" style={{ maxHeight: 220 }} />
-        </div>
-      ) : null}
-      {expanded[p.id] && (
-        <div className="mt-2 pt-2 border-top border-secondary border-opacity-25">
-          {(commentsByPost[p.id] || []).map((c) => (
-            <div key={c.id} className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-              <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
-                {c.authorHandle ? `@${c.authorHandle}` : (c.authorDisplayName || 'keeper')}:
-              </span>{' '}
-              {c.body}
+        {p.milestoneKind ? (
+          <div className="small mt-1" style={{ color: 'var(--ta-gold)' }}>{p.milestoneKind}</div>
+        ) : null}
+        {p.tarantulaName ? (
+          <div className="small mt-1 text-muted">
+            <span className="fw-semibold" style={{ color: 'var(--ta-text-muted)' }}>{t('social.postLinkedSpider')}:</span>{' '}
+            {p.tarantulaName}
+            {p.tarantulaScientificName ? ` \u2014 ${p.tarantulaScientificName}` : ''}
+          </div>
+        ) : null}
+        <p className="mb-2 mt-2 small" style={{ color: 'var(--ta-text)', whiteSpace: 'pre-wrap' }}>{p.body}</p>
+        {p.imageUrl ? (
+          <div className="mb-2">
+            <img src={p.imageUrl} alt="" className="img-fluid rounded" style={{ maxHeight: 220 }} />
+          </div>
+        ) : null}
+
+        <div className="d-flex align-items-center justify-content-between gap-2 mt-3">
+          <div className="d-flex gap-2 flex-wrap align-items-center">
+            <div
+              className="ta-social-spood-anchor"
+              onMouseEnter={() => {
+                setLikesHoverPostId(p.id)
+                loadLikesPreview(p.id)
+              }}
+              onMouseLeave={() => setLikesHoverPostId((prev) => (prev === p.id ? null : prev))}
+            >
+              <button
+                type="button"
+                className={`btn btn-sm ${p.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
+                onClick={() => onToggleLike(p.id)}
+                title={t('social.spoodLike')}
+                aria-pressed={!!p.likedByMe}
+                aria-label={t('social.spoodLike')}
+              >
+                <span className="me-1" style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>{'\u{1F577}\u{FE0F}'}</span>
+                <span className="small">{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
+              </button>
+              {likesHoverPostId === p.id && (
+                <div className="ta-social-spood-hover-card">
+                  {loadingLikesForPost[p.id] ? (
+                    <div className="small text-muted">{t('social.loadingReactions')}</div>
+                  ) : likePreview.length === 0 ? (
+                    <div className="small text-muted">{t('social.noSpoodYet')}</div>
+                  ) : (
+                    <>
+                      {likePreview.slice(0, likePreviewLimit).map((row) => (
+                        <div key={`${row?.userId || 'u'}-${row?.likedAt || ''}`} className="ta-social-spood-hover-card__row">
+                          <img
+                            src={imgUrl(row?.profilePhoto) || '/spider-default.png'}
+                            alt={row?.handle ? `@${row.handle}` : '@keeper'}
+                            className="ta-social-spood-hover-card__avatar"
+                          />
+                          <span className="small">{row?.handle ? `@${row.handle}` : (row?.displayName || 'Keeper')}</span>
+                        </div>
+                      ))}
+                      {hiddenLikeCount > 0 && (
+                        <div className="small text-muted mt-1">+{hiddenLikeCount} more</div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openPostThread(p.id, true)}>
+              {t('social.comments')} ({p.commentsCount ?? 0})
+            </button>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <button type="button" className="btn btn-sm btn-link p-0 text-muted ta-social-mini-action" onClick={() => reportPost(p.id)}>
+              {t('marketplace.report')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary py-0 px-2 ta-social-open-thread-icon"
+              onClick={() => openPostThread(p.id, false)}
+              title="Open thread"
+              aria-label="Open thread"
+            >
+              {'\u2197'}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 pt-2 border-top border-secondary border-opacity-25">
+          {previewComments.length === 0 ? (
+            <div className="small text-muted mb-2">{t('social.noCommentsYet')}</div>
+          ) : (
+            previewComments.map((c) => (
+              <div key={c.id} className="small mb-2 ta-social-comment-preview">
+                <span className="fw-semibold me-1">
+                  {c.authorHandle ? `@${c.authorHandle}` : (c.authorDisplayName || 'keeper')}:
+                </span>
+                <span>{c.body}</span>
+              </div>
+            ))
+          )}
           <div className="input-group input-group-sm mt-2">
             <input
               className="form-control"
@@ -595,22 +735,8 @@ export default function SocialHubPage() {
             </button>
           </div>
         </div>
-      )}
-    </div>
-  )
-
-  const openLikesModal = async (postId) => {
-    setLikesOpenForPost(postId)
-    if (likesByPost[postId]) return
-    setLoadingLikesForPost((s) => ({ ...s, [postId]: true }))
-    try {
-      const rows = await communityService.listLikes(postId, 60)
-      setLikesByPost((prev) => ({ ...prev, [postId]: rows || [] }))
-    } catch {
-      setErr('No se pudo cargar la lista de Spood.')
-    } finally {
-      setLoadingLikesForPost((s) => ({ ...s, [postId]: false }))
-    }
+      </div>
+    )
   }
 
   useEffect(() => {
@@ -634,43 +760,6 @@ export default function SocialHubPage() {
       })
     return () => { cancelled = true }
   }, [profileQuery])
-
-  const renderLikeUser = (row) => {
-    const handle = row?.handle ? `@${row.handle}` : '@keeper'
-    const label = row?.displayName || 'Keeper'
-    const canOpen = row?.canViewFullProfile && row?.handle
-    return (
-      <div key={`${row?.userId || 'u'}-${row?.likedAt || ''}`} className="ta-social-like-row">
-        <img
-          src={imgUrl(row?.profilePhoto) || '/spider-default.png'}
-          alt={handle}
-          className="ta-social-like-row__avatar"
-        />
-        <div className="flex-grow-1">
-          {canOpen ? (
-            <Link to={`/u/${encodeURIComponent(row.handle)}`} className="fw-semibold text-decoration-none">
-              {handle}
-            </Link>
-          ) : (
-            <span className="fw-semibold ta-social-preview-anchor">
-              {handle}
-              <span className="ta-social-preview-card">
-                <span className="d-block fw-semibold mb-1">{label}</span>
-                <span className="d-block small text-muted mb-1">{handle}</span>
-                <span className="d-block small text-muted">Perfil en modo preview.</span>
-              </span>
-            </span>
-          )}
-          <div className="small text-muted">{label}</div>
-        </div>
-        {canOpen ? (
-          <Link to={`/u/${encodeURIComponent(row.handle)}`} className="btn btn-sm btn-outline-secondary">Ver perfil</Link>
-        ) : (
-          <span className="badge text-bg-secondary">Solo preview</span>
-        )}
-      </div>
-    )
-  }
 
   return (
     <div>
@@ -1120,29 +1209,6 @@ export default function SocialHubPage() {
               </div>
             </div>
           </ChitinCardFrame>
-        )}
-        {likesOpenForPost && (
-          <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.58)' }} onClick={() => setLikesOpenForPost(null)}>
-            <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">{t('social.whoSpooded')}</h5>
-                  <button type="button" className="btn-close" onClick={() => setLikesOpenForPost(null)} aria-label={t('ratePrompt.close')} />
-                </div>
-                <div className="modal-body">
-                  {loadingLikesForPost[likesOpenForPost] ? (
-                    <p className="small text-muted mb-0">{t('social.loadingReactions')}</p>
-                  ) : (likesByPost[likesOpenForPost] || []).length === 0 ? (
-                    <p className="small text-muted mb-0">{t('social.noSpoodYet')}</p>
-                  ) : (
-                    <div className="d-flex flex-column gap-2">
-                      {(likesByPost[likesOpenForPost] || []).map((row) => renderLikeUser(row))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>

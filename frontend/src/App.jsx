@@ -144,6 +144,14 @@ function AppRoutes() {
 function Footer() {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const socialLinkStyle = {
+    color: 'var(--ta-gold)',
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+  }
+
   return (
     <footer
       className="text-center py-3 mt-5"
@@ -153,19 +161,55 @@ function Footer() {
         borderTop: '1px solid var(--ta-border)',
       }}
     >
-      © {new Date().getFullYear()}{' '}
-      <BrandName /> &nbsp;·&nbsp;
-      <Link to="/tools/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
-      &nbsp;·&nbsp;
-      <Link to={token ? '/community' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
+      <div className="mb-1">
+        <a
+          href="https://www.instagram.com/tarantulapp_official"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="Instagram de TarantulApp"
+        >
+          <i className="bi bi-instagram" aria-hidden="true" />
+          <span>@tarantulapp_official</span>
+        </a>
+        &nbsp;·&nbsp;
+        <a
+          href="https://www.tiktok.com/@tarantulapp_offic"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="TikTok de TarantulApp"
+        >
+          <i className="bi bi-tiktok" aria-hidden="true" />
+          <span>@tarantulapp_offic</span>
+        </a>
+        &nbsp;·&nbsp;
+        <a
+          href="https://x.com/TarantulApp"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="X de TarantulApp"
+        >
+          <i className="bi bi-twitter-x" aria-hidden="true" />
+          <span>@TarantulApp</span>
+        </a>
+      </div>
+      <div>
+        © {new Date().getFullYear()}{' '}
+        <BrandName /> &nbsp;·&nbsp;
+        <Link to="/tools/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
+        &nbsp;·&nbsp;
+        <Link to={token ? '/community' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
+      </div>
     </footer>
   )
 }

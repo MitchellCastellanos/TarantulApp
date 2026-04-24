@@ -1652,6 +1652,109 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   background: rgba(20, 16, 36, 0.52);
 }
 
+.ta-social-post-card {
+  border: 1px solid var(--ta-border);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.ta-social-post-author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(201, 168, 76, 0.22);
+}
+
+.ta-social-post-privacy-tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+
+.ta-social-author-anchor {
+  position: relative;
+}
+
+.ta-social-author-hover-card {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  z-index: 22;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.5rem;
+  background: rgba(18, 18, 18, 0.97);
+  border: 1px solid var(--ta-border);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.ta-social-author-anchor:hover .ta-social-author-hover-card {
+  display: block;
+}
+
+.ta-social-author-hover-card__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  margin-bottom: 0.4rem;
+}
+
+.ta-social-spood-anchor {
+  position: relative;
+}
+
+.ta-social-spood-hover-card {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  min-width: 210px;
+  max-width: 280px;
+  z-index: 20;
+  border: 1px solid var(--ta-border);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.6rem;
+  background: rgba(14, 14, 16, 0.98);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.ta-social-spood-hover-card__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.ta-social-spood-hover-card__row:last-child {
+  margin-bottom: 0;
+}
+
+.ta-social-spood-hover-card__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.ta-social-mini-action {
+  font-size: 0.72rem !important;
+  text-decoration: none !important;
+}
+
+.ta-social-open-thread-icon {
+  min-width: 30px;
+  line-height: 1.1;
+}
+
+.ta-social-comment-preview {
+  color: var(--ta-text-muted);
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.45rem;
+}
+
 :root[data-theme='light'] .ta-social-feed-shell {
   background: linear-gradient(155deg, #fffcf6, #efe6d4);
   box-shadow: 0 8px 22px rgba(45, 30, 10, 0.08);
