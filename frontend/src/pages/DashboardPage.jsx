@@ -54,6 +54,7 @@ export default function DashboardPage() {
         speciesSet.size >= 12 ? 'Species diversity 12+' : null,
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
+  const badgesProgress = keeperProfile?.badgesProgress || null
 
   const filtered = alive.filter(t => {
     if (habitat !== 'all' && t.species?.habitatType !== habitat) return false
@@ -146,8 +147,9 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <h6 className="mb-1 fw-bold text-truncate">{user?.displayName || user?.email}</h6>
                     <div className="small text-muted text-truncate">
-                      @{user?.publicHandle || 'keeper'}
+                      @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'No location'}
                     </div>
+                    {user?.bio && <p className="small mb-1 mt-2">{user.bio}</p>}
                   </div>
                   <img
                     src={imgUrl(user?.profilePhoto) || '/spider-default.png'}
@@ -156,9 +158,36 @@ export default function DashboardPage() {
                   />
                 </div>
                 {reputation && (
-                  <div className="small mt-2">
-                    <span className="fw-semibold">Keeper Reputation:</span>{' '}
-                    {reputation.tier} · {reputation.score}/100
+                  <div className="mt-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1">
+                      Keeper Reputation · {reputation.tier} · {reputation.score}/100
+                    </div>
+                    <div className="progress" style={{ height: 8 }}>
+                      <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
+                    </div>
+                    {reputation.nextTier !== 'Max' && (
+                      <div className="small text-muted mt-1">
+                        Next: {reputation.nextTier} ({reputation.nextTierTarget})
+                      </div>
+                    )}
+                  </div>
+                )}
+                {badgesProgress && (
+                  <div className="row g-2 mt-1">
+                    {Object.entries(badgesProgress).map(([key, p]) => {
+                      const target = Number(p?.target || 0)
+                      const current = Number(p?.current || 0)
+                      const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
+                      return (
+                        <div className="col-12" key={key}>
+                          <div className="small mb-1">{p?.nextLabel}</div>
+                          <div className="progress" style={{ height: 6 }}>
+                            <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
+                          </div>
+                          <div className="small text-muted">{current}/{target || current}</div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
                 {profileBadges.length > 0 && (

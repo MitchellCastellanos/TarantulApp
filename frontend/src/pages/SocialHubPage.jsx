@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import communityService from '../services/communityService'
 import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
@@ -74,8 +75,6 @@ export default function SocialHubPage() {
   const [profileQuery, setProfileQuery] = useState('')
   const [profileResults, setProfileResults] = useState([])
   const [profileSearching, setProfileSearching] = useState(false)
-  const [authorPreviewByHandle, setAuthorPreviewByHandle] = useState({})
-  const [loadingAuthorPreviewByHandle, setLoadingAuthorPreviewByHandle] = useState({})
   const [topicCarouselIndex, setTopicCarouselIndex] = useState({
     sexId: 0,
     enclosure: 0,
@@ -463,7 +462,16 @@ export default function SocialHubPage() {
       onClick={() => openPostThread(p.id, true)}
     >
       <div className="small fw-semibold text-truncate mb-1" style={{ color: 'var(--ta-parchment)' }}>
-        {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
+        {p.authorHandle ? (
+          <PublicKeeperHandle
+            handle={p.authorHandle}
+            displayName={p.authorDisplayName || 'keeper'}
+            profilePhoto={p.authorProfilePhoto || p.profilePhoto || null}
+            linkClassName="text-decoration-none fw-semibold"
+          />
+        ) : (
+          p.authorDisplayName || 'keeper'
+        )}
       </div>
       <p className="small mb-2 ta-social-compact-post__body">{(p.body || '').slice(0, 115) || '...'}</p>
       <div className="small text-muted d-flex justify-content-between">
@@ -500,62 +508,12 @@ export default function SocialHubPage() {
     }).format(d)
   }
 
-  const loadAuthorPreview = useCallback(async (handle) => {
-    const clean = (handle || '').trim()
-    if (!clean || authorPreviewByHandle[clean] || loadingAuthorPreviewByHandle[clean]) return
-    setLoadingAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: true }))
-    try {
-      const row = await userPublicService.byHandle(clean)
-      setAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: row || null }))
-    } catch {
-      setAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: null }))
-    } finally {
-      setLoadingAuthorPreviewByHandle((prev) => ({ ...prev, [clean]: false }))
-    }
-  }, [authorPreviewByHandle, loadingAuthorPreviewByHandle])
-
-  const renderAuthorHoverCard = (handle) => {
-    const clean = (handle || '').trim()
-    if (!clean) return null
-    const preview = authorPreviewByHandle[clean]
-    const badges = Array.isArray(preview?.badges) ? preview.badges.slice(0, 4) : []
-    return (
-      <span className="ta-social-author-hover-card">
-        {preview?.profilePhoto ? (
-          <img
-            src={imgUrl(preview.profilePhoto) || '/spider-default.png'}
-            alt={`@${clean}`}
-            className="ta-social-author-hover-card__avatar"
-          />
-        ) : null}
-        <span className="d-block fw-semibold mb-1">{preview?.displayName || 'Keeper'}</span>
-        <span className="d-block small text-muted mb-1">@{clean}</span>
-        {loadingAuthorPreviewByHandle[clean] && (
-          <span className="d-block small text-muted">{t('common.loading')}</span>
-        )}
-        {!loadingAuthorPreviewByHandle[clean] && badges.length > 0 && (
-          <span className="d-flex flex-wrap gap-1 mt-1">
-            {badges.map((b, idx) => (
-              <span key={`${b?.key || b?.label || 'badge'}-${idx}`} className="badge text-bg-secondary">
-                {b?.label || b?.key || 'Badge'}
-              </span>
-            ))}
-          </span>
-        )}
-      </span>
-    )
-  }
-
   const renderPostAuthor = (p) => {
     const handle = p.authorHandle || ''
     const display = p.authorDisplayName || 'keeper'
     const profilePhoto = p.authorProfilePhoto || p.profilePhoto || null
     return (
-      <div
-        className="d-flex align-items-center gap-2 ta-social-author-anchor"
-        onMouseEnter={() => loadAuthorPreview(handle)}
-        onFocus={() => loadAuthorPreview(handle)}
-      >
+      <div className="d-flex align-items-center gap-2 ta-social-author-anchor">
         <img
           src={imgUrl(profilePhoto) || '/spider-default.png'}
           alt={handle ? `@${handle}` : display}
@@ -563,9 +521,7 @@ export default function SocialHubPage() {
         />
         <div className="small d-flex align-items-center gap-2 flex-wrap">
           {handle ? (
-            <Link to={`/u/${encodeURIComponent(handle)}`} className="text-decoration-none fw-semibold">
-              @{handle}
-            </Link>
+            <PublicKeeperHandle handle={handle} displayName={display} profilePhoto={profilePhoto} />
           ) : (
             <span className="fw-semibold">{display}</span>
           )}
@@ -574,7 +530,6 @@ export default function SocialHubPage() {
             <span className="text-muted">{formatPostDateTime(p.createdAt)}</span>
           )}
         </div>
-        {handle && renderAuthorHoverCard(handle)}
       </div>
     )
   }
@@ -676,7 +631,16 @@ export default function SocialHubPage() {
                             alt={row?.handle ? `@${row.handle}` : '@keeper'}
                             className="ta-social-spood-hover-card__avatar"
                           />
-                          <span className="small">{row?.handle ? `@${row.handle}` : (row?.displayName || 'Keeper')}</span>
+                          {row?.handle ? (
+                            <PublicKeeperHandle
+                              handle={row.handle}
+                              displayName={row?.displayName || 'Keeper'}
+                              profilePhoto={row?.profilePhoto || null}
+                              linkClassName="small text-decoration-none"
+                            />
+                          ) : (
+                            <span className="small">{row?.displayName || 'Keeper'}</span>
+                          )}
                         </div>
                       ))}
                       {hiddenLikeCount > 0 && (
@@ -714,7 +678,12 @@ export default function SocialHubPage() {
             previewComments.map((c) => (
               <div key={c.id} className="small mb-2 ta-social-comment-preview">
                 <span className="fw-semibold me-1">
-                  {c.authorHandle ? `@${c.authorHandle}` : (c.authorDisplayName || 'keeper')}:
+                  {c.authorHandle ? (
+                    <PublicKeeperHandle handle={c.authorHandle} displayName={c.authorDisplayName || 'keeper'} />
+                  ) : (
+                    c.authorDisplayName || 'keeper'
+                  )}
+                  :
                 </span>
                 <span>{c.body}</span>
               </div>
@@ -808,9 +777,7 @@ export default function SocialHubPage() {
                     {(publicSexIdCases.content || [])[topicCarouselIndex.sexId] && (
                       <div className="small text-muted mb-2">
                         {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle ? (
-                          <Link to={`/u/${encodeURIComponent((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle)}`} className="text-decoration-none">
-                            @{(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle}
-                          </Link>
+                          <PublicKeeperHandle handle={(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.authorHandle} />
                         ) : 'keeper'} · {timeAgoLabel((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.createdAt, t)}
                       </div>
                     )}
@@ -830,9 +797,7 @@ export default function SocialHubPage() {
                     {enclosurePosts[topicCarouselIndex.enclosure] && (
                       <div className="small text-muted mb-2">
                         {enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle ? (
-                          <Link to={`/u/${encodeURIComponent(enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle)}`} className="text-decoration-none">
-                            @{enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle}
-                          </Link>
+                          <PublicKeeperHandle handle={enclosurePosts[topicCarouselIndex.enclosure]?.authorHandle} />
                         ) : 'keeper'} · {timeAgoLabel(enclosurePosts[topicCarouselIndex.enclosure]?.createdAt, t)}
                       </div>
                     )}
@@ -852,9 +817,7 @@ export default function SocialHubPage() {
                     {spiderOkayPosts[topicCarouselIndex.spiderOkay] && (
                       <div className="small text-muted mb-2">
                         {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle ? (
-                          <Link to={`/u/${encodeURIComponent(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle)}`} className="text-decoration-none">
-                            @{spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle}
-                          </Link>
+                          <PublicKeeperHandle handle={spiderOkayPosts[topicCarouselIndex.spiderOkay]?.authorHandle} />
                         ) : 'keeper'} · {timeAgoLabel(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.createdAt, t)}
                       </div>
                     )}
@@ -874,9 +837,7 @@ export default function SocialHubPage() {
                     {meetMyTsPosts[topicCarouselIndex.meetMyTs] && (
                       <div className="small text-muted mb-2">
                         {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle ? (
-                          <Link to={`/u/${encodeURIComponent(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle)}`} className="text-decoration-none">
-                            @{meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle}
-                          </Link>
+                          <PublicKeeperHandle handle={meetMyTsPosts[topicCarouselIndex.meetMyTs]?.authorHandle} />
                         ) : 'keeper'} · {timeAgoLabel(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.createdAt, t)}
                       </div>
                     )}
@@ -926,14 +887,18 @@ export default function SocialHubPage() {
                       >
                         {profileSearching && <div className="small text-muted px-2 py-1">{t('common.loading')}</div>}
                         {!profileSearching && profileResults.map((row) => (
-                          <Link
+                          <div
                             key={row.id}
-                            to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
-                            className="d-flex align-items-center gap-2 text-decoration-none rounded px-2 py-1"
+                            className="d-flex align-items-center gap-2 rounded px-2 py-1"
                           >
                             <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 22, height: 22, borderRadius: 999, objectFit: 'cover' }} />
-                            <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
-                          </Link>
+                            <PublicKeeperHandle
+                              handle={row.publicHandle || ''}
+                              displayName={row.displayName || 'keeper'}
+                              profilePhoto={row.profilePhoto || null}
+                              linkClassName="small fw-semibold text-decoration-none"
+                            />
+                          </div>
                         ))}
                       </div>
                     )}

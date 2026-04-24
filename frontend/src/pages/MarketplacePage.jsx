@@ -10,6 +10,7 @@ import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constant
 import { imgUrl } from '../services/api'
 import BrandLogoMark from '../components/BrandLogoMark'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 
 const EMPTY_LISTING_FORM = {
@@ -466,7 +467,14 @@ export default function MarketplacePage() {
                     <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 46, height: 46, borderRadius: 999, objectFit: 'cover' }} />
                     <div className="min-w-0">
                       <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
-                      <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
+                      <div className="small text-muted text-truncate">
+                        <PublicKeeperHandle
+                          handle={myProfile.handle || user.publicHandle || ''}
+                          displayName={user.displayName || 'Keeper'}
+                          profilePhoto={myProfile.profilePhoto || null}
+                          className="text-truncate"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="small text-muted">
@@ -627,6 +635,15 @@ export default function MarketplacePage() {
                       <div className="fw-semibold mb-2">
                         {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
                       </div>
+                      {l.sellerHandle && (
+                        <div className="small mb-2">
+                          <PublicKeeperHandle
+                            handle={l.sellerHandle}
+                            displayName={l.sellerDisplayName || 'keeper'}
+                            profilePhoto={l.sellerProfilePhoto || null}
+                          />
+                        </div>
+                      )}
                       <div className="d-flex gap-2 flex-wrap">
                         <Link to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
                           {t('marketplace.viewSeller')}
