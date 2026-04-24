@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import communityService from '../services/communityService'
+import { imgUrl } from '../services/api'
 
 export default function CommunityPostThreadPage() {
   const { t } = useTranslation()
@@ -16,6 +17,9 @@ export default function CommunityPostThreadPage() {
   const [commentBody, setCommentBody] = useState('')
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
+  const [likesOpen, setLikesOpen] = useState(false)
+  const [likesRows, setLikesRows] = useState([])
+  const [likesLoading, setLikesLoading] = useState(false)
   useEffect(() => {
     if (searchParams.get('comments') === '1') {
       document.getElementById('community-thread-comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -71,6 +75,19 @@ export default function CommunityPostThreadPage() {
     }
   }
 
+  const openLikes = async () => {
+    setLikesOpen(true)
+    setLikesLoading(true)
+    try {
+      const rows = await communityService.listLikes(postId, 60)
+      setLikesRows(Array.isArray(rows) ? rows : [])
+    } catch {
+      setErr(t('social.loadError'))
+    } finally {
+      setLikesLoading(false)
+    }
+  }
+
   return (
     <div>
       <Navbar />
@@ -105,6 +122,13 @@ export default function CommunityPostThreadPage() {
               >
                 {t('social.spoodCount', { count: post.likeCount ?? 0 })}
               </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={openLikes}
+              >
+                {t('social.viewSpood')}
+              </button>
               <span className="btn btn-sm btn-outline-secondary disabled">
                 {t('social.comments')} ({comments.length || post.commentsCount || 0})
               </span>
@@ -119,9 +143,20 @@ export default function CommunityPostThreadPage() {
             ) : (
               comments.map((c) => (
                 <div key={c.id} className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-                  <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
-                    {c.authorHandle ? `@${c.authorHandle}` : (c.authorDisplayName || 'keeper')}:
-                  </span>{' '}
+                  {c.authorHandle ? (
+                    <Link
+                      to={`/u/${encodeURIComponent(c.authorHandle)}`}
+                      className="fw-semibold text-decoration-none"
+                      style={{ color: 'var(--ta-parchment)' }}
+                    >
+                      @{c.authorHandle}
+                    </Link>
+                  ) : (
+                    <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+                      {c.authorDisplayName || 'keeper'}
+                    </span>
+                  )}
+                  :{' '}
                   {c.body}
                 </div>
               ))
@@ -146,6 +181,45 @@ export default function CommunityPostThreadPage() {
             )}
         </div>
       </div>
+      {likesOpen && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.58)' }} onClick={() => setLikesOpen(false)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{t('social.whoSpooded')}</h5>
+                <button type="button" className="btn-close" onClick={() => setLikesOpen(false)} aria-label={t('ratePrompt.close')} />
+              </div>
+              <div className="modal-body">
+                {likesLoading ? (
+                  <p className="small text-muted mb-0">{t('social.loadingReactions')}</p>
+                ) : likesRows.length === 0 ? (
+                  <p className="small text-muted mb-0">{t('social.noSpoodYet')}</p>
+                ) : (
+                  <div className="d-flex flex-column gap-2">
+                    {likesRows.map((row) => (
+                      <div key={`${row?.userId || 'u'}-${row?.likedAt || ''}`} className="d-flex align-items-center gap-2">
+                        <img
+                          src={imgUrl(row?.profilePhoto) || '/spider-default.png'}
+                          alt={row?.handle ? `@${row.handle}` : '@keeper'}
+                          style={{ width: 30, height: 30, borderRadius: 999, objectFit: 'cover' }}
+                        />
+                        {row?.handle ? (
+                          <Link to={`/u/${encodeURIComponent(row.handle)}`} className="text-decoration-none fw-semibold">
+                            @{row.handle}
+                          </Link>
+                        ) : (
+                          <span className="fw-semibold">@keeper</span>
+                        )}
+                        <span className="small text-muted">{row?.displayName || 'Keeper'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

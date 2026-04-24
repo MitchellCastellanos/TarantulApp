@@ -4,6 +4,8 @@ import api from './api'
 const communityService = {
   publicFeed: (page = 0, size = 20) =>
     api.get('/public/community/feed', { params: { page, size } }).then((r) => r.data),
+  publicFeedByTopic: (topicKey, page = 0, size = 20) =>
+    api.get(`/public/community/topics/${encodeURIComponent(topicKey)}/posts`, { params: { page, size } }).then((r) => r.data),
   publicPostById: (postId) =>
     api.get(`/public/community/posts/${postId}`).then((r) => r.data),
   publicComments: (postId) =>

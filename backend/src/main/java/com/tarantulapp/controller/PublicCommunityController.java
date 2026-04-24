@@ -34,6 +34,15 @@ public class PublicCommunityController {
         return ResponseEntity.ok(activityPostService.publicFeed(page, size, viewer));
     }
 
+    @GetMapping("/topics/{topicKey}/posts")
+    public ResponseEntity<Map<String, Object>> publicTopicFeed(
+            @PathVariable String topicKey,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Optional<UUID> viewer = securityHelper.tryGetCurrentUserId();
+        return ResponseEntity.ok(activityPostService.publicFeedByTopic(topicKey, page, size, viewer));
+    }
+
     @GetMapping("/posts/{postId}/likes")
     public ResponseEntity<List<Map<String, Object>>> postLikes(
             @PathVariable UUID postId,

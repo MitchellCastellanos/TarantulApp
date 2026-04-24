@@ -26,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +48,13 @@ public class ActivityPostService {
     private static final Pattern WORD_SPLIT = Pattern.compile("\\s+");
     private static final int MAX_POSTS_PER_HOUR = 12;
     private static final int MAX_COMMENTS_PER_HOUR = 40;
+    private static final String TOPIC_SEX_ID = "sex_id_case";
+    private static final String TOPIC_ENCLOSURE = "enclosure_check";
+    private static final String TOPIC_SPIDER_OKAY = "spider_okay";
+    private static final String TOPIC_MEET_MY_TS = "meet_my_ts";
+    private static final Set<String> ALLOWED_MILESTONE_KINDS = Collections.unmodifiableSet(
+            new HashSet<>(List.of(TOPIC_SEX_ID, TOPIC_ENCLOSURE, TOPIC_SPIDER_OKAY, TOPIC_MEET_MY_TS))
+    );
 
     private final ActivityPostRepository activityPostRepository;
     private final ActivityPostLikeRepository activityPostLikeRepository;
@@ -86,6 +95,15 @@ public class ActivityPostService {
         Pageable p = PageRequest.of(page, clampSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<ActivityPost> rows = activityPostRepository.findByAuthorUserIdOrderByCreatedAtDesc(authorId, p);
         return pageToDto(rows, Optional.of(authorId));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicFeedByTopic(String topicKey, int page, int size, Optional<UUID> viewerId) {
+        String normalized = normalizeTopicKey(topicKey);
+        Pageable p = PageRequest.of(page, clampSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<ActivityPost> rows = activityPostRepository
+                .findByVisibilityAndHiddenAtIsNullAndMilestoneKindOrderByCreatedAtDesc("public", normalized, p);
+        return pageToDto(rows, viewerId);
     }
 
     @Transactional(readOnly = true)
@@ -130,7 +148,7 @@ public class ActivityPostService {
         post.setAuthorUserId(authorId);
         post.setBody(cleanedBody);
         post.setVisibility(vis);
-        post.setMilestoneKind(cleanText(milestoneKind, 40));
+        post.setMilestoneKind(normalizeMilestoneKind(milestoneKind));
         post.setImageUrl(cleanText(imageUrl, 500));
         post.setTarantulaId(tarantulaId);
         ActivityPost saved = activityPostRepository.save(post);
@@ -398,6 +416,29 @@ public class ActivityPostService {
             throw new IllegalArgumentException("Visibilidad invalida");
         }
         return v;
+    }
+
+    private String normalizeMilestoneKind(String raw) {
+        String cleaned = cleanText(raw, 40);
+        if (cleaned == null) {
+            return null;
+        }
+        String normalized = cleaned.toLowerCase(Locale.ROOT);
+        if (!ALLOWED_MILESTONE_KINDS.contains(normalized)) {
+            throw new IllegalArgumentException("Categoria de post invalida");
+        }
+        return normalized;
+    }
+
+    private String normalizeTopicKey(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Categoria requerida");
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (!ALLOWED_MILESTONE_KINDS.contains(normalized)) {
+            throw new IllegalArgumentException("Categoria invalida");
+        }
+        return normalized;
     }
 
     private String normalizeCommunityProfileVisibility(String raw) {
