@@ -2,6 +2,7 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.OfficialVendorLead;
+import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
@@ -128,6 +129,24 @@ public class OfficialVendorService {
         return mapVendor(officialVendorRepository.save(vendor));
     }
 
+    /**
+     * Updates strategic partner program flags for an official vendor.
+     * {@code strategicFounder} true sets {@link PartnerProgramTier#STRATEGIC_FOUNDER}; false clears tier.
+     * {@code listingImportEnabled} toggles ingest eligibility (still requires tier for successful upserts).
+     */
+    @Transactional
+    public Map<String, Object> adminUpdateStrategicProgram(UUID vendorId, Boolean strategicFounder, Boolean listingImportEnabled) {
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
+        if (strategicFounder != null) {
+            vendor.setPartnerProgramTier(Boolean.TRUE.equals(strategicFounder) ? PartnerProgramTier.STRATEGIC_FOUNDER : null);
+        }
+        if (listingImportEnabled != null) {
+            vendor.setListingImportEnabled(listingImportEnabled);
+        }
+        return mapVendor(officialVendorRepository.save(vendor));
+    }
+
     private boolean vendorMatchesQuery(Map<String, Object> vendor, String queryNorm) {
         String name = normalize((String) vendor.get("name"));
         String state = normalize((String) vendor.get("state"));
@@ -176,6 +195,8 @@ public class OfficialVendorService {
         out.put("badge", vendor.getBadge() == null ? "Official partner" : vendor.getBadge());
         out.put("note", vendor.getNote() == null ? "" : vendor.getNote());
         out.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
+        out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
+        out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
         out.put("createdAt", vendor.getCreatedAt());
         return out;
     }
@@ -241,6 +262,7 @@ public class OfficialVendorService {
         v.setBadge("Official partner");
         v.setNote(note);
         v.setEnabled(true);
+        v.setListingImportEnabled(false);
         return v;
     }
 
