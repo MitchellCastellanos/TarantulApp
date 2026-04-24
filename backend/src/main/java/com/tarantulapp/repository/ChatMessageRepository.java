@@ -12,4 +12,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
     Page<ChatMessage> findByThreadIdOrderByCreatedAtAsc(UUID threadId, Pageable pageable);
 
     List<ChatMessage> findTop1ByThreadIdOrderByCreatedAtDesc(UUID threadId);
+
+    long countByThreadId(UUID threadId);
+
+    long countByThreadIdAndSenderUserId(UUID threadId, UUID senderUserId);
 }

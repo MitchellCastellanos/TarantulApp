@@ -1,11 +1,13 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.entity.ActivityPost;
+import com.tarantulapp.entity.ChatThread;
 import com.tarantulapp.entity.ModerationReport;
 import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.ActivityPostRepository;
+import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.ModerationReportRepository;
 import com.tarantulapp.repository.TarantulaRepository;
@@ -27,6 +29,7 @@ public class ModerationService {
     private final ModerationReportRepository moderationReportRepository;
     private final TarantulaRepository tarantulaRepository;
     private final MarketplaceListingRepository marketplaceListingRepository;
+    private final ChatThreadRepository chatThreadRepository;
     private final ActivityPostRepository activityPostRepository;
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
@@ -34,12 +37,14 @@ public class ModerationService {
     public ModerationService(ModerationReportRepository moderationReportRepository,
                              TarantulaRepository tarantulaRepository,
                              MarketplaceListingRepository marketplaceListingRepository,
+                             ChatThreadRepository chatThreadRepository,
                              ActivityPostRepository activityPostRepository,
                              UserRepository userRepository,
                              SecurityHelper securityHelper) {
         this.moderationReportRepository = moderationReportRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.marketplaceListingRepository = marketplaceListingRepository;
+        this.chatThreadRepository = chatThreadRepository;
         this.activityPostRepository = activityPostRepository;
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
@@ -97,6 +102,20 @@ public class ModerationService {
         r.setTargetType("activity_post");
         r.setTargetId(target.getId());
         r.setTargetRef(ref);
+        r.setReason(reason == null || reason.isBlank() ? "other" : reason.trim());
+        r.setDetails(details == null ? null : details.trim());
+        moderationReportRepository.save(r);
+    }
+
+    @Transactional
+    public void reportMarketplaceChat(UUID threadId, String reason, String details) {
+        ChatThread target = chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new NotFoundException("Chat no encontrado"));
+        ModerationReport r = new ModerationReport();
+        r.setReporterUserId(securityHelper.tryGetCurrentUserId().orElse(null));
+        r.setTargetType("marketplace_chat");
+        r.setTargetId(target.getId());
+        r.setTargetRef(target.getListingId() == null ? "" : target.getListingId().toString());
         r.setReason(reason == null || reason.isBlank() ? "other" : reason.trim());
         r.setDetails(details == null ? null : details.trim());
         moderationReportRepository.save(r);

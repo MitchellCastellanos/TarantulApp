@@ -13,8 +13,6 @@ export default function KeeperProfilePage() {
   const { user } = useAuth()
   const [data, setData] = useState(null)
   const [reviews, setReviews] = useState([])
-  const [rating, setRating] = useState(5)
-  const [comment, setComment] = useState('')
   const [msg, setMsg] = useState('')
 
   const load = async () => {
@@ -29,19 +27,6 @@ export default function KeeperProfilePage() {
   useEffect(() => {
     load().catch(() => setMsg(t('public.notFound')))
   }, [sellerUserId])
-
-  const sendReview = async (e) => {
-    e.preventDefault()
-    setMsg('')
-    try {
-      await marketplaceService.addReview(sellerUserId, { rating: Number(rating), comment })
-      setComment('')
-      await load()
-      setMsg(t('marketplace.reviewSaved'))
-    } catch (err) {
-      setMsg(err?.response?.data?.error || t('marketplace.error'))
-    }
-  }
 
   const reportKeeper = async () => {
     const reason = window.prompt(t('marketplace.reportReason'))
@@ -154,22 +139,6 @@ export default function KeeperProfilePage() {
                 ))}
               </div>
             </div>
-            {user && !sameUser && (
-              <div className="card border-0 shadow-sm">
-                <div className="card-body">
-                  <h6>{t('marketplace.leaveReview')}</h6>
-                  <form onSubmit={sendReview}>
-                    <select className="form-select form-select-sm mb-2" value={rating} onChange={(e) => setRating(e.target.value)}>
-                      {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                    <textarea className="form-control form-control-sm mb-2" rows={2}
-                      value={comment} onChange={(e) => setComment(e.target.value)}
-                      placeholder={t('marketplace.reviewComment')} />
-                    <button className="btn btn-sm btn-dark">{t('marketplace.sendReview')}</button>
-                  </form>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
