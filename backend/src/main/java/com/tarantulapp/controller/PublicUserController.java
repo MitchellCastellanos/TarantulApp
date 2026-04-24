@@ -38,6 +38,10 @@ public class PublicUserController {
         if (u.getPublicHandle() == null || u.getPublicHandle().isBlank()) {
             throw new NotFoundException("Handle no encontrado");
         }
+        String vis = u.getCommunityProfileVisibility() == null ? "" : u.getCommunityProfileVisibility().trim().toLowerCase();
+        if (!"public_full".equals(vis)) {
+            throw new NotFoundException("Handle no encontrado");
+        }
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", u.getId());
         m.put("displayName", u.getDisplayName() != null ? u.getDisplayName() : "");

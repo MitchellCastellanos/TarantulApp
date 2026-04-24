@@ -19,8 +19,17 @@ const communityService = {
   addComment: (postId, body) =>
     api.post(`/community/posts/${postId}/comments`, { body }).then((r) => r.data),
 
+  listLikes: (postId, limit = 40) =>
+    api.get(`/public/community/posts/${postId}/likes`, { params: { limit } }).then((r) => r.data),
+
   deleteComment: (commentId) =>
     api.delete(`/community/comments/${commentId}`).then((r) => r.data),
+
+  uploadPostPhoto: (file) => {
+    const form = new FormData()
+    form.append('file', file, file.name || 'community-post.jpg')
+    return api.post('/community/posts/photo', form).then((r) => r.data)
+  },
 }
 
 export default communityService

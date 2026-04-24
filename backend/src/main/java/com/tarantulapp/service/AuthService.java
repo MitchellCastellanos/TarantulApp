@@ -210,6 +210,7 @@ public class AuthService {
         r.setProfileCity(user.getProfileCity());
         r.setQrPrintExports(user.getQrPrintExports());
         r.setProfilePhoto(user.getProfilePhoto());
+        r.setCommunityProfileVisibility(user.getCommunityProfileVisibility());
         r.setAdmin(adminAccessService.isAdminEmail(user.getEmail()));
         return r;
     }

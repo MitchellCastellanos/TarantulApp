@@ -80,7 +80,7 @@ public class MarketplaceService {
     public Map<String, Object> upsertMyProfile(UUID userId, String displayName, String handle, String bio, String location,
                                                String featuredCollection, String contactWhatsapp,
                                                String contactInstagram, String country, String state, String city,
-                                               Boolean searchVisible) {
+                                               Boolean searchVisible, String communityProfileVisibility) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
@@ -98,6 +98,7 @@ public class MarketplaceService {
         profile.setProfileState(cleanText(state, 80));
         profile.setProfileCity(cleanText(city, 80));
         profile.setSearchVisible(searchVisible == null ? Boolean.TRUE : searchVisible);
+        profile.setCommunityProfileVisibility(normalizeCommunityProfileVisibility(communityProfileVisibility));
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -442,7 +443,19 @@ public class MarketplaceService {
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
+        out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
         return out;
+    }
+
+    private String normalizeCommunityProfileVisibility(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "preview_only";
+        }
+        String v = raw.trim().toLowerCase();
+        if (!v.equals("public_full") && !v.equals("preview_only") && !v.equals("private")) {
+            throw new IllegalArgumentException("Visibilidad de perfil invalida");
+        }
+        return v;
     }
 
     private List<Map<String, Object>> computeBadges(UUID userId) {

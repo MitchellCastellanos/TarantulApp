@@ -30,6 +30,7 @@ import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
+import HandleSetupPage from './pages/HandleSetupPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
 
@@ -49,7 +50,7 @@ function AuthSessionBridge() {
 }
 
 function PrivateRoute({ children }) {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const location = useLocation()
   if (!token) {
     return (
@@ -59,6 +60,10 @@ function PrivateRoute({ children }) {
         state={{ redirectAfterAuth: location.pathname + location.search }}
       />
     )
+  }
+  const safeHandle = String(user?.publicHandle || '').trim()
+  if (!safeHandle && location.pathname !== '/onboarding/handle') {
+    return <Navigate to="/onboarding/handle" replace />
   }
   return children
 }
@@ -115,6 +120,7 @@ function AppRoutes() {
       <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
       <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
       <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
+      <Route path="/onboarding/handle" element={<PrivateRoute><HandleSetupPage /></PrivateRoute>} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

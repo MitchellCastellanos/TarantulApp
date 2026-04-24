@@ -3,14 +3,17 @@ package com.tarantulapp.service;
 import com.tarantulapp.entity.ActivityPost;
 import com.tarantulapp.entity.ActivityPostComment;
 import com.tarantulapp.entity.ActivityPostLike;
+import com.tarantulapp.entity.CommunityModerationTrace;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.ActivityPostCommentRepository;
 import com.tarantulapp.repository.ActivityPostLikeRepository;
 import com.tarantulapp.repository.ActivityPostRepository;
+import com.tarantulapp.repository.CommunityModerationTraceRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.util.FileStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,21 +21,31 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 @Service
 public class ActivityPostService {
 
     private static final int MAX_PAGE_SIZE = 40;
+    private static final long MAX_IMAGE_BYTES = 8L * 1024L * 1024L;
+    private static final Pattern WORD_SPLIT = Pattern.compile("\\s+");
+    private static final int MAX_POSTS_PER_HOUR = 12;
+    private static final int MAX_COMMENTS_PER_HOUR = 40;
 
     private final ActivityPostRepository activityPostRepository;
     private final ActivityPostLikeRepository activityPostLikeRepository;
@@ -40,19 +53,25 @@ public class ActivityPostService {
     private final TarantulaRepository tarantulaRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final FileStorageService fileStorageService;
+    private final CommunityModerationTraceRepository communityModerationTraceRepository;
 
     public ActivityPostService(ActivityPostRepository activityPostRepository,
                                ActivityPostLikeRepository activityPostLikeRepository,
                                ActivityPostCommentRepository activityPostCommentRepository,
                                TarantulaRepository tarantulaRepository,
                                UserRepository userRepository,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               FileStorageService fileStorageService,
+                               CommunityModerationTraceRepository communityModerationTraceRepository) {
         this.activityPostRepository = activityPostRepository;
         this.activityPostLikeRepository = activityPostLikeRepository;
         this.activityPostCommentRepository = activityPostCommentRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.fileStorageService = fileStorageService;
+        this.communityModerationTraceRepository = communityModerationTraceRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,10 +91,19 @@ public class ActivityPostService {
     @Transactional
     public Map<String, Object> createPost(UUID authorId, String body, String visibility, String milestoneKind,
                                         String imageUrl, UUID tarantulaId) {
+        long postsLastHour = activityPostRepository.countByAuthorUserIdAndCreatedAtAfter(authorId, Instant.now().minusSeconds(3600));
+        if (postsLastHour >= MAX_POSTS_PER_HOUR) {
+            saveModerationTrace(authorId, "post", "blocked", "rate_limit_post_hour", "rate-limit");
+            throw new IllegalArgumentException("Demasiadas publicaciones en poco tiempo. Intenta de nuevo en unos minutos.");
+        }
         String vis = normalizeVisibility(visibility);
         String cleanedBody = cleanText(body, 2000);
         if (cleanedBody == null) {
             throw new IllegalArgumentException("Texto requerido");
+        }
+        if (containsBlockedLanguage(cleanedBody)) {
+            saveModerationTrace(authorId, "post", "blocked", "blocked_language", cleanedBody);
+            throw new IllegalArgumentException("Tu texto infringe las reglas de comunidad.");
         }
         if (tarantulaId != null) {
             Tarantula t = tarantulaRepository.findById(tarantulaId)
@@ -166,8 +194,43 @@ public class ActivityPostService {
         return out;
     }
 
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listLikes(UUID postId, Optional<UUID> viewerId, int limit) {
+        ActivityPost post = activityPostRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
+        if (!canView(post, viewerId)) {
+            throw new AccessDeniedException("No autorizado");
+        }
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        List<ActivityPostLike> likes = activityPostLikeRepository.findByPostIdOrderByCreatedAtDesc(
+                postId, PageRequest.of(0, safeLimit)
+        );
+        Set<UUID> userIds = likes.stream().map(ActivityPostLike::getUserId).collect(Collectors.toSet());
+        Map<UUID, User> users = loadUsers(userIds);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (ActivityPostLike like : likes) {
+            User author = users.get(like.getUserId());
+            Map<String, Object> row = new LinkedHashMap<>();
+            String vis = normalizeCommunityProfileVisibility(author == null ? null : author.getCommunityProfileVisibility());
+            row.put("userId", like.getUserId());
+            row.put("handle", author == null || author.getPublicHandle() == null ? "" : author.getPublicHandle());
+            row.put("displayName", author == null || author.getDisplayName() == null ? "" : author.getDisplayName());
+            row.put("profilePhoto", author == null || author.getProfilePhoto() == null ? "" : author.getProfilePhoto());
+            row.put("communityProfileVisibility", vis);
+            row.put("canViewFullProfile", "public_full".equals(vis));
+            row.put("likedAt", like.getCreatedAt() == null ? "" : like.getCreatedAt().toString());
+            out.add(row);
+        }
+        return out;
+    }
+
     @Transactional
     public Map<String, Object> addComment(UUID userId, UUID postId, String body) {
+        long commentsLastHour = activityPostCommentRepository.countByAuthorUserIdAndCreatedAtAfter(userId, Instant.now().minusSeconds(3600));
+        if (commentsLastHour >= MAX_COMMENTS_PER_HOUR) {
+            saveModerationTrace(userId, "comment", "blocked", "rate_limit_comment_hour", "rate-limit");
+            throw new IllegalArgumentException("Demasiados comentarios en poco tiempo. Intenta de nuevo en unos minutos.");
+        }
         ActivityPost post = activityPostRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
         if (!canView(post, Optional.of(userId))) {
@@ -176,6 +239,10 @@ public class ActivityPostService {
         String text = cleanText(body, 1500);
         if (text == null) {
             throw new IllegalArgumentException("Comentario vacio");
+        }
+        if (containsBlockedLanguage(text)) {
+            saveModerationTrace(userId, "comment", "blocked", "blocked_language", text);
+            throw new IllegalArgumentException("Tu comentario infringe las reglas de comunidad.");
         }
         ActivityPostComment c = new ActivityPostComment();
         c.setPostId(postId);
@@ -284,6 +351,7 @@ public class ActivityPostService {
         m.put("createdAt", c.getCreatedAt() != null ? c.getCreatedAt().toString() : "");
         m.put("authorUserId", c.getAuthorUserId());
         m.put("authorDisplayName", author != null && author.getDisplayName() != null ? author.getDisplayName() : "");
+        m.put("authorHandle", author != null && author.getPublicHandle() != null ? author.getPublicHandle() : "");
         return m;
     }
 
@@ -301,7 +369,7 @@ public class ActivityPostService {
         if ("public".equals(post.getVisibility())) {
             return true;
         }
-        if ("private".equals(post.getVisibility()) || "followers".equals(post.getVisibility())) {
+        if ("private".equals(post.getVisibility())) {
             return viewerId.filter(uid -> uid.equals(post.getAuthorUserId())).isPresent();
         }
         return false;
@@ -312,10 +380,40 @@ public class ActivityPostService {
             return "private";
         }
         String v = raw.trim().toLowerCase();
-        if (!v.equals("public") && !v.equals("private") && !v.equals("followers")) {
+        if (!v.equals("public") && !v.equals("private")) {
             throw new IllegalArgumentException("Visibilidad invalida");
         }
         return v;
+    }
+
+    private String normalizeCommunityProfileVisibility(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "preview_only";
+        }
+        String v = raw.trim().toLowerCase(Locale.ROOT);
+        if (!v.equals("public_full") && !v.equals("preview_only") && !v.equals("private")) {
+            return "preview_only";
+        }
+        return v;
+    }
+
+    @Transactional
+    public Map<String, String> uploadPostImage(UUID userId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            saveModerationTrace(userId, "image", "blocked", "empty_file", "");
+            throw new IllegalArgumentException("Imagen requerida");
+        }
+        if (file.getSize() > MAX_IMAGE_BYTES) {
+            saveModerationTrace(userId, "image", "blocked", "image_too_large", file.getOriginalFilename());
+            throw new IllegalArgumentException("La imagen supera el limite de 8MB.");
+        }
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (!contentType.startsWith("image/")) {
+            saveModerationTrace(userId, "image", "blocked", "invalid_image_mime", contentType);
+            throw new IllegalArgumentException("Formato de imagen invalido.");
+        }
+        String path = fileStorageService.saveFile(file, "community/posts/" + userId);
+        return Map.of("imageUrl", path);
     }
 
     private int clampSize(int size) {
@@ -348,5 +446,43 @@ public class ActivityPostService {
             return out;
         }
         return out.substring(0, Math.max(0, maxLen - 1)).trim() + "…";
+    }
+
+    private boolean containsBlockedLanguage(String raw) {
+        String normalized = normalizeForModeration(raw);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        String[] words = WORD_SPLIT.split(normalized);
+        for (String w : words) {
+            if (w.equals("puta") || w.equals("puto") || w.equals("pito") || w.equals("mierda")
+                    || w.equals("pendejo") || w.equals("pendeja") || w.equals("chingar")
+                    || w.equals("chingada") || w.equals("culo") || w.equals("culero")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeForModeration(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String out = Normalizer.normalize(raw, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT);
+        out = out.replace('0', 'o').replace('1', 'i').replace('3', 'e').replace('4', 'a').replace('@', 'a');
+        out = out.replaceAll("[^a-z\\s]", " ");
+        return out.replaceAll("\\s+", " ").trim();
+    }
+
+    private void saveModerationTrace(UUID userId, String targetType, String action, String reason, String preview) {
+        CommunityModerationTrace trace = new CommunityModerationTrace();
+        trace.setUserId(userId);
+        trace.setTargetType(targetType);
+        trace.setAction(action);
+        trace.setReason(reason);
+        trace.setContentPreview(snippet(preview, 220));
+        communityModerationTraceRepository.save(trace);
     }
 }

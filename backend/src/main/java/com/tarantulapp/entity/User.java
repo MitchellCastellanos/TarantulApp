@@ -58,6 +58,9 @@ public class User {
     @Column(name = "search_visible", nullable = false)
     private Boolean searchVisible = true;
 
+    @Column(name = "community_profile_visibility", nullable = false, length = 20)
+    private String communityProfileVisibility = "preview_only";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan;
@@ -94,6 +97,9 @@ public class User {
         }
         if (searchVisible == null) {
             searchVisible = true;
+        }
+        if (communityProfileVisibility == null || communityProfileVisibility.isBlank()) {
+            communityProfileVisibility = "preview_only";
         }
     }
 
@@ -144,6 +150,9 @@ public class User {
 
     public Boolean getSearchVisible() { return searchVisible; }
     public void setSearchVisible(Boolean searchVisible) { this.searchVisible = searchVisible; }
+
+    public String getCommunityProfileVisibility() { return communityProfileVisibility; }
+    public void setCommunityProfileVisibility(String communityProfileVisibility) { this.communityProfileVisibility = communityProfileVisibility; }
 
     public UserPlan getPlan() { return plan; }
     public void setPlan(UserPlan plan) { this.plan = plan; }

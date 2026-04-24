@@ -26,6 +26,7 @@ public class AuthResponse {
     private String profileCity;
     private Integer qrPrintExports;
     private String profilePhoto;
+    private String communityProfileVisibility;
     private boolean admin;
 
     public AuthResponse(String token, String email, String displayName, UUID userId, String plan) {
@@ -79,6 +80,8 @@ public class AuthResponse {
     public void setQrPrintExports(Integer qrPrintExports) { this.qrPrintExports = qrPrintExports; }
     public String getProfilePhoto() { return profilePhoto; }
     public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
+    public String getCommunityProfileVisibility() { return communityProfileVisibility; }
+    public void setCommunityProfileVisibility(String communityProfileVisibility) { this.communityProfileVisibility = communityProfileVisibility; }
 
     public boolean isAdmin() { return admin; }
     public void setAdmin(boolean admin) { this.admin = admin; }

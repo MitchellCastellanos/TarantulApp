@@ -12,6 +12,7 @@ import sexIdCaseService from '../services/sexIdCaseService'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { useAuth } from '../context/AuthContext'
+import { imgUrl } from '../services/api'
 
 const TAB_FEED = 'feed'
 const TAB_SEX_ID = 'sexId'
@@ -38,6 +39,8 @@ export default function SocialHubPage() {
     imageUrl: '',
     tarantulaId: '',
   })
+  const [postImageFile, setPostImageFile] = useState(null)
+  const [postImageUploading, setPostImageUploading] = useState(false)
   const [composerOpen, setComposerOpen] = useState(false)
   /** Solo true al abrir desde el carrusel de temas: evita scroll brusco al usar el botón normal del feed. */
   const pendingComposerScrollRef = useRef(false)
@@ -48,6 +51,9 @@ export default function SocialHubPage() {
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
   const [feedSection, setFeedSection] = useState('all')
+  const [likesOpenForPost, setLikesOpenForPost] = useState(null)
+  const [likesByPost, setLikesByPost] = useState({})
+  const [loadingLikesForPost, setLoadingLikesForPost] = useState({})
 
   const [referral, setReferral] = useState(null)
 
@@ -194,6 +200,7 @@ export default function SocialHubPage() {
         tarantulaId: tid && UUID_REGEX.test(tid) ? tid : undefined,
       })
       setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '', tarantulaId: '' }))
+      setPostImageFile(null)
       setMsg(t('social.postCreated'))
       await Promise.all([loadFeed(), loadMine()])
     } catch (e2) {
@@ -432,6 +439,13 @@ export default function SocialHubPage() {
             <span className="me-1" style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>{'\u{1F577}\u{FE0F}'}</span>
             <span className="small">{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
           </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => openLikesModal(p.id)}
+          >
+            Ver Spood
+          </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => toggleExpand(p.id)}>
             {t('social.comments')} ({p.commentsCount ?? 0})
           </button>
@@ -465,7 +479,9 @@ export default function SocialHubPage() {
         <div className="mt-2 pt-2 border-top border-secondary border-opacity-25">
           {(commentsByPost[p.id] || []).map((c) => (
             <div key={c.id} className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-              <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>{c.authorDisplayName || 'keeper'}:</span>{' '}
+              <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+                {c.authorHandle ? `@${c.authorHandle}` : (c.authorDisplayName || 'keeper')}:
+              </span>{' '}
               {c.body}
             </div>
           ))}
@@ -484,6 +500,57 @@ export default function SocialHubPage() {
       )}
     </div>
   )
+
+  const openLikesModal = async (postId) => {
+    setLikesOpenForPost(postId)
+    if (likesByPost[postId]) return
+    setLoadingLikesForPost((s) => ({ ...s, [postId]: true }))
+    try {
+      const rows = await communityService.listLikes(postId, 60)
+      setLikesByPost((prev) => ({ ...prev, [postId]: rows || [] }))
+    } catch {
+      setErr('No se pudo cargar la lista de Spood.')
+    } finally {
+      setLoadingLikesForPost((s) => ({ ...s, [postId]: false }))
+    }
+  }
+
+  const renderLikeUser = (row) => {
+    const handle = row?.handle ? `@${row.handle}` : '@keeper'
+    const label = row?.displayName || 'Keeper'
+    const canOpen = row?.canViewFullProfile && row?.handle
+    return (
+      <div key={`${row?.userId || 'u'}-${row?.likedAt || ''}`} className="ta-social-like-row">
+        <img
+          src={imgUrl(row?.profilePhoto) || '/spider-default.png'}
+          alt={handle}
+          className="ta-social-like-row__avatar"
+        />
+        <div className="flex-grow-1">
+          {canOpen ? (
+            <Link to={`/u/${encodeURIComponent(row.handle)}`} className="fw-semibold text-decoration-none">
+              {handle}
+            </Link>
+          ) : (
+            <span className="fw-semibold ta-social-preview-anchor">
+              {handle}
+              <span className="ta-social-preview-card">
+                <span className="d-block fw-semibold mb-1">{label}</span>
+                <span className="d-block small text-muted mb-1">{handle}</span>
+                <span className="d-block small text-muted">Perfil en modo preview.</span>
+              </span>
+            </span>
+          )}
+          <div className="small text-muted">{label}</div>
+        </div>
+        {canOpen ? (
+          <Link to={`/u/${encodeURIComponent(row.handle)}`} className="btn btn-sm btn-outline-secondary">Ver perfil</Link>
+        ) : (
+          <span className="badge text-bg-secondary">Solo preview</span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -720,7 +787,6 @@ export default function SocialHubPage() {
                             >
                               <option value="public">{t('social.visPublic')}</option>
                               <option value="private">{t('social.visPrivate')}</option>
-                              <option value="followers">{t('social.visFollowers')}</option>
                             </select>
                           </div>
                           <div className="col-md-4">
@@ -733,16 +799,35 @@ export default function SocialHubPage() {
                             />
                           </div>
                           <div className="col-md-4">
-                            <label className="form-label small mb-0">{t('social.imageUrl')}</label>
-                            <input
-                              className="form-control form-control-sm"
-                              value={composer.imageUrl}
-                              onChange={(e) => setComposer((c) => ({ ...c, imageUrl: e.target.value }))}
-                              placeholder="https://..."
-                            />
+                            <label className="form-label small mb-0">Foto (max 8MB)</label>
+                            <input className="form-control form-control-sm" type="file" accept="image/*"
+                              onChange={async (e) => {
+                                const f = e.target.files?.[0] || null
+                                setPostImageFile(f)
+                                if (!f) {
+                                  setComposer((c) => ({ ...c, imageUrl: '' }))
+                                  return
+                                }
+                                setPostImageUploading(true)
+                                setErr('')
+                                try {
+                                  const res = await communityService.uploadPostPhoto(f)
+                                  setComposer((c) => ({ ...c, imageUrl: res?.imageUrl || '' }))
+                                } catch (e2) {
+                                  setComposer((c) => ({ ...c, imageUrl: '' }))
+                                  setErr(e2?.response?.data?.error || t('social.saveError'))
+                                } finally {
+                                  setPostImageUploading(false)
+                                }
+                              }} />
+                            {postImageFile && (
+                              <div className="small text-muted mt-1">
+                                {postImageUploading ? 'Subiendo foto...' : `Foto lista: ${postImageFile.name}`}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <button type="submit" className="btn btn-sm btn-dark">{t('social.publish')}</button>
+                        <button type="submit" className="btn btn-sm btn-dark" disabled={postImageUploading}>{t('social.publish')}</button>
                       </form>
                     </div>
                   </div>
@@ -936,6 +1021,29 @@ export default function SocialHubPage() {
               </div>
             </div>
           </ChitinCardFrame>
+        )}
+        {likesOpenForPost && (
+          <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.58)' }} onClick={() => setLikesOpenForPost(null)}>
+            <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Quien dio Spood</h5>
+                  <button type="button" className="btn-close" onClick={() => setLikesOpenForPost(null)} aria-label="Cerrar" />
+                </div>
+                <div className="modal-body">
+                  {loadingLikesForPost[likesOpenForPost] ? (
+                    <p className="small text-muted mb-0">Cargando reacciones...</p>
+                  ) : (likesByPost[likesOpenForPost] || []).length === 0 ? (
+                    <p className="small text-muted mb-0">Este post aun no tiene Spood.</p>
+                  ) : (
+                    <div className="d-flex flex-column gap-2">
+                      {(likesByPost[likesOpenForPost] || []).map((row) => renderLikeUser(row))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
