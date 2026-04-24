@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
+import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 
 export default function ProPage() {
   const { t } = useTranslation()
@@ -29,9 +30,7 @@ export default function ProPage() {
   const isPro = plan === 'PRO'
   const inTrial = billing?.inTrial === true || user?.inTrial === true
   const trialEndsAt = billing?.trialEndsAt ?? user?.trialEndsAt
-  const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
-    : 0
+  const trialDaysLeft = trialEndsAt ? trialCalendarDaysRemaining(trialEndsAt) : 0
   const checkout = searchParams.get('checkout')
   const sessionId = searchParams.get('session_id')
 
