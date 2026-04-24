@@ -58,6 +58,12 @@ export default function SocialHubPage() {
   const [profileQuery, setProfileQuery] = useState('')
   const [profileResults, setProfileResults] = useState([])
   const [profileSearching, setProfileSearching] = useState(false)
+  const [topicCarouselIndex, setTopicCarouselIndex] = useState({
+    sexId: 0,
+    enclosure: 0,
+    spiderOkay: 0,
+    meetMyTs: 0,
+  })
 
   const [referral, setReferral] = useState(null)
 
@@ -71,6 +77,11 @@ export default function SocialHubPage() {
   const [sexIdCases, setSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
   const [publicSexIdCases, setPublicSexIdCases] = useState({ content: [], number: 0, totalPages: 0 })
   const [sexIdUploading, setSexIdUploading] = useState(false)
+  const [topicFeeds, setTopicFeeds] = useState({
+    enclosure_check: [],
+    spider_okay: [],
+    meet_my_ts: [],
+  })
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -122,10 +133,24 @@ export default function SocialHubPage() {
     setPublicSexIdCases(data || { content: [] })
   }, [])
 
+  const loadTopicFeeds = useCallback(async () => {
+    const [enclosure, spiderOkay, meetMyTs] = await Promise.all([
+      communityService.publicFeedByTopic('enclosure_check', 0, 12).catch(() => ({ content: [] })),
+      communityService.publicFeedByTopic('spider_okay', 0, 12).catch(() => ({ content: [] })),
+      communityService.publicFeedByTopic('meet_my_ts', 0, 12).catch(() => ({ content: [] })),
+    ])
+    setTopicFeeds({
+      enclosure_check: enclosure?.content || [],
+      spider_okay: spiderOkay?.content || [],
+      meet_my_ts: meetMyTs?.content || [],
+    })
+  }, [])
+
   useEffect(() => {
     loadFeed().catch(() => setErr(t('social.loadError')))
     loadPublicSexIdCases().catch(() => {})
-  }, [loadFeed, loadPublicSexIdCases, t])
+    loadTopicFeeds().catch(() => {})
+  }, [loadFeed, loadPublicSexIdCases, loadTopicFeeds, t])
 
   useEffect(() => {
     if (tab === TAB_FEED) {
@@ -176,7 +201,7 @@ export default function SocialHubPage() {
   }, [token, composerOpen])
 
   const openComposerFromTopic = useCallback(
-    (bodyPrefix) => {
+    (bodyPrefix, milestoneKind = '') => {
       if (!token) {
         navigate('/login', { state: { redirectAfterAuth: '/community' } })
         return
@@ -184,7 +209,7 @@ export default function SocialHubPage() {
       setErr('')
       setMsg('')
       pendingComposerScrollRef.current = true
-      setComposer((c) => ({ ...c, body: bodyPrefix, visibility: 'public' }))
+      setComposer((c) => ({ ...c, body: bodyPrefix, visibility: 'public', milestoneKind }))
       setComposerOpen(true)
     },
     [token, navigate]
@@ -214,7 +239,7 @@ export default function SocialHubPage() {
       setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '', tarantulaId: '' }))
       setPostImageFile(null)
       setMsg(t('social.postCreated'))
-      await Promise.all([loadFeed(), loadMine()])
+      await Promise.all([loadFeed(), loadMine(), loadTopicFeeds()])
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('social.saveError'))
     }
@@ -266,7 +291,7 @@ export default function SocialHubPage() {
       setCommentDraft((d) => ({ ...d, [postId]: '' }))
       const list = await communityService.getComments(postId)
       setCommentsByPost((c) => ({ ...c, [postId]: list }))
-      await loadFeed()
+      await Promise.all([loadFeed(), loadTopicFeeds()])
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('social.saveError'))
     }
@@ -281,7 +306,7 @@ export default function SocialHubPage() {
     try {
       await communityService.deletePost(postId)
       setMsg(t('social.postDeleted'))
-      await Promise.all([loadFeed(), loadMine()])
+      await Promise.all([loadFeed(), loadMine(), loadTopicFeeds()])
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('social.saveError'))
     }
@@ -401,6 +426,20 @@ export default function SocialHubPage() {
     [publicPosts]
   )
   const featuredPosts = useMemo(() => publicPosts.slice(0, 2), [publicPosts])
+  const meetMyTsPosts = useMemo(() => topicFeeds.meet_my_ts || [], [topicFeeds.meet_my_ts])
+  const generalPosts = useMemo(
+    () => {
+      const topicIds = new Set([
+        ...(topicFeeds.enclosure_check || []).map((p) => p.id),
+        ...(topicFeeds.spider_okay || []).map((p) => p.id),
+        ...(topicFeeds.meet_my_ts || []).map((p) => p.id),
+      ])
+      return publicPosts.filter((p) => !topicIds.has(p.id))
+    },
+    [publicPosts, topicFeeds.enclosure_check, topicFeeds.meet_my_ts, topicFeeds.spider_okay]
+  )
+  const enclosurePosts = useMemo(() => topicFeeds.enclosure_check || [], [topicFeeds.enclosure_check])
+  const spiderOkayPosts = useMemo(() => topicFeeds.spider_okay || [], [topicFeeds.spider_okay])
 
   const activeFeedList = useMemo(() => {
     if (feedSection === 'questions') return questionPosts
@@ -409,6 +448,18 @@ export default function SocialHubPage() {
     if (feedSection === 'mine') return mine.content || []
     return publicPosts
   }, [feedSection, milestonePosts, mine.content, photoPosts, publicPosts, questionPosts])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setTopicCarouselIndex((prev) => ({
+        sexId: (prev.sexId + 1) % Math.max(1, (publicSexIdCases.content || []).length),
+        enclosure: (prev.enclosure + 1) % Math.max(1, enclosurePosts.length),
+        spiderOkay: (prev.spiderOkay + 1) % Math.max(1, spiderOkayPosts.length),
+        meetMyTs: (prev.meetMyTs + 1) % Math.max(1, meetMyTsPosts.length),
+      }))
+    }, 4200)
+    return () => window.clearInterval(id)
+  }, [publicSexIdCases.content, enclosurePosts.length, spiderOkayPosts.length, meetMyTsPosts.length])
 
   const renderCompactPost = (p) => (
     <button
@@ -636,223 +687,65 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
-            <div className="ta-social-highlights mb-3">
-              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
-                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.dailyHighlights')}</h2>
-                <span className="small text-muted">{t('social.realtimeUpdated')}</span>
-              </div>
-              <div className="row g-2">
-                {featuredPosts.length === 0 ? (
-                  <div className="col-12">
-                    <div className="ta-social-highlight-card">
-                      <p className="small text-muted mb-0">{t('social.feedEmpty')}</p>
-                    </div>
-                  </div>
-                ) : (
-                  featuredPosts.map((p) => (
-                    <div key={p.id} className="col-md-6">
-                      <button
-                        type="button"
-                        className="ta-social-highlight-card text-start w-100"
-                        onClick={() => openPostThread(p.id, true)}
-                      >
-                        <div className="small text-muted mb-1">
-                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
-                        </div>
-                        <p className="small mb-2" style={{ color: 'var(--ta-text)' }}>{(p.body || '').slice(0, 180)}</p>
-                        <div className="small text-muted d-flex justify-content-between">
-                          <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
-                          <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
-                        </div>
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
-              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
-                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => openComposerFromTopic('')}
-                >
-                  {t('social.createOwnTopic')}
-                </button>
-              </div>
-              <div className="d-flex gap-2 overflow-auto pb-1">
-                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
-                  <div className="small fw-semibold mb-1">Sex ID</div>
-                  <div className="small text-muted mb-2">{t('social.sexIdQuickMode')}</div>
-                  {(publicSexIdCases.content || [])[0]?.imageUrl && (
-                    <img
-                      src={imgUrl((publicSexIdCases.content || [])[0].imageUrl) || (publicSexIdCases.content || [])[0].imageUrl}
-                      alt=""
-                      className="img-fluid rounded mb-2"
-                      style={{ maxHeight: 96, objectFit: 'cover', width: '100%' }}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary w-100"
-                    onClick={() => {
-                      if (!token) {
-                        navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
-                        return
-                      }
-                      setTab(TAB_SEX_ID)
-                    }}
-                  >
-                    {t('social.goToSexId')}
-                  </button>
+              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Topic cases</h2>
+              <div className="row g-2">
+                <div className="col-md-3">
+                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1">Sex ID</div>
+                    {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl ? (
+                      <img src={imgUrl((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl) || (publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                    ) : <div className="small text-muted mb-2">{t('social.noActiveCases')}</div>}
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setTab(TAB_SEX_ID)}>View list</button>
+                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => setTab(TAB_SEX_ID)}>Create yours</button>
+                  </div>
                 </div>
-                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
-                  <div className="small fw-semibold mb-1">Enclosure check</div>
-                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary w-100"
-                    onClick={() => openComposerFromTopic('Is my enclosure missing anything?\n\n')}
-                  >
-                    {t('social.createDiscussion')}
-                  </button>
+                <div className="col-md-3">
+                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1">Enclosure Check</div>
+                    {enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl ? (
+                      <img src={imgUrl(enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl) || enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                    ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Enclosure check:\n\n', 'enclosure_check')}>Create yours</button>
+                  </div>
                 </div>
-                <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
-                  <div className="small fw-semibold mb-1">Is my spider okay?</div>
-                  <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
-                  {(publicSexIdCases.content || [])[1]?.imageUrl && (
-                    <img
-                      src={imgUrl((publicSexIdCases.content || [])[1].imageUrl) || (publicSexIdCases.content || [])[1].imageUrl}
-                      alt=""
-                      className="img-fluid rounded mb-2"
-                      style={{ maxHeight: 96, objectFit: 'cover', width: '100%' }}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary w-100"
-                    onClick={() => openComposerFromTopic('Is my spider okay?\n\n')}
-                  >
-                    {t('social.createDiscussion')}
-                  </button>
+                <div className="col-md-3">
+                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1">Is my spider okay?</div>
+                    {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl ? (
+                      <img src={imgUrl(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl) || spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                    ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Is my spider okay?\n\n', 'spider_okay')}>Create yours</button>
+                  </div>
+                </div>
+                <div className="col-md-3">
+                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1">Meet my Ts</div>
+                    {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl ? (
+                      <img src={imgUrl(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl) || meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 90, width: '100%', objectFit: 'cover' }} />
+                    ) : <div className="small text-muted mb-2">No cases yet.</div>}
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => {
+                      setComposerOpen(true)
+                      setComposer((c) => ({ ...c, milestoneKind: 'meet_my_ts', body: 'Meet my Ts 🕷️\n\n' }))
+                    }}>Create yours</button>
+                  </div>
                 </div>
               </div>
-              <p className="small text-muted mb-0 mt-2">
-                {t('social.carouselHint')}
-              </p>
-            </div>
-            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.10)' }}>
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.activeSexIdCases')}</h2>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => {
-                    if (!token) {
-                      navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
-                      return
-                    }
-                    setTab(TAB_SEX_ID)
-                  }}
-                >
-                  {t('social.seeAll')}
-                </button>
-              </div>
-              {(publicSexIdCases.content || []).length === 0 ? (
-                <p className="small text-muted mb-0">{t('social.noActiveCases')}</p>
-              ) : (
-                <div className="d-flex gap-2 overflow-auto pb-1">
-                  {(publicSexIdCases.content || []).slice(0, 8).map((c) => (
-                    <div
-                      key={c.id}
-                      className="rounded p-2"
-                      style={{ minWidth: 240, border: '1px solid var(--ta-border)' }}
-                    >
-                      {c.imageUrl && (
-                        <img
-                          src={imgUrl(c.imageUrl) || c.imageUrl}
-                          alt=""
-                          className="img-fluid rounded mb-2"
-                          style={{ maxHeight: 100, objectFit: 'cover', width: '100%' }}
-                        />
-                      )}
-                      <div className="small fw-semibold text-truncate mb-1">
-                        {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
-                      </div>
-                      <div className="small text-muted mb-2">{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</div>
-                      <Link to={`/sex-id/${c.id}`} className="btn btn-sm btn-dark w-100">{t('social.openCase')}</Link>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <div className="small ta-social-feed-shell__intro">
-                  {t('social.visibleSections', { count: (activeFeedList || []).length })}
-                </div>
-                  {token ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => setComposerOpen((v) => !v)}
-                      aria-expanded={composerOpen}
-                    >
-                      {t('social.composerTitle')}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-dark"
-                      onClick={() => navigate('/login', { state: { redirectAfterAuth: '/community' } })}
-                    >
-                      {t('social.loginToPublish')}
-                    </button>
-                  )}
-              </div>
-
-              <div className="mb-3 p-2 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.08)' }}>
-                <label className="form-label small mb-1">{t('social.searchProfilesLabel')}</label>
-                <input
-                  className="form-control form-control-sm"
-                  placeholder={t('social.searchProfilesPlaceholder')}
-                  value={profileQuery}
-                  onChange={(e) => setProfileQuery(e.target.value)}
-                />
-                {profileSearching && <div className="small text-muted mt-1">{t('common.loading')}</div>}
-                {!profileSearching && profileQuery.trim().length >= 2 && profileResults.length === 0 && (
-                  <div className="small text-muted mt-1">{t('common.noResults')}</div>
-                )}
-                {profileResults.length > 0 && (
-                  <div className="d-flex flex-column gap-1 mt-2">
-                    {profileResults.map((row) => (
-                      <Link
-                        key={row.id}
-                        to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
-                        className="d-flex align-items-center gap-2 text-decoration-none rounded p-1"
-                        style={{ border: '1px solid var(--ta-border)' }}
-                      >
-                        <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 24, height: 24, borderRadius: 999, objectFit: 'cover' }} />
-                        <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
-                        <span className="small text-muted">{row.displayName || 'Keeper'}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="ta-social-section-tabs mb-3">
-                {feedSections.map((section) => (
-                  <button
-                    key={section.key}
-                    type="button"
-                    className={`btn btn-sm ${feedSection === section.key ? 'btn-dark' : 'btn-outline-secondary'}`}
-                    onClick={() => setFeedSection(section.key)}
-                  >
-                    {section.label}
+                {token ? (
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setComposerOpen((v) => !v)} aria-expanded={composerOpen}>
+                    {t('social.composerTitle')}
                   </button>
-                ))}
+                ) : (
+                  <button type="button" className="btn btn-sm btn-dark" onClick={() => navigate('/login', { state: { redirectAfterAuth: '/community' } })}>
+                    {t('social.loginToPublish')}
+                  </button>
+                )}
               </div>
               {token && composerOpen && (
                 <div ref={composerSectionRef} className="mb-3">
@@ -944,55 +837,55 @@ export default function SocialHubPage() {
                 </div>
               )}
 
-              <div className="row g-3">
-                <div className="col-lg-8">
-                  <section className="ta-social-feed-section ta-social-feed-section--community">
-                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.mainFeed')}</h2>
-                    {(activeFeedList || []).length === 0 ? (
-                      <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
-                    ) : (
-                      (activeFeedList || []).map((p) => renderPostCard(p, { showDelete: feedSection === 'mine' }))
-                    )}
-                  </section>
+              <section className="ta-social-feed-section ta-social-feed-section--community">
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Community feed</h2>
+                  {token && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-dark"
+                      onClick={() => {
+                        setComposerOpen(true)
+                        setComposer((c) => ({ ...c, milestoneKind: '' }))
+                      }}
+                    >
+                      Create post
+                    </button>
+                  )}
                 </div>
-                <div className="col-lg-4">
-                  <aside className="d-flex flex-column gap-3">
-                    <section className="ta-social-feed-section ta-social-feed-section--mine">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.recentQuestions')}</h2>
-                        <span className="small text-muted">{questionPosts.length}</span>
-                      </div>
-                      {questionPosts.length === 0 ? (
-                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
-                      ) : (
-                        questionPosts.slice(0, 4).map(renderCompactPost)
-                      )}
-                    </section>
-                    <section className="ta-social-feed-section ta-social-feed-section--mine">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.withPhoto')}</h2>
-                        <span className="small text-muted">{photoPosts.length}</span>
-                      </div>
-                      {photoPosts.length === 0 ? (
-                        <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
-                      ) : (
-                        photoPosts.slice(0, 4).map(renderCompactPost)
-                      )}
-                    </section>
-                    <section className="ta-social-feed-section ta-social-feed-section--mine">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.myPosts')}</h2>
-                        <span className="small text-muted">{(mine.content || []).length}</span>
-                      </div>
-                      {(mine.content || []).length === 0 ? (
-                        <p className="text-muted small mb-0">{t('social.myPostsEmpty')}</p>
-                      ) : (
-                        (mine.content || []).slice(0, 4).map(renderCompactPost)
-                      )}
-                    </section>
-                  </aside>
+                <div className="mb-3 p-2 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.08)' }}>
+                  <label className="form-label small mb-1">{t('social.searchProfilesLabel')}</label>
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('social.searchProfilesPlaceholder')}
+                    value={profileQuery}
+                    onChange={(e) => setProfileQuery(e.target.value)}
+                  />
+                  {profileSearching && <div className="small text-muted mt-1">{t('common.loading')}</div>}
+                  {!profileSearching && profileQuery.trim().length >= 2 && profileResults.length === 0 && (
+                    <div className="small text-muted mt-1">{t('common.noResults')}</div>
+                  )}
+                  {profileResults.length > 0 && (
+                    <div className="d-flex flex-column gap-1 mt-2">
+                      {profileResults.map((row) => (
+                        <Link
+                          key={row.id}
+                          to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
+                          className="d-flex align-items-center gap-2 text-decoration-none rounded p-1"
+                          style={{ border: '1px solid var(--ta-border)' }}
+                        >
+                          <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 24, height: 24, borderRadius: 999, objectFit: 'cover' }} />
+                          <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
+                          <span className="small text-muted">{row.displayName || 'Keeper'}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+                {generalPosts.length === 0
+                  ? <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
+                  : generalPosts.map((p) => renderPostCard(p))}
+              </section>
             </div>
           </>
         )}
