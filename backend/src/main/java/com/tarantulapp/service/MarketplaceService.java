@@ -327,6 +327,8 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public Map<String, Object> publicSellerProfile(UUID sellerUserId) {
         User user = userRepository.findById(sellerUserId).orElseThrow(() -> new NotFoundException("Keeper no encontrado"));
+        String profileVisibility = normalizeCommunityProfileVisibility(user.getCommunityProfileVisibility());
+        boolean collectionPublic = "public_full".equals(profileVisibility);
         Double avgRaw = sellerReviewRepository.avgRatingBySellerUserId(sellerUserId);
         double avg = avgRaw == null ? 0d : Math.round(avgRaw * 10.0) / 10.0;
         long reviewsCount = sellerReviewRepository.countBySellerUserId(sellerUserId);
@@ -337,6 +339,22 @@ public class MarketplaceService {
                 .limit(20)
                 .map(this::mapListing)
                 .collect(Collectors.toList());
+        List<Map<String, Object>> publicCollection = collectionPublic
+                ? tarantulaRepository.findTop24ByUserIdAndIsPublicTrueOrderByCreatedAtDesc(sellerUserId)
+                        .stream()
+                        .map(t -> {
+                            Map<String, Object> row = new LinkedHashMap<>();
+                            row.put("id", t.getId());
+                            row.put("name", t.getName());
+                            row.put("shortId", t.getShortId());
+                            row.put("profilePhoto", t.getProfilePhoto() == null ? "" : t.getProfilePhoto());
+                            row.put("stage", t.getStage() == null ? "" : t.getStage());
+                            row.put("sex", t.getSex() == null ? "" : t.getSex());
+                            row.put("speciesName", t.getSpecies() == null ? "" : (t.getSpecies().getScientificName() == null ? "" : t.getSpecies().getScientificName()));
+                            return row;
+                        })
+                        .collect(Collectors.toList())
+                : List.of();
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("userId", user.getId());
@@ -348,6 +366,10 @@ public class MarketplaceService {
         out.put("ratingAvg", avg);
         out.put("reviewsCount", reviewsCount);
         out.put("activeListings", activeListings);
+        out.put("collectionPublic", collectionPublic);
+        out.put("communityProfileVisibility", profileVisibility);
+        out.put("publicCollection", publicCollection);
+        out.put("publicCollectionCount", publicCollection.size());
         return out;
     }
 

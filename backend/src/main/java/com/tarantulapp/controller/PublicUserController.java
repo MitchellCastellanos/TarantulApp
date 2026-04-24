@@ -2,6 +2,7 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.PublicHandleRules;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +22,11 @@ import java.util.Map;
 public class PublicUserController {
 
     private final UserRepository userRepository;
+    private final TarantulaRepository tarantulaRepository;
 
-    public PublicUserController(UserRepository userRepository) {
+    public PublicUserController(UserRepository userRepository, TarantulaRepository tarantulaRepository) {
         this.userRepository = userRepository;
+        this.tarantulaRepository = tarantulaRepository;
     }
 
     /** Minimal public lookup by {@code public_handle} (case-insensitive) to open Spood, etc. */
@@ -38,10 +41,8 @@ public class PublicUserController {
         if (u.getPublicHandle() == null || u.getPublicHandle().isBlank()) {
             throw new NotFoundException("Handle no encontrado");
         }
-        String vis = u.getCommunityProfileVisibility() == null ? "" : u.getCommunityProfileVisibility().trim().toLowerCase();
-        if (!"public_full".equals(vis)) {
-            throw new NotFoundException("Handle no encontrado");
-        }
+        String visibility = u.getCommunityProfileVisibility() == null ? "preview_only" : u.getCommunityProfileVisibility().trim().toLowerCase();
+        long publicCollectionCount = tarantulaRepository.findTop24ByUserIdAndIsPublicTrueOrderByCreatedAtDesc(u.getId()).size();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", u.getId());
         m.put("displayName", u.getDisplayName() != null ? u.getDisplayName() : "");
@@ -49,6 +50,9 @@ public class PublicUserController {
         m.put("bio", u.getBio() != null ? u.getBio() : "");
         m.put("location", u.getLocation() != null ? u.getLocation() : "");
         m.put("profilePhoto", u.getProfilePhoto() != null ? u.getProfilePhoto() : "");
+        m.put("communityProfileVisibility", visibility);
+        m.put("collectionPublic", "public_full".equals(visibility));
+        m.put("publicCollectionCount", publicCollectionCount);
         return ResponseEntity.ok(m);
     }
 
