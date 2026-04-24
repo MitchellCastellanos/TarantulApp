@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandLogoMark from '../components/BrandLogoMark'
-import BrandName from '../components/BrandName'
 import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
@@ -27,6 +26,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('')
   const [exporting, setExporting] = useState(false)
   const [jsonBusy, setJsonBusy] = useState(false)
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
   const importInputRef = useRef(null)
   const [keeperProfile, setKeeperProfile] = useState(null)
 
@@ -54,7 +54,6 @@ export default function DashboardPage() {
         speciesSet.size >= 12 ? 'Species diversity 12+' : null,
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
-  const badgesProgress = keeperProfile?.badgesProgress || null
 
   const filtered = alive.filter(t => {
     if (habitat !== 'all' && t.species?.habitatType !== habitat) return false
@@ -113,6 +112,7 @@ export default function DashboardPage() {
   }
 
   const handleImportJsonClick = () => {
+    setCollectionMenuOpen(false)
     importInputRef.current?.click()
   }
 
@@ -138,66 +138,45 @@ export default function DashboardPage() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <section className="ta-home-hero mb-4 p-3 p-md-4">
-          <div className="row g-3 align-items-center">
-            <div className="col-lg-7">
-              <p className="small text-uppercase mb-2 ta-home-hero__eyebrow">
-                {t('dashboard.homeHeroEyebrow', { defaultValue: 'New TarantulApp\u2122 stage' })}
-              </p>
-              <h1 className="h4 fw-bold mb-2">
-                {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, all in one flow' })}
-              </h1>
-              <p className="small mb-3" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
-                {t('dashboard.homeHeroBody', { defaultValue: 'Your collection is still the center, but now it connects to marketplace and community. What comes next completes the layer of cases, reputation, and collective decision-making to solve real hobby questions.' })}
-              </p>
-              <div className="d-flex flex-wrap gap-2">
-                <Link to="/discover" className="btn btn-sm btn-outline-secondary">{t('discover.navTitle')}</Link>
-                <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">{t('marketplace.nav')}</Link>
-                <Link to="/community" className="btn btn-sm btn-dark">{t('nav.community')}</Link>
-              </div>
-            </div>
-            <div className="col-lg-5">
-              <div className="ta-home-hero__logo-wrap d-flex align-items-center justify-content-center flex-column">
-                <BrandLogoMark size={74} showIntro />
-                <BrandName className="cinzel mt-2 ta-login-brand-wordmark" />
-                <small className="text-muted mt-1">
-                  {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Serious data. Living community.' })}
-                </small>
-              </div>
-            </div>
-          </div>
-          <div className="row g-2 mt-2">
-            <div className="col-md-4">
-              <div className="ta-home-pillar h-100">
-                <div className="small fw-semibold">{t('dashboard.homePillarToolTitle', { defaultValue: 'Tool mode' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarToolBody', { defaultValue: 'Collection, QR, reminders, and daily traceability.' })}</div>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="ta-home-pillar h-100">
-                <div className="small fw-semibold">{t('dashboard.homePillarHelpTitle', { defaultValue: 'Help mode (next)' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarHelpBody', { defaultValue: 'Sexing/health cases + voting and reputation.' })}</div>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="ta-home-pillar h-100">
-                <div className="small fw-semibold">{t('dashboard.homePillarCommunityTitle', { defaultValue: 'Community mode' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + cases + referrals; messaging focused on the marketplace.' })}</div>
+        <div className="row g-3 mb-3">
+          <div className="col-lg-4">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body py-3">
+                <div className="d-flex justify-content-between align-items-start gap-2">
+                  <div className="min-w-0">
+                    <h6 className="mb-1 fw-bold text-truncate">{user?.displayName || user?.email}</h6>
+                    <div className="small text-muted text-truncate">
+                      @{user?.publicHandle || 'keeper'}
+                    </div>
+                  </div>
+                  <img
+                    src={imgUrl(user?.profilePhoto) || '/spider-default.png'}
+                    alt="keeper"
+                    style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 999, border: '1px solid var(--ta-border)' }}
+                  />
+                </div>
+                {reputation && (
+                  <div className="small mt-2">
+                    <span className="fw-semibold">Keeper Reputation:</span>{' '}
+                    {reputation.tier} · {reputation.score}/100
+                  </div>
+                )}
+                {profileBadges.length > 0 && (
+                  <div className="d-flex gap-1 flex-wrap mt-2">
+                    {profileBadges.map((badge) => (
+                      <span className="badge bg-light text-dark border" key={badge}>{badge}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2">
+                  <Link to="/account" className="btn btn-sm btn-outline-secondary">Editar perfil</Link>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-
-        <div
-          className="mb-3 px-3 py-2 rounded-1 small ta-dashboard-atmosphere-strip"
-          style={{
-            borderLeft: '3px solid rgba(200, 170, 80, 0.55)',
-            color: 'var(--ta-parchment)',
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            letterSpacing: '0.02em',
-          }}
-        >
-          {t('dashboard.keeperAtmosphereStrip')}
+          <div className="col-lg-8">
+            <RemindersPanel />
+          </div>
         </div>
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -211,31 +190,55 @@ export default function DashboardPage() {
           <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
             {hasProFeatures ? (
               <>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  disabled={!tarantulas.length || exporting}
-                  title={!tarantulas.length ? t('dashboard.exportEmpty') : undefined}
-                  onClick={handleExportExcel}
-                >
-                  {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  disabled={!tarantulas.length || jsonBusy}
-                  onClick={handleExportJson}
-                >
-                  {jsonBusy ? t('common.loading') : 'Export JSON'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  disabled={jsonBusy}
-                  onClick={handleImportJsonClick}
-                >
-                  {jsonBusy ? t('common.loading') : 'Import JSON'}
-                </button>
+                <div className="position-relative">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    aria-expanded={collectionMenuOpen}
+                    onClick={() => setCollectionMenuOpen((prev) => !prev)}
+                    disabled={jsonBusy || exporting}
+                  >
+                    {jsonBusy || exporting ? t('common.loading') : 'Importt/export collection'}
+                  </button>
+                  {collectionMenuOpen && (
+                    <div
+                      className="card border-0 shadow-sm position-absolute end-0 mt-1 p-1"
+                      style={{ zIndex: 20, minWidth: 230 }}
+                    >
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light text-start"
+                        disabled={!tarantulas.length || exporting}
+                        title={!tarantulas.length ? t('dashboard.exportEmpty') : undefined}
+                        onClick={async () => {
+                          setCollectionMenuOpen(false)
+                          await handleExportExcel()
+                        }}
+                      >
+                        {exporting ? t('dashboard.exporting') : t('dashboard.exportExcel')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light text-start"
+                        disabled={!tarantulas.length || jsonBusy}
+                        onClick={() => {
+                          setCollectionMenuOpen(false)
+                          handleExportJson()
+                        }}
+                      >
+                        Export JSON
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light text-start"
+                        disabled={jsonBusy}
+                        onClick={handleImportJsonClick}
+                      >
+                        Import JSON
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <input
                   ref={importInputRef}
                   type="file"
@@ -256,17 +259,9 @@ export default function DashboardPage() {
                 <Link
                   to="/pro"
                   className="btn btn-outline-secondary btn-sm position-relative"
-                  title={t('dashboard.exportExcelProOnly')}
-                >
-                  {t('dashboard.exportExcel')}
-                  <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
-                </Link>
-                <Link
-                  to="/pro"
-                  className="btn btn-outline-secondary btn-sm position-relative"
                   title="Disponible en Pro"
                 >
-                  Export/Import JSON
+                  Importt/export collection
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
@@ -290,66 +285,6 @@ export default function DashboardPage() {
               <Link to="/tarantulas/new" className="btn btn-dark">
                 {t('dashboard.add')}
               </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="card border-0 shadow-sm mb-3">
-          <div className="card-body py-3">
-            <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-              <div>
-                <h6 className="mb-1 fw-bold">{user?.displayName || user?.email}</h6>
-                <div className="small text-muted">
-                  @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'No location'}
-                </div>
-                {user?.bio && <p className="small mb-1 mt-2">{user.bio}</p>}
-              </div>
-              <img
-                src={imgUrl(user?.profilePhoto) || '/spider-default.png'}
-                alt="keeper"
-                style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 999, border: '1px solid var(--ta-border)' }}
-              />
-              <Link to="/account" className="btn btn-sm btn-outline-secondary">Editar perfil</Link>
-            </div>
-            {reputation && (
-              <div className="mt-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--ta-border)' }}>
-                <div className="small fw-semibold mb-1">
-                  Keeper Reputation · {reputation.tier} · {reputation.score}/100
-                </div>
-                <div className="progress" style={{ height: 8 }}>
-                  <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
-                </div>
-                {reputation.nextTier !== 'Max' && (
-                  <div className="small text-muted mt-1">
-                    Next: {reputation.nextTier} ({reputation.nextTierTarget})
-                  </div>
-                )}
-              </div>
-            )}
-            {badgesProgress && (
-              <div className="row g-2 mt-1">
-                {Object.entries(badgesProgress).map(([key, p]) => {
-                  const target = Number(p?.target || 0)
-                  const current = Number(p?.current || 0)
-                  const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
-                  return (
-                    <div className="col-md-6" key={key}>
-                      <div className="small mb-1">{p?.nextLabel}</div>
-                      <div className="progress" style={{ height: 6 }}>
-                        <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
-                      </div>
-                      <div className="small text-muted">{current}/{target || current}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-            {profileBadges.length > 0 && (
-              <div className="d-flex gap-1 flex-wrap mt-2">
-                {profileBadges.map((badge) => (
-                  <span className="badge bg-light text-dark border" key={badge}>{badge}</span>
-                ))}
-              </div>
             )}
           </div>
         </div>
@@ -402,9 +337,6 @@ export default function DashboardPage() {
             <ProTrialCtaLink className="btn btn-sm align-self-stretch align-self-sm-auto" />
           </div>
         )}
-
-        {/* Recordatorios próximos */}
-        <RemindersPanel />
 
         {/* Filtros */}
         {tarantulas.length > 0 && (
