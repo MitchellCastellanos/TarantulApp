@@ -18,6 +18,11 @@ import { imgUrl } from '../services/api'
 const TAB_FEED = 'feed'
 const TAB_SEX_ID = 'sexId'
 const TAB_INVITE = 'invite'
+const FEED_SECTION_ALL = 'all'
+const FEED_SECTION_MINE = 'mine'
+const FEED_SECTION_ENCLOSURE = 'enclosure_check'
+const FEED_SECTION_SPIDER_OKAY = 'spider_okay'
+const FEED_SECTION_MEET_MY_TS = 'meet_my_ts'
 
 /** UUID v4 (case-insensitive). */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -62,7 +67,7 @@ export default function SocialHubPage() {
   const [myTarantulas, setMyTarantulas] = useState([])
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
-  const [feedSection, setFeedSection] = useState('all')
+  const [feedSection, setFeedSection] = useState(FEED_SECTION_ALL)
   const [likesByPost, setLikesByPost] = useState({})
   const [loadingLikesForPost, setLoadingLikesForPost] = useState({})
   const [likesHoverPostId, setLikesHoverPostId] = useState(null)
@@ -401,14 +406,6 @@ export default function SocialHubPage() {
     }
   }
 
-  const feedSections = [
-    { key: 'all', label: t('social.sectionForYou') },
-    { key: 'questions', label: t('social.sectionQuestions') },
-    { key: 'milestones', label: t('social.sectionMilestones') },
-    { key: 'photos', label: t('social.sectionWithPhoto') },
-    { key: 'mine', label: t('social.sectionMyPosts') },
-  ]
-
   const publicPosts = feed.content || []
   const questionPosts = useMemo(
     () => publicPosts.filter((p) => (p.body || '').includes('?')).slice(0, 8),
@@ -439,12 +436,12 @@ export default function SocialHubPage() {
   const spiderOkayPosts = useMemo(() => topicFeeds.spider_okay || [], [topicFeeds.spider_okay])
 
   const activeFeedList = useMemo(() => {
-    if (feedSection === 'questions') return questionPosts
-    if (feedSection === 'milestones') return milestonePosts
-    if (feedSection === 'photos') return photoPosts
-    if (feedSection === 'mine') return mine.content || []
-    return publicPosts
-  }, [feedSection, milestonePosts, mine.content, photoPosts, publicPosts, questionPosts])
+    if (feedSection === FEED_SECTION_ENCLOSURE) return enclosurePosts
+    if (feedSection === FEED_SECTION_SPIDER_OKAY) return spiderOkayPosts
+    if (feedSection === FEED_SECTION_MEET_MY_TS) return meetMyTsPosts
+    if (feedSection === FEED_SECTION_MINE) return mine.content || []
+    return generalPosts
+  }, [enclosurePosts, feedSection, generalPosts, meetMyTsPosts, mine.content, spiderOkayPosts])
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -840,7 +837,7 @@ export default function SocialHubPage() {
                       </div>
                     )}
                     {renderTopicDots(enclosurePosts.length, topicCarouselIndex.enclosure, (i) => setTopicCarouselIndex((p) => ({ ...p, enclosure: i })))}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_ENCLOSURE)}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Enclosure check:\n\n', 'enclosure_check')}>Create yours</button>
                   </div>
                 </div>
@@ -862,7 +859,7 @@ export default function SocialHubPage() {
                       </div>
                     )}
                     {renderTopicDots(spiderOkayPosts.length, topicCarouselIndex.spiderOkay, (i) => setTopicCarouselIndex((p) => ({ ...p, spiderOkay: i })))}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_SPIDER_OKAY)}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Is my spider okay?\n\n', 'spider_okay')}>Create yours</button>
                   </div>
                 </div>
@@ -894,7 +891,7 @@ export default function SocialHubPage() {
                         🕷️ {t('social.spoodCount', { count: meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likeCount ?? 0 })}
                       </button>
                     )}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection('milestones')}>View posts</button>
+                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_MEET_MY_TS)}>View posts</button>
                     <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => {
                       setComposerOpen(true)
                       setComposer((c) => ({ ...c, milestoneKind: 'meet_my_ts', body: 'Meet my Ts 🕷️\n\n' }))
@@ -1040,15 +1037,15 @@ export default function SocialHubPage() {
                     <div className="btn-group btn-group-sm" role="group" aria-label="feed-switch">
                       <button
                         type="button"
-                        className={`btn ${feedSection === 'all' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                        onClick={() => setFeedSection('all')}
+                        className={`btn ${feedSection === FEED_SECTION_ALL ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setFeedSection(FEED_SECTION_ALL)}
                       >
                         Community
                       </button>
                       <button
                         type="button"
-                        className={`btn ${feedSection === 'mine' ? 'btn-dark' : 'btn-outline-secondary'}`}
-                        onClick={() => setFeedSection('mine')}
+                        className={`btn ${feedSection === FEED_SECTION_MINE ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setFeedSection(FEED_SECTION_MINE)}
                       >
                         My posts
                       </button>
@@ -1068,9 +1065,9 @@ export default function SocialHubPage() {
                     <span className="d-block small text-muted">Start writing your post...</span>
                   </button>
                 )}
-                {(feedSection === 'mine' ? (mine.content || []) : generalPosts).length === 0
+                {activeFeedList.length === 0
                   ? <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
-                  : (feedSection === 'mine' ? (mine.content || []) : generalPosts).map((p) => renderPostCard(p, { showDelete: feedSection === 'mine' }))}
+                  : activeFeedList.map((p) => renderPostCard(p, { showDelete: feedSection === FEED_SECTION_MINE }))}
               </section>
             </div>
           </>
@@ -1078,6 +1075,26 @@ export default function SocialHubPage() {
 
         {tab === TAB_SEX_ID && (
           <>
+            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Public Sex ID cases</h2>
+            {(publicSexIdCases.content || []).length === 0 ? (
+              <p className="text-muted small">{t('social.noActiveCases')}</p>
+            ) : (
+              (publicSexIdCases.content || []).map((c) => (
+                <div
+                  key={c.id}
+                  className="d-flex flex-wrap align-items-center justify-content-between gap-2 rounded-3 p-2 mb-2"
+                  style={{ border: '1px solid var(--ta-border)' }}
+                >
+                  <div className="small" style={{ color: 'var(--ta-text)' }}>
+                    {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
+                    <span className="text-muted ms-1">{'\u00a0?\u00a0'}{t('sexIdCase.voteTally', { n: c.totalVotes ?? 0 })}</span>
+                  </div>
+                  <Link className="btn btn-sm btn-outline-secondary" to={`/sex-id/${c.id}`}>
+                    {t('sexIdCase.openCase')}
+                  </Link>
+                </div>
+              ))
+            )}
             <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
               <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
                 <div className="card-body py-3 px-3 px-md-4">
