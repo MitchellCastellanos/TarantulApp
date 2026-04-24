@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { BRAND_WITH_TM } from '../constants/brand'
 import { compositeQrPngDataUrl, BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
 import {
   AlignmentType,
@@ -159,7 +160,7 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
             type: 'png',
             data: logoBytes,
             transformation: { width: 88, height: 88 },
-            altText: { name: 'TarantulApp', description: 'TarantulApp', title: 'TarantulApp' },
+            altText: { name: BRAND_WITH_TM, description: BRAND_WITH_TM, title: BRAND_WITH_TM },
           }),
         ],
       }),
@@ -200,8 +201,8 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     })
     return Packer.toBlob(
       new Document({
-        creator: 'TarantulApp',
-        title: docTitle || 'TarantulApp QR',
+        creator: BRAND_WITH_TM,
+        title: docTitle || `${BRAND_WITH_TM} QR`,
         sections: [{ children: [...intro, table] }],
       }),
     )
@@ -228,8 +229,8 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
 
   return Packer.toBlob(
     new Document({
-      creator: 'TarantulApp',
-      title: docTitle || 'TarantulApp QR',
+      creator: BRAND_WITH_TM,
+      title: docTitle || `${BRAND_WITH_TM} QR`,
       sections: [{ children: [...intro, table] }],
     }),
   )

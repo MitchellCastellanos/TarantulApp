@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 /** Logo sobre fondo claro (QR / Excel / Word en blanco). */
 export const BRAND_LOGO_FOR_LIGHT_BG = '/logo-black.png?v=2'
@@ -131,7 +132,7 @@ export async function downloadBrandedQrPng({
   } catch {
     ctx.fillStyle = '#888'
     ctx.font = '11px sans-serif'
-    ctx.fillText('TarantulApp', W / 2, H - 14)
+    ctx.fillText(BRAND_WITH_TM, W / 2, H - 14)
   }
 
   const safeName = String(filenameBase || 'qr').replace(/[/\\?%*:|"<>]/g, '-')

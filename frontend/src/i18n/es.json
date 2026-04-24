@@ -23,7 +23,7 @@
     "contact": "Contacto",
     "admin": "Admin",
     "about": "Acerca de",
-    "aboutTitle": "TarantulApp: misión, comunidad y datos abiertos",
+    "aboutTitle": "TarantulApp\u2122: misión, comunidad y datos abiertos",
     "community": "Comunidad",
     "mobileExplore": "Explorar",
     "mobileMySpace": "Mi espacio",
@@ -37,7 +37,7 @@
   },
   "social": {
     "pageTitle": "Comunidad",
-    "seoTitle": "Comunidad | TarantulApp",
+    "seoTitle": "Comunidad | TarantulApp\u2122",
     "metaDescription": "Feed, spoods e invitaciones: espacio para keepers conectados. Inicia sesión para participar.",
     "navTitle": "Comunidad: fotos, mudas e hitos",
     "tagline": "El hangout en línea para quienes de verdad viven el tubo.",
@@ -119,7 +119,7 @@
   },
   "sexIdCase": {
     "pageTitle": "Caso Sex ID",
-    "seoTitle": "{{title}} | TarantulApp",
+    "seoTitle": "{{title}} | TarantulApp\u2122",
     "defaultCaseTitle": "Adivina el sexo",
     "metaDescription": "Foto o muda — vota, comparte y refuerza la viralidad con referidos.",
     "notFound": "Este caso no está disponible.",
@@ -127,7 +127,7 @@
     "headingFallback": "Adivina el sexo",
     "authorLine": "Creado por {{name}}",
     "resultsTitle": "Resultados",
-    "aiTitle": "TarantulApp Opinion",
+    "aiTitle": "TarantulApp\u2122 Opinion",
     "aiFallback": "Probablemente macho (medium confidence)",
     "aiConfidenceLabel": "Confidence: {{level}}",
     "communityTitle": "Community voting",
@@ -176,12 +176,12 @@
     "voteTally": "{{n}} voto(s)"
   },
   "about": {
-    "pageTitle": "Acerca de TarantulApp",
-    "metaDescription": "TarantulApp: bitácora seria para tu colección, taxonomía con fuentes (WSC/GBIF), QR de terrario y marketplace con la comunidad.",
-    "title": "Acerca de TarantulApp",
+    "pageTitle": "Acerca de TarantulApp\u2122",
+    "metaDescription": "TarantulApp\u2122: bitácora seria para tu colección, taxonomía con fuentes (WSC/GBIF), QR de terrario y marketplace con la comunidad.",
+    "title": "Acerca de TarantulApp\u2122",
     "tagline": "Terrario con método. Nombres que aguantan revisión.",
     "lead": "Hacemos la app que quisiéramos tener en el rack: menos postureo, más trazabilidad. Aquí ya conviven tu bitácora, fichas con fuentes, marketplace y comunidad en un solo flujo keeper: el lugar que nuestro hobby necesita y se merece.",
-    "section1Title": "Por qué existe TarantulApp",
+    "section1Title": "Por qué existe TarantulApp\u2122",
     "section1Body": "Porque anotar en papel está bien, pero perder el hilo entre mudas no lo está. Unimos el ritmo real del tubo con una interfaz sobria: lo que comió, cuándo mudó, cómo se ve el terrario — y un espacio público para enseñar sin regalar datos sensibles si no quieres.",
     "section2Title": "Descubrir: taxonomía sin atajos",
     "section2Body": "Integramos World Spider Catalog (vía GBIF) y el backbone de GBIF en Theraphosidae. Las fichas y fotos del catálogo combinan nuestro contenido curado con observaciones públicas (iNaturalist) o medios GBIF cuando existen. Si un nombre se mueve en la literatura, lo verás reflejado; si algo huele raro, abre GBIF y contrasta: nosotros no reescribimos la ciencia en secreto.",
@@ -191,7 +191,7 @@
     "section4Body": "Marketplace y comunidad conectan desde la misma app para que pases de registro a conversación y a trato directo sin salir del flujo. No procesamos pagos ni nos metemos en el precio entre tú y otro keeper. Los socios oficiales pasan por revisión humana y enlazan a sus sitios; bioseguridad, permisos y bienestar animal siguen siendo tu responsabilidad.",
     "section5Title": "Privacidad y lo que no somos",
     "section5Body": "No somos tienda de fauna ni reemplazo de un veterinario exótico con licencia en tu país. Tus datos se rigen por privacidad y términos; desde Cuenta puedes exportar o pedir borrado. ¿Bug o idea? Escríbenos: leemos correo de verdad.",
-    "closing": "Si el tono te cuadra, pasa por Descubrir sin cuenta, mete Pro cuando la colección pida más potencia, y dime qué falta: TarantulApp la estamos cocinando contigo."
+    "closing": "Si el tono te cuadra, pasa por Descubrir sin cuenta, mete Pro cuando la colección pida más potencia, y dime qué falta: TarantulApp\u2122 la estamos cocinando contigo."
   },
   "discover": {
     "navTitle": "Descubrir",
@@ -268,10 +268,10 @@
     "profileVentilation": "Ventilación",
     "profileSubstrate": "Sustrato",
     "profileFootnote": "Los parámetros de cuidado reflejan bibliografía y guías de la comunidad cuando existen. Taxonomía: GBIF / WSC.",
-    "noKeeperSheetTitle": "Aún no hay ficha de cuidados en TarantulApp",
+    "noKeeperSheetTitle": "Aún no hay ficha de cuidados en TarantulApp\u2122",
     "noKeeperSheetBody": "La taxonomía viene de GBIF / WSC (nombres oficiales), pero eso no incluye crianza. Nuestras fichas salen de otro catálogo que curamos; este nombre aún no está enlazado o GBIF no devolvió vista previa. No es un error de tu conexión ni de tu búsqueda.",
     "noKeeperSheetBodyShort": "Taxonomía: GBIF / WSC. Todavía no enlazamos una ficha de cuidados públicos para este taxón — es normal en muchos nombres. Puedes abrir GBIF o agregar la tarántula e importarla desde ahí.",
-    "taxonomySourceNote": "Nombre y rango siguen {{source}} / GBIF. Los datos de crianza en TarantulApp solo aparecen si el taxón está enlazado a una entrada de nuestro catálogo.",
+    "taxonomySourceNote": "Nombre y rango siguen {{source}} / GBIF. Los datos de crianza en TarantulApp\u2122 solo aparecen si el taxón está enlazado a una entrada de nuestro catálogo.",
     "openGbifSpecies": "Abrir en GBIF",
     "clearSelection": "Quitar selección",
     "browseIntro": "Escribe al menos dos letras: los resultados se cargan mientras tecleas desde nuestro catálogo público de especies, luego WSC y GBIF (Theraphosidae). Elige una fila del catálogo para ver la ficha completa de cuidados; si no hay ficha enlazada, mostramos solo taxonomía.",
@@ -283,23 +283,23 @@
     "badgeCatalog": "Catálogo",
     "yourSpecimenCm": "Tamaño corporal de tu ejemplar (cm)",
     "terrariumSizeHint": "Opcional — estimación aproximada del terrario a partir del largo corporal (misma heurística que en la vista de colección). No sustituye medir a tu animal ni tu propia investigación.",
-    "pageFooterDisclaimer": "Los parámetros de cuidado y notas de hobby (incluido Nuevo vs Viejo Mundo) provienen del catálogo público curado de TarantulApp y texto orientado a keepers cuando existe; donde se indica, son inferidos o generalizaciones. Los nombres taxonómicos y enlaces usan GBIF / WSC. Las fotos de referencia pueden venir de iNaturalist u otros datos abiertos. Nada de esto es consejo veterinario ni legal.",
+    "pageFooterDisclaimer": "Los parámetros de cuidado y notas de hobby (incluido Nuevo vs Viejo Mundo) provienen del catálogo público curado de TarantulApp\u2122 y texto orientado a keepers cuando existe; donde se indica, son inferidos o generalizaciones. Los nombres taxonómicos y enlaces usan GBIF / WSC. Las fotos de referencia pueden venir de iNaturalist u otros datos abiertos. Nada de esto es consejo veterinario ni legal.",
     "speciesProfileMeta": "{{habitat}} · Adulto: {{min}}–{{max}} cm · {{level}}",
     "speciesProfileTaxonomyShort": "Solo taxonomía ({{source}}) — aún no hay bloque de crianza en el catálogo de la app.",
     "speciesProfileTaxonomyApology": "Solo taxonomía GBIF/WSC. Nuestro catálogo público aún no enlaza una ficha de cuidados para este nombre — es normal, no es un fallo tuyo.",
-    "seoHubTitle": "Catálogo de tarántulas: especies, cuidados y taxonomía | TarantulApp",
+    "seoHubTitle": "Catálogo de tarántulas: especies, cuidados y taxonomía | TarantulApp\u2122",
     "seoHubDescription": "Explora especies por nombre científico: fichas de cuidados (hábitat, talla, humedad, sustrato), taxonomía oficial WSC/GBIF y fotos de referencia. Gratis sin iniciar sesión.",
-    "seoSpeciesTitle": "Cuidados de {{name}} | Ficha técnica | TarantulApp",
-    "seoSpeciesDescription": "Cuidados y ficha técnica de {{name}}{{common}} en TarantulApp. {{meta}} Terrario, humedad, origen y temperamento cuando figuran en el catálogo público. Taxonomía GBIF / WSC.",
+    "seoSpeciesTitle": "Cuidados de {{name}} | Ficha técnica | TarantulApp\u2122",
+    "seoSpeciesDescription": "Cuidados y ficha técnica de {{name}}{{common}} en TarantulApp\u2122. {{meta}} Terrario, humedad, origen y temperamento cuando figuran en el catálogo público. Taxonomía GBIF / WSC.",
     "seoCommonFragment": " ({{common}})",
     "seoSpeciesLead": "Ficha pública de crianza y parámetros recomendados según nuestro catálogo curado; taxonomía alineada con GBIF y World Spider Catalog. No sustituye consejo veterinario.",
-    "seoTaxonTitle": "{{name}} — taxonomía GBIF | Descubrir — TarantulApp",
-    "seoTaxonDescription": "{{name}}: ficha de taxón en Descubrir (GBIF). Nombre oficial, imagen de referencia si existe y enlace a GBIF. Los bloques detallados de cuidados aparecen cuando el taxón está enlazado al catálogo local de TarantulApp.",
-    "seoCompareTitle": "Comparar especies de tarántulas | TarantulApp",
+    "seoTaxonTitle": "{{name}} — taxonomía GBIF | Descubrir — TarantulApp\u2122",
+    "seoTaxonDescription": "{{name}}: ficha de taxón en Descubrir (GBIF). Nombre oficial, imagen de referencia si existe y enlace a GBIF. Los bloques detallados de cuidados aparecen cuando el taxón está enlazado al catálogo local de TarantulApp\u2122.",
+    "seoCompareTitle": "Comparar especies de tarántulas | TarantulApp\u2122",
     "seoCompareDescription": "Compara dos fichas del catálogo o dos taxones GBIF (plan Pro o prueba): talla, nivel, humedad y más en una sola vista."
   },
   "qrTool": {
-    "pageTitle": "QR gratis para terrario — TarantulApp",
+    "pageTitle": "QR gratis para terrario — TarantulApp\u2122",
     "metaDescription": "Genera un código QR desde tus ejemplares vivos para etiquetar el terrario. El enlace público va dentro del QR; descarga un PNG limpio listo para imprimir.",
     "heading": "Etiquetas QR para tus terrarios",
     "intro": "Elige un ejemplar de tu colección: el QR abre su ficha pública. Por defecto queda el primero vivo; si entras desde el alta de uno nuevo, se selecciona ese.",
@@ -314,14 +314,14 @@
     "loginRequiredBody": "Para generar e imprimir el QR necesitas una cuenta y al menos un ejemplar vivo en tu colección.",
     "loadingCollection": "Cargando tu colección…",
     "emptyCollection": "No tienes ejemplares vivos en la colección. Añade uno para generar su QR.",
-    "footerNote": "El PNG solo incluye el código QR y una marca pequeña «TarantulApp». El nombre y la URL no se repiten en la imagen: ya van en el QR y en la ficha.",
+    "footerNote": "El PNG solo incluye el código QR y una marca pequeña «TarantulApp\u2122». El nombre y la URL no se repiten en la imagen: ya van en el QR y en la ficha.",
     "shareTitle": "Enlace de mi etiqueta",
-    "shareText": "Etiqueta QR generada con TarantulApp",
-    "schemaName": "Generador QR para terrarios — TarantulApp",
+    "shareText": "Etiqueta QR generada con TarantulApp\u2122",
+    "schemaName": "Generador QR para terrarios — TarantulApp\u2122",
     "schemaDescription": "Herramienta gratuita para crear códigos QR desde tu colección de tarántulas y enlazar la ficha pública de cada ejemplar."
   },
   "auth": {
-    "loginTitle": "TarantulApp",
+    "loginTitle": "TarantulApp\u2122",
     "standardEyebrow": "Una sola app, todo el flujo",
     "standardManifestTitle": "Un solo lugar",
     "standardManifestLead": "Aquí conviven lo que haces en el terrario y lo que importa en papel: la app donde tienes taxonomía oficial, tu bitácora y fichas de especie con el detalle que de verdad abres al alimentar, mudar o revisar humedad — ancladas a catálogos reconocidos (WSC, GBIF) y enriquecidas con lo que el hobby necesita leer, no relleno.",
@@ -330,7 +330,7 @@
     "standardManifestB3": "Etiquetado y trazabilidad: QR por terrario, comparación entre fichas y exportación para quien documenta todo.",
     "standardManifestB4": "Comunidad en miniatura, exigencia en máximo: hecho para quien prefiere anotar, medir y cerrar la tapa con criterio.",
     "standardCircleKicker": "No es otra red social del hobby: es tu laboratorio de terrario, con nombres serios y bitácora que aguanta el paso del tiempo.",
-    "standardManifestAboutLink": "Acerca de TarantulApp",
+    "standardManifestAboutLink": "Acerca de TarantulApp\u2122",
     "standardManifestAboutHint": "manifiesto corto, promesa y límites claros.",
     "invalidResetToken": "El enlace no es válido o expiró. Solicita uno nuevo desde «Olvidé mi contraseña».",
     "loginSubtitle": "Entra a tu colección y a la bitácora que la respalda",
@@ -416,11 +416,11 @@
   },
   "marketplace": {
     "nav": "Marketplace",
-    "seoTitle": "Marketplace de keepers | TarantulApp",
-    "metaDescription": "Anuncios de la comunidad, socios oficiales y perfiles de breeders en MX, US y Canadá. TarantulApp no es intermediario: contacto directo entre keepers.",
+    "seoTitle": "Marketplace de keepers | TarantulApp\u2122",
+    "metaDescription": "Anuncios de la comunidad, socios oficiales y perfiles de breeders en MX, US y Canadá. TarantulApp\u2122 no es intermediario: contacto directo entre keepers.",
     "title": "Marketplace de keepers",
     "pageFocusTitle": "Keeper marketplace",
-    "communityIntro": "Aquí la comunidad publica anuncios para venta, intercambio o lo que acuerden entre ustedes. TarantulApp no es intermediario: no cobramos comisiones por el trato, no verificamos identidades en persona ni garantizamos entregas. Mientras crece el tablón en México, Estados Unidos y Canadá, puedes ver anuncios demo en ciudades grandes para visualizar el flujo.",
+    "communityIntro": "Aquí la comunidad publica anuncios para venta, intercambio o lo que acuerden entre ustedes. TarantulApp\u2122 no es intermediario: no cobramos comisiones por el trato, no verificamos identidades en persona ni garantizamos entregas. Mientras crece el tablón en México, Estados Unidos y Canadá, puedes ver anuncios demo en ciudades grandes para visualizar el flujo.",
     "communityDisclaimer": "Recomendamos acordar en lugares seguros, conservar capturas del chat, revisar regulación local (fauna, envíos, cuarentena) y nunca enviar dinero por adelantado sin criterio. Si algo se ve sospechoso, usa «Reportar» o escríbenos.",
     "officialStripLabel": "Socios certificados",
     "officialStripSub": "Tiendas y breeders que el equipo revisó: enlazo directo a su sitio. El grueso del marketplace sigue siendo la comunidad; esto es un extra para quien quiere una referencia ya curada.",
@@ -607,8 +607,8 @@
     "downloadFlex": "Descargar Word — flexible",
     "generating": "Generando…",
     "trimWarning": "Solo se incluyen los primeros {{max}} ejemplares seleccionados en el archivo.",
-    "docTitle": "TarantulApp — QRs de ejemplares",
-    "docTitleFlex": "TarantulApp — QRs (layout flexible)",
+    "docTitle": "TarantulApp\u2122 — QRs de ejemplares",
+    "docTitleFlex": "TarantulApp\u2122 — QRs (layout flexible)",
     "docFooterNote": "Los códigos enlazan a la ficha pública de cada ejemplar. Revisa en Word: Archivo → Imprimir.",
     "docFooterNoteFlex": "QRs más pequeños y con más espacio: agranda, achica o copia bloques en Word antes de imprimir."
   },
@@ -905,7 +905,7 @@
   }
   ,
   "pro": {
-    "title": "Planes TarantulApp",
+    "title": "Planes TarantulApp\u2122",
     "subtitle": "Free engancha y Pro concentra todo el valor real para keepers activos.",
     "planMatrixIntro": "Hoy el checkout de Stripe cubre Pro (mensual o anual). Vendor/Business queda como próximo lanzamiento.",
     "trialThenPricing": "Prueba gratis 7 días al crear cuenta. Después: Pro por $4.99 USD/mes o $49.99 USD/año (≈17 % menos que pagar mes a mes).",
@@ -1002,7 +1002,7 @@
     "platformOpsTitle": "Platform Ops — Google Play, Apple, Stripe y plataformas",
     "platformOpsBody": "Comunicaciones operativas con Google Play Console, App Store Connect, Stripe u otros proveedores.",
     "marketingTitle": "Marketing — alianzas y propuestas",
-    "marketingBody": "Patrocinios, colaboraciones, prensa o propuestas comerciales que quieran sumarse a TarantulApp."
+    "marketingBody": "Patrocinios, colaboraciones, prensa o propuestas comerciales que quieran sumarse a TarantulApp\u2122."
   },
   "admin": {
     "title": "Panel admin",
@@ -1036,8 +1036,8 @@
     "generatedAt": "Generado",
     "snapshotTitle": "Resumen del ejemplar",
     "snapshotSubtitle": "Datos principales para registro y manejo",
-    "cardTitle": "Registro TarantulApp",
-    "photoCardTitle": "Foto TarantulApp",
+    "cardTitle": "Registro TarantulApp\u2122",
+    "photoCardTitle": "Foto TarantulApp\u2122",
     "eventLabel": "Evento",
     "dateLabel": "Fecha",
     "summaryLabel": "Resumen",
@@ -1067,8 +1067,8 @@
     "postCreateHint": "Tras crear: agrega último feeding o molt para mejor seguimiento"
   },
   "ratePrompt": {
-    "title": "¿Disfrutando TarantulApp?",
-    "body": "Si TarantulApp te está ayudando con tu colección, ¿nos dejas una reseña rápida en Google Play?",
+    "title": "¿Disfrutando TarantulApp\u2122?",
+    "body": "Si TarantulApp\u2122 te está ayudando con tu colección, ¿nos dejas una reseña rápida en Google Play?",
     "rateNow": "Calificar ahora",
     "later": "Tal vez después",
     "never": "No volver a preguntar",
@@ -1154,7 +1154,7 @@
       "noEmail": "Configura VITE_SUPPORT_EMAIL en el entorno del frontend para mostrar un correo de contacto."
     },
     "about": {
-      "line": "TarantulApp · Web · v{{version}}"
+      "line": "TarantulApp\u2122 · Web · v{{version}}"
     }
   }
 }

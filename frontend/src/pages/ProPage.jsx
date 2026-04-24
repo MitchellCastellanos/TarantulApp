@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar'
+import BrandName from '../components/BrandName'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -176,7 +177,9 @@ export default function ProPage() {
       <div className="container mt-4" style={{ maxWidth: 1040 }}>
         <ChitinCardFrame showSilhouettes={false}>
           <div className="mb-3">
-            <span className="badge bg-dark me-2">TarantulApp</span>
+            <span className="badge bg-dark me-2">
+              <BrandName />
+            </span>
             <span className={`badge ${isPro ? 'bg-success' : 'bg-secondary'}`}>
               {isPro ? t('pro.currentPro') : t('pro.currentFree')}
             </span>

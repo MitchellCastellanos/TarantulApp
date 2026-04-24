@@ -6,6 +6,7 @@ import userPublicService from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 import { buildKeeperProfileShareText } from '../utils/shareTemplates'
 
 export default function PublicKeeperProfilePage() {
@@ -25,9 +26,9 @@ export default function PublicKeeperProfilePage() {
 
   usePageSeo({
     title: profile?.displayName
-      ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - TarantulApp`
-      : 'Perfil keeper - TarantulApp',
-    description: profile?.bio || 'Perfil publico keeper en TarantulApp: reputacion, listings y contacto.',
+      ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - ${BRAND_WITH_TM}`
+      : `Perfil keeper - ${BRAND_WITH_TM}`,
+    description: profile?.bio || `Perfil publico keeper en ${BRAND_WITH_TM}: reputacion, listings y contacto.`,
     imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
     canonicalHref: profileUrl || undefined,
   })

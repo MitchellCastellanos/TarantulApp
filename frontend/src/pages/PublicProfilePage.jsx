@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import BrandLogoMark from '../components/BrandLogoMark'
+import BrandName from '../components/BrandName'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import logsService from '../services/logsService'
@@ -155,7 +156,7 @@ export default function PublicProfilePage() {
         <div className="fs-1 mb-3">🔒</div>
         <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
           <BrandLogoMark size={36} showIntro={false} />
-          <span className="cinzel fw-bold" style={{ color: 'var(--ta-gold)' }}>TarantulApp</span>
+          <BrandName className="cinzel fw-bold" style={{ color: 'var(--ta-gold)' }} />
         </div>
         <p className="mb-2" style={{ opacity: 0.8 }}>{t('public.privateCard')}</p>
         {!user && (
@@ -303,7 +304,7 @@ export default function PublicProfilePage() {
               style={{ color: 'var(--ta-parchment)' }}
             >
               <BrandLogoMark size={32} showIntro={false} />
-              <span className="cinzel fw-semibold">TarantulApp</span>
+              <BrandName className="cinzel fw-semibold" />
             </Link>
           </div>
         </div>

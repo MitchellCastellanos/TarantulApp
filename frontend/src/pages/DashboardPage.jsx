@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandLogoMark from '../components/BrandLogoMark'
+import BrandName from '../components/BrandName'
 import TarantulaCard from '../components/TarantulaCard'
 import RemindersPanel from '../components/RemindersPanel'
 import tarantulaService from '../services/tarantulaService'
@@ -146,7 +147,7 @@ export default function DashboardPage() {
           <div className="row g-3 align-items-center">
             <div className="col-lg-7">
               <p className="small text-uppercase mb-2 ta-home-hero__eyebrow">
-                {t('dashboard.homeHeroEyebrow', { defaultValue: 'Nueva etapa TarantulApp' })}
+                {t('dashboard.homeHeroEyebrow', { defaultValue: 'Nueva etapa TarantulApp\u2122' })}
               </p>
               <h1 className="h4 fw-bold mb-2">
                 {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, todo en un mismo flujo' })}
@@ -163,7 +164,7 @@ export default function DashboardPage() {
             <div className="col-lg-5">
               <div className="ta-home-hero__logo-wrap d-flex align-items-center justify-content-center flex-column">
                 <BrandLogoMark size={74} showIntro />
-                <span className="cinzel mt-2 ta-login-brand-wordmark">TarantulApp</span>
+                <BrandName className="cinzel mt-2 ta-login-brand-wordmark" />
                 <small className="text-muted mt-1">
                   {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Datos serios. Comunidad viva.' })}
                 </small>

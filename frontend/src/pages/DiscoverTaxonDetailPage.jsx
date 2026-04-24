@@ -7,6 +7,7 @@ import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 function DiscoverTaxonDetailSeo({ data, gbifKeyParam }) {
   const { t, i18n } = useTranslation()
@@ -41,7 +42,7 @@ function DiscoverTaxonDetailSeo({ data, gbifKeyParam }) {
       inLanguage: i18n.language,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'TarantulApp',
+        name: BRAND_WITH_TM,
         url: base || undefined,
       },
       about: {

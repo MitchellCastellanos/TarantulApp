@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function TermsPage() {
@@ -10,11 +11,11 @@ export default function TermsPage() {
         <h2 className="fw-bold mb-1">Terms of Service</h2>
         <p className="text-muted small mb-4">Last updated: April 2026</p>
 
-        <p>By using TarantulApp you agree to these terms. Please read them carefully.</p>
+        <p>By using <BrandName /> you agree to these terms. Please read them carefully.</p>
 
         <h5 className="fw-bold mt-4">1. Use of the Service</h5>
         <ul>
-          <li>TarantulApp is a personal collection tracker for tarantula keepers.</li>
+          <li><BrandName /> is a personal collection tracker for tarantula keepers.</li>
           <li>You must be at least 13 years old to use this service.</li>
           <li>You are responsible for maintaining the security of your account credentials.</li>
           <li>You may not use the service for any illegal or unauthorized purpose.</li>
@@ -28,10 +29,10 @@ export default function TermsPage() {
         </ul>
 
         <h5 className="fw-bold mt-4">3. Your Content</h5>
-        <p>You retain ownership of all content you create (records, photos, notes). You grant TarantulApp a license to store and display this content to provide the service.</p>
+        <p>You retain ownership of all content you create (records, photos, notes). You grant <BrandName /> a license to store and display this content to provide the service.</p>
 
         <h5 className="fw-bold mt-4">4. Limitation of Liability</h5>
-        <p>TarantulApp is provided "as is". We are not liable for any data loss or damages resulting from use of the service. We recommend maintaining backups of important records.</p>
+        <p><BrandName /> is provided "as is". We are not liable for any data loss or damages resulting from use of the service. We recommend maintaining backups of important records.</p>
 
         <h5 className="fw-bold mt-4">5. Changes to Terms</h5>
         <p>We may update these terms. Continued use of the service after changes constitutes acceptance of the new terms.</p>
@@ -58,11 +59,11 @@ export default function TermsPage() {
         <h2 className="fw-bold mb-1">Términos de Servicio</h2>
         <p className="text-muted small mb-4">Última actualización: Abril 2026</p>
 
-        <p>Al usar TarantulApp aceptas estos términos. Por favor léelos con atención.</p>
+        <p>Al usar <BrandName /> aceptas estos términos. Por favor léelos con atención.</p>
 
         <h5 className="fw-bold mt-4">1. Uso del servicio</h5>
         <ul>
-          <li>TarantulApp es un rastreador de colecciones personales para mantenedores de tarántulas.</li>
+          <li><BrandName /> es un rastreador de colecciones personales para mantenedores de tarántulas.</li>
           <li>Debes tener al menos 13 años para usar este servicio.</li>
           <li>Eres responsable de mantener la seguridad de tus credenciales.</li>
           <li>No puedes usar el servicio para fines ilegales o no autorizados.</li>
@@ -76,10 +77,10 @@ export default function TermsPage() {
         </ul>
 
         <h5 className="fw-bold mt-4">3. Tu contenido</h5>
-        <p>Conservas la propiedad de todo el contenido que crees (registros, fotos, notas). Le otorgas a TarantulApp una licencia para almacenar y mostrar ese contenido como parte del servicio.</p>
+        <p>Conservas la propiedad de todo el contenido que crees (registros, fotos, notas). Le otorgas a <BrandName /> una licencia para almacenar y mostrar ese contenido como parte del servicio.</p>
 
         <h5 className="fw-bold mt-4">4. Limitación de responsabilidad</h5>
-        <p>TarantulApp se provee "tal cual". No somos responsables de pérdida de datos o daños derivados del uso del servicio. Recomendamos mantener respaldos de registros importantes.</p>
+        <p><BrandName /> se provee "tal cual". No somos responsables de pérdida de datos o daños derivados del uso del servicio. Recomendamos mantener respaldos de registros importantes.</p>
 
         <h5 className="fw-bold mt-4">5. Cambios en los términos</h5>
         <p>Podemos actualizar estos términos. El uso continuado del servicio tras los cambios implica la aceptación de los nuevos términos.</p>

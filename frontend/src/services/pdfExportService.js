@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 async function fetchBrandLogoDataUrl() {
   try {
@@ -232,7 +233,7 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
     doc.line(margin, pageHeight - 28, pageWidth - margin, pageHeight - 28)
     doc.setFontSize(9)
     doc.setTextColor(88, 88, 88)
-    doc.text('TarantulApp', margin, pageHeight - 16)
+    doc.text(BRAND_WITH_TM, margin, pageHeight - 16)
     doc.text(`${i}/${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' })
   }
 

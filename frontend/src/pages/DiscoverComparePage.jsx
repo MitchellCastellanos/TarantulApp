@@ -7,6 +7,7 @@ import { fetchDiscoverTaxonomyHits } from '../utils/discoverTaxonomySearch'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 export default function DiscoverComparePage() {
   const { t, i18n } = useTranslation()
@@ -46,7 +47,7 @@ export default function DiscoverComparePage() {
       inLanguage: i18n.language,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'TarantulApp',
+        name: BRAND_WITH_TM,
         url: origin || undefined,
       },
     }),

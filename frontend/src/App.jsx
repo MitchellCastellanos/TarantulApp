@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
+import BrandName from './components/BrandName'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AddTarantulaPage from './pages/AddTarantulaPage'
@@ -128,7 +129,8 @@ function Footer() {
         borderTop: '1px solid var(--ta-border)',
       }}
     >
-      © {new Date().getFullYear()} TarantulApp &nbsp;·&nbsp;
+      © {new Date().getFullYear()}{' '}
+      <BrandName /> &nbsp;·&nbsp;
       <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
       <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
