@@ -4,19 +4,21 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import userPublicService from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
+import moderationService from '../services/moderationService'
 import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
-import { buildKeeperProfileShareText } from '../utils/shareTemplates'
+import { useAuth } from '../context/AuthContext'
 
 export default function PublicKeeperProfilePage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const { handle } = useParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [profile, setProfile] = useState(null)
   const [keeperData, setKeeperData] = useState(null)
-  const [shareMsg, setShareMsg] = useState('')
+  const [notice, setNotice] = useState('')
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const profileUrl = useMemo(() => {
@@ -28,7 +30,7 @@ export default function PublicKeeperProfilePage() {
     title: profile?.displayName
       ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - ${BRAND_WITH_TM}`
       : `Keeper profile - ${BRAND_WITH_TM}`,
-    description: profile?.bio || `Public keeper profile on ${BRAND_WITH_TM}: reputation, listings, and contact.`,
+    description: profile?.bio || t('public.keeperSeoDescription', { brand: BRAND_WITH_TM }),
     imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
     canonicalHref: profileUrl || undefined,
   })
@@ -37,9 +39,11 @@ export default function PublicKeeperProfilePage() {
     let cancelled = false
     setLoading(true)
     setError('')
+    setNotice('')
     setProfile(null)
     setKeeperData(null)
-    userPublicService.byHandle(handle || '')
+    userPublicService
+      .byHandle(handle || '')
       .then(async (p) => {
         if (cancelled) return
         setProfile(p || null)
@@ -49,147 +53,153 @@ export default function PublicKeeperProfilePage() {
         }
       })
       .catch(() => {
-        if (!cancelled) setError('We could not find this public profile.')
+        if (!cancelled) setError(t('public.keeperNotFound'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
-    return () => { cancelled = true }
-  }, [handle])
-
-  const shareText = buildKeeperProfileShareText({
-    displayName: profile?.displayName,
-    handle: profile?.publicHandle || handle,
-    bio: profile?.bio,
-    location: profile?.location,
-    profileUrl,
-    t,
-    channel: 'default',
-  })
-
-  const copyProfileShare = async () => {
-    if (!shareText) return
-    try {
-      await navigator.clipboard.writeText(shareText)
-      setShareMsg('Template copied.')
-    } catch {
-      setShareMsg('Could not copy automatically.')
+    return () => {
+      cancelled = true
     }
-  }
+  }, [handle, t])
 
-  const shareWhatsApp = () => {
-    const text = buildKeeperProfileShareText({
-      displayName: profile?.displayName,
-      handle: profile?.publicHandle || handle,
-      bio: profile?.bio,
-      location: profile?.location,
-      profileUrl,
-      t,
-      channel: 'whatsapp',
-    })
-    if (!text) return
-    const target = `https://wa.me/?text=${encodeURIComponent(text)}`
-    window.open(target, '_blank', 'noopener,noreferrer')
+  const kp = keeperData?.profile || {}
+  const badges = Array.isArray(keeperData?.badges) ? keeperData.badges : []
+  const badgesProgress = keeperData?.badgesProgress || {}
+  const reputation = keeperData?.reputation || null
+  const sameUser = user && profile?.id && String(user.id) === String(profile.id)
+
+  const reportKeeper = async () => {
+    if (!profile?.id) return
+    const reason = window.prompt(t('marketplace.reportReason'))
+    if (!reason || !reason.trim()) return
+    try {
+      await moderationService.reportKeeperProfile(profile.id, { reason: reason.trim(), details: '' })
+      setNotice(t('marketplace.reportSent'))
+    } catch {
+      setNotice(t('public.reportError'))
+    }
   }
 
   return (
     <div>
       <Navbar variant="public" />
       <div className="container mt-4 mb-5" style={{ maxWidth: 860 }}>
-        {loading && <div className="text-muted small">Loading profile...</div>}
+        {loading && <div className="text-muted small">{t('public.keeperLoading')}</div>}
         {!loading && error && <div className="alert alert-warning small py-2">{error}</div>}
+        {!loading && notice && !error && <div className="alert alert-info small py-2">{notice}</div>}
         {!loading && !error && profile && (
           <>
             <div className="card border-0 shadow-sm mb-3">
               <div className="card-body">
-                <div className="d-flex align-items-center gap-2 mb-2">
+                <div className="d-flex align-items-start gap-3 mb-2">
                   <img
                     src={imgUrl(profile.profilePhoto) || '/spider-default.png'}
                     alt={`@${profile.publicHandle || 'keeper'}`}
-                    style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 999 }}
+                    style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 999 }}
                   />
-                  <div>
-                    <div className="fw-bold">{profile.displayName || 'Keeper'}</div>
-                    <div className="small text-muted">@{profile.publicHandle || 'keeper'}</div>
+                  <div className="flex-grow-1 min-w-0">
+                    <div className="fw-bold h5 mb-0">{keeperData?.displayName || profile.displayName || 'Keeper'}</div>
+                    <div className="small text-muted">@{profile.publicHandle || kp.handle || 'keeper'}</div>
+                    {(kp.location || profile.location) ? (
+                      <p className="small text-muted mb-1 mt-1">{kp.location || profile.location}</p>
+                    ) : null}
+                    {kp.featuredCollection ? (
+                      <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+                        <span className="fw-semibold">{t('public.keeperFeatured')}: </span>
+                        {kp.featuredCollection}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-                {profile.location ? <p className="small mb-1 text-muted">{profile.location}</p> : null}
-                <p className="small mb-0">{profile.bio || 'This keeper has not shared a public bio yet.'}</p>
-                <div className="d-flex flex-wrap gap-2 mt-3">
-                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={copyProfileShare}>
-                    Copy template
-                  </button>
-                  <button type="button" className="btn btn-sm btn-dark" onClick={shareWhatsApp}>
-                    WhatsApp
-                  </button>
+                <p className="small mb-2" style={{ color: 'var(--ta-text)', whiteSpace: 'pre-wrap' }}>
+                  {kp.bio || profile.bio || t('public.keeperNoBio')}
+                </p>
+                {badges.length > 0 && (
+                  <div className="d-flex gap-1 flex-wrap mb-2">
+                    {badges.map((b) => (
+                      <span className="badge bg-light text-dark border" key={b.key || b.label}>
+                        {b.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="small text-muted mb-2">
+                  {t('marketplace.rating')}: {keeperData?.ratingAvg ?? 0} ({keeperData?.reviewsCount ?? 0})
                 </div>
-                {shareMsg && <div className="small text-muted mt-2">{shareMsg}</div>}
+                {reputation && (
+                  <div className="small mb-2">
+                    <strong>{t('marketplace.reputationTitle')}:</strong>{' '}
+                    {t('marketplace.reputationLine', { tier: reputation.tier, score: reputation.score })}
+                    <div className="progress mt-1" style={{ height: 8 }}>
+                      <div
+                        className="progress-bar bg-warning"
+                        style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {Object.keys(badgesProgress).length > 0 && (
+                  <div className="row g-2 mb-2">
+                    {Object.entries(badgesProgress).map(([key, p]) => {
+                      const target = Number(p?.target || 0)
+                      const current = Number(p?.current || 0)
+                      const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
+                      return (
+                        <div className="col-md-6" key={key}>
+                          <div className="small">{p?.nextLabel}</div>
+                          <div className="progress" style={{ height: 6 }}>
+                            <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {!sameUser && user && (
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={reportKeeper}>
+                    {t('marketplace.report')}
+                  </button>
+                )}
               </div>
             </div>
 
-            {keeperData && (
-              <div className="card border-0 shadow-sm">
-                <div className="card-body">
-                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                    <h2 className="h6 mb-0">Keeper marketplace</h2>
-                    {profile.id ? (
-                      <Link className="btn btn-sm btn-outline-secondary" to={`/marketplace/keeper/${profile.id}`}>
-                        View detailed profile
-                      </Link>
-                    ) : null}
-                  </div>
-                  <div className="small text-muted mb-2">
-                    Reputation: {keeperData?.reputation?.tier || 'Bronze'} ({keeperData?.reputation?.score ?? 0})
-                  </div>
-                  {(keeperData?.activeListings || []).length === 0 ? (
-                    <p className="small text-muted mb-0">No active listings for now.</p>
-                  ) : (
-                    <div className="row g-2">
-                      {(keeperData.activeListings || []).slice(0, 6).map((l) => (
-                        <div key={l.id} className="col-md-6">
-                          <div className="border rounded p-2 h-100 small">
-                            <div className="fw-semibold">{l.title}</div>
-                            <div className="text-muted">{l.speciesName || '-'}</div>
-                            <div>{l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : 'Price on request'}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <hr className="my-3" />
-                  <h3 className="h6 mb-2">Public collection</h3>
-                  {keeperData?.collectionPublic !== true ? (
-                    <p className="small text-muted mb-0">This user has a private collection.</p>
-                  ) : (keeperData?.publicCollection || []).length === 0 ? (
-                    <p className="small text-muted mb-0">No public specimens yet.</p>
-                  ) : (
-                    <div className="row g-2">
-                      {(keeperData.publicCollection || []).map((tar) => (
-                        <div key={tar.id} className="col-md-6">
-                          <Link
-                            to={`/t/${encodeURIComponent(tar.shortId)}`}
-                            className="text-decoration-none"
-                            style={{ color: 'inherit' }}
-                          >
-                            <div className="border rounded p-2 h-100 small d-flex align-items-center gap-2">
-                              <img
-                                src={imgUrl(tar.profilePhoto) || '/spider-default.png'}
-                                alt={tar.name || 'specimen'}
-                                style={{ width: 40, height: 40, borderRadius: 999, objectFit: 'cover' }}
-                              />
-                              <div>
-                                <div className="fw-semibold">{tar.name || 'Specimen'}</div>
-                                <div className="text-muted">{tar.speciesName || '-'}</div>
-                              </div>
+            <div className="card border-0 shadow-sm">
+              <div className="card-body">
+                <h2 className="h6 mb-3" style={{ color: 'var(--ta-gold)' }}>
+                  {t('public.keeperCollectionTitle')}
+                </h2>
+                {keeperData?.collectionPublic !== true ? (
+                  <p className="small text-muted mb-0">{t('public.keeperCollectionPrivate')}</p>
+                ) : (keeperData?.publicCollection || []).length === 0 ? (
+                  <p className="small text-muted mb-0">{t('public.keeperCollectionEmpty')}</p>
+                ) : (
+                  <div className="row g-2">
+                    {(keeperData.publicCollection || []).map((tar) => (
+                      <div key={tar.id} className="col-md-6">
+                        <Link
+                          to={`/t/${encodeURIComponent(tar.shortId)}`}
+                          className="text-decoration-none"
+                          style={{ color: 'inherit' }}
+                        >
+                          <div className="border rounded p-2 h-100 small d-flex align-items-center gap-2">
+                            <img
+                              src={imgUrl(tar.profilePhoto) || '/spider-default.png'}
+                              alt={tar.name || 'specimen'}
+                              style={{ width: 44, height: 44, borderRadius: 999, objectFit: 'cover' }}
+                            />
+                            <div className="min-w-0">
+                              <div className="fw-semibold text-truncate">{tar.name || 'Specimen'}</div>
+                              <div className="text-muted text-truncate">{tar.speciesName || '-'}</div>
                             </div>
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
