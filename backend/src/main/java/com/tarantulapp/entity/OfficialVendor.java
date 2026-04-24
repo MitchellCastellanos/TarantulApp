@@ -2,6 +2,8 @@ package com.tarantulapp.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -57,6 +59,13 @@ public class OfficialVendor {
     @Column(nullable = false)
     private Boolean enabled = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "partner_program_tier", length = 40)
+    private PartnerProgramTier partnerProgramTier;
+
+    @Column(name = "listing_import_enabled", nullable = false)
+    private Boolean listingImportEnabled = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -101,6 +110,10 @@ public class OfficialVendor {
     public void setBadge(String badge) { this.badge = badge; }
     public Boolean getEnabled() { return enabled; }
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
+    public PartnerProgramTier getPartnerProgramTier() { return partnerProgramTier; }
+    public void setPartnerProgramTier(PartnerProgramTier partnerProgramTier) { this.partnerProgramTier = partnerProgramTier; }
+    public Boolean getListingImportEnabled() { return listingImportEnabled; }
+    public void setListingImportEnabled(Boolean listingImportEnabled) { this.listingImportEnabled = listingImportEnabled; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -1,0 +1,16 @@
+[
+  {
+    "externalId": "tc-001",
+    "title": "Caribena versicolor sling",
+    "description": "Inventory snapshot exported from strategic partner feed.",
+    "speciesNameRaw": "Caribena versicolor",
+    "priceAmount": 125.0,
+    "currency": "CAD",
+    "stockQuantity": 9,
+    "imageUrl": "https://cdn.tarantulapp.local/partners/tc/versicolor.jpg",
+    "productCanonicalUrl": "https://www.tarantulacanada.ca/products/caribena-versicolor",
+    "country": "Canada",
+    "state": "Quebec",
+    "city": "Montreal"
+  }
+]

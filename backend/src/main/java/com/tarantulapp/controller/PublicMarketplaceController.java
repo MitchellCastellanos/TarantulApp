@@ -4,6 +4,7 @@ import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,10 +24,20 @@ public class PublicMarketplaceController {
 
     private final MarketplaceService marketplaceService;
     private final OfficialVendorService officialVendorService;
+    private final boolean futurePaidStorefrontEnabled;
+    private final boolean futurePaidBadgesEnabled;
+    private final boolean strategicPartnerBootstrapMode;
 
-    public PublicMarketplaceController(MarketplaceService marketplaceService, OfficialVendorService officialVendorService) {
+    public PublicMarketplaceController(MarketplaceService marketplaceService,
+                                       OfficialVendorService officialVendorService,
+                                       @Value("${app.marketplace.future-paid-storefront-enabled:false}") boolean futurePaidStorefrontEnabled,
+                                       @Value("${app.marketplace.future-paid-badges-enabled:false}") boolean futurePaidBadgesEnabled,
+                                       @Value("${app.marketplace.strategic-bootstrap-mode:true}") boolean strategicPartnerBootstrapMode) {
         this.marketplaceService = marketplaceService;
         this.officialVendorService = officialVendorService;
+        this.futurePaidStorefrontEnabled = futurePaidStorefrontEnabled;
+        this.futurePaidBadgesEnabled = futurePaidBadgesEnabled;
+        this.strategicPartnerBootstrapMode = strategicPartnerBootstrapMode;
     }
 
     record OfficialVendorLeadRequest(
@@ -96,5 +107,14 @@ public class PublicMarketplaceController {
     @GetMapping("/listing-boost-offer")
     public ResponseEntity<Map<String, Object>> listingBoostOffer() {
         return ResponseEntity.ok(Map.of("available", marketplaceService.isListingBoostOffered()));
+    }
+
+    @GetMapping("/program-flags")
+    public ResponseEntity<Map<String, Object>> programFlags() {
+        return ResponseEntity.ok(Map.of(
+                "futurePaidStorefrontEnabled", futurePaidStorefrontEnabled,
+                "futurePaidBadgesEnabled", futurePaidBadgesEnabled,
+                "strategicPartnerBootstrapMode", strategicPartnerBootstrapMode
+        ));
     }
 }
