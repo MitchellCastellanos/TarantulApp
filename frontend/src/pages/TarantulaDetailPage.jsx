@@ -110,6 +110,7 @@ export default function TarantulaDetailPage() {
       timeline,
       t,
       language: i18n.language,
+      i18n,
     }).catch(() => {})
   }
   const publicProfileUrl = tarantula?.shortId ? `${window.location.origin}/t/${tarantula.shortId}` : ''
