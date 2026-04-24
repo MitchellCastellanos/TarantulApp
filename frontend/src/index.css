@@ -1670,3 +1670,43 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 :root[data-theme='light'] .ta-social-compact-post {
   background: rgba(255, 255, 255, 0.62);
 }
+
+.ta-social-like-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--ta-border);
+  border-radius: 0.5rem;
+}
+
+.ta-social-like-row__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.ta-social-preview-anchor {
+  position: relative;
+  cursor: default;
+}
+
+.ta-social-preview-card {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  z-index: 10;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  background: rgba(18, 18, 18, 0.96);
+  border: 1px solid var(--ta-border);
+  color: var(--ta-parchment);
+}
+
+.ta-social-preview-anchor:hover .ta-social-preview-card {
+  display: block;
+}
