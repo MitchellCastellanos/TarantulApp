@@ -88,6 +88,20 @@ public class ActivityPostService {
         return pageToDto(rows, Optional.of(authorId));
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicPost(UUID postId, Optional<UUID> viewerId) {
+        ActivityPost post = activityPostRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
+        if (!canView(post, viewerId)) {
+            throw new AccessDeniedException("No autorizado");
+        }
+        User author = userRepository.findById(post.getAuthorUserId()).orElse(null);
+        Tarantula spider = post.getTarantulaId() == null
+                ? null
+                : tarantulaRepository.findById(post.getTarantulaId()).orElse(null);
+        return toPostDto(post, viewerId, author, spider);
+    }
+
     @Transactional
     public Map<String, Object> createPost(UUID authorId, String body, String visibility, String milestoneKind,
                                         String imageUrl, UUID tarantulaId) {
@@ -178,10 +192,10 @@ public class ActivityPostService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> listComments(UUID viewerId, UUID postId) {
+    public List<Map<String, Object>> listComments(Optional<UUID> viewerId, UUID postId) {
         ActivityPost post = activityPostRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
-        if (!canView(post, Optional.of(viewerId))) {
+        if (!canView(post, viewerId)) {
             throw new AccessDeniedException("No autorizado");
         }
         List<ActivityPostComment> list = activityPostCommentRepository.findByPostIdAndHiddenAtIsNullOrderByCreatedAtAsc(postId);

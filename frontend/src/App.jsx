@@ -28,6 +28,7 @@ import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
+import CommunityPostThreadPage from './pages/CommunityPostThreadPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
 import HandleSetupPage from './pages/HandleSetupPage'
@@ -131,6 +132,7 @@ function AppRoutes() {
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/community" element={<SocialHubPage />} />
+      <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
       <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 

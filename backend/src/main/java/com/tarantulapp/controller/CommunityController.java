@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -79,7 +80,7 @@ public class CommunityController {
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<Map<String, Object>>> comments(@PathVariable UUID postId) {
         UUID uid = securityHelper.getCurrentUserId();
-        return ResponseEntity.ok(activityPostService.listComments(uid, postId));
+        return ResponseEntity.ok(activityPostService.listComments(Optional.of(uid), postId));
     }
 
     @PostMapping("/posts/{postId}/comments")
