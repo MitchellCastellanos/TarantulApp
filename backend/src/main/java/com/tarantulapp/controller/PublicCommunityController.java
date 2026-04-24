@@ -41,4 +41,16 @@ public class PublicCommunityController {
         Optional<UUID> viewer = securityHelper.tryGetCurrentUserId();
         return ResponseEntity.ok(activityPostService.listLikes(postId, viewer, limit));
     }
+
+    @GetMapping("/posts/{postId}")
+    public ResponseEntity<Map<String, Object>> postById(@PathVariable UUID postId) {
+        Optional<UUID> viewer = securityHelper.tryGetCurrentUserId();
+        return ResponseEntity.ok(activityPostService.publicPost(postId, viewer));
+    }
+
+    @GetMapping("/posts/{postId}/comments")
+    public ResponseEntity<List<Map<String, Object>>> postComments(@PathVariable UUID postId) {
+        Optional<UUID> viewer = securityHelper.tryGetCurrentUserId();
+        return ResponseEntity.ok(activityPostService.listComments(viewer, postId));
+    }
 }

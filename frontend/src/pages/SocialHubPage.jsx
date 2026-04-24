@@ -11,6 +11,7 @@ import referralService from '../services/referralService'
 import sexIdCaseService from '../services/sexIdCaseService'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
+import userPublicService from '../services/userPublicService'
 import { useAuth } from '../context/AuthContext'
 import { imgUrl } from '../services/api'
 
@@ -54,6 +55,9 @@ export default function SocialHubPage() {
   const [likesOpenForPost, setLikesOpenForPost] = useState(null)
   const [likesByPost, setLikesByPost] = useState({})
   const [loadingLikesForPost, setLoadingLikesForPost] = useState({})
+  const [profileQuery, setProfileQuery] = useState('')
+  const [profileResults, setProfileResults] = useState([])
+  const [profileSearching, setProfileSearching] = useState(false)
 
   const [referral, setReferral] = useState(null)
 
@@ -184,6 +188,14 @@ export default function SocialHubPage() {
       setComposerOpen(true)
     },
     [token, navigate]
+  )
+
+  const openPostThread = useCallback(
+    async (postId, openComments = false) => {
+      const suffix = openComments ? '?comments=1' : ''
+      navigate(`/community/post/${encodeURIComponent(postId)}${suffix}`)
+    },
+    [navigate]
   )
 
   const submitPost = async (e) => {
@@ -368,11 +380,11 @@ export default function SocialHubPage() {
   )
 
   const feedSections = [
-    { key: 'all', label: 'Para ti' },
-    { key: 'questions', label: 'Preguntas' },
-    { key: 'milestones', label: 'Hitos' },
-    { key: 'photos', label: 'Con foto' },
-    { key: 'mine', label: 'Mis posts' },
+    { key: 'all', label: t('social.sectionForYou') },
+    { key: 'questions', label: t('social.sectionQuestions') },
+    { key: 'milestones', label: t('social.sectionMilestones') },
+    { key: 'photos', label: t('social.sectionWithPhoto') },
+    { key: 'mine', label: t('social.sectionMyPosts') },
   ]
 
   const publicPosts = feed.content || []
@@ -399,7 +411,12 @@ export default function SocialHubPage() {
   }, [feedSection, milestonePosts, mine.content, photoPosts, publicPosts, questionPosts])
 
   const renderCompactPost = (p) => (
-    <div key={p.id} className="ta-social-compact-post">
+    <button
+      key={p.id}
+      type="button"
+      className="ta-social-compact-post text-start w-100"
+      onClick={() => openPostThread(p.id, true)}
+    >
       <div className="small fw-semibold text-truncate mb-1" style={{ color: 'var(--ta-parchment)' }}>
         {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
       </div>
@@ -408,7 +425,7 @@ export default function SocialHubPage() {
         <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
         <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
       </div>
-    </div>
+    </button>
   )
 
   const renderPostCard = (p, { showDelete } = {}) => (
@@ -444,10 +461,13 @@ export default function SocialHubPage() {
             className="btn btn-sm btn-outline-secondary"
             onClick={() => openLikesModal(p.id)}
           >
-            Ver Spood
+            {t('social.viewSpood')}
           </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => toggleExpand(p.id)}>
             {t('social.comments')} ({p.commentsCount ?? 0})
+          </button>
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openPostThread(p.id, true)}>
+            {t('social.openThread')}
           </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => reportPost(p.id)}>
             {t('marketplace.report')}
@@ -515,6 +535,28 @@ export default function SocialHubPage() {
     }
   }
 
+  useEffect(() => {
+    const q = (profileQuery || '').trim()
+    if (q.length < 2) {
+      setProfileResults([])
+      setProfileSearching(false)
+      return
+    }
+    let cancelled = false
+    setProfileSearching(true)
+    userPublicService.search(q, 8)
+      .then((rows) => {
+        if (!cancelled) setProfileResults(Array.isArray(rows) ? rows : [])
+      })
+      .catch(() => {
+        if (!cancelled) setProfileResults([])
+      })
+      .finally(() => {
+        if (!cancelled) setProfileSearching(false)
+      })
+    return () => { cancelled = true }
+  }, [profileQuery])
+
   const renderLikeUser = (row) => {
     const handle = row?.handle ? `@${row.handle}` : '@keeper'
     const label = row?.displayName || 'Keeper'
@@ -578,13 +620,13 @@ export default function SocialHubPage() {
 
         {!token && (
           <div className="alert alert-info small py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <span>Comunidad abierta: puedes leer posts. Para publicar, comentar o votar necesitas iniciar sesi?n.</span>
+            <span>{t('social.communityOpenBanner')}</span>
             <button
               type="button"
               className="btn btn-sm btn-dark"
               onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
             >
-              Iniciar sesi?n para participar
+              {t('social.loginToParticipate')}
             </button>
           </div>
         )}
@@ -596,8 +638,8 @@ export default function SocialHubPage() {
           <>
             <div className="ta-social-highlights mb-3">
               <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
-                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>Destacados del dia</h2>
-                <span className="small text-muted">Actualizado en tiempo real</span>
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.dailyHighlights')}</h2>
+                <span className="small text-muted">{t('social.realtimeUpdated')}</span>
               </div>
               <div className="row g-2">
                 {featuredPosts.length === 0 ? (
@@ -609,7 +651,11 @@ export default function SocialHubPage() {
                 ) : (
                   featuredPosts.map((p) => (
                     <div key={p.id} className="col-md-6">
-                      <div className="ta-social-highlight-card">
+                      <button
+                        type="button"
+                        className="ta-social-highlight-card text-start w-100"
+                        onClick={() => openPostThread(p.id, true)}
+                      >
                         <div className="small text-muted mb-1">
                           {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || 'keeper'}
                         </div>
@@ -618,7 +664,7 @@ export default function SocialHubPage() {
                           <span>{t('social.spoodCount', { count: p.likeCount ?? 0 })}</span>
                           <span>{t('social.comments')} {p.commentsCount ?? 0}</span>
                         </div>
-                      </div>
+                      </button>
                     </div>
                   ))
                 )}
@@ -626,11 +672,28 @@ export default function SocialHubPage() {
             </div>
 
             <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
-              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
+              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <h2 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-gold)' }}>{t('social.topicCarouselTitle')}</h2>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => openComposerFromTopic('')}
+                >
+                  {t('social.createOwnTopic')}
+                </button>
+              </div>
               <div className="d-flex gap-2 overflow-auto pb-1">
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Sex ID</div>
                   <div className="small text-muted mb-2">{t('social.sexIdQuickMode')}</div>
+                  {(publicSexIdCases.content || [])[0]?.imageUrl && (
+                    <img
+                      src={imgUrl((publicSexIdCases.content || [])[0].imageUrl) || (publicSexIdCases.content || [])[0].imageUrl}
+                      alt=""
+                      className="img-fluid rounded mb-2"
+                      style={{ maxHeight: 96, objectFit: 'cover', width: '100%' }}
+                    />
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
@@ -659,6 +722,14 @@ export default function SocialHubPage() {
                 <div className="rounded p-2" style={{ minWidth: 228, border: '1px solid var(--ta-border)' }}>
                   <div className="small fw-semibold mb-1">Is my spider okay?</div>
                   <div className="small text-muted mb-2">{t('social.openDiscussion')}</div>
+                  {(publicSexIdCases.content || [])[1]?.imageUrl && (
+                    <img
+                      src={imgUrl((publicSexIdCases.content || [])[1].imageUrl) || (publicSexIdCases.content || [])[1].imageUrl}
+                      alt=""
+                      className="img-fluid rounded mb-2"
+                      style={{ maxHeight: 96, objectFit: 'cover', width: '100%' }}
+                    />
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary w-100"
@@ -699,6 +770,14 @@ export default function SocialHubPage() {
                       className="rounded p-2"
                       style={{ minWidth: 240, border: '1px solid var(--ta-border)' }}
                     >
+                      {c.imageUrl && (
+                        <img
+                          src={imgUrl(c.imageUrl) || c.imageUrl}
+                          alt=""
+                          className="img-fluid rounded mb-2"
+                          style={{ maxHeight: 100, objectFit: 'cover', width: '100%' }}
+                        />
+                      )}
                       <div className="small fw-semibold text-truncate mb-1">
                         {(c.title && c.title.trim()) || t('sexIdCase.headingFallback')}
                       </div>
@@ -712,7 +791,7 @@ export default function SocialHubPage() {
             <div className="ta-social-feed-shell mb-4">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div className="small ta-social-feed-shell__intro">
-                  Secciones visibles - {(activeFeedList || []).length}
+                  {t('social.visibleSections', { count: (activeFeedList || []).length })}
                 </div>
                   {token ? (
                     <button
@@ -729,9 +808,39 @@ export default function SocialHubPage() {
                       className="btn btn-sm btn-dark"
                       onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
                     >
-                      Iniciar sesi?n para publicar
+                      {t('social.loginToPublish')}
                     </button>
                   )}
+              </div>
+
+              <div className="mb-3 p-2 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.08)' }}>
+                <label className="form-label small mb-1">{t('social.searchProfilesLabel')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  placeholder={t('social.searchProfilesPlaceholder')}
+                  value={profileQuery}
+                  onChange={(e) => setProfileQuery(e.target.value)}
+                />
+                {profileSearching && <div className="small text-muted mt-1">{t('common.loading')}</div>}
+                {!profileSearching && profileQuery.trim().length >= 2 && profileResults.length === 0 && (
+                  <div className="small text-muted mt-1">{t('common.noResults')}</div>
+                )}
+                {profileResults.length > 0 && (
+                  <div className="d-flex flex-column gap-1 mt-2">
+                    {profileResults.map((row) => (
+                      <Link
+                        key={row.id}
+                        to={`/u/${encodeURIComponent(row.publicHandle || '')}`}
+                        className="d-flex align-items-center gap-2 text-decoration-none rounded p-1"
+                        style={{ border: '1px solid var(--ta-border)' }}
+                      >
+                        <img src={imgUrl(row.profilePhoto) || '/spider-default.png'} alt="" style={{ width: 24, height: 24, borderRadius: 999, objectFit: 'cover' }} />
+                        <span className="small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>@{row.publicHandle || 'keeper'}</span>
+                        <span className="small text-muted">{row.displayName || 'Keeper'}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="ta-social-section-tabs mb-3">
                 {feedSections.map((section) => (
@@ -838,7 +947,7 @@ export default function SocialHubPage() {
               <div className="row g-3">
                 <div className="col-lg-8">
                   <section className="ta-social-feed-section ta-social-feed-section--community">
-                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Feed principal</h2>
+                    <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('social.mainFeed')}</h2>
                     {(activeFeedList || []).length === 0 ? (
                       <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
                     ) : (
@@ -850,7 +959,7 @@ export default function SocialHubPage() {
                   <aside className="d-flex flex-column gap-3">
                     <section className="ta-social-feed-section ta-social-feed-section--mine">
                       <div className="d-flex align-items-center justify-content-between mb-2">
-                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Preguntas recientes</h2>
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.recentQuestions')}</h2>
                         <span className="small text-muted">{questionPosts.length}</span>
                       </div>
                       {questionPosts.length === 0 ? (
@@ -861,7 +970,7 @@ export default function SocialHubPage() {
                     </section>
                     <section className="ta-social-feed-section ta-social-feed-section--mine">
                       <div className="d-flex align-items-center justify-content-between mb-2">
-                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>Con foto</h2>
+                        <h2 className="h6 fw-bold mb-0 mt-0" style={{ color: 'var(--ta-parchment)' }}>{t('social.withPhoto')}</h2>
                         <span className="small text-muted">{photoPosts.length}</span>
                       </div>
                       {photoPosts.length === 0 ? (
@@ -1027,14 +1136,14 @@ export default function SocialHubPage() {
             <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">Quien dio Spood</h5>
-                  <button type="button" className="btn-close" onClick={() => setLikesOpenForPost(null)} aria-label="Cerrar" />
+                  <h5 className="modal-title">{t('social.whoSpooded')}</h5>
+                  <button type="button" className="btn-close" onClick={() => setLikesOpenForPost(null)} aria-label={t('ratePrompt.close')} />
                 </div>
                 <div className="modal-body">
                   {loadingLikesForPost[likesOpenForPost] ? (
-                    <p className="small text-muted mb-0">Cargando reacciones...</p>
+                    <p className="small text-muted mb-0">{t('social.loadingReactions')}</p>
                   ) : (likesByPost[likesOpenForPost] || []).length === 0 ? (
-                    <p className="small text-muted mb-0">Este post aun no tiene Spood.</p>
+                    <p className="small text-muted mb-0">{t('social.noSpoodYet')}</p>
                   ) : (
                     <div className="d-flex flex-column gap-2">
                       {(likesByPost[likesOpenForPost] || []).map((row) => renderLikeUser(row))}
