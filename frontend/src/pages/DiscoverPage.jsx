@@ -116,6 +116,41 @@ function gbifSpeciesUrl(key) {
   return `https://www.gbif.org/species/${key}`
 }
 
+function hasTaxonomyDataForProfile(taxon) {
+  if (!taxon) return false
+  const fields = [taxon.family, taxon.rank, taxon.taxonomicStatus, taxon.vernacularName]
+  const nonBlank = fields.filter((v) => typeof v === 'string' && v.trim().length > 0).length
+  const photoData = taxon?.photo?.url ? 1 : 0
+  return nonBlank + photoData >= 3
+}
+
+function buildTaxonomyFallbackSpecies(taxon) {
+  if (!taxon) return null
+  const scientificName = taxon.canonicalName || taxon.scientificName || ''
+  if (!scientificName.trim()) return null
+  return {
+    id: `taxon-${taxon.gbifKey ?? scientificName}`,
+    scientificName,
+    commonName: taxon.vernacularName || null,
+    dataSource: 'gbif',
+    referencePhotoUrl: null,
+    narrativeI18n: null,
+    originRegion: taxon.family ? `Family: ${taxon.family}` : null,
+    habitatType: null,
+    adultSizeCmMin: null,
+    adultSizeCmMax: null,
+    growthRate: null,
+    humidityMin: null,
+    humidityMax: null,
+    ventilation: null,
+    experienceLevel: null,
+    hobbyWorld: null,
+    substrateType: taxon.rank || null,
+    temperament: taxon.taxonomicStatus || null,
+    careNotes: taxon.dataAttributionNote || null,
+  }
+}
+
 export default function DiscoverPage() {
   const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -457,6 +492,18 @@ export default function DiscoverPage() {
     panelKind === 'full' && selectedSpecies
       ? computeTerrariumRecommendation(specimenSizeCm, selectedSpecies)
       : null
+
+  const taxonomyFallbackSpecies = useMemo(
+    () => buildTaxonomyFallbackSpecies(taxonPreview),
+    [taxonPreview]
+  )
+
+  const showTaxonomyFallbackCard =
+    panelKind === 'taxonomy' &&
+    !panelLoading &&
+    !selectedSpecies &&
+    hasTaxonomyDataForProfile(taxonPreview) &&
+    taxonomyFallbackSpecies
 
   // Si el catálogo no trajo fallbackPhoto, rellenar: primero taxon (iNat+GBIF media) si hay clave GBIF, si no o si sigue vacío, iNat por nombre.
   useEffect(() => {
@@ -817,20 +864,31 @@ export default function DiscoverPage() {
                 {t('discover.openDedicatedTaxon')}
               </Link>
             )}
-            {taxonPreview?.photo?.url && (
-              <figure className="mt-2 mb-2">
-                <img
-                  src={imgUrl(taxonPreview.photo.url)}
-                  alt=""
-                  className="img-fluid rounded border"
-                  style={{ borderColor: 'var(--ta-border)', maxHeight: 200 }}
+            {showTaxonomyFallbackCard ? (
+              <ChitinCardFrame className="mb-3">
+                <SpeciesProfileCard
+                  species={taxonomyFallbackSpecies}
+                  tarantula={{ profilePhoto: null }}
+                  fallbackPhoto={taxonPreview?.photo || null}
+                  t={t}
                 />
-                {taxonPreview.photo.attribution && (
-                  <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
-                    {taxonPreview.photo.attribution}
-                  </figcaption>
-                )}
-              </figure>
+              </ChitinCardFrame>
+            ) : (
+              taxonPreview?.photo?.url && (
+                <figure className="mt-2 mb-2">
+                  <img
+                    src={imgUrl(taxonPreview.photo.url)}
+                    alt=""
+                    className="img-fluid rounded border"
+                    style={{ borderColor: 'var(--ta-border)', maxHeight: 200 }}
+                  />
+                  {taxonPreview.photo.attribution && (
+                    <figcaption className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
+                      {taxonPreview.photo.attribution}
+                    </figcaption>
+                  )}
+                </figure>
+              )
             )}
             <div className="d-flex flex-wrap gap-2 mt-3">
               {gbifSpeciesUrl(activeGbifKey) && (

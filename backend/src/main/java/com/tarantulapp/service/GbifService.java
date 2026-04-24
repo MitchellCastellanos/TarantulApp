@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,15 +43,18 @@ public class GbifService {
     private final SpeciesRepository speciesRepository;
     private final SpeciesSynonymRepository speciesSynonymRepository;
     private final InatService inatService;
+    private final CareAutofillService careAutofillService;
 
     public GbifService(RestTemplate restTemplate,
                        SpeciesRepository speciesRepository,
                        SpeciesSynonymRepository speciesSynonymRepository,
-                       InatService inatService) {
+                       InatService inatService,
+                       CareAutofillService careAutofillService) {
         this.restTemplate = restTemplate;
         this.speciesRepository = speciesRepository;
         this.speciesSynonymRepository = speciesSynonymRepository;
         this.inatService = inatService;
+        this.careAutofillService = careAutofillService;
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -105,6 +110,81 @@ public class GbifService {
 
     public String getVernacularNameForSpecies(Long key) {
         return fetchVernacularName(key);
+    }
+
+    /** Best-effort name → accepted GBIF species usageKey (Theraphosidae scoped). */
+    public Optional<Long> tryResolveAcceptedKey(String name) {
+        if (name == null || name.isBlank()) return Optional.empty();
+        return Optional.ofNullable(resolveToAcceptedKey(name.trim()));
+    }
+
+    /**
+     * Ensures a public catalog row exists for a GBIF taxon key and refreshes its taxonomy snapshot.
+     * Idempotent by {@code gbif_usage_key}.
+     */
+    public Optional<SpeciesDTO> ensurePublicCatalogSpecies(Long key) {
+        if (key == null) return Optional.empty();
+
+        Optional<Species> byGbifKey = speciesRepository.findByGbifUsageKey(key);
+        if (byGbifKey.isPresent()) {
+            Species existing = byGbifKey.get();
+            applyGbifSnapshot(existing, key, true);
+            return Optional.of(SpeciesDTO.from(speciesRepository.save(existing)));
+        }
+
+        GbifSearchResultDTO detail = fetchDetail(key);
+        if (!isTheraphosidaeBackboneSpecies(detail)) {
+            return Optional.empty();
+        }
+        String canonicalName = detail.getCanonicalName() != null
+                ? detail.getCanonicalName()
+                : detail.getScientificName();
+        if (canonicalName == null || canonicalName.isBlank()) {
+            return Optional.empty();
+        }
+
+        Optional<Species> existingByName = speciesRepository.findByScientificNameIgnoreCase(canonicalName);
+        if (existingByName.isPresent()) {
+            Species existing = existingByName.get();
+            existing.setGbifUsageKey(key);
+            applyGbifSnapshot(existing, key, true);
+            return Optional.of(SpeciesDTO.from(speciesRepository.save(existing)));
+        }
+
+        Optional<SpeciesSynonym> existingSyn = speciesSynonymRepository.findBySynonymIgnoreCase(canonicalName);
+        if (existingSyn.isPresent()) {
+            Species existing = speciesRepository.findById(existingSyn.get().getSpeciesId()).orElse(null);
+            if (existing != null) {
+                existing.setGbifUsageKey(key);
+                applyGbifSnapshot(existing, key, true);
+                return Optional.of(SpeciesDTO.from(speciesRepository.save(existing)));
+            }
+        }
+
+        Species created = new Species();
+        created.setScientificName(canonicalName);
+        created.setIsCustom(false);
+        created.setCreatedBy(null);
+        created.setDataSource("gbif");
+        created.setGbifUsageKey(key);
+        applyGbifSnapshot(created, key, true);
+
+        Species saved = speciesRepository.save(created);
+        saveSynonyms(key, saved.getId(), canonicalName);
+        return Optional.of(SpeciesDTO.from(saved));
+    }
+
+    /** Refreshes taxonomy-linked fields from GBIF while preserving keeper-curated husbandry fields. */
+    public Optional<SpeciesDTO> refreshCatalogTaxonomy(Integer speciesId) {
+        if (speciesId == null) return Optional.empty();
+        Species s = speciesRepository.findById(speciesId).orElse(null);
+        if (s == null || s.getGbifUsageKey() == null) {
+            return Optional.empty();
+        }
+        applyGbifSnapshot(s, s.getGbifUsageKey(), true);
+        Species saved = speciesRepository.save(s);
+        saveSynonyms(s.getGbifUsageKey(), saved.getId(), saved.getScientificName());
+        return Optional.of(SpeciesDTO.from(saved));
     }
 
     public List<GbifSearchResultDTO> search(String q) {
@@ -205,6 +285,97 @@ public class GbifService {
         }
         String v = n.asText().trim();
         return v.isEmpty() ? null : v;
+    }
+
+    private String buildDistributionSummary(Long key) {
+        try {
+            String url = GBIF_BASE + "/species/" + key + "/distributions?limit=100";
+            JsonNode root = restTemplate.getForObject(url, JsonNode.class);
+            if (root == null) return null;
+            JsonNode results = root.get("results");
+            if (results == null || !results.isArray()) return null;
+
+            Set<String> countries = new LinkedHashSet<>();
+            for (JsonNode row : results) {
+                String country = textJson(row, "country");
+                if (country == null || country.isBlank()) continue;
+                countries.add(country.trim());
+                if (countries.size() >= 6) break;
+            }
+            if (countries.isEmpty()) return null;
+            return String.join(", ", countries);
+        } catch (Exception e) {
+            log.debug("GBIF distributions summary failed key={}: {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    private static String nonBlank(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
+    }
+
+    private void applyGbifSnapshot(Species species, Long gbifKey, boolean fillMissingReferencePhoto) {
+        if (species == null || gbifKey == null) return;
+        GbifSearchResultDTO detail = fetchDetail(gbifKey);
+        String canonicalName = nonBlank(detail.getCanonicalName());
+        if (canonicalName == null) canonicalName = nonBlank(detail.getScientificName());
+        if (canonicalName != null && !canonicalName.equalsIgnoreCase(species.getScientificName())) {
+            Optional<Species> other = speciesRepository.findByScientificNameIgnoreCase(canonicalName);
+            if (other.isEmpty() || other.get().getId().equals(species.getId())) {
+                species.setScientificName(canonicalName);
+            }
+        }
+
+        String vernacular = nonBlank(fetchVernacularName(gbifKey));
+        if (vernacular != null) {
+            species.setCommonName(vernacular);
+        }
+        if (species.getGbifUsageKey() == null) {
+            species.setGbifUsageKey(gbifKey);
+        }
+        if (species.getDataSource() == null || species.getDataSource().isBlank() || "manual".equals(species.getDataSource())) {
+            species.setDataSource("gbif");
+        }
+        if (species.getCreatedBy() == null) {
+            species.setIsCustom(false);
+        }
+
+        String hw = resolveHobbyWorldForGbifSpecies(gbifKey, species.getOriginRegion());
+        if (hw != null) {
+            species.setHobbyWorld(hw);
+        }
+        if (species.getOriginRegion() == null || species.getOriginRegion().isBlank()) {
+            String region = buildDistributionSummary(gbifKey);
+            if (region != null) {
+                species.setOriginRegion(region);
+            }
+        }
+
+        if (fillMissingReferencePhoto && (species.getReferencePhotoUrl() == null || species.getReferencePhotoUrl().isBlank())) {
+            String photo = inatService.fetchPhotoUrl(canonicalName != null ? canonicalName : species.getScientificName());
+            if (photo != null && !photo.isBlank()) {
+                species.setReferencePhotoUrl(photo);
+            }
+        }
+        if (species.getCareNotes() == null || species.getCareNotes().isBlank()) {
+            species.setCareNotes("Taxonomy synced from GBIF backbone (WSC-linked where applicable).");
+        }
+        if (species.getSubstrateType() == null || species.getSubstrateType().isBlank()) {
+            species.setSubstrateType(nonBlank(detail.getRank()));
+        }
+        if (species.getTemperament() == null || species.getTemperament().isBlank()) {
+            species.setTemperament(nonBlank(detail.getStatus()));
+        }
+
+        species.setTaxonomyLastSyncedAt(LocalDateTime.now());
+        CareAutofillService.AutofillResult autofill = careAutofillService.autofill(species, canonicalName, species.getHobbyWorld());
+        if (autofill.fieldsFilled() > 0) {
+            species.setCareProfileSource(autofill.source());
+            if (autofill.confidence() != null) {
+                species.setCareProfileConfidence(BigDecimal.valueOf(autofill.confidence()));
+            }
+        }
     }
 
     /**

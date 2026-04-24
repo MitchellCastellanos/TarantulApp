@@ -115,7 +115,7 @@ public class SpeciesController {
         }
         body.put(
                 "speciesId",
-                discoverCatalogService.findPublicCatalogSpeciesIdByGbifUsageKey(gbifKey).orElse(null));
+                discoverCatalogService.findOrImportPublicCatalogSpeciesIdByGbifUsageKey(gbifKey).orElse(null));
         return body;
     }
 

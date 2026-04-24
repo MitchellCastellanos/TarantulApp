@@ -15,6 +15,8 @@ public interface SpeciesRepository extends JpaRepository<Species, Integer>, JpaS
 
     Optional<Species> findByGbifUsageKey(Long gbifUsageKey);
 
+    List<Species> findByGbifUsageKeyIsNotNull();
+
     /** Busca por nombre científico, nombre común o cualquier sinónimo registrado. */
     @Query(value = """
             SELECT DISTINCT s.* FROM species s

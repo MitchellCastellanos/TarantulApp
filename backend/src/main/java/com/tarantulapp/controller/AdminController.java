@@ -6,6 +6,7 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.OfficialVendorService;
+import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import jakarta.validation.Valid;
@@ -35,19 +36,22 @@ public class AdminController {
     private final ReminderRepository reminderRepository;
     private final OfficialVendorService officialVendorService;
     private final PartnerListingSyncService partnerListingSyncService;
+    private final TaxonomySyncService taxonomySyncService;
 
     public AdminController(AdminAccessService adminAccessService,
                            UserRepository userRepository,
                            TarantulaRepository tarantulaRepository,
                            ReminderRepository reminderRepository,
                            OfficialVendorService officialVendorService,
-                           PartnerListingSyncService partnerListingSyncService) {
+                           PartnerListingSyncService partnerListingSyncService,
+                           TaxonomySyncService taxonomySyncService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.reminderRepository = reminderRepository;
         this.officialVendorService = officialVendorService;
         this.partnerListingSyncService = partnerListingSyncService;
+        this.taxonomySyncService = taxonomySyncService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -118,6 +122,12 @@ public class AdminController {
                         .map(this::mapPartnerSyncRun)
                         .collect(Collectors.toList())
         );
+    }
+
+    @PostMapping("/taxonomy-sync/run")
+    public ResponseEntity<Map<String, Object>> runTaxonomySyncNow() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(taxonomySyncService.runNow());
     }
 
     @GetMapping("/partner-sync/runs")

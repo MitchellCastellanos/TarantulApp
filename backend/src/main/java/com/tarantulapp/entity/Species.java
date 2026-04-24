@@ -2,6 +2,7 @@ package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -78,6 +79,18 @@ public class Species {
     @Column(name = "hobby_world", length = 20)
     private String hobbyWorld;
 
+    /** Taxonomy snapshot freshness marker for GBIF/WSC-backed sync runs. */
+    @Column(name = "taxonomy_last_synced_at")
+    private LocalDateTime taxonomyLastSyncedAt;
+
+    /** Care profile source tag (manual, autofill ruleset, etc.). */
+    @Column(name = "care_profile_source", length = 60)
+    private String careProfileSource;
+
+    /** Autofill confidence [0,1] when care values were inferred by rules. */
+    @Column(name = "care_profile_confidence", precision = 3, scale = 2)
+    private BigDecimal careProfileConfidence;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getScientificName() { return scientificName; }
@@ -122,4 +135,10 @@ public class Species {
     public void setGbifUsageKey(Long gbifUsageKey) { this.gbifUsageKey = gbifUsageKey; }
     public String getHobbyWorld() { return hobbyWorld; }
     public void setHobbyWorld(String hobbyWorld) { this.hobbyWorld = hobbyWorld; }
+    public LocalDateTime getTaxonomyLastSyncedAt() { return taxonomyLastSyncedAt; }
+    public void setTaxonomyLastSyncedAt(LocalDateTime taxonomyLastSyncedAt) { this.taxonomyLastSyncedAt = taxonomyLastSyncedAt; }
+    public String getCareProfileSource() { return careProfileSource; }
+    public void setCareProfileSource(String careProfileSource) { this.careProfileSource = careProfileSource; }
+    public BigDecimal getCareProfileConfidence() { return careProfileConfidence; }
+    public void setCareProfileConfidence(BigDecimal careProfileConfidence) { this.careProfileConfidence = careProfileConfidence; }
 }

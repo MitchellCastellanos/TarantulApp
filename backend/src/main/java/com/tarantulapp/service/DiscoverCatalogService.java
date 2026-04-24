@@ -22,13 +22,16 @@ public class DiscoverCatalogService {
     private final SpeciesRepository speciesRepository;
     private final InatService inatService;
     private final SpeciesSynonymRepository speciesSynonymRepository;
+    private final GbifService gbifService;
 
     public DiscoverCatalogService(SpeciesRepository speciesRepository,
                                   InatService inatService,
-                                  SpeciesSynonymRepository speciesSynonymRepository) {
+                                  SpeciesSynonymRepository speciesSynonymRepository,
+                                  GbifService gbifService) {
         this.speciesRepository = speciesRepository;
         this.inatService = inatService;
         this.speciesSynonymRepository = speciesSynonymRepository;
+        this.gbifService = gbifService;
     }
 
     public Page<SpeciesDTO> findCatalogPage(
@@ -54,6 +57,18 @@ public class DiscoverCatalogService {
         return speciesRepository.findByGbifUsageKey(gbifUsageKey)
                 .filter(DiscoverCatalogService::isPublicCatalogRow)
                 .map(Species::getId);
+    }
+
+    /**
+     * Same as {@link #findPublicCatalogSpeciesIdByGbifUsageKey(long)}, but if missing tries a safe
+     * upsert from GBIF to maximize discover coverage.
+     */
+    public Optional<Integer> findOrImportPublicCatalogSpeciesIdByGbifUsageKey(long gbifUsageKey) {
+        Optional<Integer> existing = findPublicCatalogSpeciesIdByGbifUsageKey(gbifUsageKey);
+        if (existing.isPresent()) return existing;
+        return gbifService.ensurePublicCatalogSpecies(gbifUsageKey)
+                .map(SpeciesDTO::getId)
+                .filter(id -> id != null);
     }
 
     /**

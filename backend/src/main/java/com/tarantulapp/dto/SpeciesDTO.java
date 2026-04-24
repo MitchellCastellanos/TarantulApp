@@ -5,6 +5,7 @@ import com.tarantulapp.util.HobbyWorldResolver;
 import com.tarantulapp.util.SpeciesNarrativeJson;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public class SpeciesDTO {
@@ -31,6 +32,9 @@ public class SpeciesDTO {
     private Long gbifUsageKey;
     /** {@code new_world} | {@code old_world} — from DB or inferred from {@code origin_region}. */
     private String hobbyWorld;
+    private LocalDateTime taxonomyLastSyncedAt;
+    private String careProfileSource;
+    private BigDecimal careProfileConfidence;
 
     public static SpeciesDTO from(Species s) {
         if (s == null) return null;
@@ -60,6 +64,9 @@ public class SpeciesDTO {
             hw = HobbyWorldResolver.fromOriginRegion(s.getOriginRegion());
         }
         dto.hobbyWorld = hw;
+        dto.taxonomyLastSyncedAt = s.getTaxonomyLastSyncedAt();
+        dto.careProfileSource = s.getCareProfileSource();
+        dto.careProfileConfidence = s.getCareProfileConfidence();
         return dto;
     }
 
@@ -85,4 +92,7 @@ public class SpeciesDTO {
     public String getDataSource() { return dataSource; }
     public Long getGbifUsageKey() { return gbifUsageKey; }
     public String getHobbyWorld() { return hobbyWorld; }
+    public LocalDateTime getTaxonomyLastSyncedAt() { return taxonomyLastSyncedAt; }
+    public String getCareProfileSource() { return careProfileSource; }
+    public BigDecimal getCareProfileConfidence() { return careProfileConfidence; }
 }
