@@ -14,12 +14,7 @@ import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel'
 import { downloadCollectionJson, importCollectionJsonFile } from '../utils/exportCollectionJson'
 import { imgUrl } from '../services/api'
-
-function daysLeftInTrial(iso) {
-  if (!iso) return 0
-  const d = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
-  return Math.max(0, d)
-}
+import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -381,7 +376,7 @@ export default function DashboardPage() {
           <div className="alert alert-info small py-2 mb-3">
             {t('dashboard.trialBanner')}
             {user?.trialEndsAt && (
-              <span className="ms-1">· {t('pro.trialDaysLeft', { count: daysLeftInTrial(user.trialEndsAt) })}</span>
+              <span className="ms-1">· {t('pro.trialDaysLeft', { count: trialCalendarDaysRemaining(user.trialEndsAt) })}</span>
             )}
           </div>
         )}

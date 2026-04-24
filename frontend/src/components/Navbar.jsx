@@ -9,10 +9,7 @@ import ThemeToggleButton from './ThemeToggleButton'
 import BrandNavbarLogo from './BrandNavbarLogo'
 import notificationsService from '../services/notificationsService'
 
-function trialDaysLeft(trialEndsAt) {
-  if (!trialEndsAt) return 0
-  return Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
-}
+import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 
 /**
  * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
@@ -32,7 +29,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const isPro = plan === 'PRO'
   const inTrial = user?.inTrial === true
   const overFreeLimit = user?.overFreeLimit === true
-  const days = trialDaysLeft(user?.trialEndsAt)
+  const days = trialCalendarDaysRemaining(user?.trialEndsAt)
   const adminEmails = String(import.meta.env.VITE_ADMIN_EMAILS || '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
