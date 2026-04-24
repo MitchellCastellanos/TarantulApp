@@ -3,13 +3,16 @@ package com.tarantulapp.controller;
 import com.tarantulapp.dto.AuthResponse;
 import com.tarantulapp.dto.ChangePasswordRequest;
 import com.tarantulapp.service.AuthService;
+import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.util.SecurityHelper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Map;
 import java.util.UUID;
@@ -28,11 +31,14 @@ class AuthControllerTest {
     @Mock
     private SecurityHelper securityHelper;
 
+    @Mock
+    private CaptchaService captchaService;
+
     private AuthController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AuthController(authService, securityHelper);
+        controller = new AuthController(authService, securityHelper, captchaService);
     }
 
     @Test
@@ -51,15 +57,17 @@ class AuthControllerTest {
 
     @Test
     void forgotPasswordReturnsNeutralSuccessMessage() {
-        AuthController.ForgotRequest request = new AuthController.ForgotRequest("user@mail.com");
+        AuthController.ForgotRequest request = new AuthController.ForgotRequest("user@mail.com", "captcha-tok");
+        HttpServletRequest httpRequest = new MockHttpServletRequest();
 
-        ResponseEntity<Map<String, String>> result = controller.forgot(request);
+        ResponseEntity<Map<String, String>> result = controller.forgot(request, httpRequest);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
         String message = result.getBody().get("message");
         assertNotNull(message);
         org.junit.jupiter.api.Assertions.assertTrue(message.startsWith("Si el email existe"));
+        verify(captchaService).verifyOrThrow("captcha-tok", "127.0.0.1", "forgot-password");
         verify(authService).forgotPassword("user@mail.com");
     }
 
