@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { useAuth } from '../context/AuthContext'
 import communityService from '../services/communityService'
 import { imgUrl } from '../services/api'
@@ -103,7 +104,15 @@ export default function CommunityPostThreadPage() {
         ) : (
           <div className="rounded-3 p-3 mb-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
             <div className="small text-muted mb-1">
-              {(post.authorHandle && `@${post.authorHandle}`) || post.authorDisplayName || 'keeper'}
+              {post.authorHandle ? (
+                <PublicKeeperHandle
+                  handle={post.authorHandle}
+                  displayName={post.authorDisplayName || 'keeper'}
+                  profilePhoto={post.authorProfilePhoto || null}
+                />
+              ) : (
+                post.authorDisplayName || 'keeper'
+              )}
             </div>
             {post.milestoneKind ? (
               <div className="small mb-1" style={{ color: 'var(--ta-gold)' }}>{post.milestoneKind}</div>
@@ -144,13 +153,12 @@ export default function CommunityPostThreadPage() {
               comments.map((c) => (
                 <div key={c.id} className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
                   {c.authorHandle ? (
-                    <Link
-                      to={`/u/${encodeURIComponent(c.authorHandle)}`}
-                      className="fw-semibold text-decoration-none"
-                      style={{ color: 'var(--ta-parchment)' }}
-                    >
-                      @{c.authorHandle}
-                    </Link>
+                    <PublicKeeperHandle
+                      handle={c.authorHandle}
+                      displayName={c.authorDisplayName || 'keeper'}
+                      linkClassName="fw-semibold text-decoration-none"
+                      className="me-0"
+                    />
                   ) : (
                     <span className="fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
                       {c.authorDisplayName || 'keeper'}
@@ -204,9 +212,11 @@ export default function CommunityPostThreadPage() {
                           style={{ width: 30, height: 30, borderRadius: 999, objectFit: 'cover' }}
                         />
                         {row?.handle ? (
-                          <Link to={`/u/${encodeURIComponent(row.handle)}`} className="text-decoration-none fw-semibold">
-                            @{row.handle}
-                          </Link>
+                          <PublicKeeperHandle
+                            handle={row.handle}
+                            displayName={row?.displayName || 'Keeper'}
+                            profilePhoto={row?.profilePhoto || null}
+                          />
                         ) : (
                           <span className="fw-semibold">@keeper</span>
                         )}

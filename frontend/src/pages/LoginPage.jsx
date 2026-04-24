@@ -9,6 +9,7 @@ import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
 import Navbar from '../components/Navbar'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 
 export default function LoginPage() {
@@ -269,7 +270,15 @@ export default function LoginPage() {
                         }}
                       >
                         <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || t('auth.loginPage.keeperFallback')}
+                          {p.authorHandle ? (
+                            <PublicKeeperHandle
+                              handle={p.authorHandle}
+                              displayName={p.authorDisplayName || t('auth.loginPage.keeperFallback')}
+                              profilePhoto={p.authorProfilePhoto || p.profilePhoto || null}
+                            />
+                          ) : (
+                            p.authorDisplayName || t('auth.loginPage.keeperFallback')
+                          )}
                         </div>
                         <p className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
                           {(p.body || '').slice(0, 140) || t('auth.loginPage.postExcerptEmpty')}
