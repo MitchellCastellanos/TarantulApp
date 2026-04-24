@@ -16,6 +16,8 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.FeedingLogRepository;
 import com.tarantulapp.repository.MoltLogRepository;
 import com.tarantulapp.repository.BehaviorLogRepository;
+import com.tarantulapp.repository.ChatMessageRepository;
+import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,8 @@ import com.tarantulapp.util.PublicHandleRules;
 
 @Service
 public class MarketplaceService {
+    private static final long MIN_MESSAGES_TO_ENABLE_REVIEW = 6L;
+    private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
 
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final PartnerListingRepository partnerListingRepository;
@@ -49,6 +53,8 @@ public class MarketplaceService {
     private final FeedingLogRepository feedingLogRepository;
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
+    private final ChatThreadRepository chatThreadRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
 
@@ -61,6 +67,8 @@ public class MarketplaceService {
                               FeedingLogRepository feedingLogRepository,
                               MoltLogRepository moltLogRepository,
                               BehaviorLogRepository behaviorLogRepository,
+                              ChatThreadRepository chatThreadRepository,
+                              ChatMessageRepository chatMessageRepository,
                               FileStorageService fileStorageService,
                               BillingService billingService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
@@ -72,6 +80,8 @@ public class MarketplaceService {
         this.feedingLogRepository = feedingLogRepository;
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
+        this.chatThreadRepository = chatThreadRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.fileStorageService = fileStorageService;
         this.billingService = billingService;
     }
@@ -271,6 +281,9 @@ public class MarketplaceService {
         if (sellerUserId.equals(reviewerUserId)) {
             throw new IllegalArgumentException("No puedes calificarte a ti mismo");
         }
+        if (listingId == null) {
+            throw new IllegalArgumentException("Debes calificar desde el chat de un listing");
+        }
         if (rating == null || rating < 1 || rating > 5) {
             throw new IllegalArgumentException("Rating invalido");
         }
@@ -278,6 +291,7 @@ public class MarketplaceService {
         if (sellerReviewRepository.existsBySellerUserIdAndReviewerUserId(sellerUserId, reviewerUserId)) {
             throw new IllegalArgumentException("Ya dejaste una review a este seller");
         }
+        assertMarketplaceReviewEligibility(sellerUserId, reviewerUserId, listingId);
         SellerReview review = new SellerReview();
         review.setSellerUserId(sellerUserId);
         review.setReviewerUserId(reviewerUserId);
@@ -285,6 +299,23 @@ public class MarketplaceService {
         review.setRating(rating.shortValue());
         review.setComment(cleanText(comment, 500));
         return mapReview(sellerReviewRepository.save(review));
+    }
+
+    private void assertMarketplaceReviewEligibility(UUID sellerUserId, UUID reviewerUserId, UUID listingId) {
+        UUID[] pair = orderedPair(sellerUserId, reviewerUserId);
+        UUID low = pair[0];
+        UUID high = pair[1];
+        UUID threadId = chatThreadRepository.findByUserLowAndUserHighAndListingId(low, high, listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Solo puedes reseñar después de conversar en el chat del listing"))
+                .getId();
+        long totalMessages = chatMessageRepository.countByThreadId(threadId);
+        long sellerMessages = chatMessageRepository.countByThreadIdAndSenderUserId(threadId, sellerUserId);
+        long reviewerMessages = chatMessageRepository.countByThreadIdAndSenderUserId(threadId, reviewerUserId);
+        if (totalMessages < MIN_MESSAGES_TO_ENABLE_REVIEW
+                || sellerMessages < MIN_MESSAGES_PER_PARTICIPANT
+                || reviewerMessages < MIN_MESSAGES_PER_PARTICIPANT) {
+            throw new IllegalArgumentException("La reseña se habilita tras al menos 6 mensajes y participación de ambas partes");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -596,6 +627,15 @@ public class MarketplaceService {
         String out = value.trim().replaceAll("\\s+", " ");
         if (out.isEmpty()) return null;
         return out.length() > maxLen ? out.substring(0, maxLen) : out;
+    }
+
+    private UUID[] orderedPair(UUID a, UUID b) {
+        String sa = a.toString();
+        String sb = b.toString();
+        if (sa.compareTo(sb) < 0) {
+            return new UUID[]{a, b};
+        }
+        return new UUID[]{b, a};
     }
 
     private String normalizeHandle(String raw) {

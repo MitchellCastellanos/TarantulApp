@@ -143,6 +143,12 @@ public class ChatService {
         m.put("otherDisplayName", u != null && u.getDisplayName() != null ? u.getDisplayName() : "");
         m.put("otherHandle", u != null && u.getPublicHandle() != null ? u.getPublicHandle() : "");
         m.put("listingId", t.getListingId());
+        if (t.getListingId() != null) {
+            MarketplaceListing listing = marketplaceListingRepository.findById(t.getListingId()).orElse(null);
+            m.put("listingSellerUserId", listing == null ? null : listing.getSellerUserId());
+        } else {
+            m.put("listingSellerUserId", null);
+        }
         m.put("createdAt", t.getCreatedAt() != null ? t.getCreatedAt().toString() : "");
         List<ChatMessage> last = chatMessageRepository.findTop1ByThreadIdOrderByCreatedAtDesc(t.getId());
         if (!last.isEmpty()) {

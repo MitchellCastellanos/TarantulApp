@@ -53,6 +53,7 @@ const EMPTY_VENDOR_LEAD_FORM = {
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const MIN_CHAT_MESSAGES_FOR_REVIEW = 6
 
 export default function MarketplacePage() {
   const { t } = useTranslation()
@@ -77,6 +78,9 @@ export default function MarketplacePage() {
   const [activeThread, setActiveThread] = useState(null)
   const [threadMessages, setThreadMessages] = useState({ content: [] })
   const [chatBody, setChatBody] = useState('')
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [sendingReview, setSendingReview] = useState(false)
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
@@ -314,10 +318,44 @@ export default function MarketplacePage() {
     }
   }
 
+  const sendMarketplaceReview = async (e) => {
+    e.preventDefault()
+    if (!activeThread?.listingId || !activeThread?.listingSellerUserId) return
+    setSendingReview(true)
+    setMessage('')
+    try {
+      await marketplaceService.addReview(activeThread.listingSellerUserId, {
+        listingId: activeThread.listingId,
+        rating: Number(reviewRating),
+        comment: reviewComment,
+      })
+      setReviewComment('')
+      setMessage(t('marketplace.reviewSaved'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setSendingReview(false)
+    }
+  }
+
   const reportListing = async (listingId) => {
     const reason = window.prompt(t('marketplace.reportReason'))
     if (!reason || !reason.trim()) return
     await moderationService.reportMarketplaceListing(listingId, { reason: reason.trim(), details: '' })
+    setMessage(t('marketplace.reportSent'))
+  }
+
+  const reportMarketplaceChat = async (threadId) => {
+    const reason = window.prompt(t('marketplace.reportReason'))
+    if (!reason || !reason.trim()) return
+    await moderationService.reportMarketplaceChat(threadId, { reason: reason.trim(), details: '' })
+    setMessage(t('marketplace.reportSent'))
+  }
+
+  const reportMarketplaceSeller = async (sellerUserId) => {
+    const reason = window.prompt(t('marketplace.reportReason'))
+    if (!reason || !reason.trim()) return
+    await moderationService.reportKeeperProfile(sellerUserId, { reason: reason.trim(), details: '' })
     setMessage(t('marketplace.reportSent'))
   }
 
@@ -340,6 +378,17 @@ export default function MarketplacePage() {
   const listingStates = STATES_BY_COUNTRY[listingForm.country || 'Mexico'] || []
   const listingCities = CITIES_BY_STATE[listingForm.state] || []
   const filterCities = CITIES_BY_STATE[filters.state] || []
+  const activeThreadMessages = Array.isArray(threadMessages.content) ? threadMessages.content : []
+  const sentByCurrentUser = activeThreadMessages.filter((m) => String(m.senderUserId) === String(user?.id)).length
+  const sentByOtherUser = activeThreadMessages.filter((m) => String(m.senderUserId) !== String(user?.id)).length
+  const canReviewFromChat = !!activeThread
+    && !!activeThread.listingId
+    && !!activeThread.listingSellerUserId
+    && String(activeThread.listingSellerUserId) !== String(user?.id)
+    && String(activeThread.listingSellerUserId) === String(activeThread.otherUserId)
+    && activeThreadMessages.length >= MIN_CHAT_MESSAGES_FOR_REVIEW
+    && sentByCurrentUser >= 2
+    && sentByOtherUser >= 2
 
   return (
     <div>
@@ -738,6 +787,46 @@ export default function MarketplacePage() {
                           />
                           <button className="btn btn-dark" type="submit">Enviar</button>
                         </form>
+                        <div className="d-flex gap-2 flex-wrap mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => reportMarketplaceChat(activeThread.id)}
+                          >
+                            {t('marketplace.reportChat')}
+                          </button>
+                          {activeThread.listingSellerUserId && String(activeThread.listingSellerUserId) !== String(user?.id) && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => reportMarketplaceSeller(activeThread.listingSellerUserId)}
+                            >
+                              {t('marketplace.reportSeller')}
+                            </button>
+                          )}
+                        </div>
+                        {canReviewFromChat ? (
+                          <form className="mt-3" onSubmit={sendMarketplaceReview}>
+                            <h6 className="mb-2">{t('marketplace.leaveReviewInChat')}</h6>
+                            <select className="form-select form-select-sm mb-2" value={reviewRating} onChange={(e) => setReviewRating(e.target.value)}>
+                              {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                            <textarea
+                              className="form-control form-control-sm mb-2"
+                              rows={2}
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              placeholder={t('marketplace.reviewComment')}
+                            />
+                            <button className="btn btn-sm btn-dark" disabled={sendingReview}>
+                              {sendingReview ? t('common.saving') : t('marketplace.sendReview')}
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="small text-muted mt-2 mb-0">
+                            {t('marketplace.reviewGateHint', { min: MIN_CHAT_MESSAGES_FOR_REVIEW })}
+                          </p>
+                        )}
                       </>
                     ) : null}
                   </div>

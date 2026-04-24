@@ -61,6 +61,13 @@ public class ModerationController {
         return ResponseEntity.ok(Map.of("message", "ok"));
     }
 
+    @PostMapping("/public/reports/marketplace-chat/{threadId}")
+    public ResponseEntity<Map<String, String>> reportMarketplaceChat(@PathVariable UUID threadId,
+                                                                     @Valid @RequestBody PublicReportRequest req) {
+        moderationService.reportMarketplaceChat(threadId, req.reason(), req.details());
+        return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
     @GetMapping("/admin/reports")
     public ResponseEntity<List<Map<String, Object>>> adminReports(@RequestParam(required = false) String status) {
         adminAccessService.assertCurrentUserIsAdmin();
