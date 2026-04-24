@@ -210,9 +210,9 @@ export default function LoginPage() {
                 {t('auth.loginPage.heroLead')}
               </p>
               <div className="d-flex flex-wrap gap-2">
-                <Link to="/descubrir" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
                 <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
-                <Link to="/comunidad" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
+                <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
               </div>
             </div>
 
@@ -244,7 +244,7 @@ export default function LoginPage() {
             >
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <h3 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('auth.loginPage.previewTitle')}</h3>
-                <Link to="/comunidad" className="btn btn-sm btn-outline-secondary">{t('social.seeAll')}</Link>
+                <Link to="/community" className="btn btn-sm btn-outline-secondary">{t('social.seeAll')}</Link>
               </div>
               <p className="small text-muted mb-3">
                 {t('auth.loginPage.previewLead')}

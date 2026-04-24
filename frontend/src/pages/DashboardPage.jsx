@@ -48,10 +48,10 @@ export default function DashboardPage() {
     ? keeperProfile.badges.map((b) => b?.label).filter(Boolean)
     : [
         alive.length >= 1 ? 'Starter keeper' : null,
-        alive.length >= 10 ? 'Coleccion 10+' : null,
-        alive.length >= 25 ? 'Coleccion 25+' : null,
-        speciesSet.size >= 5 ? 'Diversidad 5+ especies' : null,
-        speciesSet.size >= 12 ? 'Diversidad 12+ especies' : null,
+        alive.length >= 10 ? 'Collection 10+' : null,
+        alive.length >= 25 ? 'Collection 25+' : null,
+        speciesSet.size >= 5 ? 'Species diversity 5+' : null,
+        speciesSet.size >= 12 ? 'Species diversity 12+' : null,
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
   const badgesProgress = keeperProfile?.badgesProgress || null
@@ -125,10 +125,10 @@ export default function DashboardPage() {
       const result = await importCollectionJsonFile(file)
       const list = await tarantulaService.getAll()
       setTarantulas(Array.isArray(list) ? list : [])
-      const msg = `Importación JSON: ${result.created} creados, ${result.skipped} omitidos.`
+      const msg = `JSON import: ${result.created} created, ${result.skipped} skipped.`
       window.alert(msg)
     } catch {
-      window.alert('No se pudo importar el archivo JSON.')
+      window.alert('Could not import the JSON file.')
     } finally {
       setJsonBusy(false)
     }
@@ -142,18 +142,18 @@ export default function DashboardPage() {
           <div className="row g-3 align-items-center">
             <div className="col-lg-7">
               <p className="small text-uppercase mb-2 ta-home-hero__eyebrow">
-                {t('dashboard.homeHeroEyebrow', { defaultValue: 'Nueva etapa TarantulApp\u2122' })}
+                {t('dashboard.homeHeroEyebrow', { defaultValue: 'New TarantulApp\u2122 stage' })}
               </p>
               <h1 className="h4 fw-bold mb-2">
-                {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, todo en un mismo flujo' })}
+                {t('dashboard.homeHeroTitle', { defaultValue: 'Tool + Help + Community, all in one flow' })}
               </h1>
               <p className="small mb-3" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
-                {t('dashboard.homeHeroBody', { defaultValue: 'Tu coleccion sigue siendo el centro, pero ahora ya conecta con marketplace y comunidad. Lo que viene cierra la capa de cases, reputacion y decision colectiva para resolver dudas reales del hobby.' })}
+                {t('dashboard.homeHeroBody', { defaultValue: 'Your collection is still the center, but now it connects to marketplace and community. What comes next completes the layer of cases, reputation, and collective decision-making to solve real hobby questions.' })}
               </p>
               <div className="d-flex flex-wrap gap-2">
-                <Link to="/descubrir" className="btn btn-sm btn-outline-secondary">{t('discover.navTitle')}</Link>
+                <Link to="/discover" className="btn btn-sm btn-outline-secondary">{t('discover.navTitle')}</Link>
                 <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">{t('marketplace.nav')}</Link>
-                <Link to="/comunidad" className="btn btn-sm btn-dark">{t('nav.community')}</Link>
+                <Link to="/community" className="btn btn-sm btn-dark">{t('nav.community')}</Link>
               </div>
             </div>
             <div className="col-lg-5">
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                 <BrandLogoMark size={74} showIntro />
                 <BrandName className="cinzel mt-2 ta-login-brand-wordmark" />
                 <small className="text-muted mt-1">
-                  {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Datos serios. Comunidad viva.' })}
+                  {t('dashboard.homeHeroKicker', { defaultValue: 'Keepers first. Serious data. Living community.' })}
                 </small>
               </div>
             </div>
@@ -170,19 +170,19 @@ export default function DashboardPage() {
             <div className="col-md-4">
               <div className="ta-home-pillar h-100">
                 <div className="small fw-semibold">{t('dashboard.homePillarToolTitle', { defaultValue: 'Tool mode' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarToolBody', { defaultValue: 'Coleccion, QR, recordatorios y trazabilidad diaria.' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarToolBody', { defaultValue: 'Collection, QR, reminders, and daily traceability.' })}</div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="ta-home-pillar h-100">
-                <div className="small fw-semibold">{t('dashboard.homePillarHelpTitle', { defaultValue: 'Help mode (siguiente)' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarHelpBody', { defaultValue: 'Cases de sexing/salud + votacion y reputacion.' })}</div>
+                <div className="small fw-semibold">{t('dashboard.homePillarHelpTitle', { defaultValue: 'Help mode (next)' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarHelpBody', { defaultValue: 'Sexing/health cases + voting and reputation.' })}</div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="ta-home-pillar h-100">
                 <div className="small fw-semibold">{t('dashboard.homePillarCommunityTitle', { defaultValue: 'Community mode' })}</div>
-                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + casos + referrals; mensajería enfocada al marketplace.' })}</div>
+                <div className="small text-muted">{t('dashboard.homePillarCommunityBody', { defaultValue: 'Feed + cases + referrals; messaging focused on the marketplace.' })}</div>
               </div>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                   onChange={handleImportJsonFile}
                 />
                 <Link
-                  to="/herramientas/qr?mode=bulk"
+                  to="/tools/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm"
                   title={t('dashboard.qrBulkPrintTitle')}
                 >
@@ -270,7 +270,7 @@ export default function DashboardPage() {
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
-                  to="/herramientas/qr?mode=bulk"
+                  to="/tools/qr?mode=bulk"
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title={t('dashboard.qrBulkPrintProOnly')}
                 >
@@ -300,7 +300,7 @@ export default function DashboardPage() {
               <div>
                 <h6 className="mb-1 fw-bold">{user?.displayName || user?.email}</h6>
                 <div className="small text-muted">
-                  @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'Sin ubicación'}
+                  @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'No location'}
                 </div>
                 {user?.bio && <p className="small mb-1 mt-2">{user.bio}</p>}
               </div>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
           style={{ background: 'rgba(26,22,40,0.65)', border: '1px solid rgba(201,162,39,0.35)', color: 'var(--ta-parchment)' }}
         >
           <span className="mb-0">{t('dashboard.qrBannerLead')}</span>
-          <Link to="/herramientas/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
+          <Link to="/tools/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
             {t('dashboard.qrBannerLink')}
           </Link>
         </div>

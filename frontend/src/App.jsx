@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
 import BrandName from './components/BrandName'
@@ -76,6 +76,16 @@ function LoginGate() {
   return <LoginPage />
 }
 
+function LegacyPathRedirect({ to }) {
+  const location = useLocation()
+  const params = useParams()
+  const resolvedTo = Object.entries(params).reduce(
+    (acc, [key, value]) => acc.replace(`:${key}`, encodeURIComponent(String(value ?? ''))),
+    to,
+  )
+  return <Navigate to={`${resolvedTo}${location.search || ''}`} replace />
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -89,11 +99,16 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="/descubrir" element={<DiscoverPage />} />
-      <Route path="/descubrir/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
-      <Route path="/descubrir/especie/:id" element={<DiscoverSpeciesDetailPage />} />
-      <Route path="/descubrir/comparar" element={<DiscoverComparePage />} />
-      <Route path="/herramientas/qr" element={<QrToolPage />} />
+      <Route path="/discover" element={<DiscoverPage />} />
+      <Route path="/discover/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
+      <Route path="/discover/species/:id" element={<DiscoverSpeciesDetailPage />} />
+      <Route path="/discover/compare" element={<DiscoverComparePage />} />
+      <Route path="/descubrir" element={<LegacyPathRedirect to="/discover" />} />
+      <Route path="/descubrir/taxon/:gbifKey" element={<LegacyPathRedirect to="/discover/taxon/:gbifKey" />} />
+      <Route path="/descubrir/especie/:id" element={<LegacyPathRedirect to="/discover/species/:id" />} />
+      <Route path="/descubrir/comparar" element={<LegacyPathRedirect to="/discover/compare" />} />
+      <Route path="/tools/qr" element={<QrToolPage />} />
+      <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
       <Route path="/launch" element={<LaunchRegistrationPage />} />
@@ -107,9 +122,10 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
-      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/herramientas/qr?mode=bulk" replace /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-      <Route path="/comunidad" element={<SocialHubPage />} />
+      <Route path="/community" element={<SocialHubPage />} />
+      <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -131,11 +147,11 @@ function Footer() {
     >
       © {new Date().getFullYear()}{' '}
       <BrandName /> &nbsp;·&nbsp;
-      <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
+      <Link to="/tools/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
       &nbsp;·&nbsp;
       <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
       &nbsp;·&nbsp;
-      <Link to={token ? '/comunidad' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
+      <Link to={token ? '/community' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
       &nbsp;·&nbsp;
       <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
       &nbsp;·&nbsp;

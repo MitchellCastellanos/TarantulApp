@@ -12,9 +12,9 @@ export function getUserTimeZone() {
 
 /** Map short i18n codes to BCP-47 locales for formatting (en → UK, not US). */
 export function localeForI18n(i18nLang) {
-  const base = (i18nLang || 'es').split('-')[0]
-  const map = { es: 'es-ES', en: 'en-GB', fr: 'fr-FR' }
-  return map[base] || i18nLang || 'es-ES'
+  const base = (i18nLang || 'en').split('-')[0]
+  const map = { en: 'en-GB', fr: 'fr-FR' }
+  return map[base] || i18nLang || 'en-GB'
 }
 
 function formatWithZone(iso, i18nLang, options) {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useDiscoverSpeciesSuggestions } from '../hooks/useDiscoverSpeciesSuggestions'
 
 /**
- * Misma lógica de sugerencias que Descubrir; al elegir fila → /descubrir con ficha lista (speciesId / gbifKey).
+ * Misma lógica de sugerencias que Discover; al elegir fila → /discover con ficha lista (speciesId / gbifKey).
  */
 export default function DiscoverNavSearch({ className = '' }) {
   const { t } = useTranslation()
@@ -38,7 +38,7 @@ export default function DiscoverNavSearch({ className = '' }) {
     const v = q.trim()
     if (v.length < 2) return
     setOpen(false)
-    navigate(`/descubrir?taxon=${encodeURIComponent(v)}`)
+    navigate(`/discover?taxon=${encodeURIComponent(v)}`)
     setQ('')
     resetSuggestions()
   }
@@ -47,14 +47,14 @@ export default function DiscoverNavSearch({ className = '' }) {
     setOpen(false)
     setQ('')
     resetSuggestions()
-    navigate(`/descubrir?speciesId=${id}`)
+    navigate(`/discover?speciesId=${id}`)
   }
 
   const goGbifKey = (key) => {
     setOpen(false)
     setQ('')
     resetSuggestions()
-    navigate(`/descubrir?gbifKey=${key}`)
+    navigate(`/discover?gbifKey=${key}`)
   }
 
   /** Misma idea que Descubrir: panel visible mientras hay búsqueda activa o ya hay filas / vacío final. */

@@ -299,7 +299,7 @@ export default function PublicProfilePage() {
 
           <div className="card-footer text-center small">
             <Link
-              to="/descubrir"
+              to="/discover"
               className="text-decoration-none d-inline-flex align-items-center justify-content-center gap-2"
               style={{ color: 'var(--ta-parchment)' }}
             >

@@ -73,7 +73,7 @@ export default function QrToolPage() {
         price: '0',
         priceCurrency: 'USD',
       },
-      url: `${base}/herramientas/qr`,
+      url: `${base}/tools/qr`,
     }
   }, [t, i18n.language])
 
@@ -81,7 +81,7 @@ export default function QrToolPage() {
     title: t('qrTool.pageTitle'),
     description: t('qrTool.metaDescription'),
     imageUrl: ogImage,
-    canonicalHref: origin ? `${origin}/herramientas/qr` : undefined,
+    canonicalHref: origin ? `${origin}/tools/qr` : undefined,
     jsonLd,
     jsonLdId: 'qr-tool-jsonld',
   })
@@ -251,7 +251,7 @@ export default function QrToolPage() {
     <PublicShell>
       <div className="mx-auto" style={{ maxWidth: 560 }}>
         <p className="small mb-2">
-          <Link to="/descubrir" className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
+          <Link to="/discover" className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
             ← {t('discover.navTitle')}
           </Link>
         </p>
@@ -264,13 +264,13 @@ export default function QrToolPage() {
         </p>
         <div className="d-flex gap-2 mb-4 flex-wrap">
           <Link
-            to="/herramientas/qr"
+            to="/tools/qr"
             className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
           >
             {t('tarantula.qrCode')}
           </Link>
           <Link
-            to="/herramientas/qr?mode=bulk"
+            to="/tools/qr?mode=bulk"
             className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
           >
             {t('dashboard.qrBulkPrint')}

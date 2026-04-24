@@ -27,8 +27,8 @@ export default function PublicKeeperProfilePage() {
   usePageSeo({
     title: profile?.displayName
       ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - ${BRAND_WITH_TM}`
-      : `Perfil keeper - ${BRAND_WITH_TM}`,
-    description: profile?.bio || `Perfil publico keeper en ${BRAND_WITH_TM}: reputacion, listings y contacto.`,
+      : `Keeper profile - ${BRAND_WITH_TM}`,
+    description: profile?.bio || `Public keeper profile on ${BRAND_WITH_TM}: reputation, listings, and contact.`,
     imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
     canonicalHref: profileUrl || undefined,
   })
@@ -49,7 +49,7 @@ export default function PublicKeeperProfilePage() {
         }
       })
       .catch(() => {
-        if (!cancelled) setError('No encontramos este perfil publico.')
+        if (!cancelled) setError('We could not find this public profile.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -71,9 +71,9 @@ export default function PublicKeeperProfilePage() {
     if (!shareText) return
     try {
       await navigator.clipboard.writeText(shareText)
-      setShareMsg('Plantilla copiada.')
+      setShareMsg('Template copied.')
     } catch {
-      setShareMsg('No se pudo copiar automaticamente.')
+      setShareMsg('Could not copy automatically.')
     }
   }
 
@@ -96,7 +96,7 @@ export default function PublicKeeperProfilePage() {
     <div>
       <Navbar variant="public" />
       <div className="container mt-4 mb-5" style={{ maxWidth: 860 }}>
-        {loading && <div className="text-muted small">Cargando perfil...</div>}
+        {loading && <div className="text-muted small">Loading profile...</div>}
         {!loading && error && <div className="alert alert-warning small py-2">{error}</div>}
         {!loading && !error && profile && (
           <>
@@ -114,10 +114,10 @@ export default function PublicKeeperProfilePage() {
                   </div>
                 </div>
                 {profile.location ? <p className="small mb-1 text-muted">{profile.location}</p> : null}
-                <p className="small mb-0">{profile.bio || 'Este keeper aun no comparte bio publica.'}</p>
+                <p className="small mb-0">{profile.bio || 'This keeper has not shared a public bio yet.'}</p>
                 <div className="d-flex flex-wrap gap-2 mt-3">
                   <button type="button" className="btn btn-sm btn-outline-secondary" onClick={copyProfileShare}>
-                    Copiar plantilla
+                    Copy template
                   </button>
                   <button type="button" className="btn btn-sm btn-dark" onClick={shareWhatsApp}>
                     WhatsApp
@@ -131,18 +131,18 @@ export default function PublicKeeperProfilePage() {
               <div className="card border-0 shadow-sm">
                 <div className="card-body">
                   <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                    <h2 className="h6 mb-0">Marketplace del keeper</h2>
+                    <h2 className="h6 mb-0">Keeper marketplace</h2>
                     {profile.id ? (
                       <Link className="btn btn-sm btn-outline-secondary" to={`/marketplace/keeper/${profile.id}`}>
-                        Ver perfil detallado
+                        View detailed profile
                       </Link>
                     ) : null}
                   </div>
                   <div className="small text-muted mb-2">
-                    Reputacion: {keeperData?.reputation?.tier || 'Bronze'} ({keeperData?.reputation?.score ?? 0})
+                    Reputation: {keeperData?.reputation?.tier || 'Bronze'} ({keeperData?.reputation?.score ?? 0})
                   </div>
                   {(keeperData?.activeListings || []).length === 0 ? (
-                    <p className="small text-muted mb-0">No tiene listings activos por ahora.</p>
+                    <p className="small text-muted mb-0">No active listings for now.</p>
                   ) : (
                     <div className="row g-2">
                       {(keeperData.activeListings || []).slice(0, 6).map((l) => (
@@ -150,7 +150,7 @@ export default function PublicKeeperProfilePage() {
                           <div className="border rounded p-2 h-100 small">
                             <div className="fw-semibold">{l.title}</div>
                             <div className="text-muted">{l.speciesName || '-'}</div>
-                            <div>{l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : 'Precio por acordar'}</div>
+                            <div>{l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : 'Price on request'}</div>
                           </div>
                         </div>
                       ))}

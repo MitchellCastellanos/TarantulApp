@@ -54,53 +54,6 @@ export default function TermsPage() {
           <Link to="/contact">All contact options</Link>
         </p>
 
-        <hr className="my-4" />
-
-        <h2 className="fw-bold mb-1">Términos de Servicio</h2>
-        <p className="text-muted small mb-4">Última actualización: Abril 2026</p>
-
-        <p>Al usar <BrandName /> aceptas estos términos. Por favor léelos con atención.</p>
-
-        <h5 className="fw-bold mt-4">1. Uso del servicio</h5>
-        <ul>
-          <li><BrandName /> es un rastreador de colecciones personales para mantenedores de tarántulas.</li>
-          <li>Debes tener al menos 13 años para usar este servicio.</li>
-          <li>Eres responsable de mantener la seguridad de tus credenciales.</li>
-          <li>No puedes usar el servicio para fines ilegales o no autorizados.</li>
-        </ul>
-
-        <h5 className="fw-bold mt-4">2. Planes Gratis y Pro</h5>
-        <ul>
-          <li>El plan Gratis permite hasta 6 tarántulas en tu colección.</li>
-          <li>El plan Pro ofrece tarántulas ilimitadas y funciones adicionales por $4.99 USD/mes o $49.99 USD/año (facturación anual cuando Stripe lo tenga configurado). Los niveles Pro+ y Vendor pueden ofrecerse aparte.</li>
-          <li>Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento; el acceso continúa hasta el fin del período de facturación.</li>
-        </ul>
-
-        <h5 className="fw-bold mt-4">3. Tu contenido</h5>
-        <p>Conservas la propiedad de todo el contenido que crees (registros, fotos, notas). Le otorgas a <BrandName /> una licencia para almacenar y mostrar ese contenido como parte del servicio.</p>
-
-        <h5 className="fw-bold mt-4">4. Limitación de responsabilidad</h5>
-        <p><BrandName /> se provee "tal cual". No somos responsables de pérdida de datos o daños derivados del uso del servicio. Recomendamos mantener respaldos de registros importantes.</p>
-
-        <h5 className="fw-bold mt-4">5. Cambios en los términos</h5>
-        <p>Podemos actualizar estos términos. El uso continuado del servicio tras los cambios implica la aceptación de los nuevos términos.</p>
-
-        <h5 className="fw-bold mt-4">6. Contacto</h5>
-        <p>General y aspectos legales:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.hello}`}>{PUBLIC_CONTACT.hello}</a>
-          {' · '}
-          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
-        </p>
-        <p>Técnico:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
-          {' · '}Billing:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.billing}`}>{PUBLIC_CONTACT.billing}</a>
-          {' · '}Alianzas:{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.partners}`}>{PUBLIC_CONTACT.partners}</a>
-        </p>
-        <p className="small text-muted mb-0">
-          <Link to="/contact">Página de contacto</Link>
-        </p>
       </div>
     </div>
   )

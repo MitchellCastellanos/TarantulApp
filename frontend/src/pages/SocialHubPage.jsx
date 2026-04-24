@@ -168,7 +168,7 @@ export default function SocialHubPage() {
   const openComposerFromTopic = useCallback(
     (bodyPrefix) => {
       if (!token) {
-        navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+        navigate('/login', { state: { redirectAfterAuth: '/community' } })
         return
       }
       setErr('')
@@ -203,7 +203,7 @@ export default function SocialHubPage() {
 
   const onToggleLike = async (postId) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
     setErr('')
@@ -220,7 +220,7 @@ export default function SocialHubPage() {
 
   const toggleExpand = async (postId) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
     setExpanded((ex) => ({ ...ex, [postId]: !ex[postId] }))
@@ -236,7 +236,7 @@ export default function SocialHubPage() {
 
   const submitComment = async (postId) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
     const text = (commentDraft[postId] || '').trim()
@@ -255,7 +255,7 @@ export default function SocialHubPage() {
 
   const deletePost = async (postId) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
     if (!window.confirm(t('social.confirmDeletePost'))) return
@@ -270,7 +270,7 @@ export default function SocialHubPage() {
 
   const reportPost = async (postId) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
     const reason = window.prompt(t('marketplace.reportReason'))
@@ -296,7 +296,7 @@ export default function SocialHubPage() {
   const submitSexIdCase = async (e) => {
     e.preventDefault()
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
       return
     }
     setErr('')
@@ -332,7 +332,7 @@ export default function SocialHubPage() {
 
   const onSexIdPhoto = async (e) => {
     if (!token) {
-      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+      navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
       return
     }
     const f = e.target.files?.[0]
@@ -515,7 +515,7 @@ export default function SocialHubPage() {
             <button
               type="button"
               className="btn btn-sm btn-dark"
-              onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+              onClick={() => navigate('/login', { state: { redirectAfterAuth: '/community' } })}
             >
               Iniciar sesi?n para participar
             </button>
@@ -569,7 +569,7 @@ export default function SocialHubPage() {
                     className="btn btn-sm btn-outline-secondary w-100"
                     onClick={() => {
                       if (!token) {
-                        navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                        navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
                         return
                       }
                       setTab(TAB_SEX_ID)
@@ -613,7 +613,7 @@ export default function SocialHubPage() {
                   className="btn btn-sm btn-outline-secondary"
                   onClick={() => {
                     if (!token) {
-                      navigate('/login', { state: { redirectAfterAuth: '/comunidad?tab=sexId' } })
+                      navigate('/login', { state: { redirectAfterAuth: '/community?tab=sexId' } })
                       return
                     }
                     setTab(TAB_SEX_ID)
@@ -660,7 +660,7 @@ export default function SocialHubPage() {
                     <button
                       type="button"
                       className="btn btn-sm btn-dark"
-                      onClick={() => navigate('/login', { state: { redirectAfterAuth: '/comunidad' } })}
+                      onClick={() => navigate('/login', { state: { redirectAfterAuth: '/community' } })}
                     >
                       Iniciar sesi?n para publicar
                     </button>

@@ -49,10 +49,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         title: t('nav.mobileExplore'),
         items: [
           {
-            to: '/descubrir',
+            to: '/discover',
             label: t('discover.navTitle'),
             title: t('nav.discoverLinkTitle'),
-            routeMatchers: ['/descubrir'],
+            routeMatchers: ['/discover'],
           },
           {
             to: '/marketplace',
@@ -61,10 +61,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
             routeMatchers: ['/marketplace'],
           },
           {
-            to: '/comunidad',
+            to: '/community',
             label: t('nav.community'),
             title: t('social.navTitle'),
-            routeMatchers: ['/comunidad'],
+            routeMatchers: ['/community'],
           },
           {
             to: '/about',
@@ -81,16 +81,16 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         items: [
           {
             to: '/',
-            label: t('discover.myCollection', 'Mi colección'),
+            label: t('discover.myCollection', 'My collection'),
             className: 'btn btn-sm fw-semibold ta-mobile-collection-cta',
             routeMatchers: ['/'],
             exact: true,
           },
           {
-            to: '/herramientas/qr',
+            to: '/tools/qr',
             label: t('nav.qrTool'),
             title: t('nav.qrToolTitle'),
-            routeMatchers: ['/herramientas/qr', '/tarantulas/qr-print'],
+            routeMatchers: ['/tools/qr', '/tarantulas/qr-print'],
           },
           {
             to: '/reminders',
@@ -209,7 +209,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     if (route.startsWith('/')) return route
     const type = String(n?.type || '').toUpperCase()
     if (type === 'SEX_ID_VOTE' && n?.data?.caseId) return `/sex-id/${n.data.caseId}`
-    if (type === 'SPOOD_RECEIVED' || type === 'POST_COMMENT') return '/comunidad'
+    if (type === 'SPOOD_RECEIVED' || type === 'POST_COMMENT') return '/community'
     return '/account'
   }
 
@@ -392,7 +392,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               fontSize: '0.78rem',
             }}
           >
-            {t('discover.myCollection', 'Mi colección')}
+            {t('discover.myCollection', 'My collection')}
           </Link>
         )}
         <button
@@ -400,7 +400,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           className="btn btn-sm ta-mobile-menu-toggle"
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           aria-expanded={mobileMenuOpen}
-          aria-label={mobileMenuOpen ? t('nav.close', 'Cerrar menú') : t('nav.open', 'Abrir menú')}
+          aria-label={mobileMenuOpen ? t('nav.close', 'Close menu') : t('nav.open', 'Open menu')}
         >
           {mobileMenuOpen ? '✕' : '☰'}
         </button>
@@ -500,7 +500,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                 </button>
               ) : hideLoginLink ? (
                 <Link
-                  to="/descubrir"
+                  to="/discover"
                   onClick={closeMobileMenu}
                   className="btn btn-sm"
                   style={{
@@ -535,17 +535,17 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           </div>
         )}
         <Link
-          to="/descubrir"
+          to="/discover"
           className="text-decoration-none small fw-semibold d-none d-md-inline"
-          style={{ color: linkTone(path.startsWith('/descubrir')) }}
+          style={{ color: linkTone(path.startsWith('/discover')) }}
           title={t('nav.discoverLinkTitle')}
         >
           {t('discover.navTitle')}
         </Link>
         <Link
-          to="/herramientas/qr"
+          to="/tools/qr"
           className="text-decoration-none small fw-semibold d-none d-md-inline"
-          style={{ color: linkTone(path.startsWith('/herramientas/qr')) }}
+          style={{ color: linkTone(path.startsWith('/tools/qr')) }}
           title={t('nav.qrToolTitle')}
         >
           {t('nav.qrTool')}
@@ -559,9 +559,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           {t('marketplace.nav')}
         </Link>
         <Link
-          to="/comunidad"
+          to="/community"
           className="text-decoration-none small fw-semibold d-none d-md-inline"
-          style={{ color: linkTone(path.startsWith('/comunidad')) }}
+          style={{ color: linkTone(path.startsWith('/community')) }}
           title={t('social.navTitle')}
         >
           {t('nav.community')}
@@ -585,7 +585,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               fontSize: '0.78rem',
             }}
           >
-            {t('discover.myCollection', 'Mi colección')}
+            {t('discover.myCollection', 'My collection')}
           </Link>
         )}
         {token && (
@@ -713,7 +713,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           </button>
         ) : hideLoginLink ? (
           <Link
-            to="/descubrir"
+            to="/discover"
             className="btn btn-sm"
             style={{
               border: '1px solid var(--ta-border)',

@@ -12,7 +12,7 @@ import { BRAND_WITH_TM } from '../constants/brand'
 function DiscoverTaxonDetailSeo({ data, gbifKeyParam }) {
   const { t, i18n } = useTranslation()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const path = `/descubrir/taxon/${gbifKeyParam}`
+  const path = `/discover/taxon/${gbifKeyParam}`
   const canonicalHref = origin ? `${origin}${path}` : undefined
   const displayName = data.canonicalName || data.scientificName || '–'
   const title = useMemo(
@@ -90,7 +90,7 @@ export default function DiscoverTaxonDetailPage() {
     return (
       <PublicShell>
         <p className="text-muted">{t('discover.taxonNotFound')}</p>
-        <Link to="/descubrir">{t('common.back')}</Link>
+        <Link to="/discover">{t('common.back')}</Link>
       </PublicShell>
     )
   }
@@ -200,7 +200,7 @@ export default function DiscoverTaxonDetailPage() {
               type="button"
               className="btn btn-sm"
               style={{ border: '1px solid var(--ta-gold)', color: 'var(--ta-gold)', background: 'transparent' }}
-              onClick={() => navigate(`/descubrir/comparar?gbifA=${data.gbifKey}`)}
+              onClick={() => navigate(`/discover/compare?gbifA=${data.gbifKey}`)}
             >
               {t('discover.comparePickSecond')}
             </button>

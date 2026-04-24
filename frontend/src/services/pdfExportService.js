@@ -160,9 +160,9 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
   let y = margin
   const sp = species ?? tarantula?.species ?? null
   // Idioma fijo mientras dura el await + PDF (evita mezclas si getFixedT aplica a una sola lng)
-  const resolvedLng = String(language || i18n?.language || 'es').split(/[-_]/)[0]
+  const resolvedLng = String(language || i18n?.language || 'en').split(/[-_]/)[0]
   const tr = typeof i18n?.getFixedT === 'function' ? i18n.getFixedT(resolvedLng) : t
-  const localeForDates = String(language || i18n?.language || (resolvedLng === 'en' ? 'en' : 'es'))
+  const localeForDates = String(language || i18n?.language || (resolvedLng === 'fr' ? 'fr' : 'en'))
 
   const addNewPage = () => {
     doc.addPage()
@@ -398,7 +398,7 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
     : tr('share.lockedFalse')
   const isPublicText = tarantula?.isPublic === true ? tr('share.yes') : tr('share.no')
 
-  const langForNarrative = String(language || i18n?.language || 'es')
+  const langForNarrative = String(language || i18n?.language || 'en')
   const temperamentNarr = sp
     ? pickSpeciesNarrativeField(sp.narrativeI18n, 'temperament', langForNarrative)
       ?? (sp.temperament != null && String(sp.temperament).trim() ? String(sp.temperament) : null)

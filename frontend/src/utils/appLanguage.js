@@ -1,6 +1,6 @@
-/** Normalizes i18n language (e.g. en-GB from detector) to app resource code es | en | fr. */
+/** Normalizes i18n language (e.g. en-GB from detector) to app resource code en | fr. */
 export function appLangBase(lang) {
-  if (!lang) return 'es'
+  if (!lang) return 'en'
   const b = String(lang).split('-')[0].toLowerCase()
-  return ['es', 'en', 'fr'].includes(b) ? b : 'es'
+  return ['en', 'fr'].includes(b) ? b : 'en'
 }

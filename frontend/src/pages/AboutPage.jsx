@@ -43,10 +43,10 @@ export default function AboutPage() {
 
         <section className="mb-4">
           <h2 className="h6 fw-bold mb-2 text-uppercase" style={{ color: 'var(--ta-gold)', letterSpacing: '0.04em' }}>
-            {t('about.sectionContactOpsTitle', { defaultValue: 'Canales de contacto operativos' })}
+            {t('about.sectionContactOpsTitle', { defaultValue: 'Operational contact channels' })}
           </h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.65 }}>
-            {t('about.sectionContactOpsBody', { defaultValue: 'Usamos inboxes por tema para responder más rápido: soporte técnico, facturación Stripe, marketplace/comunidad, newsletter y temas de confianza/plataformas.' })}
+            {t('about.sectionContactOpsBody', { defaultValue: 'We use topic-specific inboxes to respond faster: technical support, Stripe billing, marketplace/community, newsletter, and trust/platform matters.' })}
           </p>
           <p className="small mb-0" style={{ color: 'var(--ta-text)' }}>
             <a href={`mailto:${PUBLIC_CONTACT.support}`}>{PUBLIC_CONTACT.support}</a>
@@ -71,7 +71,7 @@ export default function AboutPage() {
           </p>
           <div className="d-flex flex-wrap gap-2">
             <Link
-              to="/descubrir"
+              to="/discover"
               className="btn btn-sm"
               style={{
                 border: '1px solid var(--ta-gold)',
@@ -93,7 +93,7 @@ export default function AboutPage() {
               {t('marketplace.nav')}
             </Link>
             <Link
-              to={token ? '/comunidad' : '/login'}
+              to={token ? '/community' : '/login'}
               className="btn btn-sm"
               style={{
                 border: '1px solid var(--ta-gold)',

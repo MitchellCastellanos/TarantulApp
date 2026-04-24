@@ -4,7 +4,7 @@ function formatDate(value, language) {
   if (!value) return '-'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString(language || 'es')
+  return d.toLocaleDateString(language || 'en')
 }
 
 function cleanInlineText(value, fallback = '-') {
@@ -34,7 +34,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
   const safeSpecies = cleanInlineText(speciesName)
   const safeLabel = cleanInlineText(label)
   const safeDate = cleanInlineText(date)
-  const summary = cleanInlineText(event?.summary || t('share.noSummary', { defaultValue: 'Sin resumen' }))
+  const summary = cleanInlineText(event?.summary || t('share.noSummary', { defaultValue: 'No summary' }))
   const safeProfileUrl = cleanInlineText(profileUrl, '')
   if (channel === 'instagram') {
     return [
@@ -50,9 +50,9 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
       `*${t('share.cardTitle', { defaultValue: `${BRAND_WITH_TM} Log` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 90)}`,
-      `• ${t('share.eventLabel', { defaultValue: 'Evento' })}: ${shortText(safeLabel, 50)}`,
-      `• ${t('share.dateLabel', { defaultValue: 'Fecha' })}: ${safeDate}`,
-      `• ${t('share.summaryLabel', { defaultValue: 'Resumen' })}: ${shortText(summary, 240)}`,
+      `• ${t('share.eventLabel', { defaultValue: 'Event' })}: ${shortText(safeLabel, 50)}`,
+      `• ${t('share.dateLabel', { defaultValue: 'Date' })}: ${safeDate}`,
+      `• ${t('share.summaryLabel', { defaultValue: 'Summary' })}: ${shortText(summary, 240)}`,
       safeProfileUrl ? `• ${safeProfileUrl}` : null,
       '#TarantulApp',
     ].filter(Boolean).join('\n')
@@ -64,9 +64,9 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
     '━━━━━━━━━━━━━━━━━━━━',
     `📌 ${t('form.name')}: ${shortText(safeName, 90)}`,
     `🔬 ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 110)}`,
-    `📝 ${t('share.eventLabel', { defaultValue: 'Evento' })}: ${shortText(safeLabel, 60)}`,
-    `📅 ${t('share.dateLabel', { defaultValue: 'Fecha' })}: ${safeDate}`,
-    `💬 ${t('share.summaryLabel', { defaultValue: 'Resumen' })}: ${shortText(summary, 320)}`,
+    `📝 ${t('share.eventLabel', { defaultValue: 'Event' })}: ${shortText(safeLabel, 60)}`,
+    `📅 ${t('share.dateLabel', { defaultValue: 'Date' })}: ${safeDate}`,
+    `💬 ${t('share.summaryLabel', { defaultValue: 'Summary' })}: ${shortText(summary, 320)}`,
     safeProfileUrl ? `🔗 ${safeProfileUrl}` : null,
     '',
     '#TarantulApp #TarantulaHobby',
@@ -76,7 +76,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
 export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, profileUrl, channel = 'default' }) {
   const safeName = cleanInlineText(tarantulaName)
   const safeSpecies = cleanInlineText(speciesName)
-  const note = cleanInlineText(typeof caption === 'string' ? caption : '', t('share.noCaption', { defaultValue: 'Sin nota' }))
+  const note = cleanInlineText(typeof caption === 'string' ? caption : '', t('share.noCaption', { defaultValue: 'No note' }))
   const safeProfileUrl = cleanInlineText(profileUrl, '')
 
   if (channel === 'instagram') {
@@ -92,7 +92,7 @@ export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, pr
       `*📸 ${t('share.photoCardTitle', { defaultValue: `${BRAND_WITH_TM} Photo Log` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 90)}`,
-      `• ${t('share.captionLabel', { defaultValue: 'Nota' })}: ${shortText(note, 240)}`,
+      `• ${t('share.captionLabel', { defaultValue: 'Note' })}: ${shortText(note, 240)}`,
       safeProfileUrl ? `• ${safeProfileUrl}` : null,
       '#TarantulApp',
     ].filter(Boolean).join('\n')
@@ -104,7 +104,7 @@ export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, pr
     '━━━━━━━━━━━━━━━━━━━━',
     `📌 ${t('form.name')}: ${shortText(safeName, 90)}`,
     `🔬 ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 110)}`,
-    `💬 ${t('share.captionLabel', { defaultValue: 'Nota' })}: ${shortText(note, 320)}`,
+    `💬 ${t('share.captionLabel', { defaultValue: 'Note' })}: ${shortText(note, 320)}`,
     safeProfileUrl ? `🔗 ${safeProfileUrl}` : null,
     '',
     '#TarantulApp #TarantulaPhoto',
@@ -123,7 +123,7 @@ export function buildKeeperProfileShareText({
   const safeName = cleanInlineText(displayName, 'Keeper')
   const safeHandle = cleanInlineText(handle ? `@${String(handle).replace(/^@+/, '')}` : '', '@keeper')
   const safeBio = shortText(
-    cleanInlineText(bio, t('share.noSummary', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` })),
+    cleanInlineText(bio, t('share.noSummary', { defaultValue: `Keeper profile on ${BRAND_WITH_TM}` })),
     220
   )
   const safeLocation = cleanInlineText(location, '')
@@ -140,11 +140,11 @@ export function buildKeeperProfileShareText({
 
   if (channel === 'whatsapp') {
     return [
-      `*${t('share.keeperCardTitle', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` })}*`,
+      `*${t('share.keeperCardTitle', { defaultValue: `Keeper profile on ${BRAND_WITH_TM}` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('account.profile.publicHandleLabel', { defaultValue: 'Handle' })}: ${shortText(safeHandle, 80)}`,
-      safeLocation ? `• ${t('share.locationLabel', { defaultValue: 'Ubicación' })}: ${shortText(safeLocation, 90)}` : null,
-      `• ${t('share.summaryLabel', { defaultValue: 'Resumen' })}: ${shortText(safeBio, 220)}`,
+      safeLocation ? `• ${t('share.locationLabel', { defaultValue: 'Location' })}: ${shortText(safeLocation, 90)}` : null,
+      `• ${t('share.summaryLabel', { defaultValue: 'Summary' })}: ${shortText(safeBio, 220)}`,
       safeUrl ? `• ${safeUrl}` : null,
       '#TarantulApp',
     ].filter(Boolean).join('\n')
@@ -152,7 +152,7 @@ export function buildKeeperProfileShareText({
 
   return [
     '━━━━━━━━━━━━━━━━━━━━',
-    t('share.keeperCardTitle', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` }),
+    t('share.keeperCardTitle', { defaultValue: `Keeper profile on ${BRAND_WITH_TM}` }),
     '━━━━━━━━━━━━━━━━━━━━',
     `👤 ${shortText(safeName, 90)} · ${shortText(safeHandle, 90)}`,
     safeLocation ? `📍 ${shortText(safeLocation, 120)}` : null,

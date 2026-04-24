@@ -154,7 +154,7 @@ export default function DiscoverPage() {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const hubJsonLd = useMemo(() => {
-    const url = origin ? `${origin}/descubrir` : '/descubrir'
+    const url = origin ? `${origin}/discover` : '/discover'
     return {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
@@ -174,7 +174,7 @@ export default function DiscoverPage() {
     title: t('discover.seoHubTitle'),
     description: t('discover.seoHubDescription'),
     imageUrl: origin ? `${origin}/icon-512.png` : undefined,
-    canonicalHref: origin ? `${origin}/descubrir` : undefined,
+    canonicalHref: origin ? `${origin}/discover` : undefined,
     jsonLd: hubJsonLd,
     jsonLdId: 'discover-hub-jsonld',
   })
@@ -698,7 +698,7 @@ export default function DiscoverPage() {
             <DiscoverSpeciesProfileSnippet species={selectedSpecies} variant="discover" />
             {Number.isFinite(Number(selectedSpecies.id)) && (
               <Link
-                to={`/descubrir/especie/${selectedSpecies.id}`}
+                to={`/discover/species/${selectedSpecies.id}`}
                 className="small d-inline-block mb-2"
                 style={{ color: 'var(--ta-gold)' }}
               >
@@ -810,7 +810,7 @@ export default function DiscoverPage() {
             <DiscoverSpeciesProfileSnippet title={taxonomyTitle} subtitle={taxonomySubtitle} variant="discover" />
             {Number.isFinite(activeGbifKey) && (
               <Link
-                to={`/descubrir/taxon/${activeGbifKey}`}
+                to={`/discover/taxon/${activeGbifKey}`}
                 className="small d-inline-block mt-2 mb-2"
                 style={{ color: 'var(--ta-gold)' }}
               >

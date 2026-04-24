@@ -43,7 +43,7 @@ export default function DiscoverComparePage() {
       '@type': 'WebPage',
       name: t('discover.seoCompareTitle'),
       description: t('discover.seoCompareDescription'),
-      url: origin ? `${origin}/descubrir/comparar` : '/descubrir/comparar',
+      url: origin ? `${origin}/discover/compare` : '/discover/compare',
       inLanguage: i18n.language,
       isPartOf: {
         '@type': 'WebSite',
@@ -58,7 +58,7 @@ export default function DiscoverComparePage() {
     title: t('discover.seoCompareTitle'),
     description: t('discover.seoCompareDescription'),
     imageUrl: origin ? `${origin}/icon-512.png` : undefined,
-    canonicalHref: origin ? `${origin}/descubrir/comparar` : undefined,
+    canonicalHref: origin ? `${origin}/discover/compare` : undefined,
     jsonLd: compareJsonLd,
     jsonLdId: 'discover-compare-jsonld',
   })
@@ -149,7 +149,7 @@ export default function DiscoverComparePage() {
             {t('discover.compareSeePro')}
           </Link>
           <div className="mt-3">
-            <Link to="/descubrir" className="small" style={{ color: 'var(--ta-brown-light)' }}>
+            <Link to="/discover" className="small" style={{ color: 'var(--ta-brown-light)' }}>
               {t('discover.backToDiscover')}
             </Link>
           </div>
@@ -162,17 +162,17 @@ export default function DiscoverComparePage() {
     return (
       <PublicShell>
         <p className="text-muted small">{t('discover.compareNeedParams')}</p>
-        <Link to="/descubrir">{t('discover.backToDiscover')}</Link>
+        <Link to="/discover">{t('discover.backToDiscover')}</Link>
       </PublicShell>
     )
   }
 
   const pickSecondGbif = (key) => {
-    navigate(`/descubrir/comparar?gbifA=${gbifA}&gbifB=${key}`)
+    navigate(`/discover/compare?gbifA=${gbifA}&gbifB=${key}`)
   }
 
   const pickSecondLocal = (id) => {
-    navigate(`/descubrir/comparar?a=${a}&b=${id}`)
+    navigate(`/discover/compare?a=${a}&b=${id}`)
   }
 
   const renderLocal = (side) => {
@@ -182,7 +182,7 @@ export default function DiscoverComparePage() {
     return (
       <div>
         <DiscoverSpeciesProfileSnippet species={sp} variant="discover" />
-        <Link to={`/descubrir/especie/${sp.id}`} className="small d-inline-block mt-2" style={{ color: 'var(--ta-gold)' }}>
+        <Link to={`/discover/species/${sp.id}`} className="small d-inline-block mt-2" style={{ color: 'var(--ta-gold)' }}>
           {t('discover.openSheet')}
         </Link>
       </div>
@@ -199,7 +199,7 @@ export default function DiscoverComparePage() {
           title={d.canonicalName || d.scientificName}
           subtitle={t('discover.speciesProfileTaxonomyShort', { source: 'GBIF' })}
         />
-        <Link to={`/descubrir/taxon/${d.gbifKey}`} className="small d-inline-block mt-2" style={{ color: 'var(--ta-gold)' }}>
+        <Link to={`/discover/taxon/${d.gbifKey}`} className="small d-inline-block mt-2" style={{ color: 'var(--ta-gold)' }}>
           {t('discover.openSheet')}
         </Link>
       </div>
@@ -288,7 +288,7 @@ export default function DiscoverComparePage() {
         )}
 
         <div className="mt-4">
-          <Link to="/descubrir" className="small" style={{ color: 'var(--ta-brown-light)' }}>
+          <Link to="/discover" className="small" style={{ color: 'var(--ta-brown-light)' }}>
             {t('discover.backToDiscover')}
           </Link>
         </div>

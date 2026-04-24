@@ -14,7 +14,7 @@ function DiscoverSpeciesDetailSeo({ view, speciesId }) {
   const { t, i18n } = useTranslation()
   const sp = view.species
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const path = `/descubrir/especie/${speciesId}`
+  const path = `/discover/species/${speciesId}`
   const canonicalHref = origin ? `${origin}${path}` : undefined
   const fallback512 = origin ? `${origin}/icon-512.png` : null
   const ogImage = discoverHeroImageAbsoluteUrl(sp, view.fallbackPhoto) || fallback512
@@ -126,7 +126,7 @@ export default function DiscoverSpeciesDetailPage() {
     return (
       <PublicShell>
         <p className="text-muted">{t('discover.speciesNotFound')}</p>
-        <Link to="/descubrir">{t('common.back')}</Link>
+        <Link to="/discover">{t('common.back')}</Link>
       </PublicShell>
     )
   }
@@ -228,7 +228,7 @@ export default function DiscoverSpeciesDetailPage() {
         {hasPro && (
           <div className="mt-3">
             <Link
-              to={`/descubrir/comparar?a=${sp.id}`}
+              to={`/discover/compare?a=${sp.id}`}
               className="btn btn-sm"
               style={{ border: '1px solid var(--ta-gold)', color: 'var(--ta-gold)', background: 'transparent' }}
             >

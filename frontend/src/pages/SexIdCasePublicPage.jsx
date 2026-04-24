@@ -306,7 +306,7 @@ export default function SexIdCasePublicPage() {
                     <button type="button" className="btn btn-sm btn-outline-secondary" onClick={copyShare}>
                       {t('sexIdCase.copyLink')}
                     </button>
-                    <Link className="btn btn-sm btn-dark" to="/comunidad?tab=invite">
+                    <Link className="btn btn-sm btn-dark" to="/community?tab=invite">
                       {t('sexIdCase.inviteKeepers')}
                     </Link>
                     <code className="small user-select-all text-break" style={{ color: 'var(--ta-text-muted)' }}>

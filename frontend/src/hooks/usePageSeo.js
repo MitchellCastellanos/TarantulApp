@@ -4,7 +4,7 @@ import { BRAND_WITH_TM } from '../constants/brand'
 /** Debe coincidir con `index.html` (SEO por defecto de la SPA). */
 export const SITE_DEFAULT_TITLE = BRAND_WITH_TM
 export const SITE_DEFAULT_DESCRIPTION =
-  'Gestiona tu colección de tarántulas: fichas, recordatorios, QR por terrario y catálogo de especies.'
+  'Manage your tarantula collection: profiles, reminders, terrarium QR labels, and species catalog.'
 
 function upsertMeta(attr, key, content) {
   if (content == null || content === '') return

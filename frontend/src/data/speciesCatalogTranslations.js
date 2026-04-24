@@ -306,7 +306,7 @@ export const SPECIES_CATALOG = {
 }
 
 export function getSpeciesCatalogOverride(slug, lang) {
-  const base = (lang || 'es').split('-')[0]
+  const base = (lang || 'en').split('-')[0]
   if (base === 'es') return null
   const row = SPECIES_CATALOG[slug]
   if (!row) return null
