@@ -1,0 +1,78 @@
+# Dependabot keeps dependencies fresh so we don't ship known CVEs.
+# Schedule: weekly on Monday so PRs land before the on-call rotation starts.
+# We open at most 5 PRs per ecosystem to avoid drowning the queue;
+# security alerts always open regardless of this cap.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Toronto
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework:*"
+          - "org.springframework.security:*"
+      stripe:
+        patterns:
+          - "com.stripe:*"
+      observability:
+        patterns:
+          - "io.sentry:*"
+          - "net.logstash.logback:*"
+          - "org.codehaus.janino:*"
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Toronto
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - frontend
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      capacitor:
+        patterns:
+          - "@capacitor/*"
+      sentry:
+        patterns:
+          - "@sentry/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-router-dom"
+          - "react-i18next"
+          - "i18next*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Toronto
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
+      include: scope
