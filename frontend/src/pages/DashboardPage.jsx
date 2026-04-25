@@ -276,7 +276,7 @@ export default function DashboardPage() {
                   onChange={handleImportJsonFile}
                 />
                 <Link
-                  to="/tools/qr?mode=bulk"
+                  to="/tarantulas/qr-print"
                   className="btn btn-outline-secondary btn-sm"
                   title={t('dashboard.qrBulkPrintTitle')}
                 >
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
-                  to="/tools/qr?mode=bulk"
+                  to="/tarantulas/qr-print"
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title={t('dashboard.qrBulkPrintProOnly')}
                 >
