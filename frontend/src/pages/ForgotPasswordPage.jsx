@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import publicApi from '../services/publicApi'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import Navbar from '../components/Navbar'
+import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation()
@@ -11,15 +12,21 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isCaptchaEnabled() && !captchaToken) {
+      setError(t('auth.captchaRequired', 'Por favor completa el captcha.'))
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      await publicApi.post('/auth/forgot-password', { email })
+      await publicApi.post('/auth/forgot-password', { email, captchaToken: captchaToken || undefined })
       setSent(true)
     } catch {
+      setCaptchaToken('')
       setError(t('common.error'))
     } finally {
       setLoading(false)
@@ -57,6 +64,10 @@ export default function ForgotPasswordPage() {
                          value={email} onChange={e => setEmail(e.target.value)}
                          placeholder={t('auth.emailPlaceholder')} />
                 </div>
+                <HCaptchaWidget
+                  onToken={setCaptchaToken}
+                  onExpire={() => setCaptchaToken('')}
+                />
                 <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.sendReset')}
                 </button>

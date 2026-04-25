@@ -21,6 +21,8 @@
     <properties>
         <java.version>17</java.version>
         <jjwt.version>0.12.5</jjwt.version>
+        <logstash.logback.version>7.4</logstash.logback.version>
+        <sentry.version>7.18.1</sentry.version>
     </properties>
 
     <dependencies>
@@ -115,6 +117,37 @@
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
             <version>25.1.0</version>
+        </dependency>
+
+        <!-- Actuator (health/info/metrics for observability) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Structured JSON logs (Logstash encoder) -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash.logback.version}</version>
+        </dependency>
+        <!-- Janino: enables <if> conditional blocks in logback-spring.xml -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.12</version>
+        </dependency>
+
+        <!-- Sentry (no-op when sentry.dsn is empty) -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+            <version>${sentry.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-logback</artifactId>
+            <version>${sentry.version}</version>
         </dependency>
     </dependencies>
 

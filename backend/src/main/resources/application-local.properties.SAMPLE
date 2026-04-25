@@ -28,3 +28,32 @@ spring.datasource.password=TU_PASSWORD_DOCKER
 # Transaction pooler :6543: añade a la URL &prepareThreshold=0 si aplica.
 
 # Usuario seed (LocalDevUserSeed): dev@tarantulapp.local / LocalDev123!
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Observabilidad y anti-abuso (opcional en local; recomendado en produccion)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Actuator: MANAGEMENT_TOKEN bloquea /actuator/info, /actuator/metrics, /actuator/prometheus
+# detras de X-Admin-Token. /actuator/health{,/liveness,/readiness} es publico (uptime checks).
+# app.management.token=cambia-esto-por-un-token-aleatorio
+
+# Logs estructurados: LOG_FORMAT=json activa salida JSON (Better Stack / Loki / Papertrail).
+# app.log-format=json
+
+# Sentry: vacio = deshabilitado. En produccion pega el DSN del proyecto.
+# sentry.dsn=
+# sentry.environment=production
+# sentry.release=tarantulapp-backend@0.1.0
+# sentry.traces-sample-rate=0.05
+
+# hCaptcha (anti-abuso en register / forgot-password). Vacio = backend salta verificacion.
+# Frontend lee VITE_HCAPTCHA_SITE_KEY (ver frontend/.env).
+# app.captcha.secret=
+
+# Rate limits adicionales (defaults razonables para lanzamiento):
+# app.rate-limit.reports-per-minute=8
+# app.rate-limit.sex-id-vote-per-minute=30
+
+# Billing safety guards
+# app.environment=production    # Detectado por safety guards y Sentry. Default: development.
+# billing.google-play.production-stub-guard=true   # Bloquea Play Billing en stub si APP_ENVIRONMENT=production.

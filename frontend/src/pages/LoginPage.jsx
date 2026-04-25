@@ -9,6 +9,7 @@ import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
 import Navbar from '../components/Navbar'
+import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 
@@ -25,6 +26,7 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
   const [communityPreview, setCommunityPreview] = useState([])
   const [communityLoading, setCommunityLoading] = useState(true)
   const [theme, setTheme] = useState(() => getStoredTheme())
@@ -91,6 +93,10 @@ export default function LoginPage() {
       setError(t('auth.passwordTooShort'))
       return
     }
+    if (mode === 'register' && isCaptchaEnabled() && !captchaToken) {
+      setError(t('auth.captchaRequired', 'Por favor completa el captcha.'))
+      return
+    }
     setLoading(true)
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
@@ -101,10 +107,12 @@ export default function LoginPage() {
             password,
             displayName: form.displayName?.trim() || undefined,
             referralCode: referralCode.trim() || undefined,
+            captchaToken: captchaToken || undefined,
           }
       const { data } = await publicApi.post(endpoint, body)
       login(data)
     } catch (err) {
+      setCaptchaToken('')
       const st = err.response?.status
       const d = err.response?.data
       const fieldMsgs = d?.fields && typeof d.fields === 'object'
@@ -383,6 +391,13 @@ export default function LoginPage() {
                           {t('auth.forgotPassword')}
                         </Link>
                       </div>
+                    )}
+
+                    {mode === 'register' && (
+                      <HCaptchaWidget
+                        onToken={setCaptchaToken}
+                        onExpire={() => setCaptchaToken('')}
+                      />
                     )}
 
                     <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
