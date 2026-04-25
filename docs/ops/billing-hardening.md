@@ -20,7 +20,7 @@ a `com.stripe.net.Webhook.constructEvent(payload, sig, secret)`, que:
 
 ### 2. Tabla de idempotencia `processed_webhook_events`
 
-Migracion `V42__processed_webhook_events.sql`:
+Migracion `V46__processed_webhook_events.sql`:
 
 ```sql
 CREATE TABLE processed_webhook_events (

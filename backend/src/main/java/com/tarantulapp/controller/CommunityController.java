@@ -5,6 +5,7 @@ import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +52,11 @@ public class CommunityController {
                 uid, req.body(), req.visibility(), req.milestoneKind(), req.imageUrl(), req.tarantulaId()));
     }
 
+    @PostMapping(value = "/posts/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadPostPhoto(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(activityPostService.uploadPostImage(securityHelper.getCurrentUserId(), file));
+    }
+
     @GetMapping("/posts/mine")
     public ResponseEntity<Map<String, Object>> myPosts(
             @RequestParam(defaultValue = "0") int page,
@@ -71,7 +80,7 @@ public class CommunityController {
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<Map<String, Object>>> comments(@PathVariable UUID postId) {
         UUID uid = securityHelper.getCurrentUserId();
-        return ResponseEntity.ok(activityPostService.listComments(uid, postId));
+        return ResponseEntity.ok(activityPostService.listComments(Optional.of(uid), postId));
     }
 
     @PostMapping("/posts/{postId}/comments")

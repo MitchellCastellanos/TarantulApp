@@ -33,6 +33,7 @@ function mergePlanFields(raw) {
     profileCity: raw?.profileCity || '',
     qrPrintExports: Number(raw?.qrPrintExports || 0),
     profilePhoto: raw?.profilePhoto || '',
+    communityProfileVisibility: raw?.communityProfileVisibility || 'preview_only',
     admin: raw?.admin === true,
   }
 }
@@ -82,6 +83,7 @@ export function AuthProvider({ children }) {
       profileCity: authData.profileCity,
       qrPrintExports: authData.qrPrintExports,
       profilePhoto: authData.profilePhoto,
+      communityProfileVisibility: authData.communityProfileVisibility,
       admin: authData.admin === true,
     })
     localStorage.setItem('token', token)

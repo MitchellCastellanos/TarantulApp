@@ -66,7 +66,8 @@ public class MarketplaceController {
             String country,
             String state,
             String city,
-            Boolean searchVisible
+            Boolean searchVisible,
+            String communityProfileVisibility
     ) {}
 
     record CreateReviewRequest(
@@ -89,7 +90,8 @@ public class MarketplaceController {
                 req.country(),
                 req.state(),
                 req.city(),
-                req.searchVisible()
+                req.searchVisible(),
+                req.communityProfileVisibility()
         ));
     }
 

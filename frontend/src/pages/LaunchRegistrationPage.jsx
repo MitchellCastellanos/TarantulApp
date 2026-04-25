@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import publicApi from '../services/publicApi'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 const COPY = {
   en: {
@@ -102,7 +103,7 @@ export default function LaunchRegistrationPage() {
   })
 
   const t = useMemo(() => COPY[lang], [lang])
-  usePageSeo({ title: `${t.formTitle} | TarantulApp`, description: t.subtitle, noindex: true })
+  usePageSeo({ title: `${t.formTitle} | ${BRAND_WITH_TM}`, description: t.subtitle, noindex: true })
 
   useEffect(() => {
     let mounted = true
@@ -205,7 +206,7 @@ export default function LaunchRegistrationPage() {
   if (!eligibility.eligible) {
     return (
       <div className="min-vh-100 d-flex flex-column justify-content-center align-items-center text-center px-3" style={{ background: 'radial-gradient(circle at top, #1e1e1e 0%, #0b0b0b 60%, #050505 100%)' }}>
-        <img src="/logo-black.png" alt="TarantulApp" style={{ width: 220, maxWidth: '62vw', marginBottom: 20, filter: 'drop-shadow(0 0 14px rgba(255,255,255,.15)) invert(1)' }} />
+        <img src="/logo-black.png" alt={BRAND_WITH_TM} style={{ width: 220, maxWidth: '62vw', marginBottom: 20, filter: 'drop-shadow(0 0 14px rgba(255,255,255,.15)) invert(1)' }} />
         <h1 style={{ color: '#f6f6f6', fontSize: '1.35rem' }}>{COPY.en.blockedTitle}</h1>
         <p style={{ color: '#c9c9c9', maxWidth: 560 }}>{COPY.en.blockedBody}</p>
         <h2 style={{ color: '#f6f6f6', fontSize: '1.15rem', marginTop: 20 }}>{COPY.fr.blockedTitle}</h2>

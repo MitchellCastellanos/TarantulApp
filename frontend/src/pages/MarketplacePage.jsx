@@ -9,6 +9,8 @@ import chatService from '../services/chatService'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import BrandLogoMark from '../components/BrandLogoMark'
+import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 
 const EMPTY_LISTING_FORM = {
@@ -52,144 +54,7 @@ const EMPTY_VENDOR_LEAD_FORM = {
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-const DEMO_LISTINGS = [
-  {
-    id: 'demo-1',
-    title: 'Brachypelma hamorii juvenil F3',
-    description: 'Come excelente, muda estable y va con registro de alimentacion + fotos de referencia.',
-    speciesName: 'Brachypelma hamorii',
-    priceAmount: 2100,
-    currency: 'MXN',
-    country: 'Mexico',
-    state: 'CDMX',
-    city: 'Ciudad de Mexico',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-2',
-    title: 'Tliltocatl vagans juvenil sexada',
-    description: 'Linea nacional, aclimatada y activa. Entrega por punto seguro en ZMG.',
-    speciesName: 'Tliltocatl vagans',
-    priceAmount: 1450,
-    currency: 'MXN',
-    country: 'Mexico',
-    state: 'Jalisco',
-    city: 'Guadalajara',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-3',
-    title: 'Aphonopelma seemanni subadulta',
-    description: 'Caracter tranquilo, bien comida, ideal para keeper que quiere una terrestre noble.',
-    speciesName: 'Aphonopelma seemanni',
-    priceAmount: 1650,
-    currency: 'MXN',
-    country: 'Mexico',
-    state: 'Nuevo Leon',
-    city: 'Monterrey',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-4',
-    title: 'Caribena versicolor sling 2.8 cm',
-    description: 'Linea de cria local y seguimiento de crecimiento. Envio nacional coordinado.',
-    speciesName: 'Caribena versicolor',
-    priceAmount: 1180,
-    currency: 'MXN',
-    country: 'Mexico',
-    state: 'Quintana Roo',
-    city: 'Cancun',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-5',
-    title: 'Grammostola pulchra sling',
-    description: 'Cria controlada, bitacora de mudas y pickup en Hermosillo.',
-    speciesName: 'Grammostola pulchra',
-    priceAmount: 2200,
-    currency: 'MXN',
-    country: 'Mexico',
-    state: 'Sonora',
-    city: 'Hermosillo',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-6',
-    title: 'Poecilotheria metallica juvenile',
-    description: 'Solo keeper con experiencia OW. Manejo serio y entrega en Houston metro.',
-    speciesName: 'Poecilotheria metallica',
-    priceAmount: 185,
-    currency: 'USD',
-    country: 'United States',
-    state: 'Texas',
-    city: 'Houston',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-7',
-    title: 'Chromatopelma cyaneopubescens juvenile',
-    description: 'Green bottle blue bien establecida, come dubias y grillo. Pickup LA o envio US.',
-    speciesName: 'Chromatopelma cyaneopubescens',
-    priceAmount: 220,
-    currency: 'USD',
-    country: 'United States',
-    state: 'California',
-    city: 'Los Angeles',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-8',
-    title: 'Lasiodora parahybana subadulta',
-    description: 'Salmon pink grande y comelona. Coordinamos entrega en Toronto GTA.',
-    speciesName: 'Lasiodora parahybana',
-    priceAmount: 165,
-    currency: 'CAD',
-    country: 'Canada',
-    state: 'Ontario',
-    city: 'Toronto',
-    imageUrl: '',
-    isDemo: true,
-  },
-  {
-    id: 'demo-9',
-    title: 'Brachypelma albopilosum juvenile',
-    description: 'Curly hair tranquila, ideal para display. Meet Vancouver area.',
-    speciesName: 'Tliltocatl albopilosum',
-    priceAmount: 140,
-    currency: 'CAD',
-    country: 'Canada',
-    state: 'British Columbia',
-    city: 'Vancouver',
-    imageUrl: '',
-    isDemo: true,
-  },
-]
-
-/**
- * Anuncios demo: no usamos estado/ciudad del perfil (“cerca de mí”) para filtrar,
- * porque los ejemplos solo cubren unas ciudades y un keeper real en otra región
- * dejaba el grid vacío. Solo se respeta `nearCountry` (sesgo por país) y los
- * filtros explícitos del tablero + búsqueda. El API real sigue usando near completo.
- */
-function getDemoListings({ query, country, state, city, nearCountry }) {
-  const q = String(query || '').trim().toLowerCase()
-  return DEMO_LISTINGS.filter((item) => {
-    const inQuery = !q || [item.title, item.description, item.speciesName].join(' ').toLowerCase().includes(q)
-    const inCountry = !country || item.country === country
-    const inState = !state || item.state === state
-    const inCity = !city || item.city === city
-    const nearCountryMatch = !nearCountry || item.country === nearCountry
-    return inQuery && inCountry && inState && inCity && nearCountryMatch
-  })
-}
+const MIN_CHAT_MESSAGES_FOR_REVIEW = 6
 
 export default function MarketplacePage() {
   const { t } = useTranslation()
@@ -214,6 +79,9 @@ export default function MarketplacePage() {
   const [activeThread, setActiveThread] = useState(null)
   const [threadMessages, setThreadMessages] = useState({ content: [] })
   const [chatBody, setChatBody] = useState('')
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [sendingReview, setSendingReview] = useState(false)
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
@@ -252,17 +120,9 @@ export default function MarketplacePage() {
         nearCity,
       })
       const normalized = Array.isArray(data) ? data : []
-      if (normalized.length > 0) {
-        setListings(normalized)
-        return
-      }
-      setListings(
-        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
-      )
+      setListings(normalized)
     } catch {
-      setListings(
-        getDemoListings({ query, country: filters.country, state: filters.state, city: filters.city, nearCountry })
-      )
+      setListings([])
     }
   }
 
@@ -394,6 +254,14 @@ export default function MarketplacePage() {
   }, [filters, query, myProfile.country, myProfile.state, myProfile.city])
 
   const visibleListings = useMemo(() => listings.filter((l) => l.status !== 'hidden'), [listings])
+  const partnerListings = useMemo(
+    () => visibleListings.filter((l) => l.source === 'partner' || l.isPartner),
+    [visibleListings]
+  )
+  const peerListings = useMemo(
+    () => visibleListings.filter((l) => l.source !== 'partner' && !l.isPartner),
+    [visibleListings]
+  )
 
   const submitListing = async (e) => {
     e.preventDefault()
@@ -451,10 +319,44 @@ export default function MarketplacePage() {
     }
   }
 
+  const sendMarketplaceReview = async (e) => {
+    e.preventDefault()
+    if (!activeThread?.listingId || !activeThread?.listingSellerUserId) return
+    setSendingReview(true)
+    setMessage('')
+    try {
+      await marketplaceService.addReview(activeThread.listingSellerUserId, {
+        listingId: activeThread.listingId,
+        rating: Number(reviewRating),
+        comment: reviewComment,
+      })
+      setReviewComment('')
+      setMessage(t('marketplace.reviewSaved'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setSendingReview(false)
+    }
+  }
+
   const reportListing = async (listingId) => {
     const reason = window.prompt(t('marketplace.reportReason'))
     if (!reason || !reason.trim()) return
     await moderationService.reportMarketplaceListing(listingId, { reason: reason.trim(), details: '' })
+    setMessage(t('marketplace.reportSent'))
+  }
+
+  const reportMarketplaceChat = async (threadId) => {
+    const reason = window.prompt(t('marketplace.reportReason'))
+    if (!reason || !reason.trim()) return
+    await moderationService.reportMarketplaceChat(threadId, { reason: reason.trim(), details: '' })
+    setMessage(t('marketplace.reportSent'))
+  }
+
+  const reportMarketplaceSeller = async (sellerUserId) => {
+    const reason = window.prompt(t('marketplace.reportReason'))
+    if (!reason || !reason.trim()) return
+    await moderationService.reportKeeperProfile(sellerUserId, { reason: reason.trim(), details: '' })
     setMessage(t('marketplace.reportSent'))
   }
 
@@ -477,6 +379,17 @@ export default function MarketplacePage() {
   const listingStates = STATES_BY_COUNTRY[listingForm.country || 'Mexico'] || []
   const listingCities = CITIES_BY_STATE[listingForm.state] || []
   const filterCities = CITIES_BY_STATE[filters.state] || []
+  const activeThreadMessages = Array.isArray(threadMessages.content) ? threadMessages.content : []
+  const sentByCurrentUser = activeThreadMessages.filter((m) => String(m.senderUserId) === String(user?.id)).length
+  const sentByOtherUser = activeThreadMessages.filter((m) => String(m.senderUserId) !== String(user?.id)).length
+  const canReviewFromChat = !!activeThread
+    && !!activeThread.listingId
+    && !!activeThread.listingSellerUserId
+    && String(activeThread.listingSellerUserId) !== String(user?.id)
+    && String(activeThread.listingSellerUserId) === String(activeThread.otherUserId)
+    && activeThreadMessages.length >= MIN_CHAT_MESSAGES_FOR_REVIEW
+    && sentByCurrentUser >= 2
+    && sentByOtherUser >= 2
 
   return (
     <div>
@@ -554,7 +467,14 @@ export default function MarketplacePage() {
                     <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 46, height: 46, borderRadius: 999, objectFit: 'cover' }} />
                     <div className="min-w-0">
                       <div className="fw-semibold text-truncate">{user.displayName || 'Keeper'}</div>
-                      <div className="small text-muted text-truncate">@{myProfile.handle || user.publicHandle || 'keeper'}</div>
+                      <div className="small text-muted text-truncate">
+                        <PublicKeeperHandle
+                          handle={myProfile.handle || user.publicHandle || ''}
+                          displayName={user.displayName || 'Keeper'}
+                          profilePhoto={myProfile.profilePhoto || null}
+                          className="text-truncate"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="small text-muted">
@@ -640,15 +560,56 @@ export default function MarketplacePage() {
         <div className="row g-4">
           <div className="col-lg-8">
             <div className="mb-3 pb-2 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
-              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>Community marketplace listings</h3>
-              <p className="small text-muted mb-0">Peer listings de la comunidad ordenados por relevancia.</p>
+              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h3>
+              <p className="small text-muted mb-0">{t('marketplace.feedCommunitySub')}</p>
             </div>
             <div className="row g-3">
               {loading && <p className="text-muted small">{t('common.loading')}</p>}
               {!loading && visibleListings.length === 0 && (
-                <p className="text-muted small">{t('marketplace.empty')}</p>
+                <p className="text-muted small">
+                  {t('marketplace.feedEmptyPrelaunch')}
+                </p>
               )}
-              {visibleListings.map((l) => (
+              {partnerListings.map((l) => (
+                <div className="col-md-6" key={l.id}>
+                  <div className="card border-warning shadow-sm h-100">
+                    <img
+                      src={(imgUrl(l.imageUrl) || l.imageUrl || '/spider-default.png')}
+                      alt={l.title}
+                      className="card-img-top"
+                      style={{ maxHeight: 200, objectFit: 'cover' }}
+                    />
+                    <div className="card-body">
+                      <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
+                        <OfficialPartnerShield width={22} height={24} />
+                        <span>{l.title}</span>
+                        <span className="badge bg-warning text-dark">{l.badgeLabel || t('marketplace.officialPartnerBadge')}</span>
+                      </h6>
+                      <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
+                      <p className="small mb-2">{l.description || '-'}</p>
+                      <div className="small text-muted mb-2">
+                        {[l.city, l.state, l.country].filter(Boolean).join(' · ') || '-'}
+                      </div>
+                      <div className="fw-semibold mb-2">
+                        {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
+                      </div>
+                      <div className="small text-muted mb-2">
+                        {t('marketplace.partnerSourceNote')}
+                      </div>
+                      <div className="d-flex gap-2 flex-wrap">
+                        {l.canonicalUrl ? (
+                          <a href={l.canonicalUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark">
+                            {t('marketplace.partnerBuyOfficialCta')}
+                          </a>
+                        ) : (
+                          <span className="small text-muted">{t('marketplace.partnerCanonicalMissing')}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {peerListings.map((l) => (
                 <div className="col-md-6" key={l.id}>
                   <div className="card border-0 shadow-sm h-100">
                     {l.imageUrl ? (
@@ -662,10 +623,7 @@ export default function MarketplacePage() {
                     <div className="card-body">
                       <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
                         <span>{l.title}</span>
-                        {l.isDemo && (
-                          <span className="badge bg-secondary">{t('marketplace.demoListingBadge', { defaultValue: 'Demo' })}</span>
-                        )}
-                        {!l.isDemo && l.boosted && (
+                        {l.boosted && (
                           <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                         )}
                       </h6>
@@ -677,13 +635,20 @@ export default function MarketplacePage() {
                       <div className="fw-semibold mb-2">
                         {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
                       </div>
+                      {l.sellerHandle && (
+                        <div className="small mb-2">
+                          <PublicKeeperHandle
+                            handle={l.sellerHandle}
+                            displayName={l.sellerDisplayName || 'keeper'}
+                            profilePhoto={l.sellerProfilePhoto || null}
+                          />
+                        </div>
+                      )}
                       <div className="d-flex gap-2 flex-wrap">
-                        {!l.isDemo && (
-                          <Link to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
-                            {t('marketplace.viewSeller')}
-                          </Link>
-                        )}
-                        {!l.isDemo && String(user?.id || '') !== String(l.sellerUserId) && (
+                        <Link to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`} className="btn btn-sm btn-outline-dark">
+                          {t('marketplace.viewSeller')}
+                        </Link>
+                        {String(user?.id || '') !== String(l.sellerUserId) && (
                           user ? (
                             <Link
                               to={`/marketplace?openSeller=${encodeURIComponent(l.sellerUserId)}&openListing=${encodeURIComponent(l.id)}`}
@@ -704,13 +669,10 @@ export default function MarketplacePage() {
                             </Link>
                           )
                         )}
-                        {!l.isDemo && user && String(user.id) !== String(l.sellerUserId) && (
+                        {user && String(user.id) !== String(l.sellerUserId) && (
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => reportListing(l.id)}>
                             {t('marketplace.report')}
                           </button>
-                        )}
-                        {l.isDemo && (
-                          <span className="small text-muted">{t('marketplace.demoListingHint', { defaultValue: 'Ejemplo visual mientras entran mas anuncios reales.' })}</span>
                         )}
                       </div>
                     </div>
@@ -842,6 +804,46 @@ export default function MarketplacePage() {
                           />
                           <button className="btn btn-dark" type="submit">Enviar</button>
                         </form>
+                        <div className="d-flex gap-2 flex-wrap mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => reportMarketplaceChat(activeThread.id)}
+                          >
+                            {t('marketplace.reportChat')}
+                          </button>
+                          {activeThread.listingSellerUserId && String(activeThread.listingSellerUserId) !== String(user?.id) && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => reportMarketplaceSeller(activeThread.listingSellerUserId)}
+                            >
+                              {t('marketplace.reportSeller')}
+                            </button>
+                          )}
+                        </div>
+                        {canReviewFromChat ? (
+                          <form className="mt-3" onSubmit={sendMarketplaceReview}>
+                            <h6 className="mb-2">{t('marketplace.leaveReviewInChat')}</h6>
+                            <select className="form-select form-select-sm mb-2" value={reviewRating} onChange={(e) => setReviewRating(e.target.value)}>
+                              {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                            <textarea
+                              className="form-control form-control-sm mb-2"
+                              rows={2}
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              placeholder={t('marketplace.reviewComment')}
+                            />
+                            <button className="btn btn-sm btn-dark" disabled={sendingReview}>
+                              {sendingReview ? t('common.saving') : t('marketplace.sendReview')}
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="small text-muted mt-2 mb-0">
+                            {t('marketplace.reviewGateHint', { min: MIN_CHAT_MESSAGES_FOR_REVIEW })}
+                          </p>
+                        )}
                       </>
                     ) : null}
                   </div>

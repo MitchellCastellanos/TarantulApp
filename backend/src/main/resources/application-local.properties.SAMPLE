@@ -1,29 +1,59 @@
 # Copia este archivo a:
 #   backend/src/main/resources/application-local.properties
-# (está en .gitignore; no subas contraseñas a git).
+# (gitignored; no subas contraseñas.)
 #
-# Misma información que en producción: solo spring.datasource.* equivalentes a DB_URL / DB_USERNAME / DB_PASSWORD.
-# Otra forma local equivalente: backend/database.local.env + VS Code launch "… (database.local.env)".
+# Spring lo importa solo (ver application.properties → spring.config.import).
+# En local NO hace falta database.local.env ni scripts: solo este archivo.
+#
+# ═══════════════════════════════════════════════════════════════════════════
+# A) Postgres en Docker (recomendado) — la contraseña la inventas en docker run
+#    (-e POSTGRES_PASSWORD=...) y repites la MISMA abajo en spring.datasource.password.
+# B) Supabase — comenta el bloque A, descomenta el B; datos del panel (Direct).
+# ═══════════════════════════════════════════════════════════════════════════
 
 spring.profiles.active=local
 app.dev-seed-user=true
 
-# Conexión directa (recomendado local / Flyway): Supabase → Connect → Direct.
-# Host db.<TU_REFERENCE_ID>.supabase.co:5432, usuario postgres, password = Database password.
-spring.datasource.url=jdbc:postgresql://db.TU_REFERENCE_ID.supabase.co:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20
+# ─── A) Docker local — reemplaza TU_PASSWORD_DOCKER por la de POSTGRES_PASSWORD ───
+spring.datasource.url=jdbc:postgresql://localhost:5432/tarantulapp?sslmode=disable&gssEncMode=disable&connectTimeout=20
 spring.datasource.username=postgres
-spring.datasource.password=TU_DATABASE_PASSWORD_SUPABASE
+spring.datasource.password=TU_PASSWORD_DOCKER
 
-# NO pongas maximum-pool-size=1: tras "Successfully validated" Flyway necesita otra conexión para migrate;
-# con un solo slot suele quedarse "Connection is not available… 120s" en bucle. Usa 2 o 3 (o borra estas líneas y deja el default del repo).
-spring.datasource.hikari.maximum-pool-size=2
-spring.datasource.hikari.minimum-idle=0
+# ─── B) Supabase — comenta las 3 lineas de arriba y descomenta estas ───
+# spring.datasource.url=jdbc:postgresql://db.<REFERENCE_ID>.supabase.co:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20
+# spring.datasource.username=postgres
+# spring.datasource.password=<Database password del panel>
 
-# Normalmente no hace falta en local, pero si quieres separar migraciones:
-# spring.flyway.url=${spring.datasource.url}
-# spring.flyway.user=${spring.datasource.username}
-# spring.flyway.password=${spring.datasource.password}
-
-# Transaction pooler :6543 solo si lo necesitas; añade a la URL: &prepareThreshold=0
+# Pool: por defecto application.properties ya usa max 2 (Flyway necesita >1 conexion).
+# Transaction pooler :6543: añade a la URL &prepareThreshold=0 si aplica.
 
 # Usuario seed (LocalDevUserSeed): dev@tarantulapp.local / LocalDev123!
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Observabilidad y anti-abuso (opcional en local; recomendado en produccion)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Actuator: MANAGEMENT_TOKEN bloquea /actuator/info, /actuator/metrics, /actuator/prometheus
+# detras de X-Admin-Token. /actuator/health{,/liveness,/readiness} es publico (uptime checks).
+# app.management.token=cambia-esto-por-un-token-aleatorio
+
+# Logs estructurados: LOG_FORMAT=json activa salida JSON (Better Stack / Loki / Papertrail).
+# app.log-format=json
+
+# Sentry: vacio = deshabilitado. En produccion pega el DSN del proyecto.
+# sentry.dsn=
+# sentry.environment=production
+# sentry.release=tarantulapp-backend@0.1.0
+# sentry.traces-sample-rate=0.05
+
+# hCaptcha (anti-abuso en register / forgot-password). Vacio = backend salta verificacion.
+# Frontend lee VITE_HCAPTCHA_SITE_KEY (ver frontend/.env).
+# app.captcha.secret=
+
+# Rate limits adicionales (defaults razonables para lanzamiento):
+# app.rate-limit.reports-per-minute=8
+# app.rate-limit.sex-id-vote-per-minute=30
+
+# Billing safety guards
+# app.environment=production    # Detectado por safety guards y Sentry. Default: development.
+# billing.google-play.production-stub-guard=true   # Bloquea Play Billing en stub si APP_ENVIRONMENT=production.

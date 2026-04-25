@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar'
+import BrandName from '../components/BrandName'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +7,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
+import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 
 export default function ProPage() {
   const { t } = useTranslation()
@@ -28,9 +30,7 @@ export default function ProPage() {
   const isPro = plan === 'PRO'
   const inTrial = billing?.inTrial === true || user?.inTrial === true
   const trialEndsAt = billing?.trialEndsAt ?? user?.trialEndsAt
-  const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
-    : 0
+  const trialDaysLeft = trialEndsAt ? trialCalendarDaysRemaining(trialEndsAt) : 0
   const checkout = searchParams.get('checkout')
   const sessionId = searchParams.get('session_id')
 
@@ -176,7 +176,9 @@ export default function ProPage() {
       <div className="container mt-4" style={{ maxWidth: 1040 }}>
         <ChitinCardFrame showSilhouettes={false}>
           <div className="mb-3">
-            <span className="badge bg-dark me-2">TarantulApp</span>
+            <span className="badge bg-dark me-2">
+              <BrandName />
+            </span>
             <span className={`badge ${isPro ? 'bg-success' : 'bg-secondary'}`}>
               {isPro ? t('pro.currentPro') : t('pro.currentFree')}
             </span>

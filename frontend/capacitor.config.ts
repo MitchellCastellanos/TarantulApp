@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.tarantulapp.app',
-  appName: 'TarantulApp',
+  appName: 'TarantulApp\u2122',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

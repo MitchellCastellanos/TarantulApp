@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 /** Debe coincidir con `index.html` (SEO por defecto de la SPA). */
-export const SITE_DEFAULT_TITLE = 'TarantulApp'
+export const SITE_DEFAULT_TITLE = BRAND_WITH_TM
 export const SITE_DEFAULT_DESCRIPTION =
   'Gestiona tu colección de tarántulas: fichas, recordatorios, QR por terrario y catálogo de especies.'
 

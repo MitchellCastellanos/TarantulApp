@@ -1,0 +1,30 @@
+[
+  {
+    "externalId": "tdm-001",
+    "title": "Brachypelma hamorii juvenile F2",
+    "description": "Linea legal con guia de acclimatacion inicial.",
+    "speciesNameRaw": "Brachypelma hamorii",
+    "priceAmount": 2100.0,
+    "currency": "MXN",
+    "stockQuantity": 6,
+    "imageUrl": "https://cdn.tarantulapp.local/partners/tdm/hamorii.jpg",
+    "productCanonicalUrl": "https://www.tarantulasdemexico.com/productos/brachypelma-hamorii-f2",
+    "country": "Mexico",
+    "state": "Jalisco",
+    "city": "Zapopan"
+  },
+  {
+    "externalId": "tdm-002",
+    "title": "Tliltocatl albopilosus subadulta",
+    "description": "Entrega coordinada y bitacora de alimentacion reciente.",
+    "speciesNameRaw": "Tliltocatl albopilosus",
+    "priceAmount": 1600.0,
+    "currency": "MXN",
+    "stockQuantity": 0,
+    "imageUrl": "https://cdn.tarantulapp.local/partners/tdm/albopilosus.jpg",
+    "productCanonicalUrl": "https://www.tarantulasdemexico.com/productos/tliltocatl-albopilosus",
+    "country": "Mexico",
+    "state": "Jalisco",
+    "city": "Zapopan"
+  }
+]

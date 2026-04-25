@@ -18,7 +18,7 @@ preguntar.
 
 | Servicio | Donde se documenta su failure mode | Donde se documenta su setup |
 |----------|-----------------------------------|----------------------------|
-| Supabase / PostgreSQL | runbook §3 | `backend/database.local.env.SAMPLE` |
+| Supabase / PostgreSQL | runbook §3 | `backend/src/main/resources/application-local.properties.SAMPLE` |
 | Stripe | runbook §2 | `billing-hardening.md` |
 | Google Play Billing | runbook §2 | `billing-hardening.md` |
 | Cloudinary | runbook §4 | `application.properties` (`CLOUDINARY_*`) |

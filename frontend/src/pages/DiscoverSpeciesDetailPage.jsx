@@ -6,6 +6,7 @@ import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileS
 import speciesService from '../services/speciesService'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 import { discoverHeroImageAbsoluteUrl, formatDiscoverSeoMetaLine } from '../utils/discoverSeo'
 import SpeciesReferenceImage from '../components/SpeciesReferenceImage'
 
@@ -47,7 +48,7 @@ function DiscoverSpeciesDetailSeo({ view, speciesId }) {
       inLanguage: i18n.language,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'TarantulApp',
+        name: BRAND_WITH_TM,
         url: base || undefined,
       },
       about: {

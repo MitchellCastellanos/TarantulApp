@@ -7,8 +7,10 @@ import communityService from '../services/communityService'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
+import BrandName from '../components/BrandName'
 import Navbar from '../components/Navbar'
 import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
+import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 
 export default function LoginPage() {
@@ -207,7 +209,7 @@ export default function LoginPage() {
                   <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
                     {t('auth.loginPage.heroEyebrow')}
                   </p>
-                  <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('auth.loginTitle')}</h1>
+                  <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}><BrandName /></h1>
                 </div>
               </div>
               <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
@@ -276,7 +278,15 @@ export default function LoginPage() {
                         }}
                       >
                         <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                          {(p.authorHandle && `@${p.authorHandle}`) || p.authorDisplayName || t('auth.loginPage.keeperFallback')}
+                          {p.authorHandle ? (
+                            <PublicKeeperHandle
+                              handle={p.authorHandle}
+                              displayName={p.authorDisplayName || t('auth.loginPage.keeperFallback')}
+                              profilePhoto={p.authorProfilePhoto || p.profilePhoto || null}
+                            />
+                          ) : (
+                            p.authorDisplayName || t('auth.loginPage.keeperFallback')
+                          )}
                         </div>
                         <p className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
                           {(p.body || '').slice(0, 140) || t('auth.loginPage.postExcerptEmpty')}
@@ -299,7 +309,7 @@ export default function LoginPage() {
                   <p className="small text-uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
                     {t('auth.standardEyebrow')}
                   </p>
-                  <h3 className="fw-bold mb-1">{mode === 'login' ? t('auth.loginTitle') : t('auth.register')}</h3>
+                  <h3 className="fw-bold mb-1">{mode === 'login' ? <BrandName /> : t('auth.register')}</h3>
                   <p className="small text-muted mb-3">{mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}</p>
 
                   {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
@@ -451,9 +461,10 @@ export default function LoginPage() {
             <div className="d-flex justify-content-center mb-2">
               <BrandLogoMark size={82} showIntro />
             </div>
-            <div className="cinzel fw-semibold mb-1" style={{ color: 'var(--ta-parchment)', letterSpacing: '0.08em' }}>
-              {t('auth.loginTitle')}
-            </div>
+            <BrandName
+              className="cinzel fw-semibold mb-1 d-block"
+              style={{ color: 'var(--ta-parchment)', letterSpacing: '0.08em' }}
+            />
             <div className="small" style={{ color: 'var(--ta-text-muted)' }}>
               {t('auth.loginPage.heroEyebrow')}
             </div>

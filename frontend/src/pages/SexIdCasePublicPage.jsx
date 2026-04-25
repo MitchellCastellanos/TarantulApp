@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
+import BrandName from '../components/BrandName'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { useAuth } from '../context/AuthContext'
@@ -185,7 +186,7 @@ export default function SexIdCasePublicPage() {
                 {t('sexIdCase.aiTitle')}
               </h2>
               <p className="small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
-                Esto piensa TarantulApp: estimación basada en nuestro propio algoritmo (no reemplaza una confirmación experta).
+                Esto piensa <BrandName />: estimaciÃ³n basada en nuestro propio algoritmo (no reemplaza una confirmaciÃ³n experta).
               </p>
               <p className="small mb-1" style={{ color: 'var(--ta-text)' }}>
                 {ai.message || t('sexIdCase.aiFallback')}

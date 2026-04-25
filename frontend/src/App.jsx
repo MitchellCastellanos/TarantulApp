@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
+import BrandName from './components/BrandName'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AddTarantulaPage from './pages/AddTarantulaPage'
@@ -22,13 +23,15 @@ import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
 import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
-import KeeperProfilePage from './pages/KeeperProfilePage'
+import MarketplaceKeeperRedirect from './pages/MarketplaceKeeperRedirect'
 import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
 import AdminPage from './pages/AdminPage'
 import SocialHubPage from './pages/SocialHubPage'
+import CommunityPostThreadPage from './pages/CommunityPostThreadPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
+import HandleSetupPage from './pages/HandleSetupPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
 
@@ -48,7 +51,7 @@ function AuthSessionBridge() {
 }
 
 function PrivateRoute({ children }) {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const location = useLocation()
   if (!token) {
     return (
@@ -58,6 +61,10 @@ function PrivateRoute({ children }) {
         state={{ redirectAfterAuth: location.pathname + location.search }}
       />
     )
+  }
+  const safeHandle = String(user?.publicHandle || '').trim()
+  if (!safeHandle && location.pathname !== '/onboarding/handle') {
+    return <Navigate to="/onboarding/handle" replace />
   }
   return children
 }
@@ -94,11 +101,12 @@ function AppRoutes() {
       <Route path="/descubrir/comparar" element={<DiscoverComparePage />} />
       <Route path="/herramientas/qr" element={<QrToolPage />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
-      <Route path="/marketplace/keeper/:sellerUserId" element={<KeeperProfilePage />} />
+      <Route path="/marketplace/keeper/:sellerUserId" element={<MarketplaceKeeperRedirect />} />
       <Route path="/launch" element={<LaunchRegistrationPage />} />
       <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
       <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
       <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
+      <Route path="/onboarding/handle" element={<PrivateRoute><HandleSetupPage /></PrivateRoute>} />
 
       {/* Protegidas */}
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -108,6 +116,8 @@ function AppRoutes() {
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/herramientas/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+      <Route path="/community" element={<SocialHubPage />} />
+      <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
       <Route path="/comunidad" element={<SocialHubPage />} />
       <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
@@ -119,6 +129,14 @@ function AppRoutes() {
 function Footer() {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const socialLinkStyle = {
+    color: 'var(--ta-gold)',
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+  }
+
   return (
     <footer
       className="text-center py-3 mt-5"
@@ -128,18 +146,55 @@ function Footer() {
         borderTop: '1px solid var(--ta-border)',
       }}
     >
-      © {new Date().getFullYear()} TarantulApp &nbsp;·&nbsp;
-      <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
-      &nbsp;·&nbsp;
-      <Link to={token ? '/comunidad' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
-      &nbsp;·&nbsp;
-      <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
+      <div className="mb-1">
+        <a
+          href="https://www.instagram.com/tarantulapp_official"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="Instagram de TarantulApp"
+        >
+          <i className="bi bi-instagram" aria-hidden="true" />
+          <span>@tarantulapp_official</span>
+        </a>
+        &nbsp;·&nbsp;
+        <a
+          href="https://www.tiktok.com/@tarantulapp_offic"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="TikTok de TarantulApp"
+        >
+          <i className="bi bi-tiktok" aria-hidden="true" />
+          <span>@tarantulapp_offic</span>
+        </a>
+        &nbsp;·&nbsp;
+        <a
+          href="https://x.com/TarantulApp"
+          target="_blank"
+          rel="noreferrer"
+          style={socialLinkStyle}
+          aria-label="X de TarantulApp"
+        >
+          <i className="bi bi-twitter-x" aria-hidden="true" />
+          <span>@TarantulApp</span>
+        </a>
+      </div>
+      <div>
+        © {new Date().getFullYear()}{' '}
+        <BrandName /> &nbsp;·&nbsp;
+        <Link to="/herramientas/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
+        &nbsp;·&nbsp;
+        <Link to={token ? '/comunidad' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
+        &nbsp;·&nbsp;
+        <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
+      </div>
     </footer>
   )
 }

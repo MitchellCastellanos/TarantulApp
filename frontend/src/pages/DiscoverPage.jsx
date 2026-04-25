@@ -15,6 +15,7 @@ import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
 import tarantulaService from '../services/tarantulaService'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 import { useDiscoverSpeciesSuggestions } from '../hooks/useDiscoverSpeciesSuggestions'
 
 const DEBOUNCE_MS = 300
@@ -163,7 +164,7 @@ export default function DiscoverPage() {
       inLanguage: i18n.language,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'TarantulApp',
+        name: BRAND_WITH_TM,
         url: origin || undefined,
       },
     }

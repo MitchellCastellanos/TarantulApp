@@ -1,3 +1,5 @@
+import { BRAND_WITH_TM } from '../constants/brand'
+
 function formatDate(value, language) {
   if (!value) return '-'
   const d = new Date(value)
@@ -45,7 +47,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
 
   if (channel === 'whatsapp') {
     return [
-      `*${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}*`,
+      `*${t('share.cardTitle', { defaultValue: `${BRAND_WITH_TM} Log` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 90)}`,
       `• ${t('share.eventLabel', { defaultValue: 'Evento' })}: ${shortText(safeLabel, 50)}`,
@@ -58,7 +60,7 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
 
   return [
     '━━━━━━━━━━━━━━━━━━━━',
-    `${t('share.cardTitle', { defaultValue: 'TarantulApp Log' })}`,
+    `${t('share.cardTitle', { defaultValue: `${BRAND_WITH_TM} Log` })}`,
     '━━━━━━━━━━━━━━━━━━━━',
     `📌 ${t('form.name')}: ${shortText(safeName, 90)}`,
     `🔬 ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 110)}`,
@@ -87,7 +89,7 @@ export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, pr
 
   if (channel === 'whatsapp') {
     return [
-      `*📸 ${t('share.photoCardTitle', { defaultValue: 'TarantulApp Photo Log' })}*`,
+      `*📸 ${t('share.photoCardTitle', { defaultValue: `${BRAND_WITH_TM} Photo Log` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 90)}`,
       `• ${t('share.captionLabel', { defaultValue: 'Nota' })}: ${shortText(note, 240)}`,
@@ -98,7 +100,7 @@ export function buildPhotoShareText({ tarantulaName, speciesName, caption, t, pr
 
   return [
     '━━━━━━━━━━━━━━━━━━━━',
-    `📸 ${t('share.photoCardTitle', { defaultValue: 'TarantulApp Photo Log' })}`,
+    `📸 ${t('share.photoCardTitle', { defaultValue: `${BRAND_WITH_TM} Photo Log` })}`,
     '━━━━━━━━━━━━━━━━━━━━',
     `📌 ${t('form.name')}: ${shortText(safeName, 90)}`,
     `🔬 ${t('discover.speciesNameLabel')}: ${shortText(safeSpecies, 110)}`,
@@ -120,7 +122,10 @@ export function buildKeeperProfileShareText({
 }) {
   const safeName = cleanInlineText(displayName, 'Keeper')
   const safeHandle = cleanInlineText(handle ? `@${String(handle).replace(/^@+/, '')}` : '', '@keeper')
-  const safeBio = shortText(cleanInlineText(bio, t('share.noSummary', { defaultValue: 'Perfil keeper en TarantulApp' })), 220)
+  const safeBio = shortText(
+    cleanInlineText(bio, t('share.noSummary', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` })),
+    220
+  )
   const safeLocation = cleanInlineText(location, '')
   const safeUrl = cleanInlineText(profileUrl, '')
 
@@ -135,7 +140,7 @@ export function buildKeeperProfileShareText({
 
   if (channel === 'whatsapp') {
     return [
-      `*${t('share.keeperCardTitle', { defaultValue: 'Perfil keeper en TarantulApp' })}*`,
+      `*${t('share.keeperCardTitle', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` })}*`,
       `• ${t('form.name')}: ${shortText(safeName, 70)}`,
       `• ${t('account.profile.publicHandleLabel', { defaultValue: 'Handle' })}: ${shortText(safeHandle, 80)}`,
       safeLocation ? `• ${t('share.locationLabel', { defaultValue: 'Ubicación' })}: ${shortText(safeLocation, 90)}` : null,
@@ -147,7 +152,7 @@ export function buildKeeperProfileShareText({
 
   return [
     '━━━━━━━━━━━━━━━━━━━━',
-    t('share.keeperCardTitle', { defaultValue: 'Perfil keeper en TarantulApp' }),
+    t('share.keeperCardTitle', { defaultValue: `Perfil keeper en ${BRAND_WITH_TM}` }),
     '━━━━━━━━━━━━━━━━━━━━',
     `👤 ${shortText(safeName, 90)} · ${shortText(safeHandle, 90)}`,
     safeLocation ? `📍 ${shortText(safeLocation, 120)}` : null,

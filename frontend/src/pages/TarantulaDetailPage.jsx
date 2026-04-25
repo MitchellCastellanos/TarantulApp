@@ -110,6 +110,7 @@ export default function TarantulaDetailPage() {
       timeline,
       t,
       language: i18n.language,
+      i18n,
     }).catch(() => {})
   }
   const publicProfileUrl = tarantula?.shortId ? `${window.location.origin}/t/${tarantula.shortId}` : ''
@@ -303,7 +304,7 @@ export default function TarantulaDetailPage() {
               </div>
               <div className="px-3 pb-3 text-center">
                 <Link
-                  to="/herramientas/qr?mode=bulk"
+                  to="/tarantulas/qr-print"
                   className="small text-decoration-none"
                   style={{ color: 'var(--ta-gold)' }}
                   title={t('dashboard.qrBulkPrintTitle')}

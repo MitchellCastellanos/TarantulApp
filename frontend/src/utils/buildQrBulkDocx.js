@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { BRAND_WITH_TM } from '../constants/brand'
 import { compositeQrPngDataUrl, BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
 import {
   AlignmentType,
@@ -37,7 +38,8 @@ function dataUrlToUint8Array(dataUrl) {
 async function pngBufferForQr(text, rasterSize) {
   const dataUrl = await QRCode.toDataURL(text, {
     width: rasterSize,
-    margin: 1,
+    // Keep a tiny quiet zone so scanners remain reliable.
+    margin: 0,
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
@@ -96,7 +98,7 @@ async function qrCell({ url, titleLine1, titleLine2, subtitle, displayPx }) {
   const children = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 80 },
+      spacing: { after: 40 },
       children: [image],
     }),
     ...labelParagraphs(titleLine1, titleLine2, subtitle),
@@ -104,7 +106,7 @@ async function qrCell({ url, titleLine1, titleLine2, subtitle, displayPx }) {
   return new TableCell({
     children,
     verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 120, bottom: 120, left: 100, right: 100 },
+    margins: { top: 60, bottom: 60, left: 50, right: 50 },
     width: { size: 50, type: WidthType.PERCENTAGE },
   })
 }
@@ -121,7 +123,7 @@ async function qrCellFullWidth({ url, titleLine1, titleLine2, subtitle, displayP
   const children = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 80 },
+      spacing: { after: 40 },
       children: [image],
     }),
     ...labelParagraphs(titleLine1, titleLine2, subtitle),
@@ -129,9 +131,41 @@ async function qrCellFullWidth({ url, titleLine1, titleLine2, subtitle, displayP
   return new TableCell({
     children,
     verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 160, bottom: 160, left: 160, right: 160 },
+    margins: { top: 80, bottom: 80, left: 70, right: 70 },
     columnSpan: 2,
     width: { size: 100, type: WidthType.PERCENTAGE },
+  })
+}
+
+async function qrCellCompact({ url, displayPx }) {
+  const raster = Math.min(900, Math.round(displayPx * 2.5))
+  const buf = await pngBufferForQr(url, raster)
+  return new TableCell({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 0 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: buf,
+            transformation: { width: displayPx, height: displayPx },
+            altText: { name: 'QR', description: 'QR', title: 'QR' },
+          }),
+        ],
+      }),
+    ],
+    verticalAlign: VerticalAlignTable.CENTER,
+    margins: { top: 30, bottom: 30, left: 30, right: 30 },
+    width: { size: 25, type: WidthType.PERCENTAGE },
+  })
+}
+
+function emptyCompactCell() {
+  return new TableCell({
+    children: [new Paragraph({ text: '' })],
+    margins: { top: 30, bottom: 30, left: 30, right: 30 },
+    width: { size: 25, type: WidthType.PERCENTAGE },
   })
 }
 
@@ -145,7 +179,7 @@ async function qrCellFullWidth({ url, titleLine1, titleLine2, subtitle, displayP
  */
 export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote }) {
   const displayPxFixed = cmToDocxDisplayPx(sizeCm)
-  const displayPxFlex = cmToDocxDisplayPx(2.8)
+  const displayPxFlex = cmToDocxDisplayPx(2.6)
 
   const intro = []
   const logoBytes = await tryBrandLogoBytes()
@@ -153,13 +187,13 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     intro.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 100 },
+        spacing: { after: 60 },
         children: [
           new ImageRun({
             type: 'png',
             data: logoBytes,
-            transformation: { width: 88, height: 88 },
-            altText: { name: 'TarantulApp', description: 'TarantulApp', title: 'TarantulApp' },
+            transformation: { width: 48, height: 48 },
+            altText: { name: BRAND_WITH_TM, description: BRAND_WITH_TM, title: BRAND_WITH_TM },
           }),
         ],
       }),
@@ -168,16 +202,16 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
   if (docTitle) {
     intro.push(
       new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-        spacing: { after: 120 },
-        children: [new TextRun({ text: docTitle })],
+        heading: HeadingLevel.HEADING_2,
+        spacing: { after: 60 },
+        children: [new TextRun({ text: docTitle, bold: true, size: 24 })],
       }),
     )
   }
   if (footerNote) {
     intro.push(
       new Paragraph({
-        spacing: { after: 200 },
+        spacing: { after: 100 },
         children: [new TextRun({ text: footerNote, italics: true, size: 18, color: '555555' })],
       }),
     )
@@ -186,12 +220,15 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
   const rows = []
 
   if (layout === 'flex') {
-    for (const item of items) {
-      const cell = await qrCellFullWidth({
-        ...item,
-        displayPx: displayPxFlex,
-      })
-      rows.push(new TableRow({ children: [cell] }))
+    const COLUMNS = 4
+    for (let i = 0; i < items.length; i += COLUMNS) {
+      const chunk = items.slice(i, i + COLUMNS)
+      const cells = []
+      for (const item of chunk) {
+        cells.push(await qrCellCompact({ url: item.url, displayPx: displayPxFlex }))
+      }
+      while (cells.length < COLUMNS) cells.push(emptyCompactCell())
+      rows.push(new TableRow({ children: cells }))
     }
     const table = new Table({
       layout: TableLayoutType.FIXED,
@@ -200,8 +237,8 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     })
     return Packer.toBlob(
       new Document({
-        creator: 'TarantulApp',
-        title: docTitle || 'TarantulApp QR',
+        creator: BRAND_WITH_TM,
+        title: docTitle || `${BRAND_WITH_TM} QR`,
         sections: [{ children: [...intro, table] }],
       }),
     )
@@ -228,8 +265,8 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
 
   return Packer.toBlob(
     new Document({
-      creator: 'TarantulApp',
-      title: docTitle || 'TarantulApp QR',
+      creator: BRAND_WITH_TM,
+      title: docTitle || `${BRAND_WITH_TM} QR`,
       sections: [{ children: [...intro, table] }],
     }),
   )

@@ -4,19 +4,11 @@
     {
       "type": "java",
       "request": "launch",
-      "name": "TarantulApp Backend (application-local.properties)",
-      "cwd": "${workspaceFolder}/backend",
-      "mainClass": "com.tarantulapp.TarantulAppApplication",
-      "projectName": "tarantulapp-backend"
-    },
-    {
-      "type": "java",
-      "request": "launch",
-      "name": "TarantulApp Backend (database.local.env)",
+      "name": "TarantulApp Backend (local)",
       "cwd": "${workspaceFolder}/backend",
       "mainClass": "com.tarantulapp.TarantulAppApplication",
       "projectName": "tarantulapp-backend",
-      "envFile": "${workspaceFolder}/backend/database.local.env"
+      "vmArgs": "-Dspring.profiles.active=local"
     },
     {
       "type": "chrome",
