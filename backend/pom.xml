@@ -20,7 +20,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <jjwt.version>0.12.5</jjwt.version>
+        <jjwt.version>0.13.0</jjwt.version>
         <logstash.logback.version>7.4</logstash.logback.version>
         <sentry.version>7.18.1</sentry.version>
     </properties>
