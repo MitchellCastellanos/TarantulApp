@@ -1,7 +1,7 @@
 -- Idempotency log for incoming webhooks (Stripe, Google Play, etc.).
--- The provider's event id (e.g. Stripe `evt_*`) is the natural primary key -- Stripe
+-- The provider's event id (e.g. Stripe `evt_*`) is the natural primary key — Stripe
 -- guarantees stable ids even on retries, so a UNIQUE PK is enough to make webhook
--- handlers idempotent: insert wins -> process; insert fails -> already handled, ack 200.
+-- handlers idempotent: insert wins → process; insert fails → already handled, ack 200.
 CREATE TABLE IF NOT EXISTS processed_webhook_events (
     event_id     VARCHAR(255) PRIMARY KEY,
     source       VARCHAR(64)  NOT NULL,
