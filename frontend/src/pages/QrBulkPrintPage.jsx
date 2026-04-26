@@ -245,7 +245,7 @@ export default function QrBulkPrintPage() {
                       value={String(sizeCm)}
                       onChange={(e) => setSizeCm(Number(e.target.value))}
                     >
-                      {[3, 4, 5, 6].map((n) => (
+                      {[2, 2.5, 3, 4, 5, 6].map((n) => (
                         <option key={n} value={n}>
                           {t('qrBulk.sizeCm', { n })}
                         </option>

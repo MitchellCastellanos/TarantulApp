@@ -5,7 +5,9 @@ import com.tarantulapp.dto.ChangePasswordRequest;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
 import com.tarantulapp.service.AuthService;
+import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.util.SecurityHelper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -22,14 +24,17 @@ public class AuthController {
 
     private final AuthService authService;
     private final SecurityHelper securityHelper;
+    private final CaptchaService captchaService;
 
-    public AuthController(AuthService authService, SecurityHelper securityHelper) {
+    public AuthController(AuthService authService, SecurityHelper securityHelper, CaptchaService captchaService) {
         this.authService = authService;
         this.securityHelper = securityHelper;
+        this.captchaService = captchaService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        captchaService.verifyOrThrow(request.getCaptchaToken(), clientIp(httpRequest), "register");
         return ResponseEntity.ok(authService.register(request));
     }
 
@@ -45,11 +50,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.referralCode()));
     }
 
-    record ForgotRequest(@Email @NotBlank String email) {}
+    record ForgotRequest(@Email @NotBlank String email, @Size(max = 4096) String captchaToken) {}
     record ResetRequest(@NotBlank String token, @NotBlank @Size(min = 6) String password) {}
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgot(@Valid @RequestBody ForgotRequest req) {
+    public ResponseEntity<Map<String, String>> forgot(@Valid @RequestBody ForgotRequest req, HttpServletRequest httpRequest) {
+        captchaService.verifyOrThrow(req.captchaToken(), clientIp(httpRequest), "forgot-password");
         authService.forgotPassword(req.email());
         return ResponseEntity.ok(Map.of("message", "Si el email existe, recibirás un enlace."));
     }
@@ -65,5 +71,14 @@ public class AuthController {
         UUID userId = securityHelper.getCurrentUserId();
         authService.changePassword(userId, req.getCurrentPassword(), req.getNewPassword());
         return ResponseEntity.ok(Map.of("message", "OK"));
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            int comma = forwarded.indexOf(',');
+            return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
+        }
+        return request.getRemoteAddr();
     }
 }

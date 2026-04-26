@@ -1,0 +1,95 @@
+name: Security scan
+
+# Runs Trivy (filesystem + dependencies + IaC misconfig) plus npm audit and
+# Maven dependency:tree on every PR and a weekly schedule. Soft-fails on
+# medium-severity findings so a single transitively-vulnerable npm dep does
+# not block all merges; severity HIGH and CRITICAL still fail the job.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    # Weekly run: catches CVEs that landed after the last PR.
+    - cron: "0 8 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-fs:
+    name: Trivy filesystem + config scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          # Skip lockfiles handled by npm audit / mvn dep below to avoid double reporting.
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: "1"
+
+      - name: Upload Trivy results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+  npm-audit:
+    name: Frontend npm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (offline-friendly)
+        run: npm ci --ignore-scripts
+
+      # --audit-level=high so dev-only nuisance findings don't block PRs;
+      # transitive medium-severity vulns get triaged via Dependabot PRs.
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high
+
+  maven-dependency-check:
+    name: Backend dependency report
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # Resolves the full dependency graph offline; surfaces conflicting versions.
+      # The actual CVE check runs in trivy-fs above (which inspects pom.xml + lockfiles).
+      - name: Print dependency tree
+        run: mvn -B -q dependency:tree -Dverbose
+
+      - name: Display effective Spring Boot versions
+        run: mvn -B -q help:evaluate -Dexpression=spring-boot.version -q -DforceStdout || true

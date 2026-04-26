@@ -21,6 +21,10 @@ public class RegisterRequest {
     @Size(max = 32)
     private String referralCode;
 
+    /** Token de hCaptcha resuelto en el cliente. Se valida en {@code CaptchaService}. */
+    @Size(max = 4096)
+    private String captchaToken;
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
@@ -32,4 +36,7 @@ public class RegisterRequest {
 
     public String getReferralCode() { return referralCode; }
     public void setReferralCode(String referralCode) { this.referralCode = referralCode; }
+
+    public String getCaptchaToken() { return captchaToken; }
+    public void setCaptchaToken(String captchaToken) { this.captchaToken = captchaToken; }
 }

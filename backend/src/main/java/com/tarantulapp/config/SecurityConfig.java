@@ -1,6 +1,7 @@
 package com.tarantulapp.config;
 
 import com.tarantulapp.util.JwtUtil;
+import com.tarantulapp.security.AbuseRateLimitFilter;
 import com.tarantulapp.security.AuthRateLimitFilter;
 import com.tarantulapp.security.ChatMessageRateLimitFilter;
 import com.tarantulapp.security.PublicFeedRateLimitFilter;
@@ -57,6 +58,7 @@ public class SecurityConfig {
                                            AuthRateLimitFilter authRateLimitFilter,
                                            PublicFeedRateLimitFilter publicFeedRateLimitFilter,
                                            ChatMessageRateLimitFilter chatMessageRateLimitFilter,
+                                           AbuseRateLimitFilter abuseRateLimitFilter,
                                             CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -127,6 +129,7 @@ public class SecurityConfig {
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(chatMessageRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(abuseRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .accessDeniedHandler((req, res, exDenied) -> {
                             if (log.isWarnEnabled()) {
