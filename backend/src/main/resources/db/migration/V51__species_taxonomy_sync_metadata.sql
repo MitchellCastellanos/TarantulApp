@@ -6,4 +6,3 @@ ALTER TABLE species
 
 ALTER TABLE species
     ADD COLUMN IF NOT EXISTS care_profile_confidence NUMERIC(3,2) NULL;
-
