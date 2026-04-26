@@ -64,11 +64,6 @@ public class CommunityController {
         return ResponseEntity.ok(activityPostService.uploadPostMedia(securityHelper.getCurrentUserId(), file));
     }
 
-    @PostMapping(value = "/posts/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, String>> uploadPostPhoto(@RequestParam("file") MultipartFile file) throws IOException {
-        return ResponseEntity.ok(activityPostService.uploadPostImage(securityHelper.getCurrentUserId(), file));
-    }
-
     @GetMapping("/posts/mine")
     public ResponseEntity<Map<String, Object>> myPosts(
             @RequestParam(defaultValue = "0") int page,
