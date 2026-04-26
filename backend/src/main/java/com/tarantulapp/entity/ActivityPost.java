@@ -35,6 +35,12 @@ public class ActivityPost {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "media_url", length = 600)
+    private String mediaUrl;
+
+    @Column(name = "media_type", length = 20)
+    private String mediaType;
+
     @Column(name = "tarantula_id", columnDefinition = "uuid")
     private UUID tarantulaId;
 
@@ -63,6 +69,10 @@ public class ActivityPost {
     public void setMilestoneKind(String milestoneKind) { this.milestoneKind = milestoneKind; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getMediaUrl() { return mediaUrl; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public Instant getHiddenAt() { return hiddenAt; }

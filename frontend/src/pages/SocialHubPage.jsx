@@ -56,10 +56,13 @@ export default function SocialHubPage() {
     visibility: 'public',
     milestoneKind: '',
     imageUrl: '',
+    mediaUrl: '',
+    mediaType: '',
     tarantulaId: '',
   })
-  const [postImageFile, setPostImageFile] = useState(null)
-  const [postImageUploading, setPostImageUploading] = useState(false)
+  const [postMediaFile, setPostMediaFile] = useState(null)
+  const [postMediaUploading, setPostMediaUploading] = useState(false)
+  const [composerPromptIndex, setComposerPromptIndex] = useState(0)
   const [composerOpen, setComposerOpen] = useState(false)
   /** Solo true al abrir desde el carrusel de temas: evita scroll brusco al usar el botón normal del feed. */
   const pendingComposerScrollRef = useRef(false)
@@ -194,6 +197,36 @@ export default function SocialHubPage() {
     tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
   }, [token, composerOpen, myTarantulas])
 
+  const beginnerPromptPhrases = useMemo(
+    () => [
+      t('social.promptBeginner1'),
+      t('social.promptBeginner2'),
+      t('social.promptBeginner3'),
+      t('social.promptBeginner4'),
+    ],
+    [t]
+  )
+  const regularPromptPhrases = useMemo(
+    () => [
+      t('social.promptGeneral1'),
+      t('social.promptGeneral2'),
+      t('social.promptGeneral3'),
+      t('social.promptGeneral4'),
+    ],
+    [t]
+  )
+  const isBeginnerKeeper = (myTarantulas || []).length <= 2
+  const composerPromptPhrases = isBeginnerKeeper ? beginnerPromptPhrases : regularPromptPhrases
+  const composerPrompt = composerPromptPhrases[composerPromptIndex % Math.max(1, composerPromptPhrases.length)] || t('social.composerBodyPh')
+
+  useEffect(() => {
+    if (!composerOpen) return
+    const id = window.setInterval(() => {
+      setComposerPromptIndex((i) => i + 1)
+    }, 5000)
+    return () => window.clearInterval(id)
+  }, [composerOpen])
+
   useEffect(() => {
     if (!token || feedSection !== 'mine') return
     loadMine().catch(() => {})
@@ -258,10 +291,12 @@ export default function SocialHubPage() {
         visibility: composer.visibility,
         milestoneKind: composer.milestoneKind.trim() || undefined,
         imageUrl: composer.imageUrl.trim() || undefined,
+        mediaUrl: composer.mediaUrl.trim() || undefined,
+        mediaType: composer.mediaType.trim() || undefined,
         tarantulaId: tid && UUID_REGEX.test(tid) ? tid : undefined,
       })
-      setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '', tarantulaId: '' }))
-      setPostImageFile(null)
+      setComposer((c) => ({ ...c, body: '', milestoneKind: '', imageUrl: '', mediaUrl: '', mediaType: '', tarantulaId: '' }))
+      setPostMediaFile(null)
       setMsg(t('social.postCreated'))
       await Promise.all([loadFeed(), loadMine(), loadTopicFeeds()])
     } catch (e2) {
@@ -565,10 +600,12 @@ export default function SocialHubPage() {
     const likePreview = likesByPost[p.id] || []
     const likePreviewLimit = 8
     const hiddenLikeCount = Math.max(0, (p.likeCount || 0) - likePreview.length)
+    const postMediaUrl = p.mediaUrl || p.imageUrl || ''
+    const postMediaType = p.mediaType || (p.imageUrl ? 'image' : '')
     return (
       <div
         key={p.id}
-        className="rounded-3 p-3 mb-3 ta-social-post-card"
+        className="rounded-3 p-3 mb-3 ta-social-post-card ta-premium-pane"
       >
         <div className="d-flex justify-content-between gap-2 flex-wrap align-items-start mb-2">
           {renderPostAuthor(p)}
@@ -589,9 +626,14 @@ export default function SocialHubPage() {
           </div>
         ) : null}
         <p className="mb-2 mt-2 small" style={{ color: 'var(--ta-text)', whiteSpace: 'pre-wrap' }}>{p.body}</p>
-        {p.imageUrl ? (
+        {postMediaUrl && postMediaType === 'video' ? (
           <div className="mb-2">
-            <img src={p.imageUrl} alt="" className="img-fluid rounded" style={{ maxHeight: 220 }} />
+            <video src={postMediaUrl} controls className="w-100 rounded" style={{ maxHeight: 260 }} />
+          </div>
+        ) : null}
+        {postMediaUrl && postMediaType !== 'video' ? (
+          <div className="mb-2">
+            <img src={postMediaUrl} alt="" className="img-fluid rounded" style={{ maxHeight: 220 }} />
           </div>
         ) : null}
 
@@ -728,9 +770,9 @@ export default function SocialHubPage() {
   }, [profileQuery])
 
   return (
-    <div>
+    <div className="ta-premium-page">
       <Navbar />
-      <div className="container mt-4 mb-5" style={{ maxWidth: 820 }}>
+      <div className="container mt-4 mb-5 ta-premium-shell" style={{ maxWidth: 820 }}>
         <header className="ta-social-hub-hero mb-4">
           <div className="d-flex flex-column flex-sm-row align-items-center gap-3 text-center text-sm-start">
             <BrandLogoMark size={56} showIntro className="flex-shrink-0" />
@@ -763,11 +805,11 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
-            <div className="mb-3 p-3 rounded-3" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
+            <div className="mb-3 p-3 rounded-3 ta-premium-pane" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
               <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Topic cases</h2>
               <div className="row g-2">
                 <div className="col-md-3">
-                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Sex ID</div>
                     {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => navigate(`/sex-id/${(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.id}`)}>
@@ -787,7 +829,7 @@ export default function SocialHubPage() {
                   </div>
                 </div>
                 <div className="col-md-3">
-                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Enclosure Check</div>
                     {enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(enclosurePosts[topicCarouselIndex.enclosure]?.id, true)}>
@@ -807,7 +849,7 @@ export default function SocialHubPage() {
                   </div>
                 </div>
                 <div className="col-md-3">
-                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Is my spider okay?</div>
                     {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.id, true)}>
@@ -827,7 +869,7 @@ export default function SocialHubPage() {
                   </div>
                 </div>
                 <div className="col-md-3">
-                  <div className="rounded p-2 h-100" style={{ border: '1px solid var(--ta-border)' }}>
+                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
                     <div className="small fw-semibold mb-1">Meet my Ts</div>
                     {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id, true)}>
@@ -919,8 +961,11 @@ export default function SocialHubPage() {
                           required
                           value={composer.body}
                           onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
-                          placeholder={t('social.composerBodyPh')}
+                          placeholder={composerPrompt}
                         />
+                        <div className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
+                          {composerPrompt}
+                        </div>
                         <div className="mb-2">
                           <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
                           <select
@@ -959,35 +1004,42 @@ export default function SocialHubPage() {
                             />
                           </div>
                           <div className="col-md-4">
-                            <label className="form-label small mb-0">Foto (max 8MB)</label>
-                            <input className="form-control form-control-sm" type="file" accept="image/*"
+                            <label className="form-label small mb-0">{t('social.postMediaLabel')}</label>
+                            <input className="form-control form-control-sm" type="file" accept="image/*,video/*"
                               onChange={async (e) => {
                                 const f = e.target.files?.[0] || null
-                                setPostImageFile(f)
+                                setPostMediaFile(f)
                                 if (!f) {
-                                  setComposer((c) => ({ ...c, imageUrl: '' }))
+                                  setComposer((c) => ({ ...c, imageUrl: '', mediaUrl: '', mediaType: '' }))
                                   return
                                 }
-                                setPostImageUploading(true)
+                                setPostMediaUploading(true)
                                 setErr('')
                                 try {
-                                  const res = await communityService.uploadPostPhoto(f)
-                                  setComposer((c) => ({ ...c, imageUrl: res?.imageUrl || '' }))
+                                  const res = await communityService.uploadPostMedia(f)
+                                  setComposer((c) => ({
+                                    ...c,
+                                    imageUrl: res?.imageUrl || (res?.mediaType === 'image' ? (res?.mediaUrl || '') : ''),
+                                    mediaUrl: res?.mediaUrl || '',
+                                    mediaType: res?.mediaType || '',
+                                  }))
                                 } catch (e2) {
-                                  setComposer((c) => ({ ...c, imageUrl: '' }))
+                                  setComposer((c) => ({ ...c, imageUrl: '', mediaUrl: '', mediaType: '' }))
                                   setErr(e2?.response?.data?.error || t('social.saveError'))
                                 } finally {
-                                  setPostImageUploading(false)
+                                  setPostMediaUploading(false)
                                 }
                               }} />
-                            {postImageFile && (
+                            {postMediaFile && (
                               <div className="small text-muted mt-1">
-                                {postImageUploading ? 'Subiendo foto...' : `Foto lista: ${postImageFile.name}`}
+                                {postMediaUploading
+                                  ? t('social.uploadingMedia')
+                                  : t('social.mediaReady', { name: postMediaFile.name })}
                               </div>
                             )}
                           </div>
                         </div>
-                        <button type="submit" className="btn btn-sm btn-dark" disabled={postImageUploading}>{t('social.publish')}</button>
+                        <button type="submit" className="btn btn-sm btn-dark" disabled={postMediaUploading}>{t('social.publish')}</button>
                       </form>
                     </div>
                   </div>
@@ -1027,7 +1079,7 @@ export default function SocialHubPage() {
                     }}
                   >
                     <span className="fw-semibold">New post</span>
-                    <span className="d-block small text-muted">Start writing your post...</span>
+                    <span className="d-block small text-muted">{composerPrompt}</span>
                   </button>
                 )}
                 {activeFeedList.length === 0

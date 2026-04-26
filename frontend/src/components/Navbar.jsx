@@ -317,15 +317,22 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
       <div className="d-md-none ms-auto d-flex align-items-center gap-2">
         <Link
-          to={token ? '/' : '/login'}
+          to={token ? '/account' : '/login'}
           onClick={closeMobileMenu}
-          className="btn btn-sm fw-semibold ta-mobile-collection-cta"
-          style={{
-            fontSize: '0.78rem',
-          }}
-          title={token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestHint')}
+          className="btn btn-sm ta-mobile-icon-btn"
+          aria-label={t('nav.accountAria')}
+          title={t('nav.accountAria')}
         >
-          {token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta')}
+          ◯
+        </Link>
+        <Link
+          to={token ? '/account' : '/login'}
+          onClick={closeMobileMenu}
+          className="btn btn-sm ta-mobile-icon-btn"
+          aria-label={t('nav.preferences', 'Settings')}
+          title={t('nav.preferences', 'Settings')}
+        >
+          ⚙
         </Link>
         <button
           type="button"
@@ -334,7 +341,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           aria-expanded={mobileMenuOpen}
           aria-label={mobileMenuOpen ? t('nav.close', 'Cerrar menú') : t('nav.open', 'Abrir menú')}
         >
-          {mobileMenuOpen ? '✕' : '☰'}
+          {mobileMenuOpen ? '✕' : '⋯'}
         </button>
       </div>
       <div

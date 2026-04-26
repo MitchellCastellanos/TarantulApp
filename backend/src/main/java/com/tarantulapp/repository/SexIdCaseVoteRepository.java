@@ -23,4 +23,28 @@ public interface SexIdCaseVoteRepository extends JpaRepository<SexIdCaseVote, UU
 
     @Query("select v.caseId, count(v) from SexIdCaseVote v where v.caseId in :ids group by v.caseId")
     List<Object[]> countTotalsByCaseIdIn(@Param("ids") List<UUID> ids);
+
+    @Query("select distinct v.voterUserId from SexIdCaseVote v where v.caseId = :caseId")
+    List<UUID> findDistinctVoterIdsByCaseId(@Param("caseId") UUID caseId);
+
+    long countByVoterUserId(UUID voterUserId);
+
+    @Query("""
+            select count(v)
+            from SexIdCaseVote v
+            join SexIdCase c on c.id = v.caseId
+            where v.voterUserId = :voterUserId
+              and c.status in ('RESOLVED', 'EXPIRED')
+            """)
+    long countSettledByVoterUserId(@Param("voterUserId") UUID voterUserId);
+
+    @Query("""
+            select count(v)
+            from SexIdCaseVote v
+            join SexIdCase c on c.id = v.caseId
+            where v.voterUserId = :voterUserId
+              and c.status = 'RESOLVED'
+              and c.resolutionChoice = v.choice
+            """)
+    long countCorrectResolvedByVoterUserId(@Param("voterUserId") UUID voterUserId);
 }

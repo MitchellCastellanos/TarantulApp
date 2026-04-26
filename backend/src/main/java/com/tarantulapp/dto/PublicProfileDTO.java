@@ -22,6 +22,8 @@ public class PublicProfileDTO {
     private String status;
     private Instant lastFedAt;
     private Instant lastMoltAt;
+    private long spoodCount;
+    private boolean spoodedByViewer;
 
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
@@ -53,4 +55,8 @@ public class PublicProfileDTO {
     public void setLastFedAt(Instant lastFedAt) { this.lastFedAt = lastFedAt; }
     public Instant getLastMoltAt() { return lastMoltAt; }
     public void setLastMoltAt(Instant lastMoltAt) { this.lastMoltAt = lastMoltAt; }
+    public long getSpoodCount() { return spoodCount; }
+    public void setSpoodCount(long spoodCount) { this.spoodCount = spoodCount; }
+    public boolean isSpoodedByViewer() { return spoodedByViewer; }
+    public void setSpoodedByViewer(boolean spoodedByViewer) { this.spoodedByViewer = spoodedByViewer; }
 }

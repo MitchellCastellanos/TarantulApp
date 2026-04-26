@@ -4,6 +4,7 @@ import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.service.SexIdProfileService;
 import com.tarantulapp.util.PublicHandleRules;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +24,14 @@ public class PublicUserController {
 
     private final UserRepository userRepository;
     private final TarantulaRepository tarantulaRepository;
+    private final SexIdProfileService sexIdProfileService;
 
-    public PublicUserController(UserRepository userRepository, TarantulaRepository tarantulaRepository) {
+    public PublicUserController(UserRepository userRepository,
+                                TarantulaRepository tarantulaRepository,
+                                SexIdProfileService sexIdProfileService) {
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
+        this.sexIdProfileService = sexIdProfileService;
     }
 
     /** Minimal public lookup by {@code public_handle} (case-insensitive) to open Spood, etc. */
@@ -53,6 +58,7 @@ public class PublicUserController {
         m.put("communityProfileVisibility", visibility);
         m.put("collectionPublic", "public_full".equals(visibility));
         m.put("publicCollectionCount", publicCollectionCount);
+        m.put("sexId", sexIdProfileService.publicStats(u.getId()));
         return ResponseEntity.ok(m);
     }
 

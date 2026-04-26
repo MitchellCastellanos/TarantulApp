@@ -19,6 +19,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,8 +36,25 @@ public class SexIdCaseService {
     private static final String C_MALE = "MALE";
     private static final String C_FEMALE = "FEMALE";
     private static final String C_UNCERTAIN = "UNCERTAIN";
+    private static final String S_OPEN = "OPEN";
+    private static final String S_LOCKED = "LOCKED";
+    private static final String S_RESOLVED = "RESOLVED";
+    private static final String S_EXPIRED = "EXPIRED";
     private static final double AI_WEIGHT = 0.3;
     private static final double COMMUNITY_WEIGHT = 0.7;
+    private static final Duration BASE_VOTING_WINDOW = Duration.ofHours(72);
+    private static final Duration MIN_EARLY_CLOSE_AGE = Duration.ofHours(24);
+    private static final Duration EXTENSION_WINDOW = Duration.ofHours(24);
+    private static final int EARLY_CLOSE_MIN_VOTES = 12;
+    private static final int MIN_RESOLUTION_VOTES = 8;
+    private static final double EARLY_CLOSE_MIN_CONFIDENCE = 0.65;
+    private static final double TIE_EXTENSION_THRESHOLD = 0.10;
+    private static final double UNCERTAIN_MARGIN = 0.07;
+    private static final int POINTS_PARTICIPATION = 2;
+    private static final int POINTS_ACCURATE = 5;
+    private static final int POINTS_HIGH_CONFIDENCE_BONUS = 2;
+    private static final double HIGH_CONFIDENCE_SCORE = 0.80;
+    private static final double MIN_RESOLVE_CONFIDENCE = 0.60;
 
     private final SexIdCaseRepository sexIdCaseRepository;
     private final SexIdCaseVoteRepository sexIdCaseVoteRepository;
@@ -46,6 +65,7 @@ public class SexIdCaseService {
     private final BehaviorLogRepository behaviorLogRepository;
     private final SexIdExplanationService sexIdExplanationService;
     private final NotificationService notificationService;
+    private final SexIdPointService sexIdPointService;
 
     public SexIdCaseService(SexIdCaseRepository sexIdCaseRepository,
                             SexIdCaseVoteRepository sexIdCaseVoteRepository,
@@ -55,7 +75,8 @@ public class SexIdCaseService {
                             MoltLogRepository moltLogRepository,
                             BehaviorLogRepository behaviorLogRepository,
                             SexIdExplanationService sexIdExplanationService,
-                            NotificationService notificationService) {
+                            NotificationService notificationService,
+                            SexIdPointService sexIdPointService) {
         this.sexIdCaseRepository = sexIdCaseRepository;
         this.sexIdCaseVoteRepository = sexIdCaseVoteRepository;
         this.userRepository = userRepository;
@@ -65,6 +86,7 @@ public class SexIdCaseService {
         this.behaviorLogRepository = behaviorLogRepository;
         this.sexIdExplanationService = sexIdExplanationService;
         this.notificationService = notificationService;
+        this.sexIdPointService = sexIdPointService;
     }
 
     @Transactional
@@ -91,6 +113,8 @@ public class SexIdCaseService {
         c.setAiConfidence(round3(ai.confidence));
         c.setAiConfidenceLabel(ai.confidenceLabel);
         c.setAiExplanation(cleanText(explanation, 800));
+        c.setStatus(S_OPEN);
+        c.setVotingClosesAt(Instant.now().plus(BASE_VOTING_WINDOW));
         SexIdCase saved = sexIdCaseRepository.save(c);
         return toCaseDto(saved, Optional.of(authorId), aggregateForCase(saved.getId()));
     }
@@ -151,6 +175,9 @@ public class SexIdCaseService {
                 .orElseThrow(() -> new NotFoundException("Caso no encontrado"));
         if (c.getHiddenAt() != null) {
             throw new NotFoundException("Caso no encontrado");
+        }
+        if (!S_OPEN.equals(c.getStatus()) || c.getVotingClosesAt() == null || Instant.now().isAfter(c.getVotingClosesAt())) {
+            throw new AccessDeniedException("La votacion de este caso ya esta cerrada");
         }
         if (voterId.equals(c.getAuthorUserId())) {
             throw new AccessDeniedException("El autor no puede votar su propio caso");
@@ -229,6 +256,8 @@ public class SexIdCaseService {
         m.put("speciesHint", c.getSpeciesHint() == null ? "" : c.getSpeciesHint());
         m.put("createdAt", c.getCreatedAt() != null ? c.getCreatedAt().toString() : null);
         m.put("totalVotes", totalVotes);
+        m.put("status", c.getStatus());
+        m.put("votingClosesAt", c.getVotingClosesAt() == null ? null : c.getVotingClosesAt().toString());
         m.put("hidden", c.getHiddenAt() != null);
         return m;
     }
@@ -289,6 +318,12 @@ public class SexIdCaseService {
         out.put("percentages", pct);
         out.put("leadingChoice", leading);
         out.put("confidence", round3(confidence));
+        out.put("status", c.getStatus());
+        out.put("votingClosesAt", c.getVotingClosesAt() == null ? null : c.getVotingClosesAt().toString());
+        out.put("resolvedAt", c.getResolvedAt() == null ? null : c.getResolvedAt().toString());
+        out.put("resolutionChoice", c.getResolutionChoice());
+        out.put("resolutionConfidence", c.getResolutionConfidence() == null ? null : round3(c.getResolutionConfidence()));
+        out.put("resolutionConfidenceLabel", c.getResolutionConfidenceLabel());
         out.put("aiOpinion", buildAiOpinion(c));
         out.put("communityOpinion", buildCommunityOpinion(ag, totalWeighted, totalRawVotes));
         out.put("finalOpinion", buildFinalOpinion(finalLeading, finalScore, finalConfidenceLabel, finalMale, finalFemale));
@@ -497,6 +532,174 @@ public class SexIdCaseService {
         return Math.min(size, MAX_PAGE_SIZE);
     }
 
+    @Transactional
+    public int settleDueCases() {
+        Instant now = Instant.now();
+        int changed = 0;
+        List<SexIdCase> openCases = sexIdCaseRepository.findByHiddenAtIsNullAndStatus(S_OPEN);
+        for (SexIdCase c : openCases) {
+            if (shouldCloseEarly(c, now)) {
+                resolveCase(c, now);
+                sexIdCaseRepository.save(c);
+                changed++;
+                continue;
+            }
+            if (c.getVotingClosesAt() != null && now.isAfter(c.getVotingClosesAt()) && attemptExtension(c, now)) {
+                sexIdCaseRepository.save(c);
+                changed++;
+                continue;
+            }
+            if (c.getVotingClosesAt() != null && now.isAfter(c.getVotingClosesAt())) {
+                resolveCase(c, now);
+                sexIdCaseRepository.save(c);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    private boolean attemptExtension(SexIdCase c, Instant now) {
+        Aggregates ag = aggregateForCase(c.getId());
+        int totalVotes = (int) Math.round(ag.rawVotes);
+        if (totalVotes < MIN_RESOLUTION_VOTES) {
+            return false;
+        }
+        double totalWeighted = ag.male + ag.female + ag.uncertain;
+        if (totalWeighted <= 0) {
+            return false;
+        }
+        double first = Math.max(ag.male, Math.max(ag.female, ag.uncertain));
+        double second = secondHighest(ag.male, ag.female, ag.uncertain);
+        double gap = (first - second) / totalWeighted;
+        Instant baseMaxClose = c.getCreatedAt().plus(BASE_VOTING_WINDOW).plus(EXTENSION_WINDOW);
+        if (gap < TIE_EXTENSION_THRESHOLD && c.getVotingClosesAt().isBefore(baseMaxClose)) {
+            c.setVotingClosesAt(c.getVotingClosesAt().plus(EXTENSION_WINDOW));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean shouldCloseEarly(SexIdCase c, Instant now) {
+        if (c.getCreatedAt() == null) {
+            return false;
+        }
+        Duration age = Duration.between(c.getCreatedAt(), now);
+        if (age.compareTo(MIN_EARLY_CLOSE_AGE) < 0) {
+            return false;
+        }
+        Aggregates ag = aggregateForCase(c.getId());
+        int totalVotes = (int) Math.round(ag.rawVotes);
+        if (totalVotes < EARLY_CLOSE_MIN_VOTES) {
+            return false;
+        }
+        double totalWeighted = ag.male + ag.female + ag.uncertain;
+        if (totalWeighted <= 0) {
+            return false;
+        }
+        double first = Math.max(ag.male, Math.max(ag.female, ag.uncertain));
+        return (first / totalWeighted) >= EARLY_CLOSE_MIN_CONFIDENCE;
+    }
+
+    private void resolveCase(SexIdCase c, Instant now) {
+        Aggregates ag = aggregateForCase(c.getId());
+        FinalResolution resolution = computeResolution(c, ag);
+        c.setStatus(resolution.expired ? S_EXPIRED : S_RESOLVED);
+        c.setLockedAt(now);
+        c.setResolvedAt(now);
+        c.setResolutionChoice(resolution.choice);
+        c.setResolutionConfidence(round3(resolution.score));
+        c.setResolutionConfidenceLabel(resolution.confidenceLabel);
+        c.setVotingClosesAt(now);
+        settlePointsAndNotify(c, resolution, now);
+        c.setSettledAt(now);
+    }
+
+    private FinalResolution computeResolution(SexIdCase c, Aggregates ag) {
+        int totalVotes = (int) Math.round(ag.rawVotes);
+        double totalWeighted = ag.male + ag.female + ag.uncertain;
+        if (totalVotes < MIN_RESOLUTION_VOTES || totalWeighted <= 0) {
+            return new FinalResolution(C_UNCERTAIN, 0.0, "low", true);
+        }
+        double aiMale = c.getAiMaleProbability() == null ? 0.5 : clamp01(c.getAiMaleProbability());
+        double aiFemale = 1.0 - aiMale;
+        double communityMale = ag.male / totalWeighted;
+        double communityFemale = ag.female / totalWeighted;
+        double finalMale = (communityMale * COMMUNITY_WEIGHT) + (aiMale * AI_WEIGHT);
+        double finalFemale = (communityFemale * COMMUNITY_WEIGHT) + (aiFemale * AI_WEIGHT);
+        double score = Math.max(finalMale, finalFemale);
+        String label = labelFromConfidence(score);
+        String choice;
+        if (Math.abs(finalMale - finalFemale) < UNCERTAIN_MARGIN) {
+            choice = C_UNCERTAIN;
+        } else {
+            choice = finalFemale >= finalMale ? C_FEMALE : C_MALE;
+        }
+        boolean expired = score < MIN_RESOLVE_CONFIDENCE;
+        return new FinalResolution(choice, score, label, expired);
+    }
+
+    private void settlePointsAndNotify(SexIdCase c, FinalResolution resolution, Instant now) {
+        List<SexIdCaseVote> votes = sexIdCaseVoteRepository.findByCaseId(c.getId());
+        Map<UUID, String> latestChoiceByUser = new HashMap<>();
+        for (SexIdCaseVote vote : votes) {
+            latestChoiceByUser.put(vote.getVoterUserId(), vote.getChoice());
+        }
+        for (Map.Entry<UUID, String> e : latestChoiceByUser.entrySet()) {
+            UUID voterId = e.getKey();
+            String choice = e.getValue();
+            int gained = 0;
+            if (!resolution.expired) {
+                gained += sexIdPointService.awardIfMissing(voterId, c.getId(), "PARTICIPATION", POINTS_PARTICIPATION);
+                if (resolution.choice.equals(choice)) {
+                    gained += sexIdPointService.awardIfMissing(voterId, c.getId(), "ACCURATE", POINTS_ACCURATE);
+                    if (resolution.score >= HIGH_CONFIDENCE_SCORE) {
+                        gained += sexIdPointService.awardIfMissing(voterId, c.getId(), "HIGH_CONFIDENCE", POINTS_HIGH_CONFIDENCE_BONUS);
+                    }
+                }
+            }
+            notificationService.create(
+                    voterId,
+                    c.getAuthorUserId(),
+                    "SEX_ID_RESOLVED",
+                    "Caso Sex ID resuelto",
+                    resolution.expired
+                            ? "El caso cerro sin consenso fuerte"
+                            : "Resultado final: " + resolution.choice + (gained > 0 ? " | +" + gained + " puntos" : ""),
+                    Map.of(
+                            "caseId", String.valueOf(c.getId()),
+                            "status", resolution.expired ? S_EXPIRED : S_RESOLVED,
+                            "resolutionChoice", resolution.choice,
+                            "resolutionScore", round3(resolution.score),
+                            "pointsAwarded", gained,
+                            "resolvedAt", now.toString(),
+                            "route", "/sex-id/" + c.getId()
+                    )
+            );
+        }
+        notificationService.create(
+                c.getAuthorUserId(),
+                null,
+                "SEX_ID_CASE_CLOSED",
+                "Tu caso Sex ID cerro",
+                resolution.expired
+                        ? "No hubo votos/confiabilidad suficientes para resolverlo"
+                        : "Resultado final: " + resolution.choice + " (" + resolution.confidenceLabel + ")",
+                Map.of(
+                        "caseId", String.valueOf(c.getId()),
+                        "status", resolution.expired ? S_EXPIRED : S_RESOLVED,
+                        "resolutionChoice", resolution.choice,
+                        "resolutionScore", round3(resolution.score),
+                        "route", "/sex-id/" + c.getId()
+                )
+        );
+    }
+
+    private double secondHighest(double a, double b, double c) {
+        if ((a >= b && a <= c) || (a >= c && a <= b)) return a;
+        if ((b >= a && b <= c) || (b >= c && b <= a)) return b;
+        return c;
+    }
+
     private static final class Aggregates {
         final double male;
         final double female;
@@ -522,6 +725,20 @@ public class SexIdCaseService {
             this.confidence = confidence;
             this.confidenceLabel = confidenceLabel;
             this.explanation = explanation;
+        }
+    }
+
+    private static final class FinalResolution {
+        final String choice;
+        final double score;
+        final String confidenceLabel;
+        final boolean expired;
+
+        FinalResolution(String choice, double score, String confidenceLabel, boolean expired) {
+            this.choice = choice;
+            this.score = score;
+            this.confidenceLabel = confidenceLabel;
+            this.expired = expired;
         }
     }
 }

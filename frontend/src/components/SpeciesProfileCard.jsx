@@ -110,7 +110,7 @@ export default function SpeciesProfileCard({
     (Boolean(species.referencePhotoUrl?.trim()) || Boolean(fallbackPhoto?.url))
 
   return (
-    <>
+    <div className="ta-spec-profile-card">
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 ta-spec-header-row">
         <h2 className="ta-spec-title h6 mb-0 text-uppercase letter-spacing-wide">
           {t('species.cardTitle')}
@@ -236,6 +236,6 @@ export default function SpeciesProfileCard({
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

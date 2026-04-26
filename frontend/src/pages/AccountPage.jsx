@@ -279,15 +279,15 @@ export default function AccountPage() {
   }
 
   return (
-    <div>
+    <div className="ta-premium-page">
       <Navbar />
-      <div className="container mt-4 mb-5" style={{ maxWidth: 720 }}>
-        <ChitinCardFrame showSilhouettes={false}>
-          <h1 className="h3 fw-bold mb-4" style={{ color: 'var(--ta-parchment)' }}>
+      <div className="container mt-4 mb-5 ta-premium-shell" style={{ maxWidth: 720 }}>
+        <ChitinCardFrame showSilhouettes={false} className="ta-premium-pane">
+          <h1 className="h3 fw-bold mb-4 ta-premium-title">
             {t('account.title')}
           </h1>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.profile')}
             </h2>
@@ -410,7 +410,7 @@ export default function AccountPage() {
             </form>
           </section>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.subscription')}
             </h2>
@@ -468,7 +468,7 @@ export default function AccountPage() {
             )}
           </section>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.security')}
             </h2>
@@ -524,7 +524,7 @@ export default function AccountPage() {
             </form>
           </section>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.preferences')}
             </h2>
@@ -565,7 +565,7 @@ export default function AccountPage() {
             </div>
           </section>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.links')}
             </h2>
@@ -592,7 +592,7 @@ export default function AccountPage() {
             </ul>
           </section>
 
-          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+          <section className="ta-premium-section-block">
             <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
               {t('account.sections.legal')}
             </h2>

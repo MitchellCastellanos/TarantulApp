@@ -37,6 +37,12 @@ const communityService = {
     form.append('file', file, file.name || 'community-post.jpg')
     return api.post('/community/posts/photo', form).then((r) => r.data)
   },
+
+  uploadPostMedia: (file) => {
+    const form = new FormData()
+    form.append('file', file, file.name || 'community-post-media')
+    return api.post('/community/posts/media', form).then((r) => r.data)
+  },
 }
 
 export default communityService

@@ -12,6 +12,7 @@ import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.SellerReviewRepository;
+import com.tarantulapp.repository.TarantulaSpoodRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.FeedingLogRepository;
 import com.tarantulapp.repository.MoltLogRepository;
@@ -48,6 +49,7 @@ public class MarketplaceService {
     private final PartnerListingRepository partnerListingRepository;
     private final OfficialVendorRepository officialVendorRepository;
     private final SellerReviewRepository sellerReviewRepository;
+    private final TarantulaSpoodRepository tarantulaSpoodRepository;
     private final UserRepository userRepository;
     private final TarantulaRepository tarantulaRepository;
     private final FeedingLogRepository feedingLogRepository;
@@ -62,6 +64,7 @@ public class MarketplaceService {
                               PartnerListingRepository partnerListingRepository,
                               OfficialVendorRepository officialVendorRepository,
                               SellerReviewRepository sellerReviewRepository,
+                              TarantulaSpoodRepository tarantulaSpoodRepository,
                               UserRepository userRepository,
                               TarantulaRepository tarantulaRepository,
                               FeedingLogRepository feedingLogRepository,
@@ -75,6 +78,7 @@ public class MarketplaceService {
         this.partnerListingRepository = partnerListingRepository;
         this.officialVendorRepository = officialVendorRepository;
         this.sellerReviewRepository = sellerReviewRepository;
+        this.tarantulaSpoodRepository = tarantulaSpoodRepository;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -351,6 +355,7 @@ public class MarketplaceService {
                             row.put("stage", t.getStage() == null ? "" : t.getStage());
                             row.put("sex", t.getSex() == null ? "" : t.getSex());
                             row.put("speciesName", t.getSpecies() == null ? "" : (t.getSpecies().getScientificName() == null ? "" : t.getSpecies().getScientificName()));
+                            row.put("spoodCount", tarantulaSpoodRepository.countByTarantulaId(t.getId()));
                             return row;
                         })
                         .collect(Collectors.toList())

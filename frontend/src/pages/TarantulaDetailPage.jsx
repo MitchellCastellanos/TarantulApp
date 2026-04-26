@@ -132,7 +132,7 @@ export default function TarantulaDetailPage() {
   const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
 
   return (
-    <div>
+    <div className="ta-premium-page">
       <Navbar />
       {modal === 'feeding'  && <FeedingModal  tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'molt'     && <MoltModal     tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
@@ -179,7 +179,7 @@ export default function TarantulaDetailPage() {
         </div>
       )}
 
-      <div className="container mt-4">
+      <div className="container mt-4 ta-premium-shell">
         {/* Breadcrumb */}
         <div className="d-flex align-items-center gap-2 mb-3">
           <button className="btn btn-link p-0 text-collection text-decoration-none" onClick={() => navigate('/')}>
@@ -193,7 +193,7 @@ export default function TarantulaDetailPage() {
           {/* ─── Columna izquierda: perfil ─────────────────────────────── */}
           <div className="col-md-4">
             <FangPanel>
-            <div className="card border-0 shadow-sm">
+            <div className="card border-0 shadow-sm ta-premium-pane">
               {/* Foto */}
               <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
                    style={{ height: 220, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
@@ -344,7 +344,7 @@ export default function TarantulaDetailPage() {
             {/* Recomendación de terrario */}
             {terrariumRec && (
               <FangPanel className="mb-4">
-              <div className="card border-0 shadow-sm">
+              <div className="card border-0 shadow-sm ta-premium-pane">
                 <div className="card-body">
                   <div className="ta-section-header mb-3">
                     <span>🏠 {t('terrarium.title')}</span>
@@ -402,7 +402,7 @@ export default function TarantulaDetailPage() {
             {/* Timeline — pergamino */}
             <div className="ta-parchment-float-wrap">
             <div className="card border-0 ta-parchment-history">
-              <div className="card-body ta-parchment-scroll p-0">
+              <div className="card-body ta-parchment-scroll ta-parchment-scroll--vertical p-0">
                 <img
                   className="ta-parchment-bg-img"
                   src={publicUrl('parchment-bg.png')}

@@ -47,6 +47,7 @@ export default function PublicProfilePage() {
 
   const [profile, setProfile]   = useState(null)
   const [timeline, setTimeline] = useState([])
+  const [photos, setPhotos] = useState([])
   const [error, setError]       = useState('')
   const [quickLog, setQuickLog] = useState(null)
   const [saved, setSaved]       = useState('')
@@ -66,6 +67,9 @@ export default function PublicProfilePage() {
          api.get(`/public/t/${shortId}/timeline`)
             .then(tr => setTimeline(tr.data))
             .catch(() => {})
+         api.get(`/public/t/${shortId}/photos`)
+            .then(pr => setPhotos(Array.isArray(pr.data) ? pr.data : []))
+            .catch(() => setPhotos([]))
        })
        .catch(() => setError(t('public.notFound')))
   }
@@ -122,6 +126,48 @@ export default function PublicProfilePage() {
       setReportSent(t('public.reportError'))
     } finally {
       setReporting(false)
+    }
+  }
+
+  const handleSpoodTarantula = async () => {
+    if (profile?.viewerIsOwner) return
+    if (!user) {
+      window.location.href = `/login`
+      return
+    }
+    try {
+      const { data } = await api.post(`/public/t/${shortId}/spood`)
+      setProfile((prev) => prev
+        ? {
+            ...prev,
+            spoodCount: Number(data?.spoodCount || 0),
+            spoodedByViewer: Boolean(data?.spoodedByViewer),
+          }
+        : prev)
+    } catch {
+      // no-op
+    }
+  }
+
+  const handleSpoodPhoto = async (photoId) => {
+    if (profile?.viewerIsOwner) return
+    if (!user) {
+      window.location.href = `/login`
+      return
+    }
+    try {
+      const { data } = await api.post(`/public/t/${shortId}/photos/${photoId}/spood`)
+      setPhotos((prev) => prev.map((p) => (
+        p.id === photoId
+          ? {
+              ...p,
+              spoodCount: Number(data?.spoodCount || 0),
+              spoodedByViewer: Boolean(data?.spoodedByViewer),
+            }
+          : p
+      )))
+    } catch {
+      // no-op
     }
   }
 
@@ -252,9 +298,21 @@ export default function PublicProfilePage() {
           <div className="card-body p-4">
             <div className="d-flex justify-content-between align-items-start mb-2">
               <h4 className="fw-bold mb-0">{profile.name}</h4>
-              <span className={`badge bg-${statusCfg.color} text-${statusCfg.color === 'warning' ? 'dark' : 'white'}`}>
-                {statusLabel}
-              </span>
+              <div className="d-flex align-items-center gap-2">
+                {!profile.viewerIsOwner && (
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${profile.spoodedByViewer ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={handleSpoodTarantula}
+                    title={t('social.spoodLike')}
+                  >
+                    🕷️ {t('social.spoodCount', { count: profile.spoodCount || 0 })}
+                  </button>
+                )}
+                <span className={`badge bg-${statusCfg.color} text-${statusCfg.color === 'warning' ? 'dark' : 'white'}`}>
+                  {statusLabel}
+                </span>
+              </div>
             </div>
 
             {(profile.scientificName || profile.commonName) && (
@@ -384,6 +442,46 @@ export default function PublicProfilePage() {
           </div>
         </div>
         </div>
+
+        <FangPanel className="mb-3">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <div className="ta-section-header mb-2">
+                <span>{t('gallery.title')}</span>
+              </div>
+              {photos.length === 0 ? (
+                <p className="small text-muted mb-0">{t('gallery.empty')}</p>
+              ) : (
+                <div className="row g-2">
+                  {photos.map((p) => (
+                    <div key={p.id} className="col-6">
+                      <div style={{ borderRadius: 8, overflow: 'hidden', background: 'rgba(0,0,0,0.35)' }}>
+                        <img
+                          src={imgUrl(p.filePath)}
+                          alt={p.caption || ''}
+                          style={{ width: '100%', height: 138, objectFit: 'cover' }}
+                        />
+                        <div className="p-2">
+                          {!profile.viewerIsOwner && (
+                            <button
+                              type="button"
+                              className={`btn btn-sm w-100 ${p.spoodedByViewer ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              onClick={() => handleSpoodPhoto(p.id)}
+                              title={t('social.spoodLike')}
+                            >
+                              🕷️ {t('social.spoodCount', { count: p.spoodCount || 0 })}
+                            </button>
+                          )}
+                          {p.caption && <p className="small text-muted mb-0 mt-1">{p.caption}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </FangPanel>
 
         {/* ─── Plan Free: ficha + historial por QR, sin mutaciones; edición desde la colección ─── */}
         {isOwner && !hasProFeatures && (

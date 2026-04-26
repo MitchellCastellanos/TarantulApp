@@ -40,6 +40,8 @@ public class CommunityController {
             String visibility,
             @Size(max = 40) String milestoneKind,
             @Size(max = 500) String imageUrl,
+            @Size(max = 600) String mediaUrl,
+            @Size(max = 20) String mediaType,
             UUID tarantulaId
     ) {}
 
@@ -49,12 +51,17 @@ public class CommunityController {
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody CreatePostRequest req) {
         UUID uid = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(activityPostService.createPost(
-                uid, req.body(), req.visibility(), req.milestoneKind(), req.imageUrl(), req.tarantulaId()));
+                uid, req.body(), req.visibility(), req.milestoneKind(), req.imageUrl(), req.mediaUrl(), req.mediaType(), req.tarantulaId()));
     }
 
     @PostMapping(value = "/posts/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadPostPhoto(@RequestParam("file") MultipartFile file) throws IOException {
         return ResponseEntity.ok(activityPostService.uploadPostImage(securityHelper.getCurrentUserId(), file));
+    }
+
+    @PostMapping(value = "/posts/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadPostMedia(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(activityPostService.uploadPostMedia(securityHelper.getCurrentUserId(), file));
     }
 
     @GetMapping("/posts/mine")

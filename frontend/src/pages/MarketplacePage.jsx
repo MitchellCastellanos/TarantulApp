@@ -392,10 +392,10 @@ export default function MarketplacePage() {
     && sentByOtherUser >= 2
 
   return (
-    <div>
+    <div className="ta-premium-page">
       <Navbar />
-      <div className="container mt-4">
-        <h4 className="mb-3">{t('marketplace.title')}</h4>
+      <div className="container mt-4 ta-premium-shell">
+        <h4 className="mb-3 ta-premium-title">{t('marketplace.title')}</h4>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
@@ -461,7 +461,7 @@ export default function MarketplacePage() {
         <div className="row g-3 mb-4">
           <div className="col-lg-4">
             {user ? (
-              <div className="card border-0 shadow-sm h-100">
+              <div className="card border-0 shadow-sm h-100 ta-premium-pane">
                 <div className="card-body p-3">
                   <div className="d-flex align-items-center gap-2 mb-2">
                     <img src={imgUrl(myProfile.profilePhoto) || '/spider-default.png'} alt="keeper" style={{ width: 46, height: 46, borderRadius: 999, objectFit: 'cover' }} />
@@ -500,7 +500,7 @@ export default function MarketplacePage() {
                 </div>
               </div>
             ) : (
-              <div className="card border-0 shadow-sm h-100">
+              <div className="card border-0 shadow-sm h-100 ta-premium-pane">
                 <div className="card-body p-3 small">
                   <div className="fw-semibold mb-1">Perfil de keeper</div>
                   <p className="text-muted mb-2">Inicia sesion para activar tu perfil publico y publicar listings.</p>
@@ -510,7 +510,7 @@ export default function MarketplacePage() {
             )}
           </div>
           <div className="col-lg-8">
-            <div className="card border-0 shadow-sm h-100">
+            <div className="card border-0 shadow-sm h-100 ta-premium-pane">
               <div className="card-body p-3">
                 <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Buscar listings</h2>
                 <div className="d-flex gap-2 flex-wrap">
@@ -572,7 +572,7 @@ export default function MarketplacePage() {
               )}
               {partnerListings.map((l) => (
                 <div className="col-md-6" key={l.id}>
-                  <div className="card border-warning shadow-sm h-100">
+                  <div className="card border-warning shadow-sm h-100 ta-premium-pane">
                     <img
                       src={(imgUrl(l.imageUrl) || l.imageUrl || '/spider-default.png')}
                       alt={l.title}
@@ -611,7 +611,7 @@ export default function MarketplacePage() {
               ))}
               {peerListings.map((l) => (
                 <div className="col-md-6" key={l.id}>
-                  <div className="card border-0 shadow-sm h-100">
+                  <div className="card border-0 shadow-sm h-100 ta-premium-pane">
                     {l.imageUrl ? (
                       <img
                         src={imgUrl(l.imageUrl) || l.imageUrl}
@@ -684,7 +684,7 @@ export default function MarketplacePage() {
 
           <div className="col-lg-4">
             {!user ? (
-              <div className="card border-0 shadow-sm">
+              <div className="card border-0 shadow-sm ta-premium-pane">
                 <div className="card-body small">
                   <p className="mb-2">{t('marketplace.loginToSell')}</p>
                   <Link to="/login" className="btn btn-sm btn-dark">{t('nav.login', 'Login')}</Link>
@@ -692,7 +692,7 @@ export default function MarketplacePage() {
               </div>
             ) : (
               <>
-                <div className="card border-0 shadow-sm mb-3">
+                <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
                   <div className="card-body">
                     <h6>{t('marketplace.publishTitle')}</h6>
                     <form onSubmit={submitListing} className="small">
@@ -765,7 +765,7 @@ export default function MarketplacePage() {
                   </div>
                 </div>
 
-                <div className="card border-0 shadow-sm">
+                <div className="card border-0 shadow-sm ta-premium-pane">
                   <div className="card-body small">
                     <h6>Mensajería de marketplace</h6>
                     <p className="text-muted mb-2">Spood ahora se usa para likes en comunidad. Aquí quedan los mensajes de compra/venta.</p>
@@ -849,7 +849,7 @@ export default function MarketplacePage() {
                   </div>
                 </div>
 
-                <div className="card border-0 shadow-sm mt-3">
+                <div className="card border-0 shadow-sm mt-3 ta-premium-pane">
                   <div className="card-body small">
                     <h6>{t('marketplace.myListings')}</h6>
                     {myListings.length === 0 && <p className="text-muted mb-0">{t('marketplace.noneMine')}</p>}
@@ -871,7 +871,7 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        <details className="card border-0 shadow-sm mt-2 ta-marketplace-official-apply-details marketplace-official-apply-panel p-0 overflow-hidden">
+        <details className="card border-0 shadow-sm mt-2 ta-marketplace-official-apply-details marketplace-official-apply-panel ta-premium-pane p-0 overflow-hidden">
           <summary className="px-3 py-3 small" style={{ cursor: 'pointer', listStyle: 'none' }}>
             <span className="fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('marketplace.officialApplyToggle')}</span>
             <span className="d-block mt-1 text-muted" style={{ fontSize: '0.75rem' }}>{t('marketplace.officialApplyBlurb')}</span>

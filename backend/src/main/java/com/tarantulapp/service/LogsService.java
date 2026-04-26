@@ -146,7 +146,7 @@ public class LogsService {
 
     private void publishEventPost(UUID userId, UUID tarantulaId, String milestone, String body) {
         try {
-            activityPostService.createPost(userId, body, "public", milestone, null, tarantulaId);
+            activityPostService.createPost(userId, body, "public", milestone, null, null, null, tarantulaId);
         } catch (Exception ex) {
             log.warn("No se pudo publicar evento al feed: {}", ex.getMessage());
         }

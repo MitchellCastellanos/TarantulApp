@@ -136,17 +136,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <div className="ta-premium-dashboard">
       <Navbar />
       <div className="container mt-4">
         <div className="row g-3 mb-3">
           <div className="col-lg-4">
-            <div className="card border-0 shadow-sm h-100">
+            <div className="card border-0 shadow-sm h-100 ta-premium-profile-card">
               <div className="card-body py-3">
                 <div className="d-flex justify-content-between align-items-start gap-2">
                   <div className="min-w-0">
-                    <h6 className="mb-1 fw-bold text-truncate">{user?.displayName || user?.email}</h6>
-                    <div className="small text-muted text-truncate">
+                    <h4 className="mb-1 text-truncate ta-premium-profile-name">{user?.displayName || user?.email}</h4>
+                    <div className="small text-truncate ta-premium-profile-handle">
                       @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'No location'}
                     </div>
                     {user?.bio && <p className="small mb-1 mt-2">{user.bio}</p>}
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div className="mt-2">
-                  <Link to="/account" className="btn btn-sm btn-outline-secondary">Editar perfil</Link>
+                  <Link to="/account" className="btn btn-sm ta-premium-edit-btn">Editar perfil</Link>
                 </div>
               </div>
             </div>
@@ -210,7 +210,7 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div>
-            <h4 className="fw-bold mb-0">{t('dashboard.title')}</h4>
+            <h2 className="mb-0 ta-premium-section-title">{t('dashboard.title')}</h2>
             <p className="text-collection small mb-0">
               {tarantulas.length} {t('dashboard.inCollection')}
               {isFreePlan && ` · ${tarantulas.length}/${tarantulaLimit} ${t('dashboard.planUsage')}`}
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                 <ProTrialCtaLink className="btn btn-dark btn-sm" />
               </>
             ) : (
-              <Link to="/tarantulas/new" className="btn btn-dark">
+              <Link to="/tarantulas/new" className="btn ta-premium-add-btn">
                 {t('dashboard.add')}
               </Link>
             )}
@@ -432,7 +432,7 @@ export default function DashboardPage() {
             )}
           </p>
         ) : (
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 pb-5">
             {filtered.map(t => (
               <div className="col" key={t.id}>
                 <TarantulaCard tarantula={t} />
@@ -471,6 +471,24 @@ export default function DashboardPage() {
             </div>
           </details>
         )}
+      </div>
+      <div className="ta-premium-bottom-nav d-md-none">
+        <Link to="/" className="ta-premium-bottom-nav-item is-active">
+          <span aria-hidden="true">⌂</span>
+          <span>Home</span>
+        </Link>
+        <Link to="/descubrir" className="ta-premium-bottom-nav-item">
+          <span aria-hidden="true">⌕</span>
+          <span>Search</span>
+        </Link>
+        <Link to="/" className="ta-premium-bottom-nav-item">
+          <span aria-hidden="true">✶</span>
+          <span>My Collection</span>
+        </Link>
+        <Link to="/comunidad" className="ta-premium-bottom-nav-item">
+          <span aria-hidden="true">◌</span>
+          <span>Notifications</span>
+        </Link>
       </div>
     </div>
   )

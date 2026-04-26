@@ -10,6 +10,8 @@ public class PhotoResponse {
     private String caption;
     private LocalDateTime takenAt;
     private LocalDateTime createdAt;
+    private long spoodCount;
+    private boolean spoodedByViewer;
 
     public static PhotoResponse from(Photo p) {
         PhotoResponse r = new PhotoResponse();
@@ -26,4 +28,8 @@ public class PhotoResponse {
     public String getCaption() { return caption; }
     public LocalDateTime getTakenAt() { return takenAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public long getSpoodCount() { return spoodCount; }
+    public void setSpoodCount(long spoodCount) { this.spoodCount = spoodCount; }
+    public boolean isSpoodedByViewer() { return spoodedByViewer; }
+    public void setSpoodedByViewer(boolean spoodedByViewer) { this.spoodedByViewer = spoodedByViewer; }
 }

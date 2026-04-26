@@ -19,10 +19,8 @@ export default function TarantulaCard({ tarantula }) {
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
       <FangPanel className="h-100">
-      <div className="card h-100 shadow-sm border-0 tarantula-card">
-        {/* Foto o placeholder */}
-        <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative"
-             style={{ height: '160px', background: 'linear-gradient(135deg, #0c0c1e 0%, #1a1040 100%)' }}>
+      <div className="card h-100 shadow-sm border-0 tarantula-card ta-premium-tarantula-card">
+        <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative ta-premium-photo-stage">
           <img
             src={primarySrc}
             alt={name}
@@ -32,52 +30,44 @@ export default function TarantulaCard({ tarantula }) {
               e.currentTarget.src = placeholder
             }}
           />
+          <div className="ta-premium-photo-overlay" />
           {!profilePhoto && species?.referencePhotoUrl?.trim() && (
             <span
-              className="position-absolute bottom-0 end-0 m-1 badge"
-              style={{ background: 'rgba(0,0,0,0.6)', fontSize: '0.6rem', backdropFilter: 'blur(2px)' }}
+              className="position-absolute top-0 end-0 m-2 ta-premium-ref-chip"
               title={t('species.refPhoto')}
             >
-              {t('species.refPhotoLabel')}
+              <span aria-hidden="true">📷</span>
             </span>
           )}
-        </div>
-
-        <div className="card-body p-3">
-          <div className="d-flex justify-content-between align-items-start mb-1">
-            <h6 className="card-title fw-bold mb-0 text-truncate me-2">{name}</h6>
-            <div className="d-flex align-items-center gap-1 flex-shrink-0">
-              {locked && (
-                <span className="badge bg-secondary" style={{ fontSize: '0.6rem' }} title={t('tarantula.lockedEditHint')}>
-                  {t('tarantula.lockedShort')}
-                </span>
-              )}
-              <StatusBadge status={status} />
+          <div className="ta-premium-card-meta">
+            <div className="d-flex justify-content-between align-items-start gap-2">
+              <div className="min-w-0">
+                {species && (
+                  <p className="mb-0 ta-premium-species text-truncate">
+                    {species.scientificName}
+                  </p>
+                )}
+                <h6 className="card-title mb-0 text-truncate ta-premium-common-name">
+                  {name}
+                </h6>
+              </div>
+              <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                {locked && (
+                  <span className="badge bg-secondary" style={{ fontSize: '0.6rem' }} title={t('tarantula.lockedEditHint')}>
+                    {t('tarantula.lockedShort')}
+                  </span>
+                )}
+                <StatusBadge status={status} />
+              </div>
             </div>
-          </div>
-
-          {species && (
-            <p className="text-muted small mb-2 fst-italic text-truncate">
-              {HABITAT_ICON[species.habitatType]} {species.scientificName}
-            </p>
-          )}
-
-          <div className="d-flex gap-2 flex-wrap">
-            {stage && (
-              <span className="badge bg-light text-dark border">
-                {t(`stages.${stage}`, { defaultValue: stage })}
-              </span>
-            )}
-            {sex && (
-              <span className="badge bg-light text-dark border">
-                {t(`sex.${sex}`, { defaultValue: sex })}
-              </span>
-            )}
-            {currentSizeCm && (
-              <span className="badge bg-light text-dark border">
-                📏 {currentSizeCm} cm
-              </span>
-            )}
+            <div className="ta-premium-tech-line">
+              {stage && <span>{t(`stages.${stage}`, { defaultValue: stage })}</span>}
+              {currentSizeCm && <span>📏 {currentSizeCm} cm</span>}
+            </div>
+            <div className="ta-premium-tech-line">
+              {sex && <span>{t(`sex.${sex}`, { defaultValue: sex })}</span>}
+              {species?.habitatType && <span>{HABITAT_ICON[species.habitatType]}</span>}
+            </div>
           </div>
         </div>
       </div>

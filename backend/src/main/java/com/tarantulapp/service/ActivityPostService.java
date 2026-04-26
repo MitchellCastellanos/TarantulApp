@@ -45,6 +45,7 @@ public class ActivityPostService {
 
     private static final int MAX_PAGE_SIZE = 40;
     private static final long MAX_IMAGE_BYTES = 8L * 1024L * 1024L;
+    private static final long MAX_VIDEO_BYTES = 35L * 1024L * 1024L;
     private static final Pattern WORD_SPLIT = Pattern.compile("\\s+");
     private static final int MAX_POSTS_PER_HOUR = 12;
     private static final int MAX_COMMENTS_PER_HOUR = 40;
@@ -122,7 +123,7 @@ public class ActivityPostService {
 
     @Transactional
     public Map<String, Object> createPost(UUID authorId, String body, String visibility, String milestoneKind,
-                                        String imageUrl, UUID tarantulaId) {
+                                        String imageUrl, String mediaUrl, String mediaType, UUID tarantulaId) {
         long postsLastHour = activityPostRepository.countByAuthorUserIdAndCreatedAtAfter(authorId, Instant.now().minusSeconds(3600));
         if (postsLastHour >= MAX_POSTS_PER_HOUR) {
             saveModerationTrace(authorId, "post", "blocked", "rate_limit_post_hour", "rate-limit");
@@ -149,7 +150,15 @@ public class ActivityPostService {
         post.setBody(cleanedBody);
         post.setVisibility(vis);
         post.setMilestoneKind(normalizeMilestoneKind(milestoneKind));
-        post.setImageUrl(cleanText(imageUrl, 500));
+        String cleanedImageUrl = cleanText(imageUrl, 500);
+        String cleanedMediaUrl = cleanText(mediaUrl, 600);
+        String normalizedMediaType = normalizeMediaType(mediaType);
+        post.setImageUrl(cleanedImageUrl);
+        post.setMediaUrl(cleanedMediaUrl);
+        post.setMediaType(normalizedMediaType);
+        if ("image".equals(normalizedMediaType) && cleanedMediaUrl != null) {
+            post.setImageUrl(cleanedMediaUrl);
+        }
         post.setTarantulaId(tarantulaId);
         ActivityPost saved = activityPostRepository.save(post);
         User author = userRepository.findById(authorId).orElse(null);
@@ -336,6 +345,8 @@ public class ActivityPostService {
         m.put("visibility", p.getVisibility());
         m.put("milestoneKind", p.getMilestoneKind() == null ? "" : p.getMilestoneKind());
         m.put("imageUrl", p.getImageUrl() == null ? "" : p.getImageUrl());
+        m.put("mediaUrl", p.getMediaUrl() == null ? "" : p.getMediaUrl());
+        m.put("mediaType", p.getMediaType() == null ? "" : p.getMediaType());
         m.put("tarantulaId", p.getTarantulaId());
         m.put("createdAt", p.getCreatedAt() != null ? p.getCreatedAt().toString() : "");
         m.put("authorUserId", p.getAuthorUserId());
@@ -430,6 +441,17 @@ public class ActivityPostService {
         return normalized;
     }
 
+    private String normalizeMediaType(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.equals("image") && !normalized.equals("video")) {
+            throw new IllegalArgumentException("Tipo de media invalido");
+        }
+        return normalized;
+    }
+
     private String normalizeTopicKey(String raw) {
         if (raw == null || raw.isBlank()) {
             throw new IllegalArgumentException("Categoria requerida");
@@ -469,6 +491,30 @@ public class ActivityPostService {
         }
         String path = fileStorageService.saveFile(file, "community/posts/" + userId);
         return Map.of("imageUrl", path);
+    }
+
+    @Transactional
+    public Map<String, String> uploadPostMedia(UUID userId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            saveModerationTrace(userId, "media", "blocked", "empty_file", "");
+            throw new IllegalArgumentException("Archivo requerido");
+        }
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (contentType.startsWith("image/")) {
+            if (file.getSize() > MAX_IMAGE_BYTES) {
+                throw new IllegalArgumentException("La imagen supera el limite de 8MB.");
+            }
+            String path = fileStorageService.saveFile(file, "community/posts/" + userId);
+            return Map.of("mediaUrl", path, "mediaType", "image", "imageUrl", path);
+        }
+        if (contentType.startsWith("video/")) {
+            if (file.getSize() > MAX_VIDEO_BYTES) {
+                throw new IllegalArgumentException("El video supera el limite de 35MB.");
+            }
+            String path = fileStorageService.saveFile(file, "community/posts/" + userId);
+            return Map.of("mediaUrl", path, "mediaType", "video");
+        }
+        throw new IllegalArgumentException("Formato de archivo invalido. Usa imagen o video.");
     }
 
     private int clampSize(int size) {

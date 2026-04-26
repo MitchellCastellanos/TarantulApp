@@ -67,6 +67,7 @@ export default function PublicKeeperProfilePage() {
   const badges = Array.isArray(keeperData?.badges) ? keeperData.badges : []
   const badgesProgress = keeperData?.badgesProgress || {}
   const reputation = keeperData?.reputation || null
+  const sexId = profile?.sexId || null
   const sameUser = user && profile?.id && String(user.id) === String(profile.id)
 
   const reportKeeper = async () => {
@@ -156,6 +157,38 @@ export default function PublicKeeperProfilePage() {
                     })}
                   </div>
                 )}
+                {sexId && (
+                  <div className="border rounded p-2 mb-2 bg-light-subtle">
+                    <div className="small fw-semibold mb-1">{t('public.sexIdTitle')}</div>
+                    <div className="d-flex flex-wrap gap-2 mb-1">
+                      <span className="badge text-bg-dark">
+                        {t('public.sexIdPoints', { points: Number(sexId.points || 0) })}
+                      </span>
+                      <span className="badge bg-light text-dark border">
+                        {t('public.sexIdAccuracy', { pct: Number(sexId.accuracyPct || 0) })}
+                      </span>
+                      <span className="badge bg-light text-dark border">
+                        {t(`public.sexIdLevel.${String(sexId.level || 'rookie')}`)}
+                      </span>
+                    </div>
+                    <div className="small text-muted mb-1">
+                      {t('public.sexIdVotesLine', {
+                        totalVotes: Number(sexId.totalVotes || 0),
+                        settledVotes: Number(sexId.settledVotes || 0),
+                        correct: Number(sexId.correctResolvedVotes || 0),
+                      })}
+                    </div>
+                    {Array.isArray(sexId.achievements) && sexId.achievements.length > 0 && (
+                      <div className="d-flex gap-1 flex-wrap">
+                        {sexId.achievements.map((a) => (
+                          <span className="badge text-bg-success" key={a.key || a.labelKey}>
+                            {t(`public.sexIdAchievement.${a.labelKey || a.key}`)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!sameUser && user && (
                   <button type="button" className="btn btn-sm btn-outline-secondary" onClick={reportKeeper}>
                     {t('marketplace.report')}
@@ -191,6 +224,9 @@ export default function PublicKeeperProfilePage() {
                             <div className="min-w-0">
                               <div className="fw-semibold text-truncate">{tar.name || 'Specimen'}</div>
                               <div className="text-muted text-truncate">{tar.speciesName || '-'}</div>
+                              <div className="small" style={{ color: 'var(--ta-gold-soft)' }}>
+                                🕷️ {Number(tar.spoodCount || 0)}
+                              </div>
                             </div>
                           </div>
                         </Link>

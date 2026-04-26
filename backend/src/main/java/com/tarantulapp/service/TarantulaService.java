@@ -1,7 +1,9 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.dto.*;
+import com.tarantulapp.entity.PhotoSpood;
 import com.tarantulapp.entity.Photo;
+import com.tarantulapp.entity.TarantulaSpood;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
@@ -31,6 +33,8 @@ public class TarantulaService {
     private final BehaviorLogRepository behaviorLogRepository;
     private final FileStorageService fileStorageService;
     private final PhotoRepository photoRepository;
+    private final PhotoSpoodRepository photoSpoodRepository;
+    private final TarantulaSpoodRepository tarantulaSpoodRepository;
     private final UserRepository userRepository;
     private final PlanAccessService planAccessService;
     private final SecurityHelper securityHelper;
@@ -42,6 +46,8 @@ public class TarantulaService {
                             BehaviorLogRepository behaviorLogRepository,
                             FileStorageService fileStorageService,
                             PhotoRepository photoRepository,
+                            PhotoSpoodRepository photoSpoodRepository,
+                            TarantulaSpoodRepository tarantulaSpoodRepository,
                             UserRepository userRepository,
                             PlanAccessService planAccessService,
                             SecurityHelper securityHelper) {
@@ -52,6 +58,8 @@ public class TarantulaService {
         this.behaviorLogRepository = behaviorLogRepository;
         this.fileStorageService = fileStorageService;
         this.photoRepository = photoRepository;
+        this.photoSpoodRepository = photoSpoodRepository;
+        this.tarantulaSpoodRepository = tarantulaSpoodRepository;
         this.userRepository = userRepository;
         this.planAccessService = planAccessService;
         this.securityHelper = securityHelper;
@@ -241,12 +249,93 @@ public class TarantulaService {
         }
 
         dto.setStatus(computeStatus(t));
+        dto.setSpoodCount(tarantulaSpoodRepository.countByTarantulaId(t.getId()));
+        dto.setSpoodedByViewer(securityHelper.tryGetCurrentUserId()
+                .map(viewerId -> tarantulaSpoodRepository.existsByTarantulaIdAndUserId(t.getId(), viewerId))
+                .orElse(false));
         feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId())
                 .ifPresent(f -> dto.setLastFedAt(f.getFedAt()));
         moltLogRepository.findFirstByTarantulaIdOrderByMoltedAtDesc(t.getId())
                 .ifPresent(m -> dto.setLastMoltAt(m.getMoltedAt()));
 
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PhotoResponse> getPublicPhotos(String shortId) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        boolean owner = isQrProfileOwner(t);
+        if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+        Optional<UUID> viewerId = securityHelper.tryGetCurrentUserId();
+        return photoRepository.findByTarantulaIdOrderByCreatedAtDesc(t.getId()).stream()
+                .map(photo -> {
+                    PhotoResponse response = PhotoResponse.from(photo);
+                    response.setSpoodCount(photoSpoodRepository.countByPhotoId(photo.getId()));
+                    response.setSpoodedByViewer(viewerId
+                            .map(v -> photoSpoodRepository.existsByPhotoIdAndUserId(photo.getId(), v))
+                            .orElse(false));
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public SpoodToggleResponse togglePublicTarantulaSpood(String shortId, UUID userId) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        if (!Boolean.TRUE.equals(t.getIsPublic())) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+        if (t.getUserId().equals(userId)) {
+            throw new AccessDeniedException("No puedes dar spood a tu propia tarántula");
+        }
+        boolean hasSpood = tarantulaSpoodRepository.existsByTarantulaIdAndUserId(t.getId(), userId);
+        if (hasSpood) {
+            tarantulaSpoodRepository.deleteByTarantulaIdAndUserId(t.getId(), userId);
+            return new SpoodToggleResponse(
+                    tarantulaSpoodRepository.countByTarantulaId(t.getId()),
+                    false
+            );
+        }
+        TarantulaSpood spood = new TarantulaSpood();
+        spood.setTarantulaId(t.getId());
+        spood.setUserId(userId);
+        tarantulaSpoodRepository.save(spood);
+        return new SpoodToggleResponse(
+                tarantulaSpoodRepository.countByTarantulaId(t.getId()),
+                true
+        );
+    }
+
+    public SpoodToggleResponse togglePublicPhotoSpood(String shortId, UUID photoId, UUID userId) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        if (!Boolean.TRUE.equals(t.getIsPublic())) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+        if (t.getUserId().equals(userId)) {
+            throw new AccessDeniedException("No puedes dar spood a tus propias fotos");
+        }
+        Photo photo = photoRepository.findByIdAndTarantulaId(photoId, t.getId())
+                .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
+        boolean hasSpood = photoSpoodRepository.existsByPhotoIdAndUserId(photo.getId(), userId);
+        if (hasSpood) {
+            photoSpoodRepository.deleteByPhotoIdAndUserId(photo.getId(), userId);
+            return new SpoodToggleResponse(
+                    photoSpoodRepository.countByPhotoId(photo.getId()),
+                    false
+            );
+        }
+        PhotoSpood spood = new PhotoSpood();
+        spood.setPhotoId(photo.getId());
+        spood.setUserId(userId);
+        photoSpoodRepository.save(spood);
+        return new SpoodToggleResponse(
+                photoSpoodRepository.countByPhotoId(photo.getId()),
+                true
+        );
     }
 
     // ─── Private helpers ────────────────────────────────────────────────────

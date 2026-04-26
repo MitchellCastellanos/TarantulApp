@@ -548,11 +548,12 @@ export default function DiscoverPage() {
 
   return (
     <PublicShell>
-      <div className="mx-auto" style={{ maxWidth: 920 }}>
+      <div className="mx-auto ta-premium-page">
+      <div className="ta-premium-shell">
         <div className="d-flex justify-content-center mb-3" aria-hidden>
           <BrandLogoMark size={72} showIntro />
         </div>
-        <h1 className="h3 fw-bold mb-2 text-center text-md-start" style={{ color: 'var(--ta-parchment)' }}>
+        <h1 className="h3 fw-bold mb-2 text-center text-md-start ta-premium-title">
           {t('discover.title')}
         </h1>
         <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
@@ -560,7 +561,7 @@ export default function DiscoverPage() {
         {/* Buscador primero, hub marketplace después (móvil y desktop). */}
         <div className="row g-3 mb-4 align-items-stretch">
           <div className="col-lg-7 d-flex order-1">
-        <section className="mb-0 flex-grow-1 w-100 card border-0 shadow-sm p-4 ta-species-dropdown-card h-100">
+        <section className="mb-0 flex-grow-1 w-100 card border-0 shadow-sm p-4 ta-species-dropdown-card h-100 ta-premium-pane">
           <h2 className="h6 text-uppercase letter-spacing mb-3 ta-accent-heading">
             {t('discover.sectionSearch')}
           </h2>
@@ -708,7 +709,7 @@ export default function DiscoverPage() {
         </section>
           </div>
           <div className="col-lg-5 d-flex order-2">
-            <section className="ta-discover-marketplace-hub w-100 rounded-3 border p-4 d-flex flex-column">
+            <section className="ta-discover-marketplace-hub ta-premium-pane w-100 rounded-3 border p-4 d-flex flex-column">
               <div className="d-flex align-items-start gap-2 mb-2">
                 <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />
                 <h2 className="h6 text-uppercase letter-spacing mb-0 ta-accent-heading" style={{ lineHeight: 1.35 }}>
@@ -763,7 +764,7 @@ export default function DiscoverPage() {
             </ChitinCardFrame>
 
             <FangPanel className="mb-4">
-              <div className="card border-0 shadow-sm" style={{ background: 'rgba(8,10,22,0.5)' }}>
+              <div className="card border-0 shadow-sm ta-premium-pane" style={{ background: 'rgba(8,10,22,0.5)' }}>
                 <div className="card-body">
                   <div className="ta-section-header mb-2">
                     <span style={{ color: 'var(--ta-parchment)' }}>🏠 {t('terrarium.title')}</span>
@@ -919,6 +920,7 @@ export default function DiscoverPage() {
         <p className="small mt-4 mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.45 }}>
           {t('discover.pageFooterDisclaimer')}
         </p>
+      </div>
       </div>
     </PublicShell>
   )

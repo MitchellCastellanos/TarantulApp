@@ -53,6 +53,30 @@ public class SexIdCase {
     @Column(name = "hidden_at")
     private Instant hiddenAt;
 
+    @Column(name = "status", nullable = false, length = 20)
+    private String status;
+
+    @Column(name = "voting_closes_at", nullable = false)
+    private Instant votingClosesAt;
+
+    @Column(name = "locked_at")
+    private Instant lockedAt;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
+
+    @Column(name = "resolution_choice", length = 20)
+    private String resolutionChoice;
+
+    @Column(name = "resolution_confidence")
+    private Double resolutionConfidence;
+
+    @Column(name = "resolution_confidence_label", length = 20)
+    private String resolutionConfidenceLabel;
+
+    @Column(name = "settled_at")
+    private Instant settledAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -87,6 +111,22 @@ public class SexIdCase {
     public void setAiExplanation(String aiExplanation) { this.aiExplanation = aiExplanation; }
     public Instant getHiddenAt() { return hiddenAt; }
     public void setHiddenAt(Instant hiddenAt) { this.hiddenAt = hiddenAt; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Instant getVotingClosesAt() { return votingClosesAt; }
+    public void setVotingClosesAt(Instant votingClosesAt) { this.votingClosesAt = votingClosesAt; }
+    public Instant getLockedAt() { return lockedAt; }
+    public void setLockedAt(Instant lockedAt) { this.lockedAt = lockedAt; }
+    public Instant getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(Instant resolvedAt) { this.resolvedAt = resolvedAt; }
+    public String getResolutionChoice() { return resolutionChoice; }
+    public void setResolutionChoice(String resolutionChoice) { this.resolutionChoice = resolutionChoice; }
+    public Double getResolutionConfidence() { return resolutionConfidence; }
+    public void setResolutionConfidence(Double resolutionConfidence) { this.resolutionConfidence = resolutionConfidence; }
+    public String getResolutionConfidenceLabel() { return resolutionConfidenceLabel; }
+    public void setResolutionConfidenceLabel(String resolutionConfidenceLabel) { this.resolutionConfidenceLabel = resolutionConfidenceLabel; }
+    public Instant getSettledAt() { return settledAt; }
+    public void setSettledAt(Instant settledAt) { this.settledAt = settledAt; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
