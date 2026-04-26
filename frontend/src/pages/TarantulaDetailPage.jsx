@@ -18,6 +18,7 @@ import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
+import { useAppTheme } from '../hooks/useAppTheme'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone } from '../utils/dateFormat'
 import { exportTarantulaPdf } from '../services/pdfExportService'
@@ -29,6 +30,7 @@ export default function TarantulaDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const theme = useAppTheme()
   const { user } = useAuth()
   const hasProFeatures = user?.hasProFeatures === true
 
@@ -127,6 +129,7 @@ export default function TarantulaDetailPage() {
   const displayProfilePhoto = tarantula.profilePhoto
     ? imgUrl(tarantula.profilePhoto)
     : imgUrl(species?.referencePhotoUrl) || spiderPlaceholder
+  const brandLogoSrc = publicUrl(theme === 'light' ? 'logo-black.png' : 'logo-neon.png')
 
   // ─── Terrarium recommendation ──────────────────────────────────────────────
   const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
@@ -195,8 +198,10 @@ export default function TarantulaDetailPage() {
             <FangPanel>
             <div className="card border-0 shadow-sm ta-premium-pane">
               {/* Foto */}
-              <div className="d-flex align-items-center justify-content-center overflow-hidden rounded-top"
-                   style={{ height: 220, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}>
+              <div
+                className="d-flex align-items-center justify-content-center overflow-hidden rounded-top position-relative ta-tarantula-detail-photo-stage"
+                style={{ height: 220, background: 'linear-gradient(135deg,#0c0c1e,#1a1040)' }}
+              >
                 <img
                   src={displayProfilePhoto}
                   alt={tarantula.name}
@@ -205,6 +210,16 @@ export default function TarantulaDetailPage() {
                     e.currentTarget.onerror = null
                     e.currentTarget.src = spiderPlaceholder
                   }}
+                />
+                <img
+                  src={`${brandLogoSrc}?v=2`}
+                  alt=""
+                  className="ta-tarantula-detail-brand-mark"
+                  width={48}
+                  height={48}
+                  loading="lazy"
+                  decoding="async"
+                  aria-hidden
                 />
               </div>
 

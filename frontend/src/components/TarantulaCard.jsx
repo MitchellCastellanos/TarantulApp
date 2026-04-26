@@ -4,13 +4,16 @@ import StatusBadge from './StatusBadge'
 import FangPanel from './FangPanel'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
+import { useAppTheme } from '../hooks/useAppTheme'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 
 export default function TarantulaCard({ tarantula }) {
   const { t } = useTranslation()
+  const theme = useAppTheme()
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
   const placeholder = publicUrl('spider-default.png')
+  const brandLogoSrc = publicUrl(theme === 'light' ? 'logo-black.png' : 'logo-neon.png')
   // Own upload first, then species reference (DB / iNat URL), then placeholder; broken URLs fall back on error.
   const primarySrc = profilePhoto
     ? imgUrl(profilePhoto)
@@ -33,7 +36,7 @@ export default function TarantulaCard({ tarantula }) {
           <div className="ta-premium-photo-overlay" />
           {!profilePhoto && species?.referencePhotoUrl?.trim() && (
             <span
-              className="position-absolute top-0 end-0 m-2 ta-premium-ref-chip"
+              className="position-absolute top-0 start-0 m-2 ta-premium-ref-chip"
               title={t('species.refPhoto')}
             >
               <span aria-hidden="true">📷</span>
@@ -60,13 +63,27 @@ export default function TarantulaCard({ tarantula }) {
                 <StatusBadge status={status} />
               </div>
             </div>
-            <div className="ta-premium-tech-line">
-              {stage && <span>{t(`stages.${stage}`, { defaultValue: stage })}</span>}
-              {currentSizeCm && <span>📏 {currentSizeCm} cm</span>}
-            </div>
-            <div className="ta-premium-tech-line">
-              {sex && <span>{t(`sex.${sex}`, { defaultValue: sex })}</span>}
-              {species?.habitatType && <span>{HABITAT_ICON[species.habitatType]}</span>}
+            <div className="d-flex justify-content-between align-items-end gap-2 mt-1 ta-premium-card-meta-lower">
+              <div className="min-w-0 flex-grow-1">
+                <div className="ta-premium-tech-line ta-premium-tech-line--first">
+                  {stage && <span>{t(`stages.${stage}`, { defaultValue: stage })}</span>}
+                  {currentSizeCm && <span>📏 {currentSizeCm} cm</span>}
+                </div>
+                <div className="ta-premium-tech-line">
+                  {sex && <span>{t(`sex.${sex}`, { defaultValue: sex })}</span>}
+                  {species?.habitatType && <span>{HABITAT_ICON[species.habitatType]}</span>}
+                </div>
+              </div>
+              <img
+                src={`${brandLogoSrc}?v=2`}
+                alt=""
+                className="ta-tarantula-card-brand-mark flex-shrink-0"
+                width={44}
+                height={44}
+                loading="lazy"
+                decoding="async"
+                aria-hidden
+              />
             </div>
           </div>
         </div>

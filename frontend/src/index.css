@@ -1734,6 +1734,43 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: absolute;
   inset: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 40%, transparent 75%);
+  z-index: 1;
+}
+
+/* Marca TarantulApp en tarjeta de colección: bloque inferior derecho, alineada con las líneas técnicas (debajo del badge) */
+.ta-premium-tarantula-card .ta-tarantula-card-brand-mark {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+  user-select: none;
+  /* Un poco de aire respecto al borde de la tarjeta, sin pegarse a la esquina */
+  margin-bottom: 0.1rem;
+  margin-left: 0.35rem;
+}
+
+/* Ficha de detalle: marca sobre la foto, casi en la esquina inferior-derecha (aire fijo, no % que lo centra) */
+.ta-tarantula-detail-photo-stage {
+  position: relative;
+}
+
+.ta-tarantula-detail-brand-mark {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.55rem;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  z-index: 2;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  user-select: none;
+}
+
+.ta-premium-card-meta-lower {
+  min-height: 3.25rem;
 }
 
 .ta-premium-card-meta {
@@ -1741,7 +1778,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 2;
+  z-index: 4;
   padding: 0.85rem;
 }
 
@@ -1766,7 +1803,12 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   font-size: 0.84rem;
 }
 
+.ta-premium-card-meta-lower .ta-premium-tech-line--first {
+  margin-top: 0;
+}
+
 .ta-premium-ref-chip {
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
