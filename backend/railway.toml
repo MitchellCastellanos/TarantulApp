@@ -1,0 +1,6 @@
+# Railway config-as-code (https://docs.railway.com/config-as-code/reference)
+# Use liveness, not the aggregate /actuator/health: the latter includes the DB
+# indicator and returns 503 if the DB check fails, which fails the deploy healthcheck.
+[deploy]
+healthcheckPath = "/actuator/health/liveness"
+healthcheckTimeout = 300

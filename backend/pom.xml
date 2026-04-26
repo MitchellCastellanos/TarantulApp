@@ -159,4 +159,11 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Railpack/Nixpacks often pass -Pproduction; empty profile silences the Maven warning. -->
+    <profiles>
+        <profile>
+            <id>production</id>
+        </profile>
+    </profiles>
 </project>
