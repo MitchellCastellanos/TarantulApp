@@ -52,6 +52,11 @@ public class PublicMarketplaceController {
             String note
     ) {}
 
+    @GetMapping("/listings/{listingId}")
+    public ResponseEntity<Map<String, Object>> publicListingDetail(@PathVariable UUID listingId) {
+        return ResponseEntity.ok(marketplaceService.publicListingDetail(listingId));
+    }
+
     @GetMapping("/listings")
     public ResponseEntity<List<Map<String, Object>>> publicListings(@RequestParam(required = false) String q,
                                                                     @RequestParam(required = false) String status,

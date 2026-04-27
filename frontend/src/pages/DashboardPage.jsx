@@ -158,16 +158,23 @@ export default function DashboardPage() {
                   />
                 </div>
                 {reputation && (
-                  <div className="mt-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--ta-border)' }}>
-                    <div className="small fw-semibold mb-1">
-                      Keeper Reputation · {reputation.tier} · {reputation.score}/100
+                  <div className="ta-keeper-reputation-strip">
+                    <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
+                      {t('marketplace.reputationTitle')} ·{' '}
+                      {t('marketplace.reputationLine', {
+                        tier: reputation.tier,
+                        score: reputation.score,
+                      })}
                     </div>
                     <div className="progress" style={{ height: 8 }}>
                       <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
                     </div>
                     {reputation.nextTier !== 'Max' && (
                       <div className="small text-muted mt-1">
-                        Next: {reputation.nextTier} ({reputation.nextTierTarget})
+                        {t('marketplace.reputationNext', {
+                          tier: reputation.nextTier,
+                          target: reputation.nextTierTarget,
+                        })}
                       </div>
                     )}
                   </div>
@@ -227,7 +234,7 @@ export default function DashboardPage() {
                     onClick={() => setCollectionMenuOpen((prev) => !prev)}
                     disabled={jsonBusy || exporting}
                   >
-                    {jsonBusy || exporting ? t('common.loading') : 'Importt/export collection'}
+                    {jsonBusy || exporting ? t('common.loading') : t('dashboard.importExportCollection')}
                   </button>
                   {collectionMenuOpen && (
                     <div
@@ -290,7 +297,7 @@ export default function DashboardPage() {
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title="Disponible en Pro"
                 >
-                  Importt/export collection
+                  {t('dashboard.importExportCollection')}
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
@@ -347,7 +354,7 @@ export default function DashboardPage() {
 
         <div
           className="alert small py-2 mb-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2"
-          style={{ background: 'rgba(26,22,40,0.65)', border: '1px solid rgba(201,162,39,0.35)', color: 'var(--ta-parchment)' }}
+          style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--ta-parchment)' }}
         >
           <span className="mb-0">{t('dashboard.qrBannerLead')}</span>
           <Link to="/tools/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">

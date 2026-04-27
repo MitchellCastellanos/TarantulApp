@@ -262,28 +262,32 @@ export default function QrToolPage() {
         <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
           {t('qrTool.intro')}
         </p>
-        <div className="d-flex gap-2 mb-4 flex-wrap">
-          <Link
-            to="/tools/qr"
-            className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
-          >
-            {t('tarantula.qrCode')}
-          </Link>
-          <Link
-            to="/tools/qr?mode=bulk"
-            className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
-          >
-            {t('dashboard.qrBulkPrint')}
-          </Link>
-        </div>
 
-        <FangPanel>
+        <FangPanel className="ta-qr-tool-fang-panel">
           <div className="card border-0 shadow-sm" style={{ background: 'rgba(18,16,28,0.65)' }}>
-            <div className="card-body p-4">
+            <div className="card-body p-3 p-md-4">
+              <div
+                className="d-flex gap-2 flex-wrap mb-4 pb-3"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <Link
+                  to="/tools/qr"
+                  className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
+                >
+                  {t('tarantula.qrCode')}
+                </Link>
+                <Link
+                  to="/tools/qr?mode=bulk"
+                  className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
+                >
+                  {t('dashboard.qrBulkPrint')}
+                </Link>
+              </div>
+
               {!token && (
                 <p className="small mb-4" style={{ color: 'var(--ta-text)' }}>
                   {t('qrTool.loginRequiredBody')}{' '}
-                  <Link to="/login" className="alert-link" style={{ color: 'var(--ta-gold)' }}>
+                  <Link to="/login" className="text-decoration-none fw-semibold" style={{ color: 'var(--ta-gold)' }}>
                     {t('nav.login', 'Login')}
                   </Link>
                 </p>
@@ -360,7 +364,7 @@ export default function QrToolPage() {
                 )}
               </div>
 
-              <div className="d-flex flex-wrap gap-2 justify-content-center">
+              <div className="d-flex flex-wrap gap-2 justify-content-center pt-1 px-sm-1">
                 <button type="button" className="btn btn-dark btn-sm" disabled={!parsed.ok} onClick={handleDownload}>
                   ⬇ {t('qrTool.downloadPng')}
                 </button>

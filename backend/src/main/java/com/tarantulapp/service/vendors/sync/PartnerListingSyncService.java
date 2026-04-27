@@ -62,9 +62,8 @@ public class PartnerListingSyncService {
             return;
         }
         List<OfficialVendor> strategicVendors = officialVendorRepository
-                .findByPartnerProgramTierAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        PartnerProgramTier.STRATEGIC_FOUNDER
-                );
+                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                        List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER));
         for (OfficialVendor vendor : strategicVendors) {
             try {
                 List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
@@ -82,9 +81,8 @@ public class PartnerListingSyncService {
             return List.of();
         }
         List<OfficialVendor> strategicVendors = officialVendorRepository
-                .findByPartnerProgramTierAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        PartnerProgramTier.STRATEGIC_FOUNDER
-                );
+                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                        List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER));
         List<PartnerListingSyncRun> runs = new ArrayList<>();
         for (OfficialVendor vendor : strategicVendors) {
             try {

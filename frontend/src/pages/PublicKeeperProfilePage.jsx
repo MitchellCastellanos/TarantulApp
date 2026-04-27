@@ -129,15 +129,25 @@ export default function PublicKeeperProfilePage() {
                   {t('marketplace.rating')}: {keeperData?.ratingAvg ?? 0} ({keeperData?.reviewsCount ?? 0})
                 </div>
                 {reputation && (
-                  <div className="small mb-2">
-                    <strong>{t('marketplace.reputationTitle')}:</strong>{' '}
-                    {t('marketplace.reputationLine', { tier: reputation.tier, score: reputation.score })}
+                  <div className="ta-keeper-reputation-strip mb-2">
+                    <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-text)' }}>
+                      {t('marketplace.reputationTitle')} ·{' '}
+                      {t('marketplace.reputationLine', { tier: reputation.tier, score: reputation.score })}
+                    </div>
                     <div className="progress mt-1" style={{ height: 8 }}>
                       <div
                         className="progress-bar bg-warning"
                         style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }}
                       />
                     </div>
+                    {reputation.nextTier !== 'Max' && (
+                      <div className="small text-muted mt-1">
+                        {t('marketplace.reputationNext', {
+                          tier: reputation.nextTier,
+                          target: reputation.nextTierTarget,
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
                 {Object.keys(badgesProgress).length > 0 && (
@@ -158,16 +168,16 @@ export default function PublicKeeperProfilePage() {
                   </div>
                 )}
                 {sexId && (
-                  <div className="border rounded p-2 mb-2 bg-light-subtle">
-                    <div className="small fw-semibold mb-1">{t('public.sexIdTitle')}</div>
+                  <div className="ta-sex-id-reputation-card mb-2">
+                    <div className="ta-sex-id-reputation-card__title">{t('public.sexIdTitle')}</div>
                     <div className="d-flex flex-wrap gap-2 mb-1">
-                      <span className="badge text-bg-dark">
+                      <span className="badge ta-sex-id-badge ta-sex-id-badge--primary">
                         {t('public.sexIdPoints', { points: Number(sexId.points || 0) })}
                       </span>
-                      <span className="badge bg-light text-dark border">
+                      <span className="badge ta-sex-id-badge">
                         {t('public.sexIdAccuracy', { pct: Number(sexId.accuracyPct || 0) })}
                       </span>
-                      <span className="badge bg-light text-dark border">
+                      <span className="badge ta-sex-id-badge">
                         {t(`public.sexIdLevel.${String(sexId.level || 'rookie')}`)}
                       </span>
                     </div>
@@ -179,9 +189,9 @@ export default function PublicKeeperProfilePage() {
                       })}
                     </div>
                     {Array.isArray(sexId.achievements) && sexId.achievements.length > 0 && (
-                      <div className="d-flex gap-1 flex-wrap">
+                      <div className="d-flex gap-1 flex-wrap mt-2">
                         {sexId.achievements.map((a) => (
-                          <span className="badge text-bg-success" key={a.key || a.labelKey}>
+                          <span className="badge ta-sex-id-badge ta-sex-id-badge--achievement" key={a.key || a.labelKey}>
                             {t(`public.sexIdAchievement.${a.labelKey || a.key}`)}
                           </span>
                         ))}

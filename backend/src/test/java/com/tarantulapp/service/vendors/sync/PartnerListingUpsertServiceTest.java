@@ -148,10 +148,46 @@ class PartnerListingUpsertServiceTest {
         )));
     }
 
+    @Test
+    void upsertCreatesListingForEligibleStrategicPartnerTier() {
+        UUID vendorId = UUID.randomUUID();
+        OfficialVendor vendor = strategicEnabledVendor(vendorId, PartnerProgramTier.STRATEGIC_PARTNER);
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(vendor));
+        when(partnerListingRepository.findByOfficialVendorIdAndExternalId(vendorId, "SKU-SP1")).thenReturn(Optional.empty());
+        when(partnerListingRepository.save(any(PartnerListing.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PartnerListing saved = service.upsert(new PartnerListingUpsertRequest(
+                vendorId,
+                "SKU-SP1",
+                "Pamphobeteus sling line",
+                "Healthy feeding response",
+                "Pamphobeteus sp.",
+                "Pamphobeteus sp.",
+                null,
+                new BigDecimal("89.00"),
+                "usd",
+                2,
+                PartnerListingAvailability.IN_STOCK,
+                null,
+                "https://vendor.example.com/p/sp1",
+                "United States",
+                "Texas",
+                "Austin",
+                Instant.parse("2026-04-23T10:00:00Z"),
+                null
+        ));
+
+        assertEquals("SKU-SP1", saved.getExternalId());
+    }
+
     private OfficialVendor strategicEnabledVendor(UUID vendorId) {
+        return strategicEnabledVendor(vendorId, PartnerProgramTier.STRATEGIC_FOUNDER);
+    }
+
+    private OfficialVendor strategicEnabledVendor(UUID vendorId, PartnerProgramTier tier) {
         OfficialVendor vendor = new OfficialVendor();
         vendor.setId(vendorId);
-        vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
+        vendor.setPartnerProgramTier(tier);
         vendor.setListingImportEnabled(true);
         return vendor;
     }

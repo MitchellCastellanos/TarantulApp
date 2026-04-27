@@ -23,6 +23,9 @@ import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
 import DiscoverComparePage from './pages/DiscoverComparePage'
 import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
+import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage'
+import MarketplaceMessagesPage from './pages/MarketplaceMessagesPage'
+import MarketplaceSellerPage from './pages/MarketplaceSellerPage'
 import MarketplaceKeeperRedirect from './pages/MarketplaceKeeperRedirect'
 import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
@@ -116,6 +119,9 @@ function AppRoutes() {
       <Route path="/tools/qr" element={<QrToolPage />} />
       <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
+      <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />
+      <Route path="/marketplace/messages" element={<PrivateRoute><MarketplaceMessagesPage /></PrivateRoute>} />
+      <Route path="/marketplace/sell" element={<PrivateRoute><MarketplaceSellerPage /></PrivateRoute>} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<MarketplaceKeeperRedirect />} />
       <Route path="/launch" element={<LaunchRegistrationPage />} />
       <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
@@ -144,51 +150,41 @@ function AppRoutes() {
 function Footer() {
   const { t } = useTranslation()
   const { token } = useAuth()
-  const socialLinkStyle = {
-    color: 'var(--ta-gold)',
-    textDecoration: 'none',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.3rem',
-  }
 
   return (
-    <footer
-      className="text-center py-3 mt-5"
-      style={{
-        fontSize: '0.78rem',
-        color: 'var(--ta-parchment-dk)',
-        borderTop: '1px solid var(--ta-border)',
-      }}
-    >
+    <footer className="ta-app-footer text-center py-3 mt-5">
       <div className="mb-1">
         <a
           href="https://www.instagram.com/tarantulapp_official"
           target="_blank"
           rel="noreferrer"
-          style={socialLinkStyle}
+          className="ta-app-footer__social"
           aria-label="Instagram de TarantulApp"
         >
           <i className="bi bi-instagram" aria-hidden="true" />
           <span>@tarantulapp_official</span>
         </a>
-        &nbsp;·&nbsp;
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>
         <a
           href="https://www.tiktok.com/@tarantulapp_offic"
           target="_blank"
           rel="noreferrer"
-          style={socialLinkStyle}
+          className="ta-app-footer__social"
           aria-label="TikTok de TarantulApp"
         >
           <i className="bi bi-tiktok" aria-hidden="true" />
           <span>@tarantulapp_offic</span>
         </a>
-        &nbsp;·&nbsp;
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>
         <a
           href="https://x.com/TarantulApp"
           target="_blank"
           rel="noreferrer"
-          style={socialLinkStyle}
+          className="ta-app-footer__social"
           aria-label="X de TarantulApp"
         >
           <i className="bi bi-twitter-x" aria-hidden="true" />
@@ -197,18 +193,31 @@ function Footer() {
       </div>
       <div>
         © {new Date().getFullYear()}{' '}
-        <BrandName /> &nbsp;·&nbsp;
-        <Link to="/tools/qr" style={{ color: 'var(--ta-gold)' }}>{t('nav.qrTool')}</Link>
-        &nbsp;·&nbsp;
-        <Link to="/about" style={{ color: 'var(--ta-gold)' }}>{t('nav.about')}</Link>
-        &nbsp;·&nbsp;
-        <Link to={token ? '/community' : '/login'} style={{ color: 'var(--ta-gold)' }}>{t('nav.community')}</Link>
-        &nbsp;·&nbsp;
-        <Link to="/contact" style={{ color: 'var(--ta-gold)' }}>{t('nav.contact')}</Link>
-        &nbsp;·&nbsp;
-        <Link to="/privacy" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.privacy')}</Link>
-        &nbsp;·&nbsp;
-        <Link to="/terms" style={{ color: 'var(--ta-gold)' }}>{t('account.legal.terms')}</Link>
+        <BrandName />{' '}
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/tools/qr">{t('nav.qrTool')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/about">{t('nav.about')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to={token ? '/community' : '/login'}>{t('nav.community')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/contact">{t('nav.contact')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/privacy">{t('account.legal.privacy')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/terms">{t('account.legal.terms')}</Link>
       </div>
     </footer>
   )

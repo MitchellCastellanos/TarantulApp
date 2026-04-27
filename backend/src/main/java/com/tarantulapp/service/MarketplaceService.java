@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +45,11 @@ import com.tarantulapp.util.PublicHandleRules;
 public class MarketplaceService {
     private static final long MIN_MESSAGES_TO_ENABLE_REVIEW = 6L;
     private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
+
+    /** Official vendors whose partner listings appear in the public marketplace feed. */
+    private static final List<PartnerProgramTier> STRATEGIC_PARTNER_FEED_TIERS = List.of(
+            PartnerProgramTier.STRATEGIC_FOUNDER,
+            PartnerProgramTier.STRATEGIC_PARTNER);
 
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final PartnerListingRepository partnerListingRepository;
@@ -213,6 +219,105 @@ public class MarketplaceService {
         return out.stream().limit(100).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicListingDetail(UUID listingId) {
+        Optional<MarketplaceListing> peerOpt = marketplaceListingRepository.findById(listingId);
+        if (peerOpt.isPresent()) {
+            MarketplaceListing l = peerOpt.get();
+            if (!"active".equalsIgnoreCase(l.getStatus())) {
+                throw new NotFoundException("Listing no encontrado");
+            }
+            Map<String, Object> listing = mapListing(l);
+            listing.put("imageUrls", buildImageGallery(l.getImageUrl()));
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("listing", listing);
+            payload.put("relatedListings", relatedPeerListings(l.getSellerUserId(), listingId));
+            payload.put("sellerPreview", buildSellerPreview(l.getSellerUserId()));
+            return payload;
+        }
+
+        Optional<PartnerListing> partnerOpt = partnerListingRepository.findById(listingId);
+        if (partnerOpt.isEmpty()) {
+            throw new NotFoundException("Listing no encontrado");
+        }
+        PartnerListing pl = partnerOpt.get();
+        if (pl.getStatus() != PartnerListingStatus.ACTIVE) {
+            throw new NotFoundException("Listing no encontrado");
+        }
+        OfficialVendor vendor = officialVendorRepository.findById(pl.getOfficialVendorId()).orElse(null);
+        if (!isVendorEligibleForPublicFeed(vendor)) {
+            throw new NotFoundException("Listing no encontrado");
+        }
+        Map<String, Object> listing = mapPartnerListing(pl, vendor);
+        listing.put("imageUrls", buildImageGallery(pl.getImageUrl()));
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("listing", listing);
+        payload.put("relatedListings", relatedPartnerListings(pl.getOfficialVendorId(), listingId, vendor));
+        payload.put("sellerPreview", null);
+        return payload;
+    }
+
+    private boolean isVendorEligibleForPublicFeed(OfficialVendor vendor) {
+        if (vendor == null || !Boolean.TRUE.equals(vendor.getEnabled())
+                || !Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
+            return false;
+        }
+        PartnerProgramTier tier = vendor.getPartnerProgramTier();
+        return tier != null && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
+    }
+
+    private List<Map<String, Object>> relatedPeerListings(UUID sellerUserId, UUID excludeId) {
+        return marketplaceListingRepository.findTop100BySellerUserIdOrderByCreatedAtDesc(sellerUserId).stream()
+                .filter(x -> !x.getId().equals(excludeId) && "active".equalsIgnoreCase(x.getStatus()))
+                .limit(8)
+                .map(this::mapListing)
+                .collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> relatedPartnerListings(UUID vendorId, UUID excludeId, OfficialVendor vendor) {
+        return partnerListingRepository.findByOfficialVendorId(vendorId).stream()
+                .filter(p -> p.getStatus() == PartnerListingStatus.ACTIVE && !p.getId().equals(excludeId))
+                .sorted(Comparator.comparing(PartnerListing::getLastSyncedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(8)
+                .map(p -> mapPartnerListing(p, vendor))
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> buildSellerPreview(UUID sellerUserId) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        User u = userRepository.findById(sellerUserId).orElse(null);
+        if (u == null) {
+            return out;
+        }
+        Double avgRaw = sellerReviewRepository.avgRatingBySellerUserId(sellerUserId);
+        double avg = avgRaw == null ? 0d : Math.round(avgRaw * 10.0) / 10.0;
+        long reviewsCount = sellerReviewRepository.countBySellerUserId(sellerUserId);
+        out.put("userId", u.getId());
+        out.put("displayName", u.getDisplayName() == null || u.getDisplayName().isBlank() ? u.getEmail() : u.getDisplayName());
+        out.put("handle", u.getPublicHandle() == null ? "" : u.getPublicHandle());
+        out.put("profilePhoto", u.getProfilePhoto() == null ? "" : u.getProfilePhoto());
+        out.put("ratingAvg", avg);
+        out.put("reviewsCount", reviewsCount);
+        return out;
+    }
+
+    private List<String> buildImageGallery(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        String u = raw.trim();
+        if (u.contains("picsum.photos/seed/")) {
+            String hi = u.replaceFirst("/[0-9]+/[0-9]+(\\?.*)?$", "/1200/800$1");
+            if (!hi.equals(u)) {
+                List<String> urls = new ArrayList<>();
+                urls.add(hi);
+                urls.add(u);
+                return urls;
+            }
+        }
+        return List.of(u);
+    }
+
     private List<Map<String, Object>> peerPublicListings(String q, String status,
                                                          String filterCountry, String filterState, String filterCity,
                                                          String nearCountryNorm, String nearStateNorm, String nearCityNorm) {
@@ -258,9 +363,8 @@ public class MarketplaceService {
                                                             String nearCountryNorm, String nearStateNorm, String nearCityNorm) {
         String queryNorm = normalizeFilter(q);
         Map<UUID, OfficialVendor> eligibleVendorById = officialVendorRepository
-                .findByPartnerProgramTierAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        PartnerProgramTier.STRATEGIC_FOUNDER
-                )
+                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                        STRATEGIC_PARTNER_FEED_TIERS)
                 .stream()
                 .collect(Collectors.toMap(OfficialVendor::getId, v -> v));
 
@@ -411,10 +515,15 @@ public class MarketplaceService {
 
     private Map<String, Object> mapListing(MarketplaceListing l) {
         User seller = userRepository.findById(l.getSellerUserId()).orElse(null);
+        String sellerLabel = seller == null ? "Keeper"
+                : (seller.getDisplayName() == null || seller.getDisplayName().isBlank()
+                ? seller.getEmail() : seller.getDisplayName());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", l.getId());
         out.put("sellerUserId", l.getSellerUserId());
-        out.put("sellerName", seller == null ? "Keeper" : (seller.getDisplayName() == null || seller.getDisplayName().isBlank() ? seller.getEmail() : seller.getDisplayName()));
+        out.put("sellerName", sellerLabel);
+        out.put("sellerDisplayName", sellerLabel);
+        out.put("sellerProfilePhoto", seller == null || seller.getProfilePhoto() == null ? "" : seller.getProfilePhoto());
         out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
@@ -464,6 +573,8 @@ public class MarketplaceService {
         out.put("boosted", true);
         out.put("source", "partner");
         out.put("isPartner", true);
+        out.put("partnerProgramTier", vendor != null && vendor.getPartnerProgramTier() != null
+                ? vendor.getPartnerProgramTier().name() : null);
         out.put("badgeLabel", vendor == null || vendor.getBadge() == null ? "Official partner" : vendor.getBadge());
         out.put("canonicalUrl", listing.getProductCanonicalUrl());
         if (vendor == null) {
@@ -474,6 +585,7 @@ public class MarketplaceService {
             vendorMeta.put("slug", vendor.getSlug());
             vendorMeta.put("name", vendor.getName());
             vendorMeta.put("websiteUrl", vendor.getWebsiteUrl());
+            vendorMeta.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
             out.put("officialVendor", vendorMeta);
         }
         out.put("availability", listing.getAvailability() == null ? "unknown" : listing.getAvailability().name().toLowerCase());

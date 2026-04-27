@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.eq;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,6 +64,7 @@ class MarketplaceServicePublicListingsTest {
         vendor.setSlug("test-partner");
         vendor.setWebsiteUrl("https://example.com");
         vendor.setBadge("Certified partner");
+        vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
 
         PartnerListing partner = new PartnerListing();
         partner.setId(UUID.randomUUID());
@@ -91,8 +94,9 @@ class MarketplaceServicePublicListingsTest {
         seller.setEmail("keeper@example.com");
         seller.setDisplayName("Keeper");
 
-        when(officialVendorRepository.findByPartnerProgramTierAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                PartnerProgramTier.STRATEGIC_FOUNDER)).thenReturn(List.of(vendor));
+        when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                .thenReturn(List.of(vendor));
         when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(List.of(partner));
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
@@ -136,8 +140,9 @@ class MarketplaceServicePublicListingsTest {
         seller.setId(sellerId);
         seller.setEmail("k2@example.com");
 
-        when(officialVendorRepository.findByPartnerProgramTierAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                PartnerProgramTier.STRATEGIC_FOUNDER)).thenReturn(List.of());
+        when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                .thenReturn(List.of());
         when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(List.of(partner));
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))

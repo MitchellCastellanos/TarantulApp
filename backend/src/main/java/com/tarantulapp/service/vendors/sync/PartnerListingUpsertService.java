@@ -33,7 +33,7 @@ public class PartnerListingUpsertService {
         validateRequired(request);
         OfficialVendor vendor = officialVendorRepository.findById(request.officialVendorId())
                 .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
-        assertStrategicFounderEnabled(vendor);
+        assertStrategicPartnerImportEnabled(vendor);
 
         String normalizedExternalId = cleanText(request.externalId(), 180);
         PartnerListing listing = partnerListingRepository
@@ -71,10 +71,11 @@ public class PartnerListingUpsertService {
         }
     }
 
-    private void assertStrategicFounderEnabled(OfficialVendor vendor) {
+    private void assertStrategicPartnerImportEnabled(OfficialVendor vendor) {
         boolean importEnabled = Boolean.TRUE.equals(vendor.getListingImportEnabled());
-        boolean strategicFounder = Objects.equals(vendor.getPartnerProgramTier(), PartnerProgramTier.STRATEGIC_FOUNDER);
-        if (!importEnabled || !strategicFounder) {
+        boolean tierOk = Objects.equals(vendor.getPartnerProgramTier(), PartnerProgramTier.STRATEGIC_FOUNDER)
+                || Objects.equals(vendor.getPartnerProgramTier(), PartnerProgramTier.STRATEGIC_PARTNER);
+        if (!importEnabled || !tierOk) {
             throw new IllegalArgumentException("El vendor no esta habilitado para import estrategico");
         }
     }

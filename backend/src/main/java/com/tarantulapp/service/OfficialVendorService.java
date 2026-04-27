@@ -229,26 +229,43 @@ public class OfficialVendorService {
     private void ensureSeedData() {
         if (officialVendorRepository.count() > 0) return;
         officialVendorRepository.save(seedVendor("fear-not-tarantulas", "Fear Not Tarantulas", "United States", "Virginia", "Virginia Beach",
-                "https://www.fearnottarantulas.com", true, "United States", 93, "National shipping coverage"));
+                "https://www.fearnottarantulas.com", true, "United States,Mexico,Canada", 93,
+                "Launch cohort founding partner · national shipping footprint across North America.",
+                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
         officialVendorRepository.save(seedVendor("swifts-invertebrates", "Swift's Invertebrates", "United States", "Mississippi", "Little Rock",
-                "https://www.swiftinverts.com", true, "United States", 88, "Long-standing breeder and importer"));
+                "https://www.swiftinverts.com", true, "United States", 88,
+                "Certified breeder — deep catalog with consistent shipping standards.",
+                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
         officialVendorRepository.save(seedVendor("spider-shoppe", "Spider Shoppe", "United States", "Washington", "Tacoma",
-                "https://spidershoppe.com", true, "United States", 84, "Wide species catalog and online support"));
+                "https://spidershoppe.com", true, "United States", 84,
+                "Trusted Pacific Northwest storefront with proactive customer support.",
+                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
         officialVendorRepository.save(seedVendor("pinchers-pokies", "Pinchers & Pokies Exotics", "United States", "South Carolina", "Summerville",
-                "https://www.pinchersandpokies.com", true, "United States", 82, "Community-trusted specialty invertebrate seller"));
+                "https://www.pinchersandpokies.com", true, "United States", 82,
+                "Community-forward seller with specialization in arboreal species.",
+                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
         officialVendorRepository.save(seedVendor("primal-fear", "Primal Fear Tarantulas", "United States", "California", "Los Angeles",
-                "https://primalfeartarantulas.com", true, "United States", 78, "Strong West Coast presence"));
+                "https://primalfeartarantulas.com", true, "United States", 78,
+                "Southern California breeder with curated availability updates.",
+                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
         officialVendorRepository.save(seedVendor("tarantula-canada", "Tarantula Canada", "Canada", "Quebec", "Montreal",
-                "https://www.tarantulacanada.ca", true, "Canada", 90, "Bilingual service for Canada"));
-        officialVendorRepository.save(seedVendor("tarantulas-de-mexico", "Tarantulas de Mexico", "Mexico", "Jalisco", "Zapopan",
-                "http://www.tarantulasdemexico.com", true, "Mexico", 91, "Recognized legal breeding project in Mexico"));
-        officialVendorRepository.save(seedVendor("mexico-exotico", "Mexico Exotico (PIMVS)", "Mexico", "CDMX", "Ciudad de Mexico",
-                "https://pimvsmexicoexotico.wixsite.com/pimvsmexicoexotico", true, "Mexico", 79, "Focused on legal and conservation-driven trade"));
+                "https://www.tarantulacanada.ca", true, "Canada", 90,
+                "Founding partner serving Canada-wide shipping with bilingual support.",
+                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
+        officialVendorRepository.save(seedVendor("tarantulas-de-mexico", "Tarantulas de México", "Mexico", "Jalisco", "Zapopan",
+                "http://www.tarantulasdemexico.com", true, "Mexico", 91,
+                "Founding cohort · legally operated breeding hub and education-first listings.",
+                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
+        officialVendorRepository.save(seedVendor("mexico-exotico", "México Exótico (PIMVS)", "Mexico", "CDMX", "Ciudad de México",
+                "https://pimvsmexicoexotico.wixsite.com/pimvsmexicoexotico", true, "Mexico", 79,
+                "Certified partner focused on conservation-aligned traceability.",
+                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
     }
 
     private OfficialVendor seedVendor(String slug, String name, String country, String state, String city,
                                       String websiteUrl, boolean nationalShipping, String shipsToCountries,
-                                      int influenceScore, String note) {
+                                      int influenceScore, String note,
+                                      PartnerProgramTier tier, String badge, boolean listingImportEnabled) {
         OfficialVendor v = new OfficialVendor();
         v.setSlug(slug);
         v.setName(name);
@@ -259,10 +276,11 @@ public class OfficialVendorService {
         v.setNationalShipping(nationalShipping);
         v.setShipsToCountries(shipsToCountries);
         v.setInfluenceScore(influenceScore);
-        v.setBadge("Official partner");
+        v.setBadge(badge);
         v.setNote(note);
         v.setEnabled(true);
-        v.setListingImportEnabled(false);
+        v.setPartnerProgramTier(tier);
+        v.setListingImportEnabled(listingImportEnabled);
         return v;
     }
 

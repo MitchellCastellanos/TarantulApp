@@ -193,10 +193,10 @@ export default function TarantulaDetailPage() {
         </div>
 
         <div className="row g-4">
-          {/* ─── Columna izquierda: perfil ─────────────────────────────── */}
-          <div className="col-md-4">
-            <FangPanel>
-            <div className="card border-0 shadow-sm ta-premium-pane">
+          {/* ─── Columna izquierda: ejemplar + pergamino (historial) ───── */}
+          <div className="col-md-4 order-2 order-md-1">
+            <FangPanel className="ta-spider-detail-fang">
+            <div className="card border-0 shadow-sm ta-premium-pane ta-tarantula-detail-main-card">
               {/* Foto */}
               <div
                 className="d-flex align-items-center justify-content-center overflow-hidden rounded-top position-relative ta-tarantula-detail-photo-stage"
@@ -332,10 +332,72 @@ export default function TarantulaDetailPage() {
               </div>
             </div>
             </FangPanel>
+
+            {/* Timeline — mismo ancho que tarjeta ejemplar; PNG define alto */}
+            <div className="ta-parchment-float-wrap ta-parchment-float-wrap--detail ta-parchment-float-wrap--detail-sidebar w-100">
+            <div className="ta-parchment-history ta-parchment-history--tarantula-root w-100">
+              <div className="ta-parchment-scroll ta-parchment-scroll--vertical ta-parchment-scroll--as-graphic-shell w-100">
+                <img
+                  className="ta-parchment-bg-img ta-parchment-bg-img--full"
+                  src={publicUrl('parchment-bg.png')}
+                  alt=""
+                  decoding="async"
+                  draggable={false}
+                />
+                <div className="ta-parchment-scroll-inner ta-parchment-scroll-inner--vertical-detail">
+                  <div className="ta-parchment-sheet">
+                    <header className="ta-parchment-page-title">
+                      <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
+                      <span className="ta-parchment-page-title__text">{t('tarantula.history')}</span>
+                    </header>
+                    {timeline.length === 0 ? (
+                      <p className="small mb-0 ta-parchment-muted text-center">{t('tarantula.historyEmpty')}</p>
+                    ) : (
+                      <>
+                        <div className="ta-parchment-events ta-parchment-events--scroll">
+                          {timelinePage.map(event => (
+                            <TimelineItem
+                              key={event.id}
+                              event={event}
+                              onDelete={mayEdit ? handleDeleteEvent : undefined}
+                              shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+                            />
+                          ))}
+                        </div>
+                        {showHistoryPager && (
+                          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-2">
+                            <button
+                              type="button"
+                              className="btn btn-sm ta-parchment-pager__btn"
+                              disabled={historyPageSafe <= 0}
+                              onClick={() => setHistoryPageIndex(p => Math.max(0, p - 1))}
+                            >
+                              {t('tarantula.historyPrev')}
+                            </button>
+                            <span className="small ta-parchment-muted mb-0">
+                              {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-sm ta-parchment-pager__btn"
+                              disabled={historyPageSafe >= historyTotalPages - 1}
+                              onClick={() => setHistoryPageIndex(p => Math.min(historyTotalPages - 1, p + 1))}
+                            >
+                              {t('tarantula.historyNext')}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
           </div>
 
-          {/* ─── Columna derecha: ficha especie + timeline ─────────────── */}
-          <div className="col-md-8">
+          {/* ─── Columna derecha: ficha especie, terrario, registro, galería ─ */}
+          <div className="col-md-8 order-1 order-md-2">
             {/* Banner memorial */}
             {tarantula.deceasedAt && (
               <div className="alert mb-4 ta-memorial">
@@ -351,14 +413,14 @@ export default function TarantulaDetailPage() {
             )}
             {/* Ficha de especie — marco chitin + siluetas opcionales (assets en public/) */}
             {species && (
-              <ChitinCardFrame className="mb-4">
+              <ChitinCardFrame className="mb-4 ta-chitin-species-detail">
                 <SpeciesProfileCard species={species} tarantula={tarantula} t={t} />
               </ChitinCardFrame>
             )}
 
             {/* Recomendación de terrario */}
             {terrariumRec && (
-              <FangPanel className="mb-4">
+              <FangPanel className="mb-4 ta-spider-detail-fang">
               <div className="card border-0 shadow-sm ta-premium-pane">
                 <div className="card-body">
                   <div className="ta-section-header mb-3">
@@ -413,66 +475,6 @@ export default function TarantulaDetailPage() {
               readOnly={!mayEdit}
               shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
             />
-
-            {/* Timeline — pergamino */}
-            <div className="ta-parchment-float-wrap">
-            <div className="card border-0 ta-parchment-history">
-              <div className="card-body ta-parchment-scroll ta-parchment-scroll--vertical p-0">
-                <img
-                  className="ta-parchment-bg-img"
-                  src={publicUrl('parchment-bg.png')}
-                  alt=""
-                  decoding="async"
-                  draggable={false}
-                />
-                <div className="ta-parchment-scroll-inner">
-                  <header className="ta-parchment-page-title">
-                    <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
-                    <span className="ta-parchment-page-title__text">{t('tarantula.history')}</span>
-                  </header>
-                  {timeline.length === 0 ? (
-                    <p className="small mb-0 ta-parchment-muted text-center">{t('tarantula.historyEmpty')}</p>
-                  ) : (
-                    <>
-                      <div className="ta-parchment-events flex-grow-1">
-                        {timelinePage.map(event => (
-                          <TimelineItem
-                            key={event.id}
-                            event={event}
-                            onDelete={mayEdit ? handleDeleteEvent : undefined}
-                            shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
-                          />
-                        ))}
-                      </div>
-                      {showHistoryPager && (
-                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-auto">
-                          <button
-                            type="button"
-                            className="btn btn-sm ta-parchment-pager__btn"
-                            disabled={historyPageSafe <= 0}
-                            onClick={() => setHistoryPageIndex(p => Math.max(0, p - 1))}
-                          >
-                            {t('tarantula.historyPrev')}
-                          </button>
-                          <span className="small ta-parchment-muted mb-0">
-                            {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-sm ta-parchment-pager__btn"
-                            disabled={historyPageSafe >= historyTotalPages - 1}
-                            onClick={() => setHistoryPageIndex(p => Math.min(historyTotalPages - 1, p + 1))}
-                          >
-                            {t('tarantula.historyNext')}
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            </div>
           </div>
         </div>
       </div>

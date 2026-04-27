@@ -198,7 +198,7 @@ export default function ProPage() {
                   <h4 className="fw-bold mb-2" style={{ color: 'var(--ta-green-light)' }}>{t('pro.checkoutSuccessTitle')}</h4>
                   <p className="mb-3" style={{ color: 'var(--ta-text)' }}>{t('pro.checkoutSuccessBody')}</p>
                   <div className="d-flex justify-content-center gap-2">
-                    <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#111', fontSize: '0.9rem' }}>
+                    <span className="badge px-3 py-2" style={{ background: 'var(--ta-gold)', color: '#fff', fontSize: '0.9rem' }}>
                       ⭐ Pro
                     </span>
                   </div>

@@ -220,12 +220,12 @@ export default function SocialHubPage() {
   const composerPrompt = composerPromptPhrases[composerPromptIndex % Math.max(1, composerPromptPhrases.length)] || t('social.composerBodyPh')
 
   useEffect(() => {
-    if (!composerOpen) return
+    if (!token || tab !== TAB_FEED) return
     const id = window.setInterval(() => {
       setComposerPromptIndex((i) => i + 1)
-    }, 5000)
+    }, 26000)
     return () => window.clearInterval(id)
-  }, [composerOpen])
+  }, [token, tab])
 
   useEffect(() => {
     if (!token || feedSection !== 'mine') return
@@ -951,21 +951,22 @@ export default function SocialHubPage() {
                 <div ref={composerSectionRef} className="mb-3">
                   <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-0">
                   <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
-                    <div className="card-body py-3 px-3 px-md-4">
+                    <div className="card-body py-2 px-2 px-md-3">
                       <h2 className="h6 fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>{t('social.composerTitle')}</h2>
                       <form onSubmit={submitPost} className="small">
                         <textarea
                           ref={composerBodyRef}
-                          className="form-control form-control-sm mb-2"
-                          rows={3}
+                          className="form-control form-control-sm mb-2 ta-social-composer-textarea"
+                          rows={4}
                           required
                           value={composer.body}
                           onChange={(e) => setComposer((c) => ({ ...c, body: e.target.value }))}
-                          placeholder={composerPrompt}
+                          placeholder={t('social.composerPlaceholderStatic')}
+                          aria-describedby="social-composer-suggestions"
                         />
-                        <div className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-                          {composerPrompt}
-                        </div>
+                        <p id="social-composer-suggestions" className="small ta-social-composer-hint mb-3" aria-live="polite">
+                          <span className="ta-social-composer-hint__phrase">{composerPrompt}</span>
+                        </p>
                         <div className="mb-2">
                           <label className="form-label small mb-0">{t('social.linkedTarantula')}</label>
                           <select
@@ -1078,8 +1079,12 @@ export default function SocialHubPage() {
                       setComposer((c) => ({ ...c, milestoneKind: '' }))
                     }}
                   >
-                    <span className="fw-semibold">New post</span>
-                    <span className="d-block small text-muted">{composerPrompt}</span>
+                    <span className="fw-semibold">{t('social.newPostCta')}</span>
+                    {!composerOpen && (
+                      <span className="d-block small mt-1 ta-social-collapsed-prompt" aria-live="polite">
+                        {composerPrompt}
+                      </span>
+                    )}
                   </button>
                 )}
                 {activeFeedList.length === 0

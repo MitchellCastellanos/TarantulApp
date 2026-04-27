@@ -553,7 +553,7 @@ export default function DiscoverPage() {
         <div className="d-flex justify-content-center mb-3" aria-hidden>
           <BrandLogoMark size={72} showIntro />
         </div>
-        <h1 className="h3 fw-bold mb-2 text-center text-md-start ta-premium-title">
+        <h1 className="h3 fw-bold mb-2 text-center text-md-start cinzel ta-discover-page-title">
           {t('discover.title')}
         </h1>
         <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
@@ -566,7 +566,7 @@ export default function DiscoverPage() {
             {t('discover.sectionSearch')}
           </h2>
           <div className="mb-0 position-relative ta-species-autocomplete-wrap">
-            <label className="form-label small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+            <label className="form-label small fw-semibold ta-label-accent">
               {t('discover.speciesNameLabel')}
             </label>
             <div className="input-group">
@@ -712,7 +712,7 @@ export default function DiscoverPage() {
             <section className="ta-discover-marketplace-hub ta-premium-pane w-100 rounded-3 border p-4 d-flex flex-column">
               <div className="d-flex align-items-start gap-2 mb-2">
                 <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />
-                <h2 className="h6 text-uppercase letter-spacing mb-0 ta-accent-heading" style={{ lineHeight: 1.35 }}>
+                <h2 className="h6 letter-spacing mb-0 ta-accent-heading fw-semibold" style={{ lineHeight: 1.35 }}>
                   {t('discover.marketplaceHubTitle')}
                 </h2>
               </div>

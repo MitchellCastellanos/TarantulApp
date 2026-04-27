@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
@@ -59,6 +60,7 @@ export default function PublicKeeperHandle({
   showAt = true,
 }) {
   const normalizedHandle = useMemo(() => normalizePublicHandle(handle || ''), [handle])
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [publicProfile, setPublicProfile] = useState(null)
   const [keeperData, setKeeperData] = useState(null)
@@ -115,13 +117,16 @@ export default function PublicKeeperHandle({
             <div className="small text-muted text-truncate">{visibleLabel}</div>
           </div>
         </div>
-        {loading && <div className="small text-muted">Loading...</div>}
+        {loading && <div className="small text-muted">{t('common.loading')}</div>}
         {!loading && location && <div className="small text-muted mb-1">{location}</div>}
         {!loading && bio && <div className="small mb-1">{bio}</div>}
         {!loading && reputation && (
           <div className="small mb-1">
-            <span className="fw-semibold">Keeper Reputation:</span>{' '}
-            {reputation.tier} · {reputation.score}/100
+            <span className="fw-semibold">{t('marketplace.reputationTitle')}:</span>{' '}
+            {t('marketplace.reputationLine', {
+              tier: reputation.tier,
+              score: reputation.score,
+            })}
             <div className="progress mt-1" style={{ height: 6 }}>
               <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
             </div>
@@ -130,7 +135,7 @@ export default function PublicKeeperHandle({
         {!loading && badges.length > 0 && (
           <div className="d-flex flex-wrap gap-1 mt-1">
             {badges.map((badge, idx) => (
-              <span key={`${badge?.key || badge?.label || 'badge'}-${idx}`} className="badge bg-light text-dark border">
+              <span key={`${badge?.key || badge?.label || 'badge'}-${idx}`} className="badge ta-keeper-hover-badge">
                 {badge?.label || badge?.key || 'Badge'}
               </span>
             ))}

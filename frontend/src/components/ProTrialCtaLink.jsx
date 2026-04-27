@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 const goldStyle = {
   background: 'var(--ta-gold)',
-  color: '#111',
+  color: '#fff',
   fontWeight: 600,
 }
 

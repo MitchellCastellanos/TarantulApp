@@ -21,7 +21,7 @@ export default function TarantulaCard({ tarantula }) {
 
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
-      <FangPanel className="h-100">
+      <FangPanel className="h-100 ta-tarantula-fang-card">
       <div className="card h-100 shadow-sm border-0 tarantula-card ta-premium-tarantula-card">
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative ta-premium-photo-stage">
           <img

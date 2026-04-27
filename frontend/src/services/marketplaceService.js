@@ -3,6 +3,7 @@ import publicApi from './publicApi'
 
 const marketplaceService = {
   listPublic: (params = {}) => publicApi.get('/public/marketplace/listings', { params }).then((r) => r.data),
+  getPublicListing: (listingId) => publicApi.get(`/public/marketplace/listings/${listingId}`).then((r) => r.data),
   getListingBoostOffer: () => publicApi.get('/public/marketplace/listing-boost-offer').then((r) => r.data),
   listOfficialVendors: (params = {}) => publicApi.get('/public/marketplace/official-vendors', { params }).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),

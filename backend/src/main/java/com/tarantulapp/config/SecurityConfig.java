@@ -118,7 +118,9 @@ public class SecurityConfig {
                                 AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/oauth/google")
                         ).permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
+                        // Ant-style: string patterns would use MVC matchers and can fail for some /api/public/** paths
+                        // with path variables → 401 on GET /api/public/marketplace/listings/{uuid} despite permitAll intent.
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/api/public/**")).permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/billing/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/species", "/api/species/**").permitAll()

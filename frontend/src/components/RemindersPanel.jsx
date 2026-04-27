@@ -135,7 +135,7 @@ export default function RemindersPanel() {
                 className="d-flex align-items-start gap-2 p-2 rounded-2"
                 style={{
                   background: 'var(--ta-bg-input)',
-                  border: `1px solid ${urgent ? 'rgba(201,168,76,0.42)' : 'rgba(100,60,200,0.35)'}`,
+                  border: `1px solid ${urgent ? 'rgba(96,165,250,0.4)' : 'var(--ta-border)'}`,
                   minWidth: 0,
                 }}
               >

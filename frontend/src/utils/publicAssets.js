@@ -17,6 +17,7 @@ export function initPublicAssets() {
   root.style.setProperty('--ta-url-grain', u('card-chitin-inner-grain.png'))
   root.style.setProperty('--ta-url-badge-level', u('badge-level-chitin.png'))
   root.style.setProperty('--ta-url-divider-v', u('card-divider-vertical.png'))
+  root.style.setProperty('--ta-url-parchment', u('parchment-bg.png'))
 }
 
 initPublicAssets()

@@ -1,24 +1,33 @@
 /* ─── TarantulApp Theme — Dark Gothic Collector ─────────────────────────── */
 
 :root {
-  --ta-bg:            #06060e;
-  --ta-bg-deep:       #030308;
-  --ta-bg-card:       #0b0b18;
-  --ta-bg-panel:      #0e0e20;
-  --ta-bg-input:      #080812;
-  --ta-parchment:     #ddd0aa;
-  --ta-parchment-dk:  #bfad8a;
-  --ta-text:          #ddd0aa;
-  --ta-text-muted:    rgba(200,175,120,0.52);
-  --ta-border:        rgba(100,60,200,0.32);
-  --ta-border-gold:   rgba(201,168,76,0.25);
-  --ta-gold:          #c9a84c;
-  --ta-gold-light:    #e0c06a;
-  --ta-brown:         #c9a84c;
-  --ta-brown-light:   #e0c06a;
+  --ta-bg:            #000000;
+  --ta-bg-deep:       #000000;
+  --ta-bg-card:       #0a0a0c;
+  --ta-bg-panel:      #0e0e12;
+  --ta-bg-input:      #111114;
+  /* Base UI: texto frío + acento oro (navbar, CTAs, bordes “gold”) */
+  --ta-parchment:     #eef1f6;
+  --ta-parchment-dk:  #9ca3af;
+  --ta-text:          #e8eaef;
+  --ta-text-muted:    rgba(156, 163, 175, 0.82);
+  --ta-border:        rgba(255, 255, 255, 0.1);
+  --ta-border-gold:   rgba(232, 197, 71, 0.38);
+  --ta-gold:          #e8c547;
+  --ta-gold-light:    #f2d675;
+  --ta-brown:         #b8892a;
+  --ta-brown-light:   #d4a84b;
+  --ta-accent-blue:   #d4a84b;
+  --ta-accent-blue-dk: #b8892a;
+  --ta-hero-heading:    #eef1f6;
+  /* Títulos (h*) y marca navbar — oro cálido como mockups */
+  --ta-heading-gold: #e8c547;
+  /* Dorado real: escudos, ribbons socios oficiales, hubs marketplace (no toda la UI) */
+  --ta-gold-classic:       #c9a84c;
+  --ta-gold-light-classic: #e0c06a;
   --ta-green:         #1e5230;
   --ta-green-light:   #2d7040;
-  --ta-purple:        rgba(100,60,200,0.5);
+  --ta-purple:        rgba(100, 60, 200, 0.5);
 
   /* Mismo “lienzo” que body: textura + halos (reutilizable en marcos login, etc.) */
   --ta-sheet-bg-color: var(--ta-bg);
@@ -33,24 +42,30 @@
 }
 
 :root[data-theme='light'] {
-  --ta-bg: #f6f1e6;
-  --ta-bg-deep: #efe7d8;
-  --ta-bg-card: #fffaf0;
-  --ta-bg-panel: #f8efdf;
-  --ta-bg-input: #fffdf8;
-  --ta-parchment: #2b1f0b;
-  --ta-parchment-dk: #5e4a2f;
-  --ta-text: #2b1f0b;
-  --ta-text-muted: rgba(80, 61, 35, 0.72);
-  --ta-border: rgba(130, 90, 30, 0.24);
-  --ta-border-gold: rgba(140, 105, 35, 0.3);
-  --ta-gold: #8b6a2b;
-  --ta-gold-light: #a07c31;
-  --ta-brown: #8b6a2b;
-  --ta-brown-light: #a07c31;
+  --ta-bg: #f4f5f7;
+  --ta-bg-deep: #eceef1;
+  --ta-bg-card: #ffffff;
+  --ta-bg-panel: #f0f2f5;
+  --ta-bg-input: #ffffff;
+  --ta-parchment: #111827;
+  --ta-parchment-dk: #475569;
+  --ta-text: #0f172a;
+  --ta-text-muted: rgba(71, 85, 105, 0.85);
+  --ta-border: rgba(15, 23, 42, 0.1);
+  --ta-border-gold: rgba(180, 83, 9, 0.28);
+  --ta-gold: #b45309;
+  --ta-gold-light: #d97706;
+  --ta-brown: #92400e;
+  --ta-brown-light: #b45309;
+  --ta-accent-blue: #a16207;
+  --ta-accent-blue-dk: #92400e;
+  --ta-hero-heading: #0f172a;
+  --ta-heading-gold: #7c5e18;
+  --ta-gold-classic: #8b6a2b;
+  --ta-gold-light-classic: #a07c31;
   --ta-green: #2d7040;
   --ta-green-light: #3e8d56;
-  --ta-purple: rgba(120, 90, 40, 0.25);
+  --ta-purple: rgba(37, 99, 235, 0.15);
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────── */
@@ -72,13 +87,13 @@ h1, h2, h3, h4, h5, h6,
 .navbar-brand,
 .cinzel {
   font-family: 'Cinzel', Georgia, serif;
-  color: var(--ta-parchment);
+  color: var(--ta-heading-gold);
 }
 
 .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
 .modal-content h1, .modal-content h2, .modal-content h3,
 .modal-content h4, .modal-content h5, .modal-content h6 {
-  color: var(--ta-parchment);
+  color: var(--ta-heading-gold);
 }
 
 /* Marcas de lienzo muy suaves (sin emoji): legibles en claro y oscuro */
@@ -94,7 +109,7 @@ body::after {
   z-index: 0;
   background-image:
     var(--ta-url-spider-silhouette, url('/card-spider-silhouette.png')),
-    radial-gradient(circle at 40% 40%, rgba(160, 124, 48, 0.08) 0%, transparent 74%);
+    radial-gradient(circle at 40% 40%, rgba(80, 120, 200, 0.06) 0%, transparent 74%);
   background-size: contain, 100% 100%;
   background-repeat: no-repeat, no-repeat;
   background-position: center, center;
@@ -115,11 +130,15 @@ body::after { right: -2rem; }
 .card {
   background-color: var(--ta-bg-card) !important;
   border: 1px solid var(--ta-border) !important;
-  border-top: 2px solid rgba(130,80,220,0.45) !important;
+  border-radius: 10px !important;
   color: var(--ta-text) !important;
-  box-shadow: 0 4px 28px rgba(0,0,0,0.65), 0 0 40px rgba(70,35,160,0.07) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5) !important;
   position: relative;
   overflow: hidden;
+}
+
+:root[data-theme='light'] .card {
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06) !important;
 }
 
 /* Fang frame — one PNG corner, mirrored; size tracks panel width */
@@ -131,6 +150,88 @@ body::after { right: -2rem; }
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 0 8px rgba(115, 70, 248, 0.45));
+}
+
+/* Inset content from corner fangs without changing outer panel size (corners scale to ~22% panel width) */
+.fang-panel__inner {
+  position: relative;
+  z-index: 1;
+  padding: clamp(0.85rem, 4.5vw, 1.5rem);
+  box-sizing: border-box;
+}
+
+/* QR labels page: extra vertical inset so tabs, copy, and actions clear the corner fangs */
+.ta-qr-tool-fang-panel.fang-panel .fang-panel__inner {
+  padding-top: clamp(1rem, 5vw, 1.65rem);
+  padding-bottom: clamp(1.05rem, 5.2vw, 1.75rem);
+}
+
+/*
+ * Un solo marco visual: los PNG de colmillo ya delimitan la pieza.
+ * Quitar borde/sombra de .card (y .ta-premium-pane) aquí evita “doble recuadro”.
+ */
+.fang-panel .fang-panel__inner > .card {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .fang-panel .fang-panel__inner > .card {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* .ta-premium-pane añade borde/sombra propios — mismo “un solo marco” bajo FangPanel */
+.fang-panel .fang-panel__inner > .card.ta-premium-pane {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .fang-panel .fang-panel__inner > .card.ta-premium-pane {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hijo directo alerta (perfil público): mismo criterio */
+.fang-panel .fang-panel__inner > .alert {
+  border-width: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Dashboard grid + detalle tarántula: texto / badges / botones alejados de los colmillos PNG */
+.ta-spider-detail-fang.fang-panel .fang-panel__inner,
+.ta-tarantula-fang-card.fang-panel .fang-panel__inner {
+  padding: clamp(1rem, 5.2vw, 1.85rem);
+}
+
+.ta-chitin-species-detail .ta-chitin-frame__content {
+  padding: clamp(1.15rem, 6vw, 3.1rem);
+}
+
+/* Una sola lectura visual: marco chitin/placa + anillo PNG; sin “card dentro de card” */
+.ta-chitin-species-detail .ta-spec-profile-card {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+:root[data-theme='light'] .ta-chitin-species-detail .ta-spec-profile-card {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ta-chitin-species-detail .ta-spec-header-row {
+  border-bottom-color: rgba(129, 140, 248, 0.22);
+}
+
+.ta-premium-tarantula-card .ta-premium-card-meta {
+  padding: 1rem 1.15rem 1.05rem;
+}
+
+.ta-spider-detail-fang .ta-tarantula-detail-main-card .card-footer {
+  padding-bottom: 1.1rem !important;
 }
 
 .card-body, .card-header, .card-footer {
@@ -156,11 +257,25 @@ body::after { right: -2rem; }
 .form-control:focus, .form-select:focus {
   background-color: var(--ta-bg-input) !important;
   border-color: var(--ta-gold) !important;
-  box-shadow: 0 0 0 0.2rem rgba(201,168,76,0.18) !important;
+  box-shadow: 0 0 0 0.2rem rgba(232, 197, 71, 0.22) !important;
   color: var(--ta-text) !important;
 }
 .form-control::placeholder { color: var(--ta-text-muted) !important; }
 .form-label { color: var(--ta-parchment) !important; }
+/* Etiqueta estilo Discover (azul frío, equilibrio con títulos dorados en la misma tarjeta) */
+.form-label.ta-label-accent {
+  color: var(--ta-accent-blue) !important;
+}
+
+.ta-discover-page-title {
+  color: var(--ta-heading-gold) !important;
+  text-shadow:
+    0 0 20px rgba(232, 197, 71, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.75);
+}
+:root[data-theme='light'] .ta-discover-page-title {
+  text-shadow: none;
+}
 .form-check-label { color: var(--ta-parchment-dk) !important; }
 .form-check-input {
   background-color: var(--ta-bg-input) !important;
@@ -186,7 +301,7 @@ body::after { right: -2rem; }
 .btn-dark:disabled, .btn-primary:disabled {
   background-color: rgba(60,40,100,0.4) !important;
   border-color: rgba(80,55,140,0.3) !important;
-  color: rgba(200,175,120,0.35) !important;
+  color: rgba(148, 163, 184, 0.45) !important;
 }
 
 .btn-outline-secondary {
@@ -200,8 +315,8 @@ body::after { right: -2rem; }
   border-color: rgba(140,110,200,0.65) !important;
 }
 .btn-outline-secondary:disabled {
-  color: rgba(200,175,120,0.3) !important;
-  border-color: rgba(100,80,150,0.2) !important;
+  color: rgba(148, 163, 184, 0.35) !important;
+  border-color: rgba(100, 80, 150, 0.2) !important;
 }
 
 .btn-outline-primary {
@@ -210,7 +325,7 @@ body::after { right: -2rem; }
   background-color: transparent !important;
 }
 .btn-outline-primary:hover {
-  background-color: rgba(201,168,76,0.12) !important;
+  background-color: rgba(232, 197, 71, 0.14) !important;
   color: var(--ta-gold-light) !important;
 }
 
@@ -225,12 +340,12 @@ body::after { right: -2rem; }
 }
 
 .btn-outline-light {
-  border-color: rgba(200,175,120,0.28) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
   color: var(--ta-parchment-dk) !important;
   background-color: transparent !important;
 }
 .btn-outline-light:hover {
-  background-color: rgba(200,175,120,0.08) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
   color: var(--ta-parchment) !important;
 }
 
@@ -253,9 +368,9 @@ body::after { right: -2rem; }
 /* ─── Badges ────────────────────────────────────────────────────────────── */
 
 .badge.bg-light {
-  background-color: rgba(200,175,120,0.1) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
   color: var(--ta-parchment-dk) !important;
-  border: 1px solid rgba(200,175,120,0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 .badge.bg-dark {
   background-color: rgba(75,45,155,0.5) !important;
@@ -284,8 +399,8 @@ body::after { right: -2rem; }
 /* ─── Alerts ────────────────────────────────────────────────────────────── */
 
 .alert-light {
-  background-color: rgba(200,175,120,0.07) !important;
-  border-color: rgba(200,175,120,0.18) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
   color: var(--ta-parchment) !important;
 }
 .alert-danger {
@@ -344,11 +459,61 @@ body::after { right: -2rem; }
 
 hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 
+/* App-wide footer: negro + dorado clásico (marca, alineado a pie de sitio promocional) */
+.ta-app-footer {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.78rem;
+  background: #000000 !important;
+  color: var(--ta-gold-classic) !important;
+  border-top: 1px solid rgba(201, 168, 76, 0.35) !important;
+  letter-spacing: 0.03em;
+}
+
+.ta-app-footer a {
+  color: var(--ta-gold-classic) !important;
+  text-decoration: none !important;
+}
+
+.ta-app-footer a:hover {
+  color: var(--ta-gold-light-classic) !important;
+}
+
+.ta-app-footer .ta-app-footer__social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ta-app-footer .ta-app-footer__dot {
+  opacity: 0.55;
+  padding: 0 0.25rem;
+  user-select: none;
+}
+
+.ta-app-footer .ta-tm {
+  color: inherit !important;
+}
+
+/* Mismo aspecto en tema claro: pie negro / oro marca */
+:root[data-theme='light'] .ta-app-footer {
+  background: #000000 !important;
+  color: var(--ta-gold-classic) !important;
+  border-top-color: rgba(201, 168, 76, 0.38) !important;
+}
+
+:root[data-theme='light'] .ta-app-footer a {
+  color: var(--ta-gold-classic) !important;
+}
+
+:root[data-theme='light'] .ta-app-footer a:hover {
+  color: var(--ta-gold-light-classic) !important;
+}
+
 /* ─── Navbar ────────────────────────────────────────────────────────────── */
 
 .navbar {
-  background: linear-gradient(180deg, #040408 0%, #07071a 100%) !important;
-  border-bottom: 1px solid rgba(100,60,200,0.28) !important;
+  background: linear-gradient(180deg, #000000 0%, #06060a 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   position: relative;
   z-index: 100;
 }
@@ -358,19 +523,19 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   bottom: -1px;
   left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(232, 197, 71, 0.45), transparent);
   pointer-events: none;
 }
 .navbar-brand {
   font-family: 'Cinzel', serif !important;
   font-weight: 700 !important;
-  color: var(--ta-gold) !important;
+  color: var(--ta-heading-gold) !important;
   letter-spacing: 1.5px;
 }
 
 .ta-mobile-menu-toggle {
   border: 1px solid var(--ta-border) !important;
-  color: var(--ta-parchment) !important;
+  color: var(--ta-heading-gold) !important;
   min-width: 42px;
 }
 
@@ -378,9 +543,9 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   min-width: 36px;
   min-height: 36px;
   border-radius: 999px !important;
-  border: 1px solid rgba(201, 168, 76, 0.35) !important;
-  background: rgba(10, 10, 18, 0.65) !important;
-  color: var(--ta-parchment) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(10, 10, 14, 0.72) !important;
+  color: var(--ta-heading-gold) !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -388,15 +553,15 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 }
 
 .ta-mobile-collection-cta {
-  background: linear-gradient(135deg, #e8c56a 0%, #c9a227 100%) !important;
-  color: #111 !important;
-  border: 1px solid rgba(220, 178, 76, 0.9) !important;
-  box-shadow: 0 0 12px rgba(220, 175, 70, 0.3);
+  background: linear-gradient(135deg, #c9a84c 0%, #a8842e 100%) !important;
+  color: #140c02 !important;
+  border: 1px solid rgba(232, 197, 71, 0.55) !important;
+  box-shadow: 0 4px 18px rgba(120, 90, 24, 0.45);
 }
 
 .ta-mobile-nav-panel {
   border: 1px solid var(--ta-border);
-  background: radial-gradient(circle at top right, rgba(201, 168, 76, 0.12), rgba(10, 10, 24, 0.96) 46%);
+  background: radial-gradient(circle at top right, rgba(232, 197, 71, 0.08), rgba(8, 8, 12, 0.98) 46%);
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -428,7 +593,7 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   flex-direction: column;
   margin-left: 0.65rem;
   padding-left: 0.55rem;
-  border-left: 1px solid rgba(201, 168, 76, 0.28);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
   gap: 0.46rem;
 }
 
@@ -498,6 +663,71 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   background: linear-gradient(to left, transparent, rgba(100,60,200,0.3));
 }
 
+/* Community composer — caja de texto clara como foco; ideas rotan solo debajo */
+.ta-social-composer-textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.42) !important;
+  border: 1px solid rgba(232, 197, 71, 0.42) !important;
+  border-radius: 12px !important;
+  padding: 0.85rem 0.95rem !important;
+  font-size: 0.95rem !important;
+  line-height: 1.45 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 14px rgba(0, 0, 0, 0.35);
+}
+.ta-social-composer-textarea:focus {
+  border-color: rgba(232, 197, 71, 0.78) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 0.2rem rgba(232, 197, 71, 0.22);
+  background: rgba(0, 0, 0, 0.52) !important;
+}
+:root[data-theme='light'] .ta-social-composer-textarea {
+  background: rgba(255, 252, 245, 0.96) !important;
+  border-color: rgba(180, 83, 9, 0.35) !important;
+  color: var(--ta-text) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 12px rgba(15, 23, 42, 0.08);
+}
+:root[data-theme='light'] .ta-social-composer-textarea:focus {
+  border-color: rgba(180, 83, 9, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 0 0 0.2rem rgba(212, 168, 75, 0.28);
+}
+.ta-social-composer-textarea::placeholder {
+  color: rgba(226, 214, 178, 0.55);
+}
+:root[data-theme='light'] .ta-social-composer-textarea::placeholder {
+  color: rgba(71, 85, 105, 0.55);
+}
+
+.ta-social-composer-hint {
+  margin-top: -0.15rem;
+  line-height: 1.45;
+  min-height: 2.6em;
+}
+.ta-social-composer-hint__phrase {
+  display: inline;
+  font-style: italic;
+  color: rgba(223, 204, 160, 0.94);
+}
+:root[data-theme='light'] .ta-social-composer-hint__phrase {
+  color: rgba(92, 62, 18, 0.88);
+}
+
+.ta-social-collapsed-prompt {
+  font-style: italic;
+  line-height: 1.38;
+  color: rgba(223, 204, 160, 0.9);
+}
+:root[data-theme='light'] .ta-social-collapsed-prompt {
+  color: rgba(92, 62, 18, 0.85);
+}
+
 /* ─── Section header (gothic panel titles matching reference) ────────────── */
 
 .ta-section-header {
@@ -510,7 +740,7 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   font-weight: 700;
   letter-spacing: clamp(0.06em, 0.02em + 0.45vw, 0.2em);
   text-transform: uppercase;
-  color: var(--ta-parchment);
+  color: var(--ta-heading-gold);
   padding-bottom: 0.45rem;
   margin-bottom: 1rem;
   position: relative;
@@ -532,10 +762,10 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   bottom: 0; left: 0; right: 0;
   height: 1px;
   background: linear-gradient(90deg,
-    rgba(130,85,242,0.8) 0%,
-    rgba(201,168,76,0.45) 40%,
-    rgba(201,168,76,0.45) 60%,
-    rgba(130,85,242,0.8) 100%);
+    transparent 0%,
+    rgba(148, 163, 184, 0.35) 45%,
+    rgba(148, 163, 184, 0.35) 55%,
+    transparent 100%);
 }
 
 /* Inside FangPanel — remove card's double-border since FangPanel provides it */
@@ -546,7 +776,7 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 /* ─── Page title ────────────────────────────────────────────────────────── */
 
 .page-title {
-  color: var(--ta-parchment);
+  color: var(--ta-heading-gold);
   text-shadow: 0 2px 10px rgba(0,0,0,0.9);
   letter-spacing: 1px;
 }
@@ -579,7 +809,7 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 .input-group-text {
   background-color: rgba(0,0,0,0.3) !important;
   border-color: rgba(100,60,200,0.35) !important;
-  color: rgba(200,175,120,0.6) !important;
+  color: rgba(156, 163, 175, 0.75) !important;
 }
 
 /* ─── Border styles ─────────────────────────────────────────────────────── */
@@ -637,7 +867,43 @@ a.text-collection:hover {
   overflow: visible;
 }
 
-/* Wrapper transparente: la sombra y el “flotado” van en .ta-parchment-scroll (todo dentro del pergamino) */
+.ta-parchment-float-wrap--detail {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  filter: drop-shadow(0 16px 44px rgba(0, 0, 0, 0.5));
+}
+
+:root[data-theme='light'] .ta-parchment-float-wrap--detail {
+  filter: drop-shadow(0 12px 32px rgba(15, 23, 42, 0.14));
+}
+
+.ta-parchment-float-wrap--detail-sidebar {
+  margin-top: 1.35rem;
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-history.ta-parchment-history--tarantula-root,
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll.ta-parchment-scroll--vertical {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-bg-img.ta-parchment-bg-img--full {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Wrapper transparente (perfil público): sombras pueden salir del rectángulo */
 .ta-parchment-history.card {
   overflow: visible !important;
   margin: 0;
@@ -646,6 +912,21 @@ a.text-collection:hover {
   border: none !important;
   border-top: none !important;
   border-radius: 0;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+/*
+ * Detalle tarántula: el PNG es la caja — clip estricto (nada pinta fuera del pergamino).
+ */
+.ta-parchment-history.ta-parchment-history--tarantula-root {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  border: none !important;
+  border-radius: 14px;
+  overflow: hidden;
   background-color: transparent !important;
   box-shadow: none !important;
   transform: none;
@@ -663,6 +944,17 @@ a.text-collection:hover {
   transform: none;
 }
 
+/* El bloque .ta-parchment-scroll + imagen es el contorno real; el overlay sigue la caja del PNG */
+.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
+  display: block;
+  width: 100%;
+  isolation: isolate;
+}
+
+.ta-parchment-history.ta-parchment-history--tarantula-root .ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
+  contain: paint;
+}
+
 .ta-parchment-bg-img {
   display: block;
   width: 100%;
@@ -670,37 +962,179 @@ a.text-collection:hover {
   vertical-align: top;
   pointer-events: none;
   user-select: none;
-  opacity: 0.88;
-  filter: saturate(0.88) contrast(0.95) brightness(0.99);
-  mix-blend-mode: multiply;
+  opacity: 0.97;
+  filter: saturate(1.02) contrast(1.02) brightness(1.02);
+  /* multiply sobre UI oscura anulaba el pergamino; el PNG ya trae papel / sombras */
+  mix-blend-mode: normal;
 }
 
-/* Vertical parchment variant for spider history timeline */
+/*
+ * Variante vertical (detalle tarántula): la imagen define el tamaño (PNG completo, sin cover/crop).
+ * Ancho = 100% del col (igual que ficha especie / terrarium). Contenido centrado en zona de escritura.
+ */
 .ta-parchment-scroll--vertical {
-  min-height: clamp(520px, 72vh, 860px);
-}
-
-.ta-parchment-scroll--vertical .ta-parchment-bg-img {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: auto;
-  height: 150%;
-  max-width: none;
-  transform: translate(-50%, -50%) rotate(90deg);
-  transform-origin: center;
-  opacity: 0.9;
-}
-
-.ta-parchment-scroll--vertical .ta-parchment-scroll-inner {
+  width: 100%;
   position: relative;
-  inset: auto;
-  height: 100%;
-  min-height: clamp(520px, 72vh, 860px);
-  padding-top: clamp(2.2rem, 4.6vw, 3rem);
-  padding-bottom: clamp(1.4rem, 3.2vw, 2.1rem);
-  padding-left: clamp(1.4rem, 4vw, 2.2rem);
-  padding-right: clamp(1.4rem, 4vw, 2.2rem);
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -3px 18px rgba(40, 28, 18, 0.12),
+    0 10px 36px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme='light'] .ta-parchment-scroll--vertical {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 12px 40px rgba(15, 23, 42, 0.14);
+}
+
+.ta-parchment-scroll--vertical .ta-parchment-bg-img--full {
+  display: block !important;
+  width: 100%;
+  height: auto;
+}
+
+.ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(7%, 9vw, 12%) clamp(9%, 11vw, 15%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  z-index: 2;
+}
+
+.ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
+  width: min(36rem, 88%);
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-shrink: 1;
+}
+
+.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-right: -2px;
+  padding-right: 4px;
+}
+
+.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar-thumb {
+  background: rgba(62, 44, 26, 0.42);
+  border-radius: 999px;
+}
+
+.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar-track {
+  background: rgba(255, 248, 228, 0.15);
+  border-radius: 999px;
+}
+
+/*
+ * Columna ejemplar (detalle): padding acorde al arte (rodillos/garras ≠ bordes del papel).
+ * No reusar “un % para todos”: arriba/abajo mucho mayor que laterales.
+ */
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+  align-items: stretch;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  /* El PNG tiene bordes/alpha: márgenes mayores para que icono + texto queden sobre el papel */
+  padding-top: clamp(18%, 21vw, 33%);
+  padding-bottom: clamp(11%, 14vw, 23%);
+  padding-left: clamp(12%, 14vw, 20%);
+  padding-right: clamp(12%, 14vw, 20%);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+  box-sizing: border-box;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
+  min-height: clamp(210px, 22vh, 340px);
+  margin-right: 0;
+  padding-right: 0.35rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.ta-parchment-float-wrap--detail-sidebar
+  .ta-parchment-scroll-inner--vertical-detail
+  .ta-parchment-events--scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll--vertical {
+  overflow: hidden;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-row {
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.35rem !important;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-icon-col {
+  flex-shrink: 0;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-marker {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-marker > span {
+  font-size: 0.82rem !important;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-head-row {
+  max-width: 100%;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-page-title {
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+  margin-bottom: 1.45rem;
+  padding: 0.45rem 0.65rem 0.95rem;
+  gap: 0.55rem;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll .ta-history-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll .ta-history-meta {
+  white-space: normal !important;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-timeline-meta-actions {
+  flex-shrink: 1 !important;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-pager {
+  flex-shrink: 0;
 }
 
 /* Contenido (Historique, eventos, paginador) encima del pergamino, mismo rectángulo que la imagen */
@@ -940,20 +1374,33 @@ a.text-collection:hover {
     line-height: 1.28;
   }
 
-  .ta-parchment-scroll--vertical {
-    min-height: clamp(460px, 70vh, 680px);
+  /* Detalle: sin min-height forzado — el PNG marca el alto; solo afinamos márgenes de escritura */
+  .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+    padding: clamp(5.5%, 7vw, 9%) clamp(4.5%, 6vw, 9%);
+    align-items: center;
+    justify-content: center;
   }
 
-  .ta-parchment-scroll--vertical .ta-parchment-bg-img {
-    height: 165%;
+  .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
+    width: min(36rem, 94%);
   }
 
-  .ta-parchment-scroll--vertical .ta-parchment-scroll-inner {
-    min-height: clamp(460px, 70vh, 680px);
-    padding-top: 1.8rem;
-    padding-bottom: 1.1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding-top: clamp(15%, 17vw, 26%);
+    padding-bottom: clamp(10%, 12vw, 19%);
+    padding-left: clamp(10%, 12vw, 18%);
+    padding-right: clamp(10%, 12vw, 18%);
+  }
+
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
+    min-height: clamp(200px, 38vw, 300px);
   }
 }
 
@@ -963,6 +1410,17 @@ a.text-collection:hover {
     padding-bottom: 0.9rem;
     padding-left: 0.95rem;
     padding-right: 0.95rem;
+  }
+
+  .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+    padding: clamp(5%, 6vw, 8%) clamp(3.5%, 5vw, 7%);
+  }
+
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+    padding-top: clamp(14%, 16vw, 24%);
+    padding-bottom: clamp(9%, 11vw, 17%);
+    padding-left: clamp(9%, 10vw, 16%);
+    padding-right: clamp(9%, 10vw, 16%);
   }
 
   .ta-parchment-page-title {
@@ -1086,9 +1544,10 @@ a.text-collection:hover {
   padding: clamp(0.95rem, 5.2vw, 2.6rem);
 }
 
-/* Login / recuperación: quitar doble padding y el borde púrpura del .card global */
+/* Login / compositor / formularios: borde de card quitado; padding solo para alejar UI de los colmillos */
 .ta-chitin-frame--auth .ta-chitin-frame__content {
-  padding: 0;
+  padding: clamp(0.6rem, 3.2vw, 1.2rem);
+  box-sizing: border-box;
 }
 .ta-chitin-frame--auth .card,
 .ta-chitin-frame--auth .card:hover {
@@ -1127,25 +1586,25 @@ a.text-collection:hover {
 .ta-spec-profile-card {
   border-radius: 18px;
   padding: clamp(0.85rem, 1.2vw, 1.2rem);
-  border: 1px solid rgba(201, 168, 76, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background:
-    radial-gradient(120% 80% at 0% 0%, rgba(108, 74, 194, 0.12), transparent 55%),
-    linear-gradient(160deg, rgba(8, 11, 28, 0.72), rgba(6, 8, 20, 0.86));
+    radial-gradient(120% 80% at 0% 0%, rgba(59, 130, 246, 0.08), transparent 55%),
+    linear-gradient(160deg, rgba(8, 9, 12, 0.92), rgba(0, 0, 0, 0.88));
   box-shadow:
-    inset 0 1px 0 rgba(255, 228, 176, 0.08),
-    inset 0 0 0 1px rgba(126, 91, 224, 0.16),
-    0 14px 34px rgba(0, 0, 0, 0.36);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(96, 165, 250, 0.12),
+    0 14px 34px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme='light'] .ta-spec-profile-card {
   background:
-    radial-gradient(130% 90% at 0% 0%, rgba(201, 168, 76, 0.15), transparent 55%),
-    linear-gradient(160deg, #fffdf8, #f2e9d8);
-  border-color: rgba(130, 90, 30, 0.3);
+    radial-gradient(130% 90% at 0% 0%, rgba(59, 130, 246, 0.06), transparent 55%),
+    linear-gradient(160deg, #ffffff, #f1f5f9);
+  border-color: rgba(15, 23, 42, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    inset 0 0 0 1px rgba(157, 120, 56, 0.13),
-    0 10px 24px rgba(45, 30, 10, 0.1);
+    inset 0 0 0 1px rgba(15, 23, 42, 0.06),
+    0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .ta-spec-title {
@@ -1162,16 +1621,28 @@ a.text-collection:hover {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
-/* Títulos “dorados” sobre fondos oscuros o pergamino (login CTA, secciones Descubrir, Pro…) */
+/* Títulos de sección — oro (Discover, Pro, tarjetas hub…) */
 .ta-accent-heading {
-  color: #ffeccd !important;
+  color: var(--ta-heading-gold) !important;
   text-shadow:
-    0 0 20px rgba(201, 168, 76, 0.5),
-    0 1px 2px rgba(0, 0, 0, 0.9);
+    0 0 18px rgba(232, 197, 71, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.88);
 }
 :root[data-theme='light'] .ta-accent-heading {
-  color: #4a3208 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  color: var(--ta-heading-gold) !important;
+  text-shadow: none;
+}
+
+/* Hub marketplace en Discover: título en oro junto al escudo (oro clásico) */
+.ta-discover-marketplace-hub .ta-accent-heading {
+  color: #ffe8c4 !important;
+  text-shadow:
+    0 0 18px rgba(201, 168, 76, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.9);
+}
+:root[data-theme='light'] .ta-discover-marketplace-hub .ta-accent-heading {
+  color: #6b4a18 !important;
+  text-shadow: none;
 }
 
 .ta-login-brand-wordmark {
@@ -1360,7 +1831,7 @@ a.text-collection:hover {
   color: var(--ta-text);
 }
 .marketplace-official-apply-panel__title {
-  color: var(--ta-gold-light) !important;
+  color: var(--ta-gold-light-classic) !important;
   font-family: 'Cinzel', Georgia, serif;
   font-size: 1.05rem;
   letter-spacing: 0.03em;
@@ -1375,7 +1846,7 @@ a.text-collection:hover {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 8px 26px rgba(50, 35, 12, 0.12);
 }
 :root[data-theme='light'] .marketplace-official-apply-panel__title {
-  color: var(--ta-brown) !important;
+  color: var(--ta-gold-classic) !important;
 }
 
 .official-vendor-card {
@@ -1454,6 +1925,262 @@ a.text-collection:hover {
 }
 :root[data-theme='light'] .ta-marketplace-community-intro {
   box-shadow: 0 6px 22px rgba(40, 28, 8, 0.08);
+}
+
+/* Marketplace listing cards — warm text (not UI blue); keeper link uses classic gold */
+.ta-marketplace-listing-card .card-body h6 {
+  color: #eef1f6 !important;
+}
+.ta-marketplace-listing-card .card-body > .fw-semibold.mb-2 {
+  color: #f0e6d4 !important;
+}
+.ta-marketplace-listing-card .card-body a.ta-marketplace-keeper-link {
+  color: var(--ta-gold-light-classic) !important;
+}
+.ta-marketplace-listing-card .card-body a.ta-marketplace-keeper-link:hover {
+  color: #fff9ec !important;
+}
+
+/* Keeper hover: la tarjeta preview no debe recortarse por overflow:hidden del .card */
+.ta-marketplace-listing-card.card,
+.ta-marketplace-listing-card {
+  overflow: visible !important;
+}
+.ta-marketplace-listing-card .card-body {
+  overflow: visible !important;
+}
+.ta-marketplace-listing-card .ta-keeper-hover-card {
+  z-index: 1080;
+}
+
+/* Peer listing — discreet secondary action (not a gold “hero” button) */
+.ta-marketplace-view-profile-btn {
+  border-radius: 0.35rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: rgba(248, 250, 252, 0.88) !important;
+  background: transparent !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+.ta-marketplace-view-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(201, 168, 76, 0.35) !important;
+  color: #fff !important;
+}
+.ta-marketplace-view-profile-btn:focus-visible {
+  outline: 2px solid rgba(201, 168, 76, 0.55);
+  outline-offset: 2px;
+}
+
+:root[data-theme='light'] .ta-marketplace-view-profile-btn {
+  border-color: rgba(100, 85, 55, 0.22) !important;
+  color: rgba(51, 42, 28, 0.88) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme='light'] .ta-marketplace-view-profile-btn:hover {
+  background: rgba(90, 70, 35, 0.06) !important;
+  border-color: rgba(120, 88, 32, 0.4) !important;
+  color: #1a1510 !important;
+}
+
+/* Corner report — tiny, tertiary */
+.ta-marketplace-listing-card .ta-marketplace-listing-report {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.35rem;
+  z-index: 2;
+  padding: 0.1rem 0.35rem !important;
+  margin: 0 !important;
+  font-size: 0.62rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-decoration: none !important;
+  color: rgba(200, 195, 185, 0.72) !important;
+  border: none !important;
+  background: transparent !important;
+  min-height: auto;
+}
+.ta-marketplace-listing-card .ta-marketplace-listing-report:hover {
+  color: rgba(240, 235, 225, 0.95) !important;
+}
+.ta-marketplace-listing-card .ta-marketplace-listing-report:focus-visible {
+  outline: 1px solid rgba(201, 168, 76, 0.45);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+:root[data-theme='light'] .ta-marketplace-listing-card .ta-marketplace-listing-report {
+  color: rgba(90, 78, 58, 0.55) !important;
+}
+:root[data-theme='light'] .ta-marketplace-listing-card .ta-marketplace-listing-report:hover {
+  color: rgba(40, 32, 22, 0.9) !important;
+}
+
+.ta-marketplace-listing-card-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.ta-marketplace-listing-card-clickable:hover {
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35) !important;
+  transform: translateY(-2px);
+}
+:root[data-theme='light'] .ta-marketplace-listing-card-clickable:hover {
+  box-shadow: 0 10px 28px rgba(40, 28, 8, 0.14) !important;
+}
+
+/* Listing detail: breadcrumb — legible on dark sheet, no default link blue */
+.ta-marketplace-detail-breadcrumb {
+  margin-bottom: 1rem;
+}
+.ta-marketplace-detail-breadcrumb__list .breadcrumb-item:last-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.ta-marketplace-detail-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.2rem;
+  padding: 0.5rem 0.75rem;
+  list-style: none;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ta-border, rgba(255, 255, 255, 0.1));
+  font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+.ta-marketplace-detail-breadcrumb__list .breadcrumb-item + .breadcrumb-item {
+  padding-left: 0.4rem;
+}
+.ta-marketplace-detail-breadcrumb__list .breadcrumb-item + .breadcrumb-item::before {
+  float: left;
+  padding-right: 0.45rem;
+  color: var(--ta-text-muted, rgba(156, 163, 175, 0.75));
+  content: var(--bs-breadcrumb-divider, '/');
+  font-weight: 500;
+}
+.ta-marketplace-detail-breadcrumb__back {
+  color: var(--ta-gold, #5b9cff);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ta-marketplace-detail-breadcrumb__back:hover {
+  color: var(--ta-gold-light, #93c5fd);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.ta-marketplace-detail-breadcrumb__back:focus-visible {
+  outline: 2px solid rgba(91, 156, 255, 0.45);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+.ta-marketplace-detail-page .ta-marketplace-detail-breadcrumb .breadcrumb-item.active {
+  color: var(--ta-parchment, #eef1f6);
+  font-weight: 600;
+}
+
+:root[data-theme='light'] .ta-marketplace-detail-breadcrumb__list {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+:root[data-theme='light'] .ta-marketplace-detail-page .ta-marketplace-detail-breadcrumb .breadcrumb-item.active {
+  color: var(--ta-text);
+}
+
+.ta-marketplace-detail-page .ta-marketplace-detail-related-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ta-marketplace-detail-page .ta-marketplace-detail-related-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme='light'] .ta-marketplace-listing-card .card-body h6 {
+  color: var(--ta-text) !important;
+}
+:root[data-theme='light'] .ta-marketplace-listing-card .card-body > .fw-semibold.mb-2 {
+  color: #5c4a2e !important;
+}
+:root[data-theme='light'] .ta-marketplace-listing-card .card-body a.ta-marketplace-keeper-link {
+  color: var(--ta-gold-classic) !important;
+}
+
+.ta-sex-id-reputation-card {
+  padding: 0.85rem 1rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(180, 150, 95, 0.28);
+  border-left: 4px solid var(--ta-gold-classic);
+  background: linear-gradient(155deg, rgba(26, 22, 38, 0.98) 0%, rgba(8, 10, 16, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 180, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.42);
+}
+
+.ta-sex-id-reputation-card__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(236, 225, 200, 0.92);
+  margin-bottom: 0.65rem;
+}
+
+.ta-sex-id-badge {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  padding: 0.35rem 0.55rem !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(237, 242, 250, 0.92) !important;
+}
+
+.ta-sex-id-badge--primary {
+  border-color: rgba(201, 168, 76, 0.55) !important;
+  background: rgba(201, 168, 76, 0.15) !important;
+  color: #fff4dc !important;
+}
+
+.ta-sex-id-badge--achievement {
+  border-color: rgba(74, 140, 90, 0.55) !important;
+  background: rgba(34, 84, 52, 0.45) !important;
+  color: #d4f5dc !important;
+}
+
+.ta-sex-id-reputation-card .small.text-muted {
+  color: rgba(184, 198, 218, 0.88) !important;
+}
+
+:root[data-theme='light'] .ta-sex-id-reputation-card {
+  background: linear-gradient(155deg, #fdfcfa 0%, #f4efe6 100%);
+  border-color: rgba(120, 92, 40, 0.22);
+  box-shadow: 0 8px 22px rgba(45, 30, 12, 0.08);
+}
+
+:root[data-theme='light'] .ta-sex-id-reputation-card__title {
+  color: #5c4a2e;
+}
+
+:root[data-theme='light'] .ta-sex-id-badge {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: var(--ta-text) !important;
+}
+
+:root[data-theme='light'] .ta-sex-id-badge--primary {
+  border-color: rgba(139, 106, 43, 0.45) !important;
+  background: rgba(212, 175, 105, 0.22) !important;
+  color: #3f2f12 !important;
+}
+
+:root[data-theme='light'] .ta-sex-id-badge--achievement {
+  border-color: rgba(46, 125, 72, 0.45) !important;
+  background: rgba(220, 248, 232, 0.95) !important;
+  color: #14532d !important;
 }
 
 .ta-marketplace-official-strip {
@@ -1551,12 +2278,12 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-discover-marketplace-hub {
   border-color: var(--ta-border) !important;
-  background: linear-gradient(168deg, rgba(24, 18, 40, 0.72), rgba(10, 8, 18, 0.94));
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(168deg, rgba(18, 22, 36, 0.88), rgba(8, 9, 14, 0.95));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
 }
 :root[data-theme='light'] .ta-discover-marketplace-hub {
-  background: linear-gradient(168deg, #fffdf8, #efe6d4);
-  box-shadow: 0 8px 22px rgba(45, 30, 10, 0.1);
+  background: linear-gradient(168deg, #ffffff, #f1f5f9);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
 }
 
 /* ─── Navbar brand — circular logos + intro ring sweep ─────────────────── */
@@ -1567,7 +2294,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-brand-logo-wordmark {
   font-size: 1.05rem;
   letter-spacing: 0.04em;
-  color: var(--ta-parchment) !important;
+  color: var(--ta-heading-gold) !important;
 }
 .ta-tm {
   font-size: 0.5em;
@@ -1652,19 +2379,19 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 /* Dashboard strip: readable in light and dark */
 .ta-dashboard-atmosphere-strip {
-  background: linear-gradient(90deg, rgba(40, 32, 18, 0.55) 0%, rgba(22, 18, 12, 0.2) 100%);
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.45) 0%, rgba(0, 0, 0, 0.15) 100%);
 }
 :root[data-theme='light'] .ta-dashboard-atmosphere-strip {
-  background: linear-gradient(90deg, rgba(255, 248, 230, 0.95) 0%, rgba(245, 236, 216, 0.65) 100%);
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.85) 100%);
   color: var(--ta-text) !important;
-  border-left-color: rgba(139, 106, 43, 0.55) !important;
+  border-left-color: rgba(37, 99, 235, 0.45) !important;
 }
 
 .ta-home-hero {
   border: 1px solid var(--ta-border);
   border-radius: 0.85rem;
-  background: linear-gradient(145deg, rgba(20, 16, 36, 0.9), rgba(9, 9, 18, 0.96));
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(145deg, rgba(12, 12, 16, 0.96), rgba(0, 0, 0, 0.92));
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
 }
 .ta-home-hero__eyebrow {
   color: var(--ta-gold);
@@ -1672,64 +2399,89 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   font-weight: 700;
 }
 .ta-home-hero__logo-wrap {
-  border: 1px solid rgba(201, 168, 76, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
-  background: rgba(14, 12, 22, 0.55);
+  background: rgba(0, 0, 0, 0.35);
   padding: 1rem 0.75rem;
   min-height: 170px;
 }
 .ta-home-pillar {
-  border: 1px solid rgba(201, 168, 76, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.6rem;
-  background: rgba(15, 12, 24, 0.45);
+  background: rgba(0, 0, 0, 0.28);
   padding: 0.75rem;
 }
 :root[data-theme='light'] .ta-home-hero {
-  background: linear-gradient(145deg, #fffdf8, #efe6d4);
-  box-shadow: 0 8px 24px rgba(45, 30, 10, 0.11);
+  background: linear-gradient(145deg, #ffffff, #f0f2f5);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 :root[data-theme='light'] .ta-home-hero__logo-wrap {
-  background: rgba(255, 249, 238, 0.82);
-  border-color: rgba(120, 88, 32, 0.26);
+  background: rgba(248, 250, 252, 0.95);
+  border-color: rgba(15, 23, 42, 0.1);
 }
 :root[data-theme='light'] .ta-home-pillar {
-  background: rgba(255, 252, 244, 0.88);
-  border-color: rgba(120, 88, 32, 0.2);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.1);
 }
 
 /* Premium dashboard refresh */
 .ta-premium-dashboard {
-  background: radial-gradient(ellipse at top, rgba(76, 44, 140, 0.1) 0%, transparent 52%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 55%);
   min-height: 100vh;
   padding-bottom: 5rem;
 }
 
 .ta-premium-profile-card {
-  background: linear-gradient(160deg, rgba(16, 16, 28, 0.9), rgba(10, 10, 18, 0.85)) !important;
-  border: 1px solid rgba(201, 168, 76, 0.32) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 224, 170, 0.09), 0 14px 34px rgba(0, 0, 0, 0.4) !important;
+  background: linear-gradient(160deg, rgba(8, 8, 10, 0.98), rgba(0, 0, 0, 0.94)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 34px rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(10px);
 }
 
 .ta-premium-profile-name {
   font-family: 'Cinzel', Georgia, serif;
-  color: var(--ta-gold-light) !important;
+  color: var(--ta-parchment) !important;
 }
 
 .ta-premium-profile-handle {
-  color: rgba(232, 225, 206, 0.9) !important;
+  color: var(--ta-text-muted) !important;
+}
+
+.ta-keeper-reputation-strip {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 3px solid var(--ta-gold-classic);
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.09), rgba(12, 14, 22, 0.85));
+}
+
+.ta-keeper-reputation-strip .progress {
+  background: rgba(0, 0, 0, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ta-keeper-reputation-strip .progress-bar.bg-warning {
+  background: linear-gradient(90deg, #b8860b, #e0c06a) !important;
+}
+
+:root[data-theme='light'] .ta-keeper-reputation-strip {
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.14), rgba(248, 250, 252, 0.98));
+  border-color: rgba(15, 23, 42, 0.09);
 }
 
 .ta-premium-edit-btn {
   border-radius: 999px !important;
-  border: 1px solid rgba(201, 168, 76, 0.65) !important;
-  background: linear-gradient(140deg, rgba(40, 26, 86, 0.95), rgba(28, 18, 56, 0.95)) !important;
-  color: #f5e4bf !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(15, 15, 18, 0.85) !important;
+  color: var(--ta-parchment) !important;
 }
 
 .ta-premium-section-title {
   font-family: 'Cinzel', Georgia, serif;
-  color: #ecd4a0 !important;
+  color: var(--ta-parchment) !important;
 }
 
 .ta-premium-add-btn {
@@ -1773,8 +2525,8 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-tarantula-detail-brand-mark {
   position: absolute;
-  right: 0.6rem;
-  bottom: 0.55rem;
+  right: 1rem;
+  bottom: 0.85rem;
   width: 48px;
   height: 48px;
   object-fit: contain;
@@ -1801,11 +2553,11 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-premium-species {
   font-family: 'Cinzel', Georgia, serif;
   font-style: italic;
-  color: #f0d99f;
+  color: rgba(196, 210, 240, 0.95);
 }
 
 .ta-premium-common-name {
-  color: #f2ece0 !important;
+  color: #f8fafc !important;
   font-size: 1.25rem;
 }
 
@@ -1831,8 +2583,8 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  border: 1px solid rgba(225, 198, 126, 0.55);
-  background: rgba(8, 8, 12, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
 }
 
@@ -1841,7 +2593,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-premium-tarantula-card .badge.bg-danger,
 .ta-premium-tarantula-card .badge.bg-secondary {
   border-radius: 999px !important;
-  border: 1px solid rgba(222, 196, 130, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .ta-premium-bottom-nav {
@@ -1854,14 +2606,14 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   grid-template-columns: repeat(4, 1fr);
   gap: 0.2rem;
   padding: 0.38rem 0.45rem calc(0.38rem + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(201, 168, 76, 0.25);
-  background: linear-gradient(180deg, rgba(7, 7, 15, 0.88), rgba(7, 7, 15, 0.98));
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
   backdrop-filter: blur(8px);
 }
 
 .ta-premium-bottom-nav-item {
   text-decoration: none;
-  color: rgba(222, 207, 173, 0.75);
+  color: rgba(156, 163, 175, 0.88);
   font-size: 0.7rem;
   display: inline-flex;
   flex-direction: column;
@@ -1878,8 +2630,8 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-premium-page {
   min-height: 100vh;
   background:
-    radial-gradient(80% 45% at 50% -8%, rgba(123, 79, 255, 0.12), transparent 60%),
-    radial-gradient(90% 60% at 0% 100%, rgba(201, 168, 76, 0.06), transparent 58%);
+    radial-gradient(80% 45% at 50% -8%, rgba(59, 130, 246, 0.08), transparent 58%),
+    radial-gradient(90% 60% at 0% 100%, rgba(30, 64, 175, 0.04), transparent 58%);
 }
 
 .ta-premium-shell {
@@ -1888,16 +2640,16 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 .ta-premium-pane {
-  border: 1px solid rgba(201, 168, 76, 0.22) !important;
-  background: linear-gradient(155deg, rgba(19, 16, 34, 0.86), rgba(9, 8, 18, 0.96)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(155deg, rgba(10, 10, 12, 0.94), rgba(0, 0, 0, 0.92)) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 226, 170, 0.07),
-    0 10px 30px rgba(0, 0, 0, 0.32) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 30px rgba(0, 0, 0, 0.4) !important;
 }
 
 .ta-premium-title {
   font-family: 'Cinzel', Georgia, serif;
-  color: var(--ta-gold-light) !important;
+  color: var(--ta-parchment) !important;
   letter-spacing: 0.02em;
 }
 
@@ -1908,9 +2660,9 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 :root[data-theme='light'] .ta-premium-pane {
-  background: linear-gradient(155deg, #fffdf8, #efe6d4) !important;
-  border-color: rgba(120, 88, 32, 0.24) !important;
-  box-shadow: 0 8px 24px rgba(45, 30, 10, 0.09) !important;
+  background: linear-gradient(155deg, #ffffff, #f1f5f9) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
 }
 
 /* Social hub hero */
@@ -1918,12 +2670,12 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   padding: 1rem 1.1rem;
   border-radius: 0.75rem;
   border: 1px solid var(--ta-border);
-  background: linear-gradient(145deg, rgba(26, 20, 44, 0.75), rgba(12, 10, 22, 0.92));
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(145deg, rgba(10, 10, 12, 0.92), rgba(0, 0, 0, 0.88));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
 }
 :root[data-theme='light'] .ta-social-hub-hero {
-  background: linear-gradient(145deg, #fffdf8, #efe6d4);
-  box-shadow: 0 8px 22px rgba(45, 30, 10, 0.1);
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
 }
 
 .ta-social-feed-shell {
@@ -1962,7 +2714,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 .ta-social-compact-post {
-  border: 1px solid rgba(201, 168, 76, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
   background: rgba(0, 0, 0, 0.14);
   padding: 0.5rem;
@@ -1986,7 +2738,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 .ta-social-feed-section--community {
-  box-shadow: inset 0 0 0 1px rgba(201, 168, 76, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .ta-social-feed-section--mine {
@@ -2003,7 +2755,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   height: 32px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(201, 168, 76, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .ta-social-post-privacy-tag {
@@ -2015,6 +2767,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: relative;
 }
 
+/* Popovers keeper / likes: contraste alto sobre fondo oscuro */
 .ta-social-author-hover-card {
   display: none;
   position: absolute;
@@ -2023,11 +2776,18 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   min-width: 220px;
   max-width: 280px;
   z-index: 22;
-  padding: 0.6rem 0.7rem;
-  border-radius: 0.5rem;
-  background: rgba(18, 18, 18, 0.97);
-  border: 1px solid var(--ta-border);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
+  background: linear-gradient(165deg, #141824 0%, #0c0e14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(201, 168, 76, 0.12);
+  color: #e8eaef;
+}
+
+.ta-social-author-hover-card .text-muted {
+  color: rgba(186, 198, 220, 0.92) !important;
 }
 
 .ta-social-author-anchor:hover .ta-social-author-hover-card {
@@ -2039,7 +2799,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   height: 38px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(201, 168, 76, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   margin-bottom: 0.4rem;
 }
 
@@ -2054,14 +2814,68 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 240px;
+  min-width: 260px;
   max-width: 320px;
-  z-index: 30;
-  padding: 0.65rem 0.75rem;
-  border-radius: 0.55rem;
-  background: rgba(16, 16, 18, 0.98);
-  border: 1px solid var(--ta-border);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.34);
+  z-index: 50;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.6rem;
+  background: linear-gradient(165deg, #141824 0%, #0a0c12 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(201, 168, 76, 0.14);
+  color: #e8eaef;
+}
+
+.ta-keeper-hover-card .text-muted {
+  color: rgba(186, 198, 220, 0.92) !important;
+}
+
+.ta-keeper-hover-card .fw-semibold {
+  color: #f1f5f9 !important;
+}
+
+.ta-keeper-hover-badge {
+  font-size: 0.62rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em;
+  background: rgba(201, 168, 76, 0.14) !important;
+  color: #ffe8c4 !important;
+  border: 1px solid rgba(201, 168, 76, 0.38) !important;
+}
+
+.ta-keeper-hover-card .progress {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ta-keeper-hover-card .progress-bar.bg-warning {
+  background: linear-gradient(90deg, #b8860b, #e0c06a) !important;
+}
+
+.ta-keeper-hover-card .progress-bar.bg-info {
+  background: linear-gradient(90deg, #2563eb, #60a5fa) !important;
+}
+
+:root[data-theme='light'] .ta-keeper-hover-card {
+  background: linear-gradient(165deg, #ffffff 0%, #f1f5f9 100%);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+}
+
+:root[data-theme='light'] .ta-keeper-hover-card .fw-semibold {
+  color: #0f172a !important;
+}
+
+:root[data-theme='light'] .ta-keeper-hover-card .text-muted {
+  color: rgba(71, 85, 105, 0.92) !important;
+}
+
+:root[data-theme='light'] .ta-keeper-hover-badge {
+  background: rgba(201, 168, 76, 0.15) !important;
+  color: #5c420f !important;
+  border-color: rgba(139, 106, 43, 0.35) !important;
 }
 
 .ta-keeper-hover-anchor:hover .ta-keeper-hover-card,
@@ -2074,7 +2888,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   height: 38px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(201, 168, 76, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .ta-social-spood-anchor {
@@ -2085,14 +2899,41 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: absolute;
   left: 0;
   top: calc(100% + 6px);
-  min-width: 210px;
+  min-width: 220px;
   max-width: 280px;
-  z-index: 20;
-  border: 1px solid var(--ta-border);
-  border-radius: 0.5rem;
-  padding: 0.55rem 0.6rem;
-  background: rgba(14, 14, 16, 0.98);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  z-index: 40;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  background: linear-gradient(165deg, #141824 0%, #0c0e14 100%);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(201, 168, 76, 0.1);
+  color: #e8eaef;
+}
+
+.ta-social-spood-hover-card .text-muted {
+  color: rgba(186, 198, 220, 0.92) !important;
+}
+
+.ta-social-spood-hover-card a,
+.ta-social-spood-hover-card .small {
+  color: #e8eaef !important;
+}
+
+.ta-social-spood-hover-card a:hover {
+  color: #93c5fd !important;
+}
+
+:root[data-theme='light'] .ta-social-spood-hover-card {
+  background: linear-gradient(165deg, #ffffff, #f1f5f9);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+:root[data-theme='light'] .ta-social-spood-hover-card .text-muted {
+  color: rgba(71, 85, 105, 0.88) !important;
 }
 
 .ta-social-spood-hover-card__row {
@@ -2131,13 +2972,13 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 :root[data-theme='light'] .ta-social-feed-shell {
-  background: linear-gradient(155deg, #fffcf6, #efe6d4);
-  box-shadow: 0 8px 22px rgba(45, 30, 10, 0.08);
+  background: linear-gradient(155deg, #ffffff, #f1f5f9);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 }
 
 :root[data-theme='light'] .ta-social-highlights {
-  background: linear-gradient(155deg, #fffcf6, #efe6d4);
-  box-shadow: 0 8px 22px rgba(45, 30, 10, 0.08);
+  background: linear-gradient(155deg, #ffffff, #f1f5f9);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 }
 
 :root[data-theme='light'] .ta-social-feed-section {
@@ -2147,6 +2988,16 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 :root[data-theme='light'] .ta-social-highlight-card,
 :root[data-theme='light'] .ta-social-compact-post {
   background: rgba(255, 255, 255, 0.62);
+}
+
+:root[data-theme='light'] .badge.bg-light {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+:root[data-theme='light'] .alert-light {
+  background-color: rgba(15, 23, 42, 0.03) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
 .ta-social-like-row {

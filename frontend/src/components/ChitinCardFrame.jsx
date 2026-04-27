@@ -11,7 +11,7 @@ export default function ChitinCardFrame({
   className = '',
   style = {},
   showSilhouettes = true,
-  /** 'auth' = login/recuperación: sin borde de card, sin padding extra del marco, fangs al ras del recuadro */
+  /** 'auth' = login/composer/forms: sin borde de card; padding interior para alejar contenido de los colmillos */
   variant = 'default',
 }) {
   const [ringOk, setRingOk] = useState(true)

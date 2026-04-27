@@ -36,7 +36,7 @@ export default function FangPanel({ children, className = '', style = {}, corner
           style={pos}
         />
       ))}
-      <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
+      <div className="fang-panel__inner">{children}</div>
     </div>
   )
 }

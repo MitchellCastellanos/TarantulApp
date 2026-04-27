@@ -1,5 +1,8 @@
 -- Local seed data for marketplace/community behavior testing.
 -- Safe to run multiple times: uses deterministic emails/handles and cleans old seed rows.
+-- For dense partner + peer demo rows (screenshots), run: local_seed_marketplace_screenshots.sql
+--
+-- Listing/post images: Unsplash CDN (tarantula search — local dev only; attribute photographers in real marketing).
 
 begin;
 
@@ -95,7 +98,14 @@ select
     coalesce(u.profile_city, 'Unknown city'),
     coalesce(u.profile_state, 'Unknown state'),
     coalesce(u.profile_country, 'Unknown country'),
-    null,
+    case row_number() over(order by r.title)
+        when 1 then 'https://images.unsplash.com/photo-1564398042875-dddb3c722039?w=1200&q=80&auto=format&fit=crop'
+        when 2 then 'https://images.unsplash.com/photo-1752810228770-d866aee13158?w=1200&q=80&auto=format&fit=crop'
+        when 3 then 'https://images.unsplash.com/photo-1771223050567-8659c6e2a762?w=1200&q=80&auto=format&fit=crop'
+        when 4 then 'https://images.unsplash.com/photo-1579222741606-ecaab2d4bb16?w=1200&q=80&auto=format&fit=crop'
+        when 5 then 'https://images.unsplash.com/photo-1597215675000-0420736f4ccc?w=1200&q=80&auto=format&fit=crop'
+        when 6 then 'https://images.unsplash.com/photo-1567939973912-f499537375bd?w=1200&q=80&auto=format&fit=crop'
+    end,
     '[SEED] lineage reference',
     now() - (row_number() over(order by r.title) || ' hours')::interval,
     now() - (row_number() over(order by r.title) || ' hours')::interval
@@ -125,22 +135,56 @@ post_rows as (
           ('seed.nolan@tarantulapp.local',   '[SEED] Feed recap: 5/6 accepted, one refused after molt prep.', null),
           ('seed.camila@tarantulapp.local',  '[SEED] Trying a cleaner card-style post format for clearer husbandry notes.', null)
     ) as x(email, body, milestone_kind)
+),
+post_img(idx, url) as (
+    values
+      (1, 'https://images.unsplash.com/photo-1564398042875-dddb3c722039?w=900&q=80&auto=format&fit=crop'),
+      (2, 'https://images.unsplash.com/photo-1763493323940-0c3323d8beea?w=900&q=80&auto=format&fit=crop'),
+      (3, 'https://images.unsplash.com/photo-1598356918644-7a5af992f40c?w=900&q=80&auto=format&fit=crop'),
+      (4, 'https://images.unsplash.com/photo-1596535403955-8216afaacc99?w=900&q=80&auto=format&fit=crop'),
+      (5, 'https://images.unsplash.com/photo-1635495672951-314b0d4e6d28?w=900&q=80&auto=format&fit=crop'),
+      (6, 'https://images.unsplash.com/photo-1580681157234-58dbf3fe9370?w=900&q=80&auto=format&fit=crop'),
+      (7, 'https://images.unsplash.com/photo-1705931037230-928f91e63a5f?w=900&q=80&auto=format&fit=crop'),
+      (8, 'https://images.unsplash.com/photo-1527101760592-3a603b32b08a?w=900&q=80&auto=format&fit=crop'),
+      (9, 'https://images.unsplash.com/photo-1747738305505-66f6e3781265?w=900&q=80&auto=format&fit=crop'),
+      (10, 'https://images.unsplash.com/photo-1609531084358-f09af256ffcb?w=900&q=80&auto=format&fit=crop'),
+      (11, 'https://images.unsplash.com/photo-1635171379225-e820401ad961?w=900&q=80&auto=format&fit=crop'),
+      (12, 'https://images.unsplash.com/photo-1583870549158-10e557c83f11?w=900&q=80&auto=format&fit=crop')
+),
+posts_numbered as (
+    select p.body, p.milestone_kind, u.id as author_user_id,
+           row_number() over(order by p.body) as rn
+    from post_rows p
+    join seed_users u on u.email = p.email
 )
 insert into activity_posts (
     id, author_user_id, body, visibility, milestone_kind, image_url, tarantula_id, hidden_at, created_at
 )
 select
     gen_random_uuid(),
-    u.id,
-    p.body,
+    pn.author_user_id,
+    pn.body,
     'public',
-    p.milestone_kind,
+    pn.milestone_kind,
+    pi.url,
     null,
     null,
-    null,
-    now() - (row_number() over(order by p.body) * interval '47 minutes')
-from post_rows p
-join seed_users u on u.email = p.email;
+    now() - (pn.rn * interval '47 minutes')
+from posts_numbered pn
+join post_img pi on pi.idx = ((pn.rn - 1) % 12) + 1;
+
+-- 4b) Avatar-style profile photos for seed users (marketplace cards / handles).
+update users u set profile_photo = x.url
+from (
+    values
+      ('seed.alex@tarantulapp.local', 'https://images.unsplash.com/photo-1564398042875-dddb3c722039?w=400&h=400&q=80&auto=format&fit=crop'),
+      ('seed.sofia@tarantulapp.local', 'https://images.unsplash.com/photo-1752810228770-d866aee13158?w=400&h=400&q=80&auto=format&fit=crop'),
+      ('seed.mateo@tarantulapp.local', 'https://images.unsplash.com/photo-1771223050567-8659c6e2a762?w=400&h=400&q=80&auto=format&fit=crop'),
+      ('seed.valeria@tarantulapp.local', 'https://images.unsplash.com/photo-1579222741606-ecaab2d4bb16?w=400&h=400&q=80&auto=format&fit=crop'),
+      ('seed.nolan@tarantulapp.local', 'https://images.unsplash.com/photo-1597215675000-0420736f4ccc?w=400&h=400&q=80&auto=format&fit=crop'),
+      ('seed.camila@tarantulapp.local', 'https://images.unsplash.com/photo-1567939973912-f499537375bd?w=400&h=400&q=80&auto=format&fit=crop')
+) as x(email, url)
+where u.email = x.email;
 
 -- 5) Seed "spoods" (likes): each post gets likes from several other seed users.
 with seed_users as (
