@@ -5,7 +5,8 @@
     can index fields directly. MDC fields (request_id, user_id, method, path) are emitted
     as first-class JSON keys.
 
-    Sentry appender is attached unconditionally; the Sentry SDK is a no-op when sentry.dsn is empty.
+    Sentry events are captured by sentry-spring-boot-starter-jakarta.
+    We avoid a dedicated Sentry logback appender to prevent startup warnings when DSN is empty.
 -->
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
@@ -58,19 +59,16 @@
         </encoder>
     </appender>
 
-    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
-        <!-- minimum-event-level / minimum-breadcrumb-level come from sentry.logging.* in application.properties -->
-    </appender>
-
-    <root level="INFO">
-        <if condition='property("LOG_FORMAT").equalsIgnoreCase("json")'>
-            <then>
+    <if condition='property("LOG_FORMAT").equalsIgnoreCase("json")'>
+        <then>
+            <root level="INFO">
                 <appender-ref ref="JSON"/>
-            </then>
-            <else>
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
                 <appender-ref ref="TEXT"/>
-            </else>
-        </if>
-        <appender-ref ref="SENTRY"/>
-    </root>
+            </root>
+        </else>
+    </if>
 </configuration>
