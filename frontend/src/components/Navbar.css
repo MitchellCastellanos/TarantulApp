@@ -1,0 +1,39 @@
+/* Primary nav: light text + discreet gold underline on active route */
+.ta-navbar-primary-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(248, 250, 252, 0.82) !important;
+  text-decoration: none !important;
+  padding: 0.15rem 0.08rem;
+  transition: color 0.15s ease;
+}
+.ta-navbar-primary-link:hover {
+  color: var(--ta-parchment) !important;
+}
+.ta-navbar-primary-link.ta-navbar-primary-link--active {
+  color: var(--ta-parchment) !important;
+  font-weight: 700;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(232, 197, 71, 0.92) !important;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 2px;
+}
+
+/* Profile / admin row: muted until hover or active */
+.ta-navbar-meta-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.72) !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+}
+.ta-navbar-meta-link:hover {
+  color: rgba(248, 250, 252, 0.92) !important;
+}
+.ta-navbar-meta-link.ta-navbar-meta-link--active {
+  color: var(--ta-parchment) !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(232, 197, 71, 0.88) !important;
+  text-underline-offset: 0.32em;
+  text-decoration-thickness: 2px;
+}

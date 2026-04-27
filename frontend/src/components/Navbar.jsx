@@ -6,6 +6,7 @@ import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
 import { appLangBase } from '../utils/appLanguage'
 import ThemeToggleButton from './ThemeToggleButton'
 import BrandNavbarLogo from './BrandNavbarLogo'
+import './Navbar.css'
 import notificationsService from '../services/notificationsService'
 
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
@@ -13,7 +14,7 @@ import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 /**
  * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
  */
-export default function Navbar({ variant = 'app', hideLoginLink = false }) {
+export default function Navbar({ variant: _variant = 'app', hideLoginLink = false }) {
   const { token, user, logout } = useAuth()
   const location = useLocation()
   const { t, i18n } = useTranslation()
@@ -34,7 +35,33 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     (user?.email && adminEmails.includes(String(user.email).toLowerCase()))
 
   const path = location.pathname
+  const navDiscover = path.startsWith('/descubrir')
+  const navQr =
+    path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print')
+  const navMarketplace = path.startsWith('/marketplace')
+  const navCollection = Boolean(token) && path === '/'
+  const navCommunity = path.startsWith('/comunidad')
+  const navAdmin = path.startsWith('/admin')
   const logoHome = !token ? '/login' : '/'
+  const myPublicProfilePath = useMemo(() => {
+    if (!user) return '/account'
+    const h = String(user.publicHandle || '').trim()
+    if (h) return `/u/${encodeURIComponent(h)}`
+    if (user.id != null && String(user.id).trim() !== '') {
+      return `/marketplace/keeper/${String(user.id).trim()}`
+    }
+    return '/account'
+  }, [user])
+  const publicProfileNavActive = useMemo(() => {
+    if (!user) return false
+    const h = String(user.publicHandle || '').trim()
+    if (h && path === `/u/${encodeURIComponent(h)}`) return true
+    if (user.id != null && path.startsWith('/marketplace/keeper/')) {
+      const seg = path.replace(/^\/marketplace\/keeper\//, '').split('/')[0]
+      return seg === String(user.id).trim()
+    }
+    return false
+  }, [path, user])
   const closeMobileMenu = () => setMobileMenuOpen(false)
   const isRouteActive = (routeMatchers) => routeMatchers.some((matcher) => path.startsWith(matcher))
   const mobileGroups = useMemo(() => {
@@ -125,38 +152,22 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     }
   }, [token])
 
-  const linkTone = (active) =>
-    variant === 'public'
-      ? active
-        ? 'var(--ta-gold)'
-        : 'var(--ta-text-muted)'
-      : 'var(--ta-gold)'
-  const pillStyle = (active) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    whiteSpace: 'nowrap',
-    padding: '0.32rem 0.7rem',
-    borderRadius: 999,
-    border: `1px solid ${active ? 'var(--ta-gold)' : 'var(--ta-border)'}`,
-    color: active ? '#111' : 'var(--ta-parchment)',
-    background: active ? 'var(--ta-gold)' : 'transparent',
-    fontSize: '0.78rem',
-    fontWeight: 600,
-    textDecoration: 'none',
-  })
   const menuPillStyle = (active) => ({
     display: 'flex',
     alignItems: 'center',
     width: '100%',
     padding: '0.58rem 0.72rem',
     borderRadius: 10,
-    border: `1px solid ${active ? 'rgba(220, 178, 76, 0.62)' : 'rgba(120, 90, 200, 0.35)'}`,
-    color: active ? 'var(--ta-gold)' : 'var(--ta-parchment)',
-    background: active ? 'rgba(201, 168, 76, 0.16)' : 'rgba(9, 9, 20, 0.65)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderBottom: active ? '2px solid rgba(232, 197, 71, 0.62)' : undefined,
+    color: 'rgba(248, 250, 252, 0.92)',
+    background: 'rgba(0, 0, 0, 0.45)',
     fontSize: '0.82rem',
     fontWeight: active ? 700 : 600,
-    textDecoration: 'none',
+    textDecoration: active ? 'underline' : 'none',
+    textDecorationColor: active ? 'rgba(232, 197, 71, 0.85)' : 'transparent',
+    textUnderlineOffset: '0.28em',
+    textDecorationThickness: '2px',
     lineHeight: 1.2,
   })
   const mobileSectionButtonStyle = (active) => ({
@@ -165,9 +176,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: 10,
-    border: `1px solid ${active ? 'rgba(220, 178, 76, 0.8)' : 'var(--ta-border)'}`,
-    background: active ? 'rgba(201, 168, 76, 0.18)' : 'rgba(18, 18, 36, 0.66)',
-    color: active ? 'var(--ta-gold)' : 'var(--ta-parchment)',
+    border: `1px solid ${active ? 'rgba(232, 197, 71, 0.35)' : 'var(--ta-border)'}`,
+    borderBottom: active ? '2px solid rgba(232, 197, 71, 0.48)' : undefined,
+    background: 'rgba(12, 12, 16, 0.72)',
+    color: active ? 'var(--ta-parchment)' : 'var(--ta-heading-gold)',
     padding: '0.48rem 0.62rem',
     fontWeight: 600,
     letterSpacing: '0.02em',
@@ -232,10 +244,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           to="/pro"
           className="btn btn-sm"
           style={{
-            background: 'var(--ta-gold)',
-            color: '#111',
-            border: '1px solid var(--ta-gold)',
+            background: 'linear-gradient(180deg, var(--ta-gold-light) 0%, var(--ta-gold) 100%)',
+            color: '#140c02',
+            border: '1px solid rgba(90, 65, 18, 0.55)',
             fontSize: '0.75rem',
+            fontWeight: 700,
           }}
         >
           {t('nav.planPro')}
@@ -248,11 +261,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           to="/pro"
           className="btn btn-sm fw-semibold"
           style={{
-            background: 'linear-gradient(135deg, #e8c56a 0%, #c9a227 100%)',
-            color: '#1a1205',
-            border: '1px solid rgba(200, 160, 40, 0.9)',
+            background: 'linear-gradient(135deg, #d4a84b 0%, #a8842e 100%)',
+            color: '#140c02',
+            border: '1px solid rgba(232, 197, 71, 0.5)',
             fontSize: '0.72rem',
-            boxShadow: '0 0 12px rgba(200, 170, 60, 0.35)',
+            boxShadow: '0 4px 14px rgba(90, 65, 18, 0.42)',
           }}
           title={t('nav.trialBadgeTitle')}
         >
@@ -277,23 +290,15 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   })()
 
   return (
-    <nav
-      className="navbar navbar-dark px-3 px-md-4 py-2"
-      style={{
-        overflow: 'visible',
-        ...(variant === 'public'
-          ? { borderBottom: '1px solid var(--ta-border, rgba(200,170,100,0.25))' }
-          : {}),
-      }}
-    >
+    <nav className="navbar navbar-dark px-3 px-md-4 py-2" style={{ overflow: 'visible' }}>
       <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
       <div className="d-md-none ms-auto d-flex align-items-center gap-2">
         <Link
-          to={token ? '/account' : '/login'}
+          to={token ? myPublicProfilePath : '/login'}
           onClick={closeMobileMenu}
           className="btn btn-sm ta-mobile-icon-btn"
-          aria-label={t('nav.accountAria')}
-          title={t('nav.accountAria')}
+          aria-label={token ? t('nav.publicProfileAria') : t('nav.login', 'Login')}
+          title={token ? t('nav.publicProfileTitle') : t('nav.login', 'Login')}
         >
           ◯
         </Link>
@@ -301,8 +306,8 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           to={token ? '/account' : '/login'}
           onClick={closeMobileMenu}
           className="btn btn-sm ta-mobile-icon-btn"
-          aria-label={t('nav.preferences', 'Settings')}
-          title={t('nav.preferences', 'Settings')}
+          aria-label={t('nav.settingsOnlyAria')}
+          title={t('nav.settingsOnlyTitle')}
         >
           ⚙
         </Link>
@@ -443,45 +448,35 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         <div className="d-none d-md-flex align-items-center gap-2 flex-wrap">
           <Link
             to="/descubrir"
-            className="text-decoration-none small fw-semibold d-none d-md-inline"
-            style={{ color: linkTone(path.startsWith('/descubrir')) }}
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navDiscover ? 'ta-navbar-primary-link--active' : ''}`}
             title={t('nav.discoverLinkTitle')}
           >
             {t('nav.discoverSpecies')}
           </Link>
           <Link
             to="/herramientas/qr"
-            className="text-decoration-none small fw-semibold d-none d-md-inline"
-            style={{ color: linkTone(path.startsWith('/herramientas/qr')) }}
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navQr ? 'ta-navbar-primary-link--active' : ''}`}
             title={t('nav.qrToolTitle')}
           >
             {t('nav.qrTool')}
           </Link>
           <Link
             to="/marketplace"
-            className="text-decoration-none small fw-semibold d-none d-md-inline"
-            style={{ color: linkTone(path.startsWith('/marketplace')) }}
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navMarketplace ? 'ta-navbar-primary-link--active' : ''}`}
             title={t('marketplace.title')}
           >
             {t('marketplace.nav')}
           </Link>
           <Link
             to={token ? '/' : '/login'}
-            className="btn btn-sm fw-semibold d-none d-md-inline-flex align-items-center"
-            style={{
-              background: 'var(--ta-gold)',
-              color: '#111',
-              border: '1px solid var(--ta-gold)',
-              fontSize: '0.78rem',
-            }}
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCollection ? 'ta-navbar-primary-link--active' : ''}`}
             title={token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestHint')}
           >
             {token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta')}
           </Link>
           <Link
             to="/comunidad"
-            className="text-decoration-none small fw-semibold d-none d-md-inline"
-            style={{ color: linkTone(path.startsWith('/comunidad')) }}
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCommunity ? 'ta-navbar-primary-link--active' : ''}`}
             title={t('social.navTitle')}
           >
             <span className="position-relative d-inline-flex align-items-center gap-1">
@@ -497,26 +492,39 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
         <div className="vr d-none d-lg-block" style={{ borderColor: 'var(--ta-border)' }} />
         <div className="d-none d-md-flex align-items-center gap-2 flex-wrap">
         {token && (
-          <Link
-            to="/account"
-            className="d-none d-md-inline-flex align-items-center gap-1 text-decoration-none small fw-semibold"
-            style={{
-              color: 'var(--ta-parchment)',
-              maxWidth: 'min(200px, 32vw)',
-            }}
-            title={t('nav.accountAria')}
-            aria-label={t('nav.accountAria')}
-          >
-            <span className="text-truncate">
-              {user?.displayName || user?.email || t('nav.account')}
-            </span>
-            <span className="flex-shrink-0" aria-hidden="true">
-              ⚙️
-            </span>
-          </Link>
+          <>
+            <Link
+              to={myPublicProfilePath}
+              className={`ta-navbar-meta-link d-none d-md-inline-flex align-items-center text-decoration-none small fw-semibold ${publicProfileNavActive ? 'ta-navbar-meta-link--active' : ''}`}
+              style={{
+                maxWidth: 'min(200px, 32vw)',
+              }}
+              title={t('nav.publicProfileTitle')}
+              aria-label={t('nav.publicProfileAria')}
+            >
+              <span className="text-truncate">
+                {user?.displayName || user?.email || t('nav.account')}
+              </span>
+            </Link>
+            <Link
+              to="/account"
+              className="d-none d-md-inline-flex align-items-center justify-content-center text-decoration-none small fw-semibold"
+              style={{
+                color: 'var(--ta-text-muted)',
+                minWidth: '1.75rem',
+              }}
+              title={t('nav.settingsOnlyTitle')}
+              aria-label={t('nav.settingsOnlyAria')}
+            >
+              <span aria-hidden="true">⚙</span>
+            </Link>
+          </>
         )}
         {user && isAdmin && (
-          <Link to="/admin" className="text-decoration-none small fw-semibold d-none d-md-inline" style={{ color: 'var(--ta-gold)' }}>
+          <Link
+            to="/admin"
+            className={`ta-navbar-meta-link text-decoration-none small fw-semibold d-none d-md-inline ${navAdmin ? 'ta-navbar-meta-link--active' : ''}`}
+          >
             {t('nav.admin')}
           </Link>
         )}
