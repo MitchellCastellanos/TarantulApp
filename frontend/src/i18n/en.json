@@ -13,6 +13,7 @@
     "badgeOverLimit": "Some spiders locked",
     "badgeOverLimitTitle": "On the free plan you can edit your 6 oldest spiders; the rest are read-only. Upgrade to Pro or delete spiders to unlock editing.",
     "account": "Account",
+    "accountSettings": "Account settings",
     "accountAria": "Account and settings",
     "discoverSearchPlaceholder": "Species name (WSC / GBIF)…",
     "discoverSearchButton": "Search",

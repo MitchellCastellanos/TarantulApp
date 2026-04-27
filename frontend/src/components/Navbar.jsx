@@ -80,47 +80,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           },
         ],
       },
-      {
-        key: 'account',
-        title: t('nav.mobileAccount'),
-        items: [
-          ...(token
-            ? [
-                {
-                  to: '/account',
-                  label: user?.displayName || user?.email || t('nav.account'),
-                  routeMatchers: ['/account'],
-                },
-              ]
-            : []),
-          ...(!token
-            ? [
-                {
-                  to: '/login',
-                  label: t('nav.login', 'Login'),
-                  routeMatchers: ['/login'],
-                },
-              ]
-            : []),
-          ...(user && isAdmin
-            ? [
-                {
-                  to: '/admin',
-                  label: t('nav.admin'),
-                  routeMatchers: ['/admin'],
-                },
-              ]
-            : []),
-        ],
-      },
-      {
-        key: 'preferences',
-        title: t('nav.mobilePreferences'),
-        items: [],
-      },
     ]
     return groups.filter((group) => !group.hidden)
-  }, [isAdmin, notifUnread, t, token, user])
+  }, [notifUnread, t, token])
   const activeGroupKey =
     mobileGroups.find((group) =>
       group.items.some((item) =>
@@ -184,8 +146,18 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     textDecoration: 'none',
   })
   const menuPillStyle = (active) => ({
-    ...pillStyle(active),
-    padding: '0.42rem 0.82rem',
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    padding: '0.58rem 0.72rem',
+    borderRadius: 10,
+    border: `1px solid ${active ? 'rgba(220, 178, 76, 0.62)' : 'rgba(120, 90, 200, 0.35)'}`,
+    color: active ? 'var(--ta-gold)' : 'var(--ta-parchment)',
+    background: active ? 'rgba(201, 168, 76, 0.16)' : 'rgba(9, 9, 20, 0.65)',
+    fontSize: '0.82rem',
+    fontWeight: active ? 700 : 600,
+    textDecoration: 'none',
+    lineHeight: 1.2,
   })
   const mobileSectionButtonStyle = (active) => ({
     width: '100%',
@@ -378,11 +350,14 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                           key={item.to}
                           onClick={closeMobileMenu}
                           to={item.to}
-                          className={item.className}
+                          className={`ta-mobile-nav-subitem ${item.className || ''}`.trim()}
                           style={item.className ? { fontSize: '0.8rem' } : menuPillStyle(isActive)}
                           title={item.title}
                         >
-                          {item.label}
+                          <span className="ta-mobile-nav-subitem-dot" aria-hidden="true">
+                            •
+                          </span>
+                          <span>{item.label}</span>
                         </Link>
                       )
                     })}
@@ -393,9 +368,31 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           })}
         </div>
 
-        <div className="small fw-semibold mb-1 mt-3 ta-mobile-nav-section-title">
-          {t('nav.mobilePreferences')}
-        </div>
+        <div className="d-flex flex-column gap-2 mt-3">
+          <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              {token ? (
+                <Link
+                  onClick={closeMobileMenu}
+                  to="/account"
+                  className="btn btn-sm btn-outline-light"
+                  aria-label={t('nav.accountAria')}
+                  title={t('nav.accountAria')}
+                >
+                  {t('nav.accountSettings')}
+                </Link>
+              ) : (
+                <Link onClick={closeMobileMenu} to="/login" className="btn btn-sm btn-outline-light">
+                  {t('nav.login', 'Login')}
+                </Link>
+              )}
+              {user && isAdmin && (
+                <Link onClick={closeMobileMenu} to="/admin" className="btn btn-sm btn-outline-light">
+                  {t('nav.admin')}
+                </Link>
+              )}
+            </div>
+          </div>
           <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div>{planControl}</div>
             <div className="d-flex align-items-center gap-2">
@@ -440,6 +437,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               )}
             </div>
           </div>
+        </div>
       </div>
       <div className="d-none d-md-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         <div className="d-none d-md-flex align-items-center gap-2 flex-wrap">
