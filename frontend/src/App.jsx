@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
@@ -37,6 +37,37 @@ import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
 import HandleSetupPage from './pages/HandleSetupPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
+import ComingSoonPage from './pages/ComingSoonPage'
+import {
+  COMING_SOON_BYPASS_STORAGE_KEY,
+  isComingSoonEnabled,
+  readTesterBypass,
+  writeTesterBypass,
+} from './utils/comingSoonGate'
+
+function ComingSoonGate({ children }) {
+  const enabled = isComingSoonEnabled()
+  const [unlocked, setUnlocked] = useState(() => readTesterBypass())
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== COMING_SOON_BYPASS_STORAGE_KEY) return
+      setUnlocked(e.newValue === '1')
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  const handleTesterUnlock = useCallback(() => {
+    writeTesterBypass()
+    setUnlocked(true)
+  }, [])
+
+  if (!enabled || unlocked) {
+    return children
+  }
+  return <ComingSoonPage onUnlock={handleTesterUnlock} />
+}
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -230,17 +261,19 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <AuthSessionBridge />
-        <AppRoutes />
-        <RateAppPrompt />
-        <Footer />
-      </BrowserRouter>
+      <ComingSoonGate>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <AuthSessionBridge />
+          <AppRoutes />
+          <RateAppPrompt />
+          <Footer />
+        </BrowserRouter>
+      </ComingSoonGate>
     </AuthProvider>
   )
 }

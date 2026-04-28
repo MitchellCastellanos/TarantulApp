@@ -40,6 +40,23 @@
     "notificationsEmpty": "Aún no tienes notificaciones.",
     "notificationFallbackTitle": "Actividad nueva"
   },
+  "comingSoon": {
+    "docTitle": "Muy pronto | TarantulApp\u2122",
+    "headline": "Muy pronto",
+    "subhead": "Algo nuevo para keepers está al caer.",
+    "cinemaAria": "Anuncio tipo cine",
+    "cinemaBadge": "EN PRODUCCIÓN",
+    "cinemaSub": "Luces abajo — algo para keepers está por llegar.",
+    "followLead": "Síguenos en redes para enterarte antes que nadie de la fecha de lanzamiento.",
+    "testerHitAria": "Acceso testers",
+    "testerTitle": "Acceso testers",
+    "testerLabel": "Frase de acceso",
+    "testerWrong": "Esa frase no es válida.",
+    "testerNoCode": "El acceso para testers aún no está configurado.",
+    "testerCancel": "Cancelar",
+    "testerSubmit": "Desbloquear la app",
+    "testerClose": "Cerrar"
+  },
   "social": {
     "pageTitle": "Comunidad",
     "seoTitle": "Comunidad | TarantulApp\u2122",

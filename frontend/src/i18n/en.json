@@ -47,6 +47,23 @@
     "notificationsEmpty": "No notifications yet.",
     "notificationFallbackTitle": "New activity"
   },
+  "comingSoon": {
+    "docTitle": "Coming soon | TarantulApp\u2122",
+    "headline": "Coming soon",
+    "subhead": "Something new for keepers is almost here.",
+    "cinemaAria": "Cinematic announcement",
+    "cinemaBadge": "IN PRODUCTION",
+    "cinemaSub": "Lights down — something for keepers is almost here.",
+    "followLead": "Follow us on social media to be the first to hear the launch date.",
+    "testerHitAria": "Tester access",
+    "testerTitle": "Tester access",
+    "testerLabel": "Access passphrase",
+    "testerWrong": "That passphrase is not valid.",
+    "testerNoCode": "Tester unlock is not configured yet.",
+    "testerCancel": "Cancel",
+    "testerSubmit": "Unlock app",
+    "testerClose": "Close"
+  },
   "social": {
     "pageTitle": "Community",
     "seoTitle": "Community | TarantulApp\u2122",
