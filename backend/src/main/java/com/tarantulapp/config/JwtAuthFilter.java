@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -90,34 +91,41 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        String token = extractBearerToken(header);
-        if (token == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if (!jwtUtil.isTokenValid(token)) {
-            log.warn("Invalid JWT on {}", request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
+        String token = extractBearerToken(request.getHeader("Authorization"));
+        String userId = null;
+
+        if (token != null) {
+            if (!jwtUtil.isTokenValid(token)) {
+                log.warn("Invalid JWT on {}", request.getRequestURI());
+            } else {
+                // Siempre aplicar el JWT cuando el Bearer es válido (no condicionar a getAuthentication() == null).
+                try {
+                    String email = jwtUtil.extractEmail(token);
+                    var userDetails = userDetailsService.loadUserByUsername(email);
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    log.debug("Authenticated user: {}", email);
+                    if (userDetails instanceof AppUserDetails appUser) {
+                        userId = appUser.id().toString();
+                        MDC.put("user_id", userId);
+                    }
+                } catch (UsernameNotFoundException e) {
+                    log.warn("User from JWT not found in DB: {}", e.getMessage());
+                } catch (Exception e) {
+                    log.warn("JWT processing failed: {}", e.getMessage());
+                }
+            }
         }
 
-        // Siempre aplicar el JWT cuando el Bearer es válido (no condicionar a getAuthentication() == null).
         try {
-            String email = jwtUtil.extractEmail(token);
-            var userDetails = userDetailsService.loadUserByUsername(email);
-            var auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            log.debug("Authenticated user: {}", email);
-        } catch (UsernameNotFoundException e) {
-            log.warn("User from JWT not found in DB: {}", e.getMessage());
-        } catch (Exception e) {
-            log.warn("JWT processing failed: {}", e.getMessage());
+            filterChain.doFilter(request, response);
+        } finally {
+            if (userId != null) {
+                MDC.remove("user_id");
+            }
         }
-
-        filterChain.doFilter(request, response);
     }
 
     /** Acepta "Bearer ", "bearer ", etc. (algunos proxies/clientes alteran mayúsculas). */
