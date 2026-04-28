@@ -220,7 +220,7 @@ export default function AccountPage() {
       updateUserProfile({
         profilePhoto: updated?.profilePhoto || '',
       })
-      setProfileMessage('Foto de perfil actualizada.')
+      setProfileMessage(t('marketplace.photoUpdated'))
     } catch (err) {
       setProfileMessage(err?.response?.data?.error || t('account.errors.generic'))
     } finally {
@@ -385,7 +385,7 @@ export default function AccountPage() {
                     onChange={(e) => setProfileForm((f) => ({ ...f, searchVisible: e.target.checked }))}
                   />
                   <label className="form-check-label small" htmlFor="account-search-visible">
-                    Aparecer en resultados de busqueda publica de keepers
+                    {t('account.profile.searchVisibleLabel')}
                   </label>
                 </div>
               </div>
@@ -399,7 +399,7 @@ export default function AccountPage() {
                     onChange={(e) => setProfileForm((f) => ({ ...f, collectionPublic: e.target.checked }))}
                   />
                   <label className="form-check-label small" htmlFor="account-collection-public">
-                    Mostrar mi coleccion publica en mi perfil keeper
+                    {t('account.profile.collectionPublicLabel')}
                   </label>
                 </div>
                 <button className="btn btn-sm btn-outline-light" disabled={profileSaving}>

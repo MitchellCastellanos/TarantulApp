@@ -182,7 +182,7 @@ export default function TarantulaDetailPage() {
         </div>
       )}
 
-      <div className="container mt-4 ta-premium-shell">
+      <div className="container mt-4 ta-premium-shell ta-premium-shell--detail-wide">
         {/* Breadcrumb */}
         <div className="d-flex align-items-center gap-2 mb-3">
           <button className="btn btn-link p-0 text-collection text-decoration-none" onClick={() => navigate('/')}>
@@ -194,7 +194,7 @@ export default function TarantulaDetailPage() {
 
         <div className="row g-4">
           {/* ─── Columna izquierda: ejemplar + pergamino (historial) ───── */}
-          <div className="col-md-4 order-2 order-md-1">
+          <div className="col-md-4 order-1">
             <FangPanel className="ta-spider-detail-fang">
             <div className="card border-0 shadow-sm ta-premium-pane ta-tarantula-detail-main-card">
               {/* Foto */}
@@ -397,7 +397,7 @@ export default function TarantulaDetailPage() {
           </div>
 
           {/* ─── Columna derecha: ficha especie, terrario, registro, galería ─ */}
-          <div className="col-md-8 order-1 order-md-2">
+          <div className="col-md-8 order-2">
             {/* Banner memorial */}
             {tarantula.deceasedAt && (
               <div className="alert mb-4 ta-memorial">

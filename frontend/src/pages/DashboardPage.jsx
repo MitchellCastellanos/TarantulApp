@@ -43,9 +43,19 @@ export default function DashboardPage() {
 
   const alive    = tarantulas.filter(t => !t.deceasedAt)
   const deceased = tarantulas.filter(t =>  t.deceasedAt)
+  const translateBadgeLabel = (badge) => {
+    const key = badge?.key
+    if (!key) return badge?.label || ''
+    return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
+  }
+  const translateProgressLabel = (progress) => {
+    const key = progress?.nextKey
+    if (!key) return progress?.nextLabel || ''
+    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
+  }
   const speciesSet = new Set(alive.map((t) => t.species?.scientificName).filter(Boolean))
   const profileBadges = Array.isArray(keeperProfile?.badges)
-    ? keeperProfile.badges.map((b) => b?.label).filter(Boolean)
+    ? keeperProfile.badges.map((b) => translateBadgeLabel(b)).filter(Boolean)
     : [
         alive.length >= 1 ? 'Starter keeper' : null,
         alive.length >= 10 ? 'Collection 10+' : null,
@@ -187,7 +197,7 @@ export default function DashboardPage() {
                       const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
                       return (
                         <div className="col-12" key={key}>
-                          <div className="small mb-1">{p?.nextLabel}</div>
+                          <div className="small mb-1">{translateProgressLabel(p)}</div>
                           <div className="progress" style={{ height: 6 }}>
                             <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                           </div>
@@ -205,7 +215,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div className="mt-2">
-                  <Link to="/account" className="btn btn-sm ta-premium-edit-btn">Editar perfil</Link>
+                  <Link to="/account" className="btn btn-sm ta-premium-edit-btn">{t('dashboard.editProfile')}</Link>
                 </div>
               </div>
             </div>
@@ -295,7 +305,7 @@ export default function DashboardPage() {
                 <Link
                   to="/pro"
                   className="btn btn-outline-secondary btn-sm position-relative"
-                  title="Disponible en Pro"
+                  title={t('dashboard.proOnlyTitle')}
                 >
                   {t('dashboard.importExportCollection')}
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
@@ -329,16 +339,17 @@ export default function DashboardPage() {
           <div className="alert alert-warning small py-2 mb-3">
             {t('readOnly.overLimitBanner')}{' '}
             <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
-            ejemplares en Free.{' '}
+            {t('dashboard.freePlanSpecimens')}{' '}
             <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
           </div>
         )}
 
         {!overFreeLimit && isFreePlan && (
           <div className="alert alert-secondary small py-2 mb-3">
-            Plan Free activo: <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
-            usados. Te quedan <strong>{Math.max(0, tarantulaLimit - tarantulas.length)}</strong>{' '}
-            espacios antes del gate.{' '}
+            {t('dashboard.freePlanActive')}: <strong>{`${tarantulas.length}/${tarantulaLimit}`}</strong>{' '}
+            {t('dashboard.freePlanUsed')}. {t('dashboard.freePlanRemaining')}{' '}
+            <strong>{Math.max(0, tarantulaLimit - tarantulas.length)}</strong>{' '}
+            {t('dashboard.freePlanSlotsBeforeGate')}.{' '}
             <Link to="/pro" className="alert-link">{t('pro.learnMore')}</Link>
           </div>
         )}

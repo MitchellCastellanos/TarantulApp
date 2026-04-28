@@ -95,6 +95,16 @@ export default function PublicKeeperHandle({
       : []
   const reputation = keeperData?.reputation || null
   const badgesProgress = keeperData?.badgesProgress || {}
+  const badgeText = (badge) => {
+    const key = badge?.key
+    if (!key) return badge?.label || 'Badge'
+    return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
+  }
+  const progressText = (progress) => {
+    const key = progress?.nextKey
+    if (!key) return progress?.nextLabel || ''
+    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
+  }
   const visibleLabel = showAt ? `@${normalizedHandle}` : normalizedHandle
   const visibleDisplay = publicProfile?.displayName || displayName || fallbackLabel
   const location = publicProfile?.location || keeperData?.profile?.location || ''
@@ -136,7 +146,7 @@ export default function PublicKeeperHandle({
           <div className="d-flex flex-wrap gap-1 mt-1">
             {badges.map((badge, idx) => (
               <span key={`${badge?.key || badge?.label || 'badge'}-${idx}`} className="badge ta-keeper-hover-badge">
-                {badge?.label || badge?.key || 'Badge'}
+                {badgeText(badge)}
               </span>
             ))}
           </div>
@@ -149,7 +159,7 @@ export default function PublicKeeperHandle({
               const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
               return (
                 <div key={key} className="small mb-1">
-                  <div className="text-truncate">{p?.nextLabel}</div>
+                  <div className="text-truncate">{progressText(p)}</div>
                   <div className="progress" style={{ height: 4 }}>
                     <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                   </div>

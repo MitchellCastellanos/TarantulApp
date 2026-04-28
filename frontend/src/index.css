@@ -304,6 +304,15 @@ body::after { right: -2rem; }
   color: rgba(148, 163, 184, 0.45) !important;
 }
 
+/* Make buttons feel less boxy across the app */
+.btn {
+  border-radius: 0.75rem !important;
+}
+
+.btn-sm {
+  border-radius: 0.7rem !important;
+}
+
 .btn-outline-secondary {
   border-color: rgba(140,110,200,0.38) !important;
   color: var(--ta-parchment-dk) !important;
@@ -880,12 +889,13 @@ a.text-collection:hover {
 .ta-parchment-float-wrap--detail-sidebar {
   margin-top: 1.35rem;
   margin-bottom: 0;
-  margin-left: 0;
-  margin-right: 0;
-  width: 100%;
-  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  width: calc(100% + clamp(2rem, 6vw, 3.8rem));
+  max-width: calc(100% + clamp(2rem, 6vw, 3.8rem));
   min-width: 0;
   box-sizing: border-box;
+  transform: translateX(calc(clamp(2rem, 6vw, 3.8rem) * -0.5));
 }
 
 .ta-parchment-float-wrap--detail-sidebar .ta-parchment-history.ta-parchment-history--tarantula-root,
@@ -901,6 +911,7 @@ a.text-collection:hover {
   max-width: 100%;
   height: auto;
   display: block;
+  margin-left: 0;
 }
 
 /* Wrapper transparente (perfil público): sombras pueden salir del rectángulo */
@@ -925,8 +936,8 @@ a.text-collection:hover {
   width: 100%;
   max-width: 100%;
   border: none !important;
-  border-radius: 14px;
-  overflow: hidden;
+  border-radius: 0;
+  overflow: visible;
   background-color: transparent !important;
   box-shadow: none !important;
   transform: none;
@@ -936,7 +947,7 @@ a.text-collection:hover {
 .ta-parchment-scroll {
   position: relative;
   padding: 0 !important;
-  overflow: hidden;
+  overflow: visible;
   color: #2a1f0a !important;
   background: none !important;
   background-image: none !important;
@@ -946,9 +957,15 @@ a.text-collection:hover {
 
 /* El bloque .ta-parchment-scroll + imagen es el contorno real; el overlay sigue la caja del PNG */
 .ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr;
   width: 100%;
   isolation: isolate;
+}
+
+.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell .ta-parchment-bg-img--full,
+.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+  grid-area: 1 / 1;
 }
 
 .ta-parchment-history.ta-parchment-history--tarantula-root .ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
@@ -975,8 +992,8 @@ a.text-collection:hover {
 .ta-parchment-scroll--vertical {
   width: 100%;
   position: relative;
-  overflow: hidden;
-  border-radius: 14px;
+  overflow: visible;
+  border-radius: 0;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.38),
     inset 0 -3px 18px rgba(40, 28, 18, 0.12),
@@ -996,8 +1013,8 @@ a.text-collection:hover {
 }
 
 .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  inset: auto;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
@@ -1047,21 +1064,25 @@ a.text-collection:hover {
  * No reusar “un % para todos”: arriba/abajo mucho mayor que laterales.
  */
 .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  /* El PNG tiene bordes/alpha: márgenes mayores para que icono + texto queden sobre el papel */
-  padding-top: clamp(18%, 21vw, 33%);
-  padding-bottom: clamp(11%, 14vw, 23%);
-  padding-left: clamp(12%, 14vw, 20%);
-  padding-right: clamp(12%, 14vw, 20%);
+  /* Parchment itself is the container: align writing block to paper, not parent box. */
+  padding-top: clamp(20%, 23vw, 32%);
+  padding-bottom: clamp(10.5%, 13.5vw, 20%);
+  padding-left: clamp(11%, 13vw, 17%);
+  padding-right: clamp(11%, 13vw, 17%);
   overflow-x: hidden;
   overflow-y: auto;
 }
 
+.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll {
+  overflow: visible !important;
+}
+
 .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-  width: 100%;
-  max-width: 100%;
+  width: min(30rem, 84%);
+  max-width: 84%;
   min-width: 0;
   overflow-x: hidden;
   padding-left: 0.2rem;
@@ -1388,10 +1409,10 @@ a.text-collection:hover {
   .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
     align-items: stretch;
     justify-content: flex-start;
-    padding-top: clamp(15%, 17vw, 26%);
-    padding-bottom: clamp(10%, 12vw, 19%);
-    padding-left: clamp(10%, 12vw, 18%);
-    padding-right: clamp(10%, 12vw, 18%);
+    padding-top: clamp(17%, 19vw, 25%);
+    padding-bottom: clamp(9.2%, 11.2vw, 17.5%);
+    padding-left: clamp(7.6%, 9vw, 13.5%);
+    padding-right: clamp(7.6%, 9vw, 13.5%);
   }
 
   .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
@@ -2020,10 +2041,12 @@ a.text-collection:hover {
 .ta-marketplace-listing-card-clickable {
   cursor: pointer;
   transition: box-shadow 0.18s ease, transform 0.18s ease;
+  position: relative;
 }
 .ta-marketplace-listing-card-clickable:hover {
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35) !important;
   transform: translateY(-2px);
+  z-index: 18;
 }
 :root[data-theme='light'] .ta-marketplace-listing-card-clickable:hover {
   box-shadow: 0 10px 28px rgba(40, 28, 8, 0.14) !important;
@@ -2719,6 +2742,10 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   margin-inline: auto;
 }
 
+.ta-premium-shell--detail-wide {
+  max-width: 1220px;
+}
+
 .ta-premium-pane {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: linear-gradient(155deg, rgba(10, 10, 12, 0.94), rgba(0, 0, 0, 0.92)) !important;
@@ -2784,6 +2811,56 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   background: rgba(0, 0, 0, 0.16);
   padding: 0.65rem 0.7rem;
   height: 100%;
+}
+
+.ta-social-topic-cases-shell {
+  border-radius: 0.9rem !important;
+  position: sticky;
+  top: 5.1rem;
+}
+
+.ta-social-topic-card {
+  border-radius: 0.85rem !important;
+  background: linear-gradient(160deg, rgba(16, 12, 28, 0.76), rgba(8, 8, 14, 0.9)) !important;
+}
+
+.ta-social-topic-btn {
+  min-height: 2rem;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  padding-inline: 0.72rem !important;
+}
+
+.ta-social-topic-btn--primary {
+  box-shadow: 0 6px 16px rgba(95, 60, 180, 0.28);
+}
+
+.ta-social-whats-new-wrap {
+  border: 1px solid var(--ta-border);
+  border-radius: 0.78rem;
+  padding: 0.55rem;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.ta-social-whats-new-cta {
+  border-radius: 0.72rem !important;
+  border-color: rgba(140, 110, 200, 0.42) !important;
+  background: rgba(34, 24, 60, 0.28) !important;
+}
+
+.ta-social-topic-shortcut-btn {
+  border-radius: 999px !important;
+  min-height: 1.9rem;
+  padding-inline: 0.7rem !important;
+  font-size: 0.74rem !important;
+}
+
+.ta-social-topic-count {
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+  padding: 0.25rem 0.45rem !important;
+  border-radius: 999px !important;
 }
 
 .ta-social-section-tabs {
@@ -2887,6 +2964,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: relative;
   display: inline-flex;
   align-items: center;
+  z-index: 1;
 }
 
 .ta-keeper-hover-card {
@@ -2961,6 +3039,14 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-keeper-hover-anchor:hover .ta-keeper-hover-card,
 .ta-keeper-hover-anchor:focus-within .ta-keeper-hover-card {
   display: block;
+  z-index: 1400;
+}
+
+.ta-marketplace-listing-card .ta-keeper-hover-anchor:hover,
+.ta-marketplace-listing-card .ta-keeper-hover-anchor:focus-within,
+.ta-social-post-card .ta-keeper-hover-anchor:hover,
+.ta-social-post-card .ta-keeper-hover-anchor:focus-within {
+  z-index: 1400;
 }
 
 .ta-keeper-hover-card__avatar {
@@ -3070,6 +3156,48 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   background: rgba(255, 255, 255, 0.62);
 }
 
+:root[data-theme='light'] .ta-social-topic-card {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(243, 244, 246, 0.96)) !important;
+}
+
+@media (max-width: 575.98px) {
+  .ta-social-topic-cases-shell {
+    position: static;
+  }
+
+  .ta-social-topic-cases-grid .ta-social-topic-card {
+    padding: 0.75rem !important;
+  }
+
+  .ta-social-topic-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+  }
+
+  .ta-social-whats-new-wrap {
+    padding: 0.45rem;
+  }
+
+  .ta-social-topic-shortcut-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .ta-social-topic-cases-shell {
+    position: static;
+  }
+}
+
+:root[data-theme='light'] .ta-social-whats-new-wrap {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+:root[data-theme='light'] .ta-social-whats-new-cta {
+  background: rgba(241, 245, 249, 0.95) !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+
 :root[data-theme='light'] .badge.bg-light {
   background-color: rgba(15, 23, 42, 0.05) !important;
   border-color: rgba(15, 23, 42, 0.1) !important;
@@ -3118,4 +3246,37 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-social-preview-anchor:hover .ta-social-preview-card {
   display: block;
+}
+
+@media (max-width: 767.98px) {
+  .ta-premium-shell--detail-wide {
+    max-width: 980px;
+  }
+  .ta-parchment-float-wrap--detail-sidebar {
+    width: 100%;
+    max-width: 100%;
+    transform: none;
+  }
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-bg-img.ta-parchment-bg-img--full {
+    width: 100%;
+    margin-left: 0;
+  }
+  .ta-parchment-float-wrap--detail-sidebar {
+    margin-top: 1rem;
+  }
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: clamp(24%, 28vw, 35%);
+    padding-bottom: clamp(12%, 15vw, 20%);
+    padding-left: clamp(11.5%, 13.5vw, 18%);
+    padding-right: clamp(11.5%, 13.5vw, 18%);
+  }
+  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
+    width: 82%;
+    max-width: 82%;
+  }
+  .ta-premium-shell--detail-wide .row.g-4 {
+    --bs-gutter-y: 1.1rem;
+  }
 }

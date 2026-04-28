@@ -468,7 +468,6 @@ export default function SocialHubPage() {
   )
   const enclosurePosts = useMemo(() => topicFeeds.enclosure_check || [], [topicFeeds.enclosure_check])
   const spiderOkayPosts = useMemo(() => topicFeeds.spider_okay || [], [topicFeeds.spider_okay])
-
   const activeFeedList = useMemo(() => {
     if (feedSection === FEED_SECTION_ENCLOSURE) return enclosurePosts
     if (feedSection === FEED_SECTION_SPIDER_OKAY) return spiderOkayPosts
@@ -772,7 +771,7 @@ export default function SocialHubPage() {
   return (
     <div className="ta-premium-page">
       <Navbar />
-      <div className="container mt-4 mb-5 ta-premium-shell" style={{ maxWidth: 820 }}>
+      <div className="container mt-4 mb-5 ta-premium-shell" style={{ maxWidth: 1240 }}>
         <header className="ta-social-hub-hero mb-4">
           <div className="d-flex flex-column flex-sm-row align-items-center gap-3 text-center text-sm-start">
             <BrandLogoMark size={56} showIntro className="flex-shrink-0" />
@@ -805,12 +804,17 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
-            <div className="mb-3 p-3 rounded-3 ta-premium-pane" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
-              <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Topic cases</h2>
-              <div className="row g-2">
-                <div className="col-md-3">
-                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
-                    <div className="small fw-semibold mb-1">Sex ID</div>
+            <div className="row g-3 align-items-start mb-4">
+              <div className="col-12 col-xl-4">
+                <div className="p-3 ta-premium-pane ta-social-topic-cases-shell" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>
+                  <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>Topic cases</h2>
+                  <div className="row g-2 ta-social-topic-cases-grid">
+                    <div className="col-12 col-sm-6 col-xl-12">
+                      <div className="rounded p-2 h-100 ta-premium-pane ta-social-topic-card" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1 d-flex align-items-center justify-content-between gap-2">
+                      <span>Sex ID</span>
+                      <span className="badge bg-light ta-social-topic-count">{(publicSexIdCases.content || []).length}</span>
+                    </div>
                     {(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => navigate(`/sex-id/${(publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.id}`)}>
                         <img src={imgUrl((publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl) || (publicSexIdCases.content || [])[topicCarouselIndex.sexId]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
@@ -824,13 +828,17 @@ export default function SocialHubPage() {
                       </div>
                     )}
                     {renderTopicDots((publicSexIdCases.content || []).length, topicCarouselIndex.sexId, (i) => setTopicCarouselIndex((p) => ({ ...p, sexId: i })))}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setTab(TAB_SEX_ID)}>View list</button>
-                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => setTab(TAB_SEX_ID)}>Create yours</button>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => setTab(TAB_SEX_ID)}>View list</button>
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-3">
-                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
-                    <div className="small fw-semibold mb-1">Enclosure Check</div>
+                <div className="col-12 col-sm-6 col-xl-12">
+                  <div className="rounded p-2 h-100 ta-premium-pane ta-social-topic-card" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1 d-flex align-items-center justify-content-between gap-2">
+                      <span>Enclosure Check</span>
+                      <span className="badge bg-light ta-social-topic-count">{enclosurePosts.length}</span>
+                    </div>
                     {enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(enclosurePosts[topicCarouselIndex.enclosure]?.id, true)}>
                         <img src={imgUrl(enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl) || enclosurePosts[topicCarouselIndex.enclosure]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
@@ -844,13 +852,17 @@ export default function SocialHubPage() {
                       </div>
                     )}
                     {renderTopicDots(enclosurePosts.length, topicCarouselIndex.enclosure, (i) => setTopicCarouselIndex((p) => ({ ...p, enclosure: i })))}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_ENCLOSURE)}>View posts</button>
-                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Enclosure check:\n\n', 'enclosure_check')}>Create yours</button>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => setFeedSection(FEED_SECTION_ENCLOSURE)}>View posts</button>
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-3">
-                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
-                    <div className="small fw-semibold mb-1">Is my spider okay?</div>
+                <div className="col-12 col-sm-6 col-xl-12">
+                  <div className="rounded p-2 h-100 ta-premium-pane ta-social-topic-card" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1 d-flex align-items-center justify-content-between gap-2">
+                      <span>Is my spider okay?</span>
+                      <span className="badge bg-light ta-social-topic-count">{spiderOkayPosts.length}</span>
+                    </div>
                     {spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.id, true)}>
                         <img src={imgUrl(spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl) || spiderOkayPosts[topicCarouselIndex.spiderOkay]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
@@ -864,13 +876,17 @@ export default function SocialHubPage() {
                       </div>
                     )}
                     {renderTopicDots(spiderOkayPosts.length, topicCarouselIndex.spiderOkay, (i) => setTopicCarouselIndex((p) => ({ ...p, spiderOkay: i })))}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_SPIDER_OKAY)}>View posts</button>
-                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => openComposerFromTopic('Is my spider okay?\n\n', 'spider_okay')}>Create yours</button>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => setFeedSection(FEED_SECTION_SPIDER_OKAY)}>View posts</button>
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-3">
-                  <div className="rounded p-2 h-100 ta-premium-pane" style={{ border: '1px solid var(--ta-border)' }}>
-                    <div className="small fw-semibold mb-1">Meet my Ts</div>
+                <div className="col-12 col-sm-6 col-xl-12">
+                  <div className="rounded p-2 h-100 ta-premium-pane ta-social-topic-card" style={{ border: '1px solid var(--ta-border)' }}>
+                    <div className="small fw-semibold mb-1 d-flex align-items-center justify-content-between gap-2">
+                      <span>Meet my Ts</span>
+                      <span className="badge bg-light ta-social-topic-count">{meetMyTsPosts.length}</span>
+                    </div>
                     {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl ? (
                       <button type="button" className="p-0 border-0 bg-transparent w-100" onClick={() => openPostThread(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id, true)}>
                         <img src={imgUrl(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl) || meetMyTsPosts[topicCarouselIndex.meetMyTs]?.imageUrl} alt="" className="img-fluid rounded mb-2" style={{ height: 170, width: '100%', objectFit: 'cover' }} />
@@ -887,23 +903,23 @@ export default function SocialHubPage() {
                     {meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id && (
                       <button
                         type="button"
-                        className={`btn btn-sm w-100 mb-1 ${meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        className={`btn btn-sm w-100 mb-2 ta-social-topic-btn ${meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likedByMe ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => onToggleLike(meetMyTsPosts[topicCarouselIndex.meetMyTs]?.id)}
                         title={t('social.spoodLike')}
                       >
                         🕷️ {t('social.spoodCount', { count: meetMyTsPosts[topicCarouselIndex.meetMyTs]?.likeCount ?? 0 })}
                       </button>
                     )}
-                    <button type="button" className="btn btn-sm btn-outline-secondary w-100 mb-1" onClick={() => setFeedSection(FEED_SECTION_MEET_MY_TS)}>View posts</button>
-                    <button type="button" className="btn btn-sm btn-dark w-100" onClick={() => {
-                      setComposerOpen(true)
-                      setComposer((c) => ({ ...c, milestoneKind: 'meet_my_ts', body: 'Meet my Ts 🕷️\n\n' }))
-                    }}>Create yours</button>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => setFeedSection(FEED_SECTION_MEET_MY_TS)}>View posts</button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="ta-social-feed-shell mb-4">
+                </div>
+              </div>
+              <div className="col-12 col-xl-8">
+                <div className="ta-social-feed-shell h-100">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div className="ms-auto d-flex align-items-center gap-2">
                   {token && (
@@ -1071,26 +1087,39 @@ export default function SocialHubPage() {
                   )}
                 </div>
                 {token && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary w-100 text-start mb-3 py-2"
-                    onClick={() => {
-                      setComposerOpen(true)
-                      setComposer((c) => ({ ...c, milestoneKind: '' }))
-                    }}
-                  >
-                    <span className="fw-semibold">{t('social.newPostCta')}</span>
-                    {!composerOpen && (
+                  <div className="mb-3 ta-social-whats-new-wrap">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary w-100 text-start py-2 ta-social-whats-new-cta"
+                      onClick={() => {
+                        setComposerOpen(true)
+                        setComposer((c) => ({ ...c, milestoneKind: '' }))
+                      }}
+                    >
+                      <span className="fw-semibold">{t('social.newPostCta')}</span>
                       <span className="d-block small mt-1 ta-social-collapsed-prompt" aria-live="polite">
                         {composerPrompt}
                       </span>
+                    </button>
+                    {!composerOpen && (
+                      <div className="d-flex flex-wrap gap-2 mt-2">
+                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => openComposerFromTopic('Enclosure check:\n\n', 'enclosure_check')}>Enclosure</button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => openComposerFromTopic('Is my spider okay?\n\n', 'spider_okay')}>Spider okay</button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => {
+                          setComposerOpen(true)
+                          setComposer((c) => ({ ...c, milestoneKind: 'meet_my_ts', body: 'Meet my Ts 🕷️\n\n' }))
+                        }}>Meet my Ts</button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => setTab(TAB_SEX_ID)}>Sex ID case</button>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 )}
                 {activeFeedList.length === 0
                   ? <p className="text-muted small mb-0">{t('social.feedEmpty')}</p>
                   : activeFeedList.map((p) => renderPostCard(p, { showDelete: feedSection === FEED_SECTION_MINE }))}
               </section>
+            </div>
+              </div>
             </div>
           </>
         )}

@@ -638,14 +638,14 @@ public class MarketplaceService {
         int qrPrints = userRepository.findById(userId).map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
         List<Map<String, Object>> badges = new ArrayList<>();
         if (total >= 1) badges.add(Map.of("key", "starter_keeper", "label", "Starter keeper"));
-        if (total >= 10) badges.add(Map.of("key", "collection_10", "label", "Coleccion 10+"));
-        if (total >= 25) badges.add(Map.of("key", "collection_25", "label", "Coleccion 25+"));
-        if (species >= 5) badges.add(Map.of("key", "species_5", "label", "Diversidad 5+ especies"));
-        if (species >= 12) badges.add(Map.of("key", "species_12", "label", "Diversidad 12+ especies"));
-        if (events >= 30) badges.add(Map.of("key", "logger_30", "label", "Bitacora activa (30+ eventos)"));
-        if (events >= 100) badges.add(Map.of("key", "logger_100", "label", "Maestro del registro (100+ eventos)"));
-        if (qrPrints >= 1) badges.add(Map.of("key", "qr_printed", "label", "Terrario etiquetado (QR impreso)"));
-        if (qrPrints >= 10) badges.add(Map.of("key", "qr_printed_10", "label", "Etiquetador pro (10+ impresiones QR)"));
+        if (total >= 10) badges.add(Map.of("key", "collection_10", "label", "Collection 10+"));
+        if (total >= 25) badges.add(Map.of("key", "collection_25", "label", "Collection 25+"));
+        if (species >= 5) badges.add(Map.of("key", "species_5", "label", "Species diversity 5+"));
+        if (species >= 12) badges.add(Map.of("key", "species_12", "label", "Species diversity 12+"));
+        if (events >= 30) badges.add(Map.of("key", "logger_30", "label", "Active logbook (30+ events)"));
+        if (events >= 100) badges.add(Map.of("key", "logger_100", "label", "Logbook master (100+ events)"));
+        if (qrPrints >= 1) badges.add(Map.of("key", "qr_printed", "label", "Labeled terrarium (printed QR)"));
+        if (qrPrints >= 10) badges.add(Map.of("key", "qr_printed_10", "label", "QR labeler pro (10+ prints)"));
         return badges;
     }
 
@@ -657,30 +657,35 @@ public class MarketplaceService {
                 + behaviorLogRepository.countByOwnerUserId(userId);
         int qrPrints = userRepository.findById(userId).map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("collectionNext", progressMetric(total, 10, 25, "Coleccion 10+", "Coleccion 25+"));
-        out.put("speciesNext", progressMetric(species, 5, 12, "Diversidad 5+ especies", "Diversidad 12+ especies"));
-        out.put("eventsNext", progressMetric(events, 30, 100, "Bitacora activa", "Maestro del registro"));
-        out.put("qrNext", progressMetric(qrPrints, 1, 10, "QR impreso", "Etiquetador pro"));
+        out.put("collectionNext", progressMetric(total, 10, 25, "Collection 10+", "Collection 25+", "collection_10", "collection_25"));
+        out.put("speciesNext", progressMetric(species, 5, 12, "Species diversity 5+", "Species diversity 12+", "species_5", "species_12"));
+        out.put("eventsNext", progressMetric(events, 30, 100, "Active logbook", "Logbook master", "logger_30", "logger_100"));
+        out.put("qrNext", progressMetric(qrPrints, 1, 10, "Printed QR", "QR labeler pro", "qr_printed", "qr_printed_10"));
         return out;
     }
 
-    private Map<String, Object> progressMetric(long value, int tier1, int tier2, String label1, String label2) {
+    private Map<String, Object> progressMetric(long value, int tier1, int tier2,
+                                               String label1, String label2,
+                                               String key1, String key2) {
         Map<String, Object> m = new LinkedHashMap<>();
         if (value < tier1) {
             m.put("current", value);
             m.put("target", tier1);
             m.put("nextLabel", label1);
+            m.put("nextKey", key1);
             return m;
         }
         if (value < tier2) {
             m.put("current", value);
             m.put("target", tier2);
             m.put("nextLabel", label2);
+            m.put("nextKey", key2);
             return m;
         }
         m.put("current", value);
         m.put("target", value);
         m.put("nextLabel", "Max");
+        m.put("nextKey", "max");
         return m;
     }
 

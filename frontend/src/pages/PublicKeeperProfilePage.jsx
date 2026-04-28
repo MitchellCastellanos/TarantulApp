@@ -66,6 +66,16 @@ export default function PublicKeeperProfilePage() {
   const kp = keeperData?.profile || {}
   const badges = Array.isArray(keeperData?.badges) ? keeperData.badges : []
   const badgesProgress = keeperData?.badgesProgress || {}
+  const badgeText = (badge) => {
+    const key = badge?.key
+    if (!key) return badge?.label || ''
+    return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
+  }
+  const progressText = (progress) => {
+    const key = progress?.nextKey
+    if (!key) return progress?.nextLabel || ''
+    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
+  }
   const reputation = keeperData?.reputation || null
   const sexId = profile?.sexId || null
   const sameUser = user && profile?.id && String(user.id) === String(profile.id)
@@ -120,7 +130,7 @@ export default function PublicKeeperProfilePage() {
                   <div className="d-flex gap-1 flex-wrap mb-2">
                     {badges.map((b) => (
                       <span className="badge bg-light text-dark border" key={b.key || b.label}>
-                        {b.label}
+                        {badgeText(b)}
                       </span>
                     ))}
                   </div>
@@ -158,7 +168,7 @@ export default function PublicKeeperProfilePage() {
                       const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
                       return (
                         <div className="col-md-6" key={key}>
-                          <div className="small">{p?.nextLabel}</div>
+                          <div className="small">{progressText(p)}</div>
                           <div className="progress" style={{ height: 6 }}>
                             <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                           </div>

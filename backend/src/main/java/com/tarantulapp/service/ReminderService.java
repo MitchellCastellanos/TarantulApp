@@ -172,7 +172,7 @@ public class ReminderService {
                     tarantula.getName(),
                     "feeding_auto",
                     dueDate,
-                    "Sugerencia Pro: revisar alimentación de " + tarantula.getName()
+                    "Pro suggestion: review feeding for " + tarantula.getName()
             ));
         }
 

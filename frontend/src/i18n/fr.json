@@ -597,7 +597,19 @@
     "feedCommunityHeader": "Parcourir les annonces",
     "feedCommunitySub": "Keepers de la communauté et partenaires vérifiés au même endroit. Les lignes partenaires affichent un badge pour repérer les boutiques fondatrices ou certifiées.",
     "foundingPartnerBadge": "Partenaire fondateur",
-    "certifiedPartnerBadge": "Partenaire vérifié"
+    "certifiedPartnerBadge": "Partenaire vérifié",
+    "badges": {
+      "starter_keeper": "Keeper débutant",
+      "collection_10": "Collection 10+",
+      "collection_25": "Collection 25+",
+      "species_5": "Diversité d'espèces 5+",
+      "species_12": "Diversité d'espèces 12+",
+      "logger_30": "Carnet actif (30+ événements)",
+      "logger_100": "Maître du carnet (100+ événements)",
+      "qr_printed": "Terrarium étiqueté (QR imprimé)",
+      "qr_printed_10": "Pro des étiquettes QR (10+ impressions)",
+      "max": "Max"
+    }
   },
   "status": {
     "active": "Active",
@@ -655,6 +667,13 @@
     "exporting": "Génération…",
     "exportEmpty": "Rien à exporter pour l'instant",
     "importExportCollection": "Importer / exporter la collection",
+    "editProfile": "Modifier le profil",
+    "proOnlyTitle": "Disponible dans Pro",
+    "freePlanSpecimens": "spécimens en Free.",
+    "freePlanActive": "Plan Free actif",
+    "freePlanUsed": "utilisés",
+    "freePlanRemaining": "Il vous reste",
+    "freePlanSlotsBeforeGate": "emplacements avant le verrou",
     "qrBulkPrint": "QR vers Word",
     "qrBulkPrintTitle": "Imprimer des QR pour plusieurs exemplaires (.docx)",
     "qrBulkPrintProOnly": "Fonction Pro — QRs groupés dans Word",
@@ -918,6 +937,7 @@
     "freeAutoUpsell": "Pro ajoute des rappels d'alimentation automatiques selon l'historique de chaque tarentule. Essayez Pro ou passez à l'offre supérieure pour les activer.",
     "panelFreeUpsell": "Des rappels d'alimentation automatiques ? C'est inclus dans Pro.",
     "proNotice": "Plan Pro actif : vous voyez les rappels manuels et les suggestions automatiques d'alimentation.",
+    "autoFeedingSuggestion": "Suggestion Pro : vérifier l'alimentation de {{name}}",
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
     "overdueDays": "Il y a {{count}} jour(s)",
@@ -1284,7 +1304,9 @@
       "countryPlaceholder": "Pays",
       "statePlaceholder": "État / province",
       "cityPlaceholder": "Ville",
-      "avatarAlt": "Photo de profil"
+      "avatarAlt": "Photo de profil",
+      "searchVisibleLabel": "Apparaître dans les résultats publics de recherche de keepers",
+      "collectionPublicLabel": "Afficher ma collection publique sur mon profil keeper"
     },
     "billing": {
       "planFree": "Plan gratuit",

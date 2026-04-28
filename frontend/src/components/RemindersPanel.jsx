@@ -32,6 +32,15 @@ function formatDue(iso, t) {
   return { label: t('reminders.inDays', { count: diffDays }), urgent: false }
 }
 
+function resolveReminderMessage(reminder, t) {
+  if (reminder?.source === 'automatic' && reminder?.type === 'feeding_auto') {
+    return t('reminders.autoFeedingSuggestion', {
+      name: reminder?.tarantulaName || t('common.unknown'),
+    })
+  }
+  return reminder?.message || reminder?.type
+}
+
 export default function RemindersPanel() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -154,7 +163,7 @@ export default function RemindersPanel() {
                         lineHeight: 1.35,
                       }}
                     >
-                      {r.message || r.type}
+                      {resolveReminderMessage(r, t)}
                     </div>
                     {isAutomatic && (
                       <span

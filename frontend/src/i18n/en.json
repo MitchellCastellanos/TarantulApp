@@ -615,7 +615,19 @@
     "listingDetailNotFound": "This listing is not available.",
     "listingDetailLoadError": "Could not load this listing.",
     "listingDetailInventory": "Availability",
-    "listingDetailStock": "Stock"
+    "listingDetailStock": "Stock",
+    "badges": {
+      "starter_keeper": "Starter keeper",
+      "collection_10": "Collection 10+",
+      "collection_25": "Collection 25+",
+      "species_5": "Species diversity 5+",
+      "species_12": "Species diversity 12+",
+      "logger_30": "Active logbook (30+ events)",
+      "logger_100": "Logbook master (100+ events)",
+      "qr_printed": "Labeled terrarium (printed QR)",
+      "qr_printed_10": "QR labeler pro (10+ prints)",
+      "max": "Max"
+    }
   },
   "status": {
     "active": "Active",
@@ -673,6 +685,13 @@
     "exporting": "Generating…",
     "exportEmpty": "Nothing to export yet",
     "importExportCollection": "Import/export collection",
+    "editProfile": "Edit profile",
+    "proOnlyTitle": "Available in Pro",
+    "freePlanSpecimens": "specimens on Free.",
+    "freePlanActive": "Free plan active",
+    "freePlanUsed": "used",
+    "freePlanRemaining": "You have",
+    "freePlanSlotsBeforeGate": "slots left before the gate",
     "qrBulkPrint": "QRs to Word",
     "qrBulkPrintTitle": "Print QR codes for multiple spiders (.docx)",
     "qrBulkPrintProOnly": "Pro feature — bulk QR labels in Word",
@@ -936,6 +955,7 @@
     "freeAutoUpsell": "Pro adds automatic feeding reminders based on each spider’s history. Try Pro or upgrade to turn them on.",
     "panelFreeUpsell": "Want automatic feeding reminders? That’s included in Pro.",
     "proNotice": "Pro plan active: you see manual reminders and automatic feeding suggestions.",
+    "autoFeedingSuggestion": "Pro suggestion: review feeding for {{name}}",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "overdueDays": "{{count}} day(s) ago",
@@ -1302,7 +1322,9 @@
       "countryPlaceholder": "Country",
       "statePlaceholder": "State / province",
       "cityPlaceholder": "City",
-      "avatarAlt": "Profile photo"
+      "avatarAlt": "Profile photo",
+      "searchVisibleLabel": "Appear in public keeper search results",
+      "collectionPublicLabel": "Show my public collection on my keeper profile"
     },
     "billing": {
       "planFree": "Free plan",
