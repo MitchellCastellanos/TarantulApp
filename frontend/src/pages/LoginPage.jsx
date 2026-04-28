@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import publicApi from '../services/publicApi'
 import communityService from '../services/communityService'
-import ChitinCardFrame from '../components/ChitinCardFrame'
 import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
@@ -183,10 +182,11 @@ export default function LoginPage() {
       <Navbar variant="public" hideLoginLink />
 
       <main className="container py-3 py-lg-4">
-        <div className="row g-4 g-xl-5 align-items-start">
-          <section className="col-12 col-xl-7">
-            <div
-              className="p-3 p-md-4 p-lg-5 rounded-4 mb-3"
+        <div className="row justify-content-center g-0">
+          <div className="col-12 col-lg-11 col-xl-9 col-xxl-8 d-flex flex-column gap-4 gap-lg-5">
+            {/* Primary: one surface — pitch + sign-in (same width, one frame) */}
+            <section
+              className="rounded-4 overflow-hidden w-100"
               style={{
                 border: '1px solid var(--ta-border)',
                 background: isLight
@@ -195,28 +195,168 @@ export default function LoginPage() {
                 boxShadow: isLight ? '0 14px 34px rgba(82,60,26,0.12)' : '0 24px 60px rgba(0,0,0,0.35)',
               }}
             >
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <BrandLogoMark size={56} showIntro />
-                <div>
-                  <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
-                    {t('auth.loginPage.heroEyebrow')}
-                  </p>
-                  <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}><BrandName /></h1>
+              <div className="p-3 p-md-4 p-lg-5">
+                <div className="d-flex align-items-center gap-3 mb-3">
+                  <BrandLogoMark size={56} showIntro />
+                  <div>
+                    <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
+                      {t('auth.loginPage.heroEyebrow')}
+                    </p>
+                    <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}><BrandName /></h1>
+                  </div>
+                </div>
+                <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
+                  {t('auth.loginPage.heroTagline')}
+                </h2>
+                <p className="small mb-3 mb-md-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.6 }}>
+                  {t('auth.loginPage.heroLead')}
+                </p>
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                  <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
+                  <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
                 </div>
               </div>
-              <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
-                {t('auth.loginPage.heroTagline')}
-              </h2>
-              <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.6 }}>
-                {t('auth.loginPage.heroLead')}
-              </p>
-              <div className="d-flex flex-wrap gap-2">
-                <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
-                <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
-                <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
-              </div>
-            </div>
 
+              <div
+                className="px-3 px-md-4 px-lg-5 py-3 py-md-4"
+                style={{
+                  borderTop: '1px solid var(--ta-border)',
+                  background: isLight ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.22)',
+                }}
+              >
+                <p className="small text-uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
+                  {t('auth.standardEyebrow')}
+                </p>
+                <h3 className="fw-bold mb-1">{mode === 'login' ? <BrandName /> : t('auth.register')}</h3>
+                <p className="small text-muted mb-3">{mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}</p>
+
+                {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
+                {mode === 'register' && (
+                  <div
+                    className="alert py-2 small mb-3"
+                    style={{
+                      background: isLight ? 'rgba(160,124,49,0.12)' : 'rgba(200,170,80,0.12)',
+                      border: '1px solid rgba(200,170,80,0.35)',
+                      color: 'var(--ta-parchment)',
+                    }}
+                  >
+                    {t('auth.trialRegisterPromo')}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                  {mode === 'register' && (
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small">{t('auth.name')}</label>
+                      <input
+                        type="text"
+                        name="displayName"
+                        className="form-control"
+                        value={form.displayName}
+                        onChange={handleChange}
+                        placeholder={t('auth.namePlaceholder')}
+                        autoComplete="name"
+                      />
+                    </div>
+                  )}
+
+                  {mode === 'register' && (
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small">{t('auth.referralCodeOptional')}</label>
+                      <input
+                        type="text"
+                        className="form-control text-uppercase"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.trim().toUpperCase())}
+                        placeholder={t('auth.referralCodePlaceholder')}
+                        maxLength={32}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">{t('auth.email')}</label>
+                    <input
+                      type="email"
+                      name="email"
+                      className="form-control"
+                      required
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder={t('auth.emailPlaceholder')}
+                      autoComplete="email"
+                    />
+                  </div>
+
+                  <div className={mode === 'login' ? 'mb-2' : 'mb-4'}>
+                    <label className="form-label fw-semibold small">{t('auth.password')}</label>
+                    <input
+                      type="password"
+                      name="password"
+                      className="form-control"
+                      required
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : ''}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    />
+                  </div>
+
+                  {mode === 'login' && (
+                    <div className="mb-4 text-end">
+                      <Link to="/forgot-password" className="small text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
+                        {t('auth.forgotPassword')}
+                      </Link>
+                    </div>
+                  )}
+
+                  <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
+                    {loading ? t('auth.loading') : mode === 'login' ? t('auth.login') : t('auth.register')}
+                  </button>
+                </form>
+
+                <div className="mt-3">
+                  <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
+                  {googleClientId ? (
+                    <div ref={googleBtnRef} className="d-flex justify-content-center" />
+                  ) : (
+                    <p className="small text-muted mb-0">{t('auth.googlePendingConfig')}</p>
+                  )}
+                </div>
+
+                <hr className="my-3" />
+                <p className="small mb-0">
+                  {mode === 'login' ? (
+                    <>
+                      {t('auth.noAccount')}{' '}
+                      <button
+                        className="btn btn-link btn-sm p-0 text-decoration-none"
+                        style={{ color: 'var(--ta-brown)' }}
+                        onClick={() => { setMode('register'); setError('') }}
+                      >
+                        {t('auth.registerLink')}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {t('auth.hasAccount')}{' '}
+                      <button
+                        className="btn btn-link btn-sm p-0 text-decoration-none"
+                        style={{ color: 'var(--ta-brown)' }}
+                        onClick={() => { setMode('login'); setError('') }}
+                      >
+                        {t('auth.loginLink')}
+                      </button>
+                    </>
+                  )}
+                </p>
+              </div>
+            </section>
+
+          {/* 3) Feature bullets + community preview */}
+          <section className="w-100">
             <div className="row g-3 mb-3">
               {loginFeatures.map((block) => (
                 <div className="col-12 col-md-6" key={block.title}>
@@ -293,142 +433,7 @@ export default function LoginPage() {
               </div>
             </div>
           </section>
-
-          <aside className="col-12 col-xl-5">
-            <ChitinCardFrame showSilhouettes={false} variant="auth">
-              <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
-                <div className="card-body p-3 p-md-4">
-                  <p className="small text-uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
-                    {t('auth.standardEyebrow')}
-                  </p>
-                  <h3 className="fw-bold mb-1">{mode === 'login' ? <BrandName /> : t('auth.register')}</h3>
-                  <p className="small text-muted mb-3">{mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}</p>
-
-                  {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
-                  {mode === 'register' && (
-                    <div
-                      className="alert py-2 small mb-3"
-                      style={{
-                        background: isLight ? 'rgba(160,124,49,0.12)' : 'rgba(200,170,80,0.12)',
-                        border: '1px solid rgba(200,170,80,0.35)',
-                        color: 'var(--ta-parchment)',
-                      }}
-                    >
-                      {t('auth.trialRegisterPromo')}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit}>
-                    {mode === 'register' && (
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold small">{t('auth.name')}</label>
-                        <input
-                          type="text"
-                          name="displayName"
-                          className="form-control"
-                          value={form.displayName}
-                          onChange={handleChange}
-                          placeholder={t('auth.namePlaceholder')}
-                          autoComplete="name"
-                        />
-                      </div>
-                    )}
-
-                    {mode === 'register' && (
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold small">{t('auth.referralCodeOptional')}</label>
-                        <input
-                          type="text"
-                          className="form-control text-uppercase"
-                          value={referralCode}
-                          onChange={(e) => setReferralCode(e.target.value.trim().toUpperCase())}
-                          placeholder={t('auth.referralCodePlaceholder')}
-                          maxLength={32}
-                          autoComplete="off"
-                        />
-                      </div>
-                    )}
-
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold small">{t('auth.email')}</label>
-                      <input
-                        type="email"
-                        name="email"
-                        className="form-control"
-                        required
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder={t('auth.emailPlaceholder')}
-                        autoComplete="email"
-                      />
-                    </div>
-
-                    <div className={mode === 'login' ? 'mb-2' : 'mb-4'}>
-                      <label className="form-label fw-semibold small">{t('auth.password')}</label>
-                      <input
-                        type="password"
-                        name="password"
-                        className="form-control"
-                        required
-                        value={form.password}
-                        onChange={handleChange}
-                        placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : ''}
-                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      />
-                    </div>
-
-                    {mode === 'login' && (
-                      <div className="mb-4 text-end">
-                        <Link to="/forgot-password" className="small text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
-                          {t('auth.forgotPassword')}
-                        </Link>
-                      </div>
-                    )}
-
-                    <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
-                      {loading ? t('auth.loading') : mode === 'login' ? t('auth.login') : t('auth.register')}
-                    </button>
-                  </form>
-
-                  <div className="mt-3">
-                    <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
-                    {googleClientId ? (
-                      <div ref={googleBtnRef} className="d-flex justify-content-center justify-content-lg-start" />
-                    ) : (
-                      <p className="small text-muted mb-0">{t('auth.googlePendingConfig')}</p>
-                    )}
-                  </div>
-
-                  <hr className="my-3" />
-                  <p className="small mb-0">
-                    {mode === 'login' ? (
-                      <>
-                        {t('auth.noAccount')}{' '}
-                        <button
-                          className="btn btn-link btn-sm p-0 text-decoration-none"
-                          style={{ color: 'var(--ta-brown)' }}
-                          onClick={() => { setMode('register'); setError('') }}
-                        >
-                          {t('auth.registerLink')}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {t('auth.hasAccount')}{' '}
-                        <button
-                          className="btn btn-link btn-sm p-0 text-decoration-none"
-                          style={{ color: 'var(--ta-brown)' }}
-                          onClick={() => { setMode('login'); setError('') }}
-                        >
-                          {t('auth.loginLink')}
-                        </button>
-                      </>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </ChitinCardFrame>
-          </aside>
+          </div>
         </div>
       </main>
       {showIntro && (

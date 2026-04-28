@@ -2199,6 +2199,86 @@ a.text-collection:hover {
   box-shadow: 0 8px 26px rgba(45, 30, 10, 0.1);
 }
 
+.ta-marketplace-official-strip__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  line-height: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(245, 235, 215, 0.85);
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.ta-marketplace-official-strip__nav-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(232, 200, 120, 0.55);
+  color: var(--ta-parchment, #f5ebd7);
+}
+.ta-marketplace-official-strip__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.ta-marketplace-official-strip__nav-icon {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: -0.12rem;
+}
+:root[data-theme='light'] .ta-marketplace-official-strip__nav-btn {
+  border-color: rgba(120, 88, 32, 0.35);
+  background: rgba(255, 252, 245, 0.65);
+  color: rgba(55, 42, 22, 0.75);
+}
+:root[data-theme='light'] .ta-marketplace-official-strip__nav-btn:hover:not(:disabled) {
+  background: rgba(255, 250, 238, 0.95);
+  border-color: rgba(90, 70, 30, 0.4);
+  color: #2a1f10;
+}
+
+.ta-marketplace-official-strip__scroll-outer {
+  position: relative;
+}
+
+/* Mobile: edge fade + scroll snap so partners read as a horizontal carousel */
+@media (max-width: 767.98px) {
+  .ta-marketplace-official-strip__scroll-outer--hint::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2.75rem;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to left,
+      rgba(8, 7, 18, 0.97) 0%,
+      rgba(8, 7, 18, 0.45) 45%,
+      transparent 100%
+    );
+  }
+  :root[data-theme='light'] .ta-marketplace-official-strip__scroll-outer--hint::after {
+    background: linear-gradient(
+      to left,
+      #f2e8d4 0%,
+      rgba(255, 253, 248, 0.55) 50%,
+      transparent 100%
+    );
+  }
+
+  .ta-marketplace-official-strip__scroll {
+    scroll-snap-type: x proximity;
+  }
+
+  .ta-marketplace-official-strip__item {
+    scroll-snap-align: start;
+  }
+}
+
 .ta-marketplace-official-strip__scroll {
   display: flex;
   flex-direction: row;

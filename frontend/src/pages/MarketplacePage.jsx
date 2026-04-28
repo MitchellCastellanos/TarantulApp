@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -37,6 +37,15 @@ const EMPTY_VENDOR_LEAD_FORM = {
   note: '',
 }
 
+const OFFICIAL_STRIP_SCROLL_GAP_PX = 12
+
+function getOfficialStripScrollStep(el) {
+  if (!el) return 200
+  const firstItem = el.querySelector('.ta-marketplace-official-strip__item')
+  const w = firstItem ? firstItem.getBoundingClientRect().width : 200
+  return w + OFFICIAL_STRIP_SCROLL_GAP_PX
+}
+
 export default function MarketplacePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -52,6 +61,53 @@ export default function MarketplacePage() {
   const [message, setMessage] = useState('')
   const [myReputation, setMyReputation] = useState(null)
   const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
+  const officialStripScrollRef = useRef(null)
+  const officialStripAutoplayPauseRef = useRef(() => {})
+  const [officialStripEdge, setOfficialStripEdge] = useState({ atStart: true, atEnd: false })
+
+  const updateOfficialStripEdges = useCallback(() => {
+    const el = officialStripScrollRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    if (max < 8) {
+      setOfficialStripEdge({ atStart: true, atEnd: true })
+      return
+    }
+    const left = el.scrollLeft
+    setOfficialStripEdge({
+      atStart: left <= 6,
+      atEnd: left >= max - 6,
+    })
+  }, [])
+
+  const scrollOfficialStrip = useCallback((dir) => {
+    officialStripAutoplayPauseRef.current()
+    const el = officialStripScrollRef.current
+    if (!el) return
+    const maxScroll = el.scrollWidth - el.clientWidth
+    if (maxScroll < 8) return
+    const step = getOfficialStripScrollStep(el)
+    const next = dir === 'next'
+      ? Math.min(el.scrollLeft + step, maxScroll)
+      : Math.max(el.scrollLeft - step, 0)
+    el.scrollTo({ left: next, behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    const el = officialStripScrollRef.current
+    if (!el || officialVendors.length <= 1) {
+      setOfficialStripEdge({ atStart: true, atEnd: true })
+      return undefined
+    }
+    updateOfficialStripEdges()
+    el.addEventListener('scroll', updateOfficialStripEdges, { passive: true })
+    const ro = new ResizeObserver(() => updateOfficialStripEdges())
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', updateOfficialStripEdges)
+      ro.disconnect()
+    }
+  }, [officialVendors, updateOfficialStripEdges])
   const nearCountry = filters.nearMe ? (myProfile.country || user?.profileCountry || '') : undefined
   const nearState = filters.nearMe ? (myProfile.state || user?.profileState || '') : undefined
   const nearCity = filters.nearMe ? (myProfile.city || user?.profileCity || '') : undefined
@@ -161,6 +217,70 @@ export default function MarketplacePage() {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
   }, [filters, query, myProfile.country, myProfile.state, myProfile.city])
 
+  /** Certified partners strip: auto-advance like a carousel only on small viewports (clarity that more is off-screen). */
+  useEffect(() => {
+    const el = officialStripScrollRef.current
+    if (!el || officialVendors.length <= 1) {
+      officialStripAutoplayPauseRef.current = () => {}
+      return
+    }
+
+    const mobileMq = window.matchMedia('(max-width: 767.98px)')
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const intervalMs = 5000
+    const pauseAfterInteractMs = 16_000
+    let pauseUntil = 0
+    let intervalId = null
+
+    const canAuto = () => Date.now() >= pauseUntil
+
+    const pause = () => {
+      pauseUntil = Date.now() + pauseAfterInteractMs
+    }
+    officialStripAutoplayPauseRef.current = pause
+
+    const advance = () => {
+      if (!mobileMq.matches || reduceMotion.matches) return
+      if (!canAuto()) return
+      const maxScroll = el.scrollWidth - el.clientWidth
+      if (maxScroll < 8) return
+      const step = getOfficialStripScrollStep(el)
+      const next = el.scrollLeft + step
+      const atEnd = next >= maxScroll - 2
+      el.scrollTo({ left: atEnd ? 0 : next, behavior: 'smooth' })
+    }
+
+    const syncInterval = () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+      if (mobileMq.matches && !reduceMotion.matches && officialVendors.length > 1) {
+        intervalId = window.setInterval(advance, intervalMs)
+      }
+    }
+
+    syncInterval()
+
+    const onMEDIA = () => {
+      syncInterval()
+    }
+    el.addEventListener('touchstart', pause, { passive: true })
+    el.addEventListener('pointerdown', pause)
+    el.addEventListener('wheel', pause, { passive: true })
+    mobileMq.addEventListener('change', onMEDIA)
+    reduceMotion.addEventListener('change', onMEDIA)
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      officialStripAutoplayPauseRef.current = () => {}
+      el.removeEventListener('touchstart', pause)
+      el.removeEventListener('pointerdown', pause)
+      el.removeEventListener('wheel', pause)
+      mobileMq.removeEventListener('change', onMEDIA)
+      reduceMotion.removeEventListener('change', onMEDIA)
+    }
+  }, [officialVendors])
+
   const visibleListings = useMemo(() => listings.filter((l) => l.status !== 'hidden'), [listings])
   const partnerListings = useMemo(
     () => visibleListings.filter((l) => l.source === 'partner' || l.isPartner),
@@ -218,47 +338,79 @@ export default function MarketplacePage() {
             </div>
             <span className="ta-marketplace-official-strip__badge flex-shrink-0">{t('marketplace.officialBadge')}</span>
           </div>
-          <div className="ta-marketplace-official-strip__scroll">
-            {officialVendors.length === 0 && (
-              <p className="small text-muted mb-0 py-1">{t('marketplace.officialEmpty')}</p>
-            )}
-            {officialVendors.map((vendor) => (
-              <div key={vendor.id} className="ta-marketplace-official-strip__item flex-shrink-0 d-flex">
-                <div className="official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column">
-                  <div className="official-vendor-card__inner d-flex flex-column flex-grow-1">
-                    <div className="flex-grow-1 min-h-0">
-                      <div className="d-flex justify-content-between align-items-start gap-2">
-                        <div className="min-w-0">
-                          <div className="fw-semibold small">{vendor.name}</div>
-                          <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
-                            {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
+          <div
+            className={
+              `ta-marketplace-official-strip__scroll-outer${officialVendors.length > 1 ? ' ta-marketplace-official-strip__scroll-outer--hint' : ''}`.trim()
+            }
+          >
+            <div ref={officialStripScrollRef} className="ta-marketplace-official-strip__scroll">
+              {officialVendors.length === 0 && (
+                <p className="small text-muted mb-0 py-1">{t('marketplace.officialEmpty')}</p>
+              )}
+              {officialVendors.map((vendor) => (
+                <div key={vendor.id} className="ta-marketplace-official-strip__item flex-shrink-0 d-flex">
+                  <div className="official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column">
+                    <div className="official-vendor-card__inner d-flex flex-column flex-grow-1">
+                      <div className="flex-grow-1 min-h-0">
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <div className="min-w-0">
+                            <div className="fw-semibold small">{vendor.name}</div>
+                            <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
+                              {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
+                            </div>
                           </div>
+                          <span className="official-vendor-card__ribbon flex-shrink-0" style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
+                            {vendor.badge || t('marketplace.officialPartnerBadge')}
+                          </span>
                         </div>
-                        <span className="official-vendor-card__ribbon flex-shrink-0" style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
-                          {vendor.badge || t('marketplace.officialPartnerBadge')}
-                        </span>
+                        <p className="small mt-2 mb-2 ta-marketplace-official-strip__note">{vendor.note || '—'}</p>
+                        <div className="small text-muted" style={{ fontSize: '0.7rem' }}>
+                          {vendor.nationalShipping ? t('marketplace.nationalShipping') : t('marketplace.regionalShipping')}
+                          {(vendor.shipsToCountries || []).length > 0 && (
+                            <span className="d-block mt-1">{t('marketplace.shipsTo')}: {(vendor.shipsToCountries || []).join(', ')}</span>
+                          )}
+                        </div>
                       </div>
-                      <p className="small mt-2 mb-2 ta-marketplace-official-strip__note">{vendor.note || '—'}</p>
-                      <div className="small text-muted" style={{ fontSize: '0.7rem' }}>
-                        {vendor.nationalShipping ? t('marketplace.nationalShipping') : t('marketplace.regionalShipping')}
-                        {(vendor.shipsToCountries || []).length > 0 && (
-                          <span className="d-block mt-1">{t('marketplace.shipsTo')}: {(vendor.shipsToCountries || []).join(', ')}</span>
+                      <div className="mt-auto pt-2 w-100">
+                        {vendor.websiteUrl ? (
+                          <a href={vendor.websiteUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark w-100">
+                            {t('marketplace.visitSite')}
+                          </a>
+                        ) : (
+                          <span className="btn btn-sm btn-outline-secondary w-100 disabled">{t('marketplace.visitSite')}</span>
                         )}
                       </div>
                     </div>
-                    <div className="mt-auto pt-2 w-100">
-                      {vendor.websiteUrl ? (
-                        <a href={vendor.websiteUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark w-100">
-                          {t('marketplace.visitSite')}
-                        </a>
-                      ) : (
-                        <span className="btn btn-sm btn-outline-secondary w-100 disabled">{t('marketplace.visitSite')}</span>
-                      )}
-                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            {officialVendors.length > 1 && (
+              <div
+                className="d-flex d-md-none justify-content-center align-items-center gap-2 mt-2 pt-1"
+                role="group"
+                aria-label={t('marketplace.officialStripNavAria')}
+              >
+                <button
+                  type="button"
+                  className="ta-marketplace-official-strip__nav-btn"
+                  onClick={() => scrollOfficialStrip('prev')}
+                  disabled={officialStripEdge.atStart}
+                  aria-label={t('discover.prev')}
+                >
+                  <span aria-hidden className="ta-marketplace-official-strip__nav-icon">‹</span>
+                </button>
+                <button
+                  type="button"
+                  className="ta-marketplace-official-strip__nav-btn"
+                  onClick={() => scrollOfficialStrip('next')}
+                  disabled={officialStripEdge.atEnd}
+                  aria-label={t('discover.next')}
+                >
+                  <span aria-hidden className="ta-marketplace-official-strip__nav-icon">›</span>
+                </button>
               </div>
-            ))}
+            )}
           </div>
         </section>
 
