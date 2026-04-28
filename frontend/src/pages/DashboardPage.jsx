@@ -363,10 +363,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div
-          className="alert small py-2 mb-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2"
-          style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--ta-parchment)' }}
-        >
+        <div className="alert small py-2 mb-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 ta-dashboard-qr-banner">
           <span className="mb-0">{t('dashboard.qrBannerLead')}</span>
           <Link to="/tools/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
             {t('dashboard.qrBannerLink')}

@@ -45,6 +45,7 @@
   --ta-bg: #f4f5f7;
   --ta-bg-deep: #eceef1;
   --ta-bg-card: #ffffff;
+  --ta-bg-card-warm: #f5efe4;
   --ta-bg-panel: #f0f2f5;
   --ta-bg-input: #ffffff;
   --ta-parchment: #111827;
@@ -2543,6 +2544,14 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   backdrop-filter: blur(10px);
 }
 
+:root[data-theme='light'] .ta-premium-profile-card {
+  background: linear-gradient(160deg, var(--ta-bg-card-warm), #ffffff 72%) !important;
+  border-color: rgba(120, 88, 32, 0.24) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 10px 26px rgba(62, 44, 18, 0.09) !important;
+}
+
 .ta-premium-profile-name {
   font-family: 'Cinzel', Georgia, serif;
   color: var(--ta-parchment) !important;
@@ -2571,8 +2580,8 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 :root[data-theme='light'] .ta-keeper-reputation-strip {
-  background: linear-gradient(135deg, rgba(201, 168, 76, 0.14), rgba(248, 250, 252, 0.98));
-  border-color: rgba(15, 23, 42, 0.09);
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.2), rgba(245, 239, 228, 0.92));
+  border-color: rgba(120, 88, 32, 0.22);
 }
 
 .ta-premium-edit-btn {
@@ -2580,6 +2589,12 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   background: rgba(15, 15, 18, 0.85) !important;
   color: var(--ta-parchment) !important;
+}
+
+:root[data-theme='light'] .ta-premium-edit-btn {
+  border-color: rgba(120, 88, 32, 0.28) !important;
+  background: rgba(255, 251, 243, 0.95) !important;
+  color: #3f2f12 !important;
 }
 
 .ta-premium-section-title {
@@ -2674,6 +2689,11 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   font-size: 0.84rem;
 }
 
+.ta-premium-species,
+.ta-premium-common-name {
+  overflow-wrap: anywhere;
+}
+
 .ta-premium-card-meta-lower .ta-premium-tech-line--first {
   margin-top: 0;
 }
@@ -2689,6 +2709,24 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
+}
+
+.ta-dashboard-qr-banner {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ta-parchment);
+}
+
+:root[data-theme='light'] .ta-dashboard-qr-banner {
+  background: linear-gradient(100deg, var(--ta-bg-card-warm), #ffffff 85%);
+  border-color: rgba(120, 88, 32, 0.22);
+  color: #4a3720;
+}
+
+:root[data-theme='light'] .ta-dashboard-qr-banner .btn.btn-dark {
+  background: #6b4f1f !important;
+  border-color: #6b4f1f !important;
+  color: #fff8ea !important;
 }
 
 .ta-premium-tarantula-card .badge.bg-success,
@@ -3278,6 +3316,39 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   }
   .ta-premium-shell--detail-wide .row.g-4 {
     --bs-gutter-y: 1.1rem;
+  }
+
+  .ta-premium-tarantula-card .ta-premium-card-meta {
+    padding: 0.72rem 0.8rem 0.76rem;
+  }
+
+  .ta-premium-tarantula-card .ta-premium-common-name {
+    font-size: 1rem;
+    line-height: 1.18;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+
+  .ta-premium-tarantula-card .ta-premium-species {
+    font-size: 0.78rem;
+    line-height: 1.18;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+
+  .ta-premium-tarantula-card .ta-premium-tech-line {
+    font-size: 0.76rem;
+    gap: 0.35rem;
+  }
+
+  .ta-premium-tarantula-card .ta-tarantula-card-brand-mark {
+    width: 34px;
+    height: 34px;
+    margin-left: 0.25rem;
   }
 }
 
