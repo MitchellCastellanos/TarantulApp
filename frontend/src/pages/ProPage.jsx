@@ -278,20 +278,6 @@ export default function ProPage() {
                   })}
                 </div>
               </div>
-
-              <div className="border rounded p-3 mb-0" style={{ borderColor: 'var(--ta-border)' }}>
-                <h6 className="fw-bold mb-2">{t('pro.referralsBlockTitle')}</h6>
-                <p className="small mb-2" style={{ lineHeight: 1.55 }}>{t('pro.referralsKeyline')}</p>
-                <p className="small text-muted mb-2">{t('pro.referralsIntro')}</p>
-                <ul className="small mb-2 ps-3">
-                  <li>{t('pro.referralsL1')}</li>
-                  <li>{t('pro.referralsL2')}</li>
-                  <li>{t('pro.referralsL3')}</li>
-                  <li>{t('pro.referralsL4')}</li>
-                  <li>{t('pro.referralsL5')}</li>
-                </ul>
-                <p className="small text-muted mb-0">{t('pro.referralsBase')}</p>
-              </div>
             </div>
           </div>
 

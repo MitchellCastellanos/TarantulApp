@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -154,5 +155,56 @@ class MarketplaceServicePublicListingsTest {
 
         assertEquals(1, out.size());
         assertEquals("peer", out.get(0).get("source"));
+    }
+
+    @Test
+    void publicListingsReducesPartnerShareAsPeerSupplyGrows() {
+        UUID vendorId = UUID.randomUUID();
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setId(vendorId);
+        vendor.setName("Founder Vendor");
+        vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
+
+        List<PartnerListing> partners = new ArrayList<>();
+        for (int i = 0; i < 40; i++) {
+            PartnerListing p = new PartnerListing();
+            p.setId(UUID.randomUUID());
+            p.setOfficialVendorId(vendorId);
+            p.setTitle("Partner " + i);
+            p.setStatus(PartnerListingStatus.ACTIVE);
+            p.setAvailability(PartnerListingAvailability.IN_STOCK);
+            p.setCurrency("USD");
+            p.setProductCanonicalUrl("https://partner.example.com/p/" + i);
+            p.setLastSyncedAt(Instant.now().minusSeconds(i));
+            partners.add(p);
+        }
+
+        List<MarketplaceListing> peers = new ArrayList<>();
+        for (int i = 0; i < 60; i++) {
+            MarketplaceListing m = new MarketplaceListing();
+            m.setId(UUID.randomUUID());
+            m.setSellerUserId(UUID.randomUUID());
+            m.setTitle("Peer " + i);
+            m.setStatus("active");
+            m.setCurrency("MXN");
+            peers.add(m);
+        }
+
+        when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                .thenReturn(List.of(vendor));
+        when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
+                .thenReturn(partners);
+        when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
+                .thenReturn(peers);
+        when(userRepository.findById(org.mockito.ArgumentMatchers.any(UUID.class))).thenReturn(Optional.empty());
+
+        List<Map<String, Object>> out = marketplaceService.publicListings(
+                null, "active", null, null, null, null, null, null);
+
+        long partnerCount = out.stream().filter(row -> "partner".equals(row.get("source"))).count();
+        long peerCount = out.stream().filter(row -> "peer".equals(row.get("source"))).count();
+        assertTrue(peerCount >= 60);
+        assertTrue(partnerCount <= 10, "Partner rows should shrink to <=15% share at high peer inventory");
     }
 }

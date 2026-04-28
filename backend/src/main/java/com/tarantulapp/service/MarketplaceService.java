@@ -20,6 +20,7 @@ import com.tarantulapp.repository.BehaviorLogRepository;
 import com.tarantulapp.repository.ChatMessageRepository;
 import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +51,6 @@ public class MarketplaceService {
     private static final List<PartnerProgramTier> STRATEGIC_PARTNER_FEED_TIERS = List.of(
             PartnerProgramTier.STRATEGIC_FOUNDER,
             PartnerProgramTier.STRATEGIC_PARTNER);
-
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final PartnerListingRepository partnerListingRepository;
     private final OfficialVendorRepository officialVendorRepository;
@@ -65,6 +65,16 @@ public class MarketplaceService {
     private final ChatMessageRepository chatMessageRepository;
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
+    @Value("${app.marketplace.partner-feed.hard-cap:50}")
+    private int partnerFeedHardCap = 50;
+    @Value("${app.marketplace.partner-feed.share.bootstrap-under-10:0.60}")
+    private double partnerShareBootstrapUnder10 = 0.60d;
+    @Value("${app.marketplace.partner-feed.share.warm-under-25:0.40}")
+    private double partnerShareWarmUnder25 = 0.40d;
+    @Value("${app.marketplace.partner-feed.share.growth-under-60:0.25}")
+    private double partnerShareGrowthUnder60 = 0.25d;
+    @Value("${app.marketplace.partner-feed.share.steady-60-plus:0.15}")
+    private double partnerShareSteady60Plus = 0.15d;
 
     public MarketplaceService(MarketplaceListingRepository marketplaceListingRepository,
                               PartnerListingRepository partnerListingRepository,
@@ -213,10 +223,45 @@ public class MarketplaceService {
         List<Map<String, Object>> peer = peerPublicListings(
                 q, status, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
         );
-        List<Map<String, Object>> out = new ArrayList<>(partner.size() + peer.size());
-        out.addAll(partner);
+        int partnerCap = dynamicPartnerCap(peer.size(), partner.size());
+        List<Map<String, Object>> out = new ArrayList<>(partnerCap + peer.size());
+        out.addAll(partner.stream().limit(partnerCap).collect(Collectors.toList()));
         out.addAll(peer);
         return out.stream().limit(100).collect(Collectors.toList());
+    }
+
+    /**
+     * Bootstrap behavior: strategic partner listings can fill gaps early on, but once peer supply grows,
+     * partner share is progressively reduced so community inventory dominates the feed.
+     */
+    private int dynamicPartnerCap(int peerCount, int partnerAvailable) {
+        if (partnerAvailable <= 0) {
+            return 0;
+        }
+        int hardCap = Math.max(1, partnerFeedHardCap);
+        if (peerCount <= 0) {
+            return Math.min(hardCap, partnerAvailable);
+        }
+        double targetShare;
+        if (peerCount < 10) {
+            targetShare = sanitizePartnerShare(partnerShareBootstrapUnder10, 0.60d);
+        } else if (peerCount < 25) {
+            targetShare = sanitizePartnerShare(partnerShareWarmUnder25, 0.40d);
+        } else if (peerCount < 60) {
+            targetShare = sanitizePartnerShare(partnerShareGrowthUnder60, 0.25d);
+        } else {
+            targetShare = sanitizePartnerShare(partnerShareSteady60Plus, 0.15d);
+        }
+        int capByShare = (int) Math.floor((peerCount * targetShare) / (1.0d - targetShare));
+        int capped = Math.min(hardCap, Math.max(1, capByShare));
+        return Math.min(capped, partnerAvailable);
+    }
+
+    private double sanitizePartnerShare(double configured, double fallback) {
+        if (configured <= 0.01d || configured >= 0.95d) {
+            return fallback;
+        }
+        return configured;
     }
 
     @Transactional(readOnly = true)
@@ -379,7 +424,7 @@ public class MarketplaceService {
                         .comparingInt((PartnerListing p) -> partnerProximityScore(p, nearCountryNorm, nearStateNorm, nearCityNorm))
                         .reversed()
                         .thenComparing(PartnerListing::getLastSyncedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(50)
+                .limit(Math.max(1, partnerFeedHardCap))
                 .map(p -> mapPartnerListing(p, eligibleVendorById.get(p.getOfficialVendorId())))
                 .collect(Collectors.toList());
     }

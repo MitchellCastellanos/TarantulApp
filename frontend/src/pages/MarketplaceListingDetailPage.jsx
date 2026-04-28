@@ -223,12 +223,8 @@ export default function MarketplaceListingDetailPage() {
                     <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                   )}
                   {isPartner && (
-                    <span
-                      className={`badge ${String(listing.partnerProgramTier) === 'STRATEGIC_FOUNDER' ? 'bg-dark text-warning' : 'bg-warning text-dark'}`}
-                    >
-                      {String(listing.partnerProgramTier) === 'STRATEGIC_FOUNDER'
-                        ? t('marketplace.foundingPartnerBadge')
-                        : listing.badgeLabel || t('marketplace.certifiedPartnerBadge')}
+                    <span className="badge bg-warning text-dark">
+                      {listing.badgeLabel || t('marketplace.certifiedPartnerBadge')}
                     </span>
                   )}
                 </h1>

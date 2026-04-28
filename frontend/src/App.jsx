@@ -51,6 +51,7 @@ import {
 function ComingSoonGate({ children }) {
   const enabled = isComingSoonEnabled()
   const [unlocked, setUnlocked] = useState(() => readTesterBypass())
+  const location = useLocation()
 
   useEffect(() => {
     const onStorage = (e) => {
@@ -69,7 +70,9 @@ function ComingSoonGate({ children }) {
     setUnlocked(true)
   }, [])
 
-  if (!enabled || unlocked) {
+  const isPublicBypassPath = location.pathname === '/beta/apply'
+
+  if (!enabled || unlocked || isPublicBypassPath) {
     return children
   }
   return <ComingSoonPage onUnlock={handleTesterUnlock} />
@@ -268,20 +271,20 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <ComingSoonGate>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <ComingSoonGate>
           <AuthSessionBridge />
           <AppRoutes />
           <BugReportFAB />
           <RateAppPrompt />
           <Footer />
-        </BrowserRouter>
-      </ComingSoonGate>
+        </ComingSoonGate>
+      </BrowserRouter>
     </AuthProvider>
   )
 }

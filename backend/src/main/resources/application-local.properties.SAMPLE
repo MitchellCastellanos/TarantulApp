@@ -53,6 +53,14 @@ spring.datasource.password=TU_PASSWORD_DOCKER
 # Rate limits adicionales (defaults razonables para lanzamiento):
 # app.rate-limit.reports-per-minute=8
 # app.rate-limit.sex-id-vote-per-minute=30
+#
+# Marketplace bootstrap mix (partner/founder imported listings vs community listings)
+# Ajusta sin tocar código:
+# app.marketplace.partner-feed.hard-cap=50
+# app.marketplace.partner-feed.share.bootstrap-under-10=0.60
+# app.marketplace.partner-feed.share.warm-under-25=0.40
+# app.marketplace.partner-feed.share.growth-under-60=0.25
+# app.marketplace.partner-feed.share.steady-60-plus=0.15
 
 # Billing safety guards
 # app.environment=production    # Detectado por safety guards y Sentry. Default: development.

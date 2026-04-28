@@ -547,12 +547,8 @@ export default function MarketplacePage() {
                       <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
                         <OfficialPartnerShield width={22} height={24} />
                         <span>{l.title}</span>
-                        <span
-                          className={`badge ${String(l.partnerProgramTier) === 'STRATEGIC_FOUNDER' ? 'bg-dark text-warning' : 'bg-warning text-dark'}`}
-                        >
-                          {String(l.partnerProgramTier) === 'STRATEGIC_FOUNDER'
-                            ? t('marketplace.foundingPartnerBadge')
-                            : (l.badgeLabel || t('marketplace.certifiedPartnerBadge'))}
+                        <span className="badge bg-warning text-dark">
+                          {l.badgeLabel || t('marketplace.certifiedPartnerBadge')}
                         </span>
                       </h6>
                       <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
