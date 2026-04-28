@@ -1263,6 +1263,7 @@
     "severityMedium": "Moyenne",
     "severityHigh": "Haute",
     "severityCritical": "Critique",
+    "makeTester": "Rendre testeur",
     "removeTester": "Retirer testeur",
     "approve": "Approuver",
     "reject": "Rejeter",

@@ -94,6 +94,20 @@ export default function AdminPage() {
     }
   }
 
+  const toggleRecentUserTester = async (u) => {
+    try {
+      const nextValue = !(u?.isBetaTester === true)
+      await adminService.patchUserBeta(u.id, { isBetaTester: nextValue })
+      setRecentUsers((prev) =>
+        prev.map((row) => (String(row.id) === String(u.id) ? { ...row, isBetaTester: nextValue } : row)),
+      )
+      const refreshed = await adminService.betaTesters()
+      setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
+    } catch {
+      setError(t('admin.resolveError'))
+    }
+  }
+
   const hideActionForReport = (report) => {
     if (report?.targetType === 'marketplace_listing') return 'hide_listing'
     if (report?.targetType === 'activity_post') return 'hide_activity_post'
@@ -164,6 +178,7 @@ export default function AdminPage() {
                     <th>{t('auth.name')}</th>
                     <th>{t('admin.plan')}</th>
                     <th>{t('admin.created')}</th>
+                    <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -173,6 +188,15 @@ export default function AdminPage() {
                       <td>{u.displayName || '-'}</td>
                       <td>{u.plan}</td>
                       <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                          onClick={() => toggleRecentUserTester(u)}
+                        >
+                          {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

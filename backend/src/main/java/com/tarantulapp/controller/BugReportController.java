@@ -4,6 +4,7 @@ import com.tarantulapp.entity.BugReport;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.repository.BugReportRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.service.EmailService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -23,13 +24,16 @@ public class BugReportController {
     private final BugReportRepository bugReportRepository;
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
+    private final EmailService emailService;
 
     public BugReportController(BugReportRepository bugReportRepository,
                                UserRepository userRepository,
-                               SecurityHelper securityHelper) {
+                               SecurityHelper securityHelper,
+                               EmailService emailService) {
         this.bugReportRepository = bugReportRepository;
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
+        this.emailService = emailService;
     }
 
     record CreateBugReportRequest(
@@ -64,6 +68,14 @@ public class BugReportController {
         report.setAppVersion(trimTo(req.appVersion(), 80));
         report.setScreenshotUrl(trimTo(req.screenshotUrl(), 700));
         BugReport saved = bugReportRepository.save(report);
+        emailService.sendAdminBugReportNotification(
+                saved.getId(),
+                user.getEmail(),
+                saved.getSeverity(),
+                saved.getTitle(),
+                saved.getCurrentUrl(),
+                saved.getAppVersion()
+        );
         return ResponseEntity.ok(Map.of("id", saved.getId(), "status", saved.getStatus()));
     }
 

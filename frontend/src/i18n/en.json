@@ -1281,6 +1281,7 @@
     "severityMedium": "Medium",
     "severityHigh": "High",
     "severityCritical": "Critical",
+    "makeTester": "Make tester",
     "removeTester": "Remove tester",
     "approve": "Approve",
     "reject": "Reject",

@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Service
 public class EmailService {
@@ -30,6 +31,9 @@ public class EmailService {
 
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
+
+    @Value("${app.mail.admin-notify-to:admin@tarantulapp.com}")
+    private String adminNotifyTo;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -252,5 +256,77 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed to send payment receipt email to {}: {}", toEmail, e.getMessage());
         }
+    }
+
+    public void sendAdminBugReportNotification(
+            UUID reportId,
+            String reporterEmail,
+            String severity,
+            String title,
+            String currentUrl,
+            String appVersion
+    ) {
+        if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(adminNotifyTo);
+            helper.setSubject("[TarantulApp] New beta bug report (" + safe(severity) + ")");
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(
+                "New bug report submitted.\n\n" +
+                "Report ID: " + String.valueOf(reportId) + "\n" +
+                "Reporter: " + safe(reporterEmail) + "\n" +
+                "Severity: " + safe(severity) + "\n" +
+                "Title: " + safe(title) + "\n" +
+                "Current URL: " + safe(currentUrl) + "\n" +
+                "App version: " + safe(appVersion) + "\n\n" +
+                "Review in Admin > Bug reports."
+            );
+            mailSender.send(msg);
+            log.info("Admin bug notification sent to {} for report {}", adminNotifyTo, reportId);
+        } catch (Exception e) {
+            log.error("Failed to send admin bug notification for report {}: {}", reportId, e.getMessage());
+        }
+    }
+
+    public void sendAdminBetaApplicationNotification(
+            UUID applicationId,
+            String email,
+            String name,
+            String country,
+            String level
+    ) {
+        if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(adminNotifyTo);
+            helper.setSubject("[TarantulApp] New beta application");
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(
+                "New beta application received.\n\n" +
+                "Application ID: " + String.valueOf(applicationId) + "\n" +
+                "Email: " + safe(email) + "\n" +
+                "Name: " + safe(name) + "\n" +
+                "Country: " + safe(country) + "\n" +
+                "Experience level: " + safe(level) + "\n\n" +
+                "Review in Admin > Beta applications."
+            );
+            mailSender.send(msg);
+            log.info("Admin beta application notification sent to {} for application {}", adminNotifyTo, applicationId);
+        } catch (Exception e) {
+            log.error("Failed to send admin beta application notification for application {}: {}", applicationId, e.getMessage());
+        }
+    }
+
+    private String safe(String value) {
+        return (value == null || value.isBlank()) ? "-" : value;
     }
 }

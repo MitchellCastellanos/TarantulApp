@@ -1255,6 +1255,7 @@
     "severityMedium": "Media",
     "severityHigh": "Alta",
     "severityCritical": "Crítica",
+    "makeTester": "Hacer tester",
     "removeTester": "Quitar tester",
     "approve": "Aprobar",
     "reject": "Rechazar",

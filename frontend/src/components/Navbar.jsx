@@ -416,20 +416,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                 >
                   {t('nav.logout')}
                 </button>
-              ) : hideLoginLink ? (
-                <Link
-                  to="/descubrir"
-                  onClick={closeMobileMenu}
-                  className="btn btn-sm"
-                  style={{
-                    border: '1px solid var(--ta-border)',
-                    color: 'var(--ta-parchment)',
-                    background: 'transparent',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  {t('nav.continueDiscover')}
-                </Link>
               ) : (
                 <Link
                   to="/login"
@@ -540,19 +526,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                   style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>
             {t('nav.logout')}
           </button>
-        ) : hideLoginLink ? (
-          <Link
-            to="/descubrir"
-            className="btn btn-sm"
-            style={{
-              border: '1px solid var(--ta-border)',
-              color: 'var(--ta-parchment)',
-              background: 'transparent',
-              fontSize: '0.8rem',
-            }}
-          >
-            {t('nav.continueDiscover')}
-          </Link>
         ) : (
           <Link to="/login" className="btn btn-sm btn-outline-light"
                 style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}>

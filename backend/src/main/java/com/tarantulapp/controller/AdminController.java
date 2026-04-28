@@ -249,6 +249,7 @@ public class AdminController {
                 "email", u.getEmail(),
                 "displayName", u.getDisplayName() == null ? "" : u.getDisplayName(),
                 "plan", u.getPlan() == null ? "FREE" : u.getPlan().name(),
+                "isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()),
                 "createdAt", u.getCreatedAt()
         );
     }
