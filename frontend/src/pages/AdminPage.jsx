@@ -14,8 +14,10 @@ export default function AdminPage() {
   const [betaTesters, setBetaTesters] = useState([])
   const [betaApplications, setBetaApplications] = useState([])
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
   const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
+  const [reviewingApplicationId, setReviewingApplicationId] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -82,15 +84,19 @@ export default function AdminPage() {
   }
 
   const reviewApplication = async (id, action) => {
+    setReviewingApplicationId(String(id))
     try {
-      const updated = await adminService.reviewBetaApplication(id, { action })
-      setBetaApplications((prev) => prev.map((a) => (a.id === id ? updated : a)))
+      await adminService.reviewBetaApplication(id, { action })
+      setBetaApplications((prev) => prev.filter((a) => String(a.id) !== String(id)))
+      setSuccess(action === 'approve' ? t('admin.betaApplicationApproved') : t('admin.betaApplicationRejected'))
       if (action === 'approve') {
         const refreshed = await adminService.betaTesters()
         setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
       }
     } catch {
       setError(t('admin.resolveError'))
+    } finally {
+      setReviewingApplicationId('')
     }
   }
 
@@ -154,6 +160,7 @@ export default function AdminPage() {
       <div className="container mt-4 mb-5" style={{ maxWidth: 980 }}>
         <h1 className="h4 mb-3">{t('admin.title')}</h1>
         {error && <div className="alert alert-danger">{error}</div>}
+        {success && <div className="alert alert-success">{success}</div>}
         {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
 
         {summary && (
@@ -414,8 +421,22 @@ export default function AdminPage() {
                       <td>{a.country || '-'}</td>
                       <td>{a.experienceLevel || '-'}</td>
                       <td className="d-flex gap-2">
-                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => reviewApplication(a.id, 'approve')}>{t('admin.approve')}</button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => reviewApplication(a.id, 'reject')}>{t('admin.reject')}</button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-success"
+                          disabled={reviewingApplicationId === String(a.id)}
+                          onClick={() => reviewApplication(a.id, 'approve')}
+                        >
+                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.approve')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled={reviewingApplicationId === String(a.id)}
+                          onClick={() => reviewApplication(a.id, 'reject')}
+                        >
+                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.reject')}
+                        </button>
                       </td>
                     </tr>
                   ))}

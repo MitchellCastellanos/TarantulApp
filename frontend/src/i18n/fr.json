@@ -1275,6 +1275,9 @@
     "betaApplyTitle": "Postuler a la beta TarantulApp",
     "betaApplyLead": "Remplis ce formulaire et nous examinerons ton profil pour la prochaine cohorte.",
     "betaApplySubmitted": "Candidature reçue. On te contacte bientôt.",
+    "betaApplyTimeout": "La requête a expiré. Réessaie dans quelques secondes.",
+    "betaApplicationApproved": "Candidature approuvée et testeur ajouté.",
+    "betaApplicationRejected": "Candidature rejetée.",
     "apply": "Postuler",
     "selectOne": "Choisir une option"
   },

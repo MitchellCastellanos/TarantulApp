@@ -27,7 +27,8 @@ export default function BetaApplyPage() {
       setOk(t('admin.betaApplySubmitted'))
       setForm({ email: '', name: '', country: '', experienceLevel: '', devices: '', notes: '' })
     } catch (err) {
-      setError(err?.response?.data?.error || t('common.error'))
+      const timeout = err?.code === 'ECONNABORTED'
+      setError(timeout ? t('admin.betaApplyTimeout') : (err?.response?.data?.error || t('common.error')))
     } finally {
       setSaving(false)
     }
