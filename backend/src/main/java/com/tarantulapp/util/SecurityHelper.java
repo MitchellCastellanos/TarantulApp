@@ -1,5 +1,6 @@
 package com.tarantulapp.util;
 
+import com.tarantulapp.config.AppUserDetails;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
@@ -22,8 +23,11 @@ public class SecurityHelper {
     }
 
     public UUID getCurrentUserId() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth.getPrincipal() instanceof AppUserDetails appUser) {
+            return appUser.id();
+        }
+        return userRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"))
                 .getId();
     }
@@ -40,11 +44,13 @@ public class SecurityHelper {
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return Optional.empty();
         }
-        Object principal = auth.getPrincipal();
-        if (!(principal instanceof UserDetails)) {
+        if (auth.getPrincipal() instanceof AppUserDetails appUser) {
+            return Optional.of(appUser.id());
+        }
+        if (!(auth.getPrincipal() instanceof UserDetails ud)) {
             return Optional.empty();
         }
-        String email = ((UserDetails) principal).getUsername();
+        String email = ud.getUsername();
         if (email == null || email.isBlank()) {
             return Optional.empty();
         }
