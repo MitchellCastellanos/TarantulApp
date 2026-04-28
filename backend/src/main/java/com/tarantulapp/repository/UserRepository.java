@@ -36,4 +36,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             LocalDateTime from,
             LocalDateTime to
     );
+
+    List<User> findByIsBetaTesterTrueOrderByCreatedAtDesc();
 }

@@ -15,6 +15,18 @@ const adminService = {
   runPartnerSync: () => api.post('/admin/partner-sync/run').then((r) => r.data),
   partnerSyncRuns: (vendorId) =>
     api.get('/admin/partner-sync/runs', { params: vendorId ? { vendorId } : {} }).then((r) => r.data),
+  bugReports: (status = '') =>
+    api.get('/admin/bug-reports', { params: status ? { status } : {} }).then((r) => r.data),
+  patchBugReport: (id, payload) =>
+    api.patch(`/admin/bug-reports/${id}`, payload).then((r) => r.data),
+  betaTesters: () =>
+    api.get('/admin/beta-testers').then((r) => r.data),
+  patchUserBeta: (id, payload) =>
+    api.patch(`/admin/users/${id}/beta`, payload).then((r) => r.data),
+  betaApplications: (status = '') =>
+    api.get('/admin/beta-applications', { params: status ? { status } : {} }).then((r) => r.data),
+  reviewBetaApplication: (id, payload) =>
+    api.patch(`/admin/beta-applications/${id}/review`, payload).then((r) => r.data),
 }
 
 export default adminService

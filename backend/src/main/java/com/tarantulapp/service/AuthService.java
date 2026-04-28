@@ -212,6 +212,7 @@ public class AuthService {
         r.setProfilePhoto(user.getProfilePhoto());
         r.setCommunityProfileVisibility(user.getCommunityProfileVisibility());
         r.setAdmin(adminAccessService.isAdminEmail(user.getEmail()));
+        r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));
         return r;
     }
 

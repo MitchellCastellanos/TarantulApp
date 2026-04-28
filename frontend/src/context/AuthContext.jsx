@@ -35,6 +35,7 @@ function mergePlanFields(raw) {
     profilePhoto: raw?.profilePhoto || '',
     communityProfileVisibility: raw?.communityProfileVisibility || 'preview_only',
     admin: raw?.admin === true,
+    betaTester: raw?.betaTester === true || raw?.isBetaTester === true,
   }
 }
 
@@ -85,6 +86,7 @@ export function AuthProvider({ children }) {
       profilePhoto: authData.profilePhoto,
       communityProfileVisibility: authData.communityProfileVisibility,
       admin: authData.admin === true,
+      betaTester: authData.betaTester === true || authData.isBetaTester === true,
     })
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(payload))
@@ -130,6 +132,8 @@ export function AuthProvider({ children }) {
           if (!prev) return prev
           const admin =
             typeof data.admin === 'boolean' ? data.admin : prev.admin === true
+          const betaTester =
+            typeof data.isBetaTester === 'boolean' ? data.isBetaTester : prev.betaTester === true
           const next = mergePlanFields({
             ...prev,
             plan: data.plan,
@@ -139,6 +143,7 @@ export function AuthProvider({ children }) {
             overFreeLimit: data.overFreeLimit,
             strictReadOnly: data.strictReadOnly,
             admin,
+            betaTester,
           })
           localStorage.setItem('user', JSON.stringify(next))
           return next

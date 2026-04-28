@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import BrandName from '../components/BrandName'
-import { getTesterAccessCode } from '../utils/comingSoonGate'
+import publicApi from '../services/publicApi'
 
 const SOCIAL_LINKS = [
   {
@@ -24,9 +24,10 @@ const SOCIAL_LINKS = [
 export default function ComingSoonPage({ onUnlock }) {
   const { t } = useTranslation()
   const [testerOpen, setTesterOpen] = useState(false)
-  const [passphrase, setPassphrase] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [unlockError, setUnlockError] = useState(false)
-  const configuredCode = getTesterAccessCode()
 
   useEffect(() => {
     document.title = t('comingSoon.docTitle')
@@ -35,20 +36,32 @@ export default function ComingSoonPage({ onUnlock }) {
     }
   }, [t])
 
-  function tryUnlock(e) {
+  async function tryUnlock(e) {
     e.preventDefault()
+    if (submitting) return
     setUnlockError(false)
-    if (!configuredCode) {
+    if (!email.trim() || !password) {
       setUnlockError(true)
       return
     }
-    if (passphrase.trim() === configuredCode) {
-      onUnlock?.()
+    setSubmitting(true)
+    try {
+      const { data } = await publicApi.post('/auth/login', { email: email.trim(), password })
+      const isAllowed = data?.admin === true || data?.betaTester === true || data?.isBetaTester === true
+      if (!isAllowed) {
+        setUnlockError(true)
+        return
+      }
+      onUnlock?.({ email: email.trim(), password })
       setTesterOpen(false)
-      setPassphrase('')
+      setEmail('')
+      setPassword('')
       return
+    } catch {
+      setUnlockError(true)
+    } finally {
+      setSubmitting(false)
     }
-    setUnlockError(true)
   }
 
   return (
@@ -100,6 +113,15 @@ export default function ComingSoonPage({ onUnlock }) {
               </a>
             ))}
           </div>
+          <div className="mt-3">
+            <a
+              href="/beta/apply"
+              className="small text-decoration-none"
+              style={{ color: 'rgba(255, 255, 255, 0.58)' }}
+            >
+              {t('comingSoon.betaApplyLink')}
+            </a>
+          </div>
         </div>
       </main>
 
@@ -110,7 +132,8 @@ export default function ComingSoonPage({ onUnlock }) {
         onClick={() => {
           setTesterOpen(true)
           setUnlockError(false)
-          setPassphrase('')
+          setEmail('')
+          setPassword('')
         }}
         aria-label={t('comingSoon.testerHitAria')}
         title=""
@@ -137,22 +160,36 @@ export default function ComingSoonPage({ onUnlock }) {
               <form onSubmit={tryUnlock}>
                 <div className="modal-body">
                   <label htmlFor="ta-tester-pass" className="form-label">
-                    {t('comingSoon.testerLabel')}
+                    {t('auth.email')}
                   </label>
                   <input
                     id="ta-tester-pass"
+                    type="email"
+                    autoComplete="off"
+                    className={`form-control ta-coming-soon__pass-input ${unlockError ? 'is-invalid' : ''}`}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setUnlockError(false)
+                    }}
+                  />
+                  <label htmlFor="ta-tester-password" className="form-label mt-3">
+                    {t('comingSoon.testerLabel')}
+                  </label>
+                  <input
+                    id="ta-tester-password"
                     type="password"
                     autoComplete="off"
                     className={`form-control ta-coming-soon__pass-input ${unlockError ? 'is-invalid' : ''}`}
-                    value={passphrase}
+                    value={password}
                     onChange={(e) => {
-                      setPassphrase(e.target.value)
+                      setPassword(e.target.value)
                       setUnlockError(false)
                     }}
                   />
                   {unlockError ? (
                     <div className="invalid-feedback d-block">
-                      {!configuredCode ? t('comingSoon.testerNoCode') : t('comingSoon.testerWrong')}
+                      {t('comingSoon.testerWrong')}
                     </div>
                   ) : null}
                 </div>
@@ -160,7 +197,7 @@ export default function ComingSoonPage({ onUnlock }) {
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setTesterOpen(false)}>
                     {t('comingSoon.testerCancel')}
                   </button>
-                  <button type="submit" className="btn btn-warning text-dark fw-semibold">
+                  <button type="submit" className="btn btn-warning text-dark fw-semibold" disabled={submitting}>
                     {t('comingSoon.testerSubmit')}
                   </button>
                 </div>

@@ -163,6 +163,7 @@ public class BillingService {
         body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
         body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
         body.put("admin", adminAccessService.isAdminEmail(user.getEmail()));
+        body.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
 
         Optional<Subscription> optSub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
         if (optSub.isPresent()) {

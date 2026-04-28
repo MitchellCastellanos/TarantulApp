@@ -28,6 +28,7 @@ public class AuthResponse {
     private String profilePhoto;
     private String communityProfileVisibility;
     private boolean admin;
+    private boolean betaTester;
 
     public AuthResponse(String token, String email, String displayName, UUID userId, String plan) {
         this.token = token;
@@ -85,4 +86,6 @@ public class AuthResponse {
 
     public boolean isAdmin() { return admin; }
     public void setAdmin(boolean admin) { this.admin = admin; }
+    public boolean isBetaTester() { return betaTester; }
+    public void setBetaTester(boolean betaTester) { this.betaTester = betaTester; }
 }

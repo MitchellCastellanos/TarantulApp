@@ -35,13 +35,16 @@ import CommunityPostThreadPage from './pages/CommunityPostThreadPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
 import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
 import HandleSetupPage from './pages/HandleSetupPage'
+import BetaApplyPage from './pages/BetaApplyPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
 import ComingSoonPage from './pages/ComingSoonPage'
+import BugReportFAB from './components/BugReportFAB'
 import {
   COMING_SOON_BYPASS_STORAGE_KEY,
   isComingSoonEnabled,
   readTesterBypass,
+  writeTesterPrefill,
   writeTesterBypass,
 } from './utils/comingSoonGate'
 
@@ -58,7 +61,10 @@ function ComingSoonGate({ children }) {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  const handleTesterUnlock = useCallback(() => {
+  const handleTesterUnlock = useCallback((prefill) => {
+    if (prefill?.email && prefill?.password) {
+      writeTesterPrefill(prefill.email, prefill.password)
+    }
     writeTesterBypass()
     setUnlocked(true)
   }, [])
@@ -156,6 +162,7 @@ function AppRoutes() {
       <Route path="/marketplace/keeper/:sellerUserId" element={<MarketplaceKeeperRedirect />} />
       <Route path="/launch" element={<LaunchRegistrationPage />} />
       <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
+      <Route path="/beta/apply" element={<BetaApplyPage />} />
       <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
       <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
       <Route path="/onboarding/handle" element={<PrivateRoute><HandleSetupPage /></PrivateRoute>} />
@@ -270,6 +277,7 @@ export default function App() {
         >
           <AuthSessionBridge />
           <AppRoutes />
+          <BugReportFAB />
           <RateAppPrompt />
           <Footer />
         </BrowserRouter>

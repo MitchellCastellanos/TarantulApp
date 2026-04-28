@@ -83,6 +83,18 @@ public class User {
     @Column(name = "founder_keeper", nullable = false)
     private Boolean founderKeeper = false;
 
+    @Column(name = "is_beta_tester", nullable = false)
+    private Boolean isBetaTester = false;
+
+    @Column(name = "beta_cohort", length = 80)
+    private String betaCohort;
+
+    @Column(name = "beta_country", length = 80)
+    private String betaCountry;
+
+    @Column(name = "beta_experience_level", length = 40)
+    private String betaExperienceLevel;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -94,6 +106,9 @@ public class User {
         }
         if (founderKeeper == null) {
             founderKeeper = false;
+        }
+        if (isBetaTester == null) {
+            isBetaTester = false;
         }
         if (searchVisible == null) {
             searchVisible = true;
@@ -171,5 +186,17 @@ public class User {
 
     public Boolean getFounderKeeper() { return founderKeeper; }
     public void setFounderKeeper(Boolean founderKeeper) { this.founderKeeper = founderKeeper; }
+
+    public Boolean getIsBetaTester() { return isBetaTester; }
+    public void setIsBetaTester(Boolean isBetaTester) { this.isBetaTester = isBetaTester; }
+
+    public String getBetaCohort() { return betaCohort; }
+    public void setBetaCohort(String betaCohort) { this.betaCohort = betaCohort; }
+
+    public String getBetaCountry() { return betaCountry; }
+    public void setBetaCountry(String betaCountry) { this.betaCountry = betaCountry; }
+
+    public String getBetaExperienceLevel() { return betaExperienceLevel; }
+    public void setBetaExperienceLevel(String betaExperienceLevel) { this.betaExperienceLevel = betaExperienceLevel; }
 
 }

@@ -1,6 +1,10 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.BugReport;
+import com.tarantulapp.entity.BetaApplication;
+import com.tarantulapp.repository.BetaApplicationRepository;
+import com.tarantulapp.repository.BugReportRepository;
 import com.tarantulapp.repository.ReminderRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
@@ -24,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,6 +42,8 @@ public class AdminController {
     private final OfficialVendorService officialVendorService;
     private final PartnerListingSyncService partnerListingSyncService;
     private final TaxonomySyncService taxonomySyncService;
+    private final BugReportRepository bugReportRepository;
+    private final BetaApplicationRepository betaApplicationRepository;
 
     public AdminController(AdminAccessService adminAccessService,
                            UserRepository userRepository,
@@ -44,7 +51,9 @@ public class AdminController {
                            ReminderRepository reminderRepository,
                            OfficialVendorService officialVendorService,
                            PartnerListingSyncService partnerListingSyncService,
-                           TaxonomySyncService taxonomySyncService) {
+                           TaxonomySyncService taxonomySyncService,
+                           BugReportRepository bugReportRepository,
+                           BetaApplicationRepository betaApplicationRepository) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -52,11 +61,16 @@ public class AdminController {
         this.officialVendorService = officialVendorService;
         this.partnerListingSyncService = partnerListingSyncService;
         this.taxonomySyncService = taxonomySyncService;
+        this.bugReportRepository = bugReportRepository;
+        this.betaApplicationRepository = betaApplicationRepository;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
 
     record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
+    record ResolveBugReportRequest(String status, String note) {}
+    record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel) {}
+    record ReviewBetaApplicationRequest(String action, UUID userId, String note) {}
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> summary() {
@@ -141,6 +155,94 @@ public class AdminController {
         );
     }
 
+    @GetMapping("/bug-reports")
+    public ResponseEntity<List<Map<String, Object>>> bugReports(@RequestParam(required = false) String status) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        List<BugReport> items = (status == null || status.isBlank())
+                ? bugReportRepository.findAllByOrderByCreatedAtDesc()
+                : bugReportRepository.findByStatusOrderByCreatedAtDesc(status.trim().toLowerCase());
+        return ResponseEntity.ok(items.stream().map(this::mapBugReport).collect(Collectors.toList()));
+    }
+
+    @PatchMapping("/bug-reports/{id}")
+    public ResponseEntity<Map<String, Object>> resolveBugReport(@PathVariable UUID id,
+                                                                @Valid @RequestBody ResolveBugReportRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        BugReport report = bugReportRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("BUG_REPORT_NOT_FOUND"));
+        String nextStatus = req.status() == null ? "" : req.status().trim().toLowerCase();
+        if (!List.of("open", "in_progress", "fixed", "wont_fix").contains(nextStatus)) {
+            throw new IllegalArgumentException("INVALID_BUG_REPORT_STATUS");
+        }
+        report.setStatus(nextStatus);
+        report.setResolutionNote(req.note() == null ? null : req.note().trim());
+        report.setResolvedAt(("fixed".equals(nextStatus) || "wont_fix".equals(nextStatus)) ? LocalDateTime.now() : null);
+        bugReportRepository.save(report);
+        return ResponseEntity.ok(mapBugReport(report));
+    }
+
+    @GetMapping("/beta-testers")
+    public ResponseEntity<List<Map<String, Object>>> betaTesters() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        List<User> users = userRepository.findByIsBetaTesterTrueOrderByCreatedAtDesc();
+        return ResponseEntity.ok(users.stream().map(this::mapBetaTester).collect(Collectors.toList()));
+    }
+
+    @PatchMapping("/users/{id}/beta")
+    public ResponseEntity<Map<String, Object>> setUserBeta(@PathVariable UUID id,
+                                                           @Valid @RequestBody SetBetaTesterRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        if (req.isBetaTester() != null) {
+            user.setIsBetaTester(req.isBetaTester());
+        }
+        if (req.cohort() != null) user.setBetaCohort(trim(req.cohort(), 80));
+        if (req.country() != null) user.setBetaCountry(trim(req.country(), 80));
+        if (req.experienceLevel() != null) user.setBetaExperienceLevel(trim(req.experienceLevel(), 40));
+        userRepository.save(user);
+        return ResponseEntity.ok(mapBetaTester(user));
+    }
+
+    @GetMapping("/beta-applications")
+    public ResponseEntity<List<Map<String, Object>>> betaApplications(@RequestParam(required = false) String status) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        List<BetaApplication> items = (status == null || status.isBlank())
+                ? betaApplicationRepository.findAllByOrderByCreatedAtDesc()
+                : betaApplicationRepository.findByStatusOrderByCreatedAtDesc(status.trim().toLowerCase());
+        return ResponseEntity.ok(items.stream().map(this::mapBetaApplication).collect(Collectors.toList()));
+    }
+
+    @PatchMapping("/beta-applications/{id}/review")
+    public ResponseEntity<Map<String, Object>> reviewBetaApplication(@PathVariable UUID id,
+                                                                     @Valid @RequestBody ReviewBetaApplicationRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        BetaApplication app = betaApplicationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("BETA_APPLICATION_NOT_FOUND"));
+        String action = req.action() == null ? "" : req.action().trim().toLowerCase();
+        if (!List.of("approve", "reject").contains(action)) {
+            throw new IllegalArgumentException("INVALID_BETA_APPLICATION_ACTION");
+        }
+        app.setStatus("approve".equals(action) ? "approved" : "rejected");
+        app.setReviewedAt(LocalDateTime.now());
+        if ("approve".equals(action)) {
+            UUID targetUserId = req.userId();
+            if (targetUserId == null) {
+                User user = userRepository.findByEmail(app.getEmail().trim().toLowerCase())
+                        .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND_FOR_APPLICATION_EMAIL"));
+                targetUserId = user.getId();
+            }
+            User user = userRepository.findById(targetUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+            user.setIsBetaTester(true);
+            if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) user.setBetaCountry(trim(app.getCountry(), 80));
+            if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
+            userRepository.save(user);
+            app.setApprovedUserId(user.getId());
+        }
+        betaApplicationRepository.save(app);
+        return ResponseEntity.ok(mapBetaApplication(app));
+    }
+
     private Map<String, Object> mapUser(User u) {
         return Map.of(
                 "id", u.getId(),
@@ -152,7 +254,7 @@ public class AdminController {
     }
 
     private Map<String, Object> mapPartnerSyncRun(PartnerListingSyncRun run) {
-        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", run.getId());
         out.put("officialVendorId", run.getOfficialVendorId());
         out.put("triggerSource", run.getTriggerSource().name().toLowerCase());
@@ -166,5 +268,62 @@ public class AdminController {
         out.put("skippedCount", run.getSkippedCount());
         out.put("errorMessage", run.getErrorMessage() == null ? "" : run.getErrorMessage());
         return out;
+    }
+
+    private Map<String, Object> mapBugReport(BugReport r) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", r.getId());
+        out.put("userId", r.getUserId());
+        out.put("severity", r.getSeverity());
+        out.put("title", r.getTitle());
+        out.put("description", r.getDescription());
+        out.put("expectedBehavior", r.getExpectedBehavior());
+        out.put("currentUrl", r.getCurrentUrl());
+        out.put("userAgent", r.getUserAgent());
+        out.put("viewport", r.getViewport());
+        out.put("appVersion", r.getAppVersion());
+        out.put("screenshotUrl", r.getScreenshotUrl());
+        out.put("status", r.getStatus());
+        out.put("resolutionNote", r.getResolutionNote());
+        out.put("createdAt", r.getCreatedAt());
+        out.put("resolvedAt", r.getResolvedAt());
+        return out;
+    }
+
+    private Map<String, Object> mapBetaTester(User user) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", user.getId());
+        out.put("email", user.getEmail());
+        out.put("displayName", user.getDisplayName() == null ? "" : user.getDisplayName());
+        out.put("betaCohort", user.getBetaCohort() == null ? "" : user.getBetaCohort());
+        out.put("betaCountry", user.getBetaCountry() == null ? "" : user.getBetaCountry());
+        out.put("betaExperienceLevel", user.getBetaExperienceLevel() == null ? "" : user.getBetaExperienceLevel());
+        out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
+        out.put("createdAt", user.getCreatedAt());
+        out.put("bugReportsCount", bugReportRepository.countByUserId(user.getId()));
+        return out;
+    }
+
+    private Map<String, Object> mapBetaApplication(BetaApplication app) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", app.getId());
+        out.put("email", app.getEmail());
+        out.put("name", app.getName() == null ? "" : app.getName());
+        out.put("country", app.getCountry() == null ? "" : app.getCountry());
+        out.put("experienceLevel", app.getExperienceLevel() == null ? "" : app.getExperienceLevel());
+        out.put("devices", app.getDevices() == null ? "" : app.getDevices());
+        out.put("notes", app.getNotes() == null ? "" : app.getNotes());
+        out.put("status", app.getStatus());
+        out.put("approvedUserId", app.getApprovedUserId());
+        out.put("createdAt", app.getCreatedAt());
+        out.put("reviewedAt", app.getReviewedAt());
+        return out;
+    }
+
+    private String trim(String value, int max) {
+        if (value == null) return null;
+        String out = value.trim();
+        if (out.isEmpty()) return null;
+        return out.length() <= max ? out : out.substring(0, max);
     }
 }
