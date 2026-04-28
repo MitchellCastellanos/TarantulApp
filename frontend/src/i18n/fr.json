@@ -1270,6 +1270,7 @@
     "country": "Pays",
     "level": "Niveau",
     "devices": "Appareils",
+    "devicesPlaceholder": "Indique les appareils que tu as (ex. iPhone 13, Samsung S23, laptop Windows, iPad).",
     "notes": "Notes",
     "page": "Page",
     "betaApplyTitle": "Postuler a la beta TarantulApp",

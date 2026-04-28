@@ -65,7 +65,12 @@ export default function BetaApplyPage() {
             </div>
             <div className="col-12">
               <label className="form-label">{t('admin.devices')}</label>
-              <input className="form-control" value={form.devices} onChange={(e) => setForm((f) => ({ ...f, devices: e.target.value }))} />
+              <input
+                className="form-control"
+                value={form.devices}
+                onChange={(e) => setForm((f) => ({ ...f, devices: e.target.value }))}
+                placeholder={t('admin.devicesPlaceholder')}
+              />
             </div>
             <div className="col-12">
               <label className="form-label">{t('admin.notes')}</label>
