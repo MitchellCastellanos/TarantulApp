@@ -3,9 +3,11 @@ package com.tarantulapp.service;
 import com.tarantulapp.dto.AuthResponse;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
+import com.tarantulapp.entity.BetaApplication;
 import com.tarantulapp.entity.PasswordResetToken;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
+import com.tarantulapp.repository.BetaApplicationRepository;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
@@ -42,6 +44,7 @@ public class AuthService {
     private final ReferralService referralService;
     private final PublicHandleService publicHandleService;
     private final AdminAccessService adminAccessService;
+    private final BetaApplicationRepository betaApplicationRepository;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
@@ -49,7 +52,8 @@ public class AuthService {
                        EmailService emailService, PlanAccessService planAccessService,
                        ReferralService referralService,
                        PublicHandleService publicHandleService,
-                       AdminAccessService adminAccessService) {
+                       AdminAccessService adminAccessService,
+                       BetaApplicationRepository betaApplicationRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -59,6 +63,36 @@ public class AuthService {
         this.referralService = referralService;
         this.publicHandleService = publicHandleService;
         this.adminAccessService = adminAccessService;
+        this.betaApplicationRepository = betaApplicationRepository;
+    }
+
+    /** If an approved beta application exists for this email, mark the user as a beta tester. */
+    private void linkApprovedBetaApplication(User user) {
+        if (user == null || user.getEmail() == null) return;
+        if (Boolean.TRUE.equals(user.getIsBetaTester())) return;
+        betaApplicationRepository
+                .findFirstByEmailIgnoreCaseAndStatusOrderByReviewedAtDesc(user.getEmail().trim(), "approved")
+                .ifPresent(app -> {
+                    user.setIsBetaTester(true);
+                    if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) {
+                        user.setBetaCountry(trimTo(app.getCountry(), 80));
+                    }
+                    if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) {
+                        user.setBetaExperienceLevel(trimTo(app.getExperienceLevel(), 40));
+                    }
+                    userRepository.save(user);
+                    if (app.getApprovedUserId() == null) {
+                        app.setApprovedUserId(user.getId());
+                        betaApplicationRepository.save(app);
+                    }
+                });
+    }
+
+    private static String trimTo(String value, int max) {
+        if (value == null) return null;
+        String out = value.trim();
+        if (out.isEmpty()) return null;
+        return out.length() <= max ? out : out.substring(0, max);
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -76,6 +110,8 @@ public class AuthService {
         referralService.applyReferralForNewAccount(user.getId(), request.getReferralCode());
         referralService.ensureReferralCodeForUser(user.getId());
         User refreshed = userRepository.findById(user.getId()).orElseThrow();
+        linkApprovedBetaApplication(refreshed);
+        refreshed = userRepository.findById(refreshed.getId()).orElse(refreshed);
         emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
         String token = jwtUtil.generateToken(refreshed.getEmail());
         return buildAuthResponse(token, refreshed);
@@ -93,6 +129,10 @@ public class AuthService {
         }
         if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
             publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+            user = userRepository.findById(user.getId()).orElse(user);
+        }
+        if (!Boolean.TRUE.equals(user.getIsBetaTester())) {
+            linkApprovedBetaApplication(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
         String token = jwtUtil.generateToken(user.getEmail());
@@ -140,6 +180,10 @@ public class AuthService {
 
         if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
             publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+            user = userRepository.findById(user.getId()).orElse(user);
+        }
+        if (!Boolean.TRUE.equals(user.getIsBetaTester())) {
+            linkApprovedBetaApplication(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
 

@@ -225,33 +225,37 @@ public class AdminController {
         app.setStatus("approve".equals(action) ? "approved" : "rejected");
         app.setReviewedAt(LocalDateTime.now());
         if ("approve".equals(action)) {
+            // Applicants typically apply BEFORE registering, so the matching User may not exist yet.
+            // If we find one (by explicit userId or by email), promote them now; otherwise just mark
+            // the application approved — promotion will happen on registration.
             UUID targetUserId = req.userId();
-            if (targetUserId == null) {
-                User user = userRepository.findByEmail(app.getEmail().trim().toLowerCase())
-                        .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND_FOR_APPLICATION_EMAIL"));
-                targetUserId = user.getId();
+            User user = null;
+            if (targetUserId != null) {
+                user = userRepository.findById(targetUserId).orElse(null);
+            } else if (app.getEmail() != null) {
+                user = userRepository.findByEmail(app.getEmail().trim().toLowerCase()).orElse(null);
             }
-            User user = userRepository.findById(targetUserId)
-                    .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
-            user.setIsBetaTester(true);
-            if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) user.setBetaCountry(trim(app.getCountry(), 80));
-            if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
-            userRepository.save(user);
-            app.setApprovedUserId(user.getId());
+            if (user != null) {
+                user.setIsBetaTester(true);
+                if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) user.setBetaCountry(trim(app.getCountry(), 80));
+                if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
+                userRepository.save(user);
+                app.setApprovedUserId(user.getId());
+            }
         }
         betaApplicationRepository.save(app);
         return ResponseEntity.ok(mapBetaApplication(app));
     }
 
     private Map<String, Object> mapUser(User u) {
-        return Map.of(
-                "id", u.getId(),
-                "email", u.getEmail(),
-                "displayName", u.getDisplayName() == null ? "" : u.getDisplayName(),
-                "plan", u.getPlan() == null ? "FREE" : u.getPlan().name(),
-                "isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()),
-                "createdAt", u.getCreatedAt()
-        );
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", u.getId());
+        out.put("email", u.getEmail());
+        out.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
+        out.put("plan", u.getPlan() == null ? "FREE" : u.getPlan().name());
+        out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
+        out.put("createdAt", u.getCreatedAt());
+        return out;
     }
 
     private Map<String, Object> mapPartnerSyncRun(PartnerListingSyncRun run) {

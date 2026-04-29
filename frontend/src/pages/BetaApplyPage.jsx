@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import BrandName from '../components/BrandName'
 import betaApplicationService from '../services/betaApplicationService'
 
 export default function BetaApplyPage() {
@@ -15,16 +16,15 @@ export default function BetaApplyPage() {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [ok, setOk] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setError('')
-    setOk('')
     try {
       await betaApplicationService.create(form)
-      setOk(t('admin.betaApplySubmitted'))
+      setSubmitted(true)
       setForm({ email: '', name: '', country: '', experienceLevel: '', devices: '', notes: '' })
     } catch (err) {
       const timeout = err?.code === 'ECONNABORTED'
@@ -35,55 +35,85 @@ export default function BetaApplyPage() {
   }
 
   return (
-    <div>
-      <Navbar />
-      <div className="container py-4" style={{ maxWidth: 760 }}>
-        <h1 className="h4 mb-3">{t('admin.betaApplyTitle')}</h1>
-        <p className="text-muted">{t('admin.betaApplyLead')}</p>
-        <form className="card p-3" onSubmit={submit}>
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label">{t('auth.email')}</label>
-              <input className="form-control" type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">{t('auth.name')}</label>
-              <input className="form-control" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">{t('admin.country')}</label>
-              <input className="form-control" value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">{t('admin.level')}</label>
-              <select className="form-select" value={form.experienceLevel} onChange={(e) => setForm((f) => ({ ...f, experienceLevel: e.target.value }))}>
-                <option value="">{t('admin.selectOne')}</option>
-                <option value="rookie">Rookie</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="expert">Expert</option>
-              </select>
-            </div>
-            <div className="col-12">
-              <label className="form-label">{t('admin.devices')}</label>
-              <input
-                className="form-control"
-                value={form.devices}
-                onChange={(e) => setForm((f) => ({ ...f, devices: e.target.value }))}
-                placeholder={t('admin.devicesPlaceholder')}
-              />
-            </div>
-            <div className="col-12">
-              <label className="form-label">{t('admin.notes')}</label>
-              <textarea className="form-control" rows={4} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+    <div className="ta-beta-apply-shell">
+      <header className="ta-beta-apply-header text-center pt-4 pb-3 px-3">
+        <Link to="/" className="ta-beta-apply-brand text-decoration-none">
+          <BrandName />
+        </Link>
+      </header>
+
+      <main className="container py-3" style={{ maxWidth: 760 }}>
+        {submitted ? (
+          <div className="card p-4 text-center ta-beta-apply-success">
+            <div className="display-6 mb-2">✓</div>
+            <h1 className="h4 mb-2">{t('admin.betaApplySubmittedTitle')}</h1>
+            <p className="mb-2">{t('admin.betaApplySubmitted')}</p>
+            <p className="text-muted small mb-3">{t('admin.betaApplySubmittedSubtitle')}</p>
+            <div>
+              <Link to="/" className="btn btn-outline-light btn-sm">
+                {t('admin.betaApplyBackHome')}
+              </Link>
             </div>
           </div>
-          {error ? <div className="alert alert-danger mt-3 mb-0">{error}</div> : null}
-          {ok ? <div className="alert alert-success mt-3 mb-0">{ok}</div> : null}
-          <div className="mt-3">
-            <button className="btn btn-warning" disabled={saving} type="submit">{saving ? t('common.saving') : t('admin.apply')}</button>
-          </div>
-        </form>
-      </div>
+        ) : (
+          <>
+            <div className="text-center mb-3">
+              <span className="badge bg-warning text-dark">{t('admin.betaApplyLimitedSpots')}</span>
+            </div>
+            <h1 className="h3 text-center mb-2">{t('admin.betaApplyHeadline')}</h1>
+            <p className="text-center text-muted mb-3">{t('admin.betaApplySubLead')}</p>
+            <p className="text-center small mb-4">{t('admin.betaApplyEligibility')}</p>
+
+            <form className="card p-3" onSubmit={submit}>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label">{t('auth.email')}</label>
+                  <input className="form-control" type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">{t('auth.name')}</label>
+                  <input className="form-control" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">{t('admin.country')}</label>
+                  <input className="form-control" value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">{t('admin.level')}</label>
+                  <select className="form-select" value={form.experienceLevel} onChange={(e) => setForm((f) => ({ ...f, experienceLevel: e.target.value }))}>
+                    <option value="">{t('admin.selectOne')}</option>
+                    <option value="rookie">Rookie</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="expert">Expert</option>
+                  </select>
+                </div>
+                <div className="col-12">
+                  <label className="form-label">{t('admin.devices')}</label>
+                  <input
+                    className="form-control"
+                    value={form.devices}
+                    onChange={(e) => setForm((f) => ({ ...f, devices: e.target.value }))}
+                    placeholder={t('admin.devicesPlaceholder')}
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label">{t('admin.notes')}</label>
+                  <textarea className="form-control" rows={4} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+              {error ? <div className="alert alert-danger mt-3 mb-0">{error}</div> : null}
+              <div className="mt-3">
+                <button className="btn btn-warning w-100 fw-semibold" disabled={saving} type="submit">
+                  {saving ? t('common.saving') : t('admin.applyNow')}
+                </button>
+              </div>
+              <p className="text-muted small mt-3 mb-1 text-center">{t('admin.betaApplyFeedbackPledge')}</p>
+              <p className="small text-center mb-1" style={{ color: '#e8c547' }}>{t('admin.betaApplyPerksLine')}</p>
+              <p className="text-muted small text-center mb-0">{t('admin.betaApplyAnyLevel')}</p>
+            </form>
+          </>
+        )}
+      </main>
     </div>
   )
 }
