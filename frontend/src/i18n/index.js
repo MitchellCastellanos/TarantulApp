@@ -2,6 +2,7 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import en from './en.json'
+import es from './es.json'
 import fr from './fr.json'
 
 i18n
@@ -10,14 +11,15 @@ i18n
   .init({
     resources: {
       en: { translation: en },
+      es: { translation: es },
       fr: { translation: fr },
     },
     fallbackLng: 'en',
-    supportedLngs: ['en', 'fr'],
+    supportedLngs: ['en', 'es', 'fr'],
     nonExplicitSupportedLngs: true,
     load: 'languageOnly',
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
       lookupLocalStorage: 'tarantulapp-lang',
     },
