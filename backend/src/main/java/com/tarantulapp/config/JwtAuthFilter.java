@@ -1,5 +1,6 @@
 package com.tarantulapp.config;
 
+import com.tarantulapp.service.UserActivityService;
 import com.tarantulapp.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,6 +17,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Solo se instancia desde {@link SecurityConfig} y se añade con {@code addFilterBefore}.
@@ -28,10 +30,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final UserActivityService userActivityService;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtUtil jwtUtil,
+                         UserDetailsService userDetailsService,
+                         UserActivityService userActivityService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.userActivityService = userActivityService;
     }
 
     @Override
@@ -123,6 +129,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             if (userId != null) {
+                try {
+                    userActivityService.touch(UUID.fromString(userId));
+                } catch (Exception e) {
+                    log.debug("Could not record user activity: {}", e.getMessage());
+                }
                 MDC.remove("user_id");
             }
         }

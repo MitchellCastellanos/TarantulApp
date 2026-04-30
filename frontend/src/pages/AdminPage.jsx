@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import adminService from '../services/adminService'
 
-function formatUsageTime(createdAt, t) {
-  if (!createdAt) return '-'
-  const created = new Date(createdAt).getTime()
-  if (Number.isNaN(created)) return '-'
-  const diffMs = Math.max(0, Date.now() - created)
+function formatUsageTime(lastActivityAt, t) {
+  if (!lastActivityAt) return t('admin.usageTimeNever')
+  const ts = new Date(lastActivityAt).getTime()
+  if (Number.isNaN(ts)) return '-'
+  const diffMs = Math.max(0, Date.now() - ts)
   const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return t('admin.usageTimeNow')
   if (minutes < 60) return t('admin.usageTimeMinutes', { count: minutes })
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return t('admin.usageTimeHours', { count: hours })
@@ -275,7 +276,7 @@ export default function AdminPage() {
                       <td>{u.displayName || '-'}</td>
                       <td>{u.plan}</td>
                       <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
-                      <td>{formatUsageTime(u.createdAt, t)}</td>
+                      <td>{formatUsageTime(u.lastActivityAt, t)}</td>
                       <td>
                         <button
                           type="button"

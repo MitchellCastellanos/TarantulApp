@@ -368,6 +368,7 @@ public class AdminController {
         out.put("plan", u.getPlan() == null ? "FREE" : u.getPlan().name());
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
         out.put("createdAt", u.getCreatedAt());
+        out.put("lastActivityAt", u.getLastActivityAt());
         return out;
     }
 

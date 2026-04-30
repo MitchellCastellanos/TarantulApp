@@ -4,7 +4,9 @@ import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,4 +42,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByIsBetaTesterTrueOrderByCreatedAtDesc();
 
     long countByIsBetaTesterTrue();
+
+    @Modifying
+    @Query("update User u set u.lastActivityAt = :ts where u.id = :id")
+    void touchLastActivity(@Param("id") UUID id, @Param("ts") LocalDateTime ts);
 }

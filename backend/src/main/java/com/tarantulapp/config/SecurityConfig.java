@@ -48,8 +48,10 @@ public class SecurityConfig {
     private String allowedOriginsStr;
 
     @Bean
-    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        return new JwtAuthFilter(jwtUtil, userDetailsService);
+    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil,
+                                       UserDetailsService userDetailsService,
+                                       com.tarantulapp.service.UserActivityService userActivityService) {
+        return new JwtAuthFilter(jwtUtil, userDetailsService, userActivityService);
     }
 
     @Bean
