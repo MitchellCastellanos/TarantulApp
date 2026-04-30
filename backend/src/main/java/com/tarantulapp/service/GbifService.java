@@ -97,6 +97,52 @@ public class GbifService {
         }
     }
 
+    /**
+     * Page of accepted species keys in Theraphosidae (for monthly family-wide discovery).
+     * Uses {@code higherTaxonKey} on /species/search; filters defensively to family Theraphosidae.
+     */
+    public AcceptedSpeciesPage listAcceptedTheraphosidaePage(int offset, int limit) {
+        int cap = Math.min(Math.max(limit, 1), 100);
+        int off = Math.max(offset, 0);
+        try {
+            String url = UriComponentsBuilder
+                    .fromHttpUrl(GBIF_BASE + "/species/search")
+                    .queryParam("rank", "SPECIES")
+                    .queryParam("status", "ACCEPTED")
+                    .queryParam("higherTaxonKey", GBIF_THERAPHOSIDAE_FAMILY_KEY)
+                    .queryParam("offset", off)
+                    .queryParam("limit", cap)
+                    .toUriString();
+            GbifSearchResponse resp = restTemplate.exchange(
+                    url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<GbifSearchResponse>() {}
+            ).getBody();
+            if (resp == null) return new AcceptedSpeciesPage(Collections.emptyList(), true);
+            List<Long> keys = new ArrayList<>();
+            if (resp.getResults() != null) {
+                for (GbifSearchResultDTO r : resp.getResults()) {
+                    if (!isTheraphosidaeBackboneSpecies(r)) continue;
+                    if (r.getKey() != null) keys.add(r.getKey());
+                }
+            }
+            return new AcceptedSpeciesPage(keys, Boolean.TRUE.equals(resp.getEndOfRecords()));
+        } catch (RestClientException e) {
+            log.warn("GBIF family-listing failed offset={} limit={}: {}", off, cap, e.getMessage());
+            return new AcceptedSpeciesPage(Collections.emptyList(), true);
+        }
+    }
+
+    public static class AcceptedSpeciesPage {
+        private final List<Long> keys;
+        private final boolean endOfRecords;
+        public AcceptedSpeciesPage(List<Long> keys, boolean endOfRecords) {
+            this.keys = keys;
+            this.endOfRecords = endOfRecords;
+        }
+        public List<Long> getKeys() { return keys; }
+        public boolean isEndOfRecords() { return endOfRecords; }
+    }
+
     /** Species detail from GBIF backbone; empty if missing or error. */
     public Optional<GbifSearchResultDTO> tryFetchSpecies(Long key) {
         if (key == null) return Optional.empty();
@@ -587,8 +633,11 @@ public class GbifService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class GbifSearchResponse {
         private List<GbifSearchResultDTO> results;
+        private Boolean endOfRecords;
         public List<GbifSearchResultDTO> getResults() { return results; }
         public void setResults(List<GbifSearchResultDTO> r) { this.results = r; }
+        public Boolean getEndOfRecords() { return endOfRecords; }
+        public void setEndOfRecords(Boolean v) { this.endOfRecords = v; }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
