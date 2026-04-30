@@ -1,0 +1,130 @@
+# Curated hobby whitelist for TaxonomyDiscoveryService.
+# One scientific name per line. Lines starting with # are ignored.
+# Names that already exist in the catalog are skipped (idempotent via gbif_usage_key).
+# Sources: World Spider Catalog, Tom's Big Spiders, Arachnoboards "popular hobby species" lists.
+
+# ─── New World terrestrials (beginner / intermediate) ───────────────────────
+Acanthoscurria insubtilis
+Acanthoscurria juruenicola
+Acanthoscurria natalensis
+Aphonopelma anax
+Aphonopelma hentzi
+Aphonopelma johnnycashi
+Aphonopelma moderatum
+Brachypelma baumgarteni
+Brachypelma klaasi
+Brachypelma kahlenbergi
+Brachypelma vagans
+Brachypelma verdezi
+Citharischius crawshayi
+Cyriocosmus leetzi
+Cyriocosmus perezmilesi
+Cyriocosmus ritae
+Cyriocosmus sellatus
+Eupalaestrus campestratus
+Eupalaestrus weijenberghi
+Grammostola anthracina
+Grammostola iheringi
+Grammostola rosea
+Hapalopus formosus
+Hapalopus triseriatus
+Homoeomma chilensis
+Homoeomma orellanai
+Lasiodora difficilis
+Lasiodora klugi
+Megaphobema mesomelas
+Megaphobema robustum
+Neoholothele incei
+Nhandu carapoensis
+Nhandu coloratovillosus
+Nhandu tripepii
+Pamphobeteus antinous
+Pamphobeteus insignis
+Pamphobeteus nigricolor
+Pamphobeteus ultramarinus
+Phormictopus auratus
+Phormictopus cancerides
+Sericopelma sp.
+Sericopelma rubronitens
+Tapinauchenius cupreus
+Tapinauchenius plumipes
+Tapinauchenius violaceus
+Theraphosa apophysis
+Theraphosa stirmi
+Thrixopelma cyaneolum
+Thrixopelma ockerti
+Thrixopelma pruriens
+Tliltocatl albopilosum
+Tliltocatl epicureanus
+Tliltocatl kahlenbergi
+Tliltocatl sabulosus
+Tliltocatl schroederi
+Tliltocatl verdezi
+
+# ─── New World arboreals ────────────────────────────────────────────────────
+Avicularia juruensis
+Avicularia minatrix
+Avicularia purpurea
+Avicularia rufa
+Avicularia variegata
+Caribena laeta
+Ephebopus cyanognathus
+Ephebopus murinus
+Ephebopus uatuman
+Iridopelma hirsutum
+Pachistopelma rufonigrum
+Psalmopoeus ecclesiasticus
+Psalmopoeus pulcher
+Psalmopoeus reduncus
+Psalmopoeus victori
+Tapinauchenius rasti
+Typhochlaena seladonia
+
+# ─── Old World fossorials / terrestrials ────────────────────────────────────
+Augacephalus ezendami
+Augacephalus junodi
+Birupes simoroxigorum
+Ceratogyrus marshalli
+Ceratogyrus meridionalis
+Ceratogyrus sanderi
+Chilobrachys dyscolus
+Chilobrachys huahini
+Chilobrachys natanicharum
+Coremiocnemis hoggi
+Cyriopagopus albostriatus
+Cyriopagopus hainanus
+Cyriopagopus minax
+Cyriopagopus schmidti
+Eucratoscelus pachypus
+Haplocosmia himalayana
+Harpactira baviana
+Harpactira marksi
+Hysterocrates gigas
+Hysterocrates hercules
+Idiothele nigrofulva
+Phlogiellus inermis
+Pterinochilus chordatus
+Pterinochilus lugardi
+Selenocosmia crassipes
+Selenotholus foelschei
+Theraphosa apophysis
+
+# ─── Old World arboreals ────────────────────────────────────────────────────
+Heterothele villosella
+Lampropelma nigerrimum
+Omothymus schioedtei
+Phormingochilus arboricola
+Phormingochilus everetti
+Phormingochilus sp. Sabah Blue
+Poecilotheria fasciata
+Poecilotheria formosa
+Poecilotheria miranda
+Poecilotheria ornata
+Poecilotheria rufilata
+Poecilotheria smithi
+Poecilotheria striata
+Poecilotheria subfusca
+Poecilotheria tigrinawesseli
+Poecilotheria vittata
+Stromatopelma griseipes
+Tapinauchenius sanctivincenti
