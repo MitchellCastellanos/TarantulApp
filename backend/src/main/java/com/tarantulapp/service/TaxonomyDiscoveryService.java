@@ -162,6 +162,42 @@ public class TaxonomyDiscoveryService {
         return out;
     }
 
+    /** Fire-and-forget: returns immediately, runs whitelist on a background thread. */
+    public Map<String, Object> runWhitelistAsync() {
+        Thread t = new Thread(() -> {
+            try {
+                Map<String, Object> out = runWhitelist();
+                log.info("Taxonomy discovery (whitelist, async) complete: {}", out);
+            } catch (Exception ex) {
+                log.warn("Taxonomy discovery (whitelist, async) failed: {}", ex.getMessage(), ex);
+            }
+        }, "taxonomy-discovery-whitelist");
+        t.setDaemon(true);
+        t.start();
+        Map<String, Object> ack = new LinkedHashMap<>();
+        ack.put("started", true);
+        ack.put("mode", "whitelist");
+        return ack;
+    }
+
+    /** Fire-and-forget: returns immediately, runs family-wide on a background thread. */
+    public Map<String, Object> runFamilyWideAsync() {
+        Thread t = new Thread(() -> {
+            try {
+                Map<String, Object> out = runFamilyWide();
+                log.info("Taxonomy discovery (family-wide, async) complete: {}", out);
+            } catch (Exception ex) {
+                log.warn("Taxonomy discovery (family-wide, async) failed: {}", ex.getMessage(), ex);
+            }
+        }, "taxonomy-discovery-family-wide");
+        t.setDaemon(true);
+        t.start();
+        Map<String, Object> ack = new LinkedHashMap<>();
+        ack.put("started", true);
+        ack.put("mode", "family-wide");
+        return ack;
+    }
+
     private List<String> loadWhitelist() {
         Resource resource = resourceLoader.getResource(whitelistPath);
         if (!resource.exists()) {
