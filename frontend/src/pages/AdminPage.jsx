@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [bugReports, setBugReports] = useState([])
   const [betaTesters, setBetaTesters] = useState([])
   const [betaApplications, setBetaApplications] = useState([])
+  const [betaStats, setBetaStats] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
@@ -35,8 +36,9 @@ export default function AdminPage() {
       adminService.bugReports('open'),
       adminService.betaTesters(),
       adminService.betaApplications('pending'),
+      adminService.betaStats(),
     ])
-      .then(([s, users, openReports, vendors, leads, bugs, testers, applications]) => {
+      .then(([s, users, openReports, vendors, leads, bugs, testers, applications, stats]) => {
         if (cancelled) return
         setSummary(s)
         setRecentUsers(Array.isArray(users) ? users : [])
@@ -46,6 +48,7 @@ export default function AdminPage() {
         setBugReports(Array.isArray(bugs) ? bugs : [])
         setBetaTesters(Array.isArray(testers) ? testers : [])
         setBetaApplications(Array.isArray(applications) ? applications : [])
+        setBetaStats(stats && typeof stats === 'object' ? stats : null)
       })
       .catch((err) => {
         if (cancelled) return
@@ -545,6 +548,127 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+
+        {betaStats && (
+          <div className="card p-3 mt-3">
+            <h2 className="h6 mb-3">{t('admin.betaStatsTitle')}</h2>
+            <div className="row g-2 mb-3">
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsTotal')}</small>
+                  <div className="h5 mb-0">{betaStats.total ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsPending')}</small>
+                  <div className="h5 mb-0">{betaStats.pending ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsApproved')}</small>
+                  <div className="h5 mb-0">{betaStats.approved ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsRejected')}</small>
+                  <div className="h5 mb-0">{betaStats.rejected ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsLast7d')}</small>
+                  <div className="h5 mb-0">{betaStats.last7d ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsLast30d')}</small>
+                  <div className="h5 mb-0">{betaStats.last30d ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsActiveTesters')}</small>
+                  <div className="h5 mb-0">{betaStats.activeTesters ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsApprovalRate')}</small>
+                  <div className="h5 mb-0">{betaStats.approvalRatePct ?? 0}%</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsBugsOpen')}</small>
+                  <div className="h5 mb-0">{betaStats.bugReportsOpen ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsBugsTotal')}</small>
+                  <div className="h5 mb-0">{betaStats.bugReportsTotal ?? 0}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <h3 className="h6 mb-2">{t('admin.betaStatsByCountry')}</h3>
+                {Array.isArray(betaStats.byCountry) && betaStats.byCountry.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>{t('admin.country')}</th>
+                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {betaStats.byCountry.map((row) => (
+                          <tr key={`country-${row.country}`}>
+                            <td>{row.country === 'unknown' ? t('admin.betaStatsUnknown') : row.country}</td>
+                            <td className="text-end">{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
+                )}
+              </div>
+              <div className="col-12 col-md-6">
+                <h3 className="h6 mb-2">{t('admin.betaStatsByExperience')}</h3>
+                {Array.isArray(betaStats.byExperience) && betaStats.byExperience.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>{t('admin.level')}</th>
+                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {betaStats.byExperience.map((row) => (
+                          <tr key={`exp-${row.level}`}>
+                            <td>{row.level === 'unknown' ? t('admin.betaStatsUnknown') : row.level}</td>
+                            <td className="text-end">{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="card p-3 mt-3">
           <h2 className="h6 mb-3">{t('admin.betaApplicationsTitle')}</h2>

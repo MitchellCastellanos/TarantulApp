@@ -25,6 +25,7 @@ const adminService = {
     api.patch(`/admin/users/${id}/beta`, payload).then((r) => r.data),
   betaApplications: (status = '') =>
     api.get('/admin/beta-applications', { params: status ? { status } : {} }).then((r) => r.data),
+  betaStats: () => api.get('/admin/beta-stats').then((r) => r.data),
   reviewBetaApplication: (id, payload) =>
     api.patch(`/admin/beta-applications/${id}/review`, payload).then((r) => r.data),
   setUserPassword: (id, payload) =>

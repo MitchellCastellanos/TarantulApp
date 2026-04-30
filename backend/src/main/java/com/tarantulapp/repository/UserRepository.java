@@ -38,4 +38,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     );
 
     List<User> findByIsBetaTesterTrueOrderByCreatedAtDesc();
+
+    long countByIsBetaTesterTrue();
 }
