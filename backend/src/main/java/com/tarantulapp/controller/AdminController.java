@@ -11,6 +11,7 @@ import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.OfficialVendorService;
+import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -43,6 +44,7 @@ public class AdminController {
     private final OfficialVendorService officialVendorService;
     private final PartnerListingSyncService partnerListingSyncService;
     private final TaxonomySyncService taxonomySyncService;
+    private final TaxonomyDiscoveryService taxonomyDiscoveryService;
     private final BugReportRepository bugReportRepository;
     private final BetaApplicationRepository betaApplicationRepository;
     private final AuthService authService;
@@ -54,6 +56,7 @@ public class AdminController {
                            OfficialVendorService officialVendorService,
                            PartnerListingSyncService partnerListingSyncService,
                            TaxonomySyncService taxonomySyncService,
+                           TaxonomyDiscoveryService taxonomyDiscoveryService,
                            BugReportRepository bugReportRepository,
                            BetaApplicationRepository betaApplicationRepository,
                            AuthService authService) {
@@ -64,6 +67,7 @@ public class AdminController {
         this.officialVendorService = officialVendorService;
         this.partnerListingSyncService = partnerListingSyncService;
         this.taxonomySyncService = taxonomySyncService;
+        this.taxonomyDiscoveryService = taxonomyDiscoveryService;
         this.bugReportRepository = bugReportRepository;
         this.betaApplicationRepository = betaApplicationRepository;
         this.authService = authService;
@@ -148,6 +152,20 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> runTaxonomySyncNow() {
         adminAccessService.assertCurrentUserIsAdmin();
         return ResponseEntity.ok(taxonomySyncService.runNow());
+    }
+
+    /** Kicks off whitelist discovery on a background thread; returns immediately. */
+    @PostMapping("/taxonomy-discovery/whitelist/run")
+    public ResponseEntity<Map<String, Object>> runDiscoveryWhitelistNow() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.accepted().body(taxonomyDiscoveryService.runWhitelistAsync());
+    }
+
+    /** Kicks off family-wide discovery on a background thread; returns immediately. */
+    @PostMapping("/taxonomy-discovery/family-wide/run")
+    public ResponseEntity<Map<String, Object>> runDiscoveryFamilyWideNow() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.accepted().body(taxonomyDiscoveryService.runFamilyWideAsync());
     }
 
     @GetMapping("/partner-sync/runs")
