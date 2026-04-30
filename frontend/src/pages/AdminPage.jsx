@@ -18,6 +18,11 @@ export default function AdminPage() {
   const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
   const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
   const [reviewingApplicationId, setReviewingApplicationId] = useState('')
+  const [passwordUser, setPasswordUser] = useState(null)
+  const [resetPass, setResetPass] = useState({ newPassword: '', generate: false })
+  const [resetPassLoading, setResetPassLoading] = useState(false)
+  const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: false })
+  const [provisionLoading, setProvisionLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -111,6 +116,64 @@ export default function AdminPage() {
       setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
     } catch {
       setError(t('admin.resolveError'))
+    }
+  }
+
+  const submitPasswordReset = async () => {
+    if (!passwordUser) return
+    setResetPassLoading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await adminService.setUserPassword(passwordUser.id, {
+        newPassword: resetPass.generate ? undefined : resetPass.newPassword,
+        generatePassword: resetPass.generate,
+      })
+      setPasswordUser(null)
+      if (res.plainPassword) {
+        setSuccess(
+          t('admin.addTesterPasswordShown', {
+            email: res.user?.email || passwordUser.email,
+            password: res.plainPassword,
+          }),
+        )
+      } else {
+        setSuccess(t('admin.passwordUpdated'))
+      }
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setResetPassLoading(false)
+    }
+  }
+
+  const submitProvision = async (e) => {
+    e.preventDefault()
+    if (!prov.identifier?.trim()) return
+    setProvisionLoading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await adminService.provisionTester({
+        identifier: prov.identifier.trim(),
+        newPassword: prov.generate ? undefined : prov.newPassword,
+        generatePassword: prov.generate,
+        displayName: prov.displayName?.trim() || undefined,
+      })
+      const list = await adminService.betaTesters()
+      setBetaTesters(Array.isArray(list) ? list : [])
+      if (res.plainPassword) {
+        setSuccess(
+          t('admin.addTesterPasswordShown', { email: res.user.email, password: res.plainPassword }),
+        )
+      } else {
+        setSuccess(t('admin.testerUpdated'))
+      }
+      setProv({ identifier: '', displayName: '', newPassword: '', generate: false })
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setProvisionLoading(false)
     }
   }
 
@@ -363,6 +426,76 @@ export default function AdminPage() {
 
         <div className="card p-3 mt-3">
           <h2 className="h6 mb-3">{t('admin.betaTestersTitle')}</h2>
+          <p className="small text-muted mb-2">{t('admin.addTesterBlurb')}</p>
+          <form
+            onSubmit={submitProvision}
+            className="p-2 mb-3 border rounded bg-body-secondary bg-opacity-10"
+            style={{ maxWidth: 540 }}
+          >
+            <h3 className="h6 mb-2">{t('admin.addTesterTitle')}</h3>
+            <div className="row g-2">
+              <div className="col-12 col-md-6">
+                <label className="form-label small mb-0" htmlFor="ad-prov-id">
+                  {t('admin.identifierLabel')}
+                </label>
+                <input
+                  id="ad-prov-id"
+                  className="form-control form-control-sm"
+                  value={prov.identifier}
+                  onChange={(e) => setProv((p) => ({ ...p, identifier: e.target.value }))}
+                  autoComplete="off"
+                />
+                <p className="form-text text-muted small mb-0 mt-1">{t('admin.identifierHint')}</p>
+              </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label small mb-0" htmlFor="ad-prov-name">
+                  {t('admin.displayNameOptional')}
+                </label>
+                <input
+                  id="ad-prov-name"
+                  className="form-control form-control-sm"
+                  value={prov.displayName}
+                  onChange={(e) => setProv((p) => ({ ...p, displayName: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="form-check my-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id="ad-prov-gen"
+                checked={prov.generate}
+                onChange={(e) => setProv((p) => ({ ...p, generate: e.target.checked }))}
+              />
+              <label className="form-check-label small" htmlFor="ad-prov-gen">
+                {t('admin.generatePassword')}
+              </label>
+            </div>
+            {!prov.generate && (
+              <div className="mb-2" style={{ maxWidth: 320 }}>
+                <label className="form-label small mb-0" htmlFor="ad-prov-pass">
+                  {t('admin.newPasswordLabel')}
+                </label>
+                <input
+                  id="ad-prov-pass"
+                  type="password"
+                  className="form-control form-control-sm"
+                  value={prov.newPassword}
+                  onChange={(e) => setProv((p) => ({ ...p, newPassword: e.target.value }))}
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <p className="form-text text-muted small mb-0 mt-1">{t('admin.passwordOrGenerate')}</p>
+              </div>
+            )}
+            <button
+              type="submit"
+              className="btn btn-sm btn-success"
+              disabled={provisionLoading}
+            >
+              {provisionLoading ? t('common.loading') : t('admin.addTesterSubmit')}
+            </button>
+          </form>
           {betaTesters.length === 0 ? (
             <p className="text-muted small mb-0">{t('admin.betaTestersEmpty')}</p>
           ) : (
@@ -385,9 +518,25 @@ export default function AdminPage() {
                       <td>{u.betaExperienceLevel || '-'}</td>
                       <td>{u.bugReportsCount ?? 0}</td>
                       <td>
-                        <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => toggleBetaTester(u.id, false)}>
-                          {t('admin.removeTester')}
-                        </button>
+                        <div className="d-flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => {
+                              setPasswordUser({ id: u.id, email: u.email })
+                              setResetPass({ newPassword: '', generate: false })
+                            }}
+                          >
+                            {t('admin.resetPasswordButton')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => toggleBetaTester(u.id, false)}
+                          >
+                            {t('admin.removeTester')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -495,6 +644,67 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {passwordUser ? (
+        <div
+          className="modal d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content p-3">
+              <h3 className="h6 mb-3">
+                {t('admin.resetPasswordTitle', { email: passwordUser.email })}
+              </h3>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="ad-reset-gen"
+                  checked={resetPass.generate}
+                  onChange={(e) => setResetPass((p) => ({ ...p, generate: e.target.checked }))}
+                />
+                <label className="form-check-label small" htmlFor="ad-reset-gen">
+                  {t('admin.generatePassword')}
+                </label>
+              </div>
+              {!resetPass.generate && (
+                <div className="mb-3">
+                  <label className="form-label small" htmlFor="ad-reset-pass">
+                    {t('admin.newPasswordLabel')}
+                  </label>
+                  <input
+                    id="ad-reset-pass"
+                    type="password"
+                    className="form-control"
+                    value={resetPass.newPassword}
+                    onChange={(e) => setResetPass((p) => ({ ...p, newPassword: e.target.value }))}
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+              )}
+              <div className="d-flex gap-2 justify-content-end">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-light"
+                  onClick={() => setPasswordUser(null)}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  disabled={resetPassLoading}
+                  onClick={submitPasswordReset}
+                >
+                  {resetPassLoading ? t('common.loading') : t('admin.setPasswordSubmit')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
