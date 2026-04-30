@@ -10,4 +10,5 @@ public interface BugReportRepository extends JpaRepository<BugReport, UUID> {
     List<BugReport> findByStatusOrderByCreatedAtDesc(String status);
     List<BugReport> findAllByOrderByCreatedAtDesc();
     long countByUserId(UUID userId);
+    long countByStatus(String status);
 }

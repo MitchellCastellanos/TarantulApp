@@ -248,6 +248,56 @@ public class AdminController {
         return ResponseEntity.ok(out);
     }
 
+    @GetMapping("/beta-stats")
+    public ResponseEntity<Map<String, Object>> betaStats() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        long total = betaApplicationRepository.count();
+        long pending = betaApplicationRepository.countByStatus("pending");
+        long approved = betaApplicationRepository.countByStatus("approved");
+        long rejected = betaApplicationRepository.countByStatus("rejected");
+        long last7d = betaApplicationRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(7));
+        long last30d = betaApplicationRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(30));
+        long activeTesters = userRepository.countByIsBetaTesterTrue();
+        long bugReportsTotal = bugReportRepository.count();
+        long bugReportsOpen = bugReportRepository.countByStatus("open");
+        long approvalRatePct = total == 0 ? 0L : Math.round((approved * 100.0) / total);
+
+        List<Map<String, Object>> byCountry = betaApplicationRepository.countGroupByCountry().stream()
+                .map(row -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    String country = row[0] == null ? "" : row[0].toString();
+                    entry.put("country", country.isBlank() ? "unknown" : country);
+                    entry.put("total", ((Number) row[1]).longValue());
+                    return entry;
+                })
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> byExperience = betaApplicationRepository.countGroupByExperienceLevel().stream()
+                .map(row -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    String level = row[0] == null ? "" : row[0].toString();
+                    entry.put("level", level.isBlank() ? "unknown" : level);
+                    entry.put("total", ((Number) row[1]).longValue());
+                    return entry;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("total", total);
+        out.put("pending", pending);
+        out.put("approved", approved);
+        out.put("rejected", rejected);
+        out.put("last7d", last7d);
+        out.put("last30d", last30d);
+        out.put("activeTesters", activeTesters);
+        out.put("bugReportsTotal", bugReportsTotal);
+        out.put("bugReportsOpen", bugReportsOpen);
+        out.put("approvalRatePct", approvalRatePct);
+        out.put("byCountry", byCountry);
+        out.put("byExperience", byExperience);
+        return ResponseEntity.ok(out);
+    }
+
     @GetMapping("/beta-applications")
     public ResponseEntity<List<Map<String, Object>>> betaApplications(@RequestParam(required = false) String status) {
         adminAccessService.assertCurrentUserIsAdmin();
