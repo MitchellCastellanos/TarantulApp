@@ -9,6 +9,7 @@ import com.tarantulapp.repository.ReminderRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
+import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
@@ -44,6 +45,7 @@ public class AdminController {
     private final TaxonomySyncService taxonomySyncService;
     private final BugReportRepository bugReportRepository;
     private final BetaApplicationRepository betaApplicationRepository;
+    private final AuthService authService;
 
     public AdminController(AdminAccessService adminAccessService,
                            UserRepository userRepository,
@@ -53,7 +55,8 @@ public class AdminController {
                            PartnerListingSyncService partnerListingSyncService,
                            TaxonomySyncService taxonomySyncService,
                            BugReportRepository bugReportRepository,
-                           BetaApplicationRepository betaApplicationRepository) {
+                           BetaApplicationRepository betaApplicationRepository,
+                           AuthService authService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -63,6 +66,7 @@ public class AdminController {
         this.taxonomySyncService = taxonomySyncService;
         this.bugReportRepository = bugReportRepository;
         this.betaApplicationRepository = betaApplicationRepository;
+        this.authService = authService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -71,6 +75,8 @@ public class AdminController {
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel) {}
     record ReviewBetaApplicationRequest(String action, UUID userId, String note) {}
+    record AdminSetUserPasswordRequest(String newPassword, Boolean generatePassword) {}
+    record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> summary() {
@@ -201,6 +207,45 @@ public class AdminController {
         if (req.experienceLevel() != null) user.setBetaExperienceLevel(trim(req.experienceLevel(), 40));
         userRepository.save(user);
         return ResponseEntity.ok(mapBetaTester(user));
+    }
+
+    @PostMapping("/users/{id}/password")
+    public ResponseEntity<Map<String, Object>> adminSetUserPassword(@PathVariable UUID id,
+                                                                    @RequestBody AdminSetUserPasswordRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        boolean gen = Boolean.TRUE.equals(req.generatePassword());
+        if (!gen && (req.newPassword() == null || req.newPassword().isBlank())) {
+            throw new IllegalArgumentException("NEW_PASSWORD_OR_GENERATE_REQUIRED");
+        }
+        AuthService.AdminUserPasswordResult result =
+                authService.adminSetPasswordByUserId(id, req.newPassword(), gen);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("user", mapBetaTester(result.user()));
+        if (gen) {
+            out.put("plainPassword", result.plainPassword());
+        }
+        return ResponseEntity.ok(out);
+    }
+
+    @PostMapping("/beta-testers/provision")
+    public ResponseEntity<Map<String, Object>> adminProvisionTester(@RequestBody AdminProvisionTesterRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (req.identifier() == null || req.identifier().isBlank()) {
+            throw new IllegalArgumentException("IDENTIFIER_REQUIRED");
+        }
+        boolean gen = Boolean.TRUE.equals(req.generatePassword());
+        if (!gen && (req.newPassword() == null || req.newPassword().isBlank())) {
+            throw new IllegalArgumentException("NEW_PASSWORD_OR_GENERATE_REQUIRED");
+        }
+        AuthService.AdminUserPasswordResult result = authService.adminProvisionBetaTester(
+                req.identifier(), req.newPassword(), gen, req.displayName());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("user", mapBetaTester(result.user()));
+        out.put("created", result.created());
+        if (gen) {
+            out.put("plainPassword", result.plainPassword());
+        }
+        return ResponseEntity.ok(out);
     }
 
     @GetMapping("/beta-applications")

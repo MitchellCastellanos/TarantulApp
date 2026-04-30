@@ -78,10 +78,10 @@ export default function MarketplaceListingDetailPage() {
   const activeImg = images.length > 0 ? images[Math.min(photoIdx, images.length - 1)] : null
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const seoTitle = listing?.title ? `${listing.title} ù ${t('marketplace.nav')}` : t('marketplace.nav')
+  const seoTitle = listing?.title ? `${listing.title} ÔøΩ ${t('marketplace.nav')}` : t('marketplace.nav')
   const seoDesc =
     listing?.description?.trim() ||
-    [listing?.speciesName, listing?.city, listing?.country].filter(Boolean).join(' ù ') ||
+    [listing?.speciesName, listing?.city, listing?.country].filter(Boolean).join(' ÔøΩ ') ||
     t('marketplace.metaDescription')
 
   usePageSeo({
@@ -138,7 +138,7 @@ export default function MarketplaceListingDetailPage() {
               </Link>
             </li>
             <li className="breadcrumb-item active text-truncate" aria-current="page">
-              {loading ? 'Ö' : listing?.title || 'ó'}
+              {loading ? 'ÔøΩ' : listing?.title || 'ÔøΩ'}
             </li>
           </ol>
         </nav>
@@ -237,18 +237,18 @@ export default function MarketplaceListingDetailPage() {
 
               <dl className="row small mb-3 g-2">
                 <dt className="col-sm-3 text-muted">{t('marketplace.fieldSpecies')}</dt>
-                <dd className="col-sm-9 mb-0">{listing.speciesName || 'ù'}</dd>
+                <dd className="col-sm-9 mb-0">{listing.speciesName || 'ÔøΩ'}</dd>
                 {!isPartner && (listing.stage || listing.sex) && (
                   <>
                     <dt className="col-sm-3 text-muted">{t('stages.label')} / {t('sex.label')}</dt>
                     <dd className="col-sm-9 mb-0">
-                      {[listing.stage, listing.sex].filter(Boolean).join(' ù ') || 'ù'}
+                      {[listing.stage, listing.sex].filter(Boolean).join(' ÔøΩ ') || 'ÔøΩ'}
                     </dd>
                   </>
                 )}
                 <dt className="col-sm-3 text-muted">{t('marketplace.listingDetailLocation')}</dt>
                 <dd className="col-sm-9 mb-0">
-                  {[listing.city, listing.state, listing.country].filter(Boolean).join(' ù ') || 'ù'}
+                  {[listing.city, listing.state, listing.country].filter(Boolean).join(' ÔøΩ ') || 'ÔøΩ'}
                 </dd>
                 <dt className="col-sm-3 text-muted">{t('marketplace.listingDetailListedOn')}</dt>
                 <dd className="col-sm-9 mb-0">{formatListedAt(listing.createdAt, locale)}</dd>
@@ -270,7 +270,7 @@ export default function MarketplaceListingDetailPage() {
                 {t('marketplace.listingDetailDescription')}
               </h2>
               <p className="mb-0" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {listing.description?.trim() || 'ù'}
+                {listing.description?.trim() || 'ÔøΩ'}
               </p>
 
               {!isPartner && listing.pedigreeRef && (
@@ -300,7 +300,7 @@ export default function MarketplaceListingDetailPage() {
                       )}
                       {(sellerPreview?.ratingAvg > 0 || sellerPreview?.reviewsCount > 0) && (
                         <p className="small text-muted mb-3">
-                          {t('marketplace.rating')}: {sellerPreview.ratingAvg?.toFixed?.(1) ?? sellerPreview.ratingAvg} ù{' '}
+                          {t('marketplace.rating')}: {sellerPreview.ratingAvg?.toFixed?.(1) ?? sellerPreview.ratingAvg} ÔøΩ{' '}
                           {sellerPreview.reviewsCount} {t('marketplace.reviews').toLowerCase()}
                         </p>
                       )}

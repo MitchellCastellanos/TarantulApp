@@ -27,6 +27,10 @@ const adminService = {
     api.get('/admin/beta-applications', { params: status ? { status } : {} }).then((r) => r.data),
   reviewBetaApplication: (id, payload) =>
     api.patch(`/admin/beta-applications/${id}/review`, payload).then((r) => r.data),
+  setUserPassword: (id, payload) =>
+    api.post(`/admin/users/${id}/password`, payload).then((r) => r.data),
+  provisionTester: (payload) =>
+    api.post('/admin/beta-testers/provision', payload).then((r) => r.data),
 }
 
 export default adminService

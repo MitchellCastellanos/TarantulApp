@@ -26,6 +26,7 @@ import org.springframework.web.client.RestClientException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +35,9 @@ import java.util.UUID;
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    private static final char[] PASSWORD_ALPHABET =
+            "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -314,6 +318,104 @@ public class AuthService {
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    /**
+     * Admin: set a user's password (no current password). When {@code generate} is true, a random
+     * password is created and returned in {@link AdminUserPasswordResult#plainPassword()}.
+     */
+    @Transactional
+    public AdminUserPasswordResult adminSetPasswordByUserId(UUID userId, String newPassword, boolean generate) {
+        String plain = generate ? randomPasswordChars(14) : newPassword;
+        assertAdminPasswordLength(plain);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        user.setPasswordHash(passwordEncoder.encode(plain));
+        userRepository.save(user);
+        return new AdminUserPasswordResult(user, plain, false);
+    }
+
+    /**
+     * Admin: find user by email or public handle (with or without leading {@code @}), set password,
+     * mark as beta tester. If no user exists and {@code identifier} is an email, creates an account
+     * (beta tester, free plan, trial) like register but without welcome email.
+     */
+    @Transactional
+    public AdminUserPasswordResult adminProvisionBetaTester(String identifier, String newPassword, boolean generate,
+                                                            String displayName) {
+        String plain = generate ? randomPasswordChars(14) : newPassword;
+        assertAdminPasswordLength(plain);
+        Optional<User> existing = findUserByIdentifier(identifier);
+        if (existing.isPresent()) {
+            User user = existing.get();
+            user.setPasswordHash(passwordEncoder.encode(plain));
+            user.setIsBetaTester(true);
+            if (displayName != null && !displayName.isBlank()
+                    && (user.getDisplayName() == null || user.getDisplayName().isBlank())) {
+                user.setDisplayName(displayName.trim());
+            }
+            userRepository.save(user);
+            return new AdminUserPasswordResult(user, plain, false);
+        }
+        String email = identifierToEmailForNewUserOrNull(identifier);
+        if (email == null) {
+            throw new IllegalArgumentException("USER_NOT_FOUND_USE_EMAIL_TO_CREATE");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("EMAIL_ALREADY_REGISTERED");
+        }
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(plain));
+        user.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName.trim());
+        user.setPlan(UserPlan.FREE);
+        user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+        user.setIsBetaTester(true);
+        userRepository.save(user);
+        publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+        referralService.applyReferralForNewAccount(user.getId(), null);
+        referralService.ensureReferralCodeForUser(user.getId());
+        User refreshed = userRepository.findById(user.getId()).orElse(user);
+        return new AdminUserPasswordResult(refreshed, plain, true);
+    }
+
+    public record AdminUserPasswordResult(User user, String plainPassword, boolean created) {}
+
+    private void assertAdminPasswordLength(String plain) {
+        if (plain == null || plain.length() < 6 || plain.length() > 100) {
+            throw new IllegalArgumentException("PASSWORD_LENGTH");
+        }
+    }
+
+    private String randomPasswordChars(int length) {
+        SecureRandom rnd = new SecureRandom();
+        char[] out = new char[length];
+        for (int i = 0; i < length; i++) {
+            out[i] = PASSWORD_ALPHABET[rnd.nextInt(PASSWORD_ALPHABET.length)];
+        }
+        return new String(out);
+    }
+
+    private Optional<User> findUserByIdentifier(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        String s = raw.trim();
+        if (s.contains("@")) {
+            return userRepository.findByEmail(s.toLowerCase(Locale.ROOT));
+        }
+        String handle = s.startsWith("@") ? s.substring(1) : s;
+        if (handle.isBlank()) {
+            return Optional.empty();
+        }
+        return userRepository.findByPublicHandleIgnoreCase(handle);
+    }
+
+    private String identifierToEmailForNewUserOrNull(String raw) {
+        if (raw == null || raw.isBlank() || !raw.contains("@")) {
+            return null;
+        }
+        return raw.trim().toLowerCase(Locale.ROOT);
     }
 }
 
