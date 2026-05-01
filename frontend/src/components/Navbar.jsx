@@ -41,7 +41,8 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const navMarketplace = path.startsWith('/marketplace')
   const navCollection = Boolean(token) && path === '/'
   const navInsights = Boolean(token) && path.startsWith('/insights')
-  const navCommunity = path.startsWith('/comunidad')
+  const navCommunity = path.startsWith('/community') || path.startsWith('/comunidad')
+  const navNotifications = path.startsWith('/notifications')
   const navAdmin = path.startsWith('/admin')
   const logoHome = !token ? '/login' : '/'
   const myPublicProfilePath = useMemo(() => {
@@ -109,18 +110,16 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             routeMatchers: ['/marketplace'],
           },
           {
-            to: '/comunidad',
-            label: notifUnread > 0
-              ? `${t('nav.community')} (${notifUnread > 99 ? '99+' : notifUnread})`
-              : t('nav.community'),
+            to: '/community',
+            label: t('nav.community'),
             title: t('social.navTitle'),
-            routeMatchers: ['/comunidad'],
+            routeMatchers: ['/community', '/comunidad'],
           },
         ],
       },
     ]
     return groups.filter((group) => !group.hidden)
-  }, [notifUnread, t, token])
+  }, [t, token])
   const activeGroupKey =
     mobileGroups.find((group) =>
       group.items.some((item) =>
@@ -157,9 +156,14 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
     }
     pull()
     const timer = setInterval(pull, 30000)
+    const onInvalidate = () => {
+      pull()
+    }
+    window.addEventListener('ta-notifications-updated', onInvalidate)
     return () => {
       cancelled = true
       clearInterval(timer)
+      window.removeEventListener('ta-notifications-updated', onInvalidate)
     }
   }, [token])
 
@@ -413,9 +417,9 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             <div>{planControl}</div>
             <div className="d-flex align-items-center gap-2">
                 <div className="position-relative">
-                  <Link onClick={closeMobileMenu} to="/account" className="btn btn-sm btn-outline-light">
+                  <Link onClick={closeMobileMenu} to="/notifications" className="btn btn-sm btn-outline-light">
                     🔔 {t('nav.notifications')}
-                    {notifUnread > 0 ? ` (${notifUnread})` : ''}
+                    {notifUnread > 0 ? ` (${notifUnread > 99 ? '99+' : notifUnread})` : ''}
                   </Link>
                 </div>
               <ThemeToggleButton compact />
@@ -480,19 +484,30 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
               {t('nav.insights')}
             </Link>
           )}
+          {token && (
+            <Link
+              to="/notifications"
+              className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navNotifications ? 'ta-navbar-primary-link--active' : ''}`}
+              title={t('nav.notifications')}
+              aria-label={t('nav.notifications')}
+            >
+              <span className="position-relative d-inline-flex align-items-center gap-1">
+                <span aria-hidden="true">🔔</span>
+                <span className="d-none d-lg-inline">{t('nav.notifications')}</span>
+                {notifUnread > 0 && (
+                  <span className="badge rounded-pill bg-danger" style={{ fontSize: '0.62rem', lineHeight: 1.1 }}>
+                    {notifUnread > 99 ? '99+' : notifUnread}
+                  </span>
+                )}
+              </span>
+            </Link>
+          )}
           <Link
-            to="/comunidad"
+            to="/community"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCommunity ? 'ta-navbar-primary-link--active' : ''}`}
             title={t('social.navTitle')}
           >
-            <span className="position-relative d-inline-flex align-items-center gap-1">
-              <span>{t('nav.community')}</span>
-              {notifUnread > 0 && (
-                <span className="badge rounded-pill bg-danger" style={{ fontSize: '0.62rem', lineHeight: 1.1 }}>
-                  {notifUnread > 99 ? '99+' : notifUnread}
-                </span>
-              )}
-            </span>
+            {t('nav.community')}
           </Link>
         </div>
         <div className="vr d-none d-lg-block" style={{ borderColor: 'var(--ta-border)' }} />

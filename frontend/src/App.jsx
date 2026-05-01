@@ -41,6 +41,7 @@ import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
 import ComingSoonPage from './pages/ComingSoonPage'
 import InsightsPage from './pages/InsightsPage'
+import NotificationsPage from './pages/NotificationsPage'
 import BugReportFAB from './components/BugReportFAB'
 import {
   COMING_SOON_BYPASS_STORAGE_KEY,
@@ -182,6 +183,7 @@ function AppRoutes() {
       <Route path="/insights" element={<PrivateRoute><InsightsPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+      <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
       <Route path="/community" element={<SocialHubPage />} />
       <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
       <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />

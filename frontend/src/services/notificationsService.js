@@ -1,5 +1,11 @@
 import api from './api'
 
+/** Fired so the Navbar (and similar) refreshes unread count without waiting for polling. */
+export function notifyNotificationsUpdated() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('ta-notifications-updated'))
+}
+
 const notificationsService = {
   list: (page = 0, size = 12) =>
     api.get('/notifications', { params: { page, size } }).then((r) => r.data),

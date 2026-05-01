@@ -503,9 +503,9 @@ export default function DashboardPage() {
           <span aria-hidden="true">✶</span>
           <span>My Collection</span>
         </Link>
-        <Link to="/comunidad" className="ta-premium-bottom-nav-item">
+        <Link to="/community" className="ta-premium-bottom-nav-item">
           <span aria-hidden="true">◌</span>
-          <span>Notifications</span>
+          <span>{t('nav.community')}</span>
         </Link>
       </div>
     </div>

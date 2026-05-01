@@ -49,6 +49,20 @@
     "notificationsEmpty": "Aucune notification pour le moment.",
     "notificationFallbackTitle": "Nouvelle activité"
   },
+  "notificationsScreen": {
+    "pageTitle": "Notifications",
+    "seoTitle": "Notifications | TarantulApp\u2122",
+    "metaDescription": "Alertes communauté, Sex ID et plus — avec du contexte avant d'ouvrir le détail.",
+    "hint": "Chaque ligne indique ce qui s'est passé et où vous irez en appuyant dessus.",
+    "loading": "Chargement\u2026",
+    "loadError": "Impossible de charger les notifications. Réessayez dans un instant.",
+    "markAllError": "Impossible de tout marquer comme lu.",
+    "categoryCommunity": "Communauté",
+    "categorySexId": "Sex ID",
+    "categoryGeneral": "Autre",
+    "readBadge": "Lu",
+    "openCta": "Ouvrir"
+  },
   "comingSoon": {
     "docTitle": "Bientôt disponible | TarantulApp\u2122",
     "headline": "Bientôt disponible",

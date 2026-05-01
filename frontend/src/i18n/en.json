@@ -49,6 +49,20 @@
     "notificationsEmpty": "No notifications yet.",
     "notificationFallbackTitle": "New activity"
   },
+  "notificationsScreen": {
+    "pageTitle": "Notifications",
+    "seoTitle": "Notifications | TarantulApp\u2122",
+    "metaDescription": "Community alerts, Sex ID updates, and other activity — with context before you navigate.",
+    "hint": "Each row shows what triggered the alert and where it will take you when you tap it.",
+    "loading": "Loading\u2026",
+    "loadError": "Could not load notifications. Try again in a moment.",
+    "markAllError": "Could not mark all notifications as read.",
+    "categoryCommunity": "Community",
+    "categorySexId": "Sex ID",
+    "categoryGeneral": "Other",
+    "readBadge": "Read",
+    "openCta": "Open"
+  },
   "comingSoon": {
     "docTitle": "Coming soon | TarantulApp\u2122",
     "headline": "Coming soon",

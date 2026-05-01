@@ -206,7 +206,7 @@ public class ActivityPostService {
                     postPreview.isBlank() ? "Tu publicacion recibio un Spood." : postPreview,
                     Map.of(
                             "postId", String.valueOf(postId),
-                            "route", "/comunidad"
+                            "route", "/community/post/" + postId
                     )
             );
         }
@@ -303,7 +303,7 @@ public class ActivityPostService {
                 Map.of(
                         "postId", String.valueOf(postId),
                         "commentId", String.valueOf(saved.getId()),
-                        "route", "/comunidad"
+                        "route", "/community/post/" + postId
                 )
         );
         User u = userRepository.findById(userId).orElse(null);
