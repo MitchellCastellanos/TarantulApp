@@ -1,0 +1,54 @@
+Highlights: reemplazar pantalla del mockup (perspectiva / angulo variable)
+================================================================================
+
+1) Instalar Python 3.10+ y dependencias (desde la raiz del repo tarantulapp):
+
+   pip install -r Social/Highlights/tools/requirements.txt
+
+2) Capturas de la app: guarda cada PNG en Social/Highlights/screenshots/...
+   El archivo Social/Highlights/tools/manifest.csv ya apunta a rutas espejo
+   (mismo nombre que la plantilla, debajo de screenshots/).
+
+3) Calibrar esquinas (una vez por plantilla, orden de clics: esquina superior
+   izquierda, superior derecha, inferior derecha, inferior izquierda de la
+   PANTALLA por dentro del marco dorado):
+
+   python Social/Highlights/tools/calibrate.py "Social/Highlights/H1/1019268E-E9B8-4B09-944D-81B7AB84E85B.PNG"
+
+   Se guarda en Social/Highlights/tools/corners.json con coordenadas normalizadas
+   (0-1), asi que si re-exportas la misma pieza a otro tamano, vuelve a calibrar
+   o manten el mismo canvas en pixeles.
+
+   Si varias plantillas comparten el MISMO angulo y MISMO tamano en pixeles,
+   puedes copiar el bloque JSON de corners.json y pegarlo con otra clave, o usar
+   la columna "preset" en el CSV con una clave compartida (ver render.py).
+
+4) Renderizar lotes:
+
+   python Social/Highlights/tools/render.py --manifest Social/Highlights/tools/manifest.csv
+
+   Salida por defecto: Social/Highlights/_out/... (misma estructura de carpetas).
+
+Notas
+-----
+- H10 no esta en el repo todavia; cuando lo agregues, crea Social/Highlights/H10
+  y vuelve a generar el manifest con scan_templates.py o anade filas a mano.
+- Si falta corners.json para una plantilla, render.py la omite y lo indica.
+- Si falta el PNG de captura en screenshots/, tambien se omite.
+
+Regenerar manifest.csv
+------------------------
+   python Social/Highlights/tools/scan_templates.py > Social/Highlights/tools/manifest.csv
+
+Capturas automaticas (Playwright, viewport movil ~390x844, tema oscuro)
+-------------------------------------------------------------------------
+Desde frontend/:
+
+   npm run screenshots
+
+Salida: Social/Highlights/screenshots/playwright/
+  discover.png, marketplace.png, community.png, login.png, about.png
+
+Si el backend local no esta en localhost:8080, Marketplace/Community pueden verse
+vacios o con errores de red; arranca Spring Boot y vuelve a correr el comando para
+capturas con datos reales.

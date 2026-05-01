@@ -32,3 +32,6 @@ Assets/
 # ─── OS ─────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ─── MS Office lock files (opened document temp) ────────────
+~$*
