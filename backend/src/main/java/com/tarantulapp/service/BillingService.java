@@ -164,6 +164,9 @@ public class BillingService {
         body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
         body.put("admin", adminAccessService.isAdminEmail(user.getEmail()));
         body.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
+        body.put("betaAgreementAcceptedAt", user.getBetaAgreementAcceptedAt() != null
+                ? user.getBetaAgreementAcceptedAt().toString()
+                : null);
 
         Optional<Subscription> optSub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
         if (optSub.isPresent()) {

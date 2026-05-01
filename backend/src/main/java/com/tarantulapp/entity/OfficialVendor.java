@@ -66,6 +66,9 @@ public class OfficialVendor {
     @Column(name = "listing_import_enabled", nullable = false)
     private Boolean listingImportEnabled = false;
 
+    @Column(name = "is_demo", nullable = false)
+    private Boolean isDemo = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -114,6 +117,8 @@ public class OfficialVendor {
     public void setPartnerProgramTier(PartnerProgramTier partnerProgramTier) { this.partnerProgramTier = partnerProgramTier; }
     public Boolean getListingImportEnabled() { return listingImportEnabled; }
     public void setListingImportEnabled(Boolean listingImportEnabled) { this.listingImportEnabled = listingImportEnabled; }
+    public Boolean getIsDemo() { return isDemo; }
+    public void setIsDemo(Boolean isDemo) { this.isDemo = isDemo; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

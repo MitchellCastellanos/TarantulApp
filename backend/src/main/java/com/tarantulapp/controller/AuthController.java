@@ -73,6 +73,18 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "OK"));
     }
 
+    record BetaAgreementBody(Boolean accepted) {}
+
+    @PostMapping("/beta-agreement")
+    public ResponseEntity<AuthResponse> acceptBetaAgreement(@RequestBody(required = false) BetaAgreementBody body) {
+        UUID userId = securityHelper.getCurrentUserId();
+        boolean ok = body == null || body.accepted() == null || Boolean.TRUE.equals(body.accepted());
+        if (!ok) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(authService.acceptBetaTesterAgreement(userId));
+    }
+
     private static String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

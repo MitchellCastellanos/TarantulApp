@@ -323,6 +323,12 @@ export default function MarketplacePage() {
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
+        {officialVendors.some((v) => v.isDemo) && (
+          <div className="alert alert-warning small py-2 mb-3" role="note">
+            {t('beta.demoPartnersBanner')}
+          </div>
+        )}
+
         <section className="ta-marketplace-official-strip mb-4" aria-label={t('marketplace.officialTitle')}>
           <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
             <div className="d-flex align-items-start gap-2 min-w-0">

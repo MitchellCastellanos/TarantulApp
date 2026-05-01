@@ -36,6 +36,7 @@ function mergePlanFields(raw) {
     communityProfileVisibility: raw?.communityProfileVisibility || 'preview_only',
     admin: raw?.admin === true,
     betaTester: raw?.betaTester === true || raw?.isBetaTester === true,
+    betaAgreementAcceptedAt: raw?.betaAgreementAcceptedAt ?? null,
   }
 }
 
@@ -87,6 +88,7 @@ export function AuthProvider({ children }) {
       communityProfileVisibility: authData.communityProfileVisibility,
       admin: authData.admin === true,
       betaTester: authData.betaTester === true || authData.isBetaTester === true,
+      betaAgreementAcceptedAt: authData.betaAgreementAcceptedAt ?? null,
     })
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(payload))
@@ -134,6 +136,10 @@ export function AuthProvider({ children }) {
             typeof data.admin === 'boolean' ? data.admin : prev.admin === true
           const betaTester =
             typeof data.isBetaTester === 'boolean' ? data.isBetaTester : prev.betaTester === true
+          const betaAgreementAcceptedAt =
+            data.betaAgreementAcceptedAt !== undefined
+              ? data.betaAgreementAcceptedAt
+              : prev.betaAgreementAcceptedAt
           const next = mergePlanFields({
             ...prev,
             plan: data.plan,
@@ -144,6 +150,7 @@ export function AuthProvider({ children }) {
             strictReadOnly: data.strictReadOnly,
             admin,
             betaTester,
+            betaAgreementAcceptedAt,
           })
           localStorage.setItem('user', JSON.stringify(next))
           return next

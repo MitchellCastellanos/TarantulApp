@@ -370,6 +370,7 @@ public class ActivityPostService {
         m.put("likedByMe", liked);
         long comments = activityPostCommentRepository.countByPostIdAndHiddenAtIsNull(p.getId());
         m.put("commentsCount", comments);
+        m.put("isDemoContent", Boolean.TRUE.equals(p.getIsDemoContent()));
         return m;
     }
 

@@ -1,5 +1,6 @@
 package com.tarantulapp.dto;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,6 +30,7 @@ public class AuthResponse {
     private String communityProfileVisibility;
     private boolean admin;
     private boolean betaTester;
+    private Instant betaAgreementAcceptedAt;
 
     public AuthResponse(String token, String email, String displayName, UUID userId, String plan) {
         this.token = token;
@@ -88,4 +90,7 @@ public class AuthResponse {
     public void setAdmin(boolean admin) { this.admin = admin; }
     public boolean isBetaTester() { return betaTester; }
     public void setBetaTester(boolean betaTester) { this.betaTester = betaTester; }
+
+    public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
+    public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }
 }

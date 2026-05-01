@@ -618,7 +618,12 @@ export default function SocialHubPage() {
         className="rounded-3 p-3 mb-3 ta-social-post-card ta-premium-pane"
       >
         <div className="d-flex justify-content-between gap-2 flex-wrap align-items-start mb-2">
-          {renderPostAuthor(p)}
+          <div className="d-flex flex-column gap-1 flex-grow-1 min-w-0">
+            {renderPostAuthor(p)}
+            {p.isDemoContent ? (
+              <span className="badge bg-secondary align-self-start">{t('beta.demoPostBadge')}</span>
+            ) : null}
+          </div>
           {showDelete && p.authorUserId === user?.id && (
             <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => deletePost(p.id)}>
               {t('social.delete')}
@@ -807,6 +812,12 @@ export default function SocialHubPage() {
             >
               {t('social.loginToParticipate')}
             </button>
+          </div>
+        )}
+
+        {token && user?.betaTester && generalPosts.some((p) => p?.isDemoContent) && (
+          <div className="alert alert-secondary small py-2 mb-3" role="note">
+            {t('beta.demoFeedBanner')}
           </div>
         )}
 

@@ -47,6 +47,9 @@ public class ActivityPost {
     @Column(name = "hidden_at")
     private Instant hiddenAt;
 
+    @Column(name = "is_demo_content", nullable = false)
+    private Boolean isDemoContent = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -77,6 +80,8 @@ public class ActivityPost {
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public Instant getHiddenAt() { return hiddenAt; }
     public void setHiddenAt(Instant hiddenAt) { this.hiddenAt = hiddenAt; }
+    public Boolean getIsDemoContent() { return isDemoContent; }
+    public void setIsDemoContent(Boolean isDemoContent) { this.isDemoContent = isDemoContent; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

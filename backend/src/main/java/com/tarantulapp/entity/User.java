@@ -1,6 +1,7 @@
 package com.tarantulapp.entity;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -97,6 +98,10 @@ public class User {
 
     @Column(name = "beta_experience_level", length = 40)
     private String betaExperienceLevel;
+
+    /** Aceptación del acuerdo de beta tester (modal primer login). */
+    @Column(name = "beta_agreement_accepted_at")
+    private Instant betaAgreementAcceptedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -204,5 +209,8 @@ public class User {
 
     public String getBetaExperienceLevel() { return betaExperienceLevel; }
     public void setBetaExperienceLevel(String betaExperienceLevel) { this.betaExperienceLevel = betaExperienceLevel; }
+
+    public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
+    public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }
 
 }

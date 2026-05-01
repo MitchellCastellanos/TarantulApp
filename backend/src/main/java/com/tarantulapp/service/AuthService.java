@@ -25,6 +25,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Locale;
@@ -262,7 +263,22 @@ public class AuthService {
         r.setCommunityProfileVisibility(user.getCommunityProfileVisibility());
         r.setAdmin(adminAccessService.isAdminEmail(user.getEmail()));
         r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));
+        r.setBetaAgreementAcceptedAt(user.getBetaAgreementAcceptedAt());
         return r;
+    }
+
+    @Transactional
+    public AuthResponse acceptBetaTesterAgreement(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        if (!Boolean.TRUE.equals(user.getIsBetaTester())) {
+            throw new IllegalArgumentException("NOT_BETA_TESTER");
+        }
+        user.setBetaAgreementAcceptedAt(Instant.now());
+        userRepository.save(user);
+        User refreshed = userRepository.findById(userId).orElseThrow();
+        String token = jwtUtil.generateToken(refreshed.getEmail());
+        return buildAuthResponse(token, refreshed);
     }
 
     @Transactional

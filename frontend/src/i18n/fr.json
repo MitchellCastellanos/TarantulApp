@@ -81,6 +81,21 @@
     "testerClose": "Fermer",
     "betaApplyLink": "Postuler en tant que testeur bêta"
   },
+  "beta": {
+    "demoPartnersBanner": "Les partenaires marqués DEMO sont des données fictives pour que la bande du marketplace ne soit pas vide. Ce ne sont pas de vraies boutiques.",
+    "demoFeedBanner": "Les publications avec badge DEMO sont du contenu semé pour la bêta. Vos propres publications sont réelles.",
+    "demoPostBadge": "DEMO",
+    "agreementTitle": "Accord testeur bêta",
+    "agreementIntro": "Vous rejoignez la bêta fermée. Merci de confirmer les points suivants pour garder un retour structuré.",
+    "agreementBullet1": "Vous utilisez un logiciel pré-lancement pouvant changer, planter ou perdre des données ; sauvegardez l’essentiel hors appli.",
+    "agreementBullet2": "Vous vous engagez à envoyer un retour honnête (bugs, confusion, idées) via le rapport de bug ou par e-mail.",
+    "agreementBullet3": "Vous ne tenez pas TarantulApp responsable des problèmes liés à la bêta ; le support peut être limité.",
+    "agreementBullet4": "Nous pouvons vous contacter (missions, sondages). Vous pouvez quitter la bêta en écrivant au support.",
+    "agreementCheckbox": "J’ai lu et j’accepte de participer dans ces conditions.",
+    "agreementSubmit": "Continuer vers l’appli",
+    "agreementNeedCheckbox": "Cochez la case pour continuer.",
+    "agreementError": "Impossible d’enregistrer. Réessayez."
+  },
   "social": {
     "pageTitle": "Communauté",
     "seoTitle": "Communauté | TarantulApp\u2122",
@@ -1418,6 +1433,10 @@
     "passwordOrGenerate": "Mot de passe ou générer aléatoirement",
     "generatePassword": "Générer un mot de passe aléatoire",
     "addTesterSubmit": "Ajouter ou mettre à jour",
+    "welcomeEmailCopyEs": "Copier l’e-mail de bienvenue (ES)",
+    "welcomeEmailPasswordPrompt": "Mot de passe à insérer (vide = espace réservé) :",
+    "welcomeEmailCopied": "E-mail de bienvenue copié dans le presse-papiers.",
+    "welcomeEmailCopyFailed": "Copie impossible — copiez manuellement.",
     "addTesterPasswordShown": "Copier et partager : e-mail {{email}}, mot de passe : {{password}}",
     "resetPasswordButton": "Définir / réinitialiser le mot de passe",
     "resetPasswordTitle": "Définir le mot de passe — {{email}}",

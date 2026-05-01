@@ -74,6 +74,21 @@
     "testerClose": "Cerrar",
     "betaApplyLink": "Aplicar como beta tester"
   },
+  "beta": {
+    "demoPartnersBanner": "Los socios marcados DEMO son datos de relleno para la beta para que la franja del marketplace no salga vacía. No son tiendas reales: no esperes compras ni envíos reales.",
+    "demoFeedBanner": "Las publicaciones con insignia DEMO son contenido sembrado para que el feed no arranque vacío en la beta. Tus propias publicaciones son reales.",
+    "demoPostBadge": "DEMO",
+    "agreementTitle": "Acuerdo de beta tester",
+    "agreementIntro": "Estás entrando a la beta cerrada. Confirma lo siguiente para mantener el feedback ordenado y proteger el producto y a los participantes.",
+    "agreementBullet1": "Usarás software prelanzamiento que puede cambiar, fallar o perder datos; guarda respaldos fuera de la app si algo es importante.",
+    "agreementBullet2": "Te comprometes a dar feedback honesto (bugs, confusiones, ideas) con el botón de bugs o respondiendo correos del equipo.",
+    "agreementBullet3": "No nos responsabilizas por problemas del uso en beta; el soporte puede ser limitado y datos o funciones pueden reiniciarse.",
+    "agreementBullet4": "Podemos contactarte sobre la beta (misiones, encuestas). Puedes salir del programa escribiendo a soporte.",
+    "agreementCheckbox": "He leído y acepto participar bajo estas condiciones.",
+    "agreementSubmit": "Entrar a la app",
+    "agreementNeedCheckbox": "Marca la casilla para continuar.",
+    "agreementError": "No se pudo guardar tu aceptación. Intenta de nuevo."
+  },
   "social": {
     "pageTitle": "Comunidad",
     "seoTitle": "Comunidad | TarantulApp\u2122",
@@ -1410,6 +1425,10 @@
     "passwordOrGenerate": "Define una contraseña o elige generar",
     "generatePassword": "Generar contraseña al azar",
     "addTesterSubmit": "Añadir o actualizar tester",
+    "welcomeEmailCopyEs": "Copiar email de bienvenida (ES)",
+    "welcomeEmailPasswordPrompt": "Contraseña a insertar (vacío = marcador de posición):",
+    "welcomeEmailCopied": "Email de bienvenida copiado al portapapeles.",
+    "welcomeEmailCopyFailed": "No se pudo copiar — cópialo manualmente.",
     "addTesterPasswordShown": "Copia y comparte: email {{email}}, contraseña: {{password}}",
     "resetPasswordButton": "Poner / resetear contraseña",
     "resetPasswordTitle": "Definir contraseña — {{email}}",

@@ -81,6 +81,21 @@
     "testerClose": "Close",
     "betaApplyLink": "Apply as beta tester"
   },
+  "beta": {
+    "demoPartnersBanner": "Partners marked DEMO are placeholder data for the beta so the marketplace strip is not empty. They are not real stores — do not expect real purchases or shipping.",
+    "demoFeedBanner": "Posts with a DEMO badge are seeded sample content so the community feed is not empty during the beta. Your own posts are real.",
+    "demoPostBadge": "DEMO",
+    "agreementTitle": "Beta tester agreement",
+    "agreementIntro": "You are joining the closed beta. Please confirm the following so we can keep feedback structured and protect both you and the product.",
+    "agreementBullet1": "You will use pre-release software that may change, break, or lose data; keep backups of anything important outside the app.",
+    "agreementBullet2": "You agree to send honest feedback (bugs, confusion, ideas) through the in-app bug reporter or by replying to team emails.",
+    "agreementBullet3": "You will not hold TarantulApp liable for issues arising from beta use; support may be limited and features may be reset.",
+    "agreementBullet4": "You may be contacted about the beta (missions, surveys). You can leave the beta program by contacting support.",
+    "agreementCheckbox": "I have read and agree to participate under these conditions.",
+    "agreementSubmit": "Continue to the app",
+    "agreementNeedCheckbox": "Please confirm the checkbox to continue.",
+    "agreementError": "Could not save your acceptance. Try again."
+  },
   "social": {
     "pageTitle": "Community",
     "seoTitle": "Community | TarantulApp\u2122",
@@ -1436,6 +1451,10 @@
     "passwordOrGenerate": "Set a password, or use generate",
     "generatePassword": "Generate a random password",
     "addTesterSubmit": "Add or update tester",
+    "welcomeEmailCopyEs": "Copy welcome email (ES)",
+    "welcomeEmailPasswordPrompt": "Password to embed (leave empty for placeholder):",
+    "welcomeEmailCopied": "Welcome email copied to clipboard.",
+    "welcomeEmailCopyFailed": "Could not copy — select and copy manually.",
     "addTesterPasswordShown": "Copy and share: email {{email}}, password: {{password}}",
     "resetPasswordButton": "Set / reset password",
     "resetPasswordTitle": "Set password for {{email}}",

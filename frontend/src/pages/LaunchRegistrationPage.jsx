@@ -72,11 +72,48 @@ const COPY = {
     futureThanks: "C'est note. Surveillez votre boite.",
     futureLoading: 'Enregistrement...',
   },
+  es: {
+    title: 'Felicidades, llegaste.',
+    subtitle: 'Solicita tu lugar — evento de registro de lanzamiento (Montreal)',
+    blockedTitle: 'Lo sentimos, esta página no está disponible en tu región.',
+    blockedBody: 'Este registro está limitado por ahora a visitantes de Quebec.',
+    loadingEligibility: 'Verificando tu región...',
+    formTitle: 'Solicitar un lugar',
+    cinematic: 'Se abren las puertas. Luces abajo. Empieza el siguiente capítulo.',
+    name: 'Nombre',
+    email: 'Correo',
+    phone: 'Teléfono',
+    owns: '¿Tienes tarántulas?',
+    howMany: '¿Cuántas?',
+    attend: '¿Asistirás?',
+    attendYes: 'Sí, ahí estaré',
+    bringInfo: '¿Traerás info/fotos de tu colección?',
+    reminder: 'Envíame un recordatorio 2 días antes',
+    newsletter: 'Newsletter (eventos, lanzamientos, perks)',
+    submit: 'Solicitar lugar',
+    yes: 'Sí',
+    no: 'No',
+    successReserved: 'Felicidades, tu lugar está reservado.',
+    message1: 'Recibirás por correo la confirmación de tu lugar.',
+    message2: 'Recordatorio de grupo reducido (si activaste recordatorio).',
+    message3: 'Un día antes: detalles del evento.',
+    submitLoading: 'Revisando tu solicitud...',
+    soldOutTitle: 'Esta tanda está llena.',
+    soldOutLead:
+      'Ya no hay lugares para esta sesión presencial. Si quieres acceso anticipado a futuros eventos y noticias del lanzamiento, deja tu correo abajo.',
+    futureEmailLabel: 'Correo para novedades',
+    futureNotifyCta: 'Avísame',
+    futureThanks: 'Listo. Revisa tu bandeja.',
+    futureLoading: 'Guardando...',
+  },
 }
 
 function detectLang() {
   if (typeof navigator === 'undefined') return 'en'
-  return (navigator.language || '').toLowerCase().startsWith('fr') ? 'fr' : 'en'
+  const l = (navigator.language || '').toLowerCase()
+  if (l.startsWith('fr')) return 'fr'
+  if (l.startsWith('es')) return 'es'
+  return 'en'
 }
 
 export default function LaunchRegistrationPage() {
@@ -102,7 +139,7 @@ export default function LaunchRegistrationPage() {
     newsletterOptIn: true,
   })
 
-  const t = useMemo(() => COPY[lang], [lang])
+  const t = useMemo(() => COPY[lang] || COPY.en, [lang])
   usePageSeo({ title: `${t.formTitle} | ${BRAND_WITH_TM}`, description: t.subtitle, noindex: true })
 
   useEffect(() => {
@@ -279,6 +316,7 @@ export default function LaunchRegistrationPage() {
 
       <div className="d-flex justify-content-end mb-3 gap-2">
         <button type="button" className={`btn btn-sm ${lang === 'en' ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => setLang('en')}>EN</button>
+        <button type="button" className={`btn btn-sm ${lang === 'es' ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => setLang('es')}>ES</button>
         <button type="button" className={`btn btn-sm ${lang === 'fr' ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => setLang('fr')}>FR</button>
       </div>
 

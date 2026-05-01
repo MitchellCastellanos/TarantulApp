@@ -56,7 +56,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
         // Login / registro / reset: sin parsear Bearer (token caducado en el navegador no debe afectar POST públicos).
         if (uri.startsWith("/api/auth/")
-                && !"/api/auth/change-password".equals(uri)) {
+                && !"/api/auth/change-password".equals(uri)
+                && !"/api/auth/beta-agreement".equals(uri)) {
             return true;
         }
         // Búsquedas taxonómicas: siempre sin filtro JWT (evita 401 con sesión en WSC/GBIF).

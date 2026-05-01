@@ -43,6 +43,7 @@ import ComingSoonPage from './pages/ComingSoonPage'
 import InsightsPage from './pages/InsightsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import BugReportFAB from './components/BugReportFAB'
+import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
 import {
   COMING_SOON_BYPASS_STORAGE_KEY,
   isComingSoonEnabled,
@@ -287,6 +288,7 @@ export default function App() {
           <AuthSessionBridge />
           <AppRoutes />
           <BugReportFAB />
+          <BetaTesterAgreementModal />
           <RateAppPrompt />
           <Footer />
         </ComingSoonGate>

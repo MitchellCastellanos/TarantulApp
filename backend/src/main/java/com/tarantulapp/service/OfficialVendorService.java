@@ -197,6 +197,7 @@ public class OfficialVendorService {
         out.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
+        out.put("isDemo", Boolean.TRUE.equals(vendor.getIsDemo()));
         out.put("createdAt", vendor.getCreatedAt());
         return out;
     }
@@ -281,6 +282,7 @@ public class OfficialVendorService {
         v.setEnabled(true);
         v.setPartnerProgramTier(tier);
         v.setListingImportEnabled(listingImportEnabled);
+        v.setIsDemo(false);
         return v;
     }
 

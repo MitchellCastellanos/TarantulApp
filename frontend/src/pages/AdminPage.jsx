@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import adminService from '../services/adminService'
+import { buildSpanishBetaWelcomeEmail } from '../utils/welcomeBetaEmail'
 
 function formatUsageTime(lastActivityAt, t) {
   if (!lastActivityAt) return t('admin.usageTimeNever')
@@ -19,6 +20,25 @@ function formatUsageTime(lastActivityAt, t) {
 
 export default function AdminPage() {
   const { t } = useTranslation()
+  const copyWelcomeEs = async (u) => {
+    const pwd =
+      typeof window !== 'undefined'
+        ? window.prompt(t('admin.welcomeEmailPasswordPrompt'), '')
+        : ''
+    if (pwd === null) return
+    const body = buildSpanishBetaWelcomeEmail({
+      name: u.displayName || u.email,
+      email: u.email,
+      password: (pwd || '').trim() || '[CONFIGURA_CONTRASEÑA_EN_ADMIN]',
+      sendDate: new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date()),
+    })
+    try {
+      await navigator.clipboard.writeText(body)
+      window.alert(t('admin.welcomeEmailCopied'))
+    } catch {
+      window.alert(t('admin.welcomeEmailCopyFailed'))
+    }
+  }
   const [summary, setSummary] = useState(null)
   const [recentUsers, setRecentUsers] = useState([])
   const [reports, setReports] = useState([])
@@ -547,6 +567,13 @@ export default function AdminPage() {
                             }}
                           >
                             {t('admin.resetPasswordButton')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => copyWelcomeEs(u)}
+                          >
+                            {t('admin.welcomeEmailCopyEs')}
                           </button>
                           <button
                             type="button"

@@ -123,6 +123,7 @@ public class SecurityConfig {
                                 "/tarantulas/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/beta-agreement").authenticated()
                         // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.
                         .requestMatchers(
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),
