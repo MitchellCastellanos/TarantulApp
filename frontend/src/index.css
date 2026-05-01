@@ -2784,6 +2784,179 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   max-width: 1220px;
 }
 
+/* ─── Detail page pill tabs ─────────────────────────────────────────────── */
+.ta-detail-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.85rem;
+  margin-bottom: 1rem;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.ta-detail-tabs::-webkit-scrollbar { height: 4px; }
+.ta-detail-tabs__btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--ta-border);
+  color: var(--ta-text-muted);
+  padding: 0.55rem 1.1rem;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.ta-detail-tabs__btn:hover {
+  border-color: rgba(140, 90, 220, 0.6);
+  color: var(--ta-text);
+}
+.ta-detail-tabs__btn:focus-visible {
+  outline: 2px solid rgba(140, 90, 220, 0.6);
+  outline-offset: 2px;
+}
+.ta-detail-tabs__btn.is-active {
+  background: rgba(120, 60, 220, 0.18);
+  border-color: rgba(140, 90, 220, 0.7);
+  color: #d6b4ff;
+  box-shadow: 0 0 0 1px rgba(140, 90, 220, 0.25) inset;
+}
+:root[data-theme='light'] .ta-detail-tabs__btn.is-active {
+  background: rgba(80, 40, 160, 0.1);
+  color: #5a32b8;
+  border-color: rgba(120, 80, 200, 0.5);
+  box-shadow: 0 0 0 1px rgba(120, 80, 200, 0.18) inset;
+}
+
+/* ─── Detail page header strip (above tabs) ─────────────────────────────── */
+.ta-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+  margin-bottom: 0.25rem;
+}
+.ta-detail-header__photo {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--ta-border-gold);
+  background: linear-gradient(135deg, #0c0c1e, #1a1040);
+}
+.ta-detail-header__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ta-detail-header__title {
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ta-text);
+  overflow-wrap: anywhere;
+}
+.ta-detail-header__subtitle {
+  font-size: 0.85rem;
+  color: var(--ta-text-muted);
+  margin: 0.15rem 0 0;
+}
+
+/* ─── Care tab cards ────────────────────────────────────────────────────── */
+.ta-care-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border);
+  border-radius: 14px;
+}
+.ta-care-card + .ta-care-card { margin-top: 0.6rem; }
+.ta-care-card__icon {
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(140, 90, 220, 0.12);
+  color: #d6b4ff;
+  border: 1px solid rgba(140, 90, 220, 0.35);
+}
+:root[data-theme='light'] .ta-care-card__icon {
+  background: rgba(120, 80, 200, 0.08);
+  color: #5a32b8;
+  border-color: rgba(120, 80, 200, 0.3);
+}
+.ta-care-card__title {
+  margin: 0 0 0.1rem;
+  font-weight: 700;
+  color: var(--ta-text);
+  font-size: 1rem;
+}
+.ta-care-card__desc {
+  margin: 0;
+  color: var(--ta-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.ta-care-tip {
+  margin-top: 0.85rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ta-border-gold);
+  border-radius: 14px;
+  color: var(--ta-text);
+  background: rgba(232, 197, 71, 0.06);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ─── Reminders list inside detail tab ──────────────────────────────────── */
+.ta-detail-reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border);
+  border-radius: 12px;
+}
+.ta-detail-reminder + .ta-detail-reminder { margin-top: 0.5rem; }
+.ta-detail-reminder__icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  padding-top: 0.15rem;
+}
+.ta-detail-reminder__title {
+  font-weight: 600;
+  color: var(--ta-gold-light);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ta-detail-reminder__date {
+  font-size: 0.82rem;
+  color: var(--ta-text-muted);
+  margin: 0.1rem 0 0;
+}
+.ta-detail-reminder__date.is-overdue {
+  color: #ff8a8a;
+  font-weight: 600;
+}
+
 .ta-premium-pane {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: linear-gradient(155deg, rgba(10, 10, 12, 0.94), rgba(0, 0, 0, 0.92)) !important;
