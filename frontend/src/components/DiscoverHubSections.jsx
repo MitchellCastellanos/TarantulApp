@@ -83,7 +83,7 @@ export default function DiscoverHubSections() {
             return (
               <Link
                 key={sp.id}
-                to={`/discover/species/${id}`}
+                to={`/discover?speciesId=${id}`}
                 className="text-decoration-none flex-shrink-0"
                 style={{ width: 96 }}
               >

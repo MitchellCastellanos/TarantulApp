@@ -505,6 +505,7 @@ export default function DiscoverPage() {
     !selectedSpecies &&
     hasTaxonomyDataForProfile(taxonPreview) &&
     taxonomyFallbackSpecies
+  const hasActivePanel = panelLoading || panelKind === 'full' || panelKind === 'taxonomy'
 
   // Si el catálogo no trajo fallbackPhoto, rellenar: primero taxon (iNat+GBIF media) si hay clave GBIF, si no o si sigue vacío, iNat por nombre.
   useEffect(() => {
@@ -709,36 +710,40 @@ export default function DiscoverPage() {
             )}
         </section>
           </div>
-          <div className="col-12 order-2 order-lg-3">
-            <DiscoverHubSections />
-          </div>
-          <div className="col-12 col-lg-5 d-flex order-3 order-lg-2">
-            <section className="ta-discover-marketplace-hub ta-premium-pane w-100 rounded-3 border p-4 d-flex flex-column">
-              <div className="d-flex align-items-start gap-2 mb-2">
-                <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />
-                <h2 className="h6 letter-spacing mb-0 ta-accent-heading fw-semibold" style={{ lineHeight: 1.35 }}>
-                  {t('discover.marketplaceHubTitle')}
-                </h2>
-              </div>
-              <p className="small flex-grow-1 mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
-                {t('discover.marketplaceHubBody')}
-              </p>
-              <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
-                {t('discover.marketplaceHubOfficial')}
-              </p>
-              <Link
-                to="/marketplace"
-                className="btn btn-sm mt-auto align-self-start fw-semibold"
-                style={{
-                  border: '1px solid var(--ta-gold)',
-                  color: 'var(--ta-gold)',
-                  background: 'transparent',
-                }}
-              >
-                {t('discover.marketplaceHubCta')}
-              </Link>
-            </section>
-          </div>
+          {!hasActivePanel && (
+            <div className="col-12 order-2 order-lg-3">
+              <DiscoverHubSections />
+            </div>
+          )}
+          {!hasActivePanel && (
+            <div className="col-12 col-lg-5 d-flex order-3 order-lg-2">
+              <section className="ta-discover-marketplace-hub ta-premium-pane w-100 rounded-3 border p-4 d-flex flex-column">
+                <div className="d-flex align-items-start gap-2 mb-2">
+                  <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />
+                  <h2 className="h6 letter-spacing mb-0 ta-accent-heading fw-semibold" style={{ lineHeight: 1.35 }}>
+                    {t('discover.marketplaceHubTitle')}
+                  </h2>
+                </div>
+                <p className="small flex-grow-1 mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
+                  {t('discover.marketplaceHubBody')}
+                </p>
+                <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
+                  {t('discover.marketplaceHubOfficial')}
+                </p>
+                <Link
+                  to="/marketplace"
+                  className="btn btn-sm mt-auto align-self-start fw-semibold"
+                  style={{
+                    border: '1px solid var(--ta-gold)',
+                    color: 'var(--ta-gold)',
+                    background: 'transparent',
+                  }}
+                >
+                  {t('discover.marketplaceHubCta')}
+                </Link>
+              </section>
+            </div>
+          )}
         </div>
 
         {panelLoading && (
