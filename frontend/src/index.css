@@ -198,10 +198,76 @@ body::after { right: -2rem; }
   box-shadow: none !important;
 }
 
-/* Dashboard grid + detalle tarántula: texto / badges / botones alejados de los colmillos PNG */
-.ta-spider-detail-fang.fang-panel .fang-panel__inner,
+/* Detalle tarántula: colmillos más integrados (menos “flotando”) */
+.ta-spider-detail-fang.fang-panel .fang-panel__corner {
+  width: clamp(24px, 11.5%, 56px);
+  filter: drop-shadow(0 0 6px rgba(115, 70, 248, 0.35));
+}
+.ta-spider-detail-fang.fang-panel .fang-panel__inner {
+  padding: clamp(0.55rem, 2.2vw, 0.95rem);
+}
+.ta-spider-detail-fang .ta-tarantula-detail-main-card .card-body {
+  padding: 0.95rem 1rem 0.85rem;
+}
+.ta-spider-detail-fang .ta-tarantula-detail-main-card .card-footer {
+  padding: 0.55rem 0.95rem 0.9rem !important;
+}
+.ta-spider-detail-fang .ta-tarantula-detail-brand-mark {
+  right: 0.7rem;
+  bottom: 0.65rem;
+}
+:root[data-theme='light'] .ta-spider-detail-fang.fang-panel .fang-panel__corner {
+  filter: drop-shadow(0 0 4px rgba(79, 70, 229, 0.2));
+}
+
+/*
+ * Dashboard (grid): colmillos más pequeños y más pegados a la tarjeta — el 22% global
+ * dejaba los PNG muy lejos en columnas anchas/listas largas.
+ */
+.ta-tarantula-fang-card.fang-panel .fang-panel__corner {
+  width: clamp(22px, 11%, 48px);
+}
 .ta-tarantula-fang-card.fang-panel .fang-panel__inner {
-  padding: clamp(1rem, 5.2vw, 1.85rem);
+  padding: clamp(0.42rem, 1.85vw, 0.72rem);
+}
+.ta-tarantula-fang-card.fang-panel .fang-panel__corner {
+  filter: drop-shadow(0 0 5px rgba(115, 70, 248, 0.35));
+}
+
+/* Chip ref + overlay de texto: un poco más adentro para no chocar con el arte de esquina */
+.ta-tarantula-fang-card .ta-premium-ref-chip--in-fang-card {
+  margin: 0.65rem 0 0 0.6rem;
+}
+.ta-tarantula-fang-card .ta-premium-card-meta {
+  padding-left: 0.95rem;
+  padding-right: 0.95rem;
+  padding-bottom: 1rem;
+}
+.ta-tarantula-fang-card .ta-tarantula-card-brand-mark {
+  margin-right: 0.2rem;
+  margin-bottom: 0.15rem;
+}
+
+/* Nombre y especie: varias líneas (antes text-truncate en una sola línea) */
+.ta-premium-tarantula-card .ta-premium-card-text-wrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.28;
+}
+/* Tope suave solo en grids muy densos — suficiente para nombres largos en móvil */
+.ta-premium-tarantula-card .ta-premium-common-name.ta-premium-card-text-wrap {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+.ta-premium-tarantula-card .ta-premium-species.ta-premium-card-text-wrap {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 
 .ta-chitin-species-detail .ta-chitin-frame__content {
@@ -3702,4 +3768,189 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-coming-soon__pass-input:focus {
   border-color: var(--ta-border-gold);
   box-shadow: 0 0 0 0.15rem rgba(232, 197, 71, 0.2);
+}
+
+/* ─── Insights: charts + feeding check-in (avoid Bootstrap default white table) ─ */
+
+.ta-insights-stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.ta-insights-stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  opacity: 0.85;
+}
+.ta-insights-stat-card--spiders::before {
+  background: linear-gradient(180deg, #c4b5fd, #7c3aed);
+}
+.ta-insights-stat-card--feeds::before {
+  background: linear-gradient(180deg, #4ade80, #15803d);
+}
+.ta-insights-stat-card--molts::before {
+  background: linear-gradient(180deg, #fb923c, #c2410c);
+}
+.ta-insights-stat-card--totals::before {
+  background: linear-gradient(180deg, #38bdf8, #a78bfa);
+}
+
+.ta-insights-chart-card {
+  position: relative;
+}
+.ta-insights-chart-card--feeds {
+  box-shadow:
+    inset 0 1px 0 rgba(74, 222, 128, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+.ta-insights-chart-card--molts {
+  box-shadow:
+    inset 0 1px 0 rgba(196, 181, 253, 0.08),
+    0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+.ta-insights-chart-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+}
+
+.ta-insights-bar-pillar {
+  transition: filter 0.15s ease;
+}
+.ta-insights-bars .ta-insights-bar-pillar:hover {
+  filter: brightness(1.12);
+}
+
+.ta-insights-attention-card {
+  border-color: rgba(232, 197, 71, 0.22) !important;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(12, 14, 28, 0.96) 0%,
+      rgba(8, 10, 18, 0.94) 42%,
+      rgba(10, 22, 28, 0.52) 100%
+    ) !important;
+}
+.ta-insights-attention-card__head {
+  border-bottom: 1px solid rgba(232, 197, 71, 0.18);
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.06),
+    transparent 55%,
+    rgba(45, 212, 191, 0.05)
+  );
+}
+
+.ta-insights-attention-table-wrap {
+  position: relative;
+  padding: 0;
+}
+.ta-insights-attention-table-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 10% 6% 10% auto;
+  width: min(28%, 7rem);
+  opacity: 0.06;
+  pointer-events: none;
+  background-image: var(--ta-url-spider-silhouette, url('/card-spider-silhouette.png'));
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center right;
+}
+
+.ta-insights-attention-table {
+  --bs-table-bg: transparent;
+  --bs-table-accent-bg: transparent;
+  --bs-table-hover-bg: rgba(139, 92, 246, 0.06);
+  color: var(--ta-text) !important;
+}
+.ta-insights-attention-table > :not(caption) > * > * {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  color: inherit !important;
+}
+
+.ta-insights-attention-table thead th {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ta-heading-gold) !important;
+  border-bottom: 1px solid rgba(232, 197, 71, 0.28) !important;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.ta-insights-attention-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.028) !important;
+}
+.ta-insights-attention-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.07) !important;
+}
+
+.ta-insights-attention-row--urgent {
+  box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.65);
+}
+
+.ta-insights-spider-link {
+  color: #a5f3fc !important;
+}
+.ta-insights-spider-link:hover {
+  color: #c4b5fd !important;
+  text-decoration: underline !important;
+}
+
+.ta-insights-attention-muted {
+  color: var(--ta-text-muted) !important;
+}
+
+.ta-insights-badge-never {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fef3c7;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.35), rgba(239, 68, 68, 0.25));
+  border: 1px solid rgba(251, 191, 36, 0.42);
+}
+
+.ta-insights-days-urgent {
+  color: #fde68a !important;
+}
+.ta-insights-days-normal {
+  color: #93c5fd !important;
+}
+
+:root[data-theme='light'] .ta-insights-attention-card {
+  background: linear-gradient(165deg, #ffffff 0%, #f1f5f9 50%, rgba(241, 245, 249, 0.98) 100%) !important;
+  border-color: rgba(124, 58, 237, 0.2) !important;
+}
+:root[data-theme='light'] .ta-insights-attention-card__head {
+  border-bottom-color: rgba(124, 58, 237, 0.15);
+  background: linear-gradient(90deg, rgba(232, 121, 249, 0.06), transparent 60%, rgba(45, 212, 191, 0.05));
+}
+:root[data-theme='light'] .ta-insights-attention-table thead th {
+  color: var(--ta-heading-gold) !important;
+  border-bottom-color: rgba(180, 83, 9, 0.2) !important;
+}
+:root[data-theme='light'] .ta-insights-attention-table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+:root[data-theme='light'] .ta-insights-spider-link {
+  color: #0d9488 !important;
+}
+:root[data-theme='light'] .ta-insights-spider-link:hover {
+  color: #6d28d9 !important;
+}
+:root[data-theme='light'] .ta-insights-days-normal {
+  color: #1d4ed8 !important;
+}
+:root[data-theme='light'] .ta-insights-days-urgent {
+  color: #b45309 !important;
 }

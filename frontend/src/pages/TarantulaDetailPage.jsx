@@ -306,7 +306,7 @@ export default function TarantulaDetailPage() {
 
         {detailTab === 'profile' && (
           <div className="mx-auto" style={{ maxWidth: 520 }}>
-            <FangPanel className="ta-spider-detail-fang">
+            <FangPanel className="ta-spider-detail-fang" cornerOffset={10}>
               <div className="card border-0 shadow-sm ta-premium-pane ta-tarantula-detail-main-card">
                 <div
                   className="d-flex align-items-center justify-content-center overflow-hidden rounded-top position-relative ta-tarantula-detail-photo-stage"
@@ -516,7 +516,7 @@ export default function TarantulaDetailPage() {
               </ChitinCardFrame>
             )}
             {terrariumRec && (
-              <FangPanel className="mb-4 ta-spider-detail-fang">
+              <FangPanel className="mb-4 ta-spider-detail-fang" cornerOffset={10}>
                 <div className="card border-0 shadow-sm ta-premium-pane">
                   <div className="card-body">
                     <div className="ta-section-header mb-3">

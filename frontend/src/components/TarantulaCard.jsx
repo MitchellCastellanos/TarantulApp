@@ -21,7 +21,7 @@ export default function TarantulaCard({ tarantula }) {
 
   return (
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
-      <FangPanel className="h-100 ta-tarantula-fang-card">
+      <FangPanel className="h-100 ta-tarantula-fang-card" cornerOffset={10}>
       <div className="card h-100 shadow-sm border-0 tarantula-card ta-premium-tarantula-card">
         <div className="card-img-top d-flex align-items-center justify-content-center overflow-hidden position-relative ta-premium-photo-stage">
           <img
@@ -36,7 +36,7 @@ export default function TarantulaCard({ tarantula }) {
           <div className="ta-premium-photo-overlay" />
           {!profilePhoto && species?.referencePhotoUrl?.trim() && (
             <span
-              className="position-absolute top-0 start-0 m-2 ta-premium-ref-chip"
+              className="position-absolute top-0 start-0 ta-premium-ref-chip ta-premium-ref-chip--in-fang-card"
               title={t('species.refPhoto')}
             >
               <span aria-hidden="true">📷</span>
@@ -44,13 +44,13 @@ export default function TarantulaCard({ tarantula }) {
           )}
           <div className="ta-premium-card-meta">
             <div className="d-flex justify-content-between align-items-start gap-2">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-grow-1">
                 {species && (
-                  <p className="mb-0 ta-premium-species text-truncate">
+                  <p className="mb-0 ta-premium-species ta-premium-card-text-wrap">
                     {species.scientificName}
                   </p>
                 )}
-                <h6 className="card-title mb-0 text-truncate ta-premium-common-name">
+                <h6 className="card-title mb-0 ta-premium-common-name ta-premium-card-text-wrap">
                   {name}
                 </h6>
               </div>
