@@ -68,8 +68,32 @@ public class EmailService {
             mailSender.send(msg);
             log.info("Password reset email sent to {}", toEmail);
         } catch (Exception e) {
-            log.error("Failed to send reset email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send reset email to {}: {}", toEmail, e.getMessage(), e);
             throw new RuntimeException("No se pudo enviar el correo de reseteo");
+        }
+    }
+
+    /**
+     * Admin-only SMTP connectivity check: sends a short plain-text message.
+     */
+    public void sendSmtpTestEmail(String toEmail) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("TarantulApp — SMTP test");
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(
+                    "If you received this message, outbound SMTP from the TarantulApp backend is working.\n\n"
+                            + "— TarantulApp");
+            mailSender.send(msg);
+            log.info("SMTP test email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("SMTP test failed for {}: {}", toEmail, e.getMessage(), e);
+            throw new RuntimeException("SMTP test failed: " + e.getMessage());
         }
     }
 

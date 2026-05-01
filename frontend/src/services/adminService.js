@@ -32,6 +32,8 @@ const adminService = {
     api.post(`/admin/users/${id}/password`, payload).then((r) => r.data),
   provisionTester: (payload) =>
     api.post('/admin/beta-testers/provision', payload).then((r) => r.data),
+  mailConfigStatus: () => api.get('/admin/mail/config-status').then((r) => r.data),
+  mailTestSend: (to) => api.post('/admin/mail/test-send', { to }).then((r) => r.data),
 }
 
 export default adminService

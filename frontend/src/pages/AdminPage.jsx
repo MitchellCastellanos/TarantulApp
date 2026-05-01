@@ -62,6 +62,9 @@ export default function AdminPage() {
   const [resetPassLoading, setResetPassLoading] = useState(false)
   const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: false })
   const [provisionLoading, setProvisionLoading] = useState(false)
+  const [mailStatus, setMailStatus] = useState(null)
+  const [mailTestTo, setMailTestTo] = useState('')
+  const [mailTestLoading, setMailTestLoading] = useState(false)
   const [betaEmailTemplates, setBetaEmailTemplates] = useState(() => loadBetaEmailTemplates())
   const [testerTplPref, setTesterTplPref] = useState(() => loadTesterTplPrefs())
   const [tplEditor, setTplEditor] = useState(null)
@@ -242,8 +245,9 @@ export default function AdminPage() {
       adminService.betaTesters(),
       adminService.betaApplications('pending'),
       adminService.betaStats(),
+      adminService.mailConfigStatus().catch(() => null),
     ])
-      .then(([s, users, openReports, vendors, leads, bugs, testers, applications, stats]) => {
+      .then(([s, users, openReports, vendors, leads, bugs, testers, applications, stats, mailCfg]) => {
         if (cancelled) return
         setSummary(s)
         setRecentUsers(Array.isArray(users) ? users : [])
@@ -254,6 +258,7 @@ export default function AdminPage() {
         setBetaTesters(Array.isArray(testers) ? testers : [])
         setBetaApplications(Array.isArray(applications) ? applications : [])
         setBetaStats(stats && typeof stats === 'object' ? stats : null)
+        setMailStatus(mailCfg && typeof mailCfg === 'object' ? mailCfg : null)
       })
       .catch((err) => {
         if (cancelled) return
@@ -447,6 +452,64 @@ export default function AdminPage() {
         {error && <div className="alert alert-danger">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
+
+        {mailStatus && (
+          <div className={`card p-3 mb-3 ${mailStatus.usernameConfigured ? 'border-secondary' : 'border-warning'}`}>
+            <h2 className="h6 mb-2">{t('admin.mailSmtpCardTitle')}</h2>
+            <p className="small text-muted mb-2">{t('admin.mailSmtpCardBlurb')}</p>
+            <ul className="small mb-2">
+              <li>
+                <strong>SMTP host:</strong> {mailStatus.host} · <strong>port:</strong> {mailStatus.port}
+              </li>
+              <li>
+                <strong>{t('admin.mailFromLabel')}:</strong> {mailStatus.fromAddress}
+              </li>
+              <li>
+                <strong>{t('admin.mailUserConfigured')}:</strong>{' '}
+                {mailStatus.usernameConfigured ? t('share.yes') : t('share.no')}
+              </li>
+            </ul>
+            {!mailStatus.usernameConfigured ? (
+              <div className="alert alert-warning small py-2 mb-2">{t('admin.mailSmtpMissingCreds')}</div>
+            ) : null}
+            <div className="d-flex flex-wrap gap-2 align-items-end">
+              <div className="flex-grow-1" style={{ minWidth: 220 }}>
+                <label className="form-label small mb-0" htmlFor="mail-test-to">
+                  {t('admin.mailTestToLabel')}
+                </label>
+                <input
+                  id="mail-test-to"
+                  type="email"
+                  className="form-control form-control-sm"
+                  value={mailTestTo}
+                  onChange={(e) => setMailTestTo(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                disabled={mailTestLoading || !mailTestTo.trim()}
+                onClick={async () => {
+                  setMailTestLoading(true)
+                  setError('')
+                  setSuccess('')
+                  try {
+                    await adminService.mailTestSend(mailTestTo.trim())
+                    setSuccess(t('admin.mailTestSent'))
+                  } catch {
+                    setError(t('admin.mailTestFailed'))
+                  } finally {
+                    setMailTestLoading(false)
+                  }
+                }}
+              >
+                {mailTestLoading ? t('common.loading') : t('admin.mailTestSend')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {summary && (
           <div className="row g-3 mb-4">

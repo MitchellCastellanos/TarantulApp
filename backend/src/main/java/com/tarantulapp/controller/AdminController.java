@@ -10,12 +10,15 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
+import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,6 +52,19 @@ public class AdminController {
     private final BugReportRepository bugReportRepository;
     private final BetaApplicationRepository betaApplicationRepository;
     private final AuthService authService;
+    private final EmailService emailService;
+
+    @Value("${spring.mail.host:}")
+    private String springMailHost;
+
+    @Value("${spring.mail.port:0}")
+    private int springMailPort;
+
+    @Value("${spring.mail.username:}")
+    private String springMailUsername;
+
+    @Value("${app.mail.from:}")
+    private String appMailFrom;
 
     public AdminController(AdminAccessService adminAccessService,
                            UserRepository userRepository,
@@ -59,7 +76,8 @@ public class AdminController {
                            TaxonomyDiscoveryService taxonomyDiscoveryService,
                            BugReportRepository bugReportRepository,
                            BetaApplicationRepository betaApplicationRepository,
-                           AuthService authService) {
+                           AuthService authService,
+                           EmailService emailService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -71,6 +89,7 @@ public class AdminController {
         this.bugReportRepository = bugReportRepository;
         this.betaApplicationRepository = betaApplicationRepository;
         this.authService = authService;
+        this.emailService = emailService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -82,6 +101,29 @@ public class AdminController {
     record ReviewBetaApplicationRequest(String action, UUID userId, String note, Boolean generatePassword) {}
     record AdminSetUserPasswordRequest(String newPassword, Boolean generatePassword) {}
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
+
+    record MailTestSendRequest(@NotBlank @Email String to) {}
+
+    @GetMapping("/mail/config-status")
+    public ResponseEntity<Map<String, Object>> mailConfigStatus() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("host", springMailHost == null || springMailHost.isBlank() ? "(not set)" : springMailHost);
+        m.put("port", springMailPort);
+        m.put("usernameConfigured", springMailUsername != null && !springMailUsername.isBlank());
+        m.put("fromAddress", appMailFrom == null || appMailFrom.isBlank() ? "(not set)" : appMailFrom);
+        return ResponseEntity.ok(m);
+    }
+
+    @PostMapping("/mail/test-send")
+    public ResponseEntity<Map<String, Object>> mailTestSend(@Valid @RequestBody MailTestSendRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        emailService.sendSmtpTestEmail(req.to());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("status", "sent");
+        out.put("to", req.to());
+        return ResponseEntity.ok(out);
+    }
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> summary() {
