@@ -125,19 +125,18 @@ export default function ComingSoonPage({ onUnlock }) {
         </div>
       </main>
 
-      {/* Hidden hit target: bottom-right corner — opens tester unlock modal */}
       <button
         type="button"
-        className="ta-coming-soon__tester-hit"
+        className="ta-coming-soon__beta-login"
         onClick={() => {
           setTesterOpen(true)
           setUnlockError(false)
           setEmail('')
           setPassword('')
         }}
-        aria-label={t('comingSoon.testerHitAria')}
-        title=""
-      />
+      >
+        {t('comingSoon.betaTesterLogin')}
+      </button>
 
       {testerOpen ? (
         <div

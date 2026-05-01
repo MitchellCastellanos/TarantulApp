@@ -3656,26 +3656,35 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   color: var(--ta-gold-light) !important;
 }
 
-.ta-coming-soon__tester-hit {
+.ta-coming-soon__beta-login {
   position: fixed;
-  bottom: 8px;
-  right: 8px;
-  width: 56px;
-  height: 56px;
-  padding: 0;
-  margin: 0;
-  border: 1px dashed rgba(232, 197, 71, 0.2);
-  border-radius: 999px;
-  cursor: pointer;
-  opacity: 0.08;
-  background: rgba(232, 197, 71, 0.05);
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
   z-index: 50;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.38);
+  text-decoration: underline;
+  text-underline-offset: 0.17em;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
 }
 
-.ta-coming-soon__tester-hit:focus-visible {
-  opacity: 1;
+.ta-coming-soon__beta-login:hover {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.ta-coming-soon__beta-login:focus-visible {
   outline: 2px solid var(--ta-gold);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .ta-coming-soon__modal {
