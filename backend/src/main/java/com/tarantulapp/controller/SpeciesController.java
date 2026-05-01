@@ -51,6 +51,7 @@ public class SpeciesController {
             @RequestParam(required = false) String experienceLevel,
             @RequestParam(required = false) String habitatType,
             @RequestParam(required = false) String growthRate,
+            @RequestParam(required = false) String hobbyWorld,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) BigDecimal sizeMin,
             @RequestParam(required = false) BigDecimal sizeMax,
@@ -70,7 +71,7 @@ public class SpeciesController {
         };
         PageRequest pr = PageRequest.of(p, s, Sort.by(dir, sortField));
         return ResponseEntity.ok(discoverCatalogService.findCatalogPage(
-                experienceLevel, habitatType, growthRate, q, sizeMin, sizeMax, pr));
+                experienceLevel, habitatType, growthRate, hobbyWorld, q, sizeMin, sizeMax, pr));
     }
 
     @GetMapping("/discover-search")
@@ -131,6 +132,7 @@ public class SpeciesController {
         boolean usePublic = guest || Boolean.TRUE.equals(publicCatalog);
         if (usePublic) {
             var page = discoverCatalogService.findCatalogPage(
+                    null,
                     null,
                     null,
                     null,

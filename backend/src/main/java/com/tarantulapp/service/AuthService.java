@@ -17,6 +17,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
@@ -149,7 +150,7 @@ public class AuthService {
             tokenInfo = restClient.get()
                     .uri("https://oauth2.googleapis.com/tokeninfo?id_token={idToken}", idToken)
                     .retrieve()
-                    .body(Map.class);
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
         } catch (RestClientException e) {
             throw new IllegalArgumentException("Google token inválido");
         }

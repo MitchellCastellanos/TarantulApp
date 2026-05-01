@@ -1,0 +1,22 @@
+# Postgres solo para desarrollo local (probar cambios con perfil `local`).
+# Desde carpeta backend/:
+#   docker compose -f docker-compose.local.yml up -d
+# Desde raiz del repo (tarantulapp/):
+#   docker compose -f backend/docker-compose.local.yml up -d
+# POSTGRES_PASSWORD: misma clave que spring.datasource.password en application-local.properties.
+# Opcion A: edita la linea de abajo y replica en application-local.properties.
+# Opcion B (PowerShell): $env:POSTGRES_PASSWORD='tu_clave'; docker compose -f docker-compose.local.yml up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: tarantulapp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d tarantulapp']
+      interval: 3s
+      timeout: 3s
+      retries: 10

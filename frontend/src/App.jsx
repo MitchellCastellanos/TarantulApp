@@ -21,6 +21,7 @@ import DiscoverPage from './pages/DiscoverPage'
 import DiscoverTaxonDetailPage from './pages/DiscoverTaxonDetailPage'
 import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
 import DiscoverComparePage from './pages/DiscoverComparePage'
+import DiscoverCatalogBrowsePage from './pages/DiscoverCatalogBrowsePage'
 import QrToolPage from './pages/QrToolPage'
 import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage'
@@ -39,6 +40,7 @@ import BetaApplyPage from './pages/BetaApplyPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
 import ComingSoonPage from './pages/ComingSoonPage'
+import InsightsPage from './pages/InsightsPage'
 import BugReportFAB from './components/BugReportFAB'
 import {
   COMING_SOON_BYPASS_STORAGE_KEY,
@@ -149,6 +151,7 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/discover" element={<DiscoverPage />} />
+      <Route path="/discover/catalog" element={<DiscoverCatalogBrowsePage />} />
       <Route path="/discover/taxon/:gbifKey" element={<DiscoverTaxonDetailPage />} />
       <Route path="/discover/species/:id" element={<DiscoverSpeciesDetailPage />} />
       <Route path="/discover/compare" element={<DiscoverComparePage />} />
@@ -176,6 +179,7 @@ function AppRoutes() {
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
+      <Route path="/insights" element={<PrivateRoute><InsightsPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/community" element={<SocialHubPage />} />

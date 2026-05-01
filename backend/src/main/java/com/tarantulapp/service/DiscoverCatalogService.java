@@ -38,11 +38,12 @@ public class DiscoverCatalogService {
             String experienceLevel,
             String habitatType,
             String growthRate,
+            String hobbyWorld,
             String q,
             BigDecimal sizeMin,
             BigDecimal sizeMax,
             Pageable pageable) {
-        Specification<Species> spec = buildSpec(experienceLevel, habitatType, growthRate, q, sizeMin, sizeMax);
+        Specification<Species> spec = buildSpec(experienceLevel, habitatType, growthRate, hobbyWorld, q, sizeMin, sizeMax);
         return speciesRepository.findAll(spec, pageable).map(SpeciesDTO::from);
     }
 
@@ -132,6 +133,7 @@ public class DiscoverCatalogService {
             String experienceLevel,
             String habitatType,
             String growthRate,
+            String hobbyWorld,
             String q,
             BigDecimal sizeMin,
             BigDecimal sizeMax) {
@@ -156,6 +158,10 @@ public class DiscoverCatalogService {
         if (growthRate != null && !growthRate.isBlank()) {
             String v = growthRate.trim();
             base = base.and((root, query, cb) -> cb.equal(cb.lower(root.get("growthRate")), v.toLowerCase(Locale.ROOT)));
+        }
+        if (hobbyWorld != null && !hobbyWorld.isBlank()) {
+            String v = hobbyWorld.trim();
+            base = base.and((root, query, cb) -> cb.equal(cb.lower(root.get("hobbyWorld")), v.toLowerCase(Locale.ROOT)));
         }
         if (q != null && !q.trim().isEmpty()) {
             String needle = "%" + q.trim().toLowerCase(Locale.ROOT) + "%";

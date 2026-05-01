@@ -10,6 +10,8 @@ import java.util.Map;
 /**
  * JSON stored in {@code species.narrative_i18n}:
  * {@code { "careNotes"|"temperament"|"substrate": { "es","en","fr": "..." } }}
+ * Optional extended keys (same per-locale shape) may be used by the app UI, e.g.
+ * {@code preMoltSigns}, {@code moltCare}, {@code postMoltCare}, {@code moltRhythm}.
  */
 public final class SpeciesNarrativeJson {
 

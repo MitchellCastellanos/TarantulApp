@@ -98,13 +98,29 @@ public class SecurityConfig {
                                 "/pro",
                                 "/launch",
                                 "/launch_registration",
+                                "/discover",
+                                "/discover/**",
                                 "/descubrir",
                                 "/descubrir/**",
                                 "/herramientas/qr",
+                                "/tools/qr",
                                 "/marketplace",
                                 "/marketplace/**",
+                                "/community",
+                                "/community/**",
+                                "/comunidad",
+                                "/comunidad/**",
                                 "/sex-id/**",
-                                "/t/**"
+                                "/t/**",
+                                "/insights",
+                                "/reminders",
+                                "/account",
+                                "/admin",
+                                "/onboarding/handle",
+                                "/onboarding/**",
+                                "/beta/apply",
+                                "/u/**",
+                                "/tarantulas/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
                         // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.

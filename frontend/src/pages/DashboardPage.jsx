@@ -234,6 +234,9 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+            <Link to="/insights" className="btn btn-outline-secondary btn-sm" title={t('nav.insightsTitle')}>
+              {t('nav.insights')}
+            </Link>
             {hasProFeatures ? (
               <>
                 <div className="position-relative">

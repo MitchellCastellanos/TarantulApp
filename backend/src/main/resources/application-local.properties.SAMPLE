@@ -3,29 +3,25 @@
 # (gitignored; no subas contraseñas.)
 #
 # Spring lo importa solo (ver application.properties → spring.config.import).
-# En local NO hace falta database.local.env ni scripts: solo este archivo.
 #
-# ═══════════════════════════════════════════════════════════════════════════
-# A) Postgres en Docker (recomendado) — la contraseña la inventas en docker run
-#    (-e POSTGRES_PASSWORD=...) y repites la MISMA abajo en spring.datasource.password.
-# B) Supabase — comenta el bloque A, descomenta el B; datos del panel (Direct).
-# ═══════════════════════════════════════════════════════════════════════════
+# ─── BD local (Docker) ─────────────────────────────────────────────────────
+# Levantar Postgres (elige UNA ruta segun donde estes en PowerShell):
+#   Si tu cwd es ...\tarantulapp\backend   →  docker compose -f docker-compose.local.yml up -d
+#   Si tu cwd es ...\tarantulapp (raiz)   →  docker compose -f backend/docker-compose.local.yml up -d
+# NO uses "backend\..." dos veces (error: backend\backend\... no existe).
+# La contrasena de abajo = la misma que POSTGRES_PASSWORD del contenedor (compose usa ${POSTGRES_PASSWORD:-postgres}).
+# "Connection refused: localhost:5432" = Postgres no esta escuchando (contenedor apagado o puerto ocupado).
+#
+# ─── Supabase u otra remota (opcional) ─────────────────────────────────────
+#   Comenta las 3 lineas de datasource de abajo y pon la URL/credenciales remotas,
+#   o exporta DB_URL, DB_USERNAME, DB_PASSWORD y SPRING_PROFILES_ACTIVE=local.
 
 spring.profiles.active=local
 app.dev-seed-user=true
 
-# ─── A) Docker local — reemplaza TU_PASSWORD_DOCKER por la de POSTGRES_PASSWORD ───
 spring.datasource.url=jdbc:postgresql://localhost:5432/tarantulapp?sslmode=disable&gssEncMode=disable&connectTimeout=20
 spring.datasource.username=postgres
 spring.datasource.password=TU_PASSWORD_DOCKER
-
-# ─── B) Supabase — comenta las 3 lineas de arriba y descomenta estas ───
-# spring.datasource.url=jdbc:postgresql://db.<REFERENCE_ID>.supabase.co:5432/postgres?sslmode=require&gssEncMode=disable&connectTimeout=20
-# spring.datasource.username=postgres
-# spring.datasource.password=<Database password del panel>
-
-# Pool: por defecto application.properties ya usa max 2 (Flyway necesita >1 conexion).
-# Transaction pooler :6543: añade a la URL &prepareThreshold=0 si aplica.
 
 # Usuario seed (LocalDevUserSeed): dev@tarantulapp.local / LocalDev123!
 

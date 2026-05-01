@@ -40,7 +40,7 @@ export default function BrandLogoMark({ size = 40, className = '', showIntro = t
         className="ta-brand-logo-img"
         alt=""
         decoding="async"
-        fetchPriority="high"
+        fetchpriority="high"
         style={{ width: px, height: px }}
       />
     </span>

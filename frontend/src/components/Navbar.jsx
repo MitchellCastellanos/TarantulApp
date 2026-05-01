@@ -40,6 +40,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
     path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print')
   const navMarketplace = path.startsWith('/marketplace')
   const navCollection = Boolean(token) && path === '/'
+  const navInsights = Boolean(token) && path.startsWith('/insights')
   const navCommunity = path.startsWith('/comunidad')
   const navAdmin = path.startsWith('/admin')
   const logoHome = !token ? '/login' : '/'
@@ -85,6 +86,16 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             routeMatchers: ['/'],
             exact: true,
           },
+          ...(token
+            ? [
+                {
+                  to: '/insights',
+                  label: t('nav.insights'),
+                  title: t('nav.insightsTitle'),
+                  routeMatchers: ['/insights'],
+                },
+              ]
+            : []),
           {
             to: '/herramientas/qr',
             label: t('nav.qrTool'),
@@ -460,6 +471,15 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
           >
             {token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta')}
           </Link>
+          {token && (
+            <Link
+              to="/insights"
+              className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navInsights ? 'ta-navbar-primary-link--active' : ''}`}
+              title={t('nav.insightsTitle')}
+            >
+              {t('nav.insights')}
+            </Link>
+          )}
           <Link
             to="/comunidad"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCommunity ? 'ta-navbar-primary-link--active' : ''}`}

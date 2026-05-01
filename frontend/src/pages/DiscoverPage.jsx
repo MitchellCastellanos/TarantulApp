@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
 import BrandLogoMark from '../components/BrandLogoMark'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import DiscoverHubSections from '../components/DiscoverHubSections'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import SpeciesProfileCard from '../components/SpeciesProfileCard'
@@ -558,9 +559,9 @@ export default function DiscoverPage() {
         </h1>
         <p className="small mb-3" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browseIntro')}</p>
 
-        {/* Buscador primero, hub marketplace después (móvil y desktop). */}
+        {/* Móvil: buscador → Popular/Explorar → marketplace. Desktop: fila buscador|marketplace, luego hub a ancho completo. */}
         <div className="row g-3 mb-4 align-items-stretch">
-          <div className="col-lg-7 d-flex order-1">
+          <div className="col-12 col-lg-7 d-flex order-1 order-lg-1">
         <section className="mb-0 flex-grow-1 w-100 card border-0 shadow-sm p-4 ta-species-dropdown-card h-100 ta-premium-pane">
           <h2 className="h6 text-uppercase letter-spacing mb-3 ta-accent-heading">
             {t('discover.sectionSearch')}
@@ -708,7 +709,10 @@ export default function DiscoverPage() {
             )}
         </section>
           </div>
-          <div className="col-lg-5 d-flex order-2">
+          <div className="col-12 order-2 order-lg-3">
+            <DiscoverHubSections />
+          </div>
+          <div className="col-12 col-lg-5 d-flex order-3 order-lg-2">
             <section className="ta-discover-marketplace-hub ta-premium-pane w-100 rounded-3 border p-4 d-flex flex-column">
               <div className="d-flex align-items-start gap-2 mb-2">
                 <OfficialPartnerShield idPrefix="discover-hub" width={36} height={40} />

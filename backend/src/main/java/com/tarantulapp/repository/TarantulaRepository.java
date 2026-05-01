@@ -16,6 +16,7 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     /** Orden estable: las 6 primeras son las del cupo Free cuando no hay Pro/prueba. */
     List<Tarantula> findByUserIdOrderByCreatedAtAscIdAsc(UUID userId);
     long countByUserId(UUID userId);
+    long countByUserIdAndDeceasedAtIsNull(UUID userId);
     @Query("select count(distinct t.species.id) from Tarantula t where t.userId = :userId and t.species is not null")
     long countDistinctSpeciesByUserId(UUID userId);
     Optional<Tarantula> findByShortId(String shortId);
@@ -23,4 +24,16 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
 
     @Query("select distinct t from Tarantula t left join fetch t.species where t.id in :ids")
     List<Tarantula> findAllWithSpeciesByIdIn(@Param("ids") List<UUID> ids);
+
+    @Query(value = """
+            select t.id, t.name, t.short_id, max(f.fed_at) as last_fed
+            from tarantulas t
+            left join feeding_logs f on f.tarantula_id = t.id
+               and (f.accepted is null or f.accepted = true)
+            where t.user_id = cast(:userId as uuid) and t.deceased_at is null
+            group by t.id, t.name, t.short_id
+            order by last_fed nulls first, last_fed asc
+            limit 25
+            """, nativeQuery = true)
+    List<Object[]> findFeedingAttentionRows(@Param("userId") UUID userId);
 }

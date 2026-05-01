@@ -4,6 +4,7 @@ import { getSpeciesCatalogOverride } from '../data/speciesCatalogTranslations'
 import { toSpeciesSlug } from '../utils/speciesSlug'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
 import SpeciesReferenceImage from './SpeciesReferenceImage'
+import SpeciesCarePanels from './SpeciesCarePanels'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const LEVEL_COLOR = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
@@ -209,6 +210,8 @@ export default function SpeciesProfileCard({
           )}
         </div>
       </div>
+
+      <SpeciesCarePanels species={species} t={t} i18nLanguage={lang} />
 
       {careNotesText && (
         <div className="mt-2">

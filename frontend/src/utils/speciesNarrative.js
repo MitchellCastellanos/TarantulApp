@@ -1,6 +1,6 @@
 /**
  * @param {Record<string, Record<string, string>>|null|undefined} narrative from API (narrativeI18n)
- * @param {'temperament'|'substrate'|'careNotes'} field
+ * @param {string} field top-level key (e.g. temperament, substrate, careNotes, or optional premoltSigns, moltCare, …)
  * @param {string} i18nLanguage e.g. 'en', 'fr'
  */
 export function pickSpeciesNarrativeField(narrative, field, i18nLanguage) {

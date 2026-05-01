@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,15 +59,35 @@ public class ReferralService {
         ensureReferralCodeForUser(userId);
         ReferralCode code = referralCodeRepository.findById(userId).orElseThrow();
         long invited = referralRedemptionRepository.countByReferrerUserId(userId);
+        User self = userRepository.findById(userId).orElse(null);
+        int mask = self != null && self.getReferralMilestoneMask() != null ? self.getReferralMilestoneMask() : 0;
+        boolean founderKeeper = self != null && Boolean.TRUE.equals(self.getFounderKeeper());
+
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("code", code.getCode());
         out.put("invitedCount", invited);
         out.put("shareQuery", "?ref=" + code.getCode());
         out.put("refereeBonusDays", refereeBonusDays);
         out.put("referrerBonusDays", referrerBonusDays);
-        out.put("founderKeeper", userRepository.findById(userId)
-                .map(u -> Boolean.TRUE.equals(u.getFounderKeeper()))
-                .orElse(false));
+        out.put("founderKeeper", founderKeeper);
+        out.put("referralMilestoneMask", mask);
+
+        List<Map<String, Object>> milestones = new ArrayList<>();
+        Integer nextThreshold = null;
+        for (int i = 0; i < MILESTONE_COUNTS.length; i++) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("threshold", MILESTONE_COUNTS[i]);
+            row.put("extraDays", MILESTONE_EXTRA_DAYS[i]);
+            row.put("claimed", (mask & MILESTONE_BITS[i]) != 0);
+            row.put("reached", invited >= MILESTONE_COUNTS[i]);
+            milestones.add(row);
+            if (nextThreshold == null && invited < MILESTONE_COUNTS[i]) {
+                nextThreshold = MILESTONE_COUNTS[i];
+            }
+        }
+        out.put("milestones", milestones);
+        out.put("nextThreshold", nextThreshold);
+
         return out;
     }
 

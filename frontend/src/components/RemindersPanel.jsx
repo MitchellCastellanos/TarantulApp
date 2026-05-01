@@ -10,6 +10,7 @@ import {
   dismissAutomaticReminder,
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
+import { remindersPrefillUrl } from '../utils/reminderDeepLink'
 
 const TYPE_ICONS = {
   feeding: '🍽️',
@@ -138,6 +139,7 @@ export default function RemindersPanel() {
             const { label, urgent } = formatDue(r.dueDate, t)
             const isAutomatic = r.source === 'automatic'
             const showDoneBtn = isAutomatic || (r.id && !isReminderLocked(r))
+            const showQuickAdd = Boolean(r.tarantulaId) && !isReminderLocked(r)
             return (
               <div
                 key={r.id || `${r.type}-${r.tarantulaId}-${r.dueDate}`}
@@ -182,16 +184,30 @@ export default function RemindersPanel() {
                     {r.tarantulaName && ` · ${r.tarantulaName}`}
                   </div>
                 </div>
-                {showDoneBtn && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary py-0 px-2 flex-shrink-0 align-self-start"
-                    style={{ fontSize: '0.75rem' }}
-                    onClick={() => handleDone(r)}
-                    title={t('reminders.markDone')}
-                  >
-                    ✓
-                  </button>
+                {(showDoneBtn || showQuickAdd) && (
+                  <div className="d-flex flex-column gap-1 flex-shrink-0 align-self-start">
+                    {showDoneBtn && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary py-0 px-2"
+                        style={{ fontSize: '0.75rem' }}
+                        onClick={() => handleDone(r)}
+                        title={t('reminders.markDone')}
+                      >
+                        ✓
+                      </button>
+                    )}
+                    {showQuickAdd && (
+                      <Link
+                        to={remindersPrefillUrl(r.tarantulaId, r.type, { openForm: true })}
+                        className="btn btn-sm btn-outline-dark py-0 px-2 text-decoration-none"
+                        style={{ fontSize: '0.75rem', lineHeight: 1.2 }}
+                        title={t('reminders.panelQuickAddTitle')}
+                      >
+                        ＋
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
             )

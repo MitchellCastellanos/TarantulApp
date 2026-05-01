@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import reminderService from '../services/reminderService'
@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatDateTimeInUserZone } from '../utils/dateFormat'
 import { datetimeLocalToOffsetISO } from '../utils/datetimeSubmit'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import TaSegmentedControl from '../components/TaSegmentedControl'
 import {
   readDismissedAutoKeys,
   dismissAutomaticReminder,
@@ -22,6 +23,12 @@ const TYPE_OPTS = [
   { value: 'custom',   icon: '📌', labelKey: 'reminders.typeCustom' },
 ]
 const TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
+const REMINDER_FORM_TYPES = new Set(TYPE_OPTS.map((o) => o.value))
+
+function normalizeTypeParam(raw) {
+  const v = String(raw || '').trim().toLowerCase()
+  return REMINDER_FORM_TYPES.has(v) ? v : 'feeding'
+}
 
 function isOverdue(iso) {
   return new Date(iso) < new Date()
@@ -29,12 +36,16 @@ function isOverdue(iso) {
 
 export default function RemindersPage() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const [reminders, setReminders] = useState([])
   const [form, setForm] = useState({ type: 'feeding', dueDate: '', message: '', tarantulaId: '' })
   const [showForm, setShowForm] = useState(false)
+  const [prefillTip, setPrefillTip] = useState(null) // { message: string, variant: 'info'|'warning' }
   const [saving, setSaving] = useState(false)
-  const [showDone, setShowDone] = useState(false)
+  /** @type {'all' | 'upcoming' | 'completed'} */
+  const [listTab, setListTab] = useState('upcoming')
   const [tarantulas, setTarantulas] = useState([])
   const [dismissedAuto, setDismissedAuto] = useState(() => readDismissedAutoKeys())
   const hasProFeatures = user?.hasProFeatures === true
@@ -50,6 +61,42 @@ export default function RemindersPage() {
     load()
     tarantulaService.getAll().then(setTarantulas).catch(() => {})
   }, [])
+
+  const qTarantulaId = searchParams.get('tarantulaId')
+  const qOpen = searchParams.get('open') === '1' || searchParams.get('new') === '1'
+  const qType = searchParams.get('type')
+
+  useEffect(() => {
+    if (!qTarantulaId && !qOpen) return
+    const typeNext = normalizeTypeParam(qType)
+    if (qTarantulaId && tarantulas.length === 0) return
+
+    if (qTarantulaId) {
+      const ta = tarantulas.find((x) => String(x.id) === String(qTarantulaId))
+      if (!ta) {
+        setPrefillTip({ message: t('reminders.prefillNotFound'), variant: 'warning' })
+        if (qOpen) setShowForm(true)
+      } else if (ta.locked) {
+        setForm((f) => ({ ...f, type: typeNext, tarantulaId: '', message: '' }))
+        setPrefillTip({ message: t('reminders.prefillLocked', { name: ta.name }), variant: 'warning' })
+        if (qOpen) setShowForm(true)
+      } else {
+        setForm((f) => ({
+          ...f,
+          tarantulaId: String(ta.id),
+          type: typeNext,
+          message: '',
+        }))
+        setPrefillTip({ message: t('reminders.prefillReady', { name: ta.name }), variant: 'info' })
+        if (qOpen) setShowForm(true)
+      }
+    } else if (qOpen) {
+      setForm((f) => ({ ...f, type: typeNext }))
+      setShowForm(true)
+    }
+
+    navigate('/reminders', { replace: true })
+  }, [qTarantulaId, qOpen, qType, tarantulas, navigate, t])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -95,7 +142,23 @@ export default function RemindersPage() {
     [reminders, dismissedAuto],
   )
 
-  const visible = remindersActive.filter(r => showDone ? true : !r.isDone)
+  const listTabOptions = useMemo(
+    () => [
+      { id: 'all', label: t('reminders.tabAll') },
+      { id: 'upcoming', label: t('reminders.tabUpcoming') },
+      { id: 'completed', label: t('reminders.tabCompleted') },
+    ],
+    [t],
+  )
+
+  const visible = useMemo(() => {
+    if (listTab === 'upcoming') return remindersActive.filter((r) => !r.isDone)
+    if (listTab === 'completed') return remindersActive.filter((r) => r.isDone)
+    return remindersActive
+  }, [remindersActive, listTab])
+
+  const emptyMessageKey =
+    listTab === 'completed' ? 'reminders.emptyCompleted' : listTab === 'upcoming' ? 'reminders.emptyUpcoming' : 'reminders.emptyAll'
 
   return (
     <div>
@@ -124,6 +187,22 @@ export default function RemindersPage() {
         <div className={`alert small py-2 ${hasProFeatures ? 'alert-dark' : 'alert-secondary'}`}>
           {hasProFeatures ? t('reminders.proNotice') : t('reminders.freeNotice')}
         </div>
+
+        {prefillTip && (
+          <div
+            className={`alert small py-2 mb-3 d-flex justify-content-between align-items-start gap-2 ${
+              prefillTip.variant === 'warning' ? 'alert-warning' : 'alert-info'
+            }`}
+          >
+            <span className="mb-0">{prefillTip.message}</span>
+            <button
+              type="button"
+              className="btn-close btn-close-sm mt-0"
+              aria-label={t('common.dismissAlert')}
+              onClick={() => setPrefillTip(null)}
+            />
+          </div>
+        )}
 
         {!hasProFeatures && (
           <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between mb-3 p-2 rounded"
@@ -189,22 +268,19 @@ export default function RemindersPage() {
           </div>
         )}
 
-        {/* Toggle done */}
-        <div className="d-flex justify-content-end mb-2">
-          <div className="form-check form-switch">
-            <input className="form-check-input" type="checkbox" id="showDone"
-                   checked={showDone} onChange={e => setShowDone(e.target.checked)} />
-            <label className="form-check-label small" htmlFor="showDone">
-              {t('reminders.showDone')}
-            </label>
-          </div>
-        </div>
+        <TaSegmentedControl
+          className="mb-3"
+          ariaLabel={t('reminders.listTabsAria')}
+          value={listTab}
+          onChange={setListTab}
+          options={listTabOptions}
+        />
 
         {/* List */}
         {visible.length === 0 ? (
           <div className="text-center py-5 text-muted">
             <div className="fs-1 mb-2">🔔</div>
-            <p>{showDone ? t('reminders.emptyAll') : t('reminders.emptyPending')}</p>
+            <p>{t(emptyMessageKey)}</p>
           </div>
         ) : (
           <div className="d-flex flex-column gap-2">
@@ -242,7 +318,7 @@ export default function RemindersPage() {
                       </div>
                       {r.tarantulaName && (
                         <div className="small text-muted">
-                          Para {r.tarantulaName}
+                          {t('reminders.forTarantula', { name: r.tarantulaName })}
                         </div>
                       )}
                     </div>

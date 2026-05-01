@@ -35,6 +35,21 @@ const speciesService = {
   importFromGbif: (key) => api.post(`/gbif/${key}/import`).then(r => r.data),
   searchWsc: (q) => publicApi.get('/wsc/search', { params: { q } }).then((r) => r.data),
   importFromWsc: (name, family) => api.post('/wsc/import', { name, family }).then(r => r.data),
+  /** Página del catálogo público (Spring Data Page JSON). */
+  discoverCatalogPage: (params = {}) =>
+    publicApi
+      .get('public/discover/species', {
+        params: {
+          page: params.page ?? 0,
+          pageSize: params.pageSize ?? 24,
+          ...(params.experienceLevel ? { experienceLevel: params.experienceLevel } : {}),
+          ...(params.habitatType ? { habitatType: params.habitatType } : {}),
+          ...(params.growthRate ? { growthRate: params.growthRate } : {}),
+          ...(params.hobbyWorld ? { hobbyWorld: params.hobbyWorld } : {}),
+          ...(params.q ? { q: params.q } : {}),
+        },
+      })
+      .then((r) => r.data),
 }
 
 export default speciesService

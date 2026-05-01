@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
+import ReferralGamificationCard from '../components/ReferralGamificationCard'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import communityService from '../services/communityService'
 import tarantulaService from '../services/tarantulaService'
@@ -381,6 +382,16 @@ export default function SocialHubPage() {
       setMsg(t('social.copiedInvite'))
     } catch {
       setMsg(inviteMessage)
+    }
+  }
+
+  const copyReferralCode = async () => {
+    if (!referral?.code) return
+    try {
+      await navigator.clipboard.writeText(referral.code)
+      setMsg(t('social.referralCopiedCode'))
+    } catch {
+      setMsg(referral.code)
     }
   }
 
@@ -1245,37 +1256,13 @@ export default function SocialHubPage() {
 
         {tab === TAB_INVITE && referral && (
           <ChitinCardFrame showSilhouettes={false} variant="auth">
-            <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
-              <div className="card-body py-3 px-3 px-md-4 small">
-                <p className="mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('social.inviteLead')}</p>
-                <p className="mb-1">
-                  <span className="text-muted">{t('social.yourCode')}:</span>{' '}
-                  <code className="user-select-all">{referral.code}</code>
-                </p>
-                <p className="mb-2 text-muted">
-                  {t('social.inviteBonusLine', { referee: referral.refereeBonusDays, referrer: referral.referrerBonusDays })}
-                </p>
-                <p className="mb-2 fw-semibold" style={{ color: 'var(--ta-gold)' }}>{t('social.referralKeyline')}</p>
-                <p className="mb-1 text-muted">{t('social.referralLadderIntro')}</p>
-                <ul className="mb-2 ps-3 text-muted" style={{ lineHeight: 1.45 }}>
-                  <li>{t('social.referralLadder1')}</li>
-                  <li>{t('social.referralLadder2')}</li>
-                  <li>{t('social.referralLadder3')}</li>
-                  <li>{t('social.referralLadder4')}</li>
-                  <li>{t('social.referralLadder5')}</li>
-                </ul>
-                {referral.founderKeeper && (
-                  <p className="mb-2">
-                    <span className="badge bg-warning text-dark">{t('social.founderKeeperBadge')}</span>
-                  </p>
-                )}
-                <p className="mb-2 text-muted">{t('social.invitedCount', { count: referral.invitedCount ?? 0 })}</p>
-                <div className="d-flex flex-wrap gap-2">
-                  <button type="button" className="btn btn-sm btn-dark" onClick={copyInvite}>{t('social.copyInviteLink')}</button>
-                </div>
-                <p className="mt-3 mb-0 text-muted" style={{ wordBreak: 'break-all' }}>{inviteLink}</p>
-              </div>
-            </div>
+            <ReferralGamificationCard
+              referral={referral}
+              inviteLink={inviteLink}
+              onCopyInviteMessage={copyInvite}
+              onCopyCode={copyReferralCode}
+              t={t}
+            />
           </ChitinCardFrame>
         )}
       </div>
