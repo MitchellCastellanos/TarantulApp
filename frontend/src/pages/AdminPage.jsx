@@ -2,7 +2,30 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import adminService from '../services/adminService'
-import { buildSpanishBetaWelcomeEmail } from '../utils/welcomeBetaEmail'
+import {
+  loadBetaEmailTemplates,
+  saveBetaEmailTemplates,
+  resetBetaEmailTemplatesToDefaults,
+  newCustomTemplateId,
+} from '../utils/betaEmailTemplatesStorage'
+import { renderBetaEmailBody } from '../utils/renderBetaEmailBody'
+import { buildBetaEmailDocxBlob, downloadBlob } from '../utils/exportBetaEmailDocx'
+import {
+  cacheBetaPasswordForEmail,
+  readCachedBetaPassword,
+} from '../utils/betaTesterEmailSession'
+
+const TESTER_TPL_PREF_KEY = 'tarantulapp_tester_email_tpl_v1'
+
+function loadTesterTplPrefs() {
+  try {
+    const s = localStorage.getItem(TESTER_TPL_PREF_KEY)
+    const o = s ? JSON.parse(s) : {}
+    return typeof o === 'object' && o !== null ? o : {}
+  } catch {
+    return {}
+  }
+}
 
 function formatUsageTime(lastActivityAt, t) {
   if (!lastActivityAt) return t('admin.usageTimeNever')
@@ -20,25 +43,6 @@ function formatUsageTime(lastActivityAt, t) {
 
 export default function AdminPage() {
   const { t } = useTranslation()
-  const copyWelcomeEs = async (u) => {
-    const pwd =
-      typeof window !== 'undefined'
-        ? window.prompt(t('admin.welcomeEmailPasswordPrompt'), '')
-        : ''
-    if (pwd === null) return
-    const body = buildSpanishBetaWelcomeEmail({
-      name: u.displayName || u.email,
-      email: u.email,
-      password: (pwd || '').trim() || '[CONFIGURA_CONTRASEÑA_EN_ADMIN]',
-      sendDate: new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date()),
-    })
-    try {
-      await navigator.clipboard.writeText(body)
-      window.alert(t('admin.welcomeEmailCopied'))
-    } catch {
-      window.alert(t('admin.welcomeEmailCopyFailed'))
-    }
-  }
   const [summary, setSummary] = useState(null)
   const [recentUsers, setRecentUsers] = useState([])
   const [reports, setReports] = useState([])
@@ -58,6 +62,173 @@ export default function AdminPage() {
   const [resetPassLoading, setResetPassLoading] = useState(false)
   const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: false })
   const [provisionLoading, setProvisionLoading] = useState(false)
+  const [betaEmailTemplates, setBetaEmailTemplates] = useState(() => loadBetaEmailTemplates())
+  const [testerTplPref, setTesterTplPref] = useState(() => loadTesterTplPrefs())
+  const [tplEditor, setTplEditor] = useState(null)
+  const [approvalEmailBundle, setApprovalEmailBundle] = useState(null)
+  const [approvalTplId, setApprovalTplId] = useState('builtin-welcome-es')
+
+  const updateTesterPref = (userId, templateId) => {
+    setTesterTplPref((prev) => {
+      const n = { ...prev, [userId]: templateId }
+      try {
+        localStorage.setItem(TESTER_TPL_PREF_KEY, JSON.stringify(n))
+      } catch {
+        /* ignore */
+      }
+      return n
+    })
+  }
+
+  const getTemplateForTester = (userId) => {
+    const id = testerTplPref[userId] || betaEmailTemplates[0]?.id
+    return betaEmailTemplates.find((x) => x.id === id) || betaEmailTemplates[0]
+  }
+
+  const resolvePasswordForEmail = (email) => {
+    const c = readCachedBetaPassword(email)
+    if (c) return c
+    const p = typeof window !== 'undefined' ? window.prompt(t('admin.welcomeEmailPasswordPrompt'), '') : ''
+    if (p === null) return null
+    return (p || '').trim() || null
+  }
+
+  const duplicateBuiltinToCustom = (tpl, openEditorAfter) => {
+    setBetaEmailTemplates((prev) => {
+      const body = renderBetaEmailBody(tpl, {
+        name: '{{name}}',
+        email: '{{email}}',
+        password: '{{password}}',
+        appUrl: '{{appUrl}}',
+        sendDate: '{{sendDate}}',
+      })
+      const row = {
+        id: newCustomTemplateId(),
+        label: `${tpl.label} (custom)`,
+        locale: tpl.locale,
+        kind: 'custom',
+        body,
+      }
+      const next = [...prev, row]
+      saveBetaEmailTemplates(next)
+      if (openEditorAfter) {
+        queueMicrotask(() => setTplEditor(row))
+      }
+      return next
+    })
+  }
+
+  const addCustomTemplate = () => {
+    const row = {
+      id: newCustomTemplateId(),
+      label: 'Nueva plantilla',
+      locale: 'es',
+      kind: 'custom',
+      body:
+        'Hola {{name}},\n\nCorreo: {{email}}\nContraseña: {{password}}\nApp: {{appUrl}}\nFecha: {{sendDate}}\n',
+    }
+    setBetaEmailTemplates((prev) => {
+      const next = [...prev, row]
+      saveBetaEmailTemplates(next)
+      return next
+    })
+    setTplEditor(row)
+  }
+
+  const deleteTemplate = (id) => {
+    if (!window.confirm(t('admin.betaEmailTemplateDeleteConfirm'))) return
+    setBetaEmailTemplates((prev) => {
+      const next = prev.filter((x) => x.id !== id)
+      saveBetaEmailTemplates(next)
+      return next
+    })
+  }
+
+  const resetTemplatesToDefaults = () => {
+    if (!window.confirm(t('admin.betaEmailTemplatesResetConfirm'))) return
+    resetBetaEmailTemplatesToDefaults()
+    setBetaEmailTemplates(loadBetaEmailTemplates())
+  }
+
+  const saveTemplateEditor = () => {
+    if (!tplEditor) return
+    const row = { ...tplEditor, kind: 'custom' }
+    setBetaEmailTemplates((prev) => {
+      const exists = prev.some((x) => x.id === row.id)
+      const next = exists ? prev.map((x) => (x.id === row.id ? row : x)) : [...prev, row]
+      saveBetaEmailTemplates(next)
+      return next
+    })
+    setTplEditor(null)
+  }
+
+  const copyTesterEmail = async (u) => {
+    const pwd = resolvePasswordForEmail(u.email)
+    if (pwd === null) return
+    const tpl = getTemplateForTester(u.id)
+    const body = renderBetaEmailBody(tpl, {
+      name: u.displayName || u.email,
+      email: u.email,
+      password: pwd || '[PASSWORD]',
+    })
+    try {
+      await navigator.clipboard.writeText(body)
+      window.alert(t('admin.welcomeEmailCopied'))
+    } catch {
+      window.alert(t('admin.welcomeEmailCopyFailed'))
+    }
+  }
+
+  const downloadTesterWord = async (u) => {
+    const pwd = resolvePasswordForEmail(u.email)
+    if (pwd === null) return
+    const tpl = getTemplateForTester(u.id)
+    const body = renderBetaEmailBody(tpl, {
+      name: u.displayName || u.email,
+      email: u.email,
+      password: pwd || '[PASSWORD]',
+    })
+    try {
+      const blob = await buildBetaEmailDocxBlob({ bodyText: body })
+      const safe = (u.email || 'tester').split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_')
+      downloadBlob(blob, `tarantulapp-beta-email-${safe}.docx`)
+    } catch (e) {
+      console.error(e)
+      window.alert(t('admin.betaEmailWordFailed'))
+    }
+  }
+
+  const copyApprovalBundleEmail = () => {
+    if (!approvalEmailBundle) return
+    const tpl = betaEmailTemplates.find((x) => x.id === approvalTplId) || betaEmailTemplates[0]
+    const body = renderBetaEmailBody(tpl, {
+      name: approvalEmailBundle.name || approvalEmailBundle.email,
+      email: approvalEmailBundle.email,
+      password: approvalEmailBundle.password,
+    })
+    navigator.clipboard.writeText(body).then(
+      () => window.alert(t('admin.welcomeEmailCopied')),
+      () => window.alert(t('admin.welcomeEmailCopyFailed')),
+    )
+  }
+
+  const downloadApprovalWord = async () => {
+    if (!approvalEmailBundle) return
+    const tpl = betaEmailTemplates.find((x) => x.id === approvalTplId) || betaEmailTemplates[0]
+    const body = renderBetaEmailBody(tpl, {
+      name: approvalEmailBundle.name || approvalEmailBundle.email,
+      email: approvalEmailBundle.email,
+      password: approvalEmailBundle.password,
+    })
+    try {
+      const blob = await buildBetaEmailDocxBlob({ bodyText: body })
+      const safe = (approvalEmailBundle.email || 'tester').split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_')
+      downloadBlob(blob, `tarantulapp-beta-email-${safe}.docx`)
+    } catch (e) {
+      console.error(e)
+      window.alert(t('admin.betaEmailWordFailed'))
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -128,12 +299,24 @@ export default function AdminPage() {
   const reviewApplication = async (id, action) => {
     setReviewingApplicationId(String(id))
     try {
-      await adminService.reviewBetaApplication(id, { action })
+      const data = await adminService.reviewBetaApplication(id, {
+        action,
+        generatePassword: action === 'approve',
+      })
       setBetaApplications((prev) => prev.filter((a) => String(a.id) !== String(id)))
       setSuccess(action === 'approve' ? t('admin.betaApplicationApproved') : t('admin.betaApplicationRejected'))
       if (action === 'approve') {
         const refreshed = await adminService.betaTesters()
         setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
+        if (data?.plainPassword && data?.email) {
+          cacheBetaPasswordForEmail(data.email, data.plainPassword)
+          setApprovalTplId('builtin-welcome-es')
+          setApprovalEmailBundle({
+            password: data.plainPassword,
+            email: data.email,
+            name: data.name || data.approvedUser?.displayName || '',
+          })
+        }
       }
     } catch {
       setError(t('admin.resolveError'))
@@ -168,6 +351,7 @@ export default function AdminPage() {
       })
       setPasswordUser(null)
       if (res.plainPassword) {
+        cacheBetaPasswordForEmail(res.user?.email || passwordUser.email, res.plainPassword)
         setSuccess(
           t('admin.addTesterPasswordShown', {
             email: res.user?.email || passwordUser.email,
@@ -200,6 +384,7 @@ export default function AdminPage() {
       const list = await adminService.betaTesters()
       setBetaTesters(Array.isArray(list) ? list : [])
       if (res.plainPassword) {
+        cacheBetaPasswordForEmail(res.user.email, res.plainPassword)
         setSuccess(
           t('admin.addTesterPasswordShown', { email: res.user.email, password: res.plainPassword }),
         )
@@ -465,6 +650,68 @@ export default function AdminPage() {
 
         <div className="card p-3 mt-3">
           <h2 className="h6 mb-3">{t('admin.betaTestersTitle')}</h2>
+          <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
+            <h3 className="h6 mb-2">{t('admin.betaEmailTemplatesTitle')}</h3>
+            <p className="small text-muted mb-2">{t('admin.betaEmailTemplatesBlurb')}</p>
+            <div className="table-responsive">
+              <table className="table table-sm align-middle mb-2">
+                <thead>
+                  <tr>
+                    <th>{t('admin.betaEmailTemplateColName')}</th>
+                    <th>{t('admin.betaEmailTemplateColLocale')}</th>
+                    <th>{t('admin.betaEmailTemplateColKind')}</th>
+                    <th>{t('admin.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {betaEmailTemplates.map((tpl) => (
+                    <tr key={tpl.id}>
+                      <td className="small">{tpl.label}</td>
+                      <td>{tpl.locale?.toUpperCase()}</td>
+                      <td className="small">{tpl.kind}</td>
+                      <td className="d-flex flex-wrap gap-1">
+                        {tpl.kind === 'builtin' ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => duplicateBuiltinToCustom(tpl, false)}
+                          >
+                            {t('admin.betaEmailTemplateDuplicate')}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => setTplEditor({ ...tpl })}
+                          >
+                            {t('admin.betaEmailTemplateEdit')}
+                          </button>
+                        )}
+                        {tpl.kind === 'custom' ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => deleteTemplate(tpl.id)}
+                          >
+                            {t('admin.betaEmailTemplateDelete')}
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <button type="button" className="btn btn-sm btn-success" onClick={addCustomTemplate}>
+                {t('admin.betaEmailTemplateAdd')}
+              </button>
+              <button type="button" className="btn btn-sm btn-outline-warning" onClick={resetTemplatesToDefaults}>
+                {t('admin.betaEmailTemplatesReset')}
+              </button>
+            </div>
+            <p className="small text-muted mb-0 mt-2">{t('admin.betaEmailTemplatesHint')}</p>
+          </div>
           <p className="small text-muted mb-2">{t('admin.addTesterBlurb')}</p>
           <form
             onSubmit={submitProvision}
@@ -546,6 +793,7 @@ export default function AdminPage() {
                     <th>{t('admin.country')}</th>
                     <th>{t('admin.level')}</th>
                     <th>{t('admin.betaBugReportsTitle')}</th>
+                    <th>{t('admin.betaEmailTemplateColName')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
@@ -556,6 +804,20 @@ export default function AdminPage() {
                       <td>{u.betaCountry || '-'}</td>
                       <td>{u.betaExperienceLevel || '-'}</td>
                       <td>{u.bugReportsCount ?? 0}</td>
+                      <td style={{ minWidth: 180 }}>
+                        <select
+                          className="form-select form-select-sm"
+                          aria-label={t('admin.betaEmailSelectTemplate')}
+                          value={testerTplPref[u.id] || betaEmailTemplates[0]?.id || ''}
+                          onChange={(e) => updateTesterPref(u.id, e.target.value)}
+                        >
+                          {betaEmailTemplates.map((tpl) => (
+                            <option key={tpl.id} value={tpl.id}>
+                              {tpl.label} ({tpl.locale?.toUpperCase()})
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td>
                         <div className="d-flex flex-wrap gap-1">
                           <button
@@ -571,9 +833,16 @@ export default function AdminPage() {
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={() => copyWelcomeEs(u)}
+                            onClick={() => copyTesterEmail(u)}
                           >
-                            {t('admin.welcomeEmailCopyEs')}
+                            {t('admin.betaEmailCopy')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => downloadTesterWord(u)}
+                          >
+                            {t('admin.betaEmailWord')}
                           </button>
                           <button
                             type="button"
@@ -811,6 +1080,131 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {approvalEmailBundle ? (
+        <div
+          className="modal d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content p-3">
+              <h3 className="h6 mb-3">{t('admin.approvalEmailModalTitle')}</h3>
+              <p className="small mb-2">
+                <strong>{t('auth.email')}:</strong> {approvalEmailBundle.email}
+              </p>
+              <p className="small mb-3">
+                <strong>{t('admin.newPasswordLabel')}:</strong>{' '}
+                <code className="user-select-all">{approvalEmailBundle.password}</code>
+              </p>
+              <label className="form-label small" htmlFor="approval-tpl">
+                {t('admin.betaEmailSelectTemplate')}
+              </label>
+              <select
+                id="approval-tpl"
+                className="form-select form-select-sm mb-3"
+                value={approvalTplId}
+                onChange={(e) => setApprovalTplId(e.target.value)}
+              >
+                {betaEmailTemplates.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.label} ({tpl.locale?.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+              <div className="d-flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(approvalEmailBundle.password).then(
+                      () => window.alert(t('admin.approvalPasswordCopied')),
+                      () => window.alert(t('admin.welcomeEmailCopyFailed')),
+                    )
+                  }}
+                >
+                  {t('admin.approvalCopyPassword')}
+                </button>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={copyApprovalBundleEmail}>
+                  {t('admin.betaEmailCopy')}
+                </button>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={downloadApprovalWord}>
+                  {t('admin.betaEmailWord')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-light ms-auto"
+                  onClick={() => setApprovalEmailBundle(null)}
+                >
+                  {t('common.done')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {tplEditor ? (
+        <div
+          className="modal d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content p-3">
+              <h3 className="h6 mb-3">{t('admin.betaEmailTemplateEdit')}</h3>
+              <div className="mb-2">
+                <label className="form-label small" htmlFor="tpl-label">
+                  {t('admin.betaEmailTemplateColName')}
+                </label>
+                <input
+                  id="tpl-label"
+                  className="form-control form-control-sm"
+                  value={tplEditor.label}
+                  onChange={(e) => setTplEditor((x) => ({ ...x, label: e.target.value }))}
+                />
+              </div>
+              <div className="mb-2">
+                <label className="form-label small" htmlFor="tpl-locale">
+                  {t('admin.betaEmailTemplateColLocale')}
+                </label>
+                <select
+                  id="tpl-locale"
+                  className="form-select form-select-sm"
+                  value={tplEditor.locale}
+                  onChange={(e) =>
+                    setTplEditor((x) => ({ ...x, locale: e.target.value === 'en' ? 'en' : 'es' }))
+                  }
+                >
+                  <option value="es">ES</option>
+                  <option value="en">EN</option>
+                </select>
+              </div>
+              <div className="mb-2">
+                <label className="form-label small" htmlFor="tpl-body">
+                  {t('admin.betaEmailTemplateBody')}
+                </label>
+                <textarea
+                  id="tpl-body"
+                  className="form-control font-monospace small"
+                  rows={16}
+                  value={tplEditor.body || ''}
+                  onChange={(e) => setTplEditor((x) => ({ ...x, body: e.target.value }))}
+                />
+              </div>
+              <p className="small text-muted">{t('admin.betaEmailTemplatesHint')}</p>
+              <div className="d-flex gap-2 justify-content-end">
+                <button type="button" className="btn btn-sm btn-light" onClick={() => setTplEditor(null)}>
+                  {t('common.cancel')}
+                </button>
+                <button type="button" className="btn btn-sm btn-primary" onClick={saveTemplateEditor}>
+                  {t('admin.betaEmailTemplateSave')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {passwordUser ? (
         <div
           className="modal d-block"

@@ -78,7 +78,8 @@ public class AdminController {
     record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel) {}
-    record ReviewBetaApplicationRequest(String action, UUID userId, String note) {}
+    /** {@code generatePassword}: when {@code null} or true, a password is generated on approve (default). */
+    record ReviewBetaApplicationRequest(String action, UUID userId, String note, Boolean generatePassword) {}
     record AdminSetUserPasswordRequest(String newPassword, Boolean generatePassword) {}
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
@@ -337,27 +338,57 @@ public class AdminController {
         }
         app.setStatus("approve".equals(action) ? "approved" : "rejected");
         app.setReviewedAt(LocalDateTime.now());
+        String plainPassword = null;
+        User approvedUser = null;
         if ("approve".equals(action)) {
-            // Applicants typically apply BEFORE registering, so the matching User may not exist yet.
-            // If we find one (by explicit userId or by email), promote them now; otherwise just mark
-            // the application approved — promotion will happen on registration.
-            UUID targetUserId = req.userId();
+            boolean gen = req.generatePassword() == null || Boolean.TRUE.equals(req.generatePassword());
             User user = null;
-            if (targetUserId != null) {
-                user = userRepository.findById(targetUserId).orElse(null);
-            } else if (app.getEmail() != null) {
+            if (req.userId() != null) {
+                user = userRepository.findById(req.userId()).orElse(null);
+            }
+            if (user == null && app.getEmail() != null) {
                 user = userRepository.findByEmail(app.getEmail().trim().toLowerCase()).orElse(null);
             }
             if (user != null) {
                 user.setIsBetaTester(true);
-                if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) user.setBetaCountry(trim(app.getCountry(), 80));
-                if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
+                if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) {
+                    user.setBetaCountry(trim(app.getCountry(), 80));
+                }
+                if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) {
+                    user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
+                }
                 userRepository.save(user);
-                app.setApprovedUserId(user.getId());
+                if (gen) {
+                    AuthService.AdminUserPasswordResult res =
+                            authService.adminSetPasswordByUserId(user.getId(), null, true);
+                    plainPassword = res.plainPassword();
+                    approvedUser = res.user();
+                } else {
+                    approvedUser = user;
+                }
+            } else {
+                if (!gen) {
+                    throw new IllegalArgumentException("APPROVE_NEW_USER_REQUIRES_GENERATED_PASSWORD");
+                }
+                AuthService.AdminUserPasswordResult res = authService.adminProvisionBetaTester(
+                        app.getEmail().trim(),
+                        null,
+                        true,
+                        app.getName());
+                plainPassword = res.plainPassword();
+                approvedUser = res.user();
             }
+            app.setApprovedUserId(approvedUser.getId());
         }
         betaApplicationRepository.save(app);
-        return ResponseEntity.ok(mapBetaApplication(app));
+        Map<String, Object> out = new LinkedHashMap<>(mapBetaApplication(app));
+        if (plainPassword != null) {
+            out.put("plainPassword", plainPassword);
+        }
+        if (approvedUser != null) {
+            out.put("approvedUser", mapBetaTester(approvedUser));
+        }
+        return ResponseEntity.ok(out);
     }
 
     private Map<String, Object> mapUser(User u) {

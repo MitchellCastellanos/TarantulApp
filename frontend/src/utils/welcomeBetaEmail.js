@@ -1,6 +1,9 @@
 /** Canonical production URL (override via param when copying from staging). */
 export const DEFAULT_BETA_APP_URL = 'https://tarantulapp.com'
 
+/** Public asset for Word export and HTML signatures (`frontend/public`). */
+export const BETA_EMAIL_SIGNATURE_IMAGE_PATH = '/email-signature-tarantulapp.png'
+
 /**
  * Spanish welcome email for closed-beta batch (copy into Gmail).
  * @param {{ name: string, email: string, password: string, appUrl?: string, sendDate?: string }} p
@@ -22,7 +25,7 @@ export function buildSpanishBetaWelcomeEmail(p) {
     '',
     'Cómo entrar:',
     `1) Abre ${appUrl} y usa el botón de acceso beta ("Beta tester login" / acceso beta) en la pantalla previa al lanzamiento.`,
-    '2) Inicia sesión con el correo y la contraseña que aparecen abajo (ya puedes marcar tu cuenta como beta tester desde administración).',
+    '2) Inicia sesión con el correo y la contraseña que aparecen abajo.',
     '',
     'Web app en el móvil:',
     '• En iPhone/iPad: Safari → Compartir → "Añadir a pantalla de inicio" para un acceso rápido tipo app.',
@@ -84,7 +87,7 @@ export function buildEnglishBetaWelcomeEmail(p) {
     '',
     'How to sign in:',
     `1) Open ${appUrl} and use the beta gate ("Beta tester login") on the pre-launch screen.`,
-    '2) Sign in with the email and password below (you can finish provisioning the password in admin).',
+    '2) Sign in with the email and password below.',
     '',
     'Web app on your phone:',
     '• iPhone/iPad: Safari → Share → “Add to Home Screen”.',
