@@ -34,6 +34,9 @@ const adminService = {
     api.post('/admin/beta-testers/provision', payload).then((r) => r.data),
   mailConfigStatus: () => api.get('/admin/mail/config-status').then((r) => r.data),
   mailTestSend: (to) => api.post('/admin/mail/test-send', { to }).then((r) => r.data),
+  betaCampaignCatalog: () => api.get('/admin/beta-emails/campaign-catalog').then((r) => r.data),
+  sendBetaCampaignBatch: (payload) =>
+    api.post('/admin/beta-emails/send-campaign', payload).then((r) => r.data),
 }
 
 export default adminService

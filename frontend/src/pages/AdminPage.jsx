@@ -70,6 +70,13 @@ export default function AdminPage() {
   const [tplEditor, setTplEditor] = useState(null)
   const [approvalEmailBundle, setApprovalEmailBundle] = useState(null)
   const [approvalTplId, setApprovalTplId] = useState('builtin-welcome-es')
+  const [approveSendWelcome, setApproveSendWelcome] = useState(true)
+  const [approveWelcomeLocale, setApproveWelcomeLocale] = useState('es')
+  const [campaignCatalog, setCampaignCatalog] = useState([])
+  const [campaignKey, setCampaignKey] = useState('week_1')
+  const [campaignLocale, setCampaignLocale] = useState('es')
+  const [campaignSending, setCampaignSending] = useState(false)
+  const [selectedTesterIds, setSelectedTesterIds] = useState(() => ({}))
 
   const updateTesterPref = (userId, templateId) => {
     setTesterTplPref((prev) => {
@@ -270,6 +277,20 @@ export default function AdminPage() {
     }
   }, [t])
 
+  useEffect(() => {
+    adminService
+      .betaCampaignCatalog()
+      .then((rows) => {
+        if (Array.isArray(rows) && rows.length > 0) {
+          setCampaignCatalog(rows)
+          setCampaignKey(rows[0].key)
+        }
+      })
+      .catch(() => {
+        /* non-blocking */
+      })
+  }, [])
+
   const resolveReport = async (id, action) => {
     try {
       await adminService.resolveReport(id, action, '')
@@ -303,14 +324,27 @@ export default function AdminPage() {
 
   const reviewApplication = async (id, action) => {
     setReviewingApplicationId(String(id))
+    setError('')
     try {
       const data = await adminService.reviewBetaApplication(id, {
         action,
         generatePassword: action === 'approve',
+        sendWelcomeEmail: action === 'approve' ? approveSendWelcome : undefined,
+        welcomeLocale: action === 'approve' ? approveWelcomeLocale : undefined,
       })
       setBetaApplications((prev) => prev.filter((a) => String(a.id) !== String(id)))
-      setSuccess(action === 'approve' ? t('admin.betaApplicationApproved') : t('admin.betaApplicationRejected'))
       if (action === 'approve') {
+        let msg = t('admin.betaApplicationApproved')
+        if (data?.welcomeEmailSent === true) {
+          msg += ` ${t('admin.welcomeEmailedOk')}`
+        }
+        if (data?.welcomeEmailSkippedReason === 'NO_PLAIN_PASSWORD' && approveSendWelcome) {
+          msg += ` ${t('admin.welcomeSkippedNoPassword')}`
+        }
+        setSuccess(msg)
+        if (data?.welcomeEmailError) {
+          setError(t('admin.welcomeEmailSmtpFailed', { detail: data.welcomeEmailError }))
+        }
         const refreshed = await adminService.betaTesters()
         setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
         if (data?.plainPassword && data?.email) {
@@ -322,6 +356,8 @@ export default function AdminPage() {
             name: data.name || data.approvedUser?.displayName || '',
           })
         }
+      } else {
+        setSuccess(t('admin.betaApplicationRejected'))
       }
     } catch {
       setError(t('admin.resolveError'))
@@ -329,6 +365,81 @@ export default function AdminPage() {
       setReviewingApplicationId('')
     }
   }
+
+  const toggleTesterSelected = (userId) => {
+    const k = String(userId)
+    setSelectedTesterIds((prev) => ({ ...prev, [k]: !prev[k] }))
+  }
+
+  const selectAllTesters = (on) => {
+    setSelectedTesterIds(() => {
+      const next = {}
+      if (on) {
+        betaTesters.forEach((u) => {
+          next[String(u.id)] = true
+        })
+      }
+      return next
+    })
+  }
+
+  const sendCampaignBatch = async () => {
+    const ids = Object.entries(selectedTesterIds)
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+    if (!ids.length || !campaignKey) return
+    setCampaignSending(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await adminService.sendBetaCampaignBatch({
+        campaignKey,
+        userIds: ids,
+        locale: campaignLocale,
+      })
+      const failed = Array.isArray(res?.results)
+        ? res.results.filter((r) => r.status === 'failed').length
+        : 0
+      if (failed > 0) {
+        setSuccess(t('admin.campaignSendPartial', { sent: res.sent }))
+      } else {
+        setSuccess(t('admin.campaignSendSuccess', { sent: res.sent }))
+      }
+      const refreshed = await adminService.betaTesters()
+      setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
+      setSelectedTesterIds({})
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setCampaignSending(false)
+    }
+  }
+
+  const formatCampaignSends = (u) => {
+    const m = u?.betaCampaignSends
+    if (!m || typeof m !== 'object') return '—'
+    const entries = Object.entries(m)
+    if (!entries.length) return '—'
+    return entries
+      .map(([key, iso]) => {
+        const d = iso ? new Date(iso) : null
+        const label = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString() : iso
+        return `${key}: ${label}`
+      })
+      .join(' · ')
+  }
+
+  const campaignRows =
+    campaignCatalog.length > 0
+      ? campaignCatalog
+      : [
+          { key: 'week_1', labelEs: 'Semana 1', labelEn: 'Week 1' },
+          { key: 'week_2', labelEs: 'Semana 2', labelEn: 'Week 2' },
+          { key: 'week_3', labelEs: 'Semana 3', labelEn: 'Week 3' },
+          { key: 'week_4', labelEs: 'Semana 4', labelEn: 'Week 4' },
+          { key: 'week_5', labelEs: 'Semana 5', labelEn: 'Week 5' },
+          { key: 'week_6', labelEs: 'Semana 6', labelEn: 'Week 6' },
+        ]
 
   const toggleRecentUserTester = async (u) => {
     try {
@@ -775,6 +886,70 @@ export default function AdminPage() {
             </div>
             <p className="small text-muted mb-0 mt-2">{t('admin.betaEmailTemplatesHint')}</p>
           </div>
+          <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
+            <h3 className="h6 mb-2">{t('admin.campaignEmailSectionTitle')}</h3>
+            <p className="small text-muted mb-2">{t('admin.campaignEmailBlurb')}</p>
+            <div className="d-flex flex-wrap gap-2 align-items-end mb-2">
+              <div>
+                <label className="form-label small mb-0" htmlFor="beta-campaign-key">
+                  {t('admin.campaignSelectLabel')}
+                </label>
+                <select
+                  id="beta-campaign-key"
+                  className="form-select form-select-sm"
+                  style={{ minWidth: 220 }}
+                  value={campaignKey}
+                  onChange={(e) => setCampaignKey(e.target.value)}
+                >
+                  {campaignRows.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {campaignLocale === 'en' ? c.labelEn || c.key : c.labelEs || c.key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label small mb-0" htmlFor="beta-campaign-locale">
+                  {t('admin.campaignLocaleLabel')}
+                </label>
+                <select
+                  id="beta-campaign-locale"
+                  className="form-select form-select-sm"
+                  value={campaignLocale}
+                  onChange={(e) => setCampaignLocale(e.target.value)}
+                >
+                  <option value="es">ES</option>
+                  <option value="en">EN</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                disabled={
+                  campaignSending || !betaTesters.some((u) => selectedTesterIds[String(u.id)])
+                }
+                onClick={() => sendCampaignBatch()}
+              >
+                {campaignSending ? t('admin.campaignSendRunning') : t('admin.campaignSendButton')}
+              </button>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => selectAllTesters(true)}
+              >
+                {t('admin.selectAllTesters')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => selectAllTesters(false)}
+              >
+                {t('admin.selectNoneTesters')}
+              </button>
+            </div>
+          </div>
           <p className="small text-muted mb-2">{t('admin.addTesterBlurb')}</p>
           <form
             onSubmit={submitProvision}
@@ -852,10 +1027,15 @@ export default function AdminPage() {
               <table className="table table-sm align-middle mb-0">
                 <thead>
                   <tr>
+                    <th className="text-center" title={t('admin.campaignSelectTesters')}>
+                      <span className="visually-hidden">{t('admin.campaignSelectTesters')}</span>
+                      ✓
+                    </th>
                     <th>{t('auth.email')}</th>
                     <th>{t('admin.country')}</th>
                     <th>{t('admin.level')}</th>
                     <th>{t('admin.betaBugReportsTitle')}</th>
+                    <th>{t('admin.sentCampaignsCol')}</th>
                     <th>{t('admin.betaEmailTemplateColName')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
@@ -863,10 +1043,22 @@ export default function AdminPage() {
                 <tbody>
                   {betaTesters.map((u) => (
                     <tr key={u.id}>
+                      <td className="text-center">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={!!selectedTesterIds[String(u.id)]}
+                          onChange={() => toggleTesterSelected(u.id)}
+                          aria-label={t('admin.campaignSelectTesters')}
+                        />
+                      </td>
                       <td>{u.email}</td>
                       <td>{u.betaCountry || '-'}</td>
                       <td>{u.betaExperienceLevel || '-'}</td>
                       <td>{u.bugReportsCount ?? 0}</td>
+                      <td className="small text-muted" style={{ maxWidth: 220 }}>
+                        {formatCampaignSends(u)}
+                      </td>
                       <td style={{ minWidth: 180 }}>
                         <select
                           className="form-select form-select-sm"
@@ -1047,6 +1239,37 @@ export default function AdminPage() {
 
         <div className="card p-3 mt-3">
           <h2 className="h6 mb-3">{t('admin.betaApplicationsTitle')}</h2>
+          <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
+            <div className="form-check mb-0">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id="approve-send-welcome"
+                checked={approveSendWelcome}
+                onChange={(e) => setApproveSendWelcome(e.target.checked)}
+              />
+              <label className="form-check-label small" htmlFor="approve-send-welcome">
+                {t('admin.approveSendWelcomeLabel')}
+              </label>
+            </div>
+            <div className="row g-2 align-items-end mt-2">
+              <div className="col-auto">
+                <label className="form-label small mb-0" htmlFor="approve-welcome-locale">
+                  {t('admin.welcomeLocaleLabel')}
+                </label>
+                <select
+                  id="approve-welcome-locale"
+                  className="form-select form-select-sm"
+                  value={approveWelcomeLocale}
+                  onChange={(e) => setApproveWelcomeLocale(e.target.value)}
+                >
+                  <option value="es">ES</option>
+                  <option value="en">EN</option>
+                </select>
+              </div>
+            </div>
+            <p className="small text-muted mb-0 mt-2">{t('admin.approveSendWelcomeHint')}</p>
+          </div>
           {betaApplications.length === 0 ? (
             <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
           ) : (

@@ -3,7 +3,9 @@ package com.tarantulapp.controller;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.BugReport;
 import com.tarantulapp.entity.BetaApplication;
+import com.tarantulapp.entity.BetaEmailSend;
 import com.tarantulapp.repository.BetaApplicationRepository;
+import com.tarantulapp.repository.BetaEmailSendRepository;
 import com.tarantulapp.repository.BugReportRepository;
 import com.tarantulapp.repository.ReminderRepository;
 import com.tarantulapp.repository.TarantulaRepository;
@@ -16,6 +18,7 @@ import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
+import com.tarantulapp.util.BetaMailBodies;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -51,6 +57,7 @@ public class AdminController {
     private final TaxonomyDiscoveryService taxonomyDiscoveryService;
     private final BugReportRepository bugReportRepository;
     private final BetaApplicationRepository betaApplicationRepository;
+    private final BetaEmailSendRepository betaEmailSendRepository;
     private final AuthService authService;
     private final EmailService emailService;
 
@@ -76,6 +83,7 @@ public class AdminController {
                            TaxonomyDiscoveryService taxonomyDiscoveryService,
                            BugReportRepository bugReportRepository,
                            BetaApplicationRepository betaApplicationRepository,
+                           BetaEmailSendRepository betaEmailSendRepository,
                            AuthService authService,
                            EmailService emailService) {
         this.adminAccessService = adminAccessService;
@@ -88,6 +96,7 @@ public class AdminController {
         this.taxonomyDiscoveryService = taxonomyDiscoveryService;
         this.bugReportRepository = bugReportRepository;
         this.betaApplicationRepository = betaApplicationRepository;
+        this.betaEmailSendRepository = betaEmailSendRepository;
         this.authService = authService;
         this.emailService = emailService;
     }
@@ -97,8 +106,20 @@ public class AdminController {
     record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel) {}
-    /** {@code generatePassword}: when {@code null} or true, a password is generated on approve (default). */
-    record ReviewBetaApplicationRequest(String action, UUID userId, String note, Boolean generatePassword) {}
+    /**
+     * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
+     * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
+     */
+    record ReviewBetaApplicationRequest(
+            String action,
+            UUID userId,
+            String note,
+            Boolean generatePassword,
+            Boolean sendWelcomeEmail,
+            String welcomeLocale
+    ) {}
+
+    record BetaCampaignBatchRequest(String campaignKey, List<UUID> userIds, String locale) {}
     record AdminSetUserPasswordRequest(String newPassword, Boolean generatePassword) {}
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
@@ -260,7 +281,75 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> betaTesters() {
         adminAccessService.assertCurrentUserIsAdmin();
         List<User> users = userRepository.findByIsBetaTesterTrueOrderByCreatedAtDesc();
-        return ResponseEntity.ok(users.stream().map(this::mapBetaTester).collect(Collectors.toList()));
+        List<Map<String, Object>> rows = users.stream().map(this::mapBetaTester).collect(Collectors.toList());
+        enrichBetaCampaignSummaries(rows, users.stream().map(User::getId).collect(Collectors.toList()));
+        return ResponseEntity.ok(rows);
+    }
+
+    @GetMapping("/beta-emails/campaign-catalog")
+    public ResponseEntity<List<Map<String, Object>>> betaCampaignCatalog() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        String[][] data = {
+                {"week_1", "Semana 1 — día a día", "Week 1 — day-to-day"},
+                {"week_2", "Semana 2 — fotos y rutina", "Week 2 — photos & routine"},
+                {"week_3", "Semana 3 — comunidad", "Week 3 — community"},
+                {"week_4", "Semana 4 — marketplace y chat", "Week 4 — marketplace & chat"},
+                {"week_5", "Semana 5 — Pro y QR", "Week 5 — Pro & QR"},
+                {"week_6", "Semana 6 — cierre", "Week 6 — wrap-up"},
+        };
+        for (String[] r : data) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("key", r[0]);
+            m.put("labelEs", r[1]);
+            m.put("labelEn", r[2]);
+            rows.add(m);
+        }
+        return ResponseEntity.ok(rows);
+    }
+
+    @PostMapping("/beta-emails/send-campaign")
+    public ResponseEntity<Map<String, Object>> sendBetaCampaignBatch(@RequestBody BetaCampaignBatchRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (req.userIds() == null || req.userIds().isEmpty()) {
+            throw new IllegalArgumentException("USER_IDS_REQUIRED");
+        }
+        String key = req.campaignKey() == null ? "" : req.campaignKey().trim().toLowerCase();
+        if (!BetaMailBodies.isBatchCampaignKey(key)) {
+            throw new IllegalArgumentException("INVALID_BETA_CAMPAIGN_KEY");
+        }
+        String loc = BetaMailBodies.normalizeLocale(req.locale());
+        List<Map<String, Object>> results = new ArrayList<>();
+        int sent = 0;
+        for (UUID uid : req.userIds()) {
+            User u = userRepository.findById(uid).orElse(null);
+            if (u == null) {
+                results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "skipped", "reason", "USER_NOT_FOUND")));
+                continue;
+            }
+            if (!Boolean.TRUE.equals(u.getIsBetaTester())) {
+                results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "skipped", "reason", "NOT_BETA_TESTER")));
+                continue;
+            }
+            try {
+                emailService.sendBetaCampaignEmail(u.getEmail(), u.getDisplayName(), key, loc);
+                recordBetaEmailSent(uid, key, loc);
+                sent++;
+                results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "sent")));
+            } catch (Exception e) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("userId", uid);
+                row.put("status", "failed");
+                row.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                results.add(row);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("campaignKey", key);
+        out.put("locale", loc);
+        out.put("sent", sent);
+        out.put("results", results);
+        return ResponseEntity.ok(out);
     }
 
     @PatchMapping("/users/{id}/beta")
@@ -438,7 +527,63 @@ public class AdminController {
         if (approvedUser != null) {
             out.put("approvedUser", mapBetaTester(approvedUser));
         }
+        if ("approve".equals(action) && Boolean.TRUE.equals(req.sendWelcomeEmail()) && approvedUser != null) {
+            if (plainPassword != null && !plainPassword.isBlank()) {
+                try {
+                    String greetingName = approvedUser.getDisplayName();
+                    if (greetingName == null || greetingName.isBlank()) {
+                        greetingName = app.getName();
+                    }
+                    emailService.sendBetaWelcomeEmail(
+                            approvedUser.getEmail(),
+                            greetingName,
+                            plainPassword,
+                            req.welcomeLocale());
+                    recordBetaEmailSent(approvedUser.getId(), "welcome", BetaMailBodies.normalizeLocale(req.welcomeLocale()));
+                    out.put("welcomeEmailSent", true);
+                } catch (Exception e) {
+                    out.put("welcomeEmailSent", false);
+                    out.put("welcomeEmailError", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                }
+            } else {
+                out.put("welcomeEmailSent", false);
+                out.put("welcomeEmailSkippedReason", "NO_PLAIN_PASSWORD");
+            }
+        }
         return ResponseEntity.ok(out);
+    }
+
+    private void recordBetaEmailSent(UUID userId, String campaignKey, String locale) {
+        BetaEmailSend row = new BetaEmailSend();
+        row.setUserId(userId);
+        row.setCampaignKey(campaignKey);
+        row.setLocale(locale);
+        betaEmailSendRepository.save(row);
+    }
+
+    private void enrichBetaCampaignSummaries(List<Map<String, Object>> rows, List<UUID> userIds) {
+        if (userIds.isEmpty()) {
+            return;
+        }
+        List<BetaEmailSend> all = betaEmailSendRepository.findByUserIdIn(userIds);
+        Map<UUID, Map<String, LocalDateTime>> latest = new HashMap<>();
+        for (BetaEmailSend s : all) {
+            latest.computeIfAbsent(s.getUserId(), k -> new HashMap<>());
+            Map<String, LocalDateTime> m = latest.get(s.getUserId());
+            LocalDateTime prev = m.get(s.getCampaignKey());
+            if (prev == null || s.getSentAt().isAfter(prev)) {
+                m.put(s.getCampaignKey(), s.getSentAt());
+            }
+        }
+        for (Map<String, Object> row : rows) {
+            UUID id = (UUID) row.get("id");
+            Map<String, LocalDateTime> m = latest.getOrDefault(id, Map.of());
+            Map<String, String> iso = new LinkedHashMap<>();
+            for (var e : m.entrySet()) {
+                iso.put(e.getKey(), e.getValue().toString());
+            }
+            row.put("betaCampaignSends", iso);
+        }
     }
 
     private Map<String, Object> mapUser(User u) {

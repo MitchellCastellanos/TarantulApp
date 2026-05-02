@@ -2,6 +2,7 @@ package com.tarantulapp.service;
 
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
+import com.tarantulapp.util.BetaMailBodies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -294,6 +297,68 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed to send admin beta application notification for application {}: {}", applicationId, e.getMessage());
         }
+    }
+
+    /**
+     * Closed-beta welcome with credentials (same copy as the admin copy/paste templates).
+     */
+    public void sendBetaWelcomeEmail(String toEmail, String displayName, String plainPassword, String welcomeLocale) {
+        String loc = BetaMailBodies.normalizeLocale(welcomeLocale);
+        String sendDate = formatBetaSendDateForLocale(loc);
+        String body = "en".equals(loc)
+                ? BetaMailBodies.welcomeEn(displayName, toEmail, plainPassword, baseUrl, sendDate)
+                : BetaMailBodies.welcomeEs(displayName, toEmail, plainPassword, baseUrl, sendDate);
+        String subject = BetaMailBodies.welcomeSubject(loc);
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(body);
+            mailSender.send(msg);
+            log.info("Beta welcome email sent to {} (locale={})", toEmail, loc);
+        } catch (Exception e) {
+            log.error("Failed to send beta welcome to {}: {}", toEmail, e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar el correo de bienvenida beta: " + e.getMessage());
+        }
+    }
+
+    public void sendBetaCampaignEmail(String toEmail, String displayName, String campaignKey, String locale) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        if (!BetaMailBodies.isBatchCampaignKey(campaignKey)) {
+            throw new IllegalArgumentException("INVALID_BETA_CAMPAIGN_KEY");
+        }
+        String sendDate = formatBetaSendDateForLocale(loc);
+        String body = BetaMailBodies.campaignBody(campaignKey, loc, displayName, baseUrl, sendDate);
+        String subject = BetaMailBodies.campaignSubject(campaignKey, loc);
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            helper.setText(body);
+            mailSender.send(msg);
+            log.info("Beta campaign {} email sent to {} (locale={})", campaignKey, toEmail, loc);
+        } catch (Exception e) {
+            log.error("Failed beta campaign {} to {}: {}", campaignKey, toEmail, e.getMessage(), e);
+            throw new RuntimeException("Fallo al enviar correo de campaña beta: " + e.getMessage());
+        }
+    }
+
+    private static String formatBetaSendDateForLocale(String loc) {
+        var date = LocalDateTime.now().toLocalDate();
+        if ("en".equals(loc)) {
+            return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK).format(date);
+        }
+        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.forLanguageTag("es-MX")).format(date);
     }
 
     private String safe(String value) {
