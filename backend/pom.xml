@@ -105,6 +105,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Resend HTTP email API (used when RESEND_API_KEY is set; bypasses SMTP) -->
+        <dependency>
+            <groupId>com.resend</groupId>
+            <artifactId>resend-java</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
         <!-- Cloudinary (persistent photo storage) -->
         <dependency>
             <groupId>com.cloudinary</groupId>

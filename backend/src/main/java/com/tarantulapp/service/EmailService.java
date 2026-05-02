@@ -1,12 +1,14 @@
 package com.tarantulapp.service;
 
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.mail.javamail.MimeMessageHelper;
 
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
@@ -20,6 +22,9 @@ public class EmailService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final JavaMailSender mailSender;
+
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
 
     @Value("${app.mail.from:noreply@tarantulapp.com}")
     private String fromAddress;
@@ -40,18 +45,40 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendPasswordReset(String toEmail, String token) {
-        String resetUrl = baseUrl + "/reset-password?token=" + token;
-        try {
+    // ── Core routing ──────────────────────────────────────────────────────────
+
+    private void doSend(String to, String subject, String text) throws Exception {
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            Resend resend = new Resend(resendApiKey);
+            String fromField = fromName + " <" + fromAddress + ">";
+            CreateEmailOptions opts = CreateEmailOptions.builder()
+                    .from(fromField)
+                    .to(to)
+                    .subject(subject)
+                    .text(text)
+                    .build();
+            resend.emails().send(opts);
+        } else {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
             helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("TarantulApp — Reset de contraseña / Password Reset");
+            helper.setTo(to);
+            helper.setSubject(subject);
             if (replyToAddress != null && !replyToAddress.isBlank()) {
                 helper.setReplyTo(replyToAddress);
             }
-            helper.setText(
+            helper.setText(text);
+            mailSender.send(msg);
+        }
+    }
+
+    // ── Public methods ────────────────────────────────────────────────────────
+
+    public void sendPasswordReset(String toEmail, String token) {
+        String resetUrl = baseUrl + "/reset-password?token=" + token;
+        try {
+            doSend(toEmail,
+                "TarantulApp — Reset de contraseña / Password Reset",
                 "Hola,\n\n" +
                 "Recibimos una solicitud para restablecer tu contraseña.\n" +
                 "Haz clic en el siguiente enlace (válido por 1 hora):\n\n" +
@@ -65,7 +92,6 @@ public class EmailService {
                 "If you didn't request this, ignore this email.\n\n" +
                 "— TarantulApp"
             );
-            mailSender.send(msg);
             log.info("Password reset email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send reset email to {}: {}", toEmail, e.getMessage(), e);
@@ -73,27 +99,17 @@ public class EmailService {
         }
     }
 
-    /**
-     * Admin-only SMTP connectivity check: sends a short plain-text message.
-     */
     public void sendSmtpTestEmail(String toEmail) {
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("TarantulApp — SMTP test");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
-                    "If you received this message, outbound SMTP from the TarantulApp backend is working.\n\n"
-                            + "— TarantulApp");
-            mailSender.send(msg);
-            log.info("SMTP test email sent to {}", toEmail);
+            doSend(toEmail,
+                "TarantulApp — mail test",
+                "If you received this message, outbound email from the TarantulApp backend is working.\n\n" +
+                "— TarantulApp"
+            );
+            log.info("Mail test sent to {}", toEmail);
         } catch (Exception e) {
-            log.error("SMTP test failed for {}: {}", toEmail, e.getMessage(), e);
-            throw new RuntimeException("SMTP test failed: " + e.getMessage());
+            log.error("Mail test failed for {}: {}", toEmail, e.getMessage(), e);
+            throw new RuntimeException("Mail test failed: " + e.getMessage());
         }
     }
 
@@ -101,15 +117,8 @@ public class EmailService {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         String trialEndsText = trialEndsAt != null ? trialEndsAt.format(DATE_FMT) : "en 7 días";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Bienvenido a TarantulApp - Tu prueba Pro empezó");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Bienvenido a TarantulApp - Tu prueba Pro empezó",
                 "Hola " + greeting + ",\n\n" +
                 "Bienvenido a TarantulApp. Tu prueba gratuita Pro ya está activa.\n" +
                 "Finaliza el: " + trialEndsText + ".\n\n" +
@@ -118,7 +127,6 @@ public class EmailService {
                 "Si quieres ayuda, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Welcome trial email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send welcome/trial email to {}: {}", toEmail, e.getMessage());
@@ -129,15 +137,8 @@ public class EmailService {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         String trialEndsText = trialEndsAt != null ? trialEndsAt.format(DATE_FMT) : "pronto";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Recordatorio: tu prueba Pro termina en 2 días");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Recordatorio: tu prueba Pro termina en 2 días",
                 "Hola " + greeting + ",\n\n" +
                 "Te recordamos que tu prueba Pro termina en 2 días.\n" +
                 "Fecha de fin: " + trialEndsText + ".\n\n" +
@@ -145,7 +146,6 @@ public class EmailService {
                 "Si quieres continuar en Pro, puedes activarlo manualmente desde la app.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Trial ending reminder sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send trial reminder to {}: {}", toEmail, e.getMessage());
@@ -155,22 +155,14 @@ public class EmailService {
     public void sendProActivated(String toEmail, String displayName) {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Pro activado - Gracias por apoyar TarantulApp");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Pro activado - Gracias por apoyar TarantulApp",
                 "Hola " + greeting + ",\n\n" +
                 "Tu plan Pro ya está activo.\n" +
                 "Gracias por apoyar TarantulApp.\n\n" +
                 "Si necesitas ayuda con tu suscripción, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Pro activation email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send pro activation email to {}: {}", toEmail, e.getMessage());
@@ -180,22 +172,14 @@ public class EmailService {
     public void sendTrialExpired(String toEmail, String displayName) {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Tu prueba Pro ha finalizado");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Tu prueba Pro ha finalizado",
                 "Hola " + greeting + ",\n\n" +
                 "Tu prueba Pro ya finalizó.\n" +
                 "Tu cuenta sigue activa en plan FREE y no se realizó ningún cobro automático.\n\n" +
                 "Si quieres volver a Pro, puedes activarlo manualmente desde la app.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Trial expired email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send trial expired email to {}: {}", toEmail, e.getMessage());
@@ -205,21 +189,13 @@ public class EmailService {
     public void sendProExpired(String toEmail, String displayName) {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Tu plan Pro ha finalizado");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Tu plan Pro ha finalizado",
                 "Hola " + greeting + ",\n\n" +
                 "Tu plan Pro ha finalizado y tu cuenta volvió a FREE.\n\n" +
                 "Si quieres reactivar Pro, puedes hacerlo desde la app en cualquier momento.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Pro expired email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send pro expired email to {}: {}", toEmail, e.getMessage());
@@ -230,22 +206,14 @@ public class EmailService {
         String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
         String endText = currentPeriodEnd != null ? currentPeriodEnd.format(DATE_FMT) : "pronto";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Recordatorio: tu suscripción Pro vence pronto");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Recordatorio: tu suscripción Pro vence pronto",
                 "Hola " + greeting + ",\n\n" +
                 "Tu suscripción Pro vence pronto.\n" +
                 "Fecha estimada de vencimiento: " + endText + ".\n\n" +
                 "Puedes revisar o renovar tu plan desde la sección de cuenta en la app.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Pro expiring reminder sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send pro expiring reminder to {}: {}", toEmail, e.getMessage());
@@ -260,15 +228,8 @@ public class EmailService {
                 ? "\nRecibo/factura: " + receiptUrl + "\n"
                 : "\n";
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Recibo de pago TarantulApp Pro");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(toEmail,
+                "Recibo de pago TarantulApp Pro",
                 "Hola " + greeting + ",\n\n" +
                 "Gracias por tu pago de TarantulApp Pro.\n" +
                 "Monto: " + amountText + ".\n" +
@@ -276,7 +237,6 @@ public class EmailService {
                 "Si tienes dudas con tu cobro, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            mailSender.send(msg);
             log.info("Payment receipt email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send payment receipt email to {}: {}", toEmail, e.getMessage());
@@ -293,17 +253,10 @@ public class EmailService {
     ) {
         if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(adminNotifyTo);
-            helper.setSubject("[TarantulApp] New beta bug report (" + safe(severity) + ")");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(adminNotifyTo,
+                "[TarantulApp] New beta bug report (" + safe(severity) + ")",
                 "New bug report submitted.\n\n" +
-                "Report ID: " + String.valueOf(reportId) + "\n" +
+                "Report ID: " + reportId + "\n" +
                 "Reporter: " + safe(reporterEmail) + "\n" +
                 "Severity: " + safe(severity) + "\n" +
                 "Title: " + safe(title) + "\n" +
@@ -311,7 +264,6 @@ public class EmailService {
                 "App version: " + safe(appVersion) + "\n\n" +
                 "Review in Admin > Bug reports."
             );
-            mailSender.send(msg);
             log.info("Admin bug notification sent to {} for report {}", adminNotifyTo, reportId);
         } catch (Exception e) {
             log.error("Failed to send admin bug notification for report {}: {}", reportId, e.getMessage());
@@ -328,24 +280,16 @@ public class EmailService {
     ) {
         if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(adminNotifyTo);
-            helper.setSubject("[TarantulApp] New beta application");
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(
+            doSend(adminNotifyTo,
+                "[TarantulApp] New beta application",
                 "New beta application received.\n\n" +
-                "Application ID: " + String.valueOf(applicationId) + "\n" +
+                "Application ID: " + applicationId + "\n" +
                 "Email: " + safe(email) + "\n" +
                 "Name: " + safe(name) + "\n" +
                 "Country: " + safe(country) + "\n" +
                 "Experience level: " + safe(level) + "\n\n" +
                 "Review in Admin > Beta applications."
             );
-            mailSender.send(msg);
             log.info("Admin beta application notification sent to {} for application {}", adminNotifyTo, applicationId);
         } catch (Exception e) {
             log.error("Failed to send admin beta application notification for application {}: {}", applicationId, e.getMessage());
