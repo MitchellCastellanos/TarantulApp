@@ -2,6 +2,28 @@
 
 El backend ya usa **Spring Mail** (`JavaMailSender`). No hace falta código extra: solo variables de entorno correctas y un buzón que permita SMTP.
 
+## Tu pantalla de IONOS (“Setting up an email client”) ¿está bien?
+
+Sí, para **SMTP saliente** IONOS indica:
+
+| Campo | Valor |
+| ----- | ----- |
+| Servidor saliente | `smtp.ionos.com` |
+| Puerto saliente | **587** con **TLS activado** (STARTTLS) |
+| Autenticación | **Sí** — usuario = email completo, contraseña = la del buzón |
+
+Eso es lo mismo que debe reflejar Railway: `MAIL_HOST=smtp.ionos.com`, `MAIL_PORT=587`, credenciales del buzón, y en nuestra app **`MAIL_STARTTLS_ENABLE=true`** (valor por defecto).
+
+**Importante:** si en los logs ves `Couldn't connect to host, port: smtp.ionos.com, 587` y `SocketTimeoutException: Connect timed out`, el fallo ocurre **antes** de usuario/contraseña/TLS a nivel aplicación: la JVM **no completa el TCP** hasta IONOS. Ahí el problema no es “mal copiado el tutorial de IONOS”, sino **red entre Railway e IONOS** (bloqueo saliente, firewall, política del datacenter, etc.).
+
+### Cómo interpretar el error en logs
+
+| Mensaje típico | Significado probable |
+| ---------------- | -------------------- |
+| `Connect timed out` / `MailConnectException` al **abrir** conexión | Red bloqueada o ruta hasta `smtp.ionos.com:587` (no llegó ni a autenticar). |
+| `Authentication failed` / `535` / `535 5.7.8` | Usuario, contraseña o `MAIL_FROM` vs buzón. |
+| `MailSendException` después de `MAIL FROM` | Suele ser política del proveedor sobre remitente/dominio. |
+
 ## Por qué no llegaba el reset de contraseña
 
 Revisa en orden:
@@ -29,15 +51,20 @@ En Railway → tu servicio backend → **Variables**:
 
 No subas el `.env` al repo; solo Railway.
 
-### Alternativa puerto 465 (SSL)
+### Alternativa puerto 465 (SSL implícito)
 
-Algunas cuentas documentan SSL implícito:
+IONOS también documenta salida por el mismo host; muchas cuentas permiten **465 con SSL**. Si **587** siempre hace *timeout* desde Railway (sin llegar a error de login), prueba este bloque **en Railway** y redeploy:
 
-- `MAIL_PORT=465`
-- `MAIL_SMTP_SSL=true`
-- Puede hacer falta `MAIL_STARTTLS_ENABLE=false` (variable en `application.properties`).
+```text
+MAIL_HOST=smtp.ionos.com
+MAIL_PORT=465
+MAIL_SMTP_SSL=true
+MAIL_STARTTLS_ENABLE=false
+```
 
-Prueba primero **587 + STARTTLS**; es la opción más habitual.
+(`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` igual que con 587.)
+
+Prueba primero **587 + STARTTLS** en entornos donde el puerto no esté filtrado; si solo ves **timeouts de conexión**, el bloque de arriba es el siguiente paso lógico.
 
 ## Comprobar sin adivinar
 
@@ -80,8 +107,14 @@ Ahí se monta el link `/reset-password?token=...`.
 
 Si en Sentry aparece **timeout al conectar** al puerto **587** (no error de usuario/contraseña), suele ser **red saliente**:
 
-- Varios hosts cloud bloquean SMTP saliente para combatir spam; a veces solo falla desde ciertas regiones o hasta que abres ticket con el proveedor.
-- Prueba **`MAIL_PORT=465`** + **`MAIL_SMTP_SSL=true`** (SSL implícito) si IONOS lo permite para tu cuenta.
-- Si sigue igual, valorar **API de correo** (SendGrid, Resend, AWS SES, etc.) en lugar de SMTP directo hacia IONOS desde Railway.
+- El contenedor en Railway intenta abrir TCP a `smtp.ionos.com:587` y **no recibe respuesta** a tiempo (`Connect timed out`). Eso no contradice la guía de IONOS: los valores son correctos para un cliente que **sí** tiene salida a Internet hacia ese host.
+- Algunos proveedores cloud restringen **SMTP saliente** (25/465/587) para limitar spam; otras veces es routing/región. No siempre hay “toggle” en el panel: a veces hace falta **ticket con Railway** preguntando si el egress hacia `smtp.ionos.com` está permitido, o usar otro canal de envío.
+- **Siguiente paso práctico:** variables del bloque **465 + SSL** arriba; si también hace timeout, el problema es casi seguro **conectividad**, no Spring Mail.
+- **Plan B estable en producción:** enviar con **API** (Resend, SendGrid, SES, Mailgun) o usar el **SMTP del proveedor transaccional** que ellos documenten para apps (host/puerto distintos), en lugar de conectar directo a IONOS desde el PaaS.
 
 No es un bug del código Java si la JVM no puede abrir el socket TCP al host SMTP.
+
+### Otras comprobaciones IONOS
+
+- En el panel de IONOS, confirma que el **buzón tiene SMTP habilitado** y que no haya restricción tipo “solo desde IP X” (raro en cuentas estándar).
+- El **usuario SMTP** debe ser el email completo del buzón, como indica IONOS en “User name”.
