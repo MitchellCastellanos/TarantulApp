@@ -648,6 +648,7 @@ public class AdminController {
         out.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
         putPlanAccessFields(u, out);
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
+        out.put("tarantulasCount", tarantulaRepository.countByUserId(u.getId()));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());
         return out;
@@ -709,6 +710,7 @@ public class AdminController {
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         out.put("createdAt", user.getCreatedAt());
         out.put("lastActivityAt", user.getLastActivityAt());
+        out.put("tarantulasCount", tarantulaRepository.countByUserId(user.getId()));
         out.put("bugReportsCount", bugReportRepository.countByUserId(user.getId()));
         return out;
     }

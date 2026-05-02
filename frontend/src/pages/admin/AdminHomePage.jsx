@@ -284,6 +284,7 @@ export default function AdminHomePage() {
                     <th>{t('auth.email')}</th>
                     <th>{t('auth.name')}</th>
                     <th>{t('admin.plan')}</th>
+                    <th className="text-end">{t('admin.collectionSpidersCol')}</th>
                     <th>{t('admin.activityStatusCol')}</th>
                     <th>{t('admin.created')}</th>
                     <th>{t('admin.lastSeenCol')}</th>
@@ -302,6 +303,7 @@ export default function AdminHomePage() {
                             {formatAdminPlanSummary(u, t)}
                           </span>
                         </td>
+                        <td className="text-end font-monospace">{u.tarantulasCount ?? 0}</td>
                         <td>
                           <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
                             {activityStatusLabel(tier, t)}

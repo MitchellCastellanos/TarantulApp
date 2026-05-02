@@ -1388,6 +1388,7 @@
     "planSummaryFree": "Free",
     "planSummaryProTrial": "Pro trial",
     "planSummaryProTrialWithDays": "Pro trial ({{days}}d left)",
+    "collectionSpidersCol": "Spiders",
     "activityStatusCol": "Activity",
     "lastSeenCol": "Last seen",
     "activityStatusActive": "Active",

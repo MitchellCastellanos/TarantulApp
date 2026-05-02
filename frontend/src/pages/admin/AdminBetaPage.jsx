@@ -904,6 +904,7 @@ export default function AdminBetaPage() {
                     </th>
                     <th>{t('auth.email')}</th>
                     <th>{t('admin.plan')}</th>
+                    <th className="text-end">{t('admin.collectionSpidersCol')}</th>
                     <th>{t('admin.activityStatusCol')}</th>
                     <th>{t('admin.lastSeenCol')}</th>
                     <th>{t('admin.country')}</th>
@@ -934,6 +935,7 @@ export default function AdminBetaPage() {
                           {formatAdminPlanSummary(u, t)}
                         </span>
                       </td>
+                      <td className="text-end font-monospace">{u.tarantulasCount ?? 0}</td>
                       <td>
                         <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
                           {activityStatusLabel(tier, t)}

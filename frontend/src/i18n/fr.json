@@ -1370,6 +1370,7 @@
     "planSummaryFree": "Gratuit",
     "planSummaryProTrial": "Essai Pro",
     "planSummaryProTrialWithDays": "Essai Pro ({{days}} j restants)",
+    "collectionSpidersCol": "Araignées",
     "activityStatusCol": "Activité",
     "lastSeenCol": "Dernière vue",
     "activityStatusActive": "Actif",
