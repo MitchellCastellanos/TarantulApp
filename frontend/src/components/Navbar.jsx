@@ -10,6 +10,28 @@ import './Navbar.css'
 import notificationsService from '../services/notificationsService'
 
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
+import { isInviteOnlyEnabled } from '../utils/inviteOnly'
+
+/** Invite-only guests: show destination styling but block navigation. */
+function NavDest({ lock, to, className, title, style, children, onClick }) {
+  if (lock) {
+    return (
+      <span
+        className={className}
+        style={{ ...(style || {}), opacity: 0.55, cursor: 'not-allowed' }}
+        title={title}
+        aria-disabled="true"
+      >
+        {children}
+      </span>
+    )
+  }
+  return (
+    <Link to={to} className={className} style={style} title={title} onClick={onClick}>
+      {children}
+    </Link>
+  )
+}
 
 /**
  * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
@@ -34,6 +56,8 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
     user?.admin === true ||
     (user?.email && adminEmails.includes(String(user.email).toLowerCase()))
 
+  const inviteOnlyNav = isInviteOnlyEnabled()
+  const lockPublicNav = inviteOnlyNav && !token
   const path = location.pathname
   const navDiscover = path.startsWith('/descubrir')
   const navQr =
@@ -44,7 +68,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const navCommunity = path.startsWith('/community') || path.startsWith('/comunidad')
   const navNotifications = path.startsWith('/notifications')
   const navAdmin = path.startsWith('/admin')
-  const logoHome = !token ? '/login' : '/'
+  const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
   const myPublicProfilePath = useMemo(() => {
     if (!user) return '/account'
     const h = String(user.publicHandle || '').trim()
@@ -204,6 +228,24 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
 
   const planControl = (() => {
     if (!token) {
+      if (lockPublicNav) {
+        return (
+          <span
+            className="btn btn-sm"
+            style={{
+              background: 'transparent',
+              color: 'var(--ta-gold)',
+              border: '1px solid var(--ta-gold)',
+              fontSize: '0.75rem',
+              opacity: 0.55,
+              cursor: 'not-allowed',
+            }}
+            title={t('nav.inviteOnlyNavLocked')}
+          >
+            {t('nav.planFreeDiscover')}
+          </span>
+        )
+      }
       return (
         <Link
           to="/pro"
@@ -306,7 +348,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
 
   return (
     <nav className="navbar navbar-dark px-3 px-md-4 py-2" style={{ overflow: 'visible' }}>
-      <BrandNavbarLogo key={path} homeTo={logoHome} showIntro />
+      <BrandNavbarLogo key={path} homeTo={logoHome} showIntro disableLink={lockPublicNav} />
       <div className="d-md-none ms-auto d-flex align-items-center gap-2">
         <Link
           to={token ? myPublicProfilePath : '/login'}
@@ -366,19 +408,20 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                         ? path === item.to
                         : isRouteActive(item.routeMatchers || [item.to])
                       return (
-                        <Link
+                        <NavDest
                           key={item.to}
-                          onClick={closeMobileMenu}
+                          lock={lockPublicNav}
+                          onClick={lockPublicNav ? undefined : closeMobileMenu}
                           to={item.to}
                           className={`ta-mobile-nav-subitem ${item.className || ''}`.trim()}
                           style={item.className ? { fontSize: '0.8rem' } : menuPillStyle(isActive)}
-                          title={item.title}
+                          title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : item.title}
                         >
                           <span className="ta-mobile-nav-subitem-dot" aria-hidden="true">
                             •
                           </span>
                           <span>{item.label}</span>
-                        </Link>
+                        </NavDest>
                       )
                     })}
                   </div>
@@ -447,34 +490,44 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
       </div>
       <div className="d-none d-md-flex align-items-center gap-2 gap-md-3 flex-wrap justify-content-end flex-grow-1">
         <div className="d-none d-md-flex align-items-center gap-2 flex-wrap">
-          <Link
+          <NavDest
+            lock={lockPublicNav}
             to="/descubrir"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navDiscover ? 'ta-navbar-primary-link--active' : ''}`}
-            title={t('nav.discoverLinkTitle')}
+            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('nav.discoverLinkTitle')}
           >
             {t('nav.discoverSpecies')}
-          </Link>
-          <Link
+          </NavDest>
+          <NavDest
+            lock={lockPublicNav}
             to="/herramientas/qr"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navQr ? 'ta-navbar-primary-link--active' : ''}`}
-            title={t('nav.qrToolTitle')}
+            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('nav.qrToolTitle')}
           >
             {t('nav.qrTool')}
-          </Link>
-          <Link
+          </NavDest>
+          <NavDest
+            lock={lockPublicNav}
             to="/marketplace"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navMarketplace ? 'ta-navbar-primary-link--active' : ''}`}
-            title={t('marketplace.title')}
+            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('marketplace.title')}
           >
             {t('marketplace.nav')}
-          </Link>
-          <Link
-            to={token ? '/' : '/login'}
+          </NavDest>
+          <NavDest
+            lock={lockPublicNav}
+            to={token ? '/' : inviteOnlyNav ? '/' : '/login'}
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCollection ? 'ta-navbar-primary-link--active' : ''}`}
-            title={token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestHint')}
+            title={
+              lockPublicNav
+                ? t('nav.inviteOnlyNavLocked')
+                : token
+                  ? t('discover.myCollection', 'My collection')
+                  : t('nav.myCollectionGuestHint')
+            }
           >
             {token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta')}
-          </Link>
+          </NavDest>
           {token && (
             <Link
               to="/insights"
@@ -502,13 +555,14 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
               </span>
             </Link>
           )}
-          <Link
+          <NavDest
+            lock={lockPublicNav}
             to="/community"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCommunity ? 'ta-navbar-primary-link--active' : ''}`}
-            title={t('social.navTitle')}
+            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('social.navTitle')}
           >
             {t('nav.community')}
-          </Link>
+          </NavDest>
         </div>
         <div className="vr d-none d-lg-block" style={{ borderColor: 'var(--ta-border)' }} />
         <div className="d-none d-md-flex align-items-center gap-2 flex-wrap">

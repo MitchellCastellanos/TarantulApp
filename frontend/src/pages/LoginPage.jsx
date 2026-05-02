@@ -128,7 +128,8 @@ export default function LoginPage() {
   }
 
   useEffect(() => {
-    if (!googleClientId || !googleBtnRef.current) return
+    if (inviteOnly) return undefined
+    if (!googleClientId || !googleBtnRef.current) return undefined
     const existing = document.querySelector('script[data-google-identity="1"]')
     const initGoogle = () => {
       if (!window.google?.accounts?.id || !googleBtnRef.current) return
@@ -182,7 +183,7 @@ export default function LoginPage() {
     return () => {
       if (window.google?.accounts?.id) window.google.accounts.id.cancel()
     }
-  }, [googleClientId])
+  }, [googleClientId, inviteOnly])
 
   const isLight = theme === 'light'
   const showRegisterUi = !inviteOnly
@@ -351,7 +352,7 @@ export default function LoginPage() {
                   </p>
                 )}
 
-                {mode === 'login' && (
+                {!inviteOnly && mode === 'login' && (
                 <div className="mt-3">
                   <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
                   {googleClientId ? (
