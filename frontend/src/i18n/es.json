@@ -461,6 +461,20 @@
     "schemaName": "Generador QR para terrarios — TarantulApp\u2122",
     "schemaDescription": "Herramienta gratuita para crear códigos QR desde tu colección de tarántulas y enlazar la ficha pública de cada ejemplar."
   },
+  "publicBetaHome": {
+    "tagline": "Hecha para quien anota el terrario, no el hype.",
+    "lead": "Durante la beta el acceso completo es por invitación. Entra si ya te dimos de alta como tester, o solicita acceso abajo.",
+    "ctaLogin": "Entrar (beta)",
+    "ctaApply": "Solicitar acceso beta"
+  },
+  "betaPending": {
+    "title": "Se requiere acceso beta",
+    "lead": "Tu cuenta está iniciada, pero aún no tiene permiso de beta tester. Solicita acceso y revisamos tu solicitud.",
+    "signedInAs": "Sesión:",
+    "ctaApply": "Solicitar beta",
+    "logout": "Cerrar sesión",
+    "footerHint": "Si ya te invitamos, pídenos marcar tu correo como tester; durante la beta las cuentas las crea el equipo."
+  },
   "auth": {
     "loginTitle": "TarantulApp\u2122",
     "standardEyebrow": "Una sola app, todo el flujo",
@@ -474,6 +488,10 @@
     "standardManifestAboutLink": "Acerca de TarantulApp\u2122",
     "standardManifestAboutHint": "manifiesto corto, promesa y límites claros.",
     "invalidResetToken": "El enlace no es válido o expiró. Solicita uno nuevo desde «Olvidé mi contraseña».",
+    "registrationClosed": "El registro público está cerrado. Las cuentas las da de alta el equipo para beta; usa «Solicitar beta» o entra con el correo que te provisionamos.",
+    "betaLoginSubtitle": "Entra con la cuenta beta que te creamos.",
+    "betaFormTitle": "Acceso beta",
+    "betaLoginButton": "Entrar",
     "loginSubtitle": "Entra a tu colección y a la bitácora que la respalda",
     "registerSubtitle": "Crea tu cuenta y empieza a registrar",
     "name": "Nombre",
@@ -1439,6 +1457,7 @@
     "betaBugWhatHappened": "¿Qué pasó?",
     "betaBugExpected": "¿Qué esperabas?",
     "betaBugScreenshot": "URL de screenshot (opcional)",
+    "betaBugScreenshotHint": "Sube la imagen a Imgur, Google Drive o similar y pega el enlace. La pantalla y la URL de la app ya se adjuntan solas al enviar.",
     "severity": "Severidad",
     "severityLow": "Baja",
     "severityMedium": "Media",

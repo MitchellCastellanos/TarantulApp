@@ -13,6 +13,7 @@ import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -51,6 +52,7 @@ public class AuthService {
     private final PublicHandleService publicHandleService;
     private final AdminAccessService adminAccessService;
     private final BetaApplicationRepository betaApplicationRepository;
+    private final boolean inviteOnlyRegistration;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
@@ -59,7 +61,8 @@ public class AuthService {
                        ReferralService referralService,
                        PublicHandleService publicHandleService,
                        AdminAccessService adminAccessService,
-                       BetaApplicationRepository betaApplicationRepository) {
+                       BetaApplicationRepository betaApplicationRepository,
+                       @Value("${app.auth.invite-only-registration:false}") boolean inviteOnlyRegistration) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -70,6 +73,7 @@ public class AuthService {
         this.publicHandleService = publicHandleService;
         this.adminAccessService = adminAccessService;
         this.betaApplicationRepository = betaApplicationRepository;
+        this.inviteOnlyRegistration = inviteOnlyRegistration;
     }
 
     /** If an approved beta application exists for this email, mark the user as a beta tester. */
@@ -102,6 +106,9 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
+        if (inviteOnlyRegistration) {
+            throw new IllegalArgumentException("REGISTRATION_CLOSED");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
@@ -167,6 +174,9 @@ public class AuthService {
         }
 
         User user = findByEmailWithOneRetry(email).orElseGet(() -> {
+            if (inviteOnlyRegistration) {
+                throw new IllegalArgumentException("REGISTRATION_CLOSED");
+            }
             User created = new User();
             created.setEmail(email);
             created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));

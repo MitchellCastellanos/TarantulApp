@@ -67,6 +67,7 @@ export default function BugReportModal({ open, onClose }) {
               <div className="mb-2">
                 <label className="form-label">{t('admin.betaBugScreenshot')}</label>
                 <input className="form-control" value={form.screenshotUrl} onChange={(e) => setForm((f) => ({ ...f, screenshotUrl: e.target.value }))} placeholder="https://..." />
+                <p className="form-text small mb-0">{t('admin.betaBugScreenshotHint')}</p>
               </div>
               {error ? <div className="alert alert-danger py-2">{error}</div> : null}
               {ok ? <div className="alert alert-success py-2">{ok}</div> : null}

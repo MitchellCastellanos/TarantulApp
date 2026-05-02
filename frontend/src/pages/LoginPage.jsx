@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { clearTesterPrefill, isComingSoonEnabled, readTesterPrefill } from '../utils/comingSoonGate'
+import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -41,6 +42,11 @@ export default function LoginPage() {
     const r = searchParams.get('ref')
     if (r && String(r).trim()) setReferralCode(String(r).trim().toUpperCase())
   }, [searchParams])
+
+  const inviteOnly = isInviteOnlyEnabled()
+  useEffect(() => {
+    if (inviteOnly) setMode('login')
+  }, [inviteOnly])
 
   useEffect(() => {
     if (!isComingSoonEnabled()) return
@@ -103,14 +109,14 @@ export default function LoginPage() {
       return
     }
     const testerLoginMode = isComingSoonEnabled() && !!testerPrefill
-    if (!testerLoginMode && mode === 'register' && password.length < 6) {
+    if (!testerLoginMode && !inviteOnly && mode === 'register' && password.length < 6) {
       setError(t('auth.passwordTooShort'))
       return
     }
     setLoading(true)
     try {
-      const endpoint = testerLoginMode || mode === 'login' ? '/auth/login' : '/auth/register'
-      const body = testerLoginMode || mode === 'login'
+      const endpoint = testerLoginMode || inviteOnly || mode === 'login' ? '/auth/login' : '/auth/register'
+      const body = testerLoginMode || inviteOnly || mode === 'login'
         ? { email, password }
         : {
             email,
@@ -127,11 +133,16 @@ export default function LoginPage() {
     } catch (err) {
       const st = err.response?.status
       const d = err.response?.data
+      const code = d?.error
+      if (code === 'REGISTRATION_CLOSED') {
+        setError(t('auth.registrationClosed'))
+      } else {
       const fieldMsgs = d?.fields && typeof d.fields === 'object'
         ? Object.values(d.fields).filter(Boolean).join(' ')
         : ''
-      const baseMsg = fieldMsgs || d?.error || t('common.error')
+      const baseMsg = fieldMsgs || (typeof code === 'string' ? code : '') || t('common.error')
       setError(import.meta.env.DEV && st ? `${baseMsg} (HTTP ${st})` : baseMsg)
+      }
     } finally {
       setLoading(false)
     }
@@ -157,7 +168,11 @@ export default function LoginPage() {
             loginRef.current(data)
           } catch (err) {
             const d = err.response?.data
+            if (d?.error === 'REGISTRATION_CLOSED') {
+              setError(tRef.current('auth.registrationClosed'))
+            } else {
             setError(d?.error || tRef.current('auth.googleLoginError'))
+            }
           } finally {
             setLoading(false)
           }
@@ -192,6 +207,7 @@ export default function LoginPage() {
 
   const isLight = theme === 'light'
   const testerLoginMode = isComingSoonEnabled() && !!testerPrefill
+  const showRegisterUi = !inviteOnly && !testerLoginMode
   const loginFeatures = [
     { title: t('auth.loginPage.featureDiscoverTitle'), bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')] },
     { title: t('auth.loginPage.featureCollectionTitle'), bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')] },
@@ -233,11 +249,13 @@ export default function LoginPage() {
                 <p className="small mb-3 mb-md-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.6 }}>
                   {t('auth.loginPage.heroLead')}
                 </p>
+                {!inviteOnly && (
                 <div className="d-flex flex-wrap gap-2 mt-3">
                   <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
                   <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
                   <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
                 </div>
+                )}
               </div>
 
               <div
@@ -250,11 +268,15 @@ export default function LoginPage() {
                 <p className="small text-uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
                   {t('auth.standardEyebrow')}
                 </p>
-                <h3 className="fw-bold mb-1">{mode === 'login' ? <BrandName /> : t('auth.register')}</h3>
-                <p className="small text-muted mb-3">{mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}</p>
+                <h3 className="fw-bold mb-1">
+                  {inviteOnly ? t('auth.betaFormTitle') : mode === 'login' ? <BrandName /> : t('auth.register')}
+                </h3>
+                <p className="small text-muted mb-3">
+                  {inviteOnly ? t('auth.betaLoginSubtitle') : mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
+                </p>
 
                 {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
-                {!testerLoginMode && mode === 'register' && (
+                {showRegisterUi && mode === 'register' && (
                   <div
                     className="alert py-2 small mb-3"
                     style={{
@@ -268,7 +290,7 @@ export default function LoginPage() {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                  {!testerLoginMode && mode === 'register' && (
+                  {showRegisterUi && mode === 'register' && (
                     <div className="mb-3">
                       <label className="form-label fw-semibold small">{t('auth.name')}</label>
                       <input
@@ -283,7 +305,7 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  {!testerLoginMode && mode === 'register' && (
+                  {showRegisterUi && mode === 'register' && (
                     <div className="mb-3">
                       <label className="form-label fw-semibold small">{t('auth.referralCodeOptional')}</label>
                       <input
@@ -337,11 +359,25 @@ export default function LoginPage() {
                   )}
 
                   <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
-                    {loading ? t('auth.loading') : testerLoginMode ? t('auth.testerLogin') : mode === 'login' ? t('auth.login') : t('auth.register')}
+                    {loading
+                      ? t('auth.loading')
+                      : testerLoginMode
+                        ? t('auth.testerLogin')
+                        : inviteOnly && mode === 'login'
+                          ? t('auth.betaLoginButton')
+                          : mode === 'login'
+                            ? t('auth.login')
+                            : t('auth.register')}
                   </button>
                 </form>
 
-                {!testerLoginMode && (
+                {inviteOnly && (
+                  <p className="small text-center mt-3 mb-0">
+                    <Link to="/beta/apply" style={{ color: 'var(--ta-brown-light)' }}>{t('publicBetaHome.ctaApply')}</Link>
+                  </p>
+                )}
+
+                {!testerLoginMode && mode === 'login' && (
                 <div className="mt-3">
                   <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
                   {googleClientId ? (
@@ -352,7 +388,7 @@ export default function LoginPage() {
                 </div>
                 )}
 
-                {!testerLoginMode && (
+                {showRegisterUi && (
                 <>
                 <hr className="my-3" />
                 <p className="small mb-0">
@@ -385,7 +421,7 @@ export default function LoginPage() {
               </div>
             </section>
 
-          {/* 3) Feature bullets + community preview */}
+          {/* Feature bullets + community preview */}
           <section className="w-100">
             <div className="row g-3 mb-3">
               {loginFeatures.map((block) => (

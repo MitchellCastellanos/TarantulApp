@@ -46,6 +46,8 @@ import InsightsPage from './pages/InsightsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
+import PublicBetaHomePage from './pages/PublicBetaHomePage'
+import BetaPendingHomePage from './pages/BetaPendingHomePage'
 import {
   COMING_SOON_BYPASS_STORAGE_KEY,
   isComingSoonEnabled,
@@ -53,6 +55,7 @@ import {
   writeTesterPrefill,
   writeTesterBypass,
 } from './utils/comingSoonGate'
+import { isInviteOnlyEnabled } from './utils/inviteOnly'
 
 function ComingSoonGate({ children }) {
   const enabled = isComingSoonEnabled()
@@ -111,11 +114,32 @@ function PrivateRoute({ children }) {
       />
     )
   }
+  if (isInviteOnlyEnabled()) {
+    const isBeta = user?.betaTester === true || user?.admin === true
+    if (!isBeta) {
+      return <Navigate to="/" replace />
+    }
+  }
   const safeHandle = String(user?.publicHandle || '').trim()
   if (!safeHandle && location.pathname !== '/onboarding/handle') {
     return <Navigate to="/onboarding/handle" replace />
   }
   return children
+}
+
+function HomeGate() {
+  const { token, user } = useAuth()
+  const inviteOnly = isInviteOnlyEnabled()
+  if (!token) {
+    return inviteOnly ? <PublicBetaHomePage /> : <Navigate to="/login" replace />
+  }
+  if (inviteOnly) {
+    const isBeta = user?.betaTester === true || user?.admin === true
+    if (!isBeta) {
+      return <BetaPendingHomePage />
+    }
+  }
+  return <DashboardPage />
 }
 
 function LoginGate() {
@@ -178,7 +202,7 @@ function AppRoutes() {
       <Route path="/onboarding/handle" element={<PrivateRoute><HandleSetupPage /></PrivateRoute>} />
 
       {/* Protegidas */}
-      <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+      <Route path="/" element={<HomeGate />} />
       <Route path="/tarantulas/new" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id" element={<PrivateRoute><TarantulaDetailPage /></PrivateRoute>} />
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />

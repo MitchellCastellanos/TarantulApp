@@ -468,6 +468,20 @@
     "schemaName": "Générateur QR pour terrarium — TarantulApp\u2122",
     "schemaDescription": "Outil gratuit pour créer des codes QR depuis votre collection de mygales, vers la fiche publique de chaque exemplaire."
   },
+  "publicBetaHome": {
+    "tagline": "Pour celles et ceux qui font le journal du terrarium, pas le buzz.",
+    "lead": "Pendant la bêta, l’accès complet est sur invitation. Connectez-vous si nous avons créé votre compte testeur, ou posez votre candidature ci-dessous.",
+    "ctaLogin": "Connexion testeur bêta",
+    "ctaApply": "Demander l’accès bêta"
+  },
+  "betaPending": {
+    "title": "Accès bêta requis",
+    "lead": "Vous êtes connecté, mais ce compte n’a pas encore le rôle testeur bêta. Envoyez une demande et nous la traitons.",
+    "signedInAs": "Connecté :",
+    "ctaApply": "Demander l’accès bêta",
+    "logout": "Se déconnecter",
+    "footerHint": "Si nous vous avons déjà invité, demandez-nous d’activer votre e-mail comme testeur — pendant la bêta, les comptes sont créés par l’équipe."
+  },
   "auth": {
     "loginTitle": "TarantulApp\u2122",
     "standardEyebrow": "Une seule appli, tout le flux",
@@ -481,6 +495,10 @@
     "standardManifestAboutLink": "À propos de TarantulApp\u2122",
     "standardManifestAboutHint": "manifeste court : promesse et limites claires.",
     "invalidResetToken": "Ce lien n’est pas valide ou a expiré. Demandez-en un nouveau via « Mot de passe oublié ».",
+    "registrationClosed": "L’inscription publique est fermée. Les comptes sont créés par l’équipe pour les testeurs bêta ; utilisez « Demander l’accès » ou connectez-vous avec l’e-mail provisionné.",
+    "betaLoginSubtitle": "Connectez-vous avec le compte bêta que nous avons créé pour vous.",
+    "betaFormTitle": "Connexion testeur bêta",
+    "betaLoginButton": "Connexion",
     "loginSubtitle": "Accédez à votre collection et au carnet qui la porte",
     "registerSubtitle": "Créez votre compte et commencez à suivre",
     "name": "Nom",
@@ -1447,6 +1465,7 @@
     "betaBugWhatHappened": "Que s'est-il passé ?",
     "betaBugExpected": "Quel était le comportement attendu ?",
     "betaBugScreenshot": "URL de capture (optionnel)",
+    "betaBugScreenshotHint": "Importez l’image sur Imgur, Google Drive, etc. et collez le lien. L’URL de la page, la fenêtre et la version de l’app sont déjà jointes à l’envoi.",
     "severity": "Sévérité",
     "severityLow": "Faible",
     "severityMedium": "Moyenne",

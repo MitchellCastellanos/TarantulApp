@@ -468,6 +468,20 @@
     "schemaName": "Terrarium QR generator — TarantulApp\u2122",
     "schemaDescription": "Free tool to create QR codes from your tarantula collection, linking each spider’s public profile."
   },
+  "publicBetaHome": {
+    "tagline": "Built for keepers who log the enclosure, not the hype.",
+    "lead": "Access to the full app is invite-only during beta. Sign in if we created your tester account, or apply to join the beta.",
+    "ctaLogin": "Beta tester sign in",
+    "ctaApply": "Apply for beta access"
+  },
+  "betaPending": {
+    "title": "Beta access required",
+    "lead": "Your account is signed in, but it doesn’t have beta tester access yet. Apply below and we’ll review your request.",
+    "signedInAs": "Signed in as",
+    "ctaApply": "Apply for beta",
+    "logout": "Sign out",
+    "footerHint": "If we already invited you, ask us to mark your email as a tester — new accounts are created by the team during beta."
+  },
   "auth": {
     "loginTitle": "TarantulApp\u2122",
     "standardEyebrow": "One app, end to end",
@@ -481,6 +495,10 @@
     "standardManifestAboutLink": "About TarantulApp\u2122",
     "standardManifestAboutHint": "short manifest: promise and honest boundaries.",
     "invalidResetToken": "This link is invalid or expired. Request a new one from “Forgot password”.",
+    "registrationClosed": "Public sign-up is closed. Accounts are created by the team for beta testers; use Apply for beta or sign in with the email we provisioned.",
+    "betaLoginSubtitle": "Sign in with the beta account we created for you.",
+    "betaFormTitle": "Beta tester sign in",
+    "betaLoginButton": "Sign in",
     "loginSubtitle": "Open your collection and the logbook behind it",
     "registerSubtitle": "Create your account and start tracking",
     "name": "Name",
@@ -1465,6 +1483,7 @@
     "betaBugWhatHappened": "What happened?",
     "betaBugExpected": "What did you expect?",
     "betaBugScreenshot": "Screenshot URL (optional)",
+    "betaBugScreenshotHint": "Upload to Imgur, Google Drive, etc. and paste the link. We already capture the current screen URL, viewport, and app version when you submit.",
     "severity": "Severity",
     "severityLow": "Low",
     "severityMedium": "Medium",
