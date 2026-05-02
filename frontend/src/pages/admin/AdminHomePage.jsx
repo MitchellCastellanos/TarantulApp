@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
-import { formatUsageTime } from './adminShared'
+import {
+  formatUsageTime,
+  userActivityTier,
+  activityStatusLabel,
+  activityStatusBadgeClass,
+} from './adminShared'
 
 export default function AdminHomePage() {
   const { t } = useTranslation()
@@ -17,21 +22,21 @@ export default function AdminHomePage() {
   const [mailStatus, setMailStatus] = useState(null)
   const [mailTestTo, setMailTestTo] = useState('')
   const [mailTestLoading, setMailTestLoading] = useState(false)
+  const [recentLimit, setRecentLimit] = useState(50)
+  const [recentSort, setRecentSort] = useState('activity')
 
   useEffect(() => {
     let cancelled = false
     Promise.all([
       adminService.summary(),
-      adminService.recentUsers(),
       adminService.reports('open'),
       adminService.officialVendors(),
       adminService.officialVendorLeads(),
       adminService.mailConfigStatus().catch(() => null),
     ])
-      .then(([s, users, openReports, vendors, leads, mailCfg]) => {
+      .then(([s, openReports, vendors, leads, mailCfg]) => {
         if (cancelled) return
         setSummary(s)
-        setRecentUsers(Array.isArray(users) ? users : [])
         setReports(Array.isArray(openReports) ? openReports : [])
         setOfficialVendors(Array.isArray(vendors) ? vendors : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
@@ -46,6 +51,24 @@ export default function AdminHomePage() {
       cancelled = true
     }
   }, [t])
+
+  useEffect(() => {
+    let cancelled = false
+    adminService
+      .recentUsers({ limit: recentLimit, sort: recentSort })
+      .then((users) => {
+        if (cancelled) return
+        setRecentUsers(Array.isArray(users) ? users : [])
+      })
+      .catch((err) => {
+        if (cancelled) return
+        const code = err?.response?.status
+        setError(code === 403 ? t('admin.onlyAdmins') : t('admin.loadError'))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [t, recentLimit, recentSort])
 
   const resolveReport = async (id, action) => {
     try {
@@ -204,7 +227,41 @@ export default function AdminHomePage() {
       )}
 
       <div className="card p-3">
-        <h2 className="h6 mb-3">{t('admin.recentUsers')}</h2>
+        <h2 className="h6 mb-2">{t('admin.recentUsers')}</h2>
+        <p className="small text-muted mb-3">{t('admin.recentUsersBlurb')}</p>
+        <div className="d-flex flex-wrap gap-2 align-items-end mb-3">
+          <div>
+            <label className="form-label small mb-0" htmlFor="recent-sort">
+              {t('admin.recentUsersSortLabel')}
+            </label>
+            <select
+              id="recent-sort"
+              className="form-select form-select-sm"
+              style={{ minWidth: 200 }}
+              value={recentSort}
+              onChange={(e) => setRecentSort(e.target.value)}
+            >
+              <option value="activity">{t('admin.recentUsersSortActivity')}</option>
+              <option value="created">{t('admin.recentUsersSortCreated')}</option>
+            </select>
+          </div>
+          <div>
+            <label className="form-label small mb-0" htmlFor="recent-limit">
+              {t('admin.recentUsersLimitLabel')}
+            </label>
+            <select
+              id="recent-limit"
+              className="form-select form-select-sm"
+              value={String(recentLimit)}
+              onChange={(e) => setRecentLimit(Number(e.target.value))}
+            >
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+        </div>
         {recentUsers.length === 0 ? (
           <p className="text-muted small mb-0">{t('admin.noUsers')}</p>
         ) : (
@@ -215,30 +272,39 @@ export default function AdminHomePage() {
                   <th>{t('auth.email')}</th>
                   <th>{t('auth.name')}</th>
                   <th>{t('admin.plan')}</th>
+                  <th>{t('admin.activityStatusCol')}</th>
                   <th>{t('admin.created')}</th>
-                  <th>{t('admin.usageTime')}</th>
+                  <th>{t('admin.lastSeenCol')}</th>
                   <th>{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {recentUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.email}</td>
-                    <td>{u.displayName || '-'}</td>
-                    <td>{u.plan}</td>
-                    <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
-                    <td>{formatUsageTime(u.lastActivityAt, t)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                        onClick={() => toggleRecentUserTester(u)}
-                      >
-                        {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {recentUsers.map((u) => {
+                  const tier = userActivityTier(u.lastActivityAt)
+                  return (
+                    <tr key={u.id}>
+                      <td>{u.email}</td>
+                      <td>{u.displayName || '-'}</td>
+                      <td>{u.plan}</td>
+                      <td>
+                        <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
+                          {activityStatusLabel(tier, t)}
+                        </span>
+                      </td>
+                      <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
+                      <td>{formatUsageTime(u.lastActivityAt, t)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                          onClick={() => toggleRecentUserTester(u)}
+                        >
+                          {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

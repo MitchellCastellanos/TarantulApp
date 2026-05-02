@@ -23,3 +23,25 @@ export function formatUsageTime(lastActivityAt, t) {
   const days = Math.floor(hours / 24)
   return t('admin.usageTimeDays', { count: days })
 }
+
+/** @returns {'never' | 'active' | 'seen'} */
+export function userActivityTier(lastActivityAt) {
+  if (!lastActivityAt) return 'never'
+  const ts = new Date(lastActivityAt).getTime()
+  if (Number.isNaN(ts)) return 'never'
+  const days = (Date.now() - ts) / 86400000
+  if (days <= 7) return 'active'
+  return 'seen'
+}
+
+export function activityStatusLabel(tier, t) {
+  if (tier === 'active') return t('admin.activityStatusActive')
+  if (tier === 'seen') return t('admin.activityStatusSeen')
+  return t('admin.activityStatusNever')
+}
+
+export function activityStatusBadgeClass(tier) {
+  if (tier === 'active') return 'success'
+  if (tier === 'seen') return 'secondary'
+  return 'warning'
+}

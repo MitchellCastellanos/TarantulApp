@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -172,9 +174,16 @@ public class AdminController {
     }
 
     @GetMapping("/recent-users")
-    public ResponseEntity<List<Map<String, Object>>> recentUsers() {
+    public ResponseEntity<List<Map<String, Object>>> recentUsers(
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "activity") String sort) {
         adminAccessService.assertCurrentUserIsAdmin();
-        List<Map<String, Object>> out = userRepository.findTop10ByOrderByCreatedAtDesc().stream()
+        int cap = Math.min(Math.max(limit, 1), 200);
+        Pageable page = PageRequest.of(0, cap);
+        List<User> users = "created".equalsIgnoreCase(sort == null ? "" : sort.trim())
+                ? userRepository.findUsersForAdminOrderByCreatedDesc(page)
+                : userRepository.findUsersForAdminOrderByLastActivityDesc(page);
+        List<Map<String, Object>> out = users.stream()
                 .map(this::mapUser)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(out);
@@ -681,6 +690,7 @@ public class AdminController {
         out.put("betaExperienceLevel", user.getBetaExperienceLevel() == null ? "" : user.getBetaExperienceLevel());
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         out.put("createdAt", user.getCreatedAt());
+        out.put("lastActivityAt", user.getLastActivityAt());
         out.put("bugReportsCount", bugReportRepository.countByUserId(user.getId()));
         return out;
     }

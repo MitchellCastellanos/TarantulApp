@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import {
@@ -13,7 +13,14 @@ import {
   cacheBetaPasswordForEmail,
   readCachedBetaPassword,
 } from '../../utils/betaTesterEmailSession'
-import { loadTesterTplPrefs, TESTER_TPL_PREF_KEY } from './adminShared'
+import {
+  loadTesterTplPrefs,
+  TESTER_TPL_PREF_KEY,
+  formatUsageTime,
+  userActivityTier,
+  activityStatusLabel,
+  activityStatusBadgeClass,
+} from './adminShared'
 
 export default function AdminBetaPage() {
   const { t } = useTranslation()
@@ -41,6 +48,30 @@ export default function AdminBetaPage() {
   const [campaignLocale, setCampaignLocale] = useState('es')
   const [campaignSending, setCampaignSending] = useState(false)
   const [selectedTesterIds, setSelectedTesterIds] = useState(() => ({}))
+  const [testerListSort, setTesterListSort] = useState('activity')
+
+  const sortedBetaTesters = useMemo(() => {
+    const rows = [...betaTesters]
+    if (testerListSort === 'email') {
+      rows.sort((a, b) => (a.email || '').localeCompare(b.email || '', undefined, { sensitivity: 'base' }))
+    } else if (testerListSort === 'created') {
+      rows.sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return tb - ta
+      })
+    } else {
+      rows.sort((a, b) => {
+        const ta = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0
+        const tb = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0
+        if (tb !== ta) return tb - ta
+        const ca = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const cb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return cb - ca
+      })
+    }
+    return rows
+  }, [betaTesters, testerListSort])
 
   const updateTesterPref = (userId, templateId) => {
     setTesterTplPref((prev) => {
@@ -780,6 +811,24 @@ export default function AdminBetaPage() {
             </div>
           </div>
           <p className="small text-muted mb-2">{t('admin.addTesterBlurb')}</p>
+          <div className="d-flex flex-wrap align-items-end gap-2 mb-2">
+            <div>
+              <label className="form-label small mb-0" htmlFor="tester-table-sort">
+                {t('admin.testerListSortLabel')}
+              </label>
+              <select
+                id="tester-table-sort"
+                className="form-select form-select-sm"
+                style={{ minWidth: 220 }}
+                value={testerListSort}
+                onChange={(e) => setTesterListSort(e.target.value)}
+              >
+                <option value="activity">{t('admin.testerSortActivity')}</option>
+                <option value="created">{t('admin.testerSortCreated')}</option>
+                <option value="email">{t('admin.testerSortEmail')}</option>
+              </select>
+            </div>
+          </div>
           <form
             onSubmit={submitProvision}
             className="p-2 mb-3 border rounded bg-body-secondary bg-opacity-10"
@@ -861,6 +910,8 @@ export default function AdminBetaPage() {
                       ✓
                     </th>
                     <th>{t('auth.email')}</th>
+                    <th>{t('admin.activityStatusCol')}</th>
+                    <th>{t('admin.lastSeenCol')}</th>
                     <th>{t('admin.country')}</th>
                     <th>{t('admin.level')}</th>
                     <th>{t('admin.betaBugReportsTitle')}</th>
@@ -870,7 +921,9 @@ export default function AdminBetaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {betaTesters.map((u) => (
+                  {sortedBetaTesters.map((u) => {
+                    const tier = userActivityTier(u.lastActivityAt)
+                    return (
                     <tr key={u.id}>
                       <td className="text-center">
                         <input
@@ -882,6 +935,12 @@ export default function AdminBetaPage() {
                         />
                       </td>
                       <td>{u.email}</td>
+                      <td>
+                        <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
+                          {activityStatusLabel(tier, t)}
+                        </span>
+                      </td>
+                      <td className="small">{formatUsageTime(u.lastActivityAt, t)}</td>
                       <td>{u.betaCountry || '-'}</td>
                       <td>{u.betaExperienceLevel || '-'}</td>
                       <td>{u.bugReportsCount ?? 0}</td>
@@ -938,7 +997,8 @@ export default function AdminBetaPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

@@ -3,9 +3,9 @@ package com.tarantulapp.repository;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -32,7 +32,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             """)
     List<User> searchPublicProfiles(String query, Pageable pageable);
     long countByCreatedAtAfter(LocalDateTime from);
-    List<User> findTop10ByOrderByCreatedAtDesc();
+
+    @Query("SELECT u FROM User u ORDER BY u.lastActivityAt DESC NULLS LAST, u.createdAt DESC")
+    List<User> findUsersForAdminOrderByLastActivityDesc(Pageable pageable);
+
+    @Query("select u from User u order by u.createdAt desc")
+    List<User> findUsersForAdminOrderByCreatedDesc(Pageable pageable);
     List<User> findByPlanAndTrialEndsAtBetween(
             UserPlan plan,
             LocalDateTime from,
