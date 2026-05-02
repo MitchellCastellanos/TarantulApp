@@ -118,7 +118,15 @@ public class AdminController {
     @PostMapping("/mail/test-send")
     public ResponseEntity<Map<String, Object>> mailTestSend(@Valid @RequestBody MailTestSendRequest req) {
         adminAccessService.assertCurrentUserIsAdmin();
-        emailService.sendSmtpTestEmail(req.to());
+        try {
+            emailService.sendSmtpTestEmail(req.to());
+        } catch (RuntimeException e) {
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("status", "error");
+            err.put("to", req.to());
+            err.put("message", e.getMessage());
+            return ResponseEntity.status(502).body(err);
+        }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("status", "sent");
         out.put("to", req.to());
