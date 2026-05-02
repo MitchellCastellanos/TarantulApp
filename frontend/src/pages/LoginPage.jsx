@@ -10,7 +10,6 @@ import BrandName from '../components/BrandName'
 import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
-import { clearTesterPrefill, isComingSoonEnabled, readTesterPrefill } from '../utils/comingSoonGate'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 
 export default function LoginPage() {
@@ -30,7 +29,6 @@ export default function LoginPage() {
   const [communityLoading, setCommunityLoading] = useState(true)
   const [theme, setTheme] = useState(() => getStoredTheme())
   const [showIntro, setShowIntro] = useState(false)
-  const [testerPrefill, setTesterPrefill] = useState(() => readTesterPrefill())
   const googleBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   const loginRef = useRef(login)
@@ -47,20 +45,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (inviteOnly) setMode('login')
   }, [inviteOnly])
-
-  useEffect(() => {
-    if (!isComingSoonEnabled()) return
-    const prefill = readTesterPrefill()
-    if (!prefill) return
-    setMode('login')
-    setTesterPrefill(prefill)
-    setForm((prev) => ({
-      ...prev,
-      email: prefill.email,
-      password: prefill.password,
-      displayName: '',
-    }))
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -108,15 +92,14 @@ export default function LoginPage() {
       setError(t('auth.fillRequired'))
       return
     }
-    const testerLoginMode = isComingSoonEnabled() && !!testerPrefill
-    if (!testerLoginMode && !inviteOnly && mode === 'register' && password.length < 6) {
+    if (!inviteOnly && mode === 'register' && password.length < 6) {
       setError(t('auth.passwordTooShort'))
       return
     }
     setLoading(true)
     try {
-      const endpoint = testerLoginMode || inviteOnly || mode === 'login' ? '/auth/login' : '/auth/register'
-      const body = testerLoginMode || inviteOnly || mode === 'login'
+      const endpoint = inviteOnly || mode === 'login' ? '/auth/login' : '/auth/register'
+      const body = inviteOnly || mode === 'login'
         ? { email, password }
         : {
             email,
@@ -126,10 +109,6 @@ export default function LoginPage() {
           }
       const { data } = await publicApi.post(endpoint, body)
       login(data)
-      if (testerLoginMode) {
-        clearTesterPrefill()
-        setTesterPrefill(null)
-      }
     } catch (err) {
       const st = err.response?.status
       const d = err.response?.data
@@ -206,8 +185,7 @@ export default function LoginPage() {
   }, [googleClientId])
 
   const isLight = theme === 'light'
-  const testerLoginMode = isComingSoonEnabled() && !!testerPrefill
-  const showRegisterUi = !inviteOnly && !testerLoginMode
+  const showRegisterUi = !inviteOnly
   const loginFeatures = [
     { title: t('auth.loginPage.featureDiscoverTitle'), bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')] },
     { title: t('auth.loginPage.featureCollectionTitle'), bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')] },
@@ -331,7 +309,6 @@ export default function LoginPage() {
                       onChange={handleChange}
                       placeholder={t('auth.emailPlaceholder')}
                       autoComplete="email"
-                      disabled={testerLoginMode}
                     />
                   </div>
 
@@ -346,11 +323,10 @@ export default function LoginPage() {
                       onChange={handleChange}
                       placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : ''}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      disabled={testerLoginMode}
                     />
                   </div>
 
-                  {!testerLoginMode && mode === 'login' && (
+                  {mode === 'login' && (
                     <div className="mb-4 text-end">
                       <Link to="/forgot-password" className="small text-decoration-none" style={{ color: 'var(--ta-brown-light)' }}>
                         {t('auth.forgotPassword')}
@@ -361,13 +337,11 @@ export default function LoginPage() {
                   <button type="submit" className="btn btn-dark w-100 py-2 fw-semibold" disabled={loading}>
                     {loading
                       ? t('auth.loading')
-                      : testerLoginMode
-                        ? t('auth.testerLogin')
-                        : inviteOnly && mode === 'login'
-                          ? t('auth.betaLoginButton')
-                          : mode === 'login'
-                            ? t('auth.login')
-                            : t('auth.register')}
+                      : inviteOnly && mode === 'login'
+                        ? t('auth.betaLoginButton')
+                        : mode === 'login'
+                          ? t('auth.login')
+                          : t('auth.register')}
                   </button>
                 </form>
 
@@ -377,7 +351,7 @@ export default function LoginPage() {
                   </p>
                 )}
 
-                {!testerLoginMode && mode === 'login' && (
+                {mode === 'login' && (
                 <div className="mt-3">
                   <p className="small text-muted mb-2">{t('auth.orContinueWith')}</p>
                   {googleClientId ? (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
@@ -41,51 +41,13 @@ import HandleSetupPage from './pages/HandleSetupPage'
 import BetaApplyPage from './pages/BetaApplyPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
-import ComingSoonPage from './pages/ComingSoonPage'
 import InsightsPage from './pages/InsightsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
 import PublicBetaHomePage from './pages/PublicBetaHomePage'
 import BetaPendingHomePage from './pages/BetaPendingHomePage'
-import {
-  COMING_SOON_BYPASS_STORAGE_KEY,
-  isComingSoonEnabled,
-  readTesterBypass,
-  writeTesterPrefill,
-  writeTesterBypass,
-} from './utils/comingSoonGate'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
-
-function ComingSoonGate({ children }) {
-  const enabled = isComingSoonEnabled()
-  const [unlocked, setUnlocked] = useState(() => readTesterBypass())
-  const location = useLocation()
-
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key !== COMING_SOON_BYPASS_STORAGE_KEY) return
-      setUnlocked(e.newValue === '1')
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-
-  const handleTesterUnlock = useCallback((prefill) => {
-    if (prefill?.email && prefill?.password) {
-      writeTesterPrefill(prefill.email, prefill.password)
-    }
-    writeTesterBypass()
-    setUnlocked(true)
-  }, [])
-
-  const isPublicBypassPath = location.pathname === '/beta/apply'
-
-  if (!enabled || unlocked || isPublicBypassPath) {
-    return children
-  }
-  return <ComingSoonPage onUnlock={handleTesterUnlock} />
-}
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -313,14 +275,12 @@ export default function App() {
           v7_relativeSplatPath: true,
         }}
       >
-        <ComingSoonGate>
-          <AuthSessionBridge />
-          <AppRoutes />
-          <BugReportFAB />
-          <BetaTesterAgreementModal />
-          <RateAppPrompt />
-          <Footer />
-        </ComingSoonGate>
+        <AuthSessionBridge />
+        <AppRoutes />
+        <BugReportFAB />
+        <BetaTesterAgreementModal />
+        <RateAppPrompt />
+        <Footer />
       </BrowserRouter>
     </AuthProvider>
   )
