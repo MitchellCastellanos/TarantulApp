@@ -20,6 +20,10 @@ import {
   userActivityTier,
   activityStatusLabel,
   activityStatusBadgeClass,
+  formatAdminPlanSummary,
+  adminPlanBadgeClass,
+  compareAdminByActivityDesc,
+  compareAdminByCreatedDesc,
 } from './adminShared'
 
 export default function AdminBetaPage() {
@@ -55,20 +59,9 @@ export default function AdminBetaPage() {
     if (testerListSort === 'email') {
       rows.sort((a, b) => (a.email || '').localeCompare(b.email || '', undefined, { sensitivity: 'base' }))
     } else if (testerListSort === 'created') {
-      rows.sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
-        return tb - ta
-      })
+      rows.sort(compareAdminByCreatedDesc)
     } else {
-      rows.sort((a, b) => {
-        const ta = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0
-        const tb = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0
-        if (tb !== ta) return tb - ta
-        const ca = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const cb = b.createdAt ? new Date(b.createdAt).getTime() : 0
-        return cb - ca
-      })
+      rows.sort(compareAdminByActivityDesc)
     }
     return rows
   }, [betaTesters, testerListSort])
@@ -910,6 +903,7 @@ export default function AdminBetaPage() {
                       ✓
                     </th>
                     <th>{t('auth.email')}</th>
+                    <th>{t('admin.plan')}</th>
                     <th>{t('admin.activityStatusCol')}</th>
                     <th>{t('admin.lastSeenCol')}</th>
                     <th>{t('admin.country')}</th>
@@ -935,6 +929,11 @@ export default function AdminBetaPage() {
                         />
                       </td>
                       <td>{u.email}</td>
+                      <td>
+                        <span className={`badge text-bg-${adminPlanBadgeClass(u)}`}>
+                          {formatAdminPlanSummary(u, t)}
+                        </span>
+                      </td>
                       <td>
                         <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
                           {activityStatusLabel(tier, t)}

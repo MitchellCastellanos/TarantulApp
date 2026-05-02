@@ -13,6 +13,7 @@ import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.EmailService;
+import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
@@ -62,6 +63,7 @@ public class AdminController {
     private final BetaEmailSendRepository betaEmailSendRepository;
     private final AuthService authService;
     private final EmailService emailService;
+    private final PlanAccessService planAccessService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -87,7 +89,8 @@ public class AdminController {
                            BetaApplicationRepository betaApplicationRepository,
                            BetaEmailSendRepository betaEmailSendRepository,
                            AuthService authService,
-                           EmailService emailService) {
+                           EmailService emailService,
+                           PlanAccessService planAccessService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -101,6 +104,7 @@ public class AdminController {
         this.betaEmailSendRepository = betaEmailSendRepository;
         this.authService = authService;
         this.emailService = emailService;
+        this.planAccessService = planAccessService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -174,7 +178,7 @@ public class AdminController {
     }
 
     @GetMapping("/recent-users")
-    public ResponseEntity<List<Map<String, Object>>> recentUsers(
+    public ResponseEntity<Map<String, Object>> recentUsers(
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(defaultValue = "activity") String sort) {
         adminAccessService.assertCurrentUserIsAdmin();
@@ -183,10 +187,16 @@ public class AdminController {
         List<User> users = "created".equalsIgnoreCase(sort == null ? "" : sort.trim())
                 ? userRepository.findUsersForAdminOrderByCreatedDesc(page)
                 : userRepository.findUsersForAdminOrderByLastActivityDesc(page);
-        List<Map<String, Object>> out = users.stream()
+        List<Map<String, Object>> rows = users.stream()
                 .map(this::mapUser)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(out);
+        long totalUsers = userRepository.count();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("users", rows);
+        body.put("totalUsers", totalUsers);
+        body.put("limit", cap);
+        body.put("sort", "created".equalsIgnoreCase(sort == null ? "" : sort.trim()) ? "created" : "activity");
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/official-vendors")
@@ -636,11 +646,18 @@ public class AdminController {
         out.put("id", u.getId());
         out.put("email", u.getEmail());
         out.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
-        out.put("plan", u.getPlan() == null ? "FREE" : u.getPlan().name());
+        putPlanAccessFields(u, out);
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());
         return out;
+    }
+
+    private void putPlanAccessFields(User u, Map<String, Object> out) {
+        out.put("plan", u.getPlan() == null ? "FREE" : u.getPlan().name());
+        out.put("inTrial", planAccessService.isTrialActive(u));
+        out.put("trialEndsAt", u.getTrialEndsAt());
+        out.put("hasProFeatures", planAccessService.hasProFeatures(u));
     }
 
     private Map<String, Object> mapPartnerSyncRun(PartnerListingSyncRun run) {
@@ -685,6 +702,7 @@ public class AdminController {
         out.put("id", user.getId());
         out.put("email", user.getEmail());
         out.put("displayName", user.getDisplayName() == null ? "" : user.getDisplayName());
+        putPlanAccessFields(user, out);
         out.put("betaCohort", user.getBetaCohort() == null ? "" : user.getBetaCohort());
         out.put("betaCountry", user.getBetaCountry() == null ? "" : user.getBetaCountry());
         out.put("betaExperienceLevel", user.getBetaExperienceLevel() == null ? "" : user.getBetaExperienceLevel());

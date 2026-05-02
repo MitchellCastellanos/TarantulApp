@@ -1,3 +1,5 @@
+import { trialCalendarDaysRemaining } from '../../utils/trialDaysLeft'
+
 export const TESTER_TPL_PREF_KEY = 'tarantulapp_tester_email_tpl_v1'
 
 export function loadTesterTplPrefs() {
@@ -44,4 +46,58 @@ export function activityStatusBadgeClass(tier) {
   if (tier === 'active') return 'success'
   if (tier === 'seen') return 'secondary'
   return 'warning'
+}
+
+/** Plan label: paid Pro vs Pro trial (Free + active trial) vs Free. */
+export function formatAdminPlanSummary(u, t) {
+  const plan = String(u?.plan || 'FREE').toUpperCase()
+  const inTrial = u?.inTrial === true
+  if (plan === 'PRO') {
+    return t('admin.planSummaryPro')
+  }
+  if (inTrial) {
+    const days = u?.trialEndsAt ? trialCalendarDaysRemaining(u.trialEndsAt) : 0
+    if (days > 0) {
+      return t('admin.planSummaryProTrialWithDays', { days })
+    }
+    return t('admin.planSummaryProTrial')
+  }
+  return t('admin.planSummaryFree')
+}
+
+/** Bootstrap badge color for plan column. */
+export function adminPlanBadgeClass(u) {
+  const plan = String(u?.plan || 'FREE').toUpperCase()
+  if (plan === 'PRO') return 'primary'
+  if (u?.inTrial === true) return 'info'
+  return 'secondary'
+}
+
+function activitySortKey(iso) {
+  if (iso == null || iso === '') return null
+  const x = new Date(iso).getTime()
+  return Number.isNaN(x) ? null : x
+}
+
+/**
+ * Newest activity first; missing/invalid last; tie-break by createdAt desc.
+ */
+export function compareAdminByActivityDesc(a, b) {
+  const sa = activitySortKey(a?.lastActivityAt)
+  const sb = activitySortKey(b?.lastActivityAt)
+  if (sa != null && sb != null && sa !== sb) return sb - sa
+  if (sa != null && sb == null) return -1
+  if (sa == null && sb != null) return 1
+  const ca = activitySortKey(a?.createdAt) ?? 0
+  const cb = activitySortKey(b?.createdAt) ?? 0
+  return cb - ca
+}
+
+export function compareAdminByCreatedDesc(a, b) {
+  const ca = activitySortKey(a?.createdAt)
+  const cb = activitySortKey(b?.createdAt)
+  if (ca != null && cb != null && ca !== cb) return cb - ca
+  if (ca != null && cb == null) return -1
+  if (ca == null && cb != null) return 1
+  return compareAdminByActivityDesc(a, b)
 }

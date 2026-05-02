@@ -2,7 +2,22 @@ import api from './api'
 
 const adminService = {
   summary: () => api.get('/admin/summary').then((r) => r.data),
-  recentUsers: (params = {}) => api.get('/admin/recent-users', { params }).then((r) => r.data),
+  recentUsers: (params = {}) =>
+    api.get('/admin/recent-users', { params }).then((r) => {
+      const d = r.data
+      if (d && typeof d === 'object' && !Array.isArray(d) && Array.isArray(d.users)) {
+        return {
+          users: d.users,
+          totalUsers: typeof d.totalUsers === 'number' ? d.totalUsers : 0,
+          limit: typeof d.limit === 'number' ? d.limit : params.limit,
+          sort: d.sort,
+        }
+      }
+      if (Array.isArray(d)) {
+        return { users: d, totalUsers: d.length, limit: d.length, sort: params.sort }
+      }
+      return { users: [], totalUsers: 0, limit: params.limit, sort: params.sort }
+    }),
   reports: (status = 'open') => api.get('/admin/reports', { params: { status } }).then((r) => r.data),
   resolveReport: (id, action, note) =>
     api.patch(`/admin/reports/${id}/resolve`, { action, note }).then((r) => r.data),

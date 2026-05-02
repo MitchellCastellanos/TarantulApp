@@ -6,6 +6,8 @@ import {
   userActivityTier,
   activityStatusLabel,
   activityStatusBadgeClass,
+  formatAdminPlanSummary,
+  adminPlanBadgeClass,
 } from './adminShared'
 
 export default function AdminHomePage() {
@@ -24,6 +26,8 @@ export default function AdminHomePage() {
   const [mailTestLoading, setMailTestLoading] = useState(false)
   const [recentLimit, setRecentLimit] = useState(50)
   const [recentSort, setRecentSort] = useState('activity')
+  const [recentUsersTotal, setRecentUsersTotal] = useState(0)
+  const [recentUsersLoading, setRecentUsersLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -54,16 +58,21 @@ export default function AdminHomePage() {
 
   useEffect(() => {
     let cancelled = false
+    setRecentUsersLoading(true)
     adminService
       .recentUsers({ limit: recentLimit, sort: recentSort })
-      .then((users) => {
+      .then((pack) => {
         if (cancelled) return
-        setRecentUsers(Array.isArray(users) ? users : [])
+        setRecentUsers(Array.isArray(pack?.users) ? pack.users : [])
+        setRecentUsersTotal(typeof pack?.totalUsers === 'number' ? pack.totalUsers : 0)
       })
       .catch((err) => {
         if (cancelled) return
         const code = err?.response?.status
         setError(code === 403 ? t('admin.onlyAdmins') : t('admin.loadError'))
+      })
+      .finally(() => {
+        if (!cancelled) setRecentUsersLoading(false)
       })
     return () => {
       cancelled = true
@@ -262,52 +271,67 @@ export default function AdminHomePage() {
             </select>
           </div>
         </div>
-        {recentUsers.length === 0 ? (
+        {recentUsersLoading ? (
+          <p className="text-muted small mb-0">{t('common.loading')}</p>
+        ) : recentUsers.length === 0 ? (
           <p className="text-muted small mb-0">{t('admin.noUsers')}</p>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>{t('auth.email')}</th>
-                  <th>{t('auth.name')}</th>
-                  <th>{t('admin.plan')}</th>
-                  <th>{t('admin.activityStatusCol')}</th>
-                  <th>{t('admin.created')}</th>
-                  <th>{t('admin.lastSeenCol')}</th>
-                  <th>{t('admin.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentUsers.map((u) => {
-                  const tier = userActivityTier(u.lastActivityAt)
-                  return (
-                    <tr key={u.id}>
-                      <td>{u.email}</td>
-                      <td>{u.displayName || '-'}</td>
-                      <td>{u.plan}</td>
-                      <td>
-                        <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
-                          {activityStatusLabel(tier, t)}
-                        </span>
-                      </td>
-                      <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
-                      <td>{formatUsageTime(u.lastActivityAt, t)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                          onClick={() => toggleRecentUserTester(u)}
-                        >
-                          {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="table-responsive">
+              <table className="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>{t('auth.email')}</th>
+                    <th>{t('auth.name')}</th>
+                    <th>{t('admin.plan')}</th>
+                    <th>{t('admin.activityStatusCol')}</th>
+                    <th>{t('admin.created')}</th>
+                    <th>{t('admin.lastSeenCol')}</th>
+                    <th>{t('admin.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentUsers.map((u) => {
+                    const tier = userActivityTier(u.lastActivityAt)
+                    return (
+                      <tr key={u.id}>
+                        <td>{u.email}</td>
+                        <td>{u.displayName || '-'}</td>
+                        <td>
+                          <span className={`badge text-bg-${adminPlanBadgeClass(u)}`}>
+                            {formatAdminPlanSummary(u, t)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
+                            {activityStatusLabel(tier, t)}
+                          </span>
+                        </td>
+                        <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
+                        <td>{formatUsageTime(u.lastActivityAt, t)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                            onClick={() => toggleRecentUserTester(u)}
+                          >
+                            {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="small text-muted mb-0 mt-2">
+              {t('admin.recentUsersShowing', {
+                count: recentUsers.length,
+                total: recentUsersTotal,
+                limit: recentLimit,
+              })}
+            </p>
+          </>
         )}
       </div>
 
