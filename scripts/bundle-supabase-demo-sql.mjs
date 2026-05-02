@@ -13,12 +13,16 @@ const v59 = fs.readFileSync(
   path.join(base, "backend/src/main/resources/db/migration/V59__expand_beta_demo_seeds.sql"),
   "utf8",
 );
+const v60 = fs.readFileSync(
+  path.join(base, "backend/src/main/resources/db/migration/V60__demo_seeds_english_us_market.sql"),
+  "utf8",
+);
 
 const hdr = `-- =============================================================================
 -- Beta DEMO seed data — idempotent SQL for Supabase SQL Editor (or psql)
 -- =============================================================================
 -- Purpose:
---   Applies the same data changes as Flyway V58 + V59 when you want parity without
+--   Applies the same data changes as Flyway V58 + V59 + V60 when you want parity without
 --   waiting for a deploy, or to repair a partially failed migration.
 --
 -- Safe usage:
@@ -63,7 +67,15 @@ WHERE status IS NOT NULL;
 `;
 
 const out =
-  hdr + "\n\n" + v58.trimEnd() + "\n\n" + v59.trimEnd() + repair + "\n";
+  hdr +
+  "\n\n" +
+  v58.trimEnd() +
+  "\n\n" +
+  v59.trimEnd() +
+  "\n\n" +
+  v60.trimEnd() +
+  repair +
+  "\n";
 
 const dest = path.join(base, "docs/operations/supabase-beta-demo-data.sql");
 fs.writeFileSync(dest, out, "utf8");

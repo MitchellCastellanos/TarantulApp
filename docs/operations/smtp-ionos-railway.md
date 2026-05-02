@@ -66,3 +66,22 @@ Ahí se monta el link `/reset-password?token=...`.
 
 - Rotá la contraseña del buzón si alguna vez quedó en un log viejo.
 - IONOS a veces permite contraseñas específicas por cliente; si la tienes, úsala en lugar de la contraseña webmail principal.
+
+## Admin: `401` vs `403` en `/api/admin/mail/*`
+
+| Código | Suele significar |
+| ------ | ---------------- |
+| **401** | No hay sesión válida: falta `Authorization: Bearer …`, JWT expirado, o **`JWT_SECRET` en Railway distinto** del que firmó el token (otro deploy / env equivocado). Cierra sesión y vuelve a entrar; verifica que frontend y backend compartan el mismo secreto. |
+| **403** | JWT válido pero **tu email no está en `APP_ADMIN_EMAILS`** (CSV en Railway). El backend usa lista explícita de admins, no el rol dentro del JWT. |
+
+`POST /api/admin/mail/test-send` requiere estar logueado **y** ser admin.
+
+## `MailConnectException` / `SocketTimeoutException` hacia `smtp.ionos.com`
+
+Si en Sentry aparece **timeout al conectar** al puerto **587** (no error de usuario/contraseña), suele ser **red saliente**:
+
+- Varios hosts cloud bloquean SMTP saliente para combatir spam; a veces solo falla desde ciertas regiones o hasta que abres ticket con el proveedor.
+- Prueba **`MAIL_PORT=465`** + **`MAIL_SMTP_SSL=true`** (SSL implícito) si IONOS lo permite para tu cuenta.
+- Si sigue igual, valorar **API de correo** (SendGrid, Resend, AWS SES, etc.) en lugar de SMTP directo hacia IONOS desde Railway.
+
+No es un bug del código Java si la JVM no puede abrir el socket TCP al host SMTP.
