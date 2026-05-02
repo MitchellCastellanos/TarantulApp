@@ -17,6 +17,21 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     List<Tarantula> findByUserIdOrderByCreatedAtAscIdAsc(UUID userId);
     long countByUserId(UUID userId);
     long countByUserIdAndDeceasedAtIsNull(UUID userId);
+
+    /**
+     * Native count per owner — avoids edge cases with derived queries + UUID on some PG/Hibernate combos.
+     * Returns one row per user_id that has at least one tarantula.
+     */
+    @Query(value = """
+            SELECT t.user_id, COUNT(*)::bigint
+            FROM tarantulas t
+            WHERE t.user_id IN (:userIds)
+            GROUP BY t.user_id
+            """, nativeQuery = true)
+    List<Object[]> countGroupedByUserIdsNative(@Param("userIds") List<UUID> userIds);
+
+    @Query("SELECT COUNT(t) FROM Tarantula t WHERE t.userId = :userId")
+    long countForUserId(@Param("userId") UUID userId);
     @Query("select count(distinct t.species.id) from Tarantula t where t.userId = :userId and t.species is not null")
     long countDistinctSpeciesByUserId(UUID userId);
     Optional<Tarantula> findByShortId(String shortId);

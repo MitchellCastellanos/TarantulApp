@@ -73,6 +73,14 @@ export function adminPlanBadgeClass(u) {
   return 'secondary'
 }
 
+/** Admin API may send camelCase or snake_case; always return a safe integer. */
+export function adminSpiderCount(u) {
+  const raw = u?.tarantulasCount ?? u?.tarantulas_count
+  if (raw == null) return 0
+  const n = Number(raw)
+  return Number.isFinite(n) ? Math.trunc(n) : 0
+}
+
 function activitySortKey(iso) {
   if (iso == null || iso === '') return null
   const x = new Date(iso).getTime()

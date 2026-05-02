@@ -22,6 +22,7 @@ import {
   activityStatusBadgeClass,
   formatAdminPlanSummary,
   adminPlanBadgeClass,
+  adminSpiderCount,
   compareAdminByActivityDesc,
   compareAdminByCreatedDesc,
 } from './adminShared'
@@ -935,7 +936,7 @@ export default function AdminBetaPage() {
                           {formatAdminPlanSummary(u, t)}
                         </span>
                       </td>
-                      <td className="text-end font-monospace">{u.tarantulasCount ?? 0}</td>
+                      <td className="text-end font-monospace">{adminSpiderCount(u)}</td>
                       <td>
                         <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
                           {activityStatusLabel(tier, t)}

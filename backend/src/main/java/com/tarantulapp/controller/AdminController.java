@@ -187,8 +187,10 @@ public class AdminController {
         List<User> users = "created".equalsIgnoreCase(sort == null ? "" : sort.trim())
                 ? userRepository.findUsersForAdminOrderByCreatedDesc(page)
                 : userRepository.findUsersForAdminOrderByLastActivityDesc(page);
+        Map<UUID, Long> spiderCounts = loadTarantulaCountsForUsers(
+                users.stream().map(User::getId).collect(Collectors.toList()));
         List<Map<String, Object>> rows = users.stream()
-                .map(this::mapUser)
+                .map(u -> mapUser(u, spiderCounts))
                 .collect(Collectors.toList());
         long totalUsers = userRepository.count();
         Map<String, Object> body = new LinkedHashMap<>();
@@ -302,7 +304,11 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> betaTesters() {
         adminAccessService.assertCurrentUserIsAdmin();
         List<User> users = userRepository.findByIsBetaTesterTrueOrderByCreatedAtDesc();
-        List<Map<String, Object>> rows = users.stream().map(this::mapBetaTester).collect(Collectors.toList());
+        Map<UUID, Long> spiderCounts = loadTarantulaCountsForUsers(
+                users.stream().map(User::getId).collect(Collectors.toList()));
+        List<Map<String, Object>> rows = users.stream()
+                .map(u -> mapBetaTester(u, spiderCounts))
+                .collect(Collectors.toList());
         enrichBetaCampaignSummaries(rows, users.stream().map(User::getId).collect(Collectors.toList()));
         return ResponseEntity.ok(rows);
     }
@@ -641,17 +647,55 @@ public class AdminController {
         }
     }
 
-    private Map<String, Object> mapUser(User u) {
+    private Map<String, Object> mapUser(User u, Map<UUID, Long> spiderCounts) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", u.getId());
         out.put("email", u.getEmail());
         out.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
         putPlanAccessFields(u, out);
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
-        out.put("tarantulasCount", tarantulaRepository.countByUserId(u.getId()));
+        out.put("tarantulasCount", spiderCounts.getOrDefault(u.getId(), 0L));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());
         return out;
+    }
+
+    /** One round-trip for admin lists; native SQL counts rows in {@code tarantulas} per owner. */
+    private Map<UUID, Long> loadTarantulaCountsForUsers(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = userIds.stream().distinct().collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Long> out = new HashMap<>();
+        for (Object[] row : tarantulaRepository.countGroupedByUserIdsNative(ids)) {
+            UUID uid = parseUuidRow(row[0]);
+            if (uid == null) {
+                continue;
+            }
+            long n = 0L;
+            if (row[1] instanceof Number num) {
+                n = num.longValue();
+            }
+            out.put(uid, n);
+        }
+        return out;
+    }
+
+    private static UUID parseUuidRow(Object raw) {
+        if (raw instanceof UUID u) {
+            return u;
+        }
+        if (raw instanceof String s && !s.isBlank()) {
+            try {
+                return UUID.fromString(s.trim());
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private void putPlanAccessFields(User u, Map<String, Object> out) {
@@ -699,6 +743,10 @@ public class AdminController {
     }
 
     private Map<String, Object> mapBetaTester(User user) {
+        return mapBetaTester(user, null);
+    }
+
+    private Map<String, Object> mapBetaTester(User user, Map<UUID, Long> spiderCounts) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", user.getId());
         out.put("email", user.getEmail());
@@ -710,7 +758,10 @@ public class AdminController {
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         out.put("createdAt", user.getCreatedAt());
         out.put("lastActivityAt", user.getLastActivityAt());
-        out.put("tarantulasCount", tarantulaRepository.countByUserId(user.getId()));
+        long spiders = spiderCounts != null
+                ? spiderCounts.getOrDefault(user.getId(), 0L)
+                : tarantulaRepository.countForUserId(user.getId());
+        out.put("tarantulasCount", spiders);
         out.put("bugReportsCount", bugReportRepository.countByUserId(user.getId()));
         return out;
     }

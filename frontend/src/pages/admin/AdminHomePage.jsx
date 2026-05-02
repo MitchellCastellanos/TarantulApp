@@ -8,6 +8,7 @@ import {
   activityStatusBadgeClass,
   formatAdminPlanSummary,
   adminPlanBadgeClass,
+  adminSpiderCount,
 } from './adminShared'
 
 export default function AdminHomePage() {
@@ -303,7 +304,7 @@ export default function AdminHomePage() {
                             {formatAdminPlanSummary(u, t)}
                           </span>
                         </td>
-                        <td className="text-end font-monospace">{u.tarantulasCount ?? 0}</td>
+                        <td className="text-end font-monospace">{adminSpiderCount(u)}</td>
                         <td>
                           <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
                             {activityStatusLabel(tier, t)}
