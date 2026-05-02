@@ -310,16 +310,7 @@ public class EmailService {
                 : BetaMailBodies.welcomeEs(displayName, toEmail, plainPassword, baseUrl, sendDate);
         String subject = BetaMailBodies.welcomeSubject(loc);
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(body);
-            mailSender.send(msg);
+            doSend(toEmail, subject, body);
             log.info("Beta welcome email sent to {} (locale={})", toEmail, loc);
         } catch (Exception e) {
             log.error("Failed to send beta welcome to {}: {}", toEmail, e.getMessage(), e);
@@ -336,16 +327,7 @@ public class EmailService {
         String body = BetaMailBodies.campaignBody(campaignKey, loc, displayName, baseUrl, sendDate);
         String subject = BetaMailBodies.campaignSubject(campaignKey, loc);
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            if (replyToAddress != null && !replyToAddress.isBlank()) {
-                helper.setReplyTo(replyToAddress);
-            }
-            helper.setText(body);
-            mailSender.send(msg);
+            doSend(toEmail, subject, body);
             log.info("Beta campaign {} email sent to {} (locale={})", campaignKey, toEmail, loc);
         } catch (Exception e) {
             log.error("Failed beta campaign {} to {}: {}", campaignKey, toEmail, e.getMessage(), e);

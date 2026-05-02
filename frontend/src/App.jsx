@@ -30,7 +30,9 @@ import MarketplaceSellerPage from './pages/MarketplaceSellerPage'
 import MarketplaceKeeperRedirect from './pages/MarketplaceKeeperRedirect'
 import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
-import AdminPage from './pages/AdminPage'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminHomePage from './pages/admin/AdminHomePage'
+import AdminBetaPage from './pages/admin/AdminBetaPage'
 import SocialHubPage from './pages/SocialHubPage'
 import CommunityPostThreadPage from './pages/CommunityPostThreadPage'
 import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
@@ -188,7 +190,10 @@ function AppRoutes() {
       <Route path="/community" element={<SocialHubPage />} />
       <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
       <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />
-      <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
+        <Route index element={<AdminHomePage />} />
+        <Route path="beta" element={<AdminBetaPage />} />
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

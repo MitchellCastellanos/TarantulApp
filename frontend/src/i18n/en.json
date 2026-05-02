@@ -1364,6 +1364,13 @@
   },
   "admin": {
     "title": "Admin panel",
+    "layoutBlurb": "Choose a section below.",
+    "navGeneral": "General",
+    "navBeta": "Beta program",
+    "titleGeneral": "General",
+    "titleBeta": "Beta program",
+    "generalPageBlurb": "SMTP, KPIs, users, marketplace moderation, and vendor tools.",
+    "betaPageBlurb": "Applications, testers, welcome templates, campaigns, and beta bug queue.",
     "onlyAdmins": "Admin access only.",
     "loadError": "Could not load admin panel.",
     "usersTotal": "Total users",

@@ -1338,6 +1338,13 @@
   },
   "admin": {
     "title": "Panel admin",
+    "layoutBlurb": "Elige una sección abajo.",
+    "navGeneral": "General",
+    "navBeta": "Programa beta",
+    "titleGeneral": "General",
+    "titleBeta": "Programa beta",
+    "generalPageBlurb": "SMTP, KPIs, usuarios, moderación del marketplace y herramientas de vendors.",
+    "betaPageBlurb": "Solicitudes, testers, plantillas de bienvenida, campañas y cola de bugs beta.",
     "onlyAdmins": "Acceso solo para administradores.",
     "loadError": "No se pudo cargar el panel admin.",
     "usersTotal": "Usuarios totales",

@@ -1,70 +1,34 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
-import adminService from '../services/adminService'
+import adminService from '../../services/adminService'
 import {
   loadBetaEmailTemplates,
   saveBetaEmailTemplates,
   resetBetaEmailTemplatesToDefaults,
   newCustomTemplateId,
-} from '../utils/betaEmailTemplatesStorage'
-import { renderBetaEmailBody } from '../utils/renderBetaEmailBody'
-import { buildBetaEmailDocxBlob, downloadBlob } from '../utils/exportBetaEmailDocx'
+} from '../../utils/betaEmailTemplatesStorage'
+import { renderBetaEmailBody } from '../../utils/renderBetaEmailBody'
+import { buildBetaEmailDocxBlob, downloadBlob } from '../../utils/exportBetaEmailDocx'
 import {
   cacheBetaPasswordForEmail,
   readCachedBetaPassword,
-} from '../utils/betaTesterEmailSession'
+} from '../../utils/betaTesterEmailSession'
+import { loadTesterTplPrefs, TESTER_TPL_PREF_KEY } from './adminShared'
 
-const TESTER_TPL_PREF_KEY = 'tarantulapp_tester_email_tpl_v1'
-
-function loadTesterTplPrefs() {
-  try {
-    const s = localStorage.getItem(TESTER_TPL_PREF_KEY)
-    const o = s ? JSON.parse(s) : {}
-    return typeof o === 'object' && o !== null ? o : {}
-  } catch {
-    return {}
-  }
-}
-
-function formatUsageTime(lastActivityAt, t) {
-  if (!lastActivityAt) return t('admin.usageTimeNever')
-  const ts = new Date(lastActivityAt).getTime()
-  if (Number.isNaN(ts)) return '-'
-  const diffMs = Math.max(0, Date.now() - ts)
-  const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 1) return t('admin.usageTimeNow')
-  if (minutes < 60) return t('admin.usageTimeMinutes', { count: minutes })
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return t('admin.usageTimeHours', { count: hours })
-  const days = Math.floor(hours / 24)
-  return t('admin.usageTimeDays', { count: days })
-}
-
-export default function AdminPage() {
+export default function AdminBetaPage() {
   const { t } = useTranslation()
-  const [summary, setSummary] = useState(null)
-  const [recentUsers, setRecentUsers] = useState([])
-  const [reports, setReports] = useState([])
-  const [officialVendors, setOfficialVendors] = useState([])
-  const [officialLeads, setOfficialLeads] = useState([])
   const [bugReports, setBugReports] = useState([])
   const [betaTesters, setBetaTesters] = useState([])
   const [betaApplications, setBetaApplications] = useState([])
   const [betaStats, setBetaStats] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
-  const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
   const [reviewingApplicationId, setReviewingApplicationId] = useState('')
   const [passwordUser, setPasswordUser] = useState(null)
   const [resetPass, setResetPass] = useState({ newPassword: '', generate: false })
   const [resetPassLoading, setResetPassLoading] = useState(false)
   const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: false })
   const [provisionLoading, setProvisionLoading] = useState(false)
-  const [mailStatus, setMailStatus] = useState(null)
-  const [mailTestTo, setMailTestTo] = useState('')
-  const [mailTestLoading, setMailTestLoading] = useState(false)
   const [betaEmailTemplates, setBetaEmailTemplates] = useState(() => loadBetaEmailTemplates())
   const [testerTplPref, setTesterTplPref] = useState(() => loadTesterTplPrefs())
   const [tplEditor, setTplEditor] = useState(null)
@@ -243,29 +207,17 @@ export default function AdminPage() {
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      adminService.summary(),
-      adminService.recentUsers(),
-      adminService.reports('open'),
-      adminService.officialVendors(),
-      adminService.officialVendorLeads(),
       adminService.bugReports('open'),
       adminService.betaTesters(),
       adminService.betaApplications('pending'),
       adminService.betaStats(),
-      adminService.mailConfigStatus().catch(() => null),
     ])
-      .then(([s, users, openReports, vendors, leads, bugs, testers, applications, stats, mailCfg]) => {
+      .then(([bugs, testers, applications, stats]) => {
         if (cancelled) return
-        setSummary(s)
-        setRecentUsers(Array.isArray(users) ? users : [])
-        setReports(Array.isArray(openReports) ? openReports : [])
-        setOfficialVendors(Array.isArray(vendors) ? vendors : [])
-        setOfficialLeads(Array.isArray(leads) ? leads : [])
         setBugReports(Array.isArray(bugs) ? bugs : [])
         setBetaTesters(Array.isArray(testers) ? testers : [])
         setBetaApplications(Array.isArray(applications) ? applications : [])
         setBetaStats(stats && typeof stats === 'object' ? stats : null)
-        setMailStatus(mailCfg && typeof mailCfg === 'object' ? mailCfg : null)
       })
       .catch((err) => {
         if (cancelled) return
@@ -290,15 +242,6 @@ export default function AdminPage() {
         /* non-blocking */
       })
   }, [])
-
-  const resolveReport = async (id, action) => {
-    try {
-      await adminService.resolveReport(id, action, '')
-      setReports((prev) => prev.filter((r) => r.id !== id))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
 
   const patchBugReport = async (id, status) => {
     try {
@@ -441,20 +384,6 @@ export default function AdminPage() {
           { key: 'week_6', labelEs: 'Semana 6', labelEn: 'Week 6' },
         ]
 
-  const toggleRecentUserTester = async (u) => {
-    try {
-      const nextValue = !(u?.isBetaTester === true)
-      await adminService.patchUserBeta(u.id, { isBetaTester: nextValue })
-      setRecentUsers((prev) =>
-        prev.map((row) => (String(row.id) === String(u.id) ? { ...row, isBetaTester: nextValue } : row)),
-      )
-      const refreshed = await adminService.betaTesters()
-      setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
   const submitPasswordReset = async () => {
     if (!passwordUser) return
     setResetPassLoading(true)
@@ -515,126 +444,169 @@ export default function AdminPage() {
     }
   }
 
-  const hideActionForReport = (report) => {
-    if (report?.targetType === 'marketplace_listing') return 'hide_listing'
-    if (report?.targetType === 'activity_post') return 'hide_activity_post'
-    if (report?.targetType === 'keeper_profile') return 'hide_keeper_profile'
-    return 'hide_tarantula'
-  }
-
-  const toggleOfficialVendor = async (vendorId, nextEnabled) => {
-    try {
-      const updated = await adminService.setOfficialVendorStatus(vendorId, nextEnabled)
-      setOfficialVendors((prev) => prev.map((v) => (v.id === vendorId ? updated : v)))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
-  const patchVendorStrategic = async (vendorId, body) => {
-    try {
-      const updated = await adminService.updateOfficialVendorStrategicProgram(vendorId, body)
-      setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendorId) ? updated : v)))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
-  const runPartnerSyncNow = async () => {
-    setPartnerSyncLoading(true)
-    setPartnerSyncMessage('')
-    setError('')
-    try {
-      const runs = await adminService.runPartnerSync()
-      const n = Array.isArray(runs) ? runs.length : 0
-      setPartnerSyncMessage(t('admin.partnerSyncDone', { count: n }))
-    } catch {
-      setError(t('admin.partnerSyncError'))
-    } finally {
-      setPartnerSyncLoading(false)
-    }
-  }
-
   return (
-    <div>
-      <Navbar />
-      <div className="container mt-4 mb-5" style={{ maxWidth: 980 }}>
-        <h1 className="h4 mb-3">{t('admin.title')}</h1>
-        {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
-        {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
+    <>
+      <h2 className="h5 mb-3">{t('admin.titleBeta')}</h2>
+      <p className="small text-muted mb-3">{t('admin.betaPageBlurb')}</p>
+      {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
-        {mailStatus && (
-          <div className={`card p-3 mb-3 ${mailStatus.usernameConfigured ? 'border-secondary' : 'border-warning'}`}>
-            <h2 className="h6 mb-2">{t('admin.mailSmtpCardTitle')}</h2>
-            <p className="small text-muted mb-2">{t('admin.mailSmtpCardBlurb')}</p>
-            <ul className="small mb-2">
-              <li>
-                <strong>SMTP host:</strong> {mailStatus.host} · <strong>port:</strong> {mailStatus.port}
-              </li>
-              <li>
-                <strong>{t('admin.mailFromLabel')}:</strong> {mailStatus.fromAddress}
-              </li>
-              <li>
-                <strong>{t('admin.mailUserConfigured')}:</strong>{' '}
-                {mailStatus.usernameConfigured ? t('share.yes') : t('share.no')}
-              </li>
-            </ul>
-            {!mailStatus.usernameConfigured ? (
-              <div className="alert alert-warning small py-2 mb-2">{t('admin.mailSmtpMissingCreds')}</div>
-            ) : null}
-            <div className="d-flex flex-wrap gap-2 align-items-end">
-              <div className="flex-grow-1" style={{ minWidth: 220 }}>
-                <label className="form-label small mb-0" htmlFor="mail-test-to">
-                  {t('admin.mailTestToLabel')}
-                </label>
-                <input
-                  id="mail-test-to"
-                  type="email"
-                  className="form-control form-control-sm"
-                  value={mailTestTo}
-                  onChange={(e) => setMailTestTo(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
+        {betaStats && (
+          <div className="card p-3 mt-3">
+            <h2 className="h6 mb-3">{t('admin.betaStatsTitle')}</h2>
+            <div className="row g-2 mb-3">
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsTotal')}</small>
+                  <div className="h5 mb-0">{betaStats.total ?? 0}</div>
+                </div>
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                disabled={mailTestLoading || !mailTestTo.trim()}
-                onClick={async () => {
-                  setMailTestLoading(true)
-                  setError('')
-                  setSuccess('')
-                  try {
-                    await adminService.mailTestSend(mailTestTo.trim())
-                    setSuccess(t('admin.mailTestSent'))
-                  } catch {
-                    setError(t('admin.mailTestFailed'))
-                  } finally {
-                    setMailTestLoading(false)
-                  }
-                }}
-              >
-                {mailTestLoading ? t('common.loading') : t('admin.mailTestSend')}
-              </button>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsPending')}</small>
+                  <div className="h5 mb-0">{betaStats.pending ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsApproved')}</small>
+                  <div className="h5 mb-0">{betaStats.approved ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsRejected')}</small>
+                  <div className="h5 mb-0">{betaStats.rejected ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsLast7d')}</small>
+                  <div className="h5 mb-0">{betaStats.last7d ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsLast30d')}</small>
+                  <div className="h5 mb-0">{betaStats.last30d ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsActiveTesters')}</small>
+                  <div className="h5 mb-0">{betaStats.activeTesters ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsApprovalRate')}</small>
+                  <div className="h5 mb-0">{betaStats.approvalRatePct ?? 0}%</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsBugsOpen')}</small>
+                  <div className="h5 mb-0">{betaStats.bugReportsOpen ?? 0}</div>
+                </div>
+              </div>
+              <div className="col-6 col-md-3">
+                <div className="card p-2">
+                  <small className="text-muted">{t('admin.betaStatsBugsTotal')}</small>
+                  <div className="h5 mb-0">{betaStats.bugReportsTotal ?? 0}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <h3 className="h6 mb-2">{t('admin.betaStatsByCountry')}</h3>
+                {Array.isArray(betaStats.byCountry) && betaStats.byCountry.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>{t('admin.country')}</th>
+                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {betaStats.byCountry.map((row) => (
+                          <tr key={`country-${row.country}`}>
+                            <td>{row.country === 'unknown' ? t('admin.betaStatsUnknown') : row.country}</td>
+                            <td className="text-end">{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
+                )}
+              </div>
+              <div className="col-12 col-md-6">
+                <h3 className="h6 mb-2">{t('admin.betaStatsByExperience')}</h3>
+                {Array.isArray(betaStats.byExperience) && betaStats.byExperience.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>{t('admin.level')}</th>
+                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {betaStats.byExperience.map((row) => (
+                          <tr key={`exp-${row.level}`}>
+                            <td>{row.level === 'unknown' ? t('admin.betaStatsUnknown') : row.level}</td>
+                            <td className="text-end">{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {summary && (
-          <div className="row g-3 mb-4">
-            <div className="col-6 col-md-3"><div className="card p-3"><small className="text-muted">{t('admin.usersTotal')}</small><div className="h5 mb-0">{summary.usersTotal}</div></div></div>
-            <div className="col-6 col-md-3"><div className="card p-3"><small className="text-muted">{t('admin.users7d')}</small><div className="h5 mb-0">{summary.usersLast7d}</div></div></div>
-            <div className="col-6 col-md-3"><div className="card p-3"><small className="text-muted">{t('admin.tarantulas')}</small><div className="h5 mb-0">{summary.tarantulasTotal}</div></div></div>
-            <div className="col-6 col-md-3"><div className="card p-3"><small className="text-muted">{t('admin.pendingReminders')}</small><div className="h5 mb-0">{summary.remindersPending}</div></div></div>
+        <div className="card p-3 mt-3">
+          <h2 className="h6 mb-3">{t('admin.betaApplicationsTitle')}</h2>
+          <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
+            <div className="form-check mb-0">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id="approve-send-welcome"
+                checked={approveSendWelcome}
+                onChange={(e) => setApproveSendWelcome(e.target.checked)}
+              />
+              <label className="form-check-label small" htmlFor="approve-send-welcome">
+                {t('admin.approveSendWelcomeLabel')}
+              </label>
+            </div>
+            <div className="row g-2 align-items-end mt-2">
+              <div className="col-auto">
+                <label className="form-label small mb-0" htmlFor="approve-welcome-locale">
+                  {t('admin.welcomeLocaleLabel')}
+                </label>
+                <select
+                  id="approve-welcome-locale"
+                  className="form-select form-select-sm"
+                  value={approveWelcomeLocale}
+                  onChange={(e) => setApproveWelcomeLocale(e.target.value)}
+                >
+                  <option value="es">ES</option>
+                  <option value="en">EN</option>
+                </select>
+              </div>
+            </div>
+            <p className="small text-muted mb-0 mt-2">{t('admin.approveSendWelcomeHint')}</p>
           </div>
-        )}
-
-        <div className="card p-3">
-          <h2 className="h6 mb-3">{t('admin.recentUsers')}</h2>
-          {recentUsers.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.noUsers')}</p>
+          {betaApplications.length === 0 ? (
+            <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
           ) : (
             <div className="table-responsive">
               <table className="table table-sm align-middle mb-0">
@@ -642,177 +614,35 @@ export default function AdminPage() {
                   <tr>
                     <th>{t('auth.email')}</th>
                     <th>{t('auth.name')}</th>
-                    <th>{t('admin.plan')}</th>
-                    <th>{t('admin.created')}</th>
-                    <th>{t('admin.usageTime')}</th>
+                    <th>{t('admin.country')}</th>
+                    <th>{t('admin.level')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td>{u.email}</td>
-                      <td>{u.displayName || '-'}</td>
-                      <td>{u.plan}</td>
-                      <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
-                      <td>{formatUsageTime(u.lastActivityAt, t)}</td>
-                      <td>
+                  {betaApplications.map((a) => (
+                    <tr key={a.id}>
+                      <td>{a.email}</td>
+                      <td>{a.name || '-'}</td>
+                      <td>{a.country || '-'}</td>
+                      <td>{a.experienceLevel || '-'}</td>
+                      <td className="d-flex gap-2">
                         <button
                           type="button"
-                          className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                          onClick={() => toggleRecentUserTester(u)}
+                          className="btn btn-sm btn-outline-success"
+                          disabled={reviewingApplicationId === String(a.id)}
+                          onClick={() => reviewApplication(a.id, 'approve')}
                         >
-                          {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
+                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.approve')}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="card p-3 mt-3 border-warning">
-          <h2 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h2>
-          <p className="small text-muted mb-3">{t('admin.strategicPartnerSectionBlurb')}</p>
-          <button
-            type="button"
-            className="btn btn-sm btn-dark"
-            disabled={partnerSyncLoading}
-            onClick={() => runPartnerSyncNow()}
-          >
-            {partnerSyncLoading ? t('admin.partnerSyncRunning') : t('admin.runPartnerSync')}
-          </button>
-        </div>
-
-        <div className="card p-3 mt-3">
-          <h2 className="h6 mb-3">{t('admin.officialVendorsTitle')}</h2>
-          {officialVendors.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.officialVendorsEmpty')}</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>{t('admin.officialVendorsColBrand')}</th>
-                    <th>{t('admin.officialVendorsColLocation')}</th>
-                    <th>{t('admin.officialVendorsColScore')}</th>
-                    <th>{t('admin.officialVendorsColStatus')}</th>
-                    <th className="text-center">{t('admin.officialVendorsColFounder')}</th>
-                    <th className="text-center">{t('admin.officialVendorsColImport')}</th>
-                    <th>{t('admin.officialVendorsColActions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {officialVendors.map((v) => (
-                    <tr key={v.id}>
-                      <td>
-                        <div className="fw-semibold">{v.name}</div>
-                        <div className="small text-muted">{v.websiteUrl}</div>
-                      </td>
-                      <td>{[v.city, v.state, v.country].filter(Boolean).join(' · ') || '-'}</td>
-                      <td>{v.influenceScore ?? 0}</td>
-                      <td>{v.enabled ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
-                      <td className="text-center">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          title="STRATEGIC_FOUNDER"
-                          checked={v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
-                          onChange={(e) => patchVendorStrategic(v.id, { strategicFounder: e.target.checked })}
-                        />
-                      </td>
-                      <td className="text-center">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={!!v.listingImportEnabled}
-                          onChange={(e) => patchVendorStrategic(v.id, { listingImportEnabled: e.target.checked })}
-                        />
-                      </td>
-                      <td>
                         <button
                           type="button"
-                          className={`btn btn-sm ${v.enabled ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                          onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled={reviewingApplicationId === String(a.id)}
+                          onClick={() => reviewApplication(a.id, 'reject')}
                         >
-                          {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
+                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.reject')}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="card p-3 mt-3">
-          <h2 className="h6 mb-3">{t('admin.officialLeadsTitle')}</h2>
-          {officialLeads.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.officialLeadsEmpty')}</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Marca</th>
-                    <th>Contacto</th>
-                    <th>Cobertura</th>
-                    <th>Notas</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {officialLeads.map((lead) => (
-                    <tr key={lead.id}>
-                      <td>
-                        <div className="fw-semibold">{lead.businessName}</div>
-                        <div className="small text-muted">{lead.websiteUrl || '-'}</div>
-                      </td>
-                      <td>
-                        <div>{lead.contactName || '-'}</div>
-                        <div className="small text-muted">{lead.contactEmail}</div>
-                      </td>
-                      <td>{[lead.city, lead.state, lead.country].filter(Boolean).join(' · ') || '-'}</td>
-                      <td>{lead.note || '-'}</td>
-                      <td>{lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="card p-3 mt-3">
-          <h2 className="h6 mb-3">{t('admin.betaBugReportsTitle')}</h2>
-          {bugReports.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.betaBugReportsEmpty')}</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>{t('admin.created')}</th>
-                    <th>{t('admin.severity')}</th>
-                    <th>{t('admin.betaBugTitle')}</th>
-                    <th>{t('admin.page')}</th>
-                    <th>{t('admin.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bugReports.map((b) => (
-                    <tr key={b.id}>
-                      <td>{b.createdAt ? new Date(b.createdAt).toLocaleString() : '-'}</td>
-                      <td>{b.severity || '-'}</td>
-                      <td>{b.title || '-'}</td>
-                      <td className="small text-muted">{b.currentUrl || '-'}</td>
-                      <td className="d-flex flex-wrap gap-1">
-                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => patchBugReport(b.id, 'in_progress')}>In progress</button>
-                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => patchBugReport(b.id, 'fixed')}>Fixed</button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => patchBugReport(b.id, 'wont_fix')}>Won't fix</button>
                       </td>
                     </tr>
                   ))}
@@ -1116,247 +946,33 @@ export default function AdminPage() {
           )}
         </div>
 
-        {betaStats && (
-          <div className="card p-3 mt-3">
-            <h2 className="h6 mb-3">{t('admin.betaStatsTitle')}</h2>
-            <div className="row g-2 mb-3">
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsTotal')}</small>
-                  <div className="h5 mb-0">{betaStats.total ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsPending')}</small>
-                  <div className="h5 mb-0">{betaStats.pending ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsApproved')}</small>
-                  <div className="h5 mb-0">{betaStats.approved ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsRejected')}</small>
-                  <div className="h5 mb-0">{betaStats.rejected ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsLast7d')}</small>
-                  <div className="h5 mb-0">{betaStats.last7d ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsLast30d')}</small>
-                  <div className="h5 mb-0">{betaStats.last30d ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsActiveTesters')}</small>
-                  <div className="h5 mb-0">{betaStats.activeTesters ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsApprovalRate')}</small>
-                  <div className="h5 mb-0">{betaStats.approvalRatePct ?? 0}%</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsBugsOpen')}</small>
-                  <div className="h5 mb-0">{betaStats.bugReportsOpen ?? 0}</div>
-                </div>
-              </div>
-              <div className="col-6 col-md-3">
-                <div className="card p-2">
-                  <small className="text-muted">{t('admin.betaStatsBugsTotal')}</small>
-                  <div className="h5 mb-0">{betaStats.bugReportsTotal ?? 0}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="row g-3">
-              <div className="col-12 col-md-6">
-                <h3 className="h6 mb-2">{t('admin.betaStatsByCountry')}</h3>
-                {Array.isArray(betaStats.byCountry) && betaStats.byCountry.length > 0 ? (
-                  <div className="table-responsive">
-                    <table className="table table-sm align-middle mb-0">
-                      <thead>
-                        <tr>
-                          <th>{t('admin.country')}</th>
-                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {betaStats.byCountry.map((row) => (
-                          <tr key={`country-${row.country}`}>
-                            <td>{row.country === 'unknown' ? t('admin.betaStatsUnknown') : row.country}</td>
-                            <td className="text-end">{row.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
-                )}
-              </div>
-              <div className="col-12 col-md-6">
-                <h3 className="h6 mb-2">{t('admin.betaStatsByExperience')}</h3>
-                {Array.isArray(betaStats.byExperience) && betaStats.byExperience.length > 0 ? (
-                  <div className="table-responsive">
-                    <table className="table table-sm align-middle mb-0">
-                      <thead>
-                        <tr>
-                          <th>{t('admin.level')}</th>
-                          <th className="text-end">{t('admin.betaStatsTotal')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {betaStats.byExperience.map((row) => (
-                          <tr key={`exp-${row.level}`}>
-                            <td>{row.level === 'unknown' ? t('admin.betaStatsUnknown') : row.level}</td>
-                            <td className="text-end">{row.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="card p-3 mt-3">
-          <h2 className="h6 mb-3">{t('admin.betaApplicationsTitle')}</h2>
-          <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
-            <div className="form-check mb-0">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="approve-send-welcome"
-                checked={approveSendWelcome}
-                onChange={(e) => setApproveSendWelcome(e.target.checked)}
-              />
-              <label className="form-check-label small" htmlFor="approve-send-welcome">
-                {t('admin.approveSendWelcomeLabel')}
-              </label>
-            </div>
-            <div className="row g-2 align-items-end mt-2">
-              <div className="col-auto">
-                <label className="form-label small mb-0" htmlFor="approve-welcome-locale">
-                  {t('admin.welcomeLocaleLabel')}
-                </label>
-                <select
-                  id="approve-welcome-locale"
-                  className="form-select form-select-sm"
-                  value={approveWelcomeLocale}
-                  onChange={(e) => setApproveWelcomeLocale(e.target.value)}
-                >
-                  <option value="es">ES</option>
-                  <option value="en">EN</option>
-                </select>
-              </div>
-            </div>
-            <p className="small text-muted mb-0 mt-2">{t('admin.approveSendWelcomeHint')}</p>
-          </div>
-          {betaApplications.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
+          <h2 className="h6 mb-3">{t('admin.betaBugReportsTitle')}</h2>
+          {bugReports.length === 0 ? (
+            <p className="text-muted small mb-0">{t('admin.betaBugReportsEmpty')}</p>
           ) : (
             <div className="table-responsive">
               <table className="table table-sm align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>{t('auth.email')}</th>
-                    <th>{t('auth.name')}</th>
-                    <th>{t('admin.country')}</th>
-                    <th>{t('admin.level')}</th>
-                    <th>{t('admin.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {betaApplications.map((a) => (
-                    <tr key={a.id}>
-                      <td>{a.email}</td>
-                      <td>{a.name || '-'}</td>
-                      <td>{a.country || '-'}</td>
-                      <td>{a.experienceLevel || '-'}</td>
-                      <td className="d-flex gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-success"
-                          disabled={reviewingApplicationId === String(a.id)}
-                          onClick={() => reviewApplication(a.id, 'approve')}
-                        >
-                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.approve')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          disabled={reviewingApplicationId === String(a.id)}
-                          onClick={() => reviewApplication(a.id, 'reject')}
-                        >
-                          {reviewingApplicationId === String(a.id) ? t('common.loading') : t('admin.reject')}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="card p-3 mt-3">
-          <h2 className="h6 mb-3">{t('admin.openReports')}</h2>
-          {reports.length === 0 ? (
-            <p className="text-muted small mb-0">{t('admin.noReports')}</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>{t('admin.target')}</th>
-                    <th>{t('admin.targetType')}</th>
-                    <th>{t('admin.reason')}</th>
-                    <th>{t('admin.details')}</th>
                     <th>{t('admin.created')}</th>
+                    <th>{t('admin.severity')}</th>
+                    <th>{t('admin.betaBugTitle')}</th>
+                    <th>{t('admin.page')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.targetRef || r.targetId || '-'}</td>
-                      <td className="text-muted small">{r.targetType || '-'}</td>
-                      <td>{r.reason}</td>
-                      <td>{r.details || '-'}</td>
-                      <td>{r.createdAt ? new Date(r.createdAt).toLocaleString() : '-'}</td>
-                      <td className="d-flex gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => resolveReport(r.id, hideActionForReport(r))}
-                        >
-                          {t('admin.hidePublic')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-light"
-                          onClick={() => resolveReport(r.id, 'dismiss')}
-                        >
-                          {t('admin.dismiss')}
-                        </button>
+                  {bugReports.map((b) => (
+                    <tr key={b.id}>
+                      <td>{b.createdAt ? new Date(b.createdAt).toLocaleString() : '-'}</td>
+                      <td>{b.severity || '-'}</td>
+                      <td>{b.title || '-'}</td>
+                      <td className="small text-muted">{b.currentUrl || '-'}</td>
+                      <td className="d-flex flex-wrap gap-1">
+                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => patchBugReport(b.id, 'in_progress')}>In progress</button>
+                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => patchBugReport(b.id, 'fixed')}>Fixed</button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => patchBugReport(b.id, 'wont_fix')}>Won't fix</button>
                       </td>
                     </tr>
                   ))}
@@ -1365,7 +981,7 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </div>
+
       {approvalEmailBundle ? (
         <div
           className="modal d-block"
@@ -1552,6 +1168,6 @@ export default function AdminPage() {
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   )
 }
