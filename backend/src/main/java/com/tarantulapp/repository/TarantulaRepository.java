@@ -23,7 +23,7 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
      * Returns one row per user_id that has at least one tarantula.
      */
     @Query(value = """
-            SELECT t.user_id, COUNT(*)::bigint
+            SELECT t.user_id, CAST(COUNT(*) AS bigint)
             FROM tarantulas t
             WHERE t.user_id IN (:userIds)
             GROUP BY t.user_id
