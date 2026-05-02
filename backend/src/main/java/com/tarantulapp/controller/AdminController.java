@@ -123,6 +123,8 @@ public class AdminController {
     record AdminSetUserPasswordRequest(String newPassword, Boolean generatePassword) {}
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
+    record SendBetaWelcomeEmailRequest(String locale, String plainPassword) {}
+
     record MailTestSendRequest(@NotBlank @Email String to) {}
 
     @GetMapping("/mail/config-status")
@@ -402,6 +404,40 @@ public class AdminController {
         out.put("created", result.created());
         if (gen) {
             out.put("plainPassword", result.plainPassword());
+        }
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * Sends the beta welcome email using credentials just produced by provision (admin-only).
+     * Plain password must be supplied by the client session that received it from provision.
+     */
+    @PostMapping("/users/{id}/send-beta-welcome-email")
+    public ResponseEntity<Map<String, Object>> adminSendBetaWelcomeEmail(@PathVariable UUID id,
+                                                                         @RequestBody SendBetaWelcomeEmailRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (req.plainPassword() == null || req.plainPassword().isBlank()) {
+            throw new IllegalArgumentException("PLAIN_PASSWORD_REQUIRED");
+        }
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        if (!Boolean.TRUE.equals(user.getIsBetaTester())) {
+            throw new IllegalArgumentException("USER_NOT_BETA_TESTER");
+        }
+        String localeNorm = BetaMailBodies.normalizeLocale(req.locale());
+        String greetingName = user.getDisplayName();
+        if (greetingName == null || greetingName.isBlank()) {
+            String em = user.getEmail();
+            int at = em.indexOf('@');
+            greetingName = at > 0 ? em.substring(0, at) : em;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        try {
+            emailService.sendBetaWelcomeEmail(user.getEmail(), greetingName, req.plainPassword(), localeNorm);
+            recordBetaEmailSent(user.getId(), "welcome", localeNorm);
+            out.put("welcomeEmailSent", true);
+        } catch (Exception e) {
+            out.put("welcomeEmailSent", false);
+            out.put("welcomeEmailError", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
         }
         return ResponseEntity.ok(out);
     }

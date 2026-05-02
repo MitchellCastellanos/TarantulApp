@@ -27,13 +27,13 @@ export default function AdminBetaPage() {
   const [passwordUser, setPasswordUser] = useState(null)
   const [resetPass, setResetPass] = useState({ newPassword: '', generate: false })
   const [resetPassLoading, setResetPassLoading] = useState(false)
-  const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: false })
+  const [prov, setProv] = useState({ identifier: '', displayName: '', newPassword: '', generate: true })
   const [provisionLoading, setProvisionLoading] = useState(false)
+  const [provisionWelcomeModal, setProvisionWelcomeModal] = useState(null)
+  const [provisionWelcomeSending, setProvisionWelcomeSending] = useState(false)
   const [betaEmailTemplates, setBetaEmailTemplates] = useState(() => loadBetaEmailTemplates())
   const [testerTplPref, setTesterTplPref] = useState(() => loadTesterTplPrefs())
   const [tplEditor, setTplEditor] = useState(null)
-  const [approvalEmailBundle, setApprovalEmailBundle] = useState(null)
-  const [approvalTplId, setApprovalTplId] = useState('builtin-welcome-es')
   const [approveSendWelcome, setApproveSendWelcome] = useState(true)
   const [approveWelcomeLocale, setApproveWelcomeLocale] = useState('es')
   const [campaignCatalog, setCampaignCatalog] = useState([])
@@ -172,38 +172,6 @@ export default function AdminBetaPage() {
     }
   }
 
-  const copyApprovalBundleEmail = () => {
-    if (!approvalEmailBundle) return
-    const tpl = betaEmailTemplates.find((x) => x.id === approvalTplId) || betaEmailTemplates[0]
-    const body = renderBetaEmailBody(tpl, {
-      name: approvalEmailBundle.name || approvalEmailBundle.email,
-      email: approvalEmailBundle.email,
-      password: approvalEmailBundle.password,
-    })
-    navigator.clipboard.writeText(body).then(
-      () => window.alert(t('admin.welcomeEmailCopied')),
-      () => window.alert(t('admin.welcomeEmailCopyFailed')),
-    )
-  }
-
-  const downloadApprovalWord = async () => {
-    if (!approvalEmailBundle) return
-    const tpl = betaEmailTemplates.find((x) => x.id === approvalTplId) || betaEmailTemplates[0]
-    const body = renderBetaEmailBody(tpl, {
-      name: approvalEmailBundle.name || approvalEmailBundle.email,
-      email: approvalEmailBundle.email,
-      password: approvalEmailBundle.password,
-    })
-    try {
-      const blob = await buildBetaEmailDocxBlob({ bodyText: body })
-      const safe = (approvalEmailBundle.email || 'tester').split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_')
-      downloadBlob(blob, `tarantulapp-beta-email-${safe}.docx`)
-    } catch (e) {
-      console.error(e)
-      window.alert(t('admin.betaEmailWordFailed'))
-    }
-  }
-
   useEffect(() => {
     let cancelled = false
     Promise.all([
@@ -292,12 +260,6 @@ export default function AdminBetaPage() {
         setBetaTesters(Array.isArray(refreshed) ? refreshed : [])
         if (data?.plainPassword && data?.email) {
           cacheBetaPasswordForEmail(data.email, data.plainPassword)
-          setApprovalTplId('builtin-welcome-es')
-          setApprovalEmailBundle({
-            password: data.plainPassword,
-            email: data.email,
-            name: data.name || data.approvedUser?.displayName || '',
-          })
         }
       } else {
         setSuccess(t('admin.betaApplicationRejected'))
@@ -413,6 +375,35 @@ export default function AdminBetaPage() {
     }
   }
 
+  const closeProvisionWelcomeModal = () => {
+    setProvisionWelcomeModal(null)
+    setProvisionWelcomeSending(false)
+  }
+
+  const sendProvisionWelcome = async (locale) => {
+    if (!provisionWelcomeModal) return
+    setProvisionWelcomeSending(true)
+    setError('')
+    try {
+      const data = await adminService.sendBetaWelcomeEmail(provisionWelcomeModal.userId, {
+        locale,
+        plainPassword: provisionWelcomeModal.plainPassword,
+      })
+      setProvisionWelcomeSending(false)
+      if (data?.welcomeEmailSent) {
+        setSuccess(t('admin.provisionWelcomeSentOk'))
+        closeProvisionWelcomeModal()
+      } else if (data?.welcomeEmailError) {
+        setError(t('admin.welcomeEmailSmtpFailed', { detail: data.welcomeEmailError }))
+      } else {
+        closeProvisionWelcomeModal()
+      }
+    } catch {
+      setProvisionWelcomeSending(false)
+      setError(t('admin.resolveError'))
+    }
+  }
+
   const submitProvision = async (e) => {
     e.preventDefault()
     if (!prov.identifier?.trim()) return
@@ -428,15 +419,19 @@ export default function AdminBetaPage() {
       })
       const list = await adminService.betaTesters()
       setBetaTesters(Array.isArray(list) ? list : [])
-      if (res.plainPassword) {
+      if (res.plainPassword && res.user) {
         cacheBetaPasswordForEmail(res.user.email, res.plainPassword)
-        setSuccess(
-          t('admin.addTesterPasswordShown', { email: res.user.email, password: res.plainPassword }),
-        )
+        setProvisionWelcomeModal({
+          userId: res.user.id,
+          email: res.user.email,
+          displayName: res.user.displayName || '',
+          plainPassword: res.plainPassword,
+        })
+        setSuccess(t('admin.provisionCreatedChooseWelcome'))
       } else {
         setSuccess(t('admin.testerUpdated'))
       }
-      setProv({ identifier: '', displayName: '', newPassword: '', generate: false })
+      setProv({ identifier: '', displayName: '', newPassword: '', generate: true })
     } catch {
       setError(t('admin.resolveError'))
     } finally {
@@ -575,7 +570,8 @@ export default function AdminBetaPage() {
         <div className="card p-3 mt-3">
           <h2 className="h6 mb-3">{t('admin.betaApplicationsTitle')}</h2>
           <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
-            <div className="form-check mb-0">
+            <p className="small fw-semibold mb-2">{t('admin.approveWelcomeOptionsTitle')}</p>
+            <div className="form-check mb-3">
               <input
                 type="checkbox"
                 className="form-check-input"
@@ -587,23 +583,26 @@ export default function AdminBetaPage() {
                 {t('admin.approveSendWelcomeLabel')}
               </label>
             </div>
-            <div className="row g-2 align-items-end mt-2">
-              <div className="col-auto">
-                <label className="form-label small mb-0" htmlFor="approve-welcome-locale">
-                  {t('admin.welcomeLocaleLabel')}
-                </label>
-                <select
-                  id="approve-welcome-locale"
-                  className="form-select form-select-sm"
-                  value={approveWelcomeLocale}
-                  onChange={(e) => setApproveWelcomeLocale(e.target.value)}
+            <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <span className="small mb-0">{t('admin.welcomeEmailLanguageLabel')}</span>
+              <div className="btn-group btn-group-sm" role="group" aria-label={t('admin.welcomeEmailLanguageLabel')}>
+                <button
+                  type="button"
+                  className={`btn ${approveWelcomeLocale === 'es' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setApproveWelcomeLocale('es')}
                 >
-                  <option value="es">ES</option>
-                  <option value="en">EN</option>
-                </select>
+                  {t('admin.welcomeLangEs')}
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${approveWelcomeLocale === 'en' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setApproveWelcomeLocale('en')}
+                >
+                  {t('admin.welcomeLangEn')}
+                </button>
               </div>
             </div>
-            <p className="small text-muted mb-0 mt-2">{t('admin.approveSendWelcomeHint')}</p>
+            <p className="small text-muted mb-0">{t('admin.approveSendWelcomeHint')}</p>
           </div>
           {betaApplications.length === 0 ? (
             <p className="text-muted small mb-0">{t('admin.betaApplicationsEmpty')}</p>
@@ -982,7 +981,7 @@ export default function AdminBetaPage() {
           )}
         </div>
 
-      {approvalEmailBundle ? (
+      {provisionWelcomeModal ? (
         <div
           className="modal d-block"
           style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
@@ -991,56 +990,54 @@ export default function AdminBetaPage() {
         >
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content p-3">
-              <h3 className="h6 mb-3">{t('admin.approvalEmailModalTitle')}</h3>
+              <h3 className="h6 mb-2">{t('admin.provisionWelcomeModalTitle')}</h3>
+              <p className="small text-muted mb-3">{t('admin.provisionWelcomeModalBlurb')}</p>
               <p className="small mb-2">
-                <strong>{t('auth.email')}:</strong> {approvalEmailBundle.email}
+                <strong>{t('auth.email')}:</strong> {provisionWelcomeModal.email}
               </p>
               <p className="small mb-3">
                 <strong>{t('admin.newPasswordLabel')}:</strong>{' '}
-                <code className="user-select-all">{approvalEmailBundle.password}</code>
+                <code className="user-select-all">{provisionWelcomeModal.plainPassword}</code>
               </p>
-              <label className="form-label small" htmlFor="approval-tpl">
-                {t('admin.betaEmailSelectTemplate')}
-              </label>
-              <select
-                id="approval-tpl"
-                className="form-select form-select-sm mb-3"
-                value={approvalTplId}
-                onChange={(e) => setApprovalTplId(e.target.value)}
-              >
-                {betaEmailTemplates.map((tpl) => (
-                  <option key={tpl.id} value={tpl.id}>
-                    {tpl.label} ({tpl.locale?.toUpperCase()})
-                  </option>
-                ))}
-              </select>
-              <div className="d-flex flex-wrap gap-2">
+              <div className="d-flex flex-wrap gap-2 mb-3">
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => {
-                    navigator.clipboard.writeText(approvalEmailBundle.password).then(
-                      () => window.alert(t('admin.approvalPasswordCopied')),
-                      () => window.alert(t('admin.welcomeEmailCopyFailed')),
-                    )
-                  }}
+                  className="btn btn-sm btn-primary"
+                  disabled={provisionWelcomeSending}
+                  onClick={() => sendProvisionWelcome('es')}
                 >
-                  {t('admin.approvalCopyPassword')}
-                </button>
-                <button type="button" className="btn btn-sm btn-outline-primary" onClick={copyApprovalBundleEmail}>
-                  {t('admin.betaEmailCopy')}
-                </button>
-                <button type="button" className="btn btn-sm btn-outline-primary" onClick={downloadApprovalWord}>
-                  {t('admin.betaEmailWord')}
+                  {provisionWelcomeSending ? t('common.loading') : t('admin.sendWelcomeEmailEs')}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-light ms-auto"
-                  onClick={() => setApprovalEmailBundle(null)}
+                  className="btn btn-sm btn-primary"
+                  disabled={provisionWelcomeSending}
+                  onClick={() => sendProvisionWelcome('en')}
                 >
-                  {t('common.done')}
+                  {provisionWelcomeSending ? t('common.loading') : t('admin.sendWelcomeEmailEn')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  disabled={provisionWelcomeSending}
+                  onClick={closeProvisionWelcomeModal}
+                >
+                  {t('admin.skipWelcomeEmail')}
                 </button>
               </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                disabled={provisionWelcomeSending}
+                onClick={() => {
+                  navigator.clipboard.writeText(provisionWelcomeModal.plainPassword).then(
+                    () => window.alert(t('admin.approvalPasswordCopied')),
+                    () => window.alert(t('admin.welcomeEmailCopyFailed')),
+                  )
+                }}
+              >
+                {t('admin.approvalCopyPassword')}
+              </button>
             </div>
           </div>
         </div>
