@@ -23,7 +23,6 @@ VALUES (
     false,
     false,
     0,
-    0,
     0
 )
 ON CONFLICT (email) DO NOTHING;
