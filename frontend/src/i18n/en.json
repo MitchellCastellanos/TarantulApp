@@ -885,7 +885,7 @@
     "docTitle": "TarantulApp\u2122 — specimen QR codes",
     "docTitleFlex": "TarantulApp\u2122 — QR codes (flexible layout)",
     "docFooterNote": "Codes link to each specimen’s public card. In Word: File → Print.",
-    "docFooterNoteFlex": "Smaller QR blocks with more whitespace—resize, duplicate, or rearrange in Word before printing."
+    "docFooterNoteFlex": "Smaller full labels (QR, text, dashed cut line)—resize or duplicate in Word before printing."
   },
   "readOnly": {
     "banner": "Your trial has ended. You can still browse your collection and history. Subscribe to Pro to add or edit entries — and to export your collection to Excel.",

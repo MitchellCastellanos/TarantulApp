@@ -1,6 +1,5 @@
-import QRCode from 'qrcode'
 import { BRAND_WITH_TM } from '../constants/brand'
-import { compositeQrPngDataUrl, BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
+import { BRAND_LOGO_FOR_LIGHT_BG, buildFullLabelPngDataUrl, labelDocxDimensions } from './qrBrandComposite'
 import {
   AlignmentType,
   Document,
@@ -35,18 +34,6 @@ function dataUrlToUint8Array(dataUrl) {
   return bytes
 }
 
-async function pngBufferForQr(text, rasterSize) {
-  const dataUrl = await QRCode.toDataURL(text, {
-    width: rasterSize,
-    // Keep a tiny quiet zone so scanners remain reliable.
-    margin: 0,
-    errorCorrectionLevel: 'H',
-    color: { dark: '#000000', light: '#FFFFFF' },
-  })
-  const composed = await compositeQrPngDataUrl(dataUrl, rasterSize)
-  return dataUrlToUint8Array(composed)
-}
-
 async function tryBrandLogoBytes() {
   try {
     const r = await fetch(BRAND_LOGO_FOR_LIGHT_BG)
@@ -57,129 +44,65 @@ async function tryBrandLogoBytes() {
   }
 }
 
-function labelParagraphs(titleLine1, titleLine2, subtitle) {
-  const lines = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 40 },
-      children: [new TextRun({ text: titleLine1, bold: true })],
-    }),
-  ]
-  if (titleLine2) {
-    lines.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: subtitle ? 40 : 0 },
-        children: [new TextRun({ text: titleLine2, italics: true, size: 18 })],
-      }),
-    )
-  }
-  if (subtitle) {
-    lines.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 0 },
-        children: [new TextRun({ text: subtitle, size: 16, color: '666666' })],
-      }),
-    )
-  }
-  return lines
-}
-
-async function qrCell({ url, titleLine1, titleLine2, subtitle, displayPx }) {
-  const raster = Math.min(900, Math.round(displayPx * 2.5))
-  const buf = await pngBufferForQr(url, raster)
+/**
+ * Una celda = una imagen (etiqueta completa). Así Word no “corre” el pie respecto al QR en vista flexible.
+ */
+async function labelTableCell({
+  url,
+  titleLine1,
+  titleLine2,
+  subtitle,
+  displayQrPx,
+  widthPercent,
+  columnSpan = 1,
+}) {
+  const dataUrl = await buildFullLabelPngDataUrl({
+    url,
+    nameLine: titleLine1,
+    speciesLine: titleLine2 || '',
+    shortIdLine: subtitle || '',
+  })
+  const buf = dataUrlToUint8Array(dataUrl)
+  const { width, height } = labelDocxDimensions(displayQrPx)
   const image = new ImageRun({
     type: 'png',
     data: buf,
-    transformation: { width: displayPx, height: displayPx },
-    altText: { name: 'QR', description: titleLine1, title: titleLine1 },
+    transformation: { width, height },
+    altText: { name: 'Etiqueta QR', description: titleLine1, title: titleLine1 },
   })
-  const children = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 40 },
-      children: [image],
-    }),
-    ...labelParagraphs(titleLine1, titleLine2, subtitle),
-  ]
-  return new TableCell({
-    children,
-    verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 60, bottom: 60, left: 50, right: 50 },
-    width: { size: 50, type: WidthType.PERCENTAGE },
-  })
-}
-
-async function qrCellFullWidth({ url, titleLine1, titleLine2, subtitle, displayPx }) {
-  const raster = Math.min(900, Math.round(displayPx * 2.5))
-  const buf = await pngBufferForQr(url, raster)
-  const image = new ImageRun({
-    type: 'png',
-    data: buf,
-    transformation: { width: displayPx, height: displayPx },
-    altText: { name: 'QR', description: titleLine1, title: titleLine1 },
-  })
-  const children = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 40 },
-      children: [image],
-    }),
-    ...labelParagraphs(titleLine1, titleLine2, subtitle),
-  ]
-  return new TableCell({
-    children,
-    verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 80, bottom: 80, left: 70, right: 70 },
-    columnSpan: 2,
-    width: { size: 100, type: WidthType.PERCENTAGE },
-  })
-}
-
-async function qrCellCompact({ url, displayPx }) {
-  const raster = Math.min(900, Math.round(displayPx * 2.5))
-  const buf = await pngBufferForQr(url, raster)
   return new TableCell({
     children: [
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 0 },
-        children: [
-          new ImageRun({
-            type: 'png',
-            data: buf,
-            transformation: { width: displayPx, height: displayPx },
-            altText: { name: 'QR', description: 'QR', title: 'QR' },
-          }),
-        ],
+        children: [image],
       }),
     ],
     verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 30, bottom: 30, left: 30, right: 30 },
-    width: { size: 25, type: WidthType.PERCENTAGE },
+    margins: { top: 28, bottom: 28, left: 20, right: 20 },
+    columnSpan,
+    width: { size: widthPercent, type: WidthType.PERCENTAGE },
   })
 }
 
-function emptyCompactCell() {
+function emptyLabelCell(widthPercent) {
   return new TableCell({
     children: [new Paragraph({ text: '' })],
-    margins: { top: 30, bottom: 30, left: 30, right: 30 },
-    width: { size: 25, type: WidthType.PERCENTAGE },
+    margins: { top: 28, bottom: 28, left: 20, right: 20 },
+    width: { size: widthPercent, type: WidthType.PERCENTAGE },
   })
 }
 
 /**
  * @param {object} opts
  * @param {{ url: string, titleLine1: string, titleLine2?: string, subtitle?: string }[]} opts.items
- * @param {'fixed'|'flex'} opts.layout — rejilla 2 columnas con tamaño uniforme, o una columna con QRs más pequeños para retocar en Word
- * @param {number} [opts.sizeCm] — lado del QR en modo fijo (cm)
+ * @param {'fixed'|'flex'} opts.layout — rejilla 2 columnas con tamaño uniforme, o cuatro columnas más pequeñas
+ * @param {number} [opts.sizeCm] — lado del **QR** en cm (el DOCX escala la etiqueta entera manteniendo proporción)
  * @param {string} [opts.docTitle]
  * @param {string} [opts.footerNote]
  */
 export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote }) {
-  const displayPxFixed = cmToDocxDisplayPx(sizeCm)
-  const displayPxFlex = cmToDocxDisplayPx(2.6)
+  const displayQrPx = cmToDocxDisplayPx(sizeCm)
 
   const intro = []
   const logoBytes = await tryBrandLogoBytes()
@@ -225,9 +148,15 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
       const chunk = items.slice(i, i + COLUMNS)
       const cells = []
       for (const item of chunk) {
-        cells.push(await qrCellCompact({ url: item.url, displayPx: displayPxFlex }))
+        cells.push(
+          await labelTableCell({
+            ...item,
+            displayQrPx,
+            widthPercent: 100 / COLUMNS,
+          }),
+        )
       }
-      while (cells.length < COLUMNS) cells.push(emptyCompactCell())
+      while (cells.length < COLUMNS) cells.push(emptyLabelCell(100 / COLUMNS))
       rows.push(new TableRow({ children: cells }))
     }
     const table = new Table({
@@ -247,12 +176,25 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
   for (let i = 0; i < items.length; i += 2) {
     const left = items[i]
     const right = items[i + 1]
-    const leftCell = await qrCell({ ...left, displayPx: displayPxFixed })
+    const leftCell = await labelTableCell({
+      ...left,
+      displayQrPx,
+      widthPercent: 50,
+    })
     if (right) {
-      const rightCell = await qrCell({ ...right, displayPx: displayPxFixed })
+      const rightCell = await labelTableCell({
+        ...right,
+        displayQrPx,
+        widthPercent: 50,
+      })
       rows.push(new TableRow({ children: [leftCell, rightCell] }))
     } else {
-      const wide = await qrCellFullWidth({ ...left, displayPx: displayPxFixed })
+      const wide = await labelTableCell({
+        ...left,
+        displayQrPx,
+        widthPercent: 100,
+        columnSpan: 2,
+      })
       rows.push(new TableRow({ children: [wide] }))
     }
   }

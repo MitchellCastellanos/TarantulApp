@@ -867,7 +867,7 @@
     "docTitle": "TarantulApp\u2122 — QR des exemplaires",
     "docTitleFlex": "TarantulApp\u2122 — QR (mise en page flexible)",
     "docFooterNote": "Les codes pointent vers la fiche publique de chaque exemplaire. Dans Word : Fichier → Imprimer.",
-    "docFooterNoteFlex": "QR plus petits avec plus d’espace : redimensionnez, dupliquez ou réorganisez dans Word avant d’imprimer."
+    "docFooterNoteFlex": "Étiquettes complètes plus petites (QR, texte, ligne de coupe en pointillés) — redimensionnez ou dupliquez dans Word avant d’imprimer."
   },
   "readOnly": {
     "banner": "Votre essai est terminé. Vous pouvez toujours consulter votre collection et l'historique. Passez à Pro pour ajouter ou modifier des entrées — et pour exporter votre collection vers Excel.",

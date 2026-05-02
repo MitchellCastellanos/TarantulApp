@@ -79,18 +79,53 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
 }
 
 /**
- * PNG listo para descargar: QR con logo centrado + nombre + especie + logo pequeño abajo.
+ * Dimensiones internas de la etiqueta completa (una sola unidad: QR + texto + logo + borde de corte).
+ * El lado del QR en píxeles encaja con el tamaño elegido en cm al exportar DOCX.
  */
-export async function downloadBrandedQrPng({
+export const FULL_LABEL_LAYOUT = {
+  canvasW: 320,
+  canvasH: 380,
+  qrSize: 240,
+  /** Poco margen blanco entre el borde de recorte y el QR (similar a etiqueta física). */
+  qrTop: 6,
+}
+
+/** Ancho/alto en px “docx” si el QR debe medir `displayQrPx` al imprimir. */
+export function labelDocxDimensions(displayQrPx) {
+  const { canvasW, canvasH, qrSize } = FULL_LABEL_LAYOUT
+  const scale = displayQrPx / qrSize
+  return {
+    width: Math.round(canvasW * scale),
+    height: Math.round(canvasH * scale),
+  }
+}
+
+function fillTextTruncatedCenter(ctx, text, centerX, y, maxWidth) {
+  const t = String(text ?? '')
+  if (!t) return
+  if (ctx.measureText(t).width <= maxWidth) {
+    ctx.fillText(t, centerX, y)
+    return
+  }
+  let s = t
+  const ell = '…'
+  while (s.length > 1 && ctx.measureText(s + ell).width > maxWidth) {
+    s = s.slice(0, -1)
+  }
+  ctx.fillText(s + ell, centerX, y)
+}
+
+/**
+ * PNG (data URL) de la etiqueta completa: QR + nombre + especie + ID + logo + línea de recorte punteada.
+ * Una sola imagen evita que Word mueva el texto respecto al QR al usar diseño flexible.
+ */
+export async function buildFullLabelPngDataUrl({
   url,
   nameLine,
   speciesLine,
   shortIdLine,
-  filenameBase,
 }) {
-  const qrSize = 240
-  const W = 320
-  const H = 380
+  const { canvasW: W, canvasH: H, qrSize, qrTop } = FULL_LABEL_LAYOUT
   const raw = await QRCode.toDataURL(url, {
     width: qrSize,
     margin: 1,
@@ -108,37 +143,68 @@ export async function downloadBrandedQrPng({
 
   const qrImg = await loadImageElement(composed)
   const ox = (W - qrSize) / 2
-  ctx.drawImage(qrImg, ox, 14, qrSize, qrSize)
+  ctx.drawImage(qrImg, ox, qrTop, qrSize, qrSize)
 
+  const textPad = 12
+  const maxTextW = W - textPad * 2
+  const baseY = qrTop + qrSize
+
+  ctx.textAlign = 'center'
   ctx.fillStyle = '#111'
   ctx.font = 'bold 15px sans-serif'
-  ctx.textAlign = 'center'
-  ctx.fillText(nameLine, W / 2, qrSize + 44)
+  fillTextTruncatedCenter(ctx, nameLine, W / 2, baseY + 26, maxTextW)
 
-  ctx.fillStyle = '#444'
+  ctx.fillStyle = '#555'
   ctx.font = '12px sans-serif'
-  ctx.fillText(speciesLine, W / 2, qrSize + 66)
+  fillTextTruncatedCenter(ctx, speciesLine, W / 2, baseY + 48, maxTextW)
 
   if (shortIdLine) {
     ctx.fillStyle = '#777'
     ctx.font = '11px sans-serif'
-    ctx.fillText(shortIdLine, W / 2, qrSize + 86)
+    fillTextTruncatedCenter(ctx, shortIdLine, W / 2, baseY + 68, maxTextW)
   }
 
   try {
     const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
     const lw = 34
-    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - 10, lw, lw)
+    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - 8, lw, lw)
   } catch {
     ctx.fillStyle = '#888'
     ctx.font = '11px sans-serif'
-    ctx.fillText(BRAND_WITH_TM, W / 2, H - 14)
+    ctx.fillText(BRAND_WITH_TM, W / 2, H - 12)
   }
 
+  const inset = 2
+  ctx.save()
+  ctx.strokeStyle = '#222222'
+  ctx.lineWidth = 1
+  ctx.setLineDash([3, 3])
+  ctx.strokeRect(inset + 0.5, inset + 0.5, W - inset * 2 - 1, H - inset * 2 - 1)
+  ctx.restore()
+
+  return canvas.toDataURL('image/png')
+}
+
+/**
+ * PNG listo para descargar: QR con logo centrado + nombre + especie + logo pequeño abajo.
+ */
+export async function downloadBrandedQrPng({
+  url,
+  nameLine,
+  speciesLine,
+  shortIdLine,
+  filenameBase,
+}) {
+  const href = await buildFullLabelPngDataUrl({
+    url,
+    nameLine,
+    speciesLine,
+    shortIdLine,
+  })
   const safeName = String(filenameBase || 'qr').replace(/[/\\?%*:|"<>]/g, '-')
   const link = document.createElement('a')
   link.download = `${safeName}-QR.png`
-  link.href = canvas.toDataURL('image/png')
+  link.href = href
   link.rel = 'noopener'
   document.body.appendChild(link)
   link.click()
