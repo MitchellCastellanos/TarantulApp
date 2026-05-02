@@ -1547,7 +1547,7 @@
     "country": "Country",
     "level": "Level",
     "devices": "Devices",
-    "devicesPlaceholder": "List the devices you have (e.g., iPhone 13, Samsung S23, Windows laptop, iPad).",
+    "devicesPlaceholder": "Rough idea is fine — e.g. iPhone, Android, tablet, or desktop OS (helps us target builds, not collect hardware IDs).",
     "notes": "Notes",
     "page": "Page",
     "betaApplyTitle": "Apply for TarantulApp beta",

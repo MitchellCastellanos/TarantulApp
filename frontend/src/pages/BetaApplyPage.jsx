@@ -103,7 +103,17 @@ export default function BetaApplyPage() {
               </div>
               {error ? <div className="alert alert-danger mt-3 mb-0">{error}</div> : null}
               <div className="mt-3">
-                <button className="btn btn-warning w-100 fw-semibold" disabled={saving} type="submit">
+                <button
+                  type="submit"
+                  className="btn w-100 fw-semibold"
+                  disabled={saving}
+                  style={{
+                    background: 'linear-gradient(180deg, #2c2419 0%, #17130f 100%)',
+                    color: '#f8f1e4',
+                    border: '1px solid rgba(232, 197, 71, 0.55)',
+                    boxShadow: '0 6px 18px rgba(0, 0, 0, 0.35)',
+                  }}
+                >
                   {saving ? t('common.saving') : t('admin.applyNow')}
                 </button>
               </div>
