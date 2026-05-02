@@ -31,6 +31,7 @@ import {
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
 import { remindersPrefillUrl } from '../utils/reminderDeepLink'
+import { reminderPrimaryLabel } from '../utils/reminderLabels'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const REMINDER_TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
@@ -613,7 +614,7 @@ export default function TarantulaDetailPage() {
                               </span>
                               <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
                                 <div className="fw-semibold small" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                                  {r.message || r.type}
+                                  {reminderPrimaryLabel(r.message, r.type, t)}
                                   {isAutomatic && (
                                     <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.6rem' }}>
                                       PRO
@@ -670,7 +671,7 @@ export default function TarantulaDetailPage() {
                             </span>
                             <div className="flex-grow-1 min-w-0">
                               <div className="small text-decoration-line-through text-muted" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                                {r.message || r.type}
+                                {reminderPrimaryLabel(r.message, r.type, t)}
                               </div>
                               <div className="small text-muted">{formatDateTimeInUserZone(r.dueDate, i18n.language)}</div>
                             </div>

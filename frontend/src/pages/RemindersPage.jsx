@@ -15,6 +15,7 @@ import {
   dismissAutomaticReminder,
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
+import { reminderPrimaryLabel } from '../utils/reminderLabels'
 
 const TYPE_OPTS = [
   { value: 'feeding',  icon: '🍽️', labelKey: 'reminders.typeFeeding' },
@@ -305,7 +306,7 @@ export default function RemindersPage() {
                             ...(r.isDone ? {} : { color: 'var(--ta-gold-light)' }),
                           }}
                         >
-                          {r.message || r.type}
+                          {reminderPrimaryLabel(r.message, r.type, t)}
                         </div>
                         {isAutomatic && (
                           <span className="badge bg-dark flex-shrink-0 align-self-start" style={{ fontSize: '0.6rem' }}>PRO</span>

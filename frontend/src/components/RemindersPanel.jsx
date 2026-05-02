@@ -11,6 +11,7 @@ import {
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
 import { remindersPrefillUrl } from '../utils/reminderDeepLink'
+import { reminderPrimaryLabel } from '../utils/reminderLabels'
 
 const TYPE_ICONS = {
   feeding: '🍽️',
@@ -39,7 +40,7 @@ function resolveReminderMessage(reminder, t) {
       name: reminder?.tarantulaName || t('common.unknown'),
     })
   }
-  return reminder?.message || reminder?.type
+  return reminderPrimaryLabel(reminder?.message, reminder?.type, t)
 }
 
 export default function RemindersPanel() {

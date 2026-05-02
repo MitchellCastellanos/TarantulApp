@@ -27,8 +27,21 @@ import {
   compareAdminByCreatedDesc,
 } from './adminShared'
 
+function formatBetaBugSeverity(severity, t) {
+  if (!severity) return '-'
+  const k = String(severity).toLowerCase()
+  const keys = {
+    low: 'admin.severityLow',
+    medium: 'admin.severityMedium',
+    high: 'admin.severityHigh',
+    critical: 'admin.severityCritical',
+  }
+  const tk = keys[k]
+  return tk ? t(tk) : severity
+}
+
 export default function AdminBetaPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [bugReports, setBugReports] = useState([])
   const [betaTesters, setBetaTesters] = useState([])
   const [betaApplications, setBetaApplications] = useState([])
@@ -1026,14 +1039,36 @@ export default function AdminBetaPage() {
                 <tbody>
                   {bugReports.map((b) => (
                     <tr key={b.id}>
-                      <td>{b.createdAt ? new Date(b.createdAt).toLocaleString() : '-'}</td>
-                      <td>{b.severity || '-'}</td>
+                      <td>
+                        {b.createdAt
+                          ? new Date(b.createdAt).toLocaleString(i18n.language || undefined)
+                          : '-'}
+                      </td>
+                      <td>{formatBetaBugSeverity(b.severity, t)}</td>
                       <td>{b.title || '-'}</td>
                       <td className="small text-muted">{b.currentUrl || '-'}</td>
                       <td className="d-flex flex-wrap gap-1">
-                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => patchBugReport(b.id, 'in_progress')}>In progress</button>
-                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => patchBugReport(b.id, 'fixed')}>Fixed</button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => patchBugReport(b.id, 'wont_fix')}>Won't fix</button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-warning"
+                          onClick={() => patchBugReport(b.id, 'in_progress')}
+                        >
+                          {t('admin.betaBugMarkInProgress')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-success"
+                          onClick={() => patchBugReport(b.id, 'fixed')}
+                        >
+                          {t('admin.betaBugMarkFixed')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => patchBugReport(b.id, 'wont_fix')}
+                        >
+                          {t('admin.betaBugMarkWontFix')}
+                        </button>
                       </td>
                     </tr>
                   ))}
