@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
+import { moltEventDetailStrings } from '../utils/moltEventExtras'
 
 /** U+2122: jsPDF built-in font lo pinta; no pasar por `safe()` (el regex ASCII lo quitaria). */
 const TRADEMARK = '\u2122'
@@ -558,7 +559,8 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
     recent.forEach((e, idx) => {
       const date = e?.eventDate ? toDate(e.eventDate).toLocaleString(localeForDates) : tr('common.unknown')
       const eventTitle = pdfEventTitle(e, tr)
-      const eventSummary = e?.summary ? ` | ${e.summary}` : ''
+      const summaryParts = [e?.summary, ...moltEventDetailStrings(e, tr)].filter(Boolean)
+      const eventSummary = summaryParts.length ? ` | ${summaryParts.join(' · ')}` : ''
       paragraph(`${idx + 1}. ${date} - ${eventTitle}${eventSummary}`)
     })
   }

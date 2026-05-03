@@ -84,6 +84,10 @@ public class LogsService {
         log.setPreSizeCm(req.getPreSizeCm());
         log.setPostSizeCm(req.getPostSizeCm());
         log.setNotes(req.getNotes());
+        log.setSuccessful(req.getSuccessful());
+        log.setComplicationType(req.getComplicationType());
+        log.setDurationMinutes(req.getDurationMinutes());
+        log.setPreMoltSigns(req.getPreMoltSigns());
         MoltLog saved = moltLogRepository.save(log);
         if (Boolean.TRUE.equals(req.getPublishToFeed())) {
             publishEventPost(userId, tarantulaId, "molt", buildMoltBody(saved));

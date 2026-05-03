@@ -1,4 +1,5 @@
 import { BRAND_WITH_TM } from '../constants/brand'
+import { moltEventDetailStrings } from './moltEventExtras'
 
 function formatDate(value, language) {
   if (!value) return '-'
@@ -34,7 +35,11 @@ export function buildEventShareText({ tarantulaName, speciesName, event, t, lang
   const safeSpecies = cleanInlineText(speciesName)
   const safeLabel = cleanInlineText(label)
   const safeDate = cleanInlineText(date)
-  const summary = cleanInlineText(event?.summary || t('share.noSummary', { defaultValue: 'No summary' }))
+  const moltExtras = moltEventDetailStrings(event, t)
+  const summaryJoined = [event?.summary, ...moltExtras].filter(Boolean).join(' · ')
+  const summary = cleanInlineText(
+    summaryJoined || t('share.noSummary', { defaultValue: 'No summary' }),
+  )
   const safeProfileUrl = cleanInlineText(profileUrl, '')
   if (channel === 'instagram') {
     return [

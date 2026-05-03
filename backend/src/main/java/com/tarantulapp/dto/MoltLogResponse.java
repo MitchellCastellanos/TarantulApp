@@ -13,6 +13,10 @@ public class MoltLogResponse {
     private BigDecimal preSizeCm;
     private BigDecimal postSizeCm;
     private String notes;
+    private Boolean successful;
+    private String complicationType;
+    private Integer durationMinutes;
+    private String preMoltSigns;
     private Instant createdAt;
 
     public static MoltLogResponse from(MoltLog m) {
@@ -23,6 +27,10 @@ public class MoltLogResponse {
         dto.preSizeCm = m.getPreSizeCm();
         dto.postSizeCm = m.getPostSizeCm();
         dto.notes = m.getNotes();
+        dto.successful = m.getSuccessful();
+        dto.complicationType = m.getComplicationType();
+        dto.durationMinutes = m.getDurationMinutes();
+        dto.preMoltSigns = m.getPreMoltSigns();
         dto.createdAt = m.getCreatedAt();
         return dto;
     }
@@ -33,5 +41,9 @@ public class MoltLogResponse {
     public BigDecimal getPreSizeCm() { return preSizeCm; }
     public BigDecimal getPostSizeCm() { return postSizeCm; }
     public String getNotes() { return notes; }
+    public Boolean getSuccessful() { return successful; }
+    public String getComplicationType() { return complicationType; }
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public String getPreMoltSigns() { return preMoltSigns; }
     public Instant getCreatedAt() { return createdAt; }
 }

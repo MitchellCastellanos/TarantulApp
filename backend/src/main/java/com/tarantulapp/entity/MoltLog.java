@@ -29,6 +29,18 @@ public class MoltLog {
     @Column(name = "notes", length = 500)
     private String notes;
 
+    @Column(name = "successful")
+    private Boolean successful;
+
+    @Column(name = "complication_type", length = 50)
+    private String complicationType;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "pre_molt_signs", columnDefinition = "TEXT")
+    private String preMoltSigns;
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
@@ -47,5 +59,13 @@ public class MoltLog {
     public void setPostSizeCm(BigDecimal postSizeCm) { this.postSizeCm = postSizeCm; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Boolean getSuccessful() { return successful; }
+    public void setSuccessful(Boolean successful) { this.successful = successful; }
+    public String getComplicationType() { return complicationType; }
+    public void setComplicationType(String complicationType) { this.complicationType = complicationType; }
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+    public String getPreMoltSigns() { return preMoltSigns; }
+    public void setPreMoltSigns(String preMoltSigns) { this.preMoltSigns = preMoltSigns; }
     public Instant getCreatedAt() { return createdAt; }
 }

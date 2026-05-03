@@ -95,6 +95,27 @@ export default function TimelineItem({ event, onDelete, shareMeta }) {
         {event.summary && (
           <p className="small mb-0 mt-1 ps-0 ta-history-summary">{event.summary}</p>
         )}
+        {event.type === 'molt' && event.successful === false && (
+          <span
+            className="badge mt-1 d-inline-block"
+            style={{
+              background: 'rgba(220,53,69,0.18)',
+              color: '#e07080',
+              fontSize: '0.7rem',
+              border: '1px solid rgba(220,53,69,0.35)',
+            }}
+          >
+            ⚠{' '}
+            {event.complicationType
+              ? t(`molt.complication_${event.complicationType}`)
+              : t('molt.hadComplication')}
+          </span>
+        )}
+        {event.type === 'molt' && event.durationMinutes != null && event.durationMinutes > 0 && (
+          <span className="ms-1 small" style={{ color: 'var(--ta-text-muted)', fontSize: '0.72rem' }}>
+            · {event.durationMinutes} min
+          </span>
+        )}
       </div>
     </div>
   )

@@ -180,7 +180,11 @@ public class TarantulaService {
 
         moltLogRepository.findByTarantulaIdOrderByMoltedAtDesc(tarantulaId).forEach(m -> {
             String summary = buildMoltSummary(m.getPreSizeCm(), m.getPostSizeCm(), m.getNotes());
-            events.add(new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary));
+            TimelineEventDTO ev = new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary);
+            ev.setSuccessful(m.getSuccessful());
+            ev.setComplicationType(m.getComplicationType());
+            ev.setDurationMinutes(m.getDurationMinutes());
+            events.add(ev);
         });
 
         behaviorLogRepository.findByTarantulaIdOrderByLoggedAtDesc(tarantulaId).forEach(b -> {
@@ -209,7 +213,11 @@ public class TarantulaService {
         });
         moltLogRepository.findByTarantulaIdOrderByMoltedAtDesc(t.getId()).forEach(m -> {
             String summary = buildMoltSummary(m.getPreSizeCm(), m.getPostSizeCm(), m.getNotes());
-            events.add(new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary));
+            TimelineEventDTO ev = new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary);
+            ev.setSuccessful(m.getSuccessful());
+            ev.setComplicationType(m.getComplicationType());
+            ev.setDurationMinutes(m.getDurationMinutes());
+            events.add(ev);
         });
         behaviorLogRepository.findByTarantulaIdOrderByLoggedAtDesc(t.getId()).forEach(b -> {
             events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), b.getMood(), b.getNotes()));

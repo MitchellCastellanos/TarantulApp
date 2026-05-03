@@ -13,6 +13,7 @@ import PhotoGallery from '../components/PhotoGallery'
 import FangPanel from '../components/FangPanel'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import SpeciesProfileCard from '../components/SpeciesProfileCard'
+import MoltGrowthChart from '../components/MoltGrowthChart'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import TaSegmentedControl from '../components/TaSegmentedControl'
 import tarantulaService from '../services/tarantulaService'
@@ -32,6 +33,9 @@ import {
 } from '../utils/dismissedAutoReminders'
 import { remindersPrefillUrl } from '../utils/reminderDeepLink'
 import { reminderPrimaryLabel } from '../utils/reminderLabels'
+import { computePostMoltWindow } from '../utils/moltFeedingWindow'
+import { predictNextMolt } from '../utils/moltPrediction'
+import { detectFeedingPreMoltSignal } from '../utils/preMoltSignals'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const REMINDER_TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
@@ -50,6 +54,8 @@ export default function TarantulaDetailPage() {
 
   const [tarantula, setTarantula] = useState(null)
   const [timeline, setTimeline] = useState([])
+  const [molts, setMolts] = useState([])
+  const [feedings, setFeedings] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased'
   const [deceasedNotes, setDeceasedNotes] = useState('')
@@ -68,9 +74,13 @@ export default function TarantulaDetailPage() {
     Promise.all([
       tarantulaService.getById(id),
       tarantulaService.getTimeline(id),
-    ]).then(([t, tl]) => {
+      logsService.getMolts(id),
+      logsService.getFeedings(id),
+    ]).then(([t, tl, ms, fs]) => {
       setTarantula(t)
       setTimeline(tl)
+      setMolts(Array.isArray(ms) ? ms : [])
+      setFeedings(Array.isArray(fs) ? fs : [])
     }).finally(() => {
       if (showFullPageLoading) setLoading(false)
     })
@@ -166,6 +176,32 @@ export default function TarantulaDetailPage() {
   useEffect(() => {
     setHistoryPageIndex(i => Math.min(i, Math.max(0, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE) - 1)))
   }, [timeline.length])
+
+  const moltEvents = useMemo(
+    () => timeline.filter((e) => e.type === 'molt'),
+    [timeline],
+  )
+  const estimatedInstar = moltEvents.length > 0 ? moltEvents.length + 1 : null
+
+  const postMoltWindow = useMemo(
+    () => computePostMoltWindow(tarantula?.lastMoltAt, tarantula?.stage),
+    [tarantula?.lastMoltAt, tarantula?.stage],
+  )
+
+  const moltPrediction = useMemo(
+    () =>
+      predictNextMolt(
+        tarantula?.lastMoltAt,
+        tarantula?.species?.growthRate,
+        tarantula?.stage,
+      ),
+    [tarantula?.lastMoltAt, tarantula?.species?.growthRate, tarantula?.stage],
+  )
+
+  const preMoltFeedingSignal = useMemo(
+    () => detectFeedingPreMoltSignal(feedings),
+    [feedings],
+  )
 
   const handleLogSaved = () => { setModal(null); load(false) }
 
@@ -363,13 +399,75 @@ export default function TarantulaDetailPage() {
                     {tarantula.currentSizeCm && (
                       <span className="badge bg-light text-dark border">📏 {tarantula.currentSizeCm} cm</span>
                     )}
+                    {estimatedInstar != null && (
+                      <span className="badge bg-light text-dark border" title={t('molt.instarHint')}>
+                        {t('molt.instarBadge', { n: estimatedInstar })}
+                      </span>
+                    )}
                   </div>
+
+                  {preMoltFeedingSignal && tarantula.status !== 'pre_molt' && (
+                    <div
+                      className="mb-2 rounded-2 px-3 py-2 small"
+                      style={{
+                        background: 'rgba(212,175,55,0.12)',
+                        border: '1px solid rgba(212,175,55,0.4)',
+                        color: 'var(--ta-text-muted)',
+                      }}
+                    >
+                      <span style={{ color: 'var(--ta-gold)' }}>🌙 </span>
+                      {t('molt.feedingSignalBanner')}
+                    </div>
+                  )}
 
                   <div className="small text-muted">
                     <div>📅 {t('tarantula.purchaseDate')}: {formatDateInUserZone(tarantula.purchaseDate, i18n.language)}</div>
                     <div>{t('tarantula.lastFed')}: {formatDateInUserZone(tarantula.lastFedAt, i18n.language)}</div>
                     <div>{t('tarantula.lastMolt')}: {formatDateInUserZone(tarantula.lastMoltAt, i18n.language)}</div>
+                    {estimatedInstar != null && (
+                      <div>
+                        {t('molt.instarLabel')}: #{estimatedInstar} (
+                        {t('molt.instarFromLogs', { count: moltEvents.length })})
+                      </div>
+                    )}
                   </div>
+
+                  {postMoltWindow?.isActive && (
+                    <div
+                      className="mt-2 rounded-2 px-3 py-2 small"
+                      style={{
+                        background: 'rgba(144,96,224,0.12)',
+                        border: '1px solid rgba(144,96,224,0.4)',
+                        color: 'var(--ta-text-muted)',
+                      }}
+                    >
+                      <span style={{ color: '#9060e0' }}>⚠ </span>
+                      {t('molt.noFeedWindowActive', {
+                        count: postMoltWindow.daysLeft,
+                        date: formatDateInUserZone(postMoltWindow.safeDate.toISOString(), i18n.language),
+                      })}
+                    </div>
+                  )}
+
+                  {moltPrediction && !postMoltWindow?.isActive && (
+                    <div
+                      className="mt-2 rounded-2 px-3 py-2 small"
+                      style={{
+                        background: 'rgba(192,144,64,0.10)',
+                        border: '1px solid rgba(192,144,64,0.35)',
+                        color: 'var(--ta-text-muted)',
+                      }}
+                    >
+                      <span style={{ color: '#c09040' }}>🔮 </span>
+                      {t('molt.predictionRange', {
+                        from: formatDateInUserZone(moltPrediction.earliest.toISOString(), i18n.language),
+                        to: formatDateInUserZone(moltPrediction.latest.toISOString(), i18n.language),
+                      })}
+                      <span className="d-block mt-1" style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+                        {t('molt.predictionDisclaimer')}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card-footer bg-transparent border-top-0 d-flex gap-2 flex-wrap">
@@ -507,6 +605,18 @@ export default function TarantulaDetailPage() {
               <ChitinCardFrame className="mb-4 ta-chitin-species-detail">
                 <SpeciesProfileCard species={species} tarantula={tarantula} t={t} />
               </ChitinCardFrame>
+            )}
+            {molts.some((m) => m.preSizeCm != null || m.postSizeCm != null) && (
+              <FangPanel className="mb-4 ta-spider-detail-fang" cornerOffset={10}>
+                <div className="card border-0 shadow-sm ta-premium-pane">
+                  <div className="card-body">
+                    <div className="ta-section-header mb-3">
+                      <span>{t('molt.growthCurveTitle')}</span>
+                    </div>
+                    <MoltGrowthChart molts={molts} species={species} />
+                  </div>
+                </div>
+              </FangPanel>
             )}
             {terrariumRec && (
               <FangPanel className="mb-4 ta-spider-detail-fang" cornerOffset={10}>

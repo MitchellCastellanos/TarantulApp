@@ -9,6 +9,10 @@ public class TimelineEventDTO {
     private Instant eventDate;
     private String title;
     private String summary;
+    /** Populated for type=molt when available */
+    private Boolean successful;
+    private String complicationType;
+    private Integer durationMinutes;
 
     public TimelineEventDTO(UUID id, String type, Instant eventDate, String title, String summary) {
         this.id = id;
@@ -23,4 +27,10 @@ public class TimelineEventDTO {
     public Instant getEventDate() { return eventDate; }
     public String getTitle() { return title; }
     public String getSummary() { return summary; }
+    public Boolean getSuccessful() { return successful; }
+    public void setSuccessful(Boolean successful) { this.successful = successful; }
+    public String getComplicationType() { return complicationType; }
+    public void setComplicationType(String complicationType) { this.complicationType = complicationType; }
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
 }
