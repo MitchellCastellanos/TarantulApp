@@ -85,9 +85,10 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
 export const FULL_LABEL_LAYOUT = {
   canvasW: 320,
   canvasH: 380,
-  qrSize: 240,
+  /** Un poco menor que antes para dar aire al nombre/especie sin agrandar la etiqueta impresa. */
+  qrSize: 228,
   /** Poco margen blanco entre el borde de recorte y el QR (similar a etiqueta física). */
-  qrTop: 6,
+  qrTop: 5,
 }
 
 /** Ancho/alto en px “docx” si el QR debe medir `displayQrPx` al imprimir. */
@@ -145,29 +146,29 @@ export async function buildFullLabelPngDataUrl({
   const ox = (W - qrSize) / 2
   ctx.drawImage(qrImg, ox, qrTop, qrSize, qrSize)
 
-  const textPad = 12
+  const textPad = 10
   const maxTextW = W - textPad * 2
   const baseY = qrTop + qrSize
 
   ctx.textAlign = 'center'
   ctx.fillStyle = '#111'
-  ctx.font = 'bold 15px sans-serif'
-  fillTextTruncatedCenter(ctx, nameLine, W / 2, baseY + 26, maxTextW)
+  ctx.font = 'bold 19px sans-serif'
+  fillTextTruncatedCenter(ctx, nameLine, W / 2, baseY + 24, maxTextW)
 
-  ctx.fillStyle = '#555'
-  ctx.font = '12px sans-serif'
-  fillTextTruncatedCenter(ctx, speciesLine, W / 2, baseY + 48, maxTextW)
+  ctx.fillStyle = '#444'
+  ctx.font = 'italic 15px sans-serif'
+  fillTextTruncatedCenter(ctx, speciesLine, W / 2, baseY + 50, maxTextW)
 
   if (shortIdLine) {
     ctx.fillStyle = '#777'
     ctx.font = '11px sans-serif'
-    fillTextTruncatedCenter(ctx, shortIdLine, W / 2, baseY + 68, maxTextW)
+    fillTextTruncatedCenter(ctx, shortIdLine, W / 2, baseY + 74, maxTextW)
   }
 
   try {
     const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
-    const lw = 34
-    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - 8, lw, lw)
+    const lw = 28
+    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - 7, lw, lw)
   } catch {
     ctx.fillStyle = '#888'
     ctx.font = '11px sans-serif'

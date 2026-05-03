@@ -7,13 +7,8 @@ import {
   ImageRun,
   Packer,
   Paragraph,
-  Table,
-  TableCell,
-  TableLayoutType,
-  TableRow,
+  SectionType,
   TextRun,
-  VerticalAlignTable,
-  WidthType,
 } from 'docx'
 
 /** Máximo de QRs por archivo (rendimiento del navegador). */
@@ -44,59 +39,39 @@ async function tryBrandLogoBytes() {
   }
 }
 
-/**
- * Una celda = una imagen (etiqueta completa). Así Word no “corre” el pie respecto al QR en vista flexible.
- */
-async function labelTableCell({
-  url,
-  titleLine1,
-  titleLine2,
-  subtitle,
-  displayQrPx,
-  widthPercent,
-  columnSpan = 1,
-}) {
-  const dataUrl = await buildFullLabelPngDataUrl({
-    url,
-    nameLine: titleLine1,
-    speciesLine: titleLine2 || '',
-    shortIdLine: subtitle || '',
-  })
-  const buf = dataUrlToUint8Array(dataUrl)
-  const { width, height } = labelDocxDimensions(displayQrPx)
-  const image = new ImageRun({
-    type: 'png',
-    data: buf,
-    transformation: { width, height },
-    altText: { name: 'Etiqueta QR', description: titleLine1, title: titleLine1 },
-  })
-  return new TableCell({
-    children: [
+async function buildLabelParagraphs(items, displayQrPx) {
+  const out = []
+  for (const item of items) {
+    const dataUrl = await buildFullLabelPngDataUrl({
+      url: item.url,
+      nameLine: item.titleLine1,
+      speciesLine: item.titleLine2 || '',
+      shortIdLine: item.subtitle || '',
+    })
+    const buf = dataUrlToUint8Array(dataUrl)
+    const { width, height } = labelDocxDimensions(displayQrPx)
+    out.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 0 },
-        children: [image],
+        spacing: { after: 72 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: buf,
+            transformation: { width, height },
+            altText: { name: 'Etiqueta QR', description: item.titleLine1, title: item.titleLine1 },
+          }),
+        ],
       }),
-    ],
-    verticalAlign: VerticalAlignTable.CENTER,
-    margins: { top: 28, bottom: 28, left: 20, right: 20 },
-    columnSpan,
-    width: { size: widthPercent, type: WidthType.PERCENTAGE },
-  })
-}
-
-function emptyLabelCell(widthPercent) {
-  return new TableCell({
-    children: [new Paragraph({ text: '' })],
-    margins: { top: 28, bottom: 28, left: 20, right: 20 },
-    width: { size: widthPercent, type: WidthType.PERCENTAGE },
-  })
+    )
+  }
+  return out
 }
 
 /**
  * @param {object} opts
  * @param {{ url: string, titleLine1: string, titleLine2?: string, subtitle?: string }[]} opts.items
- * @param {'fixed'|'flex'} opts.layout — rejilla 2 columnas con tamaño uniforme, o cuatro columnas más pequeñas
+ * @param {'fixed'|'flex'} opts.layout — columnas de Word (2 o 4), sin tabla para que mover una etiqueta no arrastre celdas vacías
  * @param {number} [opts.sizeCm] — lado del **QR** en cm (el DOCX escala la etiqueta entera manteniendo proporción)
  * @param {string} [opts.docTitle]
  * @param {string} [opts.footerNote]
@@ -140,76 +115,39 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     )
   }
 
-  const rows = []
-
-  if (layout === 'flex') {
-    const COLUMNS = 4
-    for (let i = 0; i < items.length; i += COLUMNS) {
-      const chunk = items.slice(i, i + COLUMNS)
-      const cells = []
-      for (const item of chunk) {
-        cells.push(
-          await labelTableCell({
-            ...item,
-            displayQrPx,
-            widthPercent: 100 / COLUMNS,
-          }),
-        )
-      }
-      while (cells.length < COLUMNS) cells.push(emptyLabelCell(100 / COLUMNS))
-      rows.push(new TableRow({ children: cells }))
-    }
-    const table = new Table({
-      layout: TableLayoutType.FIXED,
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      rows,
-    })
-    return Packer.toBlob(
-      new Document({
-        creator: BRAND_WITH_TM,
-        title: docTitle || `${BRAND_WITH_TM} QR`,
-        sections: [{ children: [...intro, table] }],
-      }),
-    )
+  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx)
+  const columnCount = layout === 'flex' ? 4 : 2
+  const columnOpts = {
+    count: columnCount,
+    space: 280,
   }
 
-  for (let i = 0; i < items.length; i += 2) {
-    const left = items[i]
-    const right = items[i + 1]
-    const leftCell = await labelTableCell({
-      ...left,
-      displayQrPx,
-      widthPercent: 50,
-    })
-    if (right) {
-      const rightCell = await labelTableCell({
-        ...right,
-        displayQrPx,
-        widthPercent: 50,
-      })
-      rows.push(new TableRow({ children: [leftCell, rightCell] }))
-    } else {
-      const wide = await labelTableCell({
-        ...left,
-        displayQrPx,
-        widthPercent: 100,
-        columnSpan: 2,
-      })
-      rows.push(new TableRow({ children: [wide] }))
-    }
-  }
-
-  const table = new Table({
-    layout: TableLayoutType.FIXED,
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows,
-  })
+  const sections =
+    intro.length > 0
+      ? [
+          { children: intro },
+          {
+            properties: {
+              type: SectionType.CONTINUOUS,
+              column: columnOpts,
+            },
+            children: labelParagraphs,
+          },
+        ]
+      : [
+          {
+            properties: {
+              column: columnOpts,
+            },
+            children: labelParagraphs,
+          },
+        ]
 
   return Packer.toBlob(
     new Document({
       creator: BRAND_WITH_TM,
       title: docTitle || `${BRAND_WITH_TM} QR`,
-      sections: [{ children: [...intro, table] }],
+      sections,
     }),
   )
 }
