@@ -108,6 +108,13 @@ public final class HobbyWorldResolver {
             if (containsAny(n, DISTRIBUTION_NEW_HINTS)) {
                 newHit = true;
             }
+            // GBIF often uses country names ("Costa Rica") without macro-regions; reuse origin heuristics.
+            String locWorld = fromOriginRegion(locality);
+            if (NEW_WORLD.equals(locWorld)) {
+                newHit = true;
+            } else if (OLD_WORLD.equals(locWorld)) {
+                oldHit = true;
+            }
         }
 
         if (oldHit && newHit) {

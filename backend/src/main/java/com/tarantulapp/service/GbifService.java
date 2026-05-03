@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -295,6 +296,13 @@ public class GbifService {
             }
             Set<String> hints = new LinkedHashSet<>();
             for (JsonNode row : results) {
+                String establishment = textJson(row, "establishmentMeans");
+                if (establishment != null) {
+                    String em = establishment.trim().toUpperCase(Locale.ROOT);
+                    if ("INTRODUCED".equals(em) || "INVASIVE".equals(em)) {
+                        continue;
+                    }
+                }
                 String locality = textJson(row, "locality");
                 String iso = textJson(row, "countryCode");
                 if (iso == null) {
