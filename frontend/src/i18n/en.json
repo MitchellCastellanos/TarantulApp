@@ -941,6 +941,8 @@
     "addFeeding": "🍽️ + Feeding",
     "addMolt": "+ Molt",
     "addBehavior": "🔍 + Behavior",
+    "quickLogTitle": "Log an event",
+    "quickLogHint": "Feeding, molt, or behavior — right where you need it.",
     "history": "📅 History",
     "historyEmpty": "No events recorded yet. Start by logging a feeding or molt.",
     "historyPrev": "← Previous",

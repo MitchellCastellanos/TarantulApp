@@ -922,6 +922,8 @@
     "addFeeding": "🍽️ + Alimentación",
     "addMolt": "+ Muda",
     "addBehavior": "🔍 + Comportamiento",
+    "quickLogTitle": "Registrar evento",
+    "quickLogHint": "Alimentación, muda o comportamiento — aquí mismo, sin buscar abajo.",
     "history": "📅 Historial",
     "historyEmpty": "Aún no hay eventos registrados. Empieza registrando una alimentación o muda.",
     "historyPrev": "← Anterior",

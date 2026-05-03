@@ -923,6 +923,8 @@
     "addFeeding": "🍽️ + Alimentation",
     "addMolt": "+ Mue",
     "addBehavior": "🔍 + Comportement",
+    "quickLogTitle": "Enregistrer un événement",
+    "quickLogHint": "Alimentation, mue ou comportement — ici, sans scroller.",
     "history": "📅 Historique",
     "historyEmpty": "Aucun événement enregistré. Commencez par une alimentation ou une mue.",
     "historyPrev": "← Précédent",

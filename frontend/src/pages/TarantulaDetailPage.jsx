@@ -44,6 +44,45 @@ function reminderOverdue(iso) {
   return new Date(iso) < new Date()
 }
 
+function LogEventButtonRow({ mayEdit, lockedHint, onFeeding, onMolt, onBehavior, t, className = '' }) {
+  const disabled = !mayEdit
+  const lockTitle = disabled ? lockedHint : undefined
+  return (
+    <div className={`d-flex flex-wrap gap-2 ${className}`}>
+      <button
+        type="button"
+        className="btn btn-outline-primary btn-sm flex-grow-1"
+        style={{ minWidth: '6.5rem' }}
+        onClick={onFeeding}
+        disabled={disabled}
+        title={lockTitle}
+      >
+        {t('tarantula.addFeeding')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-outline-purple btn-sm flex-grow-1"
+        style={{ minWidth: '6.5rem', color: '#6f42c1', borderColor: '#6f42c1' }}
+        onClick={onMolt}
+        disabled={disabled}
+        title={lockTitle}
+      >
+        {t('tarantula.addMolt')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-outline-warning btn-sm flex-grow-1"
+        style={{ minWidth: '6.5rem' }}
+        onClick={onBehavior}
+        disabled={disabled}
+        title={lockTitle}
+      >
+        {t('tarantula.addBehavior')}
+      </button>
+    </div>
+  )
+}
+
 export default function TarantulaDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -432,6 +471,40 @@ export default function TarantulaDetailPage() {
                     )}
                   </div>
 
+                  {!tarantula.deceasedAt && (
+                    <div
+                      className="mt-3 rounded-3 px-3 py-3"
+                      style={{
+                        background: 'linear-gradient(145deg, rgba(212,175,55,0.1), rgba(72,40,120,0.14))',
+                        border: '1px solid rgba(212,175,55,0.28)',
+                        boxShadow: '0 0 0 1px rgba(0,0,0,0.04) inset',
+                      }}
+                    >
+                      <div
+                        className="small fw-semibold mb-1"
+                        style={{
+                          color: 'var(--ta-gold)',
+                          letterSpacing: '0.08em',
+                          fontSize: '0.68rem',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {t('tarantula.quickLogTitle')}
+                      </div>
+                      <p className="small text-muted mb-2 mb-md-3" style={{ fontSize: '0.78rem', lineHeight: 1.35 }}>
+                        {t('tarantula.quickLogHint')}
+                      </p>
+                      <LogEventButtonRow
+                        mayEdit={mayEdit}
+                        lockedHint={t('tarantula.lockedEditHint')}
+                        onFeeding={() => setModal('feeding')}
+                        onMolt={() => setModal('molt')}
+                        onBehavior={() => setModal('behavior')}
+                        t={t}
+                      />
+                    </div>
+                  )}
+
                   {postMoltWindow?.isActive && (
                     <div
                       className="mt-2 rounded-2 px-3 py-2 small"
@@ -553,7 +626,20 @@ export default function TarantulaDetailPage() {
                     <span>{t('tarantula.history')}</span>
                   </div>
                   {timeline.length === 0 ? (
-                    <p className="small text-muted mb-0 text-center">{t('tarantula.historyEmpty')}</p>
+                    <div>
+                      <p className="small text-muted mb-3 text-center">{t('tarantula.historyEmpty')}</p>
+                      {!tarantula.deceasedAt && (
+                        <LogEventButtonRow
+                          mayEdit={mayEdit}
+                          lockedHint={t('tarantula.lockedEditHint')}
+                          onFeeding={() => setModal('feeding')}
+                          onMolt={() => setModal('molt')}
+                          onBehavior={() => setModal('behavior')}
+                          t={t}
+                          className="justify-content-center"
+                        />
+                      )}
+                    </div>
                   ) : (
                     <>
                       <div className="ta-timeline-panel__events">
@@ -601,6 +687,26 @@ export default function TarantulaDetailPage() {
 
         {detailTab === 'care' && (
           <div className="mx-auto" style={{ maxWidth: 900 }}>
+            {!tarantula.deceasedAt && (
+              <FangPanel className="mb-4 ta-spider-detail-fang" cornerOffset={10}>
+                <div className="card border-0 shadow-sm ta-premium-pane">
+                  <div className="card-body py-3">
+                    <div className="ta-section-header mb-2">
+                      <span>{t('tarantula.quickLogTitle')}</span>
+                    </div>
+                    <p className="small text-muted mb-3">{t('tarantula.quickLogHint')}</p>
+                    <LogEventButtonRow
+                      mayEdit={mayEdit}
+                      lockedHint={t('tarantula.lockedEditHint')}
+                      onFeeding={() => setModal('feeding')}
+                      onMolt={() => setModal('molt')}
+                      onBehavior={() => setModal('behavior')}
+                      t={t}
+                    />
+                  </div>
+                </div>
+              </FangPanel>
+            )}
             {species && (
               <ChitinCardFrame className="mb-4 ta-chitin-species-detail">
                 <SpeciesProfileCard species={species} tarantula={tarantula} t={t} />
@@ -651,23 +757,6 @@ export default function TarantulaDetailPage() {
                 </div>
               </FangPanel>
             )}
-            <div className="d-flex gap-2 mb-2 flex-wrap">
-              <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setModal('feeding')} disabled={!mayEdit} title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
-                {t('tarantula.addFeeding')}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-purple btn-sm"
-                style={{ color: '#6f42c1', borderColor: '#6f42c1' }}
-                onClick={() => setModal('molt')}
-                disabled={!mayEdit}
-                title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
-                {t('tarantula.addMolt')}
-              </button>
-              <button type="button" className="btn btn-outline-warning btn-sm" onClick={() => setModal('behavior')} disabled={!mayEdit} title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
-                {t('tarantula.addBehavior')}
-              </button>
-            </div>
           </div>
         )}
 
