@@ -2492,6 +2492,48 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
 }
 
+/* Community: beta DEMO note — chip only by default (screenshots); full text on hover / focus-within (i18n en/es/fr). */
+.ta-demo-feed-hover-note__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.ta-demo-feed-hover-note__chip {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--ta-border);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ta-text-muted);
+  line-height: 1.2;
+  cursor: help;
+}
+.ta-demo-feed-hover-note__chip:hover,
+.ta-demo-feed-hover-note__chip:focus-visible {
+  border-color: rgba(212, 175, 55, 0.45);
+  color: var(--ta-parchment, #e8e4dc);
+}
+.ta-demo-feed-hover-note__chip:focus {
+  outline: none;
+}
+:root[data-theme='light'] .ta-demo-feed-hover-note__chip {
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(15, 23, 42, 0.65);
+}
+.ta-demo-feed-hover-note__panel {
+  display: none;
+  margin-top: 0.35rem;
+  max-width: min(520px, 100%);
+  text-align: start;
+}
+.ta-demo-feed-hover-note__inner:hover .ta-demo-feed-hover-note__panel,
+.ta-demo-feed-hover-note__inner:focus-within .ta-demo-feed-hover-note__panel {
+  display: block;
+}
 .ta-social-feed-shell {
   border: 1px solid var(--ta-border);
   border-radius: 0.75rem;

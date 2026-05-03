@@ -816,8 +816,15 @@ export default function SocialHubPage() {
         )}
 
         {token && user?.betaTester && generalPosts.some((p) => p?.isDemoContent) && (
-          <div className="alert alert-secondary small py-2 mb-3" role="note">
-            {t('beta.demoFeedBanner')}
+          <div className="ta-demo-feed-hover-note mb-3">
+            <div className="ta-demo-feed-hover-note__inner">
+              <button type="button" className="ta-demo-feed-hover-note__chip">
+                DEMO
+              </button>
+              <div className="ta-demo-feed-hover-note__panel alert alert-secondary small py-2 mb-0" role="note">
+                {t('beta.demoFeedBanner')}
+              </div>
+            </div>
           </div>
         )}
 
