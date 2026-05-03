@@ -926,637 +926,240 @@ a.text-collection:hover {
   background: rgba(100,60,200,0.2) !important;
 }
 
-/* ─── History readability over parchment cards ──────────────────────────── */
+/* ─── History timeline copy (detail + public profile) ───────────────────── */
 .ta-history-title {
   color: var(--ta-parchment) !important;
 }
 
 .ta-history-meta,
 .ta-history-summary {
-  color: rgba(225,202,154,0.88) !important;
+  color: rgba(225, 202, 154, 0.88) !important;
 }
 
-/* Sin padding extra: todo el bloque visual vive en .ta-parchment-scroll */
-.ta-parchment-float-wrap {
-  margin: 0.75rem 0 1.75rem;
-  padding: 0;
-  overflow: visible;
+:root[data-theme='light'] .ta-history-meta,
+:root[data-theme='light'] .ta-history-summary {
+  color: var(--ta-text-muted) !important;
 }
 
-.ta-parchment-float-wrap--detail {
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-  filter: drop-shadow(0 16px 44px rgba(0, 0, 0, 0.5));
+/* Historial en paneles premium (sin asset PNG de pergamino) */
+.ta-timeline-panel .ta-section-header {
+  margin-bottom: 0.5rem;
 }
 
-:root[data-theme='light'] .ta-parchment-float-wrap--detail {
-  filter: drop-shadow(0 12px 32px rgba(15, 23, 42, 0.14));
-}
-
-.ta-parchment-float-wrap--detail-sidebar {
-  margin-top: 1.35rem;
-  margin-bottom: 0;
-  margin-left: auto;
-  margin-right: auto;
-  width: calc(100% + clamp(2rem, 6vw, 3.8rem));
-  max-width: calc(100% + clamp(2rem, 6vw, 3.8rem));
-  min-width: 0;
-  box-sizing: border-box;
-  transform: translateX(calc(clamp(2rem, 6vw, 3.8rem) * -0.5));
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-history.ta-parchment-history--tarantula-root,
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll.ta-parchment-scroll--vertical {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-bg-img.ta-parchment-bg-img--full {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin-left: 0;
-}
-
-/* Wrapper transparente (perfil público): sombras pueden salir del rectángulo */
-.ta-parchment-history.card {
-  overflow: visible !important;
-  margin: 0;
-  width: 100%;
-  max-width: 100%;
-  border: none !important;
-  border-top: none !important;
-  border-radius: 0;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  transform: none;
-}
-
-/*
- * Detalle tarántula: el PNG es la caja — clip estricto (nada pinta fuera del pergamino).
- */
-.ta-parchment-history.ta-parchment-history--tarantula-root {
-  margin: 0;
-  width: 100%;
-  max-width: 100%;
-  border: none !important;
-  border-radius: 0;
-  overflow: visible;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  transform: none;
-}
-
-/* Pergamino: <img> a ancho completo = PNG completo visible (sin recorte); contenido en capa superpuesta */
-.ta-parchment-scroll {
-  position: relative;
-  padding: 0 !important;
-  overflow: visible;
-  color: #2a1f0a !important;
-  background: none !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  transform: none;
-}
-
-/* El bloque .ta-parchment-scroll + imagen es el contorno real; el overlay sigue la caja del PNG */
-.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
-  display: grid;
-  grid-template-columns: 1fr;
-  width: 100%;
-  isolation: isolate;
-}
-
-.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell .ta-parchment-bg-img--full,
-.ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-  grid-area: 1 / 1;
-}
-
-.ta-parchment-history.ta-parchment-history--tarantula-root .ta-parchment-scroll.ta-parchment-scroll--as-graphic-shell {
-  contain: paint;
-}
-
-.ta-parchment-bg-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  vertical-align: top;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.97;
-  filter: saturate(1.02) contrast(1.02) brightness(1.02);
-  /* multiply sobre UI oscura anulaba el pergamino; el PNG ya trae papel / sombras */
-  mix-blend-mode: normal;
-}
-
-/*
- * Variante vertical (detalle tarántula): la imagen define el tamaño (PNG completo, sin cover/crop).
- * Ancho = 100% del col (igual que ficha especie / terrarium). Contenido centrado en zona de escritura.
- */
-.ta-parchment-scroll--vertical {
-  width: 100%;
-  position: relative;
-  overflow: visible;
-  border-radius: 0;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -3px 18px rgba(40, 28, 18, 0.12),
-    0 10px 36px rgba(0, 0, 0, 0.42);
-}
-
-:root[data-theme='light'] .ta-parchment-scroll--vertical {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 12px 40px rgba(15, 23, 42, 0.14);
-}
-
-.ta-parchment-scroll--vertical .ta-parchment-bg-img--full {
-  display: block !important;
-  width: 100%;
-  height: auto;
-}
-
-.ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-  position: relative;
-  inset: auto;
-  box-sizing: border-box;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: clamp(7%, 9vw, 12%) clamp(9%, 11vw, 15%);
-  overflow-x: hidden;
-  overflow-y: auto;
-  z-index: 2;
-}
-
-.ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-  width: min(36rem, 88%);
-  max-width: 100%;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  flex-shrink: 1;
-}
-
-.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
-  flex: 1 1 auto;
-  min-height: 0;
+.ta-timeline-panel__events {
+  max-height: min(52vh, 28rem);
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  margin-right: -2px;
-  padding-right: 4px;
-}
-
-.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar {
-  width: 7px;
-}
-
-.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar-thumb {
-  background: rgba(62, 44, 26, 0.42);
-  border-radius: 999px;
-}
-
-.ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll::-webkit-scrollbar-track {
-  background: rgba(255, 248, 228, 0.15);
-  border-radius: 999px;
-}
-
-/*
- * Columna ejemplar (detalle): padding acorde al arte (rodillos/garras ≠ bordes del papel).
- * No reusar “un % para todos”: arriba/abajo mucho mayor que laterales.
- */
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-  align-items: center;
-  justify-content: flex-start;
-  box-sizing: border-box;
-  /* Parchment itself is the container: align writing block to paper, not parent box. */
-  padding-top: clamp(20%, 23vw, 32%);
-  padding-bottom: clamp(10.5%, 13.5vw, 20%);
-  padding-left: clamp(11%, 13vw, 17%);
-  padding-right: clamp(11%, 13vw, 17%);
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll {
-  overflow: visible !important;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-  width: min(30rem, 84%);
-  max-width: 84%;
-  min-width: 0;
-  overflow-x: hidden;
-  padding-left: 0.2rem;
   padding-right: 0.2rem;
-  box-sizing: border-box;
+  margin-right: -0.05rem;
 }
 
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
-  min-height: clamp(210px, 22vh, 340px);
-  margin-right: 0;
-  padding-right: 0.35rem;
-  overflow-x: hidden;
-  box-sizing: border-box;
+.ta-timeline-panel__events--public {
+  max-height: min(40vh, 22rem);
 }
 
-.ta-parchment-float-wrap--detail-sidebar
-  .ta-parchment-scroll-inner--vertical-detail
-  .ta-parchment-events--scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll--vertical {
-  overflow: hidden;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-row {
-  min-width: 0;
-  max-width: 100%;
-  gap: 0.35rem !important;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-icon-col {
-  flex-shrink: 0;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-marker {
-  width: 28px !important;
-  height: 28px !important;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-marker > span {
-  font-size: 0.82rem !important;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-head-row {
-  max-width: 100%;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-page-title {
-  flex-shrink: 0;
-  margin-top: 0.35rem;
-  margin-bottom: 1.45rem;
-  padding: 0.45rem 0.65rem 0.95rem;
-  gap: 0.55rem;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll .ta-history-title {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll .ta-history-meta {
-  white-space: normal !important;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-timeline-meta-actions {
-  flex-shrink: 1 !important;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.ta-parchment-float-wrap--detail-sidebar .ta-parchment-pager {
-  flex-shrink: 0;
-}
-
-/* Contenido (Historique, eventos, paginador) encima del pergamino, mismo rectángulo que la imagen */
-.ta-parchment-scroll-inner {
-  position: absolute;
-  inset: 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-top: clamp(3.5rem, 8.5vw, 6rem);
-  padding-bottom: clamp(1.85rem, 3.5vw, 2.75rem);
-  padding-left: clamp(3.25rem, 16vw, 8.5rem);
-  padding-right: clamp(3.25rem, 16vw, 8.5rem);
-  z-index: 1;
-}
-
-.ta-parchment-scroll-inner .ta-parchment-events,
-.ta-parchment-scroll-inner > ul.list-unstyled {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/* Título del historial: todo dentro del pergamino; texto oscuro legible sobre el papel */
-.ta-parchment-page-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  width: 100%;
-  flex-shrink: 0;
-  margin: 0 0 1.15rem;
+.ta-timeline-panel__events .ta-timeline-entry:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 0.65rem;
-  border-bottom: 1px solid rgba(24, 14, 6, 0.45);
-  font-family: 'Cinzel', Georgia, serif;
-  font-size: clamp(0.72rem, 2.1vw, 0.88rem);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #070503 !important;
-  text-shadow:
-    0 1px 0 rgba(255, 248, 228, 0.5),
-    0 1px 2px rgba(0, 0, 0, 0.18);
-}
-.ta-parchment-page-title__icons {
-  letter-spacing: 0;
-  font-size: 1.15em;
-  line-height: 1;
-  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.35));
-  opacity: 0.98;
-}
-.ta-parchment-page-title__text {
-  color: inherit !important;
-  letter-spacing: 0.14em;
+  margin-bottom: 0.65rem;
 }
 
-.ta-parchment-pager {
-  margin-top: 0.5rem;
-  padding-top: 0.55rem;
-  padding-bottom: 0.15rem;
-  border-top: 1px solid rgba(55, 40, 24, 0.22);
-}
-.ta-parchment-scroll .ta-parchment-pager__btn {
-  color: #2a1a0c !important;
-  background: rgba(255, 248, 228, 0.35) !important;
-  border: 1px solid rgba(55, 40, 24, 0.45) !important;
-  font-weight: 600;
-}
-.ta-parchment-scroll .ta-parchment-pager__btn:hover:not(:disabled) {
-  background: rgba(75, 55, 30, 0.2) !important;
-  border-color: rgba(55, 40, 24, 0.65) !important;
-  color: #1a1006 !important;
-}
-.ta-parchment-scroll .ta-parchment-pager__btn:disabled {
-  opacity: 0.35;
+:root[data-theme='light'] .ta-timeline-panel__events .ta-timeline-entry:not(:last-child) {
+  border-bottom-color: rgba(15, 23, 42, 0.1);
 }
 
-.ta-parchment-scroll .ta-history-title {
-  color: #100a05 !important;
-  text-shadow: 0 0 6px rgba(255, 248, 220, 0.28);
-  word-break: break-word;
-}
-.ta-parchment-scroll .ta-history-meta,
-.ta-parchment-scroll .ta-history-summary {
-  color: #3d2814 !important;
-}
-.ta-parchment-scroll .ta-parchment-muted {
-  color: rgba(45, 35, 18, 0.78) !important;
-}
-.ta-parchment-scroll .text-muted {
-  color: rgba(45, 35, 18, 0.65) !important;
-}
-.ta-parchment-scroll .border-light {
-  border-color: rgba(45, 35, 18, 0.22) !important;
+.ta-timeline-panel__events--public .ta-timeline-panel__public-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
-/* Timeline dentro del pergamino: icono y línea tierra, alineados con el texto */
-.ta-parchment-scroll .ta-timeline-row {
+:root[data-theme='light'] .ta-timeline-panel__events--public .ta-timeline-panel__public-row:not(:last-child) {
+  border-bottom-color: rgba(15, 23, 42, 0.1);
+}
+
+.ta-timeline-panel__pager {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ta-border);
+}
+
+.ta-timeline-panel .ta-timeline-row {
   align-items: flex-start;
+  min-width: 0;
+  max-width: 100%;
 }
-.ta-parchment-scroll .ta-timeline-icon-col {
+
+.ta-timeline-panel .ta-timeline-icon-col {
   padding-top: 0.2rem;
+  flex-shrink: 0;
 }
-.ta-parchment-scroll .ta-timeline-marker {
-  border: 2px solid rgba(52, 38, 24, 0.62) !important;
-  background: rgba(95, 78, 52, 0.22) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+
+.ta-timeline-panel .ta-timeline-marker {
+  border: 2px solid rgba(148, 120, 220, 0.5) !important;
+  background: rgba(80, 50, 160, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
-.ta-parchment-scroll .ta-timeline-vline {
-  background: rgba(52, 38, 24, 0.38) !important;
+
+.ta-timeline-panel .ta-timeline-vline {
+  background: rgba(120, 90, 200, 0.38) !important;
 }
-.ta-parchment-scroll .ta-timeline-head-row {
+
+.ta-timeline-panel .ta-timeline-head-row {
   align-items: baseline;
   row-gap: 0.35rem;
   max-width: 100%;
 }
-.ta-parchment-scroll .ta-timeline-meta-actions {
+
+.ta-timeline-panel .ta-timeline-meta-actions {
   max-width: 100%;
-}
-@media (max-width: 576px) {
-  .ta-parchment-scroll-inner {
-    padding-left: clamp(2.75rem, 12vw, 5rem);
-    padding-right: clamp(2.75rem, 12vw, 5rem);
-  }
+  flex-shrink: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
-.ta-parchment-scroll .ta-parchment-events .ta-timeline-entry:not(:last-child) {
-  border-bottom: 1px solid rgba(55, 40, 24, 0.12);
-  padding-bottom: 0.65rem;
-  margin-bottom: 0.35rem;
+.ta-timeline-panel .ta-history-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-/* × discreta, en la misma línea que título/fecha = clara asociación al registro */
-.ta-parchment-scroll .ta-history-delete-inline {
+.ta-timeline-panel .ta-history-meta {
+  white-space: normal !important;
+}
+
+.ta-timeline-panel .ta-history-delete-inline {
   flex: 0 0 auto;
   margin: 0;
   padding: 0 0.25rem !important;
   line-height: 1.1;
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgba(72, 38, 32, 0.72) !important;
+  color: rgba(248, 113, 113, 0.78) !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   text-decoration: none !important;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 4px;
   vertical-align: baseline;
   transition: color 0.15s ease, background 0.15s ease;
 }
-.ta-parchment-scroll .ta-history-delete-inline:hover {
-  color: rgba(110, 28, 22, 0.95) !important;
-  background: rgba(80, 40, 30, 0.08) !important;
+
+.ta-timeline-panel .ta-history-delete-inline:hover {
+  color: #f87171 !important;
+  background: rgba(248, 113, 113, 0.12) !important;
 }
-.ta-parchment-scroll .ta-history-delete-inline:focus-visible {
-  outline: 2px solid rgba(55, 40, 24, 0.45);
+
+.ta-timeline-panel .ta-history-delete-inline:focus-visible {
+  outline: 2px solid rgba(232, 197, 71, 0.45);
   outline-offset: 1px;
 }
 
-.ta-parchment-scroll .ta-history-share-inline {
+.ta-timeline-panel .ta-history-share-inline {
   flex: 0 0 auto;
   margin: 0;
   padding: 0.1rem 0.45rem !important;
   line-height: 1.1;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #2f1d0d !important;
-  background: rgba(255, 248, 228, 0.34) !important;
-  border: 1px solid rgba(55, 40, 24, 0.44) !important;
+  color: var(--ta-gold) !important;
+  background: rgba(232, 197, 71, 0.1) !important;
+  border: 1px solid var(--ta-border-gold) !important;
   box-shadow: none !important;
   border-radius: 0.35rem;
 }
-.ta-parchment-scroll .ta-history-share-inline:hover {
-  color: #1e1208 !important;
-  background: rgba(75, 55, 30, 0.2) !important;
-  border-color: rgba(55, 40, 24, 0.62) !important;
+
+.ta-timeline-panel .ta-history-share-inline:hover {
+  background: rgba(232, 197, 71, 0.18) !important;
+  border-color: rgba(232, 197, 71, 0.55) !important;
+  color: var(--ta-gold-light) !important;
 }
-.ta-parchment-scroll .ta-history-share-inline:focus-visible {
-  outline: 2px solid rgba(55, 40, 24, 0.45);
+
+.ta-timeline-panel .ta-history-share-inline:focus-visible {
+  outline: 2px solid rgba(232, 197, 71, 0.45);
   outline-offset: 1px;
 }
 
 @media (max-width: 576px) {
-  .ta-parchment-scroll-inner {
-    padding-top: clamp(2.25rem, 8vw, 2.8rem);
-    padding-bottom: clamp(1rem, 4vw, 1.4rem);
-    padding-left: clamp(1.15rem, 4.2vw, 1.45rem);
-    padding-right: clamp(1.15rem, 4.2vw, 1.45rem);
+  .ta-timeline-panel__events {
+    max-height: min(58vh, 26rem);
   }
-
-  .ta-parchment-page-title {
-    gap: 0.35rem;
-    margin-bottom: 0.7rem;
-    padding-bottom: 0.4rem;
-    font-size: clamp(0.62rem, 2.7vw, 0.74rem);
-    letter-spacing: 0.09em;
+  .ta-timeline-panel__events--public {
+    max-height: min(48vh, 20rem);
   }
-  .ta-parchment-page-title__text {
-    letter-spacing: 0.08em;
-  }
-
-  .ta-parchment-scroll .ta-timeline-row {
+  .ta-timeline-panel .ta-timeline-row {
     gap: 0.5rem !important;
   }
-  .ta-parchment-scroll .ta-timeline-icon-col {
+  .ta-timeline-panel .ta-timeline-icon-col {
     padding-top: 0.1rem;
   }
-  .ta-parchment-scroll .ta-timeline-marker {
+  .ta-timeline-panel .ta-timeline-marker {
     width: 28px !important;
     height: 28px !important;
   }
-
-  .ta-parchment-scroll .ta-timeline-head-row {
+  .ta-timeline-panel .ta-timeline-head-row {
     align-items: flex-start;
     row-gap: 0.18rem;
   }
-  .ta-parchment-scroll .ta-timeline-meta-actions {
+  .ta-timeline-panel .ta-timeline-meta-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center !important;
     gap: 0.25rem !important;
     width: 100%;
   }
-  .ta-parchment-scroll .ta-history-meta {
+  .ta-timeline-panel .ta-history-meta {
     font-size: 0.72rem;
-    white-space: normal !important;
     line-height: 1.2;
   }
-  .ta-parchment-scroll .ta-history-title {
+  .ta-timeline-panel .ta-history-title {
     font-size: 0.86rem;
     line-height: 1.2;
   }
-  .ta-parchment-scroll .ta-history-summary {
+  .ta-timeline-panel .ta-history-summary {
     font-size: 0.76rem;
     line-height: 1.28;
-  }
-
-  /* Detalle: sin min-height forzado — el PNG marca el alto; solo afinamos márgenes de escritura */
-  .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-    padding: clamp(5.5%, 7vw, 9%) clamp(4.5%, 6vw, 9%);
-    align-items: center;
-    justify-content: center;
-  }
-
-  .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-    width: min(36rem, 94%);
-  }
-
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-    align-items: stretch;
-    justify-content: flex-start;
-    padding-top: clamp(17%, 19vw, 25%);
-    padding-bottom: clamp(9.2%, 11.2vw, 17.5%);
-    padding-left: clamp(7.6%, 9vw, 13.5%);
-    padding-right: clamp(7.6%, 9vw, 13.5%);
-  }
-
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-events--scroll {
-    min-height: clamp(200px, 38vw, 300px);
   }
 }
 
 @media (max-width: 390px) {
-  .ta-parchment-scroll-inner {
-    padding-top: 2rem;
-    padding-bottom: 0.9rem;
-    padding-left: 0.95rem;
-    padding-right: 0.95rem;
-  }
-
-  .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-    padding: clamp(5%, 6vw, 8%) clamp(3.5%, 5vw, 7%);
-  }
-
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-    padding-top: clamp(14%, 16vw, 24%);
-    padding-bottom: clamp(9%, 11vw, 17%);
-    padding-left: clamp(9%, 10vw, 16%);
-    padding-right: clamp(9%, 10vw, 16%);
-  }
-
-  .ta-parchment-page-title {
-    margin-bottom: 0.55rem;
-    padding-bottom: 0.3rem;
-    font-size: 0.62rem;
-    letter-spacing: 0.07em;
-  }
-
-  .ta-parchment-scroll .ta-timeline-row {
+  .ta-timeline-panel .ta-timeline-row {
     gap: 0.45rem !important;
   }
-  .ta-parchment-scroll .ta-timeline-marker {
+  .ta-timeline-panel .ta-timeline-marker {
     width: 24px !important;
     height: 24px !important;
   }
-  .ta-parchment-scroll .ta-timeline-marker > span {
+  .ta-timeline-panel .ta-timeline-marker > span {
     font-size: 0.8rem !important;
   }
-
-  .ta-parchment-scroll .ta-timeline-head-row {
-    display: flex;
+  .ta-timeline-panel .ta-timeline-head-row {
     flex-direction: column;
     align-items: stretch;
     gap: 0.18rem;
   }
-  .ta-parchment-scroll .ta-history-title {
+  .ta-timeline-panel .ta-history-title {
     width: 100%;
     font-size: 0.8rem;
     line-height: 1.18;
   }
-  .ta-parchment-scroll .ta-timeline-meta-actions {
+  .ta-timeline-panel .ta-timeline-meta-actions {
     justify-content: flex-start;
     width: 100%;
   }
-  .ta-parchment-scroll .ta-history-meta {
+  .ta-timeline-panel .ta-history-meta {
     font-size: 0.67rem;
-    margin-right: 0.12rem;
   }
-  .ta-parchment-scroll .ta-history-delete-inline {
+  .ta-timeline-panel .ta-history-delete-inline {
     font-size: 1rem;
     padding: 0 0.18rem !important;
   }
-  .ta-parchment-scroll .ta-history-share-inline {
+  .ta-timeline-panel .ta-history-share-inline {
     font-size: 0.72rem;
     padding: 0.05rem 0.34rem !important;
   }
-  .ta-parchment-scroll .ta-history-summary {
+  .ta-timeline-panel .ta-history-summary {
     font-size: 0.72rem;
     line-height: 1.24;
   }
@@ -3377,30 +2980,6 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 @media (max-width: 767.98px) {
   .ta-premium-shell--detail-wide {
     max-width: 980px;
-  }
-  .ta-parchment-float-wrap--detail-sidebar {
-    width: 100%;
-    max-width: 100%;
-    transform: none;
-  }
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-bg-img.ta-parchment-bg-img--full {
-    width: 100%;
-    margin-left: 0;
-  }
-  .ta-parchment-float-wrap--detail-sidebar {
-    margin-top: 1rem;
-  }
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner.ta-parchment-scroll-inner--vertical-detail {
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: clamp(24%, 28vw, 35%);
-    padding-bottom: clamp(12%, 15vw, 20%);
-    padding-left: clamp(11.5%, 13.5vw, 18%);
-    padding-right: clamp(11.5%, 13.5vw, 18%);
-  }
-  .ta-parchment-float-wrap--detail-sidebar .ta-parchment-scroll-inner--vertical-detail .ta-parchment-sheet {
-    width: 82%;
-    max-width: 82%;
   }
   .ta-premium-shell--detail-wide .row.g-4 {
     --bs-gutter-y: 1.1rem;

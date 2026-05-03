@@ -381,31 +381,21 @@ export default function PublicProfilePage() {
           </div>
         )}
 
-        {/* ─── Historial reciente (pergamino, mismo tratamiento que detalle) ─ */}
-        <div className="ta-parchment-float-wrap mb-1">
-        <div className="card border-0 ta-parchment-history">
-          <div className="card-body ta-parchment-scroll p-0">
-            <img
-              className="ta-parchment-bg-img"
-              src={publicUrl('parchment-bg.png')}
-              alt=""
-              decoding="async"
-              draggable={false}
-            />
-            <div className="ta-parchment-scroll-inner">
-              <header className="ta-parchment-page-title">
-                <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
-                <span className="ta-parchment-page-title__text">{t('public.history')}</span>
-              </header>
+        <FangPanel className="mb-3">
+          <div className="card border-0 shadow-sm ta-premium-pane ta-timeline-panel">
+            <div className="card-body">
+              <div className="ta-section-header mb-2">
+                <span>{t('public.history')}</span>
+              </div>
               {timeline.length === 0 ? (
-                <p className="small mb-0 ta-parchment-muted text-center">{t('public.historyEmpty')}</p>
+                <p className="small text-muted mb-0 text-center">{t('public.historyEmpty')}</p>
               ) : (
                 <>
-                  <ul className="list-unstyled mb-0 flex-grow-1">
-                    {timelinePage.map(ev => (
-                      <li key={ev.id} className="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-light">
+                  <ul className="list-unstyled mb-0 ta-timeline-panel__events ta-timeline-panel__events--public">
+                    {timelinePage.map((ev) => (
+                      <li key={ev.id} className="d-flex align-items-start gap-2 ta-timeline-panel__public-row">
                         <span style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{eventGlyph(ev.type)}</span>
-                        <div className="small flex-grow-1">
+                        <div className="small flex-grow-1 min-w-0">
                           <div className="fw-semibold ta-history-title">{eventLabel(ev)}</div>
                           {ev.summary && <div className="ta-history-summary">{ev.summary}</div>}
                           <div className="ta-history-meta" style={{ fontSize: '0.7rem' }}>{formatEventDateTime(ev.eventDate, i18n.language)}</div>
@@ -414,23 +404,25 @@ export default function PublicProfilePage() {
                     ))}
                   </ul>
                   {showHistoryPager && (
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-auto">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-timeline-panel__pager">
                       <button
                         type="button"
-                        className="btn btn-sm ta-parchment-pager__btn"
+                        className="btn btn-sm btn-outline-secondary"
+                        style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
                         disabled={historyPageSafe <= 0}
-                        onClick={() => setHistoryPageIndex(p => Math.max(0, p - 1))}
+                        onClick={() => setHistoryPageIndex((p) => Math.max(0, p - 1))}
                       >
                         {t('tarantula.historyPrev')}
                       </button>
-                      <span className="small ta-parchment-muted mb-0">
+                      <span className="small text-muted mb-0">
                         {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
                       </span>
                       <button
                         type="button"
-                        className="btn btn-sm ta-parchment-pager__btn"
+                        className="btn btn-sm btn-outline-secondary"
+                        style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
                         disabled={historyPageSafe >= historyTotalPages - 1}
-                        onClick={() => setHistoryPageIndex(p => Math.min(historyTotalPages - 1, p + 1))}
+                        onClick={() => setHistoryPageIndex((p) => Math.min(historyTotalPages - 1, p + 1))}
                       >
                         {t('tarantula.historyNext')}
                       </button>
@@ -440,8 +432,7 @@ export default function PublicProfilePage() {
               )}
             </div>
           </div>
-        </div>
-        </div>
+        </FangPanel>
 
         <FangPanel className="mb-3">
           <div className="card shadow-sm">

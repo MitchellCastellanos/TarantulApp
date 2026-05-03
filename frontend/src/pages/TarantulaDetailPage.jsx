@@ -447,65 +447,57 @@ export default function TarantulaDetailPage() {
         )}
 
         {detailTab === 'timeline' && (
-          <div className="mx-auto ta-parchment-float-wrap ta-parchment-float-wrap--detail ta-parchment-float-wrap--detail-sidebar w-100" style={{ maxWidth: 560 }}>
-            <div className="ta-parchment-history ta-parchment-history--tarantula-root w-100">
-              <div className="ta-parchment-scroll ta-parchment-scroll--vertical ta-parchment-scroll--as-graphic-shell w-100">
-                <img
-                  className="ta-parchment-bg-img ta-parchment-bg-img--full"
-                  src={publicUrl('parchment-bg.png')}
-                  alt=""
-                  decoding="async"
-                  draggable={false}
-                />
-                <div className="ta-parchment-scroll-inner ta-parchment-scroll-inner--vertical-detail">
-                  <div className="ta-parchment-sheet">
-                    <header className="ta-parchment-page-title">
-                      <span className="ta-parchment-page-title__icons" aria-hidden>📜</span>
-                      <span className="ta-parchment-page-title__text">{t('tarantula.history')}</span>
-                    </header>
-                    {timeline.length === 0 ? (
-                      <p className="small mb-0 ta-parchment-muted text-center">{t('tarantula.historyEmpty')}</p>
-                    ) : (
-                      <>
-                        <div className="ta-parchment-events ta-parchment-events--scroll">
-                          {timelinePage.map((event) => (
-                            <TimelineItem
-                              key={event.id}
-                              event={event}
-                              onDelete={mayEdit ? handleDeleteEvent : undefined}
-                              shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
-                            />
-                          ))}
-                        </div>
-                        {showHistoryPager && (
-                          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-parchment-pager mt-2">
-                            <button
-                              type="button"
-                              className="btn btn-sm ta-parchment-pager__btn"
-                              disabled={historyPageSafe <= 0}
-                              onClick={() => setHistoryPageIndex((p) => Math.max(0, p - 1))}
-                            >
-                              {t('tarantula.historyPrev')}
-                            </button>
-                            <span className="small ta-parchment-muted mb-0">
-                              {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
-                            </span>
-                            <button
-                              type="button"
-                              className="btn btn-sm ta-parchment-pager__btn"
-                              disabled={historyPageSafe >= historyTotalPages - 1}
-                              onClick={() => setHistoryPageIndex((p) => Math.min(historyTotalPages - 1, p + 1))}
-                            >
-                              {t('tarantula.historyNext')}
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
+          <div className="mx-auto w-100" style={{ maxWidth: 560 }}>
+            <FangPanel className="ta-spider-detail-fang" cornerOffset={10}>
+              <div className="card border-0 shadow-sm ta-premium-pane ta-timeline-panel">
+                <div className="card-body">
+                  <div className="ta-section-header mb-2">
+                    <span>{t('tarantula.history')}</span>
                   </div>
+                  {timeline.length === 0 ? (
+                    <p className="small text-muted mb-0 text-center">{t('tarantula.historyEmpty')}</p>
+                  ) : (
+                    <>
+                      <div className="ta-timeline-panel__events">
+                        {timelinePage.map((event) => (
+                          <TimelineItem
+                            key={event.id}
+                            event={event}
+                            onDelete={mayEdit ? handleDeleteEvent : undefined}
+                            shareMeta={{ tarantulaName: tarantula.name, speciesName: species?.scientificName, profileUrl: publicProfileUrl }}
+                          />
+                        ))}
+                      </div>
+                      {showHistoryPager && (
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 ta-timeline-panel__pager">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
+                            disabled={historyPageSafe <= 0}
+                            onClick={() => setHistoryPageIndex((p) => Math.max(0, p - 1))}
+                          >
+                            {t('tarantula.historyPrev')}
+                          </button>
+                          <span className="small text-muted mb-0">
+                            {t('tarantula.historyPage', { current: historyPageSafe + 1, total: historyTotalPages })}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
+                            disabled={historyPageSafe >= historyTotalPages - 1}
+                            onClick={() => setHistoryPageIndex((p) => Math.min(historyTotalPages - 1, p + 1))}
+                          >
+                            {t('tarantula.historyNext')}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
+            </FangPanel>
           </div>
         )}
 

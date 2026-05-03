@@ -51,7 +51,7 @@ export default function TimelineItem({ event, onDelete, shareMeta }) {
 
   return (
     <div className="d-flex gap-2 gap-md-3 ta-timeline-row ta-timeline-entry">
-      {/* Icono con línea (colores del pergamino vía .ta-parchment-scroll) */}
+      {/* Icono con línea — tonos en .ta-timeline-panel */}
       <div className="d-flex flex-column align-items-center flex-shrink-0 ta-timeline-icon-col">
         <div
           className="ta-timeline-marker rounded-circle d-flex align-items-center justify-content-center"
