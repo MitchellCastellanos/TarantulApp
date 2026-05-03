@@ -143,7 +143,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
       },
     ]
     return groups.filter((group) => !group.hidden)
-  }, [t, token])
+  }, [t, token, i18n.language])
   const activeGroupKey =
     mobileGroups.find((group) =>
       group.items.some((item) =>

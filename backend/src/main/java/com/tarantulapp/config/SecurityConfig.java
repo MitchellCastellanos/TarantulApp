@@ -185,6 +185,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         Set<String> originPatterns = new LinkedHashSet<>();
+        // Capacitor (androidScheme http): Origin suele ser "http://localhost" sin :puerto — "*:*" no casa.
+        originPatterns.add("http://localhost");
+        originPatterns.add("https://localhost");
+        originPatterns.add("http://127.0.0.1");
+        originPatterns.add("https://127.0.0.1");
         originPatterns.add("http://localhost:*");
         originPatterns.add("http://127.0.0.1:*");
         originPatterns.add("https://localhost:*");
