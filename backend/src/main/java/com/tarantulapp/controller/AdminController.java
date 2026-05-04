@@ -321,6 +321,7 @@ public class AdminController {
         adminAccessService.assertCurrentUserIsAdmin();
         List<Map<String, Object>> rows = new ArrayList<>();
         String[][] data = {
+                {"whatsapp_group_invite", "Grupo de WhatsApp (invitación)", "WhatsApp group (invitation)"},
                 {"android_play_beta", "Android en Google Play (prueba interna)", "Android on Google Play (internal test)"},
                 {"week_1", "Semana 1 — día a día", "Week 1 — day-to-day"},
                 {"week_2", "Semana 2 — fotos y rutina", "Week 2 — photos & routine"},
