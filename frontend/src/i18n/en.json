@@ -603,6 +603,8 @@
     "proTeaserBody": "Pro ($4.99/mo): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Pro+ and Vendor roll out next; Free stays the wide funnel with Cases, Community, and Discover.",
     "orContinueWith": "or continue with",
     "googleLoginError": "Could not sign in with Google.",
+    "networkError": "Could not reach the server. Check your connection and try again.",
+    "loginBadResponse": "The server did not return a valid session. If this keeps happening, let us know.",
     "googlePendingConfig": "Google login is visible, pending client ID configuration.",
     "loginPage": {
       "heroEyebrow": "Keeper operating system",

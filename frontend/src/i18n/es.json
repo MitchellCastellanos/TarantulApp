@@ -603,6 +603,8 @@
     "proTeaserBody": "Pro ($4.99/mes): colección sin tope, exportaciones (Excel, PDF), QR masivo, IA más detallada y análisis completo de Cases. Pro+ y Vendor llegan después; Free sigue siendo la puerta de entrada con Cases, Comunidad y Discover.",
     "orContinueWith": "o continúa con",
     "googleLoginError": "No se pudo iniciar sesión con Google.",
+    "networkError": "No pudimos conectar con el servidor. Revisa tu red o inténtalo más tarde.",
+    "loginBadResponse": "El servidor no devolvió una sesión válida. Si el fallo continúa, avísanos.",
     "googlePendingConfig": "Login con Google visible, pendiente de configurar client ID.",
     "loginPage": {
       "heroEyebrow": "Sistema operativo del keeper",

@@ -603,6 +603,8 @@
     "proTeaserBody": "Pro (4,99 $/mois) : tarentules illimitées, historique complet, exports (Excel, PDF), QR massif, IA plus détaillée et analyses Cases complètes. Pro+ et Vendor arrivent ensuite ; Free reste l’entrée large avec Cases, Communauté et Discover.",
     "orContinueWith": "ou continuer avec",
     "googleLoginError": "Connexion avec Google impossible.",
+    "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+    "loginBadResponse": "Le serveur n’a pas renvoyé de session valide. Si le problème persiste, contactez-nous.",
     "googlePendingConfig": "Connexion Google visible, configuration du client ID en attente.",
     "loginPage": {
       "heroEyebrow": "Système de travail du collectionneur",

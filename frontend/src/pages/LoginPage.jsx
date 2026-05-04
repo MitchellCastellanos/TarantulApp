@@ -109,6 +109,11 @@ export default function LoginPage() {
             referralCode: referralCode.trim() || undefined,
           }
       const { data } = await publicApi.post(endpoint, body)
+      const tok = data?.token != null ? String(data.token).trim() : ''
+      if (!tok) {
+        setError(t('auth.loginBadResponse'))
+        return
+      }
       login(data)
     } catch (err) {
       const st = err.response?.status
@@ -116,6 +121,8 @@ export default function LoginPage() {
       const code = d?.error
       if (code === 'REGISTRATION_CLOSED') {
         setError(t('auth.registrationClosed'))
+      } else if (!err.response) {
+        setError(t('auth.networkError'))
       } else {
       const fieldMsgs = d?.fields && typeof d.fields === 'object'
         ? Object.values(d.fields).filter(Boolean).join(' ')
