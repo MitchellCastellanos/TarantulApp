@@ -11,8 +11,18 @@ public final class BetaMailBodies {
 
     public static final String DEFAULT_APP_URL = "https://tarantulapp.com";
 
+    /** Google Play internal testing (closed beta). Keep in sync with {@code frontend/src/constants/playStoreUrls.js}. */
+    public static final String ANDROID_PLAY_INTERNAL_TEST_URL =
+            "https://play.google.com/apps/internaltest/4700991665399344151";
+
     public static final Set<String> BATCH_CAMPAIGN_KEYS = Set.of(
-            "week_1", "week_2", "week_3", "week_4", "week_5", "week_6"
+            "week_1",
+            "week_2",
+            "week_3",
+            "week_4",
+            "week_5",
+            "week_6",
+            "android_play_beta"
     );
 
     private BetaMailBodies() {
@@ -50,6 +60,9 @@ public final class BetaMailBodies {
             case "week_6" -> en
                     ? "TarantulApp beta — Week 6 — final check-in"
                     : "TarantulApp beta — Semana 6 — cierre";
+            case "android_play_beta" -> en
+                    ? "TarantulApp beta — Android app is on Google Play (internal testing)"
+                    : "Beta TarantulApp — la app Android ya está en Google Play (prueba interna)";
             default -> en ? "TarantulApp beta — Update" : "TarantulApp beta — Actualización";
         };
     }
@@ -67,6 +80,7 @@ public final class BetaMailBodies {
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
         return "Hola " + n + ",\n"
                 + "\n"
                 + "Fecha del mensaje: " + sendDate + "\n"
@@ -74,25 +88,26 @@ public final class BetaMailBodies {
                 + "Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, "
                 + "eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.\n"
                 + "\n"
-                + "Importante para este primer batch:\n"
-                + "• La experiencia Android nativa en Play Store llegará en los próximos días; por ahora centrémonos en la web app.\n"
-                + "• Durante el fin de semana puedes explorar la app, crear tu cuenta y registrar tu colección. "
-                + "El lunes recibirás por correo las misiones específicas de la semana.\n"
+                + "Importante para este batch:\n"
+                + "• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: " + play + "\n"
+                + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e "
+                + "inicia sesión con el mismo correo y contraseña que para la web.\n"
+                + "• La web app sigue disponible en cualquier navegador; el lunes recibirás por correo las misiones de la semana.\n"
                 + "\n"
-                + "Cómo entrar:\n"
-                + "1) Abre " + url + " y usa el botón de acceso beta (\"Beta tester login\" / acceso beta) "
-                + "en la pantalla previa al lanzamiento.\n"
+                + "Cómo entrar (web):\n"
+                + "1) Abre " + url + " y usa el acceso beta (\"Beta tester login\" / acceso beta) en la pantalla pública.\n"
                 + "2) Inicia sesión con el correo y la contraseña que aparecen abajo.\n"
                 + "\n"
-                + "Web app en el móvil:\n"
-                + "• En iPhone/iPad: Safari → Compartir → \"Añadir a pantalla de inicio\" para un acceso rápido tipo app.\n"
-                + "• En Android (Chrome): menú ⋮ → \"Instalar app\" o \"Añadir a la pantalla principal\" si el navegador lo ofrece.\n"
-                + "• En los próximos días enviaremos a usuarios Android el acceso para descargar y probar directamente desde Play Store.\n"
+                + "Web app en el móvil (atajo):\n"
+                + "• iPhone/iPad: Safari → Compartir → \"Añadir a pantalla de inicio\".\n"
+                + "• En Android (Chrome): menú ⋮ → \"Instalar app\" o \"Añadir a la pantalla principal\" si el navegador lo ofrece "
+                + "— o usa la app nativa desde Play arriba.\n"
                 + "\n"
                 + "Esto es lo que necesitas saber:\n"
                 + "\n"
                 + "1) Tu acceso\n"
                 + "   • Web: " + url + "\n"
+                + "   • Android (Play — prueba interna): " + play + "\n"
                 + "   • Email: " + e + "\n"
                 + "   • Contraseña: " + p + "\n"
                 + "\n"
@@ -125,6 +140,7 @@ public final class BetaMailBodies {
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
         return "Hi " + n + ",\n"
                 + "\n"
                 + "Message date: " + sendDate + "\n"
@@ -132,24 +148,26 @@ public final class BetaMailBodies {
                 + "Congratulations — you've been accepted into the TarantulApp closed beta. Among everyone who applied, "
                 + "you're one of the few helping us shape the platform before public launch.\n"
                 + "\n"
-                + "Important for this first batch:\n"
-                + "• Native Android on Play Store is shipping in the next few days; for now please focus on the web app.\n"
-                + "• Over the weekend, explore the product, set up your account, and add your collection. "
-                + "On Monday you'll get the week's missions by email.\n"
+                + "Important for this batch:\n"
+                + "• Android is available on Google Play for testers (internal testing track). Link: " + play + "\n"
+                + "• Open that link on your phone while signed into the Google account that has access to the test, install "
+                + "TarantulApp, then sign in with the same email and password as the web app.\n"
+                + "• The web app still works in any browser; on Monday you'll get the week's missions by email.\n"
                 + "\n"
-                + "How to sign in:\n"
-                + "1) Open " + url + " and use the beta gate (\"Beta tester login\") on the pre-launch screen.\n"
+                + "How to sign in (web):\n"
+                + "1) Open " + url + " and use the beta gate (\"Beta tester login\") on the public home screen.\n"
                 + "2) Sign in with the email and password below.\n"
                 + "\n"
-                + "Web app on your phone:\n"
+                + "Web app on your phone (shortcut):\n"
                 + "• iPhone/iPad: Safari -> Share -> \"Add to Home Screen\".\n"
-                + "• Android (Chrome): Menu -> \"Install app\" or \"Add to Home screen\" when offered.\n"
-                + "• Android testers will receive Play Store access to install and test directly in the coming days.\n"
+                + "• Android (Chrome): Menu -> \"Install app\" or \"Add to Home screen\" when offered "
+                + "— or use the native app from Play above.\n"
                 + "\n"
                 + "What you need to know:\n"
                 + "\n"
                 + "1) Your access\n"
                 + "   • Web: " + url + "\n"
+                + "   • Android (Play — internal test): " + play + "\n"
                 + "   • Email: " + e + "\n"
                 + "   • Password: " + p + "\n"
                 + "\n"
@@ -196,6 +214,7 @@ public final class BetaMailBodies {
             case "week_4" -> week4Es(n, url, sendDate);
             case "week_5" -> week5Es(n, url, sendDate);
             case "week_6" -> week6Es(n, url, sendDate);
+            case "android_play_beta" -> androidPlayBetaAnnouncementEs(n, url, sendDate);
             default -> weekGenericEs(n, url, sendDate);
         };
     }
@@ -208,8 +227,55 @@ public final class BetaMailBodies {
             case "week_4" -> week4En(n, url, sendDate);
             case "week_5" -> week5En(n, url, sendDate);
             case "week_6" -> week6En(n, url, sendDate);
+            case "android_play_beta" -> androidPlayBetaAnnouncementEn(n, url, sendDate);
             default -> weekGenericEn(n, url, sendDate);
         };
+    }
+
+    private static String androidPlayBetaAnnouncementEs(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Tenemos buenas noticias: TarantulApp para Android ya está en Google Play para nuestra beta cerrada "
+                + "(lista de prueba interna).\n\n"
+                + "Enlace de instalación (ábrelo en tu móvil Android):\n"
+                + play
+                + "\n\n"
+                + "Pasos rápidos:\n\n"
+                + "1. Abre el enlace estando en la cuenta de Google que tiene acceso a la prueba interna "
+                + "(la misma que usas en Play Store).\n"
+                + "2. Acepta la prueba e instala TarantulApp desde Google Play.\n"
+                + "3. Abre la app e inicia sesión con el mismo correo y contraseña que en la web.\n\n"
+                + "La web sigue en "
+                + url
+                + " y puedes usar la PWA en Chrome si prefieres ese flujo.\n\n"
+                + "Si el enlace de Play dice que no tienes acceso, revisa la cuenta de Google correcta, o escríbenos: "
+                + "responde a este correo o hello@tarantulapp.com.\n\n"
+                + "Gracias por probar con nosotros.\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String androidPlayBetaAnnouncementEn(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "Great news: TarantulApp for Android is now available on Google Play for our closed beta "
+                + "(internal testing track).\n\n"
+                + "Install link (open on your Android phone):\n"
+                + play
+                + "\n\n"
+                + "Quick steps:\n\n"
+                + "1. Open the link while signed into the Google account invited to the internal test "
+                + "(same account you use with the Play Store).\n"
+                + "2. Accept the test and install TarantulApp from Google Play.\n"
+                + "3. Open the app and sign in with the same email and password as the website.\n\n"
+                + "The web app at "
+                + url
+                + " still works, and you can install the PWA from Chrome on Android if you prefer.\n\n"
+                + "If the Play link says you don't have access, double-check your Google account, or reach out — "
+                + "reply to this email or hello@tarantulapp.com.\n\n"
+                + "Thank you for testing with us.\n\n"
+                + "— The TarantulApp team\n";
     }
 
     private static String week1Es(String n, String url, String sendDate) {

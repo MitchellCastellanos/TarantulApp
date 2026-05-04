@@ -7,6 +7,7 @@ import communityService from '../services/communityService'
 import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
+import AndroidPlayBetaCallout from '../components/AndroidPlayBetaCallout'
 import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
@@ -253,6 +254,8 @@ export default function LoginPage() {
                 <p className="small text-muted mb-3">
                   {inviteOnly ? t('auth.betaLoginSubtitle') : mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
                 </p>
+
+                {inviteOnly && mode === 'login' && <AndroidPlayBetaCallout className="mb-3" />}
 
                 {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
                 {showRegisterUi && mode === 'register' && (

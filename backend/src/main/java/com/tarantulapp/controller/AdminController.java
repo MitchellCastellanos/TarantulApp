@@ -320,6 +320,7 @@ public class AdminController {
         adminAccessService.assertCurrentUserIsAdmin();
         List<Map<String, Object>> rows = new ArrayList<>();
         String[][] data = {
+                {"android_play_beta", "Android en Google Play (prueba interna)", "Android on Google Play (internal test)"},
                 {"week_1", "Semana 1 — día a día", "Week 1 — day-to-day"},
                 {"week_2", "Semana 2 — fotos y rutina", "Week 2 — photos & routine"},
                 {"week_3", "Semana 3 — comunidad", "Week 3 — community"},

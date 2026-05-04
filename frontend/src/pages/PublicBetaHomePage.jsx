@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
+import AndroidPlayBetaCallout from '../components/AndroidPlayBetaCallout'
 import Navbar from '../components/Navbar'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { useEffect, useState } from 'react'
@@ -47,9 +48,10 @@ export default function PublicBetaHomePage() {
           <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
             {t('publicBetaHome.tagline')}
           </h2>
-          <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.65 }}>
+          <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.65 }}>
             {t('publicBetaHome.lead')}
           </p>
+          <AndroidPlayBetaCallout className="mb-4" />
           <div className="d-flex flex-column flex-sm-row gap-2">
             <Link to="/login" className="btn btn-dark fw-semibold px-4 py-2">
               {t('publicBetaHome.ctaLogin')}

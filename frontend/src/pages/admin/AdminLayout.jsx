@@ -7,7 +7,7 @@ export default function AdminLayout() {
   return (
     <div>
       <Navbar />
-      <div className="container mt-4 mb-5" style={{ maxWidth: 980 }}>
+      <div className="container-xxl mt-4 mb-5 px-3 px-md-4">
         <h1 className="h4 mb-2">{t('admin.title')}</h1>
         <p className="small text-muted mb-3">{t('admin.layoutBlurb')}</p>
         <ul className="nav nav-pills flex-column flex-sm-row gap-2 mb-4">

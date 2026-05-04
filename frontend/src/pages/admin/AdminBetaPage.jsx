@@ -912,119 +912,231 @@ export default function AdminBetaPage() {
           {betaTesters.length === 0 ? (
             <p className="text-muted small mb-0">{t('admin.betaTestersEmpty')}</p>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th className="text-center" title={t('admin.campaignSelectTesters')}>
-                      <span className="visually-hidden">{t('admin.campaignSelectTesters')}</span>
-                      ✓
-                    </th>
-                    <th>{t('auth.email')}</th>
-                    <th>{t('admin.plan')}</th>
-                    <th className="text-end">{t('admin.collectionSpidersCol')}</th>
-                    <th>{t('admin.activityStatusCol')}</th>
-                    <th>{t('admin.lastSeenCol')}</th>
-                    <th>{t('admin.country')}</th>
-                    <th>{t('admin.level')}</th>
-                    <th>{t('admin.devices')}</th>
-                    <th>{t('admin.betaBugReportsTitle')}</th>
-                    <th>{t('admin.sentCampaignsCol')}</th>
-                    <th>{t('admin.betaEmailTemplateColName')}</th>
-                    <th>{t('admin.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedBetaTesters.map((u) => {
-                    const tier = userActivityTier(u.lastActivityAt)
-                    return (
-                    <tr key={u.id}>
-                      <td className="text-center">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={!!selectedTesterIds[String(u.id)]}
-                          onChange={() => toggleTesterSelected(u.id)}
-                          aria-label={t('admin.campaignSelectTesters')}
-                        />
-                      </td>
-                      <td>{u.email}</td>
-                      <td>
-                        <span className={`badge text-bg-${adminPlanBadgeClass(u)}`}>
-                          {formatAdminPlanSummary(u, t)}
-                        </span>
-                      </td>
-                      <td className="text-end font-monospace">{adminSpiderCount(u)}</td>
-                      <td>
-                        <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`}>
-                          {activityStatusLabel(tier, t)}
-                        </span>
-                      </td>
-                      <td className="small">{formatUsageTime(u.lastActivityAt, t)}</td>
-                      <td>{u.betaCountry || '-'}</td>
-                      <td>{u.betaExperienceLevel || '-'}</td>
-                      <td className="small text-break" style={{ maxWidth: 280 }}>
-                        {(u.betaDevices && String(u.betaDevices).trim()) || '-'}
-                      </td>
-                      <td>{u.bugReportsCount ?? 0}</td>
-                      <td className="small text-muted" style={{ maxWidth: 220 }}>
-                        {formatCampaignSends(u)}
-                      </td>
-                      <td style={{ minWidth: 180 }}>
-                        <select
-                          className="form-select form-select-sm"
-                          aria-label={t('admin.betaEmailSelectTemplate')}
-                          value={testerTplPref[u.id] || betaEmailTemplates[0]?.id || ''}
-                          onChange={(e) => updateTesterPref(u.id, e.target.value)}
-                        >
-                          {betaEmailTemplates.map((tpl) => (
-                            <option key={tpl.id} value={tpl.id}>
-                              {tpl.label} ({tpl.locale?.toUpperCase()})
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <div className="d-flex flex-wrap gap-1">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => {
-                              setPasswordUser({ id: u.id, email: u.email })
-                              setResetPass({ newPassword: '', generate: false })
-                            }}
-                          >
-                            {t('admin.resetPasswordButton')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => copyTesterEmail(u)}
-                          >
-                            {t('admin.betaEmailCopy')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => downloadTesterWord(u)}
-                          >
-                            {t('admin.betaEmailWord')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => toggleBetaTester(u.id, false)}
-                          >
-                            {t('admin.removeTester')}
-                          </button>
-                        </div>
-                      </td>
+            <>
+              <style>{`
+                .ta-beta-testers-scroll {
+                  overflow-x: auto;
+                  -webkit-overflow-scrolling: touch;
+                  border-radius: 0.375rem;
+                  border: 1px solid var(--bs-border-color);
+                  background: var(--bs-body-bg);
+                }
+                .ta-beta-testers-scroll table {
+                  margin-bottom: 0;
+                  width: 100%;
+                  min-width: 62rem;
+                  table-layout: fixed;
+                }
+                .ta-beta-testers-scroll th,
+                .ta-beta-testers-scroll td {
+                  vertical-align: middle;
+                  padding-left: 0.45rem;
+                  padding-right: 0.45rem;
+                }
+                .ta-beta-testers-scroll thead th {
+                  font-size: 0.72rem;
+                  text-transform: uppercase;
+                  letter-spacing: 0.03em;
+                  white-space: nowrap;
+                }
+                .ta-beta-col-sel { width: 2.25rem; min-width: 2.25rem; max-width: 2.25rem; }
+                .ta-beta-col-email { width: 17%; min-width: 9rem; }
+                .ta-beta-col-plan { width: 6.25rem; }
+                .ta-beta-col-num { width: 2.35rem; }
+                .ta-beta-col-act { width: 5rem; }
+                .ta-beta-col-seen { width: 5.25rem; }
+                .ta-beta-col-profile { width: 11rem; }
+                .ta-beta-col-bugs { width: 2.35rem; }
+                .ta-beta-col-sent { width: 8.5rem; }
+                .ta-beta-col-tpl { width: 10rem; }
+                .ta-beta-col-actions { width: 6.75rem; }
+                .ta-beta-testers-scroll .ta-beta-sticky-start {
+                  position: sticky;
+                  left: 0;
+                  z-index: 2;
+                  background-color: var(--bs-body-bg);
+                  box-shadow: 4px 0 10px -6px rgba(0,0,0,.35);
+                }
+                .ta-beta-testers-scroll .ta-beta-sticky-email {
+                  position: sticky;
+                  left: 2.25rem;
+                  z-index: 2;
+                  background-color: var(--bs-body-bg);
+                  box-shadow: 4px 0 10px -6px rgba(0,0,0,.35);
+                }
+                .ta-beta-testers-scroll thead th.ta-beta-sticky-start,
+                .ta-beta-testers-scroll thead th.ta-beta-sticky-email {
+                  z-index: 3;
+                }
+                .ta-beta-actions-grid {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 0.25rem;
+                  width: 100%;
+                  max-width: 6.5rem;
+                }
+                .ta-beta-actions-grid .btn {
+                  padding: 0.15rem 0.25rem;
+                  line-height: 1.2;
+                }
+              `}</style>
+              <div className="ta-beta-testers-scroll">
+                <table className="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th
+                        className="text-center ta-beta-col-sel ta-beta-sticky-start"
+                        title={t('admin.campaignSelectTesters')}
+                      >
+                        <span className="visually-hidden">{t('admin.campaignSelectTesters')}</span>
+                        <span aria-hidden>✓</span>
+                      </th>
+                      <th className="ta-beta-col-email ta-beta-sticky-email" title={t('auth.email')}>
+                        {t('auth.email')}
+                      </th>
+                      <th className="ta-beta-col-plan">{t('admin.plan')}</th>
+                      <th className="text-end ta-beta-col-num" title={t('admin.collectionSpidersCol')}>
+                        {t('admin.betaTesterColSpidersShort')}
+                      </th>
+                      <th className="ta-beta-col-act" title={t('admin.activityStatusCol')}>
+                        {t('admin.betaTesterColActivityShort')}
+                      </th>
+                      <th className="ta-beta-col-seen" title={t('admin.lastSeenCol')}>
+                        {t('admin.betaTesterColLastShort')}
+                      </th>
+                      <th className="ta-beta-col-profile" title={`${t('admin.country')} · ${t('admin.level')} · ${t('admin.devices')}`}>
+                        {t('admin.betaTesterColProfile')}
+                      </th>
+                      <th className="text-center ta-beta-col-bugs" title={t('admin.betaBugReportsTitle')}>
+                        <span className="visually-hidden">{t('admin.betaBugReportsTitle')}</span>
+                        <i className="bi bi-bug" aria-hidden />
+                      </th>
+                      <th className="ta-beta-col-sent" title={t('admin.sentCampaignsCol')}>
+                        {t('admin.betaTesterColSentShort')}
+                      </th>
+                      <th className="ta-beta-col-tpl" title={t('admin.betaEmailTemplateColName')}>
+                        {t('admin.betaTesterColTemplateShort')}
+                      </th>
+                      <th className="ta-beta-col-actions">{t('admin.actions')}</th>
                     </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sortedBetaTesters.map((u) => {
+                      const tier = userActivityTier(u.lastActivityAt)
+                      const devicesStr = (u.betaDevices && String(u.betaDevices).trim()) || ''
+                      const profileLine1 = [u.betaCountry, u.betaExperienceLevel].map((x) => (x ? String(x).trim() : '')).filter(Boolean).join(' · ') || '—'
+                      const sendsFull = formatCampaignSends(u)
+                      return (
+                        <tr key={u.id}>
+                          <td className="text-center ta-beta-col-sel ta-beta-sticky-start">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              checked={!!selectedTesterIds[String(u.id)]}
+                              onChange={() => toggleTesterSelected(u.id)}
+                              aria-label={t('admin.campaignSelectTesters')}
+                            />
+                          </td>
+                          <td
+                            className="ta-beta-col-email ta-beta-sticky-email small text-truncate"
+                            style={{ maxWidth: 0 }}
+                            title={u.email}
+                          >
+                            {u.email}
+                          </td>
+                          <td className="ta-beta-col-plan">
+                            <span className={`badge text-bg-${adminPlanBadgeClass(u)}`} style={{ fontSize: '0.65rem' }}>
+                              {formatAdminPlanSummary(u, t)}
+                            </span>
+                          </td>
+                          <td className="text-end font-monospace small ta-beta-col-num">{adminSpiderCount(u)}</td>
+                          <td className="ta-beta-col-act">
+                            <span className={`badge text-bg-${activityStatusBadgeClass(tier)}`} style={{ fontSize: '0.65rem' }}>
+                              {activityStatusLabel(tier, t)}
+                            </span>
+                          </td>
+                          <td className="small text-muted text-truncate ta-beta-col-seen" title={formatUsageTime(u.lastActivityAt, t)}>
+                            {formatUsageTime(u.lastActivityAt, t)}
+                          </td>
+                          <td className="small ta-beta-col-profile" style={{ maxWidth: 0 }}>
+                            <div className="text-truncate" title={profileLine1}>
+                              {profileLine1}
+                            </div>
+                            <div className="text-truncate text-muted" title={devicesStr || undefined} style={{ fontSize: '0.72rem' }}>
+                              {devicesStr || '—'}
+                            </div>
+                          </td>
+                          <td className="text-center small ta-beta-col-bugs">{u.bugReportsCount ?? 0}</td>
+                          <td className="small text-muted ta-beta-col-sent" style={{ maxWidth: 0 }}>
+                            <div className="text-truncate" title={sendsFull !== '—' ? sendsFull : undefined}>
+                              {sendsFull}
+                            </div>
+                          </td>
+                          <td className="ta-beta-col-tpl" style={{ maxWidth: 0 }}>
+                            <select
+                              className="form-select form-select-sm py-1"
+                              style={{ fontSize: '0.72rem' }}
+                              aria-label={t('admin.betaEmailSelectTemplate')}
+                              value={testerTplPref[u.id] || betaEmailTemplates[0]?.id || ''}
+                              onChange={(e) => updateTesterPref(u.id, e.target.value)}
+                            >
+                              {betaEmailTemplates.map((tpl) => (
+                                <option key={tpl.id} value={tpl.id}>
+                                  {tpl.label} ({tpl.locale?.toUpperCase()})
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="ta-beta-col-actions">
+                            <div className="ta-beta-actions-grid">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary"
+                                title={t('admin.resetPasswordButton')}
+                                aria-label={t('admin.resetPasswordButton')}
+                                onClick={() => {
+                                  setPasswordUser({ id: u.id, email: u.email })
+                                  setResetPass({ newPassword: '', generate: false })
+                                }}
+                              >
+                                <i className="bi bi-key-fill" aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                title={t('admin.betaEmailCopy')}
+                                aria-label={t('admin.betaEmailCopy')}
+                                onClick={() => copyTesterEmail(u)}
+                              >
+                                <i className="bi bi-clipboard" aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                title={t('admin.betaEmailWord')}
+                                aria-label={t('admin.betaEmailWord')}
+                                onClick={() => downloadTesterWord(u)}
+                              >
+                                <i className="bi bi-file-earmark-word" aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                title={t('admin.removeTester')}
+                                aria-label={t('admin.removeTester')}
+                                onClick={() => toggleBetaTester(u.id, false)}
+                              >
+                                <i className="bi bi-person-x" aria-hidden />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
