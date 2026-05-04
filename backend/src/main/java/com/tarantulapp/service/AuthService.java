@@ -10,6 +10,7 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.repository.BetaApplicationRepository;
 import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.util.BetaMailBodies;
 import com.tarantulapp.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,12 @@ public class AuthService {
                     }
                     if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) {
                         user.setBetaExperienceLevel(trimTo(app.getExperienceLevel(), 40));
+                    }
+                    if (user.getBetaPreferredLocale() == null || user.getBetaPreferredLocale().isBlank()) {
+                        String pl = app.getPreferredLocale();
+                        if (pl != null && !pl.isBlank()) {
+                            user.setBetaPreferredLocale(BetaMailBodies.normalizeLocale(pl));
+                        }
                     }
                     userRepository.save(user);
                     if (app.getApprovedUserId() == null) {

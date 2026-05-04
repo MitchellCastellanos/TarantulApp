@@ -63,7 +63,7 @@ export default function AdminBetaPage() {
   const [approveWelcomeLocale, setApproveWelcomeLocale] = useState('es')
   const [campaignCatalog, setCampaignCatalog] = useState([])
   const [campaignKey, setCampaignKey] = useState('week_1')
-  const [campaignLocale, setCampaignLocale] = useState('es')
+  const [campaignLocale, setCampaignLocale] = useState('auto')
   const [campaignSending, setCampaignSending] = useState(false)
   const [selectedTesterIds, setSelectedTesterIds] = useState(() => ({}))
   const [testerListSort, setTesterListSort] = useState('activity')
@@ -92,8 +92,19 @@ export default function AdminBetaPage() {
     })
   }
 
-  const getTemplateForTester = (userId) => {
-    const id = testerTplPref[userId] || betaEmailTemplates[0]?.id
+  const defaultTemplateIdForTester = (u) => {
+    const raw = String(u?.betaPreferredLocale || '').trim().toLowerCase()
+    if (!raw) return betaEmailTemplates[0]?.id
+    const want = raw.startsWith('en') ? 'en' : 'es'
+    return betaEmailTemplates.find((tpl) => tpl.locale === want)?.id ?? betaEmailTemplates[0]?.id
+  }
+
+  const getTemplateForTester = (u) => {
+    const explicit = testerTplPref[u.id]
+    const id =
+      explicit !== undefined && explicit !== null && explicit !== ''
+        ? explicit
+        : defaultTemplateIdForTester(u)
     return betaEmailTemplates.find((x) => x.id === id) || betaEmailTemplates[0]
   }
 
@@ -177,7 +188,7 @@ export default function AdminBetaPage() {
   const copyTesterEmail = async (u) => {
     const pwd = resolvePasswordForEmail(u.email)
     if (pwd === null) return
-    const tpl = getTemplateForTester(u.id)
+    const tpl = getTemplateForTester(u)
     const body = renderBetaEmailBody(tpl, {
       name: u.displayName || u.email,
       email: u.email,
@@ -194,7 +205,7 @@ export default function AdminBetaPage() {
   const downloadTesterWord = async (u) => {
     const pwd = resolvePasswordForEmail(u.email)
     if (pwd === null) return
-    const tpl = getTemplateForTester(u.id)
+    const tpl = getTemplateForTester(u)
     const body = renderBetaEmailBody(tpl, {
       name: u.displayName || u.email,
       email: u.email,
@@ -652,6 +663,7 @@ export default function AdminBetaPage() {
                     <th>{t('auth.email')}</th>
                     <th>{t('auth.name')}</th>
                     <th>{t('admin.country')}</th>
+                    <th>{t('admin.betaApplicationsColLocale')}</th>
                     <th>{t('admin.level')}</th>
                     <th>{t('admin.devices')}</th>
                     <th>{t('admin.actions')}</th>
@@ -663,6 +675,13 @@ export default function AdminBetaPage() {
                       <td>{a.email}</td>
                       <td>{a.name || '-'}</td>
                       <td>{a.country || '-'}</td>
+                      <td className="small">
+                        {a.preferredLocale ? (
+                          <span className="badge text-bg-secondary text-uppercase">{a.preferredLocale}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>{a.experienceLevel || '-'}</td>
                       <td className="small text-break" style={{ maxWidth: 280 }}>
                         {(a.devices && String(a.devices).trim()) || '-'}
@@ -789,6 +808,7 @@ export default function AdminBetaPage() {
                   value={campaignLocale}
                   onChange={(e) => setCampaignLocale(e.target.value)}
                 >
+                  <option value="auto">{t('admin.campaignLocaleAuto')}</option>
                   <option value="es">ES</option>
                   <option value="en">EN</option>
                 </select>
@@ -941,6 +961,20 @@ export default function AdminBetaPage() {
                 }
                 .ta-beta-col-sel { width: 2.25rem; min-width: 2.25rem; max-width: 2.25rem; }
                 .ta-beta-col-email { width: 17%; min-width: 9rem; }
+                .ta-beta-testers-scroll .ta-beta-col-email.ta-beta-sticky-email {
+                  white-space: normal;
+                  word-break: break-word;
+                  overflow-wrap: anywhere;
+                  vertical-align: top;
+                }
+                .ta-beta-tester-email-wrap {
+                  line-break: anywhere;
+                }
+                @media (max-width: 576px) {
+                  .ta-beta-testers-scroll .ta-beta-col-email {
+                    min-width: 11rem;
+                  }
+                }
                 .ta-beta-col-plan { width: 6.25rem; }
                 .ta-beta-col-num { width: 2.35rem; }
                 .ta-beta-col-act { width: 5rem; }
@@ -991,7 +1025,10 @@ export default function AdminBetaPage() {
                         <span className="visually-hidden">{t('admin.campaignSelectTesters')}</span>
                         <span aria-hidden>✓</span>
                       </th>
-                      <th className="ta-beta-col-email ta-beta-sticky-email" title={t('auth.email')}>
+                      <th
+                        className="ta-beta-col-email ta-beta-sticky-email"
+                        title={`${t('auth.email')} — ${t('admin.betaTesterEmailLangBadge')}`}
+                      >
                         {t('auth.email')}
                       </th>
                       <th className="ta-beta-col-plan">{t('admin.plan')}</th>
@@ -1037,12 +1074,19 @@ export default function AdminBetaPage() {
                               aria-label={t('admin.campaignSelectTesters')}
                             />
                           </td>
-                          <td
-                            className="ta-beta-col-email ta-beta-sticky-email small text-truncate"
-                            style={{ maxWidth: 0 }}
-                            title={u.email}
-                          >
-                            {u.email}
+                          <td className="ta-beta-col-email ta-beta-sticky-email small">
+                            <div className="ta-beta-tester-email-wrap fw-medium">{u.email}</div>
+                            {u.betaPreferredLocale ? (
+                              <div className="mt-1">
+                                <span
+                                  className="badge text-bg-secondary"
+                                  style={{ fontSize: '0.65rem' }}
+                                  title={t('admin.betaTesterEmailLangBadge')}
+                                >
+                                  {String(u.betaPreferredLocale).toUpperCase()}
+                                </span>
+                              </div>
+                            ) : null}
                           </td>
                           <td className="ta-beta-col-plan">
                             <span className={`badge text-bg-${adminPlanBadgeClass(u)}`} style={{ fontSize: '0.65rem' }}>
@@ -1077,7 +1121,7 @@ export default function AdminBetaPage() {
                               className="form-select form-select-sm py-1"
                               style={{ fontSize: '0.72rem' }}
                               aria-label={t('admin.betaEmailSelectTemplate')}
-                              value={testerTplPref[u.id] || betaEmailTemplates[0]?.id || ''}
+                              value={testerTplPref[u.id] ?? defaultTemplateIdForTester(u) ?? ''}
                               onChange={(e) => updateTesterPref(u.id, e.target.value)}
                             >
                               {betaEmailTemplates.map((tpl) => (

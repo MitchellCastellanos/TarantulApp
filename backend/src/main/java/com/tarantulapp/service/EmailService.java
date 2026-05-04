@@ -279,7 +279,8 @@ public class EmailService {
             String email,
             String name,
             String country,
-            String level
+            String level,
+            String preferredLocale
     ) {
         if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
         try {
@@ -290,7 +291,8 @@ public class EmailService {
                 "Email: " + safe(email) + "\n" +
                 "Name: " + safe(name) + "\n" +
                 "Country: " + safe(country) + "\n" +
-                "Experience level: " + safe(level) + "\n\n" +
+                "Experience level: " + safe(level) + "\n" +
+                "Preferred email language: " + safe(preferredLocale) + "\n\n" +
                 "Review in Admin > Beta applications."
             );
             log.info("Admin beta application notification sent to {} for application {}", adminNotifyTo, applicationId);

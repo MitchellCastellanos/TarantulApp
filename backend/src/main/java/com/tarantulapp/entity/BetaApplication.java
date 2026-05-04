@@ -38,6 +38,10 @@ public class BetaApplication {
     @Column(columnDefinition = "text")
     private String notes;
 
+    /** Idioma preferido para correos de beta (es / en). Lo elige el solicitante en el formulario. */
+    @Column(name = "preferred_locale", length = 8)
+    private String preferredLocale;
+
     @Column(nullable = false, length = 24)
     private String status = "pending";
 
@@ -72,6 +76,8 @@ public class BetaApplication {
     public void setDevices(String devices) { this.devices = devices; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getPreferredLocale() { return preferredLocale; }
+    public void setPreferredLocale(String preferredLocale) { this.preferredLocale = preferredLocale; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public UUID getApprovedUserId() { return approvedUserId; }

@@ -99,6 +99,10 @@ public class User {
     @Column(name = "beta_experience_level", length = 40)
     private String betaExperienceLevel;
 
+    /** Idioma preferido para correos de beta (es / en), p. ej. desde la solicitud aprobada. */
+    @Column(name = "beta_preferred_locale", length = 8)
+    private String betaPreferredLocale;
+
     /** Aceptación del acuerdo de beta tester (modal primer login). */
     @Column(name = "beta_agreement_accepted_at")
     private Instant betaAgreementAcceptedAt;
@@ -209,6 +213,9 @@ public class User {
 
     public String getBetaExperienceLevel() { return betaExperienceLevel; }
     public void setBetaExperienceLevel(String betaExperienceLevel) { this.betaExperienceLevel = betaExperienceLevel; }
+
+    public String getBetaPreferredLocale() { return betaPreferredLocale; }
+    public void setBetaPreferredLocale(String betaPreferredLocale) { this.betaPreferredLocale = betaPreferredLocale; }
 
     public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
     public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }

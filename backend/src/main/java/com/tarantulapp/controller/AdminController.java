@@ -111,7 +111,8 @@ public class AdminController {
 
     record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
     record ResolveBugReportRequest(String status, String note) {}
-    record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel) {}
+    record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
+                                String preferredLocale) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
      * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
@@ -348,7 +349,9 @@ public class AdminController {
         if (!BetaMailBodies.isBatchCampaignKey(key)) {
             throw new IllegalArgumentException("INVALID_BETA_CAMPAIGN_KEY");
         }
-        String loc = BetaMailBodies.normalizeLocale(req.locale());
+        String requestedLoc = req.locale() == null ? "" : req.locale().trim();
+        boolean perTesterLocale = "auto".equalsIgnoreCase(requestedLoc);
+        String defaultLoc = perTesterLocale ? "es" : BetaMailBodies.normalizeLocale(requestedLoc);
         List<Map<String, Object>> results = new ArrayList<>();
         int sent = 0;
         for (UUID uid : req.userIds()) {
@@ -361,6 +364,9 @@ public class AdminController {
                 results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "skipped", "reason", "NOT_BETA_TESTER")));
                 continue;
             }
+            String loc = perTesterLocale
+                    ? BetaMailBodies.normalizeLocale(u.getBetaPreferredLocale())
+                    : defaultLoc;
             try {
                 emailService.sendBetaCampaignEmail(u.getEmail(), u.getDisplayName(), key, loc);
                 recordBetaEmailSent(uid, key, loc);
@@ -376,7 +382,7 @@ public class AdminController {
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("campaignKey", key);
-        out.put("locale", loc);
+        out.put("locale", perTesterLocale ? "auto" : defaultLoc);
         out.put("sent", sent);
         out.put("results", results);
         return ResponseEntity.ok(out);
@@ -393,6 +399,14 @@ public class AdminController {
         if (req.cohort() != null) user.setBetaCohort(trim(req.cohort(), 80));
         if (req.country() != null) user.setBetaCountry(trim(req.country(), 80));
         if (req.experienceLevel() != null) user.setBetaExperienceLevel(trim(req.experienceLevel(), 40));
+        if (req.preferredLocale() != null) {
+            String pl = req.preferredLocale().trim();
+            if (pl.isEmpty()) {
+                user.setBetaPreferredLocale(null);
+            } else {
+                user.setBetaPreferredLocale(BetaMailBodies.normalizeLocale(pl));
+            }
+        }
         userRepository.save(user);
         return ResponseEntity.ok(mapBetaTester(user));
     }
@@ -554,12 +568,6 @@ public class AdminController {
             }
             if (user != null) {
                 user.setIsBetaTester(true);
-                if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) {
-                    user.setBetaCountry(trim(app.getCountry(), 80));
-                }
-                if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) {
-                    user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
-                }
                 userRepository.save(user);
                 if (gen) {
                     AuthService.AdminUserPasswordResult res =
@@ -581,6 +589,8 @@ public class AdminController {
                 plainPassword = res.plainPassword();
                 approvedUser = res.user();
             }
+            copyBetaApplicationMetadataToUser(approvedUser, app);
+            userRepository.save(approvedUser);
             app.setApprovedUserId(approvedUser.getId());
         }
         betaApplicationRepository.save(app);
@@ -598,12 +608,13 @@ public class AdminController {
                     if (greetingName == null || greetingName.isBlank()) {
                         greetingName = app.getName();
                     }
+                    String welcomeLoc = resolveWelcomeLocaleForApplication(app, req.welcomeLocale());
                     emailService.sendBetaWelcomeEmail(
                             approvedUser.getEmail(),
                             greetingName,
                             plainPassword,
-                            req.welcomeLocale());
-                    recordBetaEmailSent(approvedUser.getId(), "welcome", BetaMailBodies.normalizeLocale(req.welcomeLocale()));
+                            welcomeLoc);
+                    recordBetaEmailSent(approvedUser.getId(), "welcome", BetaMailBodies.normalizeLocale(welcomeLoc));
                     out.put("welcomeEmailSent", true);
                 } catch (Exception e) {
                     out.put("welcomeEmailSent", false);
@@ -767,6 +778,7 @@ public class AdminController {
         out.put("betaCohort", user.getBetaCohort() == null ? "" : user.getBetaCohort());
         out.put("betaCountry", user.getBetaCountry() == null ? "" : user.getBetaCountry());
         out.put("betaExperienceLevel", user.getBetaExperienceLevel() == null ? "" : user.getBetaExperienceLevel());
+        out.put("betaPreferredLocale", user.getBetaPreferredLocale() == null ? "" : user.getBetaPreferredLocale());
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         out.put("createdAt", user.getCreatedAt());
         out.put("lastActivityAt", user.getLastActivityAt());
@@ -830,6 +842,7 @@ public class AdminController {
         out.put("experienceLevel", app.getExperienceLevel() == null ? "" : app.getExperienceLevel());
         out.put("devices", app.getDevices() == null ? "" : app.getDevices());
         out.put("notes", app.getNotes() == null ? "" : app.getNotes());
+        out.put("preferredLocale", app.getPreferredLocale() == null ? "" : app.getPreferredLocale());
         out.put("status", app.getStatus());
         out.put("approvedUserId", app.getApprovedUserId());
         out.put("createdAt", app.getCreatedAt());
@@ -842,5 +855,30 @@ public class AdminController {
         String out = value.trim();
         if (out.isEmpty()) return null;
         return out.length() <= max ? out : out.substring(0, max);
+    }
+
+    private void copyBetaApplicationMetadataToUser(User user, BetaApplication app) {
+        if (user == null || app == null) {
+            return;
+        }
+        if (user.getBetaCountry() == null || user.getBetaCountry().isBlank()) {
+            user.setBetaCountry(trim(app.getCountry(), 80));
+        }
+        if (user.getBetaExperienceLevel() == null || user.getBetaExperienceLevel().isBlank()) {
+            user.setBetaExperienceLevel(trim(app.getExperienceLevel(), 40));
+        }
+        if (user.getBetaPreferredLocale() == null || user.getBetaPreferredLocale().isBlank()) {
+            String pl = app.getPreferredLocale();
+            if (pl != null && !pl.isBlank()) {
+                user.setBetaPreferredLocale(BetaMailBodies.normalizeLocale(pl));
+            }
+        }
+    }
+
+    private static String resolveWelcomeLocaleForApplication(BetaApplication app, String adminWelcomeLocale) {
+        if (app != null && app.getPreferredLocale() != null && !app.getPreferredLocale().isBlank()) {
+            return app.getPreferredLocale();
+        }
+        return adminWelcomeLocale;
     }
 }

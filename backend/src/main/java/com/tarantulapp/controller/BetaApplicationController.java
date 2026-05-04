@@ -3,6 +3,7 @@ package com.tarantulapp.controller;
 import com.tarantulapp.entity.BetaApplication;
 import com.tarantulapp.repository.BetaApplicationRepository;
 import com.tarantulapp.service.EmailService;
+import com.tarantulapp.util.BetaMailBodies;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -33,7 +34,9 @@ public class BetaApplicationController {
             String country,
             String experienceLevel,
             String devices,
-            String notes
+            String notes,
+            /** es | en — correos de bienvenida y campañas cuando uses “por tester”. */
+            String preferredLocale
     ) {}
 
     @PostMapping("/beta-applications")
@@ -45,13 +48,15 @@ public class BetaApplicationController {
         app.setExperienceLevel(trimTo(req.experienceLevel(), 40));
         app.setDevices(trimTo(req.devices(), 2000));
         app.setNotes(trimTo(req.notes(), 4000));
+        app.setPreferredLocale(normalizePreferredLocale(req.preferredLocale()));
         BetaApplication saved = betaApplicationRepository.save(app);
         emailService.sendAdminBetaApplicationNotification(
                 saved.getId(),
                 saved.getEmail(),
                 saved.getName(),
                 saved.getCountry(),
-                saved.getExperienceLevel()
+                saved.getExperienceLevel(),
+                saved.getPreferredLocale()
         );
         return ResponseEntity.ok(Map.of("id", saved.getId(), "status", saved.getStatus()));
     }
@@ -61,5 +66,12 @@ public class BetaApplicationController {
         String out = value.trim();
         if (out.isEmpty()) return null;
         return out.length() <= max ? out : out.substring(0, max);
+    }
+
+    private static String normalizePreferredLocale(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return BetaMailBodies.normalizeLocale(raw);
     }
 }

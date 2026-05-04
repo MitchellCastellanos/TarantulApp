@@ -4,8 +4,13 @@ import { useTranslation } from 'react-i18next'
 import BrandName from '../components/BrandName'
 import betaApplicationService from '../services/betaApplicationService'
 
+function defaultBetaEmailLocale(lang) {
+  const lc = (lang || 'es').toLowerCase()
+  return lc.startsWith('en') ? 'en' : 'es'
+}
+
 export default function BetaApplyPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [form, setForm] = useState({
     email: '',
     name: '',
@@ -13,6 +18,7 @@ export default function BetaApplyPage() {
     experienceLevel: '',
     devices: '',
     notes: '',
+    preferredLocale: defaultBetaEmailLocale(i18n.language),
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +31,15 @@ export default function BetaApplyPage() {
     try {
       await betaApplicationService.create(form)
       setSubmitted(true)
-      setForm({ email: '', name: '', country: '', experienceLevel: '', devices: '', notes: '' })
+      setForm({
+        email: '',
+        name: '',
+        country: '',
+        experienceLevel: '',
+        devices: '',
+        notes: '',
+        preferredLocale: defaultBetaEmailLocale(i18n.language),
+      })
     } catch (err) {
       const timeout = err?.code === 'ECONNABORTED'
       setError(timeout ? t('admin.betaApplyTimeout') : (err?.response?.data?.error || t('common.error')))
@@ -86,6 +100,28 @@ export default function BetaApplyPage() {
                     <option value="intermediate">Intermediate</option>
                     <option value="expert">Expert</option>
                   </select>
+                </div>
+                <div className="col-12">
+                  <label className="form-label d-block">{t('admin.betaApplyEmailLanguageLabel')}</label>
+                  <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <div className="btn-group" role="group" aria-label={t('admin.betaApplyEmailLanguageLabel')}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${form.preferredLocale === 'es' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => setForm((f) => ({ ...f, preferredLocale: 'es' }))}
+                      >
+                        {t('admin.welcomeLangEs')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${form.preferredLocale === 'en' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => setForm((f) => ({ ...f, preferredLocale: 'en' }))}
+                      >
+                        {t('admin.welcomeLangEn')}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="form-text text-muted small mb-0">{t('admin.betaApplyEmailLanguageHint')}</p>
                 </div>
                 <div className="col-12">
                   <label className="form-label">{t('admin.devices')}</label>
