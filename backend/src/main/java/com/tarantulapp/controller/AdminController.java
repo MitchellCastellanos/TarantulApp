@@ -306,8 +306,10 @@ public class AdminController {
         List<User> users = userRepository.findByIsBetaTesterTrueOrderByCreatedAtDesc();
         Map<UUID, Long> spiderCounts = loadTarantulaCountsForUsers(
                 users.stream().map(User::getId).collect(Collectors.toList()));
+        Map<UUID, String> betaDevicesByUser = loadBetaDevicesForApprovedUsers(
+                users.stream().map(User::getId).collect(Collectors.toList()));
         List<Map<String, Object>> rows = users.stream()
-                .map(u -> mapBetaTester(u, spiderCounts))
+                .map(u -> mapBetaTester(u, spiderCounts, betaDevicesByUser))
                 .collect(Collectors.toList());
         enrichBetaCampaignSummaries(rows, users.stream().map(User::getId).collect(Collectors.toList()));
         return ResponseEntity.ok(rows);
@@ -743,10 +745,19 @@ public class AdminController {
     }
 
     private Map<String, Object> mapBetaTester(User user) {
-        return mapBetaTester(user, null);
+        return mapBetaTester(user, null, null);
     }
 
     private Map<String, Object> mapBetaTester(User user, Map<UUID, Long> spiderCounts) {
+        return mapBetaTester(user, spiderCounts, null);
+    }
+
+    /**
+     * {@code betaDevicesByUserId}: when non-null, devices text from the approved beta application(s)
+     * for that user (batch map). When null, resolves with one DB read (single-user admin responses).
+     */
+    private Map<String, Object> mapBetaTester(User user, Map<UUID, Long> spiderCounts,
+                                              Map<UUID, String> betaDevicesByUserId) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", user.getId());
         out.put("email", user.getEmail());
@@ -763,6 +774,49 @@ public class AdminController {
                 : tarantulaRepository.countForUserId(user.getId());
         out.put("tarantulasCount", spiders);
         out.put("bugReportsCount", bugReportRepository.countByUserId(user.getId()));
+        String betaDevices;
+        if (betaDevicesByUserId != null) {
+            betaDevices = betaDevicesByUserId.getOrDefault(user.getId(), "");
+        } else {
+            betaDevices = betaApplicationRepository
+                    .findTopByApprovedUserIdAndStatusOrderByReviewedAtDesc(user.getId(), "approved")
+                    .map(a -> a.getDevices() != null ? a.getDevices() : "")
+                    .orElse("");
+        }
+        out.put("betaDevices", betaDevices);
+        return out;
+    }
+
+    /** Latest reviewed approved application per user (devices field from the beta apply form). */
+    private Map<UUID, String> loadBetaDevicesForApprovedUsers(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> distinct = userIds.stream().distinct().collect(Collectors.toList());
+        List<BetaApplication> apps = betaApplicationRepository.findByApprovedUserIdInAndStatus(distinct, "approved");
+        Map<UUID, BetaApplication> best = new HashMap<>();
+        for (BetaApplication app : apps) {
+            UUID uid = app.getApprovedUserId();
+            if (uid == null) {
+                continue;
+            }
+            best.merge(uid, app, (older, newer) -> {
+                LocalDateTime a = older.getReviewedAt();
+                LocalDateTime b = newer.getReviewedAt();
+                if (b == null) {
+                    return older;
+                }
+                if (a == null) {
+                    return newer;
+                }
+                return b.isAfter(a) ? newer : older;
+            });
+        }
+        Map<UUID, String> out = new HashMap<>();
+        for (Map.Entry<UUID, BetaApplication> e : best.entrySet()) {
+            String d = e.getValue().getDevices();
+            out.put(e.getKey(), d != null ? d : "");
+        }
         return out;
     }
 

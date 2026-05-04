@@ -653,6 +653,7 @@ export default function AdminBetaPage() {
                     <th>{t('auth.name')}</th>
                     <th>{t('admin.country')}</th>
                     <th>{t('admin.level')}</th>
+                    <th>{t('admin.devices')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
@@ -663,6 +664,9 @@ export default function AdminBetaPage() {
                       <td>{a.name || '-'}</td>
                       <td>{a.country || '-'}</td>
                       <td>{a.experienceLevel || '-'}</td>
+                      <td className="small text-break" style={{ maxWidth: 280 }}>
+                        {(a.devices && String(a.devices).trim()) || '-'}
+                      </td>
                       <td className="d-flex gap-2">
                         <button
                           type="button"
@@ -923,6 +927,7 @@ export default function AdminBetaPage() {
                     <th>{t('admin.lastSeenCol')}</th>
                     <th>{t('admin.country')}</th>
                     <th>{t('admin.level')}</th>
+                    <th>{t('admin.devices')}</th>
                     <th>{t('admin.betaBugReportsTitle')}</th>
                     <th>{t('admin.sentCampaignsCol')}</th>
                     <th>{t('admin.betaEmailTemplateColName')}</th>
@@ -958,6 +963,9 @@ export default function AdminBetaPage() {
                       <td className="small">{formatUsageTime(u.lastActivityAt, t)}</td>
                       <td>{u.betaCountry || '-'}</td>
                       <td>{u.betaExperienceLevel || '-'}</td>
+                      <td className="small text-break" style={{ maxWidth: 280 }}>
+                        {(u.betaDevices && String(u.betaDevices).trim()) || '-'}
+                      </td>
                       <td>{u.bugReportsCount ?? 0}</td>
                       <td className="small text-muted" style={{ maxWidth: 220 }}>
                         {formatCampaignSends(u)}

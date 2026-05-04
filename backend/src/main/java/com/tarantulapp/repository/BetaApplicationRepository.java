@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,10 @@ public interface BetaApplicationRepository extends JpaRepository<BetaApplication
     List<BetaApplication> findByStatusOrderByCreatedAtDesc(String status);
     List<BetaApplication> findAllByOrderByCreatedAtDesc();
     Optional<BetaApplication> findFirstByEmailIgnoreCaseAndStatusOrderByReviewedAtDesc(String email, String status);
+
+    List<BetaApplication> findByApprovedUserIdInAndStatus(Collection<UUID> approvedUserIds, String status);
+
+    Optional<BetaApplication> findTopByApprovedUserIdAndStatusOrderByReviewedAtDesc(UUID approvedUserId, String status);
 
     long countByStatus(String status);
     long countByCreatedAtAfter(LocalDateTime cutoff);
