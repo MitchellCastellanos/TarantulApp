@@ -45,8 +45,9 @@ export default function SocialHubPage() {
   const { t } = useTranslation()
   const { user, token } = useAuth()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState(TAB_FEED)
+  const [referralLoading, setReferralLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
@@ -134,15 +135,35 @@ export default function SocialHubPage() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam === 'sexId' && token) {
-      setTab(TAB_SEX_ID)
+    if (!token) {
+      setTab(TAB_FEED)
+      return
     }
+    if (tabParam === 'sexId') setTab(TAB_SEX_ID)
+    else if (tabParam === 'invite') setTab(TAB_INVITE)
+    else setTab(TAB_FEED)
   }, [searchParams, token])
 
   const loadReferral = useCallback(async () => {
     const data = await referralService.me()
     setReferral(data)
   }, [])
+
+  const goTab = useCallback(
+    (next) => {
+      setTab(next)
+      setErr('')
+      setMsg('')
+      if (next === TAB_FEED) {
+        setSearchParams({}, { replace: true })
+      } else if (next === TAB_SEX_ID) {
+        setSearchParams({ tab: 'sexId' }, { replace: true })
+      } else if (next === TAB_INVITE) {
+        setSearchParams({ tab: 'invite' }, { replace: true })
+      }
+    },
+    [setSearchParams],
+  )
 
   const loadSexIdCases = useCallback(async () => {
     const data = await sexIdCaseService.mine(0, 30)
@@ -182,7 +203,10 @@ export default function SocialHubPage() {
     }
     if (tab === TAB_INVITE) {
       if (!token) return
-      loadReferral().catch(() => setErr(t('social.loadError')))
+      setReferralLoading(true)
+      loadReferral()
+        .catch(() => setErr(t('social.loadError')))
+        .finally(() => setReferralLoading(false))
     }
     if (tab === TAB_SEX_ID) {
       if (!token) return
@@ -815,6 +839,56 @@ export default function SocialHubPage() {
           </div>
         )}
 
+        {token && (
+          <div
+            className="d-flex flex-wrap align-items-stretch gap-2 mb-3"
+            role="tablist"
+            aria-label={t('social.hubTabListAria')}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === TAB_FEED}
+              className={`btn btn-sm ${tab === TAB_FEED ? 'btn-dark' : 'btn-outline-secondary'}`}
+              onClick={() => goTab(TAB_FEED)}
+            >
+              {t('social.hubTabFeed')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === TAB_SEX_ID}
+              className={`btn btn-sm ${tab === TAB_SEX_ID ? 'btn-dark' : 'btn-outline-secondary'}`}
+              onClick={() => goTab(TAB_SEX_ID)}
+            >
+              {t('social.hubTabSexId')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === TAB_INVITE}
+              className={`btn btn-sm ${tab === TAB_INVITE ? 'text-white border-0' : 'btn-outline-secondary'}`}
+              style={
+                tab === TAB_INVITE
+                  ? {
+                      background: 'linear-gradient(135deg, #6d28d9 0%, #5b21b6 55%, #4c1d95 100%)',
+                      boxShadow: '0 0 0 1px rgba(167, 139, 250, 0.45), 0 4px 14px rgba(91, 33, 182, 0.35)',
+                    }
+                  : {
+                      borderColor: 'rgba(139, 92, 246, 0.45)',
+                      color: 'var(--ta-parchment)',
+                    }
+              }
+              onClick={() => goTab(TAB_INVITE)}
+            >
+              <span className="me-1" aria-hidden>
+                🎁
+              </span>
+              {t('social.hubTabRewards')}
+            </button>
+          </div>
+        )}
+
         {token && user?.betaTester && generalPosts.some((p) => p?.isDemoContent) && (
           <div className="ta-demo-feed-hover-note mb-3">
             <div className="ta-demo-feed-hover-note__inner">
@@ -858,7 +932,7 @@ export default function SocialHubPage() {
                     )}
                     {renderTopicDots((publicSexIdCases.content || []).length, topicCarouselIndex.sexId, (i) => setTopicCarouselIndex((p) => ({ ...p, sexId: i })))}
                     <div className="d-flex flex-wrap gap-2 mt-2">
-                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => setTab(TAB_SEX_ID)}>View list</button>
+                      <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 ta-social-topic-btn" onClick={() => goTab(TAB_SEX_ID)}>View list</button>
                     </div>
                   </div>
                 </div>
@@ -951,15 +1025,6 @@ export default function SocialHubPage() {
                 <div className="ta-social-feed-shell h-100">
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div className="ms-auto d-flex align-items-center gap-2">
-                  {token && (
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${tab === TAB_INVITE ? 'btn-dark' : 'btn-outline-secondary'}`}
-                      onClick={() => { setTab(TAB_INVITE); setErr(''); setMsg('') }}
-                    >
-                      {t('social.tabInvite')}
-                    </button>
-                  )}
                   <div className="position-relative" style={{ width: 240 }}>
                     <input
                       className="form-control form-control-sm"
@@ -1138,7 +1203,7 @@ export default function SocialHubPage() {
                           setComposerOpen(true)
                           setComposer((c) => ({ ...c, milestoneKind: 'meet_my_ts', body: 'Meet my Ts 🕷️\n\n' }))
                         }}>Meet my Ts</button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => setTab(TAB_SEX_ID)}>Sex ID case</button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary ta-social-topic-shortcut-btn" onClick={() => goTab(TAB_SEX_ID)}>Sex ID case</button>
                       </div>
                     )}
                   </div>
@@ -1272,7 +1337,10 @@ export default function SocialHubPage() {
           </>
         )}
 
-        {tab === TAB_INVITE && referral && (
+        {tab === TAB_INVITE && token && referralLoading && (
+          <div className="text-center py-5 small text-muted">{t('common.loading')}</div>
+        )}
+        {tab === TAB_INVITE && token && !referralLoading && referral && (
           <ChitinCardFrame showSilhouettes={false} variant="auth">
             <ReferralGamificationCard
               referral={referral}
