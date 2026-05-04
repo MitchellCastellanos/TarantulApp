@@ -748,22 +748,29 @@
     "label": "Etapa"
   },
   "molt": {
+    "profileGrowthBlurb": "Las pistas de crecimiento y muda abajo usan tu historial en este ejemplar y datos típicos de la especie — orientación, no consejo veterinario.",
     "instarBadge": "Instar {{n}}",
     "instarLabel": "Instar estimado",
     "instarHint": "Calculado a partir de las mudas registradas en TarantulApp",
+    "instarExplain": "Cada muda registrada cuenta como un paso; el instar 1 es antes de tu primera muda en el registro.",
     "instarFromLogs_one": "{{count}} muda registrada",
     "instarFromLogs_other": "{{count}} mudas registradas",
     "noFeedWindowActive_one": "Post-muda: espera 1 día más antes de alimentar. Seguro a partir del {{date}}.",
     "noFeedWindowActive_other": "Post-muda: espera {{count}} días más antes de alimentar. Seguro a partir del {{date}}.",
+    "noFeedWindowFootnote": "La espera depende de la etapa (cría → adulto); valor prudente tras la última muda registrada.",
     "growthCurveTitle": "Curva de crecimiento",
+    "growthCurveIntro": "Une las tallas que anotaste en cada muda; dorado = antes de la muda, morado = después. Las líneas punteadas son la talla adulta típica de la especie si la tenemos.",
     "growthCurveNote": "Líneas punteadas = rango de talla adulta de la especie.",
     "pre": "Pre-muda",
     "post": "Post-muda",
     "adultMin": "Adulto mín",
     "adultMax": "Adulto máx",
-    "predictionRange": "Ventana estimada de próxima muda: {{from}} – {{to}}",
+    "predictionHeadline": "Ventana aproximada de próxima muda",
+    "predictionRange": "{{from}} – {{to}}",
+    "predictionFinePrint": "Se arma con la etiqueta de crecimiento de la especie y la fecha de tu última muda; el tiempo real sigue dependiendo de comida, calor y humedad.",
     "predictionDisclaimer": "Basado en la tasa de crecimiento de la especie y tu última muda registrada. La alimentación, temperatura y humedad afectan el tiempo real.",
     "feedingSignalBanner": "Las últimas 2 alimentaciones fueron rechazadas — posible pre-muda. Considera registrar un comportamiento pre-muda.",
+    "feedingSignalFootnote": "Solo revisamos tus dos alimentaciones más recientes.",
     "preMoltSignsLabel": "Signos pre-muda observados (opcional)",
     "sign_dark_abdomen": "Abdomen oscuro",
     "sign_refused_food": "Rechazó comida",
@@ -782,7 +789,9 @@
     "complication_other": "Otra",
     "durationLabel": "Duración (minutos)",
     "durationPlaceholder": "ej. 45",
-    "hadComplication": "Tuvo complicaciones"
+    "hadComplication": "Tuvo complicaciones",
+    "modalIntro": "Las tallas y los campos opcionales alimentan tu línea de tiempo, PDF y compartidos — nada de esto sustituye observar a la tarántula en vivo.",
+    "timelineRowHint": "El texto resume lo que guardaste (tallas, notas); etiquetas de complicación y minutos si los registraste en la muda."
   },
   "sex": {
     "male": "♂ Macho",
@@ -1102,6 +1111,7 @@
     "pre_molt": "🌙 Pre-muda"
   },
   "timeline": {
+    "growthMoltHint": "En mudas, la línea muestra lo que guardaste (tallas, notas); complicación y duración aparecen si los registraste.",
     "glyphFeeding": "▸",
     "glyphMolt": "↻",
     "glyphBehavior": "○",

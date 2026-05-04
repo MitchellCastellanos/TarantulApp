@@ -73,6 +73,9 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
+              <p className="small text-muted mb-3" style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {t('molt.modalIntro')}
+              </p>
               {error && <div className="alert alert-danger small py-2">{error}</div>}
               <div className="row g-3">
                 <div className="col-12">

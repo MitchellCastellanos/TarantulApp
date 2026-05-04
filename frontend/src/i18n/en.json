@@ -760,22 +760,29 @@
     "label": "Stage"
   },
   "molt": {
+    "profileGrowthBlurb": "Growth & molt hints below use your logs on this spider plus typical species data — guides only, not medical advice.",
     "instarBadge": "Instar {{n}}",
     "instarLabel": "Estimated instar",
     "instarHint": "Calculated from recorded molts in TarantulApp",
+    "instarExplain": "Each logged molt counts as one step; instar 1 is before your first recorded molt.",
     "instarFromLogs_one": "{{count}} molt logged",
     "instarFromLogs_other": "{{count}} molts logged",
     "noFeedWindowActive_one": "Post-molt: avoid feeding for 1 more day. Safe to feed after {{date}}.",
     "noFeedWindowActive_other": "Post-molt: avoid feeding for {{count}} more days. Safe to feed after {{date}}.",
+    "noFeedWindowFootnote": "Wait scales with life stage (shorter for slings, longer for adults) — a cautious default after the last logged molt.",
     "growthCurveTitle": "Growth curve",
+    "growthCurveIntro": "Plots pre- and post-molt sizes you entered on each log; gold = before shed, purple = after. Dashed lines show this species’ adult size band when we have it.",
     "growthCurveNote": "Dashed lines = adult size range for this species.",
     "pre": "Pre-molt",
     "post": "Post-molt",
     "adultMin": "Adult min",
     "adultMax": "Adult max",
-    "predictionRange": "Next molt window (estimated): {{from}} – {{to}}",
+    "predictionHeadline": "Rough next-molt window",
+    "predictionRange": "{{from}} – {{to}}",
+    "predictionFinePrint": "Built from this species’ growth tag and your last molt date — real timing still depends on feeding, warmth, and humidity.",
     "predictionDisclaimer": "Based on species growth rate and your last recorded molt. Feeding, temperature, and humidity affect actual timing.",
     "feedingSignalBanner": "Last 2 feedings were rejected — possible pre-molt. Consider logging a pre-molt behavior.",
+    "feedingSignalFootnote": "Looks only at your two newest feeding logs.",
     "preMoltSignsLabel": "Pre-molt signs observed (optional)",
     "sign_dark_abdomen": "Dark abdomen",
     "sign_refused_food": "Refused food",
@@ -794,7 +801,9 @@
     "complication_other": "Other",
     "durationLabel": "Duration (minutes)",
     "durationPlaceholder": "e.g. 45",
-    "hadComplication": "Had complications"
+    "hadComplication": "Had complications",
+    "modalIntro": "Sizes and optional details feed your timeline, PDF, and shares — nothing here replaces observing the spider in person.",
+    "timelineRowHint": "Summary line shows sizes you logged; complication tags and minutes appear when you saved them on the molt."
   },
   "sex": {
     "male": "♂ Male",
@@ -1121,6 +1130,7 @@
     "pre_molt": "🌙 Pre-molt"
   },
   "timeline": {
+    "growthMoltHint": "Molt rows show the text you saved (sizes, notes); complications and duration appear when you logged them.",
     "glyphFeeding": "▸",
     "glyphMolt": "↻",
     "glyphBehavior": "○",

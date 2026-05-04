@@ -742,22 +742,29 @@
     "label": "Stade"
   },
   "molt": {
+    "profileGrowthBlurb": "Les indications ci-dessous s’appuient sur votre historique pour cet exemplaire et des valeurs typiques d’espèce — repères, pas un avis médical.",
     "instarBadge": "Instar {{n}}",
     "instarLabel": "Instar estimé",
     "instarHint": "Calculé à partir des mues enregistrées dans TarantulApp",
+    "instarExplain": "Chaque mue enregistrée fait monter le compteur ; l’instar 1 correspond à l’état avant votre premier enregistrement.",
     "instarFromLogs_one": "{{count}} mue enregistrée",
     "instarFromLogs_other": "{{count}} mues enregistrées",
     "noFeedWindowActive_one": "Après la mue : attendre encore 1 jour avant de nourrir. Reprise prudente à partir du {{date}}.",
     "noFeedWindowActive_other": "Après la mue : attendre encore {{count}} jours avant de nourrir. Reprise prudente à partir du {{date}}.",
+    "noFeedWindowFootnote": "Le délai suit le stade (jeune → adulte) ; valeur prudente après la dernière mue enregistrée.",
     "growthCurveTitle": "Courbe de croissance",
+    "growthCurveIntro": "Relie les tailles saisies à chaque mue ; or = avant la mue, violet = après. Les tirets indiquent la taille adulte de référence quand on la connaît.",
     "growthCurveNote": "Lignes en pointillés = fourchette de taille adulte pour cette espèce.",
     "pre": "Avant la mue",
     "post": "Après la mue",
     "adultMin": "Adulte min.",
     "adultMax": "Adulte max.",
-    "predictionRange": "Fenêtre estimée de prochaine mue : {{from}} – {{to}}",
+    "predictionHeadline": "Fenêtre indicative de prochaine mue",
+    "predictionRange": "{{from}} – {{to}}",
+    "predictionFinePrint": "Calcul à partir du profil de croissance de l’espèce et de la date de votre dernière mue — le calendrier réel dépend encore des soins.",
     "predictionDisclaimer": "Basé sur le rythme de croissance de l'espèce et votre dernière mue enregistrée. Alimentation, température et humidité influencent le calendrier réel.",
     "feedingSignalBanner": "Les 2 derniers nourrissages ont été refusés — possible pré-mue. Envisagez d'enregistrer un comportement pré-mue.",
+    "feedingSignalFootnote": "Analyse uniquement vos deux derniers nourrissages (les plus récents).",
     "preMoltSignsLabel": "Signes de pré-mue observés (facultatif)",
     "sign_dark_abdomen": "Abdomen foncé",
     "sign_refused_food": "Refus de nourriture",
@@ -776,7 +783,9 @@
     "complication_other": "Autre",
     "durationLabel": "Durée (minutes)",
     "durationPlaceholder": "ex. 45",
-    "hadComplication": "Avec complications"
+    "hadComplication": "Avec complications",
+    "modalIntro": "Les tailles et champs facultatifs nourrissent la chronologie, le PDF et le partage — rien ne remplace l’observation directe.",
+    "timelineRowHint": "Le résumé reprend ce que vous avez saisi ; étiquettes de complication et minutes si vous les avez enregistrées sur la mue."
   },
   "sex": {
     "male": "♂ Mâle",
@@ -1103,6 +1112,7 @@
     "pre_molt": "🌙 Pré-mue"
   },
   "timeline": {
+    "growthMoltHint": "Pour les mues, la ligne reprend votre texte (tailles, notes) ; complications et durée si vous les avez saisies.",
     "glyphFeeding": "▸",
     "glyphMolt": "↻",
     "glyphBehavior": "○",

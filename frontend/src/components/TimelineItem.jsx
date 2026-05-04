@@ -63,7 +63,10 @@ export default function TimelineItem({ event, onDelete, shareMeta }) {
       </div>
 
       {/* Contenido: título, fecha y × en la misma línea (× pegada al registro) */}
-      <div className="flex-grow-1 min-w-0">
+      <div
+        className="flex-grow-1 min-w-0"
+        title={event.type === 'molt' ? t('molt.timelineRowHint') : undefined}
+      >
         <div className="d-flex flex-wrap align-items-baseline gap-2 ta-timeline-head-row">
           <span className="fw-semibold small ta-history-title flex-grow-1 min-w-0">{getTitle()}</span>
           <div className="d-inline-flex align-items-baseline gap-1 flex-shrink-0 ta-timeline-meta-actions">

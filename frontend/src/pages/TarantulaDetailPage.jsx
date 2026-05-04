@@ -428,7 +428,11 @@ export default function TarantulaDetailPage() {
                     </p>
                   )}
 
-                  <div className="d-flex flex-wrap gap-1 mb-3">
+                  <p className="small text-muted mb-3" style={{ fontSize: '0.78rem', lineHeight: 1.4 }}>
+                    {t('molt.profileGrowthBlurb')}
+                  </p>
+
+                  <div className={`d-flex flex-wrap gap-1 ${estimatedInstar != null ? 'mb-2' : 'mb-3'}`}>
                     {tarantula.stage && (
                       <span className="badge bg-light text-dark border">{t(`stages.${tarantula.stage}`)}</span>
                     )}
@@ -444,6 +448,11 @@ export default function TarantulaDetailPage() {
                       </span>
                     )}
                   </div>
+                  {estimatedInstar != null && (
+                    <p className="small text-muted mb-3" style={{ fontSize: '0.74rem', lineHeight: 1.35 }}>
+                      {t('molt.instarExplain')}
+                    </p>
+                  )}
 
                   {preMoltFeedingSignal && tarantula.status !== 'pre_molt' && (
                     <div
@@ -456,6 +465,9 @@ export default function TarantulaDetailPage() {
                     >
                       <span style={{ color: 'var(--ta-gold)' }}>🌙 </span>
                       {t('molt.feedingSignalBanner')}
+                      <span className="d-block mt-1" style={{ fontSize: '0.7rem', opacity: 0.82 }}>
+                        {t('molt.feedingSignalFootnote')}
+                      </span>
                     </div>
                   )}
 
@@ -519,6 +531,9 @@ export default function TarantulaDetailPage() {
                         count: postMoltWindow.daysLeft,
                         date: formatDateInUserZone(postMoltWindow.safeDate.toISOString(), i18n.language),
                       })}
+                      <span className="d-block mt-1" style={{ fontSize: '0.7rem', opacity: 0.82 }}>
+                        {t('molt.noFeedWindowFootnote')}
+                      </span>
                     </div>
                   )}
 
@@ -531,14 +546,27 @@ export default function TarantulaDetailPage() {
                         color: 'var(--ta-text-muted)',
                       }}
                     >
-                      <span style={{ color: '#c09040' }}>🔮 </span>
-                      {t('molt.predictionRange', {
-                        from: formatDateInUserZone(moltPrediction.earliest.toISOString(), i18n.language),
-                        to: formatDateInUserZone(moltPrediction.latest.toISOString(), i18n.language),
-                      })}
-                      <span className="d-block mt-1" style={{ fontSize: '0.7rem', opacity: 0.7 }}>
-                        {t('molt.predictionDisclaimer')}
-                      </span>
+                      <div
+                        className="mb-1 fw-semibold"
+                        style={{
+                          fontSize: '0.68rem',
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          color: '#c09040',
+                        }}
+                      >
+                        {t('molt.predictionHeadline')}
+                      </div>
+                      <div>
+                        <span style={{ color: '#c09040' }}>🔮 </span>
+                        {t('molt.predictionRange', {
+                          from: formatDateInUserZone(moltPrediction.earliest.toISOString(), i18n.language),
+                          to: formatDateInUserZone(moltPrediction.latest.toISOString(), i18n.language),
+                        })}
+                      </div>
+                      <div className="mt-1" style={{ fontSize: '0.7rem', opacity: 0.78, lineHeight: 1.35 }}>
+                        {t('molt.predictionFinePrint')}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -625,6 +653,11 @@ export default function TarantulaDetailPage() {
                   <div className="ta-section-header mb-2">
                     <span>{t('tarantula.history')}</span>
                   </div>
+                  {moltEvents.length > 0 && (
+                    <p className="small text-muted mb-3" style={{ fontSize: '0.76rem', lineHeight: 1.35 }}>
+                      {t('timeline.growthMoltHint')}
+                    </p>
+                  )}
                   {timeline.length === 0 ? (
                     <div>
                       <p className="small text-muted mb-3 text-center">{t('tarantula.historyEmpty')}</p>
@@ -716,9 +749,12 @@ export default function TarantulaDetailPage() {
               <FangPanel className="mb-4 ta-spider-detail-fang" cornerOffset={10}>
                 <div className="card border-0 shadow-sm ta-premium-pane">
                   <div className="card-body">
-                    <div className="ta-section-header mb-3">
+                    <div className="ta-section-header mb-2">
                       <span>{t('molt.growthCurveTitle')}</span>
                     </div>
+                    <p className="small text-muted mb-3" style={{ fontSize: '0.78rem', lineHeight: 1.4 }}>
+                      {t('molt.growthCurveIntro')}
+                    </p>
                     <MoltGrowthChart molts={molts} species={species} />
                   </div>
                 </div>
