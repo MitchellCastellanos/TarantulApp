@@ -15,6 +15,12 @@ public final class BetaMailBodies {
     public static final String ANDROID_PLAY_INTERNAL_TEST_URL =
             "https://play.google.com/apps/internaltest/4700991665399344151";
 
+    /** WhatsApp community groups for beta testers. Keep in sync with {@code frontend/src/utils/welcomeBetaEmail.js}. */
+    public static final String WHATSAPP_GROUP_URL_ES =
+            "https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t";
+    public static final String WHATSAPP_GROUP_URL_EN =
+            "https://chat.whatsapp.com/CIdg6rBQPo6FXeLNhpZA6a?mode=gi_t";
+
     public static final Set<String> BATCH_CAMPAIGN_KEYS = Set.of(
             "week_1",
             "week_2",
@@ -22,7 +28,8 @@ public final class BetaMailBodies {
             "week_4",
             "week_5",
             "week_6",
-            "android_play_beta"
+            "android_play_beta",
+            "whatsapp_group_invite"
     );
 
     private BetaMailBodies() {
@@ -63,6 +70,9 @@ public final class BetaMailBodies {
             case "android_play_beta" -> en
                     ? "TarantulApp beta — Android app is on Google Play (internal testing)"
                     : "Beta TarantulApp — la app Android ya está en Google Play (prueba interna)";
+            case "whatsapp_group_invite" -> en
+                    ? "TarantulApp beta — Join our WhatsApp group for testers"
+                    : "Beta TarantulApp — Únete a nuestro grupo de WhatsApp para testers";
             default -> en ? "TarantulApp beta — Update" : "TarantulApp beta — Actualización";
         };
     }
@@ -81,6 +91,7 @@ public final class BetaMailBodies {
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
         String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String wa = WHATSAPP_GROUP_URL_ES;
         return "Hola " + n + ",\n"
                 + "\n"
                 + "Fecha del mensaje: " + sendDate + "\n"
@@ -93,6 +104,10 @@ public final class BetaMailBodies {
                 + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e "
                 + "inicia sesión con el mismo correo y contraseña que para la web.\n"
                 + "• La web app sigue disponible en cualquier navegador; el lunes recibirás por correo las misiones de la semana.\n"
+                + "\n"
+                + "Únete a nuestro grupo de WhatsApp para testers (español):\n"
+                + "• " + wa + "\n"
+                + "• Es el canal más rápido para preguntas, ideas y reportar bugs en caliente. Te recomendamos entrar el primer día.\n"
                 + "\n"
                 + "Cómo entrar (web):\n"
                 + "1) Abre " + url + " y usa el acceso beta (\"Beta tester login\" / acceso beta) en la pantalla pública.\n"
@@ -141,6 +156,7 @@ public final class BetaMailBodies {
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
         String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String wa = WHATSAPP_GROUP_URL_EN;
         return "Hi " + n + ",\n"
                 + "\n"
                 + "Message date: " + sendDate + "\n"
@@ -153,6 +169,10 @@ public final class BetaMailBodies {
                 + "• Open that link on your phone while signed into the Google account that has access to the test, install "
                 + "TarantulApp, then sign in with the same email and password as the web app.\n"
                 + "• The web app still works in any browser; on Monday you'll get the week's missions by email.\n"
+                + "\n"
+                + "Join our WhatsApp group for testers (English):\n"
+                + "• " + wa + "\n"
+                + "• It's the fastest channel for questions, ideas, and live bug reports. We recommend joining on day one.\n"
                 + "\n"
                 + "How to sign in (web):\n"
                 + "1) Open " + url + " and use the beta gate (\"Beta tester login\") on the public home screen.\n"
@@ -215,6 +235,7 @@ public final class BetaMailBodies {
             case "week_5" -> week5Es(n, url, sendDate);
             case "week_6" -> week6Es(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEs(n, url, sendDate);
+            case "whatsapp_group_invite" -> whatsappGroupInviteEs(n, url, sendDate);
             default -> weekGenericEs(n, url, sendDate);
         };
     }
@@ -228,6 +249,7 @@ public final class BetaMailBodies {
             case "week_5" -> week5En(n, url, sendDate);
             case "week_6" -> week6En(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEn(n, url, sendDate);
+            case "whatsapp_group_invite" -> whatsappGroupInviteEn(n, url, sendDate);
             default -> weekGenericEn(n, url, sendDate);
         };
     }
@@ -275,6 +297,46 @@ public final class BetaMailBodies {
                 + "If the Play link says you don't have access, double-check your Google account, or reach out — "
                 + "reply to this email or hello@tarantulapp.com.\n\n"
                 + "Thank you for testing with us.\n\n"
+                + "— The TarantulApp team\n";
+    }
+
+    private static String whatsappGroupInviteEs(String n, String url, String sendDate) {
+        String wa = WHATSAPP_GROUP_URL_ES;
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Hemos abierto un grupo de WhatsApp para los beta testers de TarantulApp en español. "
+                + "Es el lugar más rápido para preguntas, ideas, reportar bugs en caliente y enterarte de "
+                + "novedades antes que nadie.\n\n"
+                + "Únete aquí (toca el enlace en tu teléfono):\n"
+                + wa + "\n\n"
+                + "Qué encontrarás dentro:\n"
+                + "• Anuncios de nuevas funciones y misiones de la semana.\n"
+                + "• Soporte directo del equipo y de otros criadores.\n"
+                + "• Espacio para compartir fotos, dudas y feedback rápido.\n\n"
+                + "App: " + url + "\n\n"
+                + "Si el enlace no abre, asegúrate de tener WhatsApp instalado y de pulsarlo desde el móvil. "
+                + "Cualquier problema, responde a este correo.\n\n"
+                + "¡Te esperamos en el grupo!\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String whatsappGroupInviteEn(String n, String url, String sendDate) {
+        String wa = WHATSAPP_GROUP_URL_EN;
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "We've just opened a WhatsApp group for TarantulApp beta testers in English. "
+                + "It's the fastest place to ask questions, share ideas, report bugs as they happen, "
+                + "and hear about updates first.\n\n"
+                + "Join here (tap the link on your phone):\n"
+                + wa + "\n\n"
+                + "What you'll find inside:\n"
+                + "• Announcements about new features and weekly missions.\n"
+                + "• Direct support from the team and other keepers.\n"
+                + "• A space to share photos, questions, and quick feedback.\n\n"
+                + "App: " + url + "\n\n"
+                + "If the link doesn't open, make sure WhatsApp is installed and tap it from your phone. "
+                + "Any issues, just reply to this email.\n\n"
+                + "See you in the group!\n\n"
                 + "— The TarantulApp team\n";
     }
 
