@@ -6,6 +6,10 @@ export const DEFAULT_BETA_APP_URL = 'https://tarantulapp.com'
 /** Google Play internal-test URL for closed beta (same as in-app callout). */
 export { ANDROID_PLAY_INTERNAL_TEST_URL }
 
+/** WhatsApp community groups for beta testers. Keep in sync with backend `BetaMailBodies.java`. */
+export const WHATSAPP_GROUP_URL_ES = 'https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t'
+export const WHATSAPP_GROUP_URL_EN = 'https://chat.whatsapp.com/CIdg6rBQPo6FXeLNhpZA6a?mode=gi_t'
+
 /** Public asset for Word export and HTML signatures (`frontend/public`). */
 export const BETA_EMAIL_SIGNATURE_IMAGE_PATH = '/email-signature-tarantulapp.png'
 
@@ -28,6 +32,10 @@ export function buildSpanishBetaWelcomeEmail(p) {
     `• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
     '• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.',
     '• La web app sigue disponible en cualquier navegador; el lunes recibirás por correo las misiones de la semana.',
+    '',
+    'Únete a nuestro grupo de WhatsApp para testers (español):',
+    `• ${WHATSAPP_GROUP_URL_ES}`,
+    '• Es el canal más rápido para preguntas, ideas y reportar bugs en caliente. Te recomendamos entrar el primer día.',
     '',
     'Cómo entrar (web):',
     `1) Abre ${appUrl} y usa el acceso beta ("Beta tester login" / acceso beta) en la pantalla pública.`,
@@ -91,6 +99,10 @@ export function buildEnglishBetaWelcomeEmail(p) {
     `• Android is available on Google Play for testers (internal testing track). Link: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
     '• Open that link on your phone while signed into the Google account that has access to the test, install TarantulApp, then sign in with the same email and password as the web app.',
     '• The web app still works in any browser; on Monday you’ll get the week’s missions by email.',
+    '',
+    'Join our WhatsApp group for testers (English):',
+    `• ${WHATSAPP_GROUP_URL_EN}`,
+    '• It’s the fastest channel for questions, ideas, and live bug reports. We recommend joining on day one.',
     '',
     'How to sign in (web):',
     `1) Open ${appUrl} and use the beta gate ("Beta tester login") on the public home screen.`,
