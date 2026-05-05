@@ -1,4 +1,5 @@
 import tarantulaService from '../services/tarantulaService'
+import { shareOrDownloadBlob } from './shareOrDownloadBlob'
 
 function pickImportableShape(item) {
   return {
@@ -12,21 +13,20 @@ function pickImportableShape(item) {
   }
 }
 
-export function downloadCollectionJson(tarantulas, filename = 'tarantulapp-collection.json') {
+export async function downloadCollectionJson(tarantulas, filename = 'tarantulapp-collection.json') {
   const payload = {
     exportedAt: new Date().toISOString(),
     version: 1,
     items: Array.isArray(tarantulas) ? tarantulas.map(pickImportableShape) : [],
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+  await shareOrDownloadBlob({
+    blob,
+    filename,
+    mimeType: 'application/json',
+    title: filename,
+    dialogTitle: filename,
+  })
 }
 
 export async function importCollectionJsonFile(file) {

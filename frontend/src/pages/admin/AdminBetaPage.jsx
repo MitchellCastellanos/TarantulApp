@@ -214,7 +214,7 @@ export default function AdminBetaPage() {
     try {
       const blob = await buildBetaEmailDocxBlob({ bodyText: body })
       const safe = (u.email || 'tester').split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_')
-      downloadBlob(blob, `tarantulapp-beta-email-${safe}.docx`)
+      await downloadBlob(blob, `tarantulapp-beta-email-${safe}.docx`)
     } catch (e) {
       console.error(e)
       window.alert(t('admin.betaEmailWordFailed'))

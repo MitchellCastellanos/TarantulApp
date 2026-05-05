@@ -1,5 +1,6 @@
 import { formatDateInUserZone, formatDateTimeInUserZone } from './dateFormat'
 import { BRAND_LOGO_FOR_LIGHT_BG } from './qrBrandComposite'
+import { shareOrDownloadBlob } from './shareOrDownloadBlob'
 
 function colName(t, key) {
   return t(`dashboard.exportCols.${key}`)
@@ -112,13 +113,12 @@ export async function exportTarantulaCollectionToExcel(tarantulas, t, i18nLang) 
   const blob = new Blob([buf], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${exportFilenameBase()}.xlsx`
-  a.rel = 'noopener'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+  const fname = `${exportFilenameBase()}.xlsx`
+  await shareOrDownloadBlob({
+    blob,
+    filename: fname,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    title: fname,
+    dialogTitle: fname,
+  })
 }

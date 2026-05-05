@@ -1,5 +1,6 @@
 import { BRAND_WITH_TM } from '../constants/brand'
 import { BRAND_LOGO_FOR_LIGHT_BG, buildFullLabelPngDataUrl, labelDocxDimensions } from './qrBrandComposite'
+import { shareOrDownloadBlob } from './shareOrDownloadBlob'
 import {
   AlignmentType,
   Document,
@@ -152,14 +153,12 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
   )
 }
 
-export function triggerDocxDownload(blob, filename) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.rel = 'noopener'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+export async function triggerDocxDownload(blob, filename) {
+  await shareOrDownloadBlob({
+    blob,
+    filename,
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    title: filename,
+    dialogTitle: filename,
+  })
 }

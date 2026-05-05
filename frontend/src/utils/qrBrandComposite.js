@@ -1,5 +1,6 @@
 import QRCode from 'qrcode'
 import { BRAND_WITH_TM } from '../constants/brand'
+import { sanitizeFilename, shareOrDownloadDataUrl } from './shareOrDownloadBlob'
 
 /** Logo sobre fondo claro (QR / Excel / Word en blanco). */
 export const BRAND_LOGO_FOR_LIGHT_BG = '/logo-black.png?v=2'
@@ -202,12 +203,10 @@ export async function downloadBrandedQrPng({
     speciesLine,
     shortIdLine,
   })
-  const safeName = String(filenameBase || 'qr').replace(/[/\\?%*:|"<>]/g, '-')
-  const link = document.createElement('a')
-  link.download = `${safeName}-QR.png`
-  link.href = href
-  link.rel = 'noopener'
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
+  const safeName = sanitizeFilename(filenameBase || 'qr')
+  await shareOrDownloadDataUrl(href, `${safeName}-QR.png`, {
+    mimeType: 'image/png',
+    title: `${safeName} QR`,
+    dialogTitle: `${safeName} QR`,
+  })
 }

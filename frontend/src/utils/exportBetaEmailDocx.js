@@ -1,4 +1,5 @@
 import { BETA_EMAIL_SIGNATURE_IMAGE_PATH } from './welcomeBetaEmail'
+import { shareOrDownloadBlob } from './shareOrDownloadBlob'
 
 /**
  * Build a .docx blob: plain-text body + signature banner image when fetch succeeds.
@@ -50,11 +51,12 @@ export async function buildBetaEmailDocxBlob({ bodyText }) {
   return Packer.toBlob(doc)
 }
 
-export function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+export async function downloadBlob(blob, filename) {
+  await shareOrDownloadBlob({
+    blob,
+    filename,
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    title: filename,
+    dialogTitle: filename,
+  })
 }

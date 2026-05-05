@@ -217,7 +217,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitle'),
         footerNote: t('qrBulk.docFooterNote'),
       })
-      triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
+      await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
     } finally {
       setBusy(false)
@@ -237,7 +237,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: t('qrBulk.docFooterNoteFlex'),
       })
-      triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
+      await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
     } finally {
       setBusy(false)

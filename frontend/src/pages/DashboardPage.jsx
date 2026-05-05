@@ -112,11 +112,11 @@ export default function DashboardPage() {
     }
   }
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     if (!tarantulas.length || jsonBusy) return
     setJsonBusy(true)
     try {
-      downloadCollectionJson(tarantulas)
+      await downloadCollectionJson(tarantulas)
     } finally {
       setJsonBusy(false)
     }

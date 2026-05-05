@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
 import { moltEventDetailStrings } from '../utils/moltEventExtras'
+import { shareOrDownloadBlob } from '../utils/shareOrDownloadBlob'
 
 /** U+2122: jsPDF built-in font lo pinta; no pasar por `safe()` (el regex ASCII lo quitaria). */
 const TRADEMARK = '\u2122'
@@ -578,5 +579,18 @@ export async function exportTarantulaPdf({ tarantula, species, timeline, t, lang
   }
 
   const safeName = (tarantula?.name || 'tarantula').replace(/[^\w\-]+/g, '_')
-  doc.save(`${safeName}_care_sheet.pdf`)
+  const pdfName = `${safeName}_care_sheet.pdf`
+  let blob
+  try {
+    blob = doc.output('blob')
+  } catch {
+    blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' })
+  }
+  await shareOrDownloadBlob({
+    blob,
+    filename: pdfName,
+    mimeType: 'application/pdf',
+    title: `${safeName} care sheet`,
+    dialogTitle: pdfName,
+  })
 }
