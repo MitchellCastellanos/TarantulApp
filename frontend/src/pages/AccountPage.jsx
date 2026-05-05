@@ -75,7 +75,7 @@ export default function AccountPage() {
     collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
   })
 
-  const appVersion = import.meta.env.VITE_APP_VERSION || '0.1.0'
+  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.3'
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
   const loadBilling = useCallback(() => {
