@@ -1369,15 +1369,11 @@
     "title": "TarantulApp\u2122 plans",
     "subtitle": "Subscription-focused: Pro for active keepers and Vendor/Business for commercial operations.",
     "planMatrixIntro": "Founder Seller is an internal invitation-only program and is not part of the public offer. This page only shows subscription plans.",
-    "billingRegionLabel": "Billing country (Stripe Checkout)",
-    "billingRegionHelp": "Pick where your card or tax situation applies; Stripe charges the price for that currency. Must match the Stripe Price IDs configured on the server.",
-    "regionalTable": {
-      "country": "Country / region",
-      "monthly": "Monthly",
-      "annual": "Annual promo",
-      "tax": "Taxes"
-    },
-    "regionalTableFootnote": "Google Play in-app prices follow the same list by country where configured. Web Checkout uses the region you choose here.",
+    "priceShownFor": "Prices for {{place}}, detected from your device language and time zone.",
+    "checkoutRegionHint": "Stripe Checkout uses this region to pick the correct subscription price.",
+    "changeBillingRegion": "Not your billing country?",
+    "billingRegionManualLabel": "Billing country",
+    "useAutoRegion": "Automatic (recommended)",
     "regions": {
       "US": {
         "countryName": "United States",
@@ -1412,7 +1408,7 @@
         "taxNote": "Tax included"
       }
     },
-    "trialThenPricing": "7-day trial on signup, then Pro pricing depends on billing country (United States, Canada, Mexico, Colombia — see table).",
+    "trialThenPricing": "7-day trial on signup, then Pro is billed at the price for your region (we detect it from your device for Stripe Checkout).",
     "pricingAfterTrial": "After the trial: choose Pro at your regional price or stay on Free with the plan cap and core community features.",
     "tierSoon": "Coming soon",
     "checkoutProLabel": "Pro subscription (Stripe)",

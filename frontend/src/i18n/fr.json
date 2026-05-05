@@ -1351,15 +1351,11 @@
     "title": "Offres TarantulApp\u2122",
     "subtitle": "Abonnements centrés: Pro pour les keepers actifs et Vendor/Business pour les opérations commerciales.",
     "planMatrixIntro": "Founder Seller est un programme interne sur invitation, non public. Cette page présente uniquement les abonnements.",
-    "billingRegionLabel": "Pays de facturation (Stripe Checkout)",
-    "billingRegionHelp": "Choisissez la zone fiscale / la carte utilisée ; Stripe facture le prix de cette devise. Doit correspondre aux Price IDs côté serveur.",
-    "regionalTable": {
-      "country": "Pays / région",
-      "monthly": "Mensuel",
-      "annual": "Annuel promo",
-      "tax": "Taxes"
-    },
-    "regionalTableFootnote": "Google Play peut appliquer la même grille par pays. Sur le web, Checkout suit la région choisie ici.",
+    "priceShownFor": "Tarifs pour {{place}}, détectés depuis la langue et le fuseau horaire de l’appareil.",
+    "checkoutRegionHint": "Stripe Checkout utilise cette région pour appliquer le bon prix d’abonnement.",
+    "changeBillingRegion": "Ce n’est pas votre pays de facturation ?",
+    "billingRegionManualLabel": "Pays de facturation",
+    "useAutoRegion": "Automatique (recommandé)",
     "regions": {
       "US": {
         "countryName": "États-Unis",
@@ -1394,7 +1390,7 @@
         "taxNote": "Taxes incluses"
       }
     },
-    "trialThenPricing": "7 jours d’essai gratuits à la création du compte ; ensuite le tarif Pro dépend du pays (États-Unis, Canada, Mexique, Colombie — voir le tableau).",
+    "trialThenPricing": "7 jours d’essai gratuits à la création du compte ; ensuite Pro est facturé selon votre région (détection automatique pour Stripe Checkout).",
     "pricingAfterTrial": "Après l’essai : Pro au tarif régional ou restez en Free avec le plafond du plan.",
     "tierSoon": "Bientôt",
     "checkoutProLabel": "Abonnement Pro (Stripe)",

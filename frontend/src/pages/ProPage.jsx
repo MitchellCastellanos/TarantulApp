@@ -3,14 +3,14 @@ import BrandName from '../components/BrandName'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { useEffect, useState, useRef } from 'react'
-
-const BILLING_REGION_STORAGE = 'tarantulapp-billing-region'
-const BILLING_REGIONS = ['US', 'CA', 'MX', 'CO']
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
+import { BILLING_REGION_CODES, inferBillingRegion } from '../utils/inferBillingRegion'
+
+const REGION_OVERRIDE_KEY = 'tarantulapp-billing-region-override'
 
 export default function ProPage() {
   const { t } = useTranslation()
@@ -21,15 +21,17 @@ export default function ProPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')
   const [interval, setInterval] = useState('month')
-  const [billingRegion, setBillingRegion] = useState(() => {
+  const detectedRegion = useMemo(() => inferBillingRegion(), [])
+  const [regionOverride, setRegionOverride] = useState(() => {
     try {
-      const s = localStorage.getItem(BILLING_REGION_STORAGE)
-      if (s && BILLING_REGIONS.includes(s)) return s
+      const s = localStorage.getItem(REGION_OVERRIDE_KEY)
+      if (s && BILLING_REGION_CODES.includes(s)) return s
     } catch (_) {
       /* ignore */
     }
-    return 'US'
+    return null
   })
+  const billingRegion = regionOverride ?? detectedRegion
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
@@ -62,11 +64,12 @@ export default function ProPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(BILLING_REGION_STORAGE, billingRegion)
+      if (regionOverride) localStorage.setItem(REGION_OVERRIDE_KEY, regionOverride)
+      else localStorage.removeItem(REGION_OVERRIDE_KEY)
     } catch (_) {
       /* ignore */
     }
-  }, [billingRegion])
+  }, [regionOverride])
 
   useEffect(() => {
     if (checkout !== 'success' || !user) return
@@ -278,31 +281,12 @@ export default function ProPage() {
                 </p>
               )}
 
-              <p className="small mb-3" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
-
-              <div className="table-responsive mb-3">
-                <table className="table table-sm table-dark mb-0" style={{ fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr>
-                      <th>{t('pro.regionalTable.country')}</th>
-                      <th>{t('pro.regionalTable.monthly')}</th>
-                      <th>{t('pro.regionalTable.annual')}</th>
-                      <th>{t('pro.regionalTable.tax')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {BILLING_REGIONS.map((code) => (
-                      <tr key={code}>
-                        <td>{t(`pro.regions.${code}.countryName`)}</td>
-                        <td>{t(`pro.regions.${code}.priceMonthly`)}</td>
-                        <td>{t(`pro.regions.${code}.priceYearly`)}</td>
-                        <td>{t(`pro.regions.${code}.taxNote`)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="small text-muted mb-3">{t('pro.regionalTableFootnote')}</p>
+              <p className="small mb-2" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
+              <p className="small text-muted mb-3">
+                {t('pro.priceShownFor', { place: t(`pro.regions.${billingRegion}.countryName`) })}
+                {' '}
+                <span className="text-muted">({t(`pro.regions.${billingRegion}.taxNote`)})</span>
+              </p>
 
               <div className="row g-3 mb-3">
                 <div className="col-lg-4 col-md-6">
@@ -397,21 +381,30 @@ export default function ProPage() {
                     <>
                       <div>
                         <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
-                        <label className="small text-muted d-block mb-1">{t('pro.billingRegionLabel')}</label>
-                        <select
-                          className="form-select form-select-sm mb-2"
-                          style={{ maxWidth: 320 }}
-                          value={billingRegion}
-                          onChange={(e) => setBillingRegion(e.target.value)}
-                          disabled={loadingCheckout}
-                        >
-                          {BILLING_REGIONS.map((code) => (
-                            <option key={code} value={code}>
-                              {t(`pro.regions.${code}.countryName`)}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="small text-muted mb-2">{t('pro.billingRegionHelp')}</p>
+                        <p className="small text-muted mb-2">{t('pro.checkoutRegionHint')}</p>
+                        <details className="small mb-3">
+                          <summary className="text-muted" style={{ cursor: 'pointer' }}>
+                            {t('pro.changeBillingRegion')}
+                          </summary>
+                          <label className="form-label small mb-1 mt-2">{t('pro.billingRegionManualLabel')}</label>
+                          <select
+                            className="form-select form-select-sm"
+                            style={{ maxWidth: 320 }}
+                            value={regionOverride || ''}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              setRegionOverride(v === '' ? null : v)
+                            }}
+                            disabled={loadingCheckout}
+                          >
+                            <option value="">{t('pro.useAutoRegion')}</option>
+                            {BILLING_REGION_CODES.map((code) => (
+                              <option key={code} value={code}>
+                                {t(`pro.regions.${code}.countryName`)}
+                              </option>
+                            ))}
+                          </select>
+                        </details>
                         <div className="d-flex flex-wrap gap-2">
                           <button
                             type="button"
