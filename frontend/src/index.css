@@ -2201,7 +2201,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-premium-dashboard {
   background: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 55%);
   min-height: 100vh;
-  padding-bottom: 5rem;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
 }
 
 .ta-premium-profile-card {
@@ -2404,37 +2404,6 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 .ta-premium-tarantula-card .badge.bg-secondary {
   border-radius: 999px !important;
   border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.ta-premium-bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 120;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.2rem;
-  padding: 0.38rem 0.45rem calc(0.38rem + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
-  backdrop-filter: blur(8px);
-}
-
-.ta-premium-bottom-nav-item {
-  text-decoration: none;
-  color: rgba(156, 163, 175, 0.88);
-  font-size: 0.7rem;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.1rem;
-  min-height: 50px;
-}
-
-.ta-premium-bottom-nav-item.is-active {
-  color: var(--ta-gold-light);
 }
 
 .ta-premium-page {

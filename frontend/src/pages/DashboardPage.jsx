@@ -450,7 +450,7 @@ export default function DashboardPage() {
             )}
           </p>
         ) : (
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 pb-5">
+          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 pb-3">
             {filtered.map(t => (
               <div className="col" key={t.id}>
                 <TarantulaCard tarantula={t} />
@@ -489,24 +489,6 @@ export default function DashboardPage() {
             </div>
           </details>
         )}
-      </div>
-      <div className="ta-premium-bottom-nav d-md-none">
-        <Link to="/" className="ta-premium-bottom-nav-item is-active">
-          <span aria-hidden="true">⌂</span>
-          <span>Home</span>
-        </Link>
-        <Link to="/descubrir" className="ta-premium-bottom-nav-item">
-          <span aria-hidden="true">⌕</span>
-          <span>Search</span>
-        </Link>
-        <Link to="/" className="ta-premium-bottom-nav-item">
-          <span aria-hidden="true">✶</span>
-          <span>My Collection</span>
-        </Link>
-        <Link to="/community" className="ta-premium-bottom-nav-item">
-          <span aria-hidden="true">◌</span>
-          <span>{t('nav.community')}</span>
-        </Link>
       </div>
     </div>
   )
