@@ -4,6 +4,7 @@ import com.tarantulapp.dto.AuthResponse;
 import com.tarantulapp.dto.ChangePasswordRequest;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
+import com.tarantulapp.service.AccountDeletionService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.util.SecurityHelper;
@@ -23,11 +24,16 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final AccountDeletionService accountDeletionService;
     private final SecurityHelper securityHelper;
     private final CaptchaService captchaService;
 
-    public AuthController(AuthService authService, SecurityHelper securityHelper, CaptchaService captchaService) {
+    public AuthController(AuthService authService,
+                          AccountDeletionService accountDeletionService,
+                          SecurityHelper securityHelper,
+                          CaptchaService captchaService) {
         this.authService = authService;
+        this.accountDeletionService = accountDeletionService;
         this.securityHelper = securityHelper;
         this.captchaService = captchaService;
     }
@@ -71,6 +77,17 @@ public class AuthController {
         UUID userId = securityHelper.getCurrentUserId();
         authService.changePassword(userId, req.getCurrentPassword(), req.getNewPassword());
         return ResponseEntity.ok(Map.of("message", "OK"));
+    }
+
+    record DeleteAccountRequest(String currentPassword, String googleIdToken) {}
+
+    @PostMapping("/delete-account")
+    public ResponseEntity<Map<String, String>> deleteAccount(@RequestBody(required = false) DeleteAccountRequest req) {
+        UUID userId = securityHelper.getCurrentUserId();
+        String pw = req != null ? req.currentPassword() : null;
+        String google = req != null ? req.googleIdToken() : null;
+        accountDeletionService.deleteMyAccount(userId, pw, google);
+        return ResponseEntity.ok(Map.of("message", "ok"));
     }
 
     record BetaAgreementBody(Boolean accepted) {}

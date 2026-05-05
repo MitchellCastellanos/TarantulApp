@@ -2,7 +2,9 @@ package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.BetaApplication;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -11,6 +13,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BetaApplicationRepository extends JpaRepository<BetaApplication, UUID> {
+
+    @Modifying
+    @Query("update BetaApplication b set b.approvedUserId = null where b.approvedUserId = :userId")
+    void clearApprovedUserId(@Param("userId") UUID userId);
+
     List<BetaApplication> findByStatusOrderByCreatedAtDesc(String status);
     List<BetaApplication> findAllByOrderByCreatedAtDesc();
     Optional<BetaApplication> findFirstByEmailIgnoreCaseAndStatusOrderByReviewedAtDesc(String email, String status);

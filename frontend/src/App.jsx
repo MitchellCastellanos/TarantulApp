@@ -14,6 +14,7 @@ import ProPage from './pages/ProPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPage from './pages/PrivacyPage'
+import AccountDeletionPage from './pages/AccountDeletionPage'
 import TermsPage from './pages/TermsPage'
 import ContactPage from './pages/ContactPage'
 import AboutPage from './pages/AboutPage'
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
       <Route path="/pro" element={<ProPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/account-deletion" element={<AccountDeletionPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -253,6 +255,10 @@ function Footer() {
           ·
         </span>{' '}
         <Link to="/privacy">{t('account.legal.privacy')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/account-deletion">{t('nav.accountDeletion')}</Link>
         <span className="ta-app-footer__dot" aria-hidden>
           ·
         </span>{' '}

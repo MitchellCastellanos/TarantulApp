@@ -29,6 +29,7 @@
     "qrToolTitle": "Free QR code generator for tarantula enclosure labels",
     "inviteOnlyNavLocked": "Sign in to browse these sections during the closed beta.",
     "contact": "Contact",
+    "accountDeletion": "Delete account",
     "admin": "Admin",
     "about": "About",
     "aboutTitle": "TarantulApp\u2122: mission, community, and open data",
@@ -597,12 +598,13 @@
     "resetSuccess": "Password updated. You can now sign in.",
     "fillRequired": "Enter your email and password.",
     "passwordTooShort": "Password must be at least 6 characters.",
-    "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After that: stay on Free (Cases, Community, Discover, basic AI) or move to Pro ($4.99/mo) for full logs, exports, and bulk QR. Referrals add short trial days and milestones — invite other keepers and improve your results.",
+    "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After that: stay on Free (Cases, Community, Discover, basic AI) or move to Pro at the regional price on the Pro page (US, CA, MX, CO) for full logs, exports, and bulk QR. Referrals add short trial days and milestones — invite other keepers and improve your results.",
     "proTeaserTitle": "Pro at a glance",
     "proTeaserExcelLead": "Excel export:",
-    "proTeaserBody": "Pro ($4.99/mo): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Pro+ and Vendor roll out next; Free stays the wide funnel with Cases, Community, and Discover.",
+    "proTeaserBody": "Pro (regional monthly pricing on the Pro page): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Pro+ and Vendor roll out next; Free stays the wide funnel with Cases, Community, and Discover.",
     "orContinueWith": "or continue with",
     "googleLoginError": "Could not sign in with Google.",
+    "GOOGLE_TOKEN_INVALID": "Google sign-in could not be verified. Try again.",
     "networkError": "Could not reach the server. Check your connection and try again.",
     "loginBadResponse": "The server did not return a valid session. If this keeps happening, let us know.",
     "googlePendingConfig": "Google login is visible, pending client ID configuration.",
@@ -1367,8 +1369,51 @@
     "title": "TarantulApp\u2122 plans",
     "subtitle": "Subscription-focused: Pro for active keepers and Vendor/Business for commercial operations.",
     "planMatrixIntro": "Founder Seller is an internal invitation-only program and is not part of the public offer. This page only shows subscription plans.",
-    "trialThenPricing": "7-day trial on signup, then Pro for $4.99/month or $49.99/year (~17% less than paying month-by-month).",
-    "pricingAfterTrial": "After the trial: Pro from $4.99/month or $49.99/year — or stay on Free with the cap and core community features.",
+    "billingRegionLabel": "Billing country (Stripe Checkout)",
+    "billingRegionHelp": "Pick where your card or tax situation applies; Stripe charges the price for that currency. Must match the Stripe Price IDs configured on the server.",
+    "regionalTable": {
+      "country": "Country / region",
+      "monthly": "Monthly",
+      "annual": "Annual promo",
+      "tax": "Taxes"
+    },
+    "regionalTableFootnote": "Google Play in-app prices follow the same list by country where configured. Web Checkout uses the region you choose here.",
+    "regions": {
+      "US": {
+        "countryName": "United States",
+        "tierHeadline": "US$3.99 / month · United States",
+        "priceMonthly": "US$3.99 / month",
+        "priceYearly": "US$31.99 / year",
+        "saveLabel": "~33% vs 12× monthly",
+        "taxNote": "Excl. sales tax"
+      },
+      "CA": {
+        "countryName": "Canada",
+        "tierHeadline": "CA$4.99 / month · Canada",
+        "priceMonthly": "CA$4.99 / month",
+        "priceYearly": "CA$39.99 / year",
+        "saveLabel": "~33% vs 12× monthly",
+        "taxNote": "Tax included"
+      },
+      "MX": {
+        "countryName": "Mexico",
+        "priceMonthly": "$49 MXN / month",
+        "tierHeadline": "$49 MXN / month · Mexico",
+        "priceYearly": "$399 MXN / year",
+        "saveLabel": "~32% vs 12× monthly",
+        "taxNote": "Tax included"
+      },
+      "CO": {
+        "countryName": "Colombia",
+        "tierHeadline": "$9,900 COP / month · Colombia",
+        "priceMonthly": "$9,900 COP / month",
+        "priceYearly": "$79,900 COP / year",
+        "saveLabel": "~33% vs 12× monthly",
+        "taxNote": "Tax included"
+      }
+    },
+    "trialThenPricing": "7-day trial on signup, then Pro pricing depends on billing country (United States, Canada, Mexico, Colombia — see table).",
+    "pricingAfterTrial": "After the trial: choose Pro at your regional price or stay on Free with the plan cap and core community features.",
     "tierSoon": "Coming soon",
     "checkoutProLabel": "Pro subscription (Stripe)",
     "tierFreeTitle": "Free",
@@ -1449,7 +1494,7 @@
     "priceOr": "or",
     "priceYearly": "$49.99 / year",
     "priceSaveLabel": "~17% vs 12× monthly",
-    "priceYearlyNote": "Annual billing via Stripe once the yearly price id is configured in Railway.",
+    "priceYearlyNote": "Backend env: STRIPE_PRICE_ID_MONTHLY_* and STRIPE_PRICE_ID_YEARLY_* per region (fallback: legacy STRIPE_PRICE_ID_MONTHLY / YEARLY).",
     "checkoutSuccessTitle": "🎉 Welcome to Pro!",
     "checkoutSuccessBody": "Your plan is upgraded. Pro features are active; Vendor/Business arrives in the next phase.",
     "checkoutUpdating": "Confirming your subscription…",
@@ -1497,6 +1542,20 @@
     "platformOpsBody": "Operational communication with Google Play Console, App Store Connect, Stripe, or other providers.",
     "marketingTitle": "Marketing — partnerships & proposals",
     "marketingBody": "Sponsorships, collaborations, press, or commercial ideas you would like to explore with TarantulApp\u2122."
+  },
+  "accountDeletion": {
+    "title": "Delete your account",
+    "canonicalUrlLabel": "Public page (for app stores):",
+    "intro": "You can delete your TarantulApp account yourself at any time. This removes your keeper profile, collection data you stored in the app, community posts, marketplace listings, and messages, subject to our retention and legal exceptions described in the Privacy Policy.",
+    "step1": "Sign in to the app on the web or in the mobile app (same account).",
+    "step2": "Open Account / settings (web: Account in the menu).",
+    "step3": "Scroll to Delete account, enter your current password, or use the Google button if you sign in with Google.",
+    "step4": "After deletion you can close the app; your session will end.",
+    "ctaLogin": "Sign in",
+    "ctaAccount": "Open Account",
+    "urlsNote": "Short links on this site:",
+    "supportFallback": "If you cannot sign in, email us from the address on your account and we will help with deletion:",
+    "playDataNote": "Google Play purchase history is managed in your Google account; cancel or manage subscriptions in Play Store subscriptions if needed."
   },
   "admin": {
     "title": "Admin panel",
@@ -1819,7 +1878,16 @@
       "links": "Links",
       "legal": "Legal",
       "help": "Help",
-      "about": "About"
+      "about": "About",
+      "danger": "Delete account"
+    },
+    "delete": {
+      "intro": "Permanently delete your account and associated data (collection, posts, marketplace listings, messages). This cannot be undone.",
+      "passwordLabel": "Confirm with your current password",
+      "passwordRequired": "Enter your password to confirm deletion.",
+      "googleHint": "Or confirm with the Google account that uses this email:",
+      "deleting": "Deleting…",
+      "submit": "Delete my account"
     },
     "preferences": {
       "theme": "Theme",
@@ -1876,7 +1944,11 @@
       "PORTAL_FAILED": "Could not open the billing portal.",
       "CURRENT_PASSWORD_REQUIRED": "Enter your current password.",
       "NEW_PASSWORD_REQUIRED": "Enter your new password.",
-      "Validation failed": "Check the form fields."
+      "Validation failed": "Check the form fields.",
+      "REAUTH_REQUIRED": "Enter your password or use Google to confirm.",
+      "REAUTH_ONE_METHOD": "Use only one confirmation method (password or Google).",
+      "GOOGLE_EMAIL_MISMATCH": "That Google account does not match this email.",
+      "GOOGLE_TOKEN_INVALID": "Google sign-in could not be verified. Try again."
     },
     "links": {
       "reminders": "Reminders",

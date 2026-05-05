@@ -37,8 +37,12 @@ export default function PrivacyPage() {
         <p>Your data is stored in a secure PostgreSQL database hosted on Supabase. Photos are stored on Cloudinary. All connections use HTTPS/TLS encryption.</p>
 
         <h5 className="fw-bold mt-4">4. Your Rights</h5>
-        <p>You may request deletion of your account and all associated data at any time by emailing{' '}
-          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>. We will process the request within 30 days.</p>
+        <p>
+          You may delete your account yourself in the app: see{' '}
+          <Link to="/account-deletion">Account deletion</Link>
+          {' '}(sign in → Account → Delete account). You may also request deletion by emailing{' '}
+          <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>. We will process requests within 30 days where applicable.
+        </p>
 
         <h5 className="fw-bold mt-4">5. Cookies</h5>
         <p>

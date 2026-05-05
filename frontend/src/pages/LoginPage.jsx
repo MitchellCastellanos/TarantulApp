@@ -158,6 +158,8 @@ export default function LoginPage() {
             const d = err.response?.data
             if (d?.error === 'REGISTRATION_CLOSED') {
               setError(tRef.current('auth.registrationClosed'))
+            } else if (d?.error === 'GOOGLE_TOKEN_INVALID') {
+              setError(tRef.current('auth.GOOGLE_TOKEN_INVALID'))
             } else {
             setError(d?.error || tRef.current('auth.googleLoginError'))
             }

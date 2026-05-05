@@ -66,6 +66,7 @@ implementada la verificacion real con Android Publisher API.
 |----------|---------|-------|
 | `APP_ENVIRONMENT` | `${SPRING_PROFILES_ACTIVE:development}` | Prod debe ser `production`. |
 | `PLAY_BILLING_PRODUCTION_STUB_GUARD` | `true` | Solo `false` cuando server-side verify este lista. |
+| `STRIPE_PRICE_ID_MONTHLY_US` … `STRIPE_PRICE_ID_YEARLY_CO` | (vacío) | Price IDs por región (US, CA, MX, CO) e intervalo; el checkout envía `region` desde `/pro`. Si faltan, se usa el precio US y luego `STRIPE_PRICE_ID_MONTHLY` / `YEARLY`. |
 
 ## Pendientes / siguiente fase
 

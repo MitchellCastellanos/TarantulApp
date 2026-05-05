@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.billingportal.Session;
 import com.stripe.net.Webhook;
@@ -39,6 +40,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -658,6 +660,34 @@ public class BillingService {
 
     public String getGooglePlayMode() {
         return googlePlayMode;
+    }
+
+    /**
+     * Best-effort cancel of Stripe subscriptions before the user row is removed (DB cascades subscription rows).
+     */
+    public void cancelStripeSubscriptionsForUser(UUID userId) {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            return;
+        }
+        Stripe.apiKey = stripeSecretKey;
+        List<Subscription> subs = subscriptionRepository.findByUserId(userId);
+        for (Subscription sub : subs) {
+            if (sub.getProvider() == null || !"stripe".equalsIgnoreCase(sub.getProvider().trim())) {
+                continue;
+            }
+            String sid = sub.getProviderSubscriptionId();
+            if (sid == null || sid.isBlank()) {
+                continue;
+            }
+            try {
+                com.stripe.model.Subscription st = com.stripe.model.Subscription.retrieve(sid);
+                if (st != null && !"canceled".equalsIgnoreCase(st.getStatus())) {
+                    st.cancel();
+                }
+            } catch (StripeException e) {
+                log.warn("Could not cancel Stripe subscription {} for user {}: {}", sid, userId, e.getMessage());
+            }
+        }
     }
 
     private boolean isProductionEnvironment() {

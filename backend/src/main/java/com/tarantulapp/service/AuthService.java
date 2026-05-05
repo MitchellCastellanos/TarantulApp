@@ -160,25 +160,8 @@ public class AuthService {
     }
 
     public AuthResponse googleLogin(String idToken, String referralCode) {
-        Map<String, Object> tokenInfo;
-        try {
-            tokenInfo = restClient.get()
-                    .uri("https://oauth2.googleapis.com/tokeninfo?id_token={idToken}", idToken)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
-        } catch (RestClientException e) {
-            throw new IllegalArgumentException("Google token inválido");
-        }
-        if (tokenInfo == null) {
-            throw new IllegalArgumentException("Google token inválido");
-        }
-        Object emailRaw = tokenInfo.get("email");
-        Object verifiedRaw = tokenInfo.get("email_verified");
-        String email = emailRaw == null ? "" : String.valueOf(emailRaw).trim().toLowerCase();
-        boolean verified = verifiedRaw != null && "true".equalsIgnoreCase(String.valueOf(verifiedRaw));
-        if (email.isBlank() || !verified) {
-            throw new IllegalArgumentException("Google token inválido");
-        }
+        Map<String, Object> tokenInfo = fetchGoogleTokenInfo(idToken);
+        String email = extractVerifiedEmailFromGoogleTokenInfo(tokenInfo);
 
         User user = findByEmailWithOneRetry(email).orElseGet(() -> {
             if (inviteOnlyRegistration) {
@@ -212,6 +195,69 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
+    }
+
+    /**
+     * Validates Google ID token via Google's tokeninfo endpoint; returns normalized lower-case email.
+     */
+    public String verifyGoogleIdTokenEmail(String idToken) {
+        return extractVerifiedEmailFromGoogleTokenInfo(fetchGoogleTokenInfo(idToken));
+    }
+
+    private String extractVerifiedEmailFromGoogleTokenInfo(Map<String, Object> tokenInfo) {
+        if (tokenInfo == null) {
+            throw new IllegalArgumentException("GOOGLE_TOKEN_INVALID");
+        }
+        Object emailRaw = tokenInfo.get("email");
+        Object verifiedRaw = tokenInfo.get("email_verified");
+        String email = emailRaw == null ? "" : String.valueOf(emailRaw).trim().toLowerCase(Locale.ROOT);
+        boolean verified = verifiedRaw != null && "true".equalsIgnoreCase(String.valueOf(verifiedRaw));
+        if (email.isBlank() || !verified) {
+            throw new IllegalArgumentException("GOOGLE_TOKEN_INVALID");
+        }
+        return email;
+    }
+
+    private Map<String, Object> fetchGoogleTokenInfo(String idToken) {
+        try {
+            return restClient.get()
+                    .uri("https://oauth2.googleapis.com/tokeninfo?id_token={idToken}", idToken)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        } catch (RestClientException e) {
+            throw new IllegalArgumentException("GOOGLE_TOKEN_INVALID");
+        }
+    }
+
+    /**
+     * Account deletion: require either current password or a Google ID token for the same email as the account
+     * (not both).
+     */
+    public void assertAccountDeletionReauthentication(UUID userId, String currentPassword, String googleIdToken) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean hasPw = currentPassword != null && !currentPassword.isBlank();
+        boolean hasGo = googleIdToken != null && !googleIdToken.isBlank();
+        if (hasPw && hasGo) {
+            throw new IllegalArgumentException("REAUTH_ONE_METHOD");
+        }
+        if (!hasPw && !hasGo) {
+            throw new IllegalArgumentException("REAUTH_REQUIRED");
+        }
+        if (hasPw) {
+            if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+                throw new IllegalArgumentException("INVALID_CURRENT_PASSWORD");
+            }
+            return;
+        }
+        String emailFromToken = verifyGoogleIdTokenEmail(googleIdToken);
+        if (!emailFromToken.equalsIgnoreCase(trim(user.getEmail()))) {
+            throw new IllegalArgumentException("GOOGLE_EMAIL_MISMATCH");
+        }
+    }
+
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
     }
 
     private java.util.Optional<User> findByEmailWithOneRetry(String email) {

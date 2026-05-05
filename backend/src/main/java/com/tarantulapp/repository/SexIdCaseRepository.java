@@ -12,6 +12,8 @@ import java.util.UUID;
 
 public interface SexIdCaseRepository extends JpaRepository<SexIdCase, UUID> {
 
+    void deleteByAuthorUserId(UUID authorUserId);
+
     Page<SexIdCase> findByHiddenAtIsNullOrderByCreatedAtDesc(Pageable pageable);
 
     Page<SexIdCase> findByAuthorUserIdOrderByCreatedAtDesc(UUID authorUserId, Pageable pageable);

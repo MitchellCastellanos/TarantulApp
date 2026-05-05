@@ -43,6 +43,8 @@ Railway/Fly.io/Vercel estan seteadas estas variables (no commitear nunca):
 | `APP_ENVIRONMENT` | `production` |
 | `SENTRY_DSN` | sentry.io -> Project -> Client Keys |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | dashboard.stripe.com |
+| `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY` | Legacy fallbacks (single-currency deploys) |
+| `STRIPE_PRICE_ID_MONTHLY_US` … `STRIPE_PRICE_ID_YEARLY_CO` | One Stripe Price per region (US, CA, MX, CO) × interval — see `application.properties` |
 | `CAPTCHA_SECRET` | hcaptcha.com -> New Site |
 | `CLOUDINARY_*` | cloudinary.com -> Settings -> API Keys |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP provider |

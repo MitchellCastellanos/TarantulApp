@@ -29,6 +29,7 @@
     "qrToolTitle": "Generador de códigos QR gratis para etiquetar terrarios",
     "inviteOnlyNavLocked": "Inicia sesión para usar estos enlaces durante la beta cerrada.",
     "contact": "Contacto",
+    "accountDeletion": "Eliminar cuenta",
     "admin": "Admin",
     "about": "Acerca de",
     "aboutTitle": "TarantulApp\u2122: misión, comunidad y datos abiertos",
@@ -603,6 +604,7 @@
     "proTeaserBody": "Pro ($4.99/mes): colección sin tope, exportaciones (Excel, PDF), QR masivo, IA más detallada y análisis completo de Cases. Pro+ y Vendor llegan después; Free sigue siendo la puerta de entrada con Cases, Comunidad y Discover.",
     "orContinueWith": "o continúa con",
     "googleLoginError": "No se pudo iniciar sesión con Google.",
+    "GOOGLE_TOKEN_INVALID": "No se pudo verificar Google. Intenta de nuevo.",
     "networkError": "No pudimos conectar con el servidor. Revisa tu red o inténtalo más tarde.",
     "loginBadResponse": "El servidor no devolvió una sesión válida. Si el fallo continúa, avísanos.",
     "googlePendingConfig": "Login con Google visible, pendiente de configurar client ID.",
@@ -1349,8 +1351,51 @@
     "title": "Planes TarantulApp\u2122",
     "subtitle": "Suscripciones enfocadas: Pro para keepers activos y Vendor/Business para operación comercial.",
     "planMatrixIntro": "Founder Seller es interno por invitación y no forma parte de la oferta pública. En esta página solo mostramos suscripciones activas/comerciales.",
-    "trialThenPricing": "Prueba gratis 7 días al crear cuenta. Después: Pro por $4.99 USD/mes o $49.99 USD/año (≈17 % menos que pagar mes a mes).",
-    "pricingAfterTrial": "Tras la prueba: Pro desde $4.99 USD/mes o $49.99 USD/año — o sigue en Free con el cupo y funciones básicas.",
+    "billingRegionLabel": "País de facturación (Stripe Checkout)",
+    "billingRegionHelp": "Elige dónde aplica tu tarjeta o situación fiscal; Stripe cobra la lista de ese país. Debe coincidir con los Price IDs configurados en el servidor.",
+    "regionalTable": {
+      "country": "País / región",
+      "monthly": "Mensual",
+      "annual": "Anual promo",
+      "tax": "Impuestos"
+    },
+    "regionalTableFootnote": "Google Play puede usar los mismos precios por país donde estén configurados. En web, Checkout usa la región que eliges aquí.",
+    "regions": {
+      "US": {
+        "countryName": "Estados Unidos",
+        "tierHeadline": "US$3.99 / mes · Estados Unidos",
+        "priceMonthly": "US$3.99 / mes",
+        "priceYearly": "US$31.99 / año",
+        "saveLabel": "~33 % vs 12 meses",
+        "taxNote": "Sin impuesto de ventas incl."
+      },
+      "CA": {
+        "countryName": "Canadá",
+        "tierHeadline": "CA$4.99 / mes · Canadá",
+        "priceMonthly": "CA$4.99 / mes",
+        "priceYearly": "CA$39.99 / año",
+        "saveLabel": "~33 % vs 12 meses",
+        "taxNote": "Impuestos incluidos"
+      },
+      "MX": {
+        "countryName": "México",
+        "tierHeadline": "$49 MXN / mes · México",
+        "priceMonthly": "$49 MXN / mes",
+        "priceYearly": "$399 MXN / año",
+        "saveLabel": "~32 % vs 12 meses",
+        "taxNote": "Impuestos incluidos"
+      },
+      "CO": {
+        "countryName": "Colombia",
+        "tierHeadline": "9.900 COP / mes · Colombia",
+        "priceMonthly": "9.900 COP / mes",
+        "priceYearly": "79.900 COP / año",
+        "saveLabel": "~33 % vs 12 meses",
+        "taxNote": "Impuestos incluidos"
+      }
+    },
+    "trialThenPricing": "Prueba gratis 7 días al crear cuenta. Después el precio Pro depende del país de facturación (Estados Unidos, Canadá, México, Colombia — ver tabla).",
+    "pricingAfterTrial": "Tras la prueba: Pro al precio regional o sigue en Free con el cupo y las funciones base.",
     "tierSoon": "Próximamente",
     "checkoutProLabel": "Suscripción Pro (Stripe)",
     "tierFreeTitle": "Free",
@@ -1431,7 +1476,7 @@
     "priceOr": "o",
     "priceYearly": "$49.99 USD / año",
     "priceSaveLabel": "≈17% vs 12× mensual",
-    "priceYearlyNote": "Facturación anual vía Stripe cuando el price id anual esté configurado en Railway.",
+    "priceYearlyNote": "Variables en backend: STRIPE_PRICE_ID_MONTHLY_* y STRIPE_PRICE_ID_YEARLY_* por región (respaldo: STRIPE_PRICE_ID_MONTHLY / YEARLY).",
     "checkoutSuccessTitle": "🎉 ¡Bienvenido a Pro!",
     "checkoutSuccessBody": "Tu plan fue actualizado. Funciones Pro ya activas; Vendor/Business llega en la siguiente fase.",
     "checkoutUpdating": "Confirmando tu suscripción…",
@@ -1479,6 +1524,20 @@
     "platformOpsBody": "Comunicaciones operativas con Google Play Console, App Store Connect, Stripe u otros proveedores.",
     "marketingTitle": "Marketing — alianzas y propuestas",
     "marketingBody": "Patrocinios, colaboraciones, prensa o propuestas comerciales que quieran sumarse a TarantulApp\u2122."
+  },
+  "accountDeletion": {
+    "title": "Eliminar tu cuenta",
+    "canonicalUrlLabel": "Página pública (para tiendas):",
+    "intro": "Puedes eliminar tu cuenta de TarantulApp cuando quieras. Se borran tu perfil keeper, los datos de colección guardados en la app, publicaciones en comunidad, anuncios del marketplace y mensajes, salvo lo que la política de privacidad reserve por ley.",
+    "step1": "Inicia sesión en la web o en la app móvil (misma cuenta).",
+    "step2": "Abre Cuenta / ajustes (en web: Cuenta en el menú).",
+    "step3": "Baja hasta Eliminar cuenta, escribe tu contraseña actual o usa el botón de Google si entras con Google.",
+    "step4": "Tras eliminar, puedes cerrar; la sesión terminará.",
+    "ctaLogin": "Iniciar sesión",
+    "ctaAccount": "Abrir Cuenta",
+    "urlsNote": "Enlaces cortos en este sitio:",
+    "supportFallback": "Si no puedes iniciar sesión, escríbenos desde el correo de tu cuenta y ayudamos con el borrado:",
+    "playDataNote": "El historial de compras en Google Play se gestiona en tu cuenta de Google; cancela o administra la suscripción en Google Play si aplica."
   },
   "admin": {
     "title": "Panel admin",
@@ -1801,7 +1860,16 @@
       "links": "Enlaces",
       "legal": "Legal",
       "help": "Ayuda",
-      "about": "Acerca de"
+      "about": "Acerca de",
+      "danger": "Eliminar cuenta"
+    },
+    "delete": {
+      "intro": "Eliminar permanentemente tu cuenta y datos asociados (colección, posts, anuncios, mensajes). No se puede deshacer.",
+      "passwordLabel": "Confirma con tu contraseña actual",
+      "passwordRequired": "Escribe tu contraseña para confirmar.",
+      "googleHint": "O confirma con la cuenta de Google que usa este correo:",
+      "deleting": "Eliminando…",
+      "submit": "Eliminar mi cuenta"
     },
     "preferences": {
       "theme": "Tema",
@@ -1856,7 +1924,11 @@
       "PORTAL_FAILED": "No se pudo abrir el portal de facturación.",
       "CURRENT_PASSWORD_REQUIRED": "Indica tu contraseña actual.",
       "NEW_PASSWORD_REQUIRED": "Indica la nueva contraseña.",
-      "Validation failed": "Revisa los campos del formulario."
+      "Validation failed": "Revisa los campos del formulario.",
+      "REAUTH_REQUIRED": "Indica tu contraseña o usa Google para confirmar.",
+      "REAUTH_ONE_METHOD": "Usa solo un método: contraseña o Google.",
+      "GOOGLE_EMAIL_MISMATCH": "Esa cuenta de Google no coincide con este correo.",
+      "GOOGLE_TOKEN_INVALID": "No se pudo verificar Google. Intenta de nuevo."
     },
     "links": {
       "reminders": "Recordatorios",

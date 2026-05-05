@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,6 +42,24 @@ public class BillingController {
 
     @Value("${stripe.price-id-yearly:}")
     private String priceIdYearly;
+
+    /** Region-specific Stripe Price IDs (Products dashboard). Fallback: US → legacy {@link #priceIdMonthly} / {@link #priceIdYearly}. */
+    @Value("${stripe.price-id-monthly-us:}")
+    private String priceIdMonthlyUs;
+    @Value("${stripe.price-id-yearly-us:}")
+    private String priceIdYearlyUs;
+    @Value("${stripe.price-id-monthly-ca:}")
+    private String priceIdMonthlyCa;
+    @Value("${stripe.price-id-yearly-ca:}")
+    private String priceIdYearlyCa;
+    @Value("${stripe.price-id-monthly-mx:}")
+    private String priceIdMonthlyMx;
+    @Value("${stripe.price-id-yearly-mx:}")
+    private String priceIdYearlyMx;
+    @Value("${stripe.price-id-monthly-co:}")
+    private String priceIdMonthlyCo;
+    @Value("${stripe.price-id-yearly-co:}")
+    private String priceIdYearlyCo;
 
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
@@ -85,7 +104,8 @@ public class BillingController {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         String interval = body != null ? body.getOrDefault("interval", "month") : "month";
-        String priceId = "year".equals(interval) ? priceIdYearly : priceIdMonthly;
+        String regionRaw = body != null ? body.get("region") : null;
+        String priceId = resolveStripePriceId(interval, regionRaw);
 
         if (priceId == null || priceId.isBlank()) {
             return ResponseEntity.ok(Map.of("checkoutEnabled", false, "url", ""));
@@ -105,6 +125,7 @@ public class BillingController {
                     .setSuccessUrl(baseUrl + "/pro?checkout=success&session_id={CHECKOUT_SESSION_ID}")
                     .setCancelUrl(baseUrl + "/pro?checkout=cancel")
                     .putMetadata("userId", userId.toString())
+                    .putMetadata("billingRegion", normalizeBillingRegion(regionRaw))
                     .build();
 
             Session session = Session.create(params);
@@ -197,5 +218,50 @@ public class BillingController {
 
     private boolean isStripeConfigured() {
         return stripeSecretKey != null && !stripeSecretKey.isBlank();
+    }
+
+    private static String firstNonBlank(String... candidates) {
+        if (candidates == null) {
+            return "";
+        }
+        for (String s : candidates) {
+            if (s != null && !s.isBlank()) {
+                return s.trim();
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Pick Stripe Price id for checkout. {@code region}: US, CA, MX, CO (case-insensitive).
+     * Resolution order per region: region-specific → US-specific → legacy global price ids.
+     */
+    private String resolveStripePriceId(String interval, String region) {
+        boolean yearly = "year".equalsIgnoreCase(String.valueOf(interval));
+        String def = yearly ? priceIdYearly : priceIdMonthly;
+        String us = yearly ? priceIdYearlyUs : priceIdMonthlyUs;
+        String ca = yearly ? priceIdYearlyCa : priceIdMonthlyCa;
+        String mx = yearly ? priceIdYearlyMx : priceIdMonthlyMx;
+        String co = yearly ? priceIdYearlyCo : priceIdMonthlyCo;
+        String r = normalizeBillingRegion(region);
+        return switch (r) {
+            case "CA" -> firstNonBlank(ca, us, def);
+            case "MX" -> firstNonBlank(mx, us, def);
+            case "CO" -> firstNonBlank(co, us, def);
+            default -> firstNonBlank(us, def);
+        };
+    }
+
+    private static String normalizeBillingRegion(String region) {
+        if (region == null || region.isBlank()) {
+            return "US";
+        }
+        String u = region.trim().toUpperCase(Locale.ROOT);
+        return switch (u) {
+            case "CA", "CAN", "CANADA" -> "CA";
+            case "MX", "MEX", "MEXICO" -> "MX";
+            case "CO", "COL", "COLOMBIA" -> "CO";
+            default -> "US";
+        };
     }
 }

@@ -2,7 +2,7 @@ import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 import authService from '../services/authService'
@@ -75,6 +75,12 @@ export default function AccountPage() {
     collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
   })
 
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const googleDeleteBtnRef = useRef(null)
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
   const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.3'
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
@@ -109,6 +115,57 @@ export default function AccountPage() {
       .then((list) => setTarantulas(Array.isArray(list) ? list : []))
       .catch(() => setTarantulas([]))
   }, [user])
+
+  useLayoutEffect(() => {
+    if (!googleClientId || !googleDeleteBtnRef.current) return undefined
+    const existing = document.querySelector('script[data-google-identity="1"]')
+    const initGoogle = () => {
+      if (!window.google?.accounts?.id || !googleDeleteBtnRef.current) return
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response) => {
+          if (!response?.credential) return
+          setDeleteLoading(true)
+          setDeleteError('')
+          try {
+            await authService.deleteAccount({ googleIdToken: response.credential })
+            logout()
+            navigate('/login')
+          } catch (err) {
+            setDeleteError(mapRequestError(err, t))
+          } finally {
+            setDeleteLoading(false)
+          }
+        },
+      })
+      googleDeleteBtnRef.current.innerHTML = ''
+      window.google.accounts.id.renderButton(googleDeleteBtnRef.current, {
+        type: 'standard',
+        shape: 'rectangular',
+        theme: 'outline',
+        text: 'continue_with',
+        size: 'medium',
+        width: 280,
+      })
+    }
+
+    if (existing) {
+      initGoogle()
+      return () => {
+        if (window.google?.accounts?.id) window.google.accounts.id.cancel()
+      }
+    }
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.dataset.googleIdentity = '1'
+    script.onload = initGoogle
+    document.head.appendChild(script)
+    return () => {
+      if (window.google?.accounts?.id) window.google.accounts.id.cancel()
+    }
+  }, [googleClientId, logout, navigate, t])
 
   const plan = billing?.plan || user?.plan || 'FREE'
   useEffect(() => {
@@ -270,6 +327,25 @@ export default function AccountPage() {
       setPasswordError(mapRequestError(err, t))
     } finally {
       setPasswordSubmitting(false)
+    }
+  }
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault()
+    setDeleteError('')
+    if (!deleteConfirmPassword.trim()) {
+      setDeleteError(t('account.delete.passwordRequired'))
+      return
+    }
+    setDeleteLoading(true)
+    try {
+      await authService.deleteAccount({ currentPassword: deleteConfirmPassword })
+      logout()
+      navigate('/login')
+    } catch (err) {
+      setDeleteError(mapRequestError(err, t))
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -636,6 +712,42 @@ export default function AccountPage() {
             <p className="small text-muted mb-0">
               {t('account.about.line', { version: appVersion })}
             </p>
+          </section>
+
+          <section className="mb-4 pb-4 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
+            <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-error, #c96b6b)', letterSpacing: '0.06em' }}>
+              {t('account.sections.danger')}
+            </h2>
+            <p className="small text-muted mb-3">{t('account.delete.intro')}</p>
+            <form onSubmit={handleDeleteAccount} className="mb-3">
+              <label className="form-label small text-muted mb-1">{t('account.delete.passwordLabel')}</label>
+              <input
+                type="password"
+                className="form-control form-control-sm mb-2"
+                autoComplete="current-password"
+                value={deleteConfirmPassword}
+                onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+                disabled={deleteLoading}
+              />
+              <button
+                type="submit"
+                className="btn btn-sm btn-outline-danger"
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? t('account.delete.deleting') : t('account.delete.submit')}
+              </button>
+            </form>
+            {googleClientId ? (
+              <div className="mb-2">
+                <p className="small text-muted mb-2">{t('account.delete.googleHint')}</p>
+                <div ref={googleDeleteBtnRef} />
+              </div>
+            ) : null}
+            {deleteError ? (
+              <p className="small text-danger mb-0" role="alert">
+                {deleteError}
+              </p>
+            ) : null}
           </section>
 
           <div className="pt-2 border-top" style={{ borderColor: 'var(--ta-border)' }}>

@@ -4,6 +4,9 @@ import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef } from 'react'
+
+const BILLING_REGION_STORAGE = 'tarantulapp-billing-region'
+const BILLING_REGIONS = ['US', 'CA', 'MX', 'CO']
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
@@ -18,6 +21,15 @@ export default function ProPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')
   const [interval, setInterval] = useState('month')
+  const [billingRegion, setBillingRegion] = useState(() => {
+    try {
+      const s = localStorage.getItem(BILLING_REGION_STORAGE)
+      if (s && BILLING_REGIONS.includes(s)) return s
+    } catch (_) {
+      /* ignore */
+    }
+    return 'US'
+  })
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
@@ -47,6 +59,14 @@ export default function ProPage() {
   useEffect(() => {
     if (user) loadBilling()
   }, [user?.id])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BILLING_REGION_STORAGE, billingRegion)
+    } catch (_) {
+      /* ignore */
+    }
+  }, [billingRegion])
 
   useEffect(() => {
     if (checkout !== 'success' || !user) return
@@ -111,7 +131,7 @@ export default function ProPage() {
     setError('')
     setLoadingCheckout(true)
     try {
-      const session = await billingService.createCheckoutSession(interval)
+      const session = await billingService.createCheckoutSession(interval, billingRegion)
       if (!session?.url) throw new Error('checkout-url-missing')
       window.location.href = session.url
     } catch (e) {
@@ -155,11 +175,24 @@ export default function ProPage() {
     }
   }
 
-  const tierCard = ({ toneClass = '', titleKey, priceKey, taglineKey, listKeys, corner = null, footer = null }) => (
+  const tierCard = ({
+    toneClass = '',
+    titleKey,
+    priceKey,
+    priceOverride,
+    taglineKey,
+    listKeys,
+    corner = null,
+    footer = null,
+  }) => (
     <div className={`border rounded p-3 h-100 position-relative ${toneClass}`}>
       {corner}
       <h6 className="fw-bold mb-1">{t(titleKey)}</h6>
-      {priceKey && <div className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{t(priceKey)}</div>}
+      {(priceOverride || priceKey) && (
+        <div className="fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>
+          {priceOverride || t(priceKey)}
+        </div>
+      )}
       {taglineKey && <p className="small text-muted mb-2" style={{ lineHeight: 1.45 }}>{t(taglineKey)}</p>}
       <ul className="small mb-0 ps-3" style={{ lineHeight: 1.5 }}>
         {listKeys.map((k) => (
@@ -247,6 +280,30 @@ export default function ProPage() {
 
               <p className="small mb-3" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
 
+              <div className="table-responsive mb-3">
+                <table className="table table-sm table-dark mb-0" style={{ fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr>
+                      <th>{t('pro.regionalTable.country')}</th>
+                      <th>{t('pro.regionalTable.monthly')}</th>
+                      <th>{t('pro.regionalTable.annual')}</th>
+                      <th>{t('pro.regionalTable.tax')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {BILLING_REGIONS.map((code) => (
+                      <tr key={code}>
+                        <td>{t(`pro.regions.${code}.countryName`)}</td>
+                        <td>{t(`pro.regions.${code}.priceMonthly`)}</td>
+                        <td>{t(`pro.regions.${code}.priceYearly`)}</td>
+                        <td>{t(`pro.regions.${code}.taxNote`)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="small text-muted mb-3">{t('pro.regionalTableFootnote')}</p>
+
               <div className="row g-3 mb-3">
                 <div className="col-lg-4 col-md-6">
                   {tierCard({
@@ -258,7 +315,7 @@ export default function ProPage() {
                 <div className="col-lg-4 col-md-6">
                   {tierCard({
                     titleKey: 'pro.tierProTitle',
-                    priceKey: 'pro.tierProPrice',
+                    priceOverride: t(`pro.regions.${billingRegion}.tierHeadline`),
                     taglineKey: 'pro.tierProTagline',
                     listKeys: ['pro.tierProLi1', 'pro.tierProLi2', 'pro.tierProLi3', 'pro.tierProLi4', 'pro.tierProLi5', 'pro.tierProLi6'],
                     corner: <span className="badge bg-dark position-absolute" style={{ top: 8, right: 10 }}>PRO</span>,
@@ -340,22 +397,37 @@ export default function ProPage() {
                     <>
                       <div>
                         <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
+                        <label className="small text-muted d-block mb-1">{t('pro.billingRegionLabel')}</label>
+                        <select
+                          className="form-select form-select-sm mb-2"
+                          style={{ maxWidth: 320 }}
+                          value={billingRegion}
+                          onChange={(e) => setBillingRegion(e.target.value)}
+                          disabled={loadingCheckout}
+                        >
+                          {BILLING_REGIONS.map((code) => (
+                            <option key={code} value={code}>
+                              {t(`pro.regions.${code}.countryName`)}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="small text-muted mb-2">{t('pro.billingRegionHelp')}</p>
                         <div className="d-flex flex-wrap gap-2">
                           <button
                             type="button"
                             className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
                             onClick={() => setInterval('month')}
                           >
-                            {t('pro.priceMonthly')}
+                            {t(`pro.regions.${billingRegion}.priceMonthly`)}
                           </button>
                           <button
                             type="button"
                             className={`btn btn-sm ${interval === 'year' ? 'btn-dark' : 'btn-outline-secondary'}`}
                             onClick={() => setInterval('year')}
                           >
-                            {t('pro.priceYearly')}{' '}
+                            {t(`pro.regions.${billingRegion}.priceYearly`)}{' '}
                             <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
-                              {t('pro.priceSaveLabel')}
+                              {t(`pro.regions.${billingRegion}.saveLabel`)}
                             </span>
                           </button>
                         </div>

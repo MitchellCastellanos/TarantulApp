@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
   '/marketplace',
   '/pro',
   '/privacy',
+  '/account-deletion',
   '/terms',
   '/contact',
 ]
