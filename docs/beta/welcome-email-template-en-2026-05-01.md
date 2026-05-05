@@ -53,7 +53,7 @@ Your account is flagged as a beta tester — you’ll see beta features and the 
 
 - Bugs: tap “Report a bug” in the app — it attaches page, device, and version.
 - Ideas / questions: reply to this email.
-- Each Monday you’ll get a short email with the weekly mission.
+- The Week 1 mission is already included here as your first steps; we’ll follow up with the next weeks after that.
 
 4) What we ask
 

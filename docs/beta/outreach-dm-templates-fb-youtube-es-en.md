@@ -33,7 +33,7 @@ Si te late, te mando acceso por mensaje (sin spamear el grupo 🙂). ¿Publicas 
 
 ### 3) Muy corto — segundo mensaje si dicen que sí
 
-¡Va! Entra en **tarantulapp.com**, en la pantalla inicial usa el acceso **beta** y entra con el correo que me des + te mando la contraseña por aquí. Ahora es **webapp**; la app Android en Play llega en unos días. Cualquier cosa me escribes.
+¡Va! Entra en **tarantulapp.com**, en la pantalla inicial usa el acceso **beta** y entra con el correo que me des + te mando la contraseña por aquí. Ya tenemos **webapp** y también la app **Android** en Play (prueba interna). Cualquier cosa me escribes.
 
 ---
 
@@ -70,7 +70,7 @@ If that sounds fair, I’ll send access by DM (no group spam 🙂). Are you main
 
 ### 3) Very short — follow-up when they say yes
 
-Perfect. Go to **tarantulapp.com**, tap **beta** on the gate, then sign in with the email you send me + I’ll DM the password. **Web** first; Android on Play Store is a few days out. Ping me if anything’s confusing.
+Perfect. Go to **tarantulapp.com**, tap **beta** on the gate, then sign in with the email you send me + I’ll DM the password. We now have both the **web app** and **Android on Play** (internal testing). Ping me if anything’s confusing.
 
 ---
 
@@ -90,5 +90,5 @@ Thanks for getting back. This beta wave is full — if we open more spots I’ll
 
 - Cambia **siempre** `{{DETALLE}}`; los mods y la gente notan copiar/pegar masivo.
 - DM > post en grupo cuando bloquean convocatorias públicas.
-- Dejar claro: webapp hoy, Android próximo; Pro gratis en beta; trueque = mención + fotos etiquetadas TarantulApp.
+- Dejar claro: hoy tenemos webapp + Android (Play prueba interna); Pro gratis en beta; trueque = mención + fotos etiquetadas TarantulApp.
 - Si piden acceso, alinear correo/contraseña con tu admin como con el resto de testers.

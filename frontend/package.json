@@ -1,6 +1,6 @@
 {
   "name": "tarantulapp-frontend",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,8 @@
     "build:android-emulator": "vite build --mode android-emulator",
     "preview": "vite preview",
     "test:e2e": "npm run build && playwright test",
-    "screenshots": "npm run build && playwright test e2e/screenshots.spec.js"
+    "screenshots": "npm run build && playwright test e2e/screenshots.spec.js",
+    "icons": "node scripts/generate-app-icons.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",

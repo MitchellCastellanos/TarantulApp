@@ -4,8 +4,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Plain-text bodies for beta welcome + weekly campaign emails. Kept in sync with
- * {@code frontend/src/utils/welcomeBetaEmail.js} for the welcome copy.
+ * Plain-text bodies for beta welcome + weekly campaign emails (including creator-partner
+ * follow-ups). Keep in sync with {@code frontend/src/utils/welcomeBetaEmail.js} for the welcome copy.
  */
 public final class BetaMailBodies {
 
@@ -29,7 +29,9 @@ public final class BetaMailBodies {
             "week_5",
             "week_6",
             "android_play_beta",
-            "whatsapp_group_invite"
+            "whatsapp_group_invite",
+            "creator_partner_onboarding",
+            "creator_partner_reminder"
     );
 
     private BetaMailBodies() {
@@ -73,6 +75,12 @@ public final class BetaMailBodies {
             case "whatsapp_group_invite" -> en
                     ? "TarantulApp beta — Join our WhatsApp group for testers"
                     : "Beta TarantulApp — Únete a nuestro grupo de WhatsApp para testers";
+            case "creator_partner_onboarding" -> en
+                    ? "TarantulApp — Creator partner: your content brief & perks"
+                    : "TarantulApp — Alianza creadores: brief y beneficios";
+            case "creator_partner_reminder" -> en
+                    ? "TarantulApp — Quick nudge: still up for a short video?"
+                    : "TarantulApp — ¿Seguimos con el video corto?";
             default -> en ? "TarantulApp beta — Update" : "TarantulApp beta — Actualización";
         };
     }
@@ -103,7 +111,7 @@ public final class BetaMailBodies {
                 + "• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: " + play + "\n"
                 + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e "
                 + "inicia sesión con el mismo correo y contraseña que para la web.\n"
-                + "• La web app sigue disponible en cualquier navegador; el lunes recibirás por correo las misiones de la semana.\n"
+                + "• La web app sigue disponible en cualquier navegador si lo prefieres.\n"
                 + "\n"
                 + "Únete a nuestro grupo de WhatsApp para testers (español):\n"
                 + "• " + wa + "\n"
@@ -138,7 +146,7 @@ public final class BetaMailBodies {
                 + "3) Cómo enviar feedback\n"
                 + "   • Bugs: toca \"Reportar un bug\" dentro de la app — adjunta página, dispositivo y versión.\n"
                 + "   • Ideas / preguntas: responde a este correo.\n"
-                + "   • Cada lunes te llegará un correo corto con la misión de la semana.\n"
+                + "   • La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.\n"
                 + "\n"
                 + "4) Lo que te pedimos\n"
                 + "   • Usa la app al menos unos minutos, 3+ días a la semana.\n"
@@ -168,7 +176,7 @@ public final class BetaMailBodies {
                 + "• Android is available on Google Play for testers (internal testing track). Link: " + play + "\n"
                 + "• Open that link on your phone while signed into the Google account that has access to the test, install "
                 + "TarantulApp, then sign in with the same email and password as the web app.\n"
-                + "• The web app still works in any browser; on Monday you'll get the week's missions by email.\n"
+                + "• The web app still works in any browser if you prefer.\n"
                 + "\n"
                 + "Join our WhatsApp group for testers (English):\n"
                 + "• " + wa + "\n"
@@ -203,7 +211,7 @@ public final class BetaMailBodies {
                 + "3) How to send feedback\n"
                 + "   • Bugs: tap \"Report a bug\" in the app — it attaches page, device, and version.\n"
                 + "   • Ideas / questions: reply to this email.\n"
-                + "   • Each Monday you'll get a short email with the weekly mission.\n"
+                + "   • The Week 1 mission is already included here as your first steps; we'll follow up with the next weeks after that.\n"
                 + "\n"
                 + "4) What we ask\n"
                 + "   • Use the app a few minutes a day, 3+ days per week.\n"
@@ -236,6 +244,8 @@ public final class BetaMailBodies {
             case "week_6" -> week6Es(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEs(n, url, sendDate);
             case "whatsapp_group_invite" -> whatsappGroupInviteEs(n, url, sendDate);
+            case "creator_partner_onboarding" -> creatorPartnerOnboardingEs(n, url, sendDate);
+            case "creator_partner_reminder" -> creatorPartnerReminderEs(n, url, sendDate);
             default -> weekGenericEs(n, url, sendDate);
         };
     }
@@ -250,8 +260,100 @@ public final class BetaMailBodies {
             case "week_6" -> week6En(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEn(n, url, sendDate);
             case "whatsapp_group_invite" -> whatsappGroupInviteEn(n, url, sendDate);
+            case "creator_partner_onboarding" -> creatorPartnerOnboardingEn(n, url, sendDate);
+            case "creator_partner_reminder" -> creatorPartnerReminderEn(n, url, sendDate);
             default -> weekGenericEn(n, url, sendDate);
         };
+    }
+
+    /**
+     * Send after welcome email: creator deliverables, tags, Pro / visibility — LatAm-focused tone.
+     * Recipients must already be beta testers (same as other batch campaigns).
+     */
+    private static String creatorPartnerOnboardingEs(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String wa = WHATSAPP_GROUP_URL_ES;
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Gracias por sumarte como aliado de contenido para TarantulApp. Este correo es el \"brief\" "
+                + "rápido: qué buscamos, qué te ofrecemos y por dónde empezar.\n\n"
+                + "Sobre el proyecto\n"
+                + "TarantulApp es la app para criadores: colección, mudas, recordatorios, comunidad y "
+                + "marketplace — pensada para que mostrar tus arañas y tu día a día sea más claro y útil "
+                + "para la comunidad latina y de EE. UU. que ya está probando la beta.\n\n"
+                + "Acceso\n"
+                + "• Web: " + url + "\n"
+                + "• Android (Play — prueba interna): " + play + "\n"
+                + "• Misma cuenta en todos lados. Si algo no te deja entrar, responde a este correo.\n\n"
+                + "Qué te pedimos (ajustable contigo)\n"
+                + "• 1 video corto (60–120 s) o reel mostrando la app en tu rutina real: feed, recordatorio o "
+                + "cómo registras una muda — sin guión perfecto, con honestidad.\n"
+                + "• Mención visible de TarantulApp y, si puedes, etiqueta @tarantulapp (o la red que uses).\n"
+                + "• Un comentario de feedback (bug, idea o \"todo bien\") para seguir mejorando.\n\n"
+                + "Qué te ofrecemos durante la beta\n"
+                + "• Pro sin costo mientras dure tu participación en el programa de creadores (beta).\n"
+                + "• Menciones y espacio en highlights / canales del equipo cuando el contenido encaje.\n"
+                + "• Badge de socio de contenido en perfil cuando la función esté disponible (te avisamos).\n"
+                + "• Canal directo con el equipo para ideas y priorización.\n\n"
+                + "WhatsApp testers (español): " + wa + "\n\n"
+                + "Si prefieres otro formato (carrusel, TikTok, etc.) dímelo y lo alineamos. "
+                + "¡Gracias por ayudarnos a que más criadores descubran una forma nueva de compartir su hobby.\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String creatorPartnerOnboardingEn(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String wa = WHATSAPP_GROUP_URL_EN;
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "Thanks for joining as a TarantulApp content partner. This is the short brief: what we’re looking for, "
+                + "what we offer, and where to start.\n\n"
+                + "About the product\n"
+                + "TarantulApp is the keeper-first app: collection, molts, reminders, community, and marketplace — "
+                + "built so sharing your spiders and daily routine is clearer for hobbyists in LatAm and the US "
+                + "who are already on the closed beta.\n\n"
+                + "Access\n"
+                + "• Web: " + url + "\n"
+                + "• Android (Play — internal test): " + play + "\n"
+                + "• Same account everywhere. If login fails, reply to this email.\n\n"
+                + "What we ask (we can adapt with you)\n"
+                + "• One short video (60–120s) or reel using the app in your real workflow — feeding log, reminder, "
+                + "molt entry; honest, not scripted.\n"
+                + "• A clear mention of TarantulApp and tag @tarantulapp where your platform allows.\n"
+                + "• One line of feedback (bug, idea, or “all good”) so we can improve.\n\n"
+                + "What we offer during beta\n"
+                + "• Complimentary Pro for the duration of your participation in the creator cohort.\n"
+                + "• Shout-outs / highlights on our channels when the content fits.\n"
+                + "• A “content partner” badge on profile once the feature ships (we’ll tell you).\n"
+                + "• Direct line to the team for ideas and prioritization.\n\n"
+                + "WhatsApp testers (English): " + wa + "\n\n"
+                + "If you’d rather do a carousel, TikTok, etc., reply and we’ll align. "
+                + "Thank you for helping more keepers discover a better way to share the hobby.\n\n"
+                + "— The TarantulApp team\n";
+    }
+
+    /** Gentle nudge ~1–2 weeks after onboarding if no deliverable yet. */
+    private static String creatorPartnerReminderEs(String n, String url, String sendDate) {
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Te escribo por si se te fue el tiempo: ¿sigues con ganas de grabar el video corto con TarantulApp? "
+                + "No pasa nada si se retrasa — si prefieres otro formato (reel, carrusel, historia) dímelo y lo ajustamos.\n\n"
+                + "App: " + url + "\n\n"
+                + "Si ya no te interesa o no alcanzas este mes, con un \"no por ahora\" nos ayudas a cerrar la lista "
+                + "sin quedarte en el limbo.\n\n"
+                + "Gracias,\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String creatorPartnerReminderEn(String n, String url, String sendDate) {
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "Checking in: are you still up for the short TarantulApp video? Totally fine if life got busy — "
+                + "if a carousel, TikTok, or Story works better, reply and we’ll align.\n\n"
+                + "App: " + url + "\n\n"
+                + "If it’s a “not right now,” that helps us plan — no pressure either way.\n\n"
+                + "Thanks,\n\n"
+                + "— The TarantulApp team\n";
     }
 
     private static String androidPlayBetaAnnouncementEs(String n, String url, String sendDate) {

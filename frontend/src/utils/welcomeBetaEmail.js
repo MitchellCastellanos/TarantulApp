@@ -1,4 +1,4 @@
-import { ANDROID_PLAY_INTERNAL_TEST_URL } from '../constants/playStoreUrls'
+import { ANDROID_PLAY_INTERNAL_TEST_URL } from '../constants/playStoreUrls.js'
 
 /** Canonical production URL (override via param when copying from staging). */
 export const DEFAULT_BETA_APP_URL = 'https://tarantulapp.com'
@@ -31,7 +31,7 @@ export function buildSpanishBetaWelcomeEmail(p) {
     'Importante para este batch:',
     `• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
     '• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.',
-    '• La web app sigue disponible en cualquier navegador; el lunes recibirás por correo las misiones de la semana.',
+    '• La web app sigue disponible en cualquier navegador si lo prefieres.',
     '',
     'Únete a nuestro grupo de WhatsApp para testers (español):',
     `• ${WHATSAPP_GROUP_URL_ES}`,
@@ -65,7 +65,7 @@ export function buildSpanishBetaWelcomeEmail(p) {
     '3) Cómo enviar feedback',
     '   • Bugs: toca "Reportar un bug" dentro de la app — adjunta página, dispositivo y versión.',
     '   • Ideas / preguntas: responde a este correo.',
-    '   • Cada lunes te llegará un correo corto con la misión de la semana.',
+    '   • La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.',
     '',
     '4) Lo que te pedimos',
     '   • Usa la app al menos unos minutos, 3+ días a la semana.',
@@ -98,7 +98,7 @@ export function buildEnglishBetaWelcomeEmail(p) {
     'Important for this batch:',
     `• Android is available on Google Play for testers (internal testing track). Link: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
     '• Open that link on your phone while signed into the Google account that has access to the test, install TarantulApp, then sign in with the same email and password as the web app.',
-    '• The web app still works in any browser; on Monday you’ll get the week’s missions by email.',
+    '• The web app still works in any browser if you prefer.',
     '',
     'Join our WhatsApp group for testers (English):',
     `• ${WHATSAPP_GROUP_URL_EN}`,
@@ -132,7 +132,7 @@ export function buildEnglishBetaWelcomeEmail(p) {
     '3) How to send feedback',
     '   • Bugs: tap “Report a bug” in the app — it attaches page, device, and version.',
     '   • Ideas / questions: reply to this email.',
-    '   • Each Monday you’ll get a short email with the weekly mission.',
+    '   • The Week 1 mission is already included here as your first steps; we’ll follow up with the next weeks after that.',
     '',
     '4) What we ask',
     '   • Use the app a few minutes a day, 3+ days per week.',

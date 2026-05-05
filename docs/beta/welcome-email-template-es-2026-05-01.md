@@ -54,7 +54,7 @@ Tu cuenta está marcada como beta tester: verás las funciones beta y el botón 
 
 - Bugs: toca “Reportar un bug” dentro de la app — adjunta página, dispositivo y versión.
 - Ideas / preguntas: responde a este correo.
-- Cada lunes te llegará un correo corto con la misión de la semana.
+- La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.
 
 4) Lo que te pedimos
 
