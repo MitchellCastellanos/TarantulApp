@@ -1,5 +1,6 @@
 package com.tarantulapp.service;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ public class SexIdCaseSettlementScheduler {
     }
 
     @Scheduled(cron = "${app.sex-id.settlement.cron:0 */10 * * * *}")
+    @SchedulerLock(name = "sexIdSettlement", lockAtLeastFor = "PT30S", lockAtMostFor = "PT8M")
     public void settleCases() {
         if (!enabled) {
             return;

@@ -119,6 +119,57 @@
             <version>1.38.0</version>
         </dependency>
 
+        <!-- Redis (rate limiting + cache + token blacklist).
+             Optional at runtime: only activates when app.redis.enabled=true and REDIS_URL is set.
+             RedisAutoConfiguration is excluded in TarantulAppApplication; we wire LettuceConnectionFactory
+             ourselves only when enabled. Without Redis, the app falls back to in-memory implementations. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- Spring Cache abstraction (works with Caffeine in-memory or Redis backend) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- Spring Retry: @Retryable for SMTP / external HTTP (GBIF, WSC, Stripe). -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+        </dependency>
+
+        <!-- ShedLock: prevents @Scheduled jobs from firing on every replica when we run >1 instance. -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>5.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-redis-spring</artifactId>
+            <version>5.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>5.16.0</version>
+        </dependency>
+
+        <!-- Prometheus metrics endpoint (/actuator/prometheus) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Stripe -->
         <dependency>
             <groupId>com.stripe</groupId>

@@ -42,10 +42,22 @@ public class FileStorageService {
     @Value("${cloudinary.api-secret:}")
     private String apiSecret;
 
+    @Value("${app.environment:development}")
+    private String environment;
+
     private Cloudinary cloudinary;
 
     @PostConstruct
     public void init() {
+        boolean isProd = environment != null
+                && (environment.equalsIgnoreCase("production") || environment.equalsIgnoreCase("prod"));
+        if (isProd && !isCloudinaryConfigured()) {
+            // Filesystem fallback doesn't survive multi-replica deploys; refuse to start so we
+            // notice in deploy logs instead of silently writing to ephemeral container disk.
+            throw new IllegalStateException(
+                    "Cloudinary credentials are required in production: set CLOUDINARY_CLOUD_NAME, "
+                            + "CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in the host environment.");
+        }
         if (isCloudinaryConfigured()) {
             cloudinary = new Cloudinary(ObjectUtils.asMap(
                     "cloud_name", cloudName,
@@ -53,6 +65,9 @@ public class FileStorageService {
                     "api_secret", apiSecret,
                     "secure", true
             ));
+            log.info("FileStorage: Cloudinary configured (cloud={})", cloudName);
+        } else {
+            log.warn("FileStorage: Cloudinary NOT configured — using local filesystem at {} (single-replica only)", uploadDir);
         }
     }
 

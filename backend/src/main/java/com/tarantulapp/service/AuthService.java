@@ -53,6 +53,7 @@ public class AuthService {
     private final PublicHandleService publicHandleService;
     private final AdminAccessService adminAccessService;
     private final BetaApplicationRepository betaApplicationRepository;
+    private final AppMetrics appMetrics;
     private final boolean inviteOnlyRegistration;
     private final RestClient restClient = RestClient.create();
 
@@ -63,6 +64,7 @@ public class AuthService {
                        PublicHandleService publicHandleService,
                        AdminAccessService adminAccessService,
                        BetaApplicationRepository betaApplicationRepository,
+                       AppMetrics appMetrics,
                        @Value("${app.auth.invite-only-registration:false}") boolean inviteOnlyRegistration) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -74,6 +76,7 @@ public class AuthService {
         this.publicHandleService = publicHandleService;
         this.adminAccessService = adminAccessService;
         this.betaApplicationRepository = betaApplicationRepository;
+        this.appMetrics = appMetrics;
         this.inviteOnlyRegistration = inviteOnlyRegistration;
     }
 
@@ -133,16 +136,22 @@ public class AuthService {
         linkApprovedBetaApplication(refreshed);
         refreshed = userRepository.findById(refreshed.getId()).orElse(refreshed);
         emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
+        appMetrics.registerSuccess();
         String token = jwtUtil.generateToken(refreshed.getEmail());
         return buildAuthResponse(token, refreshed);
     }
 
     public AuthResponse login(LoginRequest request) {
         User user = findByEmailWithOneRetry(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
+                .orElseGet(() -> {
+                    appMetrics.loginFailure();
+                    throw new IllegalArgumentException("Credenciales inválidas");
+                });
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            appMetrics.loginFailure();
             throw new IllegalArgumentException("Credenciales inválidas");
         }
+        appMetrics.loginSuccess();
         if (user.getPlan() == null) {
             user.setPlan(UserPlan.FREE);
             userRepository.save(user);

@@ -11,6 +11,7 @@ import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -52,6 +53,7 @@ public class PartnerListingSyncService {
     }
 
     @Scheduled(cron = "${app.partner-sync.cron:0 */30 * * * *}")
+    @SchedulerLock(name = "partnerListingSync", lockAtLeastFor = "PT2M", lockAtMostFor = "PT25M")
     public void runScheduledSync() {
         if (!schedulerEnabled) {
             return;

@@ -11,28 +11,27 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final Duration WINDOW = Duration.ofMinutes(1);
+
+    private final RateLimiter rateLimiter;
     private final int defaultMaxPerWindow;
     private final int loginMaxPerWindow;
     private final int registerMaxPerWindow;
     private final int recoveryMaxPerWindow;
     private final int oauthMaxPerWindow;
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public AuthRateLimitFilter(
+            RateLimiter rateLimiter,
             @Value("${app.auth-rate-limit-per-minute:25}") int defaultMaxPerWindow,
             @Value("${app.auth-rate-limit.login-per-minute:12}") int loginMaxPerWindow,
             @Value("${app.auth-rate-limit.register-per-minute:8}") int registerMaxPerWindow,
             @Value("${app.auth-rate-limit.recovery-per-minute:6}") int recoveryMaxPerWindow,
             @Value("${app.auth-rate-limit.oauth-per-minute:20}") int oauthMaxPerWindow) {
+        this.rateLimiter = rateLimiter;
         this.defaultMaxPerWindow = Math.max(1, defaultMaxPerWindow);
         this.loginMaxPerWindow = Math.max(1, loginMaxPerWindow);
         this.registerMaxPerWindow = Math.max(1, registerMaxPerWindow);
@@ -59,9 +58,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String uri = request.getRequestURI();
-        String key = clientIp(request) + "|" + uri;
-        Bucket bucket = buckets.computeIfAbsent(key, ignored -> new Bucket());
-        if (!bucket.allow(limitFor(uri))) {
+        String key = "auth|" + clientIp(request) + "|" + uri;
+        if (!rateLimiter.allow(key, limitFor(uri), WINDOW)) {
             throw new RateLimitExceededException("Demasiadas solicitudes. Intenta de nuevo en 1 minuto.");
         }
         filterChain.doFilter(request, response);
@@ -84,23 +82,5 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
         }
         return request.getRemoteAddr();
-    }
-
-    private static final class Bucket {
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile Instant windowStart = Instant.now();
-
-        boolean allow(int maxPerWindow) {
-            Instant now = Instant.now();
-            if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                synchronized (this) {
-                    if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                        windowStart = now;
-                        count.set(0);
-                    }
-                }
-            }
-            return count.incrementAndGet() <= maxPerWindow;
-        }
     }
 }

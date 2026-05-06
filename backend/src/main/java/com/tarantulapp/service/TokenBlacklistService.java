@@ -8,7 +8,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,30 +20,32 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HexFormat;
-import java.util.UUID;
 
 /**
- * Tracks revoked JWT access tokens (logout). The hot-path check (isRevoked) runs on every
- * authenticated request through {@link com.tarantulapp.config.JwtAuthFilter}, so it must
- * be fast: a single indexed lookup on the SHA-256 hex hash of the raw bearer token.
- *
- * Phase 2 will move the lookup to Redis with TTL = (token expiry - now); the SQL table
- * remains as audit history.
+ * Tracks revoked JWT access tokens. Hot path is {@link #isRevoked(String)} which runs on every
+ * authenticated request, so Redis (when configured) handles it: a single GET on a key with the
+ * token's residual TTL — no DB hit. Without Redis, falls back to a SQL lookup against
+ * {@code token_blacklist}; the table also keeps an audit history when Redis is enabled.
  */
 @Service
 public class TokenBlacklistService {
 
     private static final Logger log = LoggerFactory.getLogger(TokenBlacklistService.class);
+    private static final String REDIS_PREFIX = "blacklist:";
 
     private final TokenBlacklistRepository repository;
+    private final ObjectProvider<StringRedisTemplate> redisProvider;
     private final String jwtSecret;
 
     public TokenBlacklistService(TokenBlacklistRepository repository,
+                                 ObjectProvider<StringRedisTemplate> redisProvider,
                                  @Value("${app.jwt.secret}") String jwtSecret) {
         this.repository = repository;
+        this.redisProvider = redisProvider;
         this.jwtSecret = jwtSecret;
     }
 
@@ -50,24 +55,50 @@ public class TokenBlacklistService {
             return;
         }
         String hash = sha256Hex(rawToken);
-        if (repository.existsByTokenHash(hash)) {
-            return;
-        }
-        TokenBlacklistEntry entry = new TokenBlacklistEntry();
-        entry.setTokenHash(hash);
         Instant expiresAt = parseExpiry(rawToken);
-        entry.setExpiresAt(expiresAt != null ? expiresAt : Instant.now().plusSeconds(86_400));
-        UUID userId = parseUserIdFromSubject(rawToken);
-        entry.setUserId(userId);
-        repository.save(entry);
+        Instant effectiveExpiry = expiresAt != null ? expiresAt : Instant.now().plusSeconds(86_400);
+
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        if (redis != null) {
+            try {
+                Duration ttl = Duration.between(Instant.now(), effectiveExpiry);
+                if (ttl.isNegative() || ttl.isZero()) ttl = Duration.ofSeconds(60);
+                redis.opsForValue().set(REDIS_PREFIX + hash, "1", ttl);
+            } catch (Exception e) {
+                log.warn("Redis revoke failed for hash[…{}]: {}", hash.substring(56), e.getMessage());
+            }
+        }
+        // Always write the audit row too: it's our durable history when Redis is unavailable or
+        // gets flushed, and survives restarts.
+        if (!repository.existsByTokenHash(hash)) {
+            TokenBlacklistEntry entry = new TokenBlacklistEntry();
+            entry.setTokenHash(hash);
+            entry.setExpiresAt(effectiveExpiry);
+            repository.save(entry);
+        }
     }
 
     public boolean isRevoked(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             return false;
         }
+        String hash = sha256Hex(rawToken);
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        if (redis != null) {
+            try {
+                Boolean exists = redis.hasKey(REDIS_PREFIX + hash);
+                if (Boolean.TRUE.equals(exists)) {
+                    return true;
+                }
+                // Redis says no; that's authoritative for revocations issued after Redis was
+                // enabled. Skip the DB check to keep the hot path one round-trip.
+                return false;
+            } catch (Exception e) {
+                log.warn("Redis blacklist check failed (falling back to DB): {}", e.getMessage());
+            }
+        }
         try {
-            return repository.existsByTokenHash(sha256Hex(rawToken));
+            return repository.existsByTokenHash(hash);
         } catch (Exception e) {
             // Fail-open on transient DB issues: an authenticated user must not be locked out
             // because Postgres hiccupped. The window is bounded by the access-token expiry.
@@ -78,6 +109,7 @@ public class TokenBlacklistService {
 
     /** Daily purge so the table doesn't grow unbounded with already-expired tokens. */
     @Scheduled(cron = "0 0 3 * * *")
+    @SchedulerLock(name = "tokenBlacklistPurge", lockAtLeastFor = "PT30S", lockAtMostFor = "PT5M")
     @Transactional
     public void purgeExpired() {
         try {
@@ -98,18 +130,6 @@ public class TokenBlacklistService {
             Date exp = claims.getExpiration();
             return exp != null ? exp.toInstant() : null;
         } catch (JwtException | IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    private UUID parseUserIdFromSubject(String rawToken) {
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Claims claims = Jwts.parser().verifyWith(key).build()
-                    .parseSignedClaims(rawToken).getPayload();
-            // Subject is the email (see JwtUtil.generateToken). userId is not in the claims today.
-            return null;
-        } catch (Exception e) {
             return null;
         }
     }
