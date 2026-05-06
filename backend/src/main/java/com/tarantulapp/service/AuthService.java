@@ -155,6 +155,11 @@ public class AuthService {
             linkApprovedBetaApplication(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
+        if (adminAccessService.shouldBootstrapAdmin(user)) {
+            log.info("Bootstrapping admin flag for userId={} from APP_ADMIN_EMAILS", user.getId());
+            adminAccessService.promoteToAdmin(user);
+            user = userRepository.findById(user.getId()).orElse(user);
+        }
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }
@@ -190,6 +195,11 @@ public class AuthService {
         }
         if (!Boolean.TRUE.equals(user.getIsBetaTester())) {
             linkApprovedBetaApplication(user);
+            user = userRepository.findById(user.getId()).orElse(user);
+        }
+        if (adminAccessService.shouldBootstrapAdmin(user)) {
+            log.info("Bootstrapping admin flag for userId={} from APP_ADMIN_EMAILS (google)", user.getId());
+            adminAccessService.promoteToAdmin(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
 
@@ -324,7 +334,8 @@ public class AuthService {
         r.setQrPrintExports(user.getQrPrintExports());
         r.setProfilePhoto(user.getProfilePhoto());
         r.setCommunityProfileVisibility(user.getCommunityProfileVisibility());
-        r.setAdmin(adminAccessService.isAdminEmail(user.getEmail()));
+        r.setAdmin(Boolean.TRUE.equals(user.getIsAdmin())
+                || adminAccessService.shouldBootstrapAdmin(user));
         r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));
         r.setBetaAgreementAcceptedAt(user.getBetaAgreementAcceptedAt());
         return r;

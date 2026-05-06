@@ -7,6 +7,7 @@ import com.tarantulapp.dto.RegisterRequest;
 import com.tarantulapp.service.AccountDeletionService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.CaptchaService;
+import com.tarantulapp.service.TokenBlacklistService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -27,15 +28,18 @@ public class AuthController {
     private final AccountDeletionService accountDeletionService;
     private final SecurityHelper securityHelper;
     private final CaptchaService captchaService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public AuthController(AuthService authService,
                           AccountDeletionService accountDeletionService,
                           SecurityHelper securityHelper,
-                          CaptchaService captchaService) {
+                          CaptchaService captchaService,
+                          TokenBlacklistService tokenBlacklistService) {
         this.authService = authService;
         this.accountDeletionService = accountDeletionService;
         this.securityHelper = securityHelper;
         this.captchaService = captchaService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @PostMapping("/register")
@@ -91,6 +95,25 @@ public class AuthController {
     }
 
     record BetaAgreementBody(Boolean accepted) {}
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest httpRequest) {
+        String token = extractBearerToken(httpRequest.getHeader("Authorization"));
+        if (token != null) {
+            tokenBlacklistService.revoke(token);
+        }
+        return ResponseEntity.ok(Map.of("message", "ok"));
+    }
+
+    private static String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null) return null;
+        String h = authorizationHeader.trim();
+        if (h.length() < 8 || !h.regionMatches(true, 0, "Bearer", 0, 6) || h.charAt(6) != ' ') {
+            return null;
+        }
+        String raw = h.substring(7).trim();
+        return raw.isEmpty() ? null : raw;
+    }
 
     @PostMapping("/beta-agreement")
     public ResponseEntity<AuthResponse> acceptBetaAgreement(@RequestBody(required = false) BetaAgreementBody body) {

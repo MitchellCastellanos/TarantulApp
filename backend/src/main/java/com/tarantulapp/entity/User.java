@@ -107,6 +107,10 @@ public class User {
     @Column(name = "beta_agreement_accepted_at")
     private Instant betaAgreementAcceptedAt;
 
+    /** Per-user admin flag (V65). APP_ADMIN_EMAILS is bootstrap-only: AuthService promotes on first login. */
+    @Column(name = "is_admin", nullable = false)
+    private Boolean isAdmin = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -127,6 +131,9 @@ public class User {
         }
         if (communityProfileVisibility == null || communityProfileVisibility.isBlank()) {
             communityProfileVisibility = "preview_only";
+        }
+        if (isAdmin == null) {
+            isAdmin = false;
         }
     }
 
@@ -219,5 +226,8 @@ public class User {
 
     public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
     public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }
+
+    public Boolean getIsAdmin() { return isAdmin; }
+    public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
 
 }

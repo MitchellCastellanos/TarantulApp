@@ -319,8 +319,19 @@ export default function TarantulaDetailPage() {
                 <button className="btn-close" onClick={() => setModal(null)} />
               </div>
               <div className="modal-body">
-                <p className="text-muted small mb-3"
-                   dangerouslySetInnerHTML={{ __html: t('tarantula.deceasedDesc', { name: `<strong>${tarantula.name}</strong>` }) }} />
+                <p className="text-muted small mb-3">
+                  {(() => {
+                    const raw = t('tarantula.deceasedDesc', { name: 'NAME' })
+                    const [pre, post = ''] = raw.split('NAME')
+                    return (
+                      <>
+                        {pre}
+                        <strong>{tarantula.name}</strong>
+                        {post}
+                      </>
+                    )
+                  })()}
+                </p>
                 <div className="mb-3">
                   <label className="form-label fw-semibold small">{t('tarantula.deceasedDate')}</label>
                   <input type="date" className="form-control"

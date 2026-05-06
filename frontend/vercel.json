@@ -1,3 +1,25 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(), geolocation=(), payment=(self), usb=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://js.stripe.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://res.cloudinary.com https://*.tarantulapp.com https://*.googleusercontent.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://api.tarantulapp.com https://*.tarantulapp.com https://*.sentry.io https://*.ingest.sentry.io https://accounts.google.com https://oauth2.googleapis.com https://api.stripe.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://js.stripe.com https://accounts.google.com https://hcaptcha.com https://*.hcaptcha.com; worker-src 'self' blob:; manifest-src 'self'"
+        }
+      ]
+    }
+  ]
 }

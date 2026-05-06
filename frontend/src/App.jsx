@@ -1,54 +1,57 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
 import BrandName from './components/BrandName'
+// Eager: critical first paint surfaces (login + public discovery + branding shell)
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import AddTarantulaPage from './pages/AddTarantulaPage'
-import TarantulaDetailPage from './pages/TarantulaDetailPage'
-import PublicProfilePage from './pages/PublicProfilePage'
-import RemindersPage from './pages/RemindersPage'
-import AccountPage from './pages/AccountPage'
-import ProPage from './pages/ProPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import PrivacyPage from './pages/PrivacyPage'
-import AccountDeletionPage from './pages/AccountDeletionPage'
-import TermsPage from './pages/TermsPage'
-import ContactPage from './pages/ContactPage'
-import AboutPage from './pages/AboutPage'
 import DiscoverPage from './pages/DiscoverPage'
-import DiscoverTaxonDetailPage from './pages/DiscoverTaxonDetailPage'
-import DiscoverSpeciesDetailPage from './pages/DiscoverSpeciesDetailPage'
-import DiscoverComparePage from './pages/DiscoverComparePage'
-import DiscoverCatalogBrowsePage from './pages/DiscoverCatalogBrowsePage'
-import QrToolPage from './pages/QrToolPage'
-import MarketplacePage from './pages/MarketplacePage'
-import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage'
-import MarketplaceMessagesPage from './pages/MarketplaceMessagesPage'
-import MarketplaceSellerPage from './pages/MarketplaceSellerPage'
-import MarketplaceKeeperRedirect from './pages/MarketplaceKeeperRedirect'
-import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from './pages/admin/AdminLayout'
-import AdminHomePage from './pages/admin/AdminHomePage'
-import AdminBetaPage from './pages/admin/AdminBetaPage'
-import SocialHubPage from './pages/SocialHubPage'
-import CommunityPostThreadPage from './pages/CommunityPostThreadPage'
-import SexIdCasePublicPage from './pages/SexIdCasePublicPage'
-import PublicKeeperProfilePage from './pages/PublicKeeperProfilePage'
-import HandleSetupPage from './pages/HandleSetupPage'
-import BetaApplyPage from './pages/BetaApplyPage'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
-import InsightsPage from './pages/InsightsPage'
-import NotificationsPage from './pages/NotificationsPage'
 import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
-import PublicBetaHomePage from './pages/PublicBetaHomePage'
-import BetaPendingHomePage from './pages/BetaPendingHomePage'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
+
+// Lazy-loaded routes — each becomes its own JS chunk and only downloads when visited.
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const AddTarantulaPage = lazy(() => import('./pages/AddTarantulaPage'))
+const TarantulaDetailPage = lazy(() => import('./pages/TarantulaDetailPage'))
+const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage'))
+const RemindersPage = lazy(() => import('./pages/RemindersPage'))
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const ProPage = lazy(() => import('./pages/ProPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const AccountDeletionPage = lazy(() => import('./pages/AccountDeletionPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPage'))
+const DiscoverSpeciesDetailPage = lazy(() => import('./pages/DiscoverSpeciesDetailPage'))
+const DiscoverComparePage = lazy(() => import('./pages/DiscoverComparePage'))
+const DiscoverCatalogBrowsePage = lazy(() => import('./pages/DiscoverCatalogBrowsePage'))
+const QrToolPage = lazy(() => import('./pages/QrToolPage'))
+const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
+const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))
+const MarketplaceMessagesPage = lazy(() => import('./pages/MarketplaceMessagesPage'))
+const MarketplaceSellerPage = lazy(() => import('./pages/MarketplaceSellerPage'))
+const MarketplaceKeeperRedirect = lazy(() => import('./pages/MarketplaceKeeperRedirect'))
+const LaunchRegistrationPage = lazy(() => import('./pages/LaunchRegistrationPage'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminHomePage = lazy(() => import('./pages/admin/AdminHomePage'))
+const AdminBetaPage = lazy(() => import('./pages/admin/AdminBetaPage'))
+const SocialHubPage = lazy(() => import('./pages/SocialHubPage'))
+const CommunityPostThreadPage = lazy(() => import('./pages/CommunityPostThreadPage'))
+const SexIdCasePublicPage = lazy(() => import('./pages/SexIdCasePublicPage'))
+const PublicKeeperProfilePage = lazy(() => import('./pages/PublicKeeperProfilePage'))
+const HandleSetupPage = lazy(() => import('./pages/HandleSetupPage'))
+const BetaApplyPage = lazy(() => import('./pages/BetaApplyPage'))
+const InsightsPage = lazy(() => import('./pages/InsightsPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const PublicBetaHomePage = lazy(() => import('./pages/PublicBetaHomePage'))
+const BetaPendingHomePage = lazy(() => import('./pages/BetaPendingHomePage'))
 
 /** Registra cierre de sesión por 401 sin recargar la página (la consola conserva el error). */
 function AuthSessionBridge() {
@@ -282,7 +285,9 @@ export default function App() {
         }}
       >
         <AuthSessionBridge />
-        <AppRoutes />
+        <Suspense fallback={null}>
+          <AppRoutes />
+        </Suspense>
         <BugReportFAB />
         <BetaTesterAgreementModal />
         <RateAppPrompt />
