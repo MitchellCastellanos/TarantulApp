@@ -1,5 +1,6 @@
 package com.tarantulapp.config;
 
+import com.tarantulapp.service.TokenBlacklistService;
 import com.tarantulapp.service.UserActivityService;
 import com.tarantulapp.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -31,13 +32,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final UserActivityService userActivityService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public JwtAuthFilter(JwtUtil jwtUtil,
                          UserDetailsService userDetailsService,
-                         UserActivityService userActivityService) {
+                         UserActivityService userActivityService,
+                         TokenBlacklistService tokenBlacklistService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.userActivityService = userActivityService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -58,7 +62,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (uri.startsWith("/api/auth/")
                 && !"/api/auth/change-password".equals(uri)
                 && !"/api/auth/beta-agreement".equals(uri)
-                && !"/api/auth/delete-account".equals(uri)) {
+                && !"/api/auth/delete-account".equals(uri)
+                && !"/api/auth/logout".equals(uri)) {
             return true;
         }
         // Búsquedas taxonómicas: siempre sin filtro JWT (evita 401 con sesión en WSC/GBIF).
@@ -105,6 +110,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null) {
             if (!jwtUtil.isTokenValid(token)) {
                 log.warn("Invalid JWT on {}", request.getRequestURI());
+            } else if (tokenBlacklistService.isRevoked(token)) {
+                log.debug("Revoked JWT presented on {}", request.getRequestURI());
             } else {
                 // Siempre aplicar el JWT cuando el Bearer es válido (no condicionar a getAuthentication() == null).
                 try {

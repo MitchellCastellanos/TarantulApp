@@ -3,6 +3,7 @@ package com.tarantulapp.service;
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.tarantulapp.util.BetaMailBodies;
+import com.tarantulapp.util.LogSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,9 +96,9 @@ public class EmailService {
                 "If you didn't request this, ignore this email.\n\n" +
                 "— TarantulApp"
             );
-            log.info("Password reset email sent to {}", toEmail);
+            log.info("Password reset email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send reset email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Failed to send reset email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
             throw new RuntimeException("No se pudo enviar el correo de reseteo");
         }
     }
@@ -109,9 +110,9 @@ public class EmailService {
                 "If you received this message, outbound email from the TarantulApp backend is working.\n\n" +
                 "— TarantulApp"
             );
-            log.info("Mail test sent to {}", toEmail);
+            log.info("Mail test sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Mail test failed for {}: {}", toEmail, e.getMessage(), e);
+            log.error("Mail test failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
             throw new RuntimeException("Mail test failed: " + e.getMessage());
         }
     }
@@ -130,9 +131,9 @@ public class EmailService {
                 "Si quieres ayuda, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Welcome trial email sent to {}", toEmail);
+            log.info("Welcome trial email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send welcome/trial email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send welcome/trial email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -149,9 +150,9 @@ public class EmailService {
                 "Si quieres continuar en Pro, puedes activarlo manualmente desde la app.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Trial ending reminder sent to {}", toEmail);
+            log.info("Trial ending reminder sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send trial reminder to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send trial reminder to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -166,9 +167,9 @@ public class EmailService {
                 "Si necesitas ayuda con tu suscripción, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Pro activation email sent to {}", toEmail);
+            log.info("Pro activation email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send pro activation email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send pro activation email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -183,9 +184,9 @@ public class EmailService {
                 "Si quieres volver a Pro, puedes activarlo manualmente desde la app.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Trial expired email sent to {}", toEmail);
+            log.info("Trial expired email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send trial expired email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send trial expired email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -199,9 +200,9 @@ public class EmailService {
                 "Si quieres reactivar Pro, puedes hacerlo desde la app en cualquier momento.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Pro expired email sent to {}", toEmail);
+            log.info("Pro expired email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send pro expired email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send pro expired email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -217,9 +218,9 @@ public class EmailService {
                 "Puedes revisar o renovar tu plan desde la sección de cuenta en la app.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Pro expiring reminder sent to {}", toEmail);
+            log.info("Pro expiring reminder sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send pro expiring reminder to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send pro expiring reminder to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -240,9 +241,9 @@ public class EmailService {
                 "Si tienes dudas con tu cobro, responde este correo.\n\n" +
                 "- TarantulApp Team"
             );
-            log.info("Payment receipt email sent to {}", toEmail);
+            log.info("Payment receipt email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
-            log.error("Failed to send payment receipt email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send payment receipt email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
     }
 
@@ -313,9 +314,9 @@ public class EmailService {
         String subject = BetaMailBodies.welcomeSubject(loc);
         try {
             doSend(toEmail, subject, body);
-            log.info("Beta welcome email sent to {} (locale={})", toEmail, loc);
+            log.info("Beta welcome email sent to {} (locale={})", LogSafe.maskEmail(toEmail), loc);
         } catch (Exception e) {
-            log.error("Failed to send beta welcome to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Failed to send beta welcome to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
             throw new RuntimeException("No se pudo enviar el correo de bienvenida beta: " + e.getMessage());
         }
     }
@@ -330,9 +331,9 @@ public class EmailService {
         String subject = BetaMailBodies.campaignSubject(campaignKey, loc);
         try {
             doSend(toEmail, subject, body);
-            log.info("Beta campaign {} email sent to {} (locale={})", campaignKey, toEmail, loc);
+            log.info("Beta campaign {} email sent to {} (locale={})", campaignKey, LogSafe.maskEmail(toEmail), loc);
         } catch (Exception e) {
-            log.error("Failed beta campaign {} to {}: {}", campaignKey, toEmail, e.getMessage(), e);
+            log.error("Failed beta campaign {} to {}: {}", campaignKey, LogSafe.maskEmail(toEmail), e.getMessage(), e);
             throw new RuntimeException("Fallo al enviar correo de campaña beta: " + e.getMessage());
         }
     }

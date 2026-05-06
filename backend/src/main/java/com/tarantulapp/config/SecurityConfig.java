@@ -23,6 +23,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -50,8 +52,9 @@ public class SecurityConfig {
     @Bean
     public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil,
                                        UserDetailsService userDetailsService,
-                                       com.tarantulapp.service.UserActivityService userActivityService) {
-        return new JwtAuthFilter(jwtUtil, userDetailsService, userActivityService);
+                                       com.tarantulapp.service.UserActivityService userActivityService,
+                                       com.tarantulapp.service.TokenBlacklistService tokenBlacklistService) {
+        return new JwtAuthFilter(jwtUtil, userDetailsService, userActivityService, tokenBlacklistService);
     }
 
     @Bean
@@ -65,6 +68,19 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                // Security headers. CSP for the SPA is set on Vercel (frontend/vercel.json) since the
+                // SPA + API live on different origins; here we cover transport + clickjacking + MIME-sniff.
+                .headers(headers -> headers
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .preload(true)
+                                .maxAgeInSeconds(31_536_000L))
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .referrerPolicy(rp -> rp.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .permissionsPolicy(pp -> pp.policy(
+                                "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -125,6 +141,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auth/beta-agreement").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auth/delete-account").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.
                         .requestMatchers(
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),

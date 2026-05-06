@@ -48,13 +48,9 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const inTrial = user?.inTrial === true
   const overFreeLimit = user?.overFreeLimit === true
   const days = trialCalendarDaysRemaining(user?.trialEndsAt)
-  const adminEmails = String(import.meta.env.VITE_ADMIN_EMAILS || '')
-    .split(',')
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean)
-  const isAdmin =
-    user?.admin === true ||
-    (user?.email && adminEmails.includes(String(user.email).toLowerCase()))
+  // Admin gating is server-driven (users.is_admin via AuthResponse#admin); no client-side fallback,
+  // since shipping admin emails in the bundle leaks ops staff and lets attackers target them.
+  const isAdmin = user?.admin === true
 
   const inviteOnlyNav = isInviteOnlyEnabled()
   const lockPublicNav = inviteOnlyNav && !token
