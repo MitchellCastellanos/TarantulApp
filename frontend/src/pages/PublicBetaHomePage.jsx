@@ -51,12 +51,20 @@ export default function PublicBetaHomePage() {
           <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.65 }}>
             {t('publicBetaHome.lead')}
           </p>
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            <Link to="/marketplace" className="btn btn-dark fw-semibold px-4 py-2">
+              {t('publicBetaHome.ctaMarketplace')}
+            </Link>
+            <Link to="/marketplace/sell" className="btn btn-outline-secondary fw-semibold px-4 py-2">
+              {t('publicBetaHome.ctaSell')}
+            </Link>
+          </div>
           <AndroidPlayBetaCallout className="mb-4" />
           <div className="d-flex flex-column flex-sm-row gap-2">
             <Link to="/login" className="btn btn-dark fw-semibold px-4 py-2">
               {t('publicBetaHome.ctaLogin')}
             </Link>
-            <Link to="/beta/apply" className="btn btn-outline-light fw-semibold px-4 py-2">
+            <Link to="/beta/apply" className="btn btn-outline-secondary fw-semibold px-4 py-2">
               {t('publicBetaHome.ctaApply')}
             </Link>
           </div>

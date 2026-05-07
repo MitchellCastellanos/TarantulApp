@@ -90,7 +90,7 @@ export default function TimelineItem({ event, onDelete, shareMeta }) {
                 title={t('share.shareEvent')}
                 aria-label={t('share.shareEvent')}
               >
-                ↗
+                <i className="bi bi-share-fill" aria-hidden="true" />
               </button>
             )}
           </div>

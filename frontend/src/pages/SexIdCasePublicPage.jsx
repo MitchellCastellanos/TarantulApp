@@ -288,7 +288,7 @@ export default function SexIdCasePublicPage() {
           <h1 className="ta-sid-toolbar__title mb-0">{t('sexIdCase.screenTitle')}</h1>
           <div className="ta-sid-toolbar__actions">
             <button type="button" className="ta-sid-toolbar__btn" aria-label={t('sexIdCase.shareNative')} onClick={onShareNative}>
-              <i className="bi bi-share" aria-hidden="true" />
+              <i className="bi bi-share-fill" aria-hidden="true" />
             </button>
             <div className="ta-sid-menu-wrap" ref={menuRef}>
               <button

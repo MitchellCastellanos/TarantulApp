@@ -245,6 +245,12 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+            <Link to="/marketplace" className="btn btn-outline-secondary btn-sm">
+              {t('marketplace.nav')}
+            </Link>
+            <Link to="/marketplace/sell" className="btn btn-dark btn-sm">
+              {t('marketplace.manageListingsCta')}
+            </Link>
             <Link to="/insights" className="btn btn-outline-secondary btn-sm" title={t('nav.insightsTitle')}>
               {t('nav.insights')}
             </Link>

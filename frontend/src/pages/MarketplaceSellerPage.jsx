@@ -199,6 +199,26 @@ export default function MarketplaceSellerPage() {
     }
   }, [myListings, myProfile.handle, myProfile.storefrontLagPolicy, myProfile.storefrontName, myProfile.storefrontShippingPolicy])
 
+  const storefrontHealth = useMemo(() => {
+    const hasTagline = !!String(myProfile.storefrontTagline || '').trim()
+    const hasContacts = !!String(myProfile.contactWhatsapp || '').trim() || !!String(myProfile.contactInstagram || '').trim()
+    const activeListings = myListings.filter((l) => String(l.status || '').toLowerCase() === 'active').length
+    const checks = [
+      storefrontOnboarding.items[0],
+      storefrontOnboarding.items[1],
+      storefrontOnboarding.items[2],
+      storefrontOnboarding.items[3],
+      activeListings > 0,
+      activeListings >= 3,
+      hasTagline,
+      hasContacts,
+    ]
+    const points = checks.filter(Boolean).length
+    const total = checks.length
+    const percent = Math.round((points / total) * 100)
+    return { percent, points, total }
+  }, [myListings, myProfile.contactInstagram, myProfile.contactWhatsapp, myProfile.storefrontTagline, storefrontOnboarding.items])
+
   const saveStorefrontProfile = async (e) => {
     e.preventDefault()
     setSavingProfile(true)
@@ -285,6 +305,21 @@ export default function MarketplaceSellerPage() {
               </div>
               <div className="progress" style={{ height: 8 }}>
                 <div className="progress-bar bg-warning" style={{ width: `${storefrontOnboarding.percent}%` }} />
+              </div>
+            </div>
+            <div className="mb-3 p-2 rounded border" style={{ borderColor: 'var(--ta-border)' }}>
+              <div className="d-flex justify-content-between small mb-1">
+                <span>{t('marketplace.storefrontHealthScore')}</span>
+                <span>{storefrontHealth.percent}%</span>
+              </div>
+              <div className="progress" style={{ height: 8 }}>
+                <div className="progress-bar bg-success" style={{ width: `${storefrontHealth.percent}%` }} />
+              </div>
+              <div className="small text-muted mt-1">
+                {t('marketplace.storefrontHealthHint', {
+                  done: storefrontHealth.points,
+                  total: storefrontHealth.total,
+                })}
               </div>
             </div>
 

@@ -1,0 +1,7 @@
+## Copy this file to `frontend/android/key.properties` and fill real values.
+## Do not commit `key.properties` to git.
+
+storeFile=../keystore/upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

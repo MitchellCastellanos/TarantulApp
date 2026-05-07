@@ -38,6 +38,7 @@ const EMPTY_VENDOR_LEAD_FORM = {
 }
 
 const OFFICIAL_STRIP_SCROLL_GAP_PX = 12
+const MARKETPLACE_FILTERS_STORAGE_KEY = 'tarantulapp.marketplace.savedFilters.v1'
 
 function getOfficialStripScrollStep(el) {
   if (!el) return 200
@@ -59,6 +60,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
+  const [sortMode, setSortMode] = useState('trust')
   const [myReputation, setMyReputation] = useState(null)
   const [filters, setFilters] = useState({
     country: '',
@@ -71,6 +73,44 @@ export default function MarketplacePage() {
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
   const [officialStripEdge, setOfficialStripEdge] = useState({ atStart: true, atEnd: false })
+
+  const saveCurrentFilters = useCallback(() => {
+    try {
+      localStorage.setItem(
+        MARKETPLACE_FILTERS_STORAGE_KEY,
+        JSON.stringify({
+          query,
+          filters,
+        }),
+      )
+      setMessage(t('marketplace.savedSearchSaved'))
+    } catch {
+      setMessage(t('marketplace.error'))
+    }
+  }, [filters, query, t])
+
+  const restoreSavedFilters = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(MARKETPLACE_FILTERS_STORAGE_KEY)
+      if (!raw) {
+        setMessage(t('marketplace.savedSearchEmpty'))
+        return
+      }
+      const parsed = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.query === 'string') setQuery(parsed.query)
+        if (parsed.filters && typeof parsed.filters === 'object') {
+          setFilters((f) => ({
+            ...f,
+            ...parsed.filters,
+          }))
+        }
+        setMessage(t('marketplace.savedSearchApplied'))
+      }
+    } catch {
+      setMessage(t('marketplace.error'))
+    }
+  }, [t])
 
   const updateOfficialStripEdges = useCallback(() => {
     const el = officialStripScrollRef.current
@@ -290,7 +330,50 @@ export default function MarketplacePage() {
     }
   }, [officialVendors])
 
-  const visibleListings = useMemo(() => listings.filter((l) => l.status !== 'hidden'), [listings])
+  const visibleListings = useMemo(() => {
+    const base = listings.filter((l) => l.status !== 'hidden')
+    const score = (row) => {
+      let s = 0
+      if (row.sellerVerifiedBreeder) s += 40
+      if (row.boosted) s += 12
+      if (row.source === 'partner' || row.isPartner) s += 18
+      if (row.imageUrl) s += 6
+      if (row.priceAmount != null) s += 4
+      const createdMs = row.createdAt ? Date.parse(row.createdAt) : 0
+      if (!Number.isNaN(createdMs) && createdMs > 0) {
+        const hours = (Date.now() - createdMs) / (1000 * 60 * 60)
+        s += Math.max(0, 20 - Math.min(20, hours / 12))
+      }
+      return s
+    }
+    const sorted = [...base]
+    if (sortMode === 'newest') {
+      sorted.sort((a, b) => {
+        const am = a.createdAt ? Date.parse(a.createdAt) : 0
+        const bm = b.createdAt ? Date.parse(b.createdAt) : 0
+        return bm - am
+      })
+      return sorted
+    }
+    if (sortMode === 'price_asc') {
+      sorted.sort((a, b) => {
+        const ap = Number(a.priceAmount ?? Number.POSITIVE_INFINITY)
+        const bp = Number(b.priceAmount ?? Number.POSITIVE_INFINITY)
+        return ap - bp
+      })
+      return sorted
+    }
+    if (sortMode === 'price_desc') {
+      sorted.sort((a, b) => {
+        const ap = Number(a.priceAmount ?? Number.NEGATIVE_INFINITY)
+        const bp = Number(b.priceAmount ?? Number.NEGATIVE_INFINITY)
+        return bp - ap
+      })
+      return sorted
+    }
+    sorted.sort((a, b) => score(b) - score(a))
+    return sorted
+  }, [listings, sortMode])
   const partnerListings = useMemo(
     () => visibleListings.filter((l) => l.source === 'partner' || l.isPartner),
     [visibleListings]
@@ -331,6 +414,24 @@ export default function MarketplacePage() {
         <h4 className="mb-3 ta-premium-title">{t('marketplace.title')}</h4>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
+
+        <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
+          <div className="card-body p-3 p-md-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+              <h2 className="h6 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.growthBannerTitle')}</h2>
+              <p className="small text-muted mb-0">{t('marketplace.growthBannerSub')}</p>
+            </div>
+            <div className="d-flex gap-2 flex-wrap">
+              <Link to={user ? '/marketplace/sell' : '/login'} className="btn btn-sm btn-dark">
+                {t('marketplace.growthBannerPrimaryCta')}
+              </Link>
+              <Link to={user ? '/marketplace/messages' : '/login'} className="btn btn-sm btn-outline-secondary">
+                {t('marketplace.growthBannerSecondaryCta')}
+              </Link>
+            </div>
+            <div className="small text-muted">{t('marketplace.pushPlatformHint')}</div>
+          </div>
+        </div>
 
         {officialVendors.some((v) => v.isDemo) && (
           <div className="alert alert-warning small py-2 mb-3" role="note">
@@ -489,6 +590,23 @@ export default function MarketplacePage() {
               </div>
               <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
                 {t('common.search')}
+              </button>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: 150 }}
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value)}
+              >
+                <option value="trust">{t('marketplace.sortTrust')}</option>
+                <option value="newest">{t('marketplace.sortNewest')}</option>
+                <option value="price_asc">{t('marketplace.sortPriceAsc')}</option>
+                <option value="price_desc">{t('marketplace.sortPriceDesc')}</option>
+              </select>
+              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={saveCurrentFilters}>
+                {t('marketplace.savedSearchSave')}
+              </button>
+              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={restoreSavedFilters}>
+                {t('marketplace.savedSearchLoad')}
               </button>
             </div>
           </div>

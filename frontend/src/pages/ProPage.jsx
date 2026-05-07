@@ -313,7 +313,7 @@ export default function ProPage() {
                     listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4'],
                     footer: (
                       <div className="mt-2">
-                        <span className="badge bg-secondary">{t('pro.tierSoon')}</span>
+                        <span className="badge bg-success">{t('pro.tierLive')}</span>
                       </div>
                     ),
                   })}
