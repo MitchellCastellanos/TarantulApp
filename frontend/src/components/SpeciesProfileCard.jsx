@@ -123,20 +123,11 @@ export default function SpeciesProfileCard({
       </div>
 
       {showThinSheetBanner && (
-        <div
-          className="alert py-2 px-3 small mb-3 border-0"
-          style={{
-            background: 'rgba(212, 175, 55, 0.12)',
-            color: 'var(--ta-parchment)',
-            borderLeft: '3px solid var(--ta-gold)',
-          }}
-          role="status"
-        >
-          <div className="fw-semibold mb-1">{t('species.sheetIncompleteTitle')}</div>
-          <div className="mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.45 }}>
-            {t('species.sheetIncompleteBody')}
-          </div>
-        </div>
+        <p className="small mb-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }} role="status">
+          <span className="fst-italic" style={{ color: 'var(--ta-parchment)' }}>{t('species.sheetIncompleteTitle')}</span>
+          {' '}
+          {t('species.sheetIncompleteBody')}
+        </p>
       )}
 
       {showPhotoSection && (

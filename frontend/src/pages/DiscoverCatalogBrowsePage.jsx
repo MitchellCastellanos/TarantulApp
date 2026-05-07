@@ -6,7 +6,6 @@ import BrandLogoMark from '../components/BrandLogoMark'
 import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
-import { hasKeeperGradeSignal } from '../utils/speciesKeeperSignal'
 
 const PAGE_SIZE = 24
 
@@ -180,24 +179,7 @@ export default function DiscoverCatalogBrowsePage() {
                     <img src={thumb} alt="" className="w-100 h-100" style={{ objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = spiderPh }} />
                   </div>
                   <div className="min-w-0 flex-grow-1">
-                    <div className="d-flex flex-wrap align-items-center gap-2 mb-0">
-                      <span className="fw-semibold text-break fst-italic">{sp.scientificName}</span>
-                      {!hasKeeperGradeSignal(sp) && (
-                        <span
-                          className="badge rounded-pill text-uppercase"
-                          style={{
-                            fontSize: '0.6rem',
-                            letterSpacing: '0.06em',
-                            background: 'rgba(212, 175, 55, 0.2)',
-                            color: 'var(--ta-gold)',
-                            border: '1px solid rgba(212, 175, 55, 0.45)',
-                          }}
-                          title={t('discover.catalogBadgeIndexOnlyTitle')}
-                        >
-                          {t('discover.catalogBadgeIndexOnly')}
-                        </span>
-                      )}
-                    </div>
+                    <div className="fw-semibold text-break fst-italic">{sp.scientificName}</div>
                     {sp.commonName && <div className="small text-break" style={{ color: 'var(--ta-text-muted)' }}>{sp.commonName}</div>}
                   </div>
                   <span className="flex-shrink-0" style={{ color: 'var(--ta-gold)' }} aria-hidden>›</span>

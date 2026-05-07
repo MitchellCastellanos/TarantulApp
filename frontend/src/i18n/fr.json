@@ -522,8 +522,6 @@
     "browseTitleSemiArboreal": "Semi-arboricoles et grimpeuses",
     "browseTitleAll": "Catalogue public",
     "browseEmpty": "Aucune ligne ne correspond encore à ces filtres.",
-    "catalogBadgeIndexOnly": "Index",
-    "catalogBadgeIndexOnlyTitle": "Dans l’index taxonomique consultable ; fiche élevage encore légère — ouvrir pour le détail.",
     "browsePrev": "Page précédente",
     "browseNext": "Page suivante",
     "browsePageStatus": "Page {{current}} sur {{total}}"

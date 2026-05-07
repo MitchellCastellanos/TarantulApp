@@ -522,8 +522,6 @@
     "browseTitleSemiArboreal": "Semi-arboreal & climbing species",
     "browseTitleAll": "Public catalog",
     "browseEmpty": "No rows match these filters yet.",
-    "catalogBadgeIndexOnly": "Index",
-    "catalogBadgeIndexOnlyTitle": "In the searchable taxonomy index; keeper sheet still thin—tap for details.",
     "browsePrev": "Previous page",
     "browseNext": "Next page",
     "browsePageStatus": "Page {{current}} of {{total}}"

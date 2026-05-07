@@ -522,8 +522,6 @@
     "browseTitleSemiArboreal": "Semi-arbóreas y escaladoras",
     "browseTitleAll": "Catálogo público",
     "browseEmpty": "Aún no hay filas con estos filtros.",
-    "catalogBadgeIndexOnly": "Índice",
-    "catalogBadgeIndexOnlyTitle": "En el índice taxonómico buscable; ficha de cuidados aún delgada—toca para ver detalle.",
     "browsePrev": "Página anterior",
     "browseNext": "Página siguiente",
     "browsePageStatus": "Página {{current}} de {{total}}"
