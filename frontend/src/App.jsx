@@ -26,6 +26,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const AccountDeletionPage = lazy(() => import('./pages/AccountDeletionPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
+const MarketplacePolicyPage = lazy(() => import('./pages/MarketplacePolicyPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPage'))
@@ -144,6 +145,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/account-deletion" element={<AccountDeletionPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/marketplace-policy" element={<MarketplacePolicyPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/discover" element={<DiscoverPage />} />
@@ -268,6 +270,10 @@ function Footer() {
           ·
         </span>{' '}
         <Link to="/terms">{t('account.legal.terms')}</Link>
+        <span className="ta-app-footer__dot" aria-hidden>
+          ·
+        </span>{' '}
+        <Link to="/marketplace-policy">{t('legal.marketplacePolicy.title')}</Link>
       </div>
     </footer>
   )

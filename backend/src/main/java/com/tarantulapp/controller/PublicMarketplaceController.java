@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/public/marketplace")
@@ -67,9 +68,16 @@ public class PublicMarketplaceController {
                                                                     @RequestParam(required = false) String nearState,
                                                                     @RequestParam(required = false) String nearCity,
                                                                     @RequestParam(required = false) String listingOrigin,
-                                                                    @RequestParam(required = false) Boolean hasRegulatoryRefs) {
+                                                                    @RequestParam(required = false) Boolean hasRegulatoryRefs,
+                                                                    @RequestParam(required = false) String sellerTier,
+                                                                    @RequestParam(required = false) Boolean verifiedOnly,
+                                                                    @RequestParam(required = false) Boolean boostedOnly,
+                                                                    @RequestParam(required = false) Boolean hasImage,
+                                                                    @RequestParam(required = false) BigDecimal minPrice,
+                                                                    @RequestParam(required = false) BigDecimal maxPrice) {
         return ResponseEntity.ok(marketplaceService.publicListings(
-                q, status, country, state, city, nearCountry, nearState, nearCity, listingOrigin, hasRegulatoryRefs
+                q, status, country, state, city, nearCountry, nearState, nearCity, listingOrigin, hasRegulatoryRefs,
+                sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
         ));
     }
 
@@ -119,6 +127,12 @@ public class PublicMarketplaceController {
     @GetMapping("/listing-boost-offer")
     public ResponseEntity<Map<String, Object>> listingBoostOffer() {
         return ResponseEntity.ok(Map.of("available", marketplaceService.isListingBoostOffered()));
+    }
+
+    @GetMapping("/deal-quote/{listingId}")
+    public ResponseEntity<Map<String, Object>> dealQuote(@PathVariable UUID listingId,
+                                                         @RequestParam(required = false) BigDecimal subtotal) {
+        return ResponseEntity.ok(marketplaceService.dealQuote(listingId, subtotal));
     }
 
     @GetMapping("/program-flags")

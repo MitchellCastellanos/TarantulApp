@@ -37,6 +37,7 @@ export default function MarketplaceListingDetailPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [photoIdx, setPhotoIdx] = useState(0)
+  const [dealQuote, setDealQuote] = useState(null)
 
   const locale = i18n.language?.startsWith('es') ? 'es-MX' : 'en-US'
 
@@ -50,11 +51,24 @@ export default function MarketplaceListingDetailPage() {
         if (!cancelled) {
           setPayload(data)
           setPhotoIdx(0)
+          const listingRow = data?.listing
+          if (listingRow?.id) {
+            marketplaceService.getDealQuote(listingRow.id, listingRow.priceAmount || undefined)
+              .then((q) => {
+                if (!cancelled) setDealQuote(q)
+              })
+              .catch(() => {
+                if (!cancelled) setDealQuote(null)
+              })
+          } else {
+            setDealQuote(null)
+          }
         }
       })
       .catch((err) => {
         if (!cancelled) {
           setPayload(null)
+          setDealQuote(null)
           setError(err?.response?.status === 404 ? 'notfound' : 'load')
         }
       })
@@ -377,6 +391,21 @@ export default function MarketplaceListingDetailPage() {
                         ) : null}
                         {chatHref && <p className="small text-muted mb-0">{t('marketplace.listingDetailOpenChatHint')}</p>}
                       </div>
+                      {dealQuote && (
+                        <div className="small mt-3 p-2 rounded border border-secondary border-opacity-25">
+                          <div className="fw-semibold mb-1">{t('marketplace.dealQuoteTitle')}</div>
+                          <div className="text-muted">{t('marketplace.dealQuoteSubtotal')}: {dealQuote.subtotal} {dealQuote.currency || ''}</div>
+                          <div className="text-muted">{t('marketplace.dealQuoteFee')}: {(Number(dealQuote.commissionRate || 0) * 100).toFixed(1)}% ({dealQuote.commissionAmount} {dealQuote.currency || ''})</div>
+                          <div className="text-muted">{t('marketplace.dealQuotePayout')}: {dealQuote.sellerPayoutAmount} {dealQuote.currency || ''}</div>
+                          <div className="text-muted">{t('marketplace.dealQuoteHold')}: {t('marketplace.dealQuoteHoldDays', { days: dealQuote.payoutHoldDays || 3 })}</div>
+                        </div>
+                      )}
+                      <p className="small text-muted mt-3 mb-0">
+                        {t('marketplace.listingLegalNotice')}{' '}
+                        <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>
+                        {' '}·{' '}
+                        <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
+                      </p>
                     </>
                   )}
 

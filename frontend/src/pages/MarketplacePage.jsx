@@ -69,6 +69,12 @@ export default function MarketplacePage() {
     nearMe: true,
     listingOrigin: '',
     hasRegulatoryRefs: false,
+    sellerTier: '',
+    verifiedOnly: false,
+    boostedOnly: false,
+    hasImage: null,
+    minPrice: '',
+    maxPrice: '',
   })
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
@@ -192,6 +198,12 @@ export default function MarketplacePage() {
         nearCity,
         listingOrigin: filters.listingOrigin || undefined,
         hasRegulatoryRefs: filters.hasRegulatoryRefs || undefined,
+        sellerTier: filters.sellerTier || undefined,
+        verifiedOnly: filters.verifiedOnly || undefined,
+        boostedOnly: filters.boostedOnly || undefined,
+        hasImage: filters.hasImage === null ? undefined : filters.hasImage,
+        minPrice: filters.minPrice === '' ? undefined : Number(filters.minPrice),
+        maxPrice: filters.maxPrice === '' ? undefined : Number(filters.maxPrice),
       })
       const normalized = Array.isArray(data) ? data : []
       setListings(normalized)
@@ -568,6 +580,76 @@ export default function MarketplacePage() {
               </div>
               <select
                 className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: 150 }}
+                value={filters.sellerTier}
+                onChange={(e) => setFilters((f) => ({ ...f, sellerTier: e.target.value }))}
+              >
+                <option value="">{t('marketplace.anySellerTier')}</option>
+                <option value="community">{t('marketplace.sellerTierCommunity')}</option>
+                <option value="pro">{t('marketplace.sellerTierPro')}</option>
+                <option value="vendor">{t('marketplace.sellerTierVendor')}</option>
+              </select>
+              <div className="form-check d-flex align-items-center mb-0">
+                <input
+                  className="form-check-input me-1"
+                  type="checkbox"
+                  id="verifiedOnly"
+                  checked={filters.verifiedOnly}
+                  onChange={(e) => setFilters((f) => ({ ...f, verifiedOnly: e.target.checked }))}
+                />
+                <label className="form-check-label small mb-0" htmlFor="verifiedOnly">
+                  {t('marketplace.verifiedOnly')}
+                </label>
+              </div>
+              <div className="form-check d-flex align-items-center mb-0">
+                <input
+                  className="form-check-input me-1"
+                  type="checkbox"
+                  id="boostedOnly"
+                  checked={filters.boostedOnly}
+                  onChange={(e) => setFilters((f) => ({ ...f, boostedOnly: e.target.checked }))}
+                />
+                <label className="form-check-label small mb-0" htmlFor="boostedOnly">
+                  {t('marketplace.boostedOnly')}
+                </label>
+              </div>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: 140 }}
+                value={filters.hasImage === null ? '' : filters.hasImage ? 'with' : 'without'}
+                onChange={(e) =>
+                  setFilters((f) => ({
+                    ...f,
+                    hasImage: e.target.value === '' ? null : e.target.value === 'with',
+                  }))
+                }
+              >
+                <option value="">{t('marketplace.imageFilterAny')}</option>
+                <option value="with">{t('marketplace.imageFilterWith')}</option>
+                <option value="without">{t('marketplace.imageFilterWithout')}</option>
+              </select>
+              <input
+                className="form-control form-control-sm"
+                style={{ width: 110 }}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder={t('marketplace.priceMin')}
+                value={filters.minPrice}
+                onChange={(e) => setFilters((f) => ({ ...f, minPrice: e.target.value }))}
+              />
+              <input
+                className="form-control form-control-sm"
+                style={{ width: 110 }}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder={t('marketplace.priceMax')}
+                value={filters.maxPrice}
+                onChange={(e) => setFilters((f) => ({ ...f, maxPrice: e.target.value }))}
+              />
+              <select
+                className="form-select form-select-sm"
                 style={{ width: 'auto', minWidth: 140 }}
                 value={filters.listingOrigin}
                 onChange={(e) => setFilters((f) => ({ ...f, listingOrigin: e.target.value }))}
@@ -835,7 +917,7 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        <details className="card border-0 shadow-sm mt-2 ta-marketplace-official-apply-details marketplace-official-apply-panel ta-premium-pane p-0 overflow-hidden">
+        <details id="vendor-activation" className="card border-0 shadow-sm mt-2 ta-marketplace-official-apply-details marketplace-official-apply-panel ta-premium-pane p-0 overflow-hidden">
           <summary className="px-3 py-3 small" style={{ cursor: 'pointer', listStyle: 'none' }}>
             <span className="fw-semibold" style={{ color: 'var(--ta-gold-classic)' }}>{t('marketplace.officialApplyToggle')}</span>
             <span className="d-block mt-1 text-muted" style={{ fontSize: '0.75rem' }}>{t('marketplace.officialApplyBlurb')}</span>

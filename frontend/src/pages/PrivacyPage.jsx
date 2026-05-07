@@ -1,42 +1,35 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function PrivacyPage() {
+  const { t } = useTranslation()
+  const sections = t('legal.privacy.sections', { returnObjects: true }) || []
   return (
     <div>
       <Navbar />
       <div className="container mt-4 mb-5" style={{ maxWidth: 720 }}>
-        <h2 className="fw-bold mb-1">Privacy Policy</h2>
-        <p className="text-muted small mb-4">Last updated: April 2026</p>
+        <h2 className="fw-bold mb-1">{t('legal.privacy.title')}</h2>
+        <p className="text-muted small mb-4">{t('legal.lastUpdated')}</p>
 
-        <p>
-          <BrandName /> (&quot;we&quot;, &quot;us&quot;) operates the <BrandName /> web application and mobile app. This page
-          explains how we collect, use, and protect your personal information.
-        </p>
+        <p>{t('legal.privacy.intro')} <BrandName />.</p>
 
-        <h5 className="fw-bold mt-4">1. Information We Collect</h5>
-        <ul>
-          <li><strong>Account data:</strong> email address and display name when you register.</li>
-          <li><strong>Content you create:</strong> tarantula records, feeding logs, molt logs, behavior notes, photos, and reminders.</li>
-          <li><strong>Payment data:</strong> subscription payments are processed by Stripe. We do not store card numbers or payment details.</li>
-        </ul>
+        {sections.map((section) => (
+          <div key={section.title}>
+            <h5 className="fw-bold mt-4">{section.title}</h5>
+            {Array.isArray(section.bullets) ? (
+              <ul>
+                {section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+              </ul>
+            ) : (
+              <p>{section.body}</p>
+            )}
+          </div>
+        ))}
 
-        <h5 className="fw-bold mt-4">2. How We Use Your Information</h5>
-        <ul>
-          <li>
-            To provide and improve <BrandName /> features.
-          </li>
-          <li>To send password reset emails when you request them.</li>
-          <li>To process your Pro subscription via Stripe.</li>
-          <li>We do not sell your data to third parties.</li>
-        </ul>
-
-        <h5 className="fw-bold mt-4">3. Data Storage</h5>
-        <p>Your data is stored in a secure PostgreSQL database hosted on Supabase. Photos are stored on Cloudinary. All connections use HTTPS/TLS encryption.</p>
-
-        <h5 className="fw-bold mt-4">4. Your Rights</h5>
+        <h5 className="fw-bold mt-4">{t('legal.privacy.rightsTitle')}</h5>
         <p>
           You may delete your account yourself in the app: see{' '}
           <Link to="/account-deletion">Account deletion</Link>
@@ -44,12 +37,7 @@ export default function PrivacyPage() {
           <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>. We will process requests within 30 days where applicable.
         </p>
 
-        <h5 className="fw-bold mt-4">5. Cookies</h5>
-        <p>
-          <BrandName /> uses browser localStorage to store your authentication token. No third-party tracking cookies are used.
-        </p>
-
-        <h5 className="fw-bold mt-4">6. Contact</h5>
+        <h5 className="fw-bold mt-4">{t('legal.contactTitle')}</h5>
         <p>Questions about this policy:{' '}
           <a href={`mailto:${PUBLIC_CONTACT.legal}`}>{PUBLIC_CONTACT.legal}</a>
         </p>

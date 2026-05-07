@@ -501,6 +501,17 @@
     "catalogBannerBody": "Continuously updated from our public catalog, GBIF, and the World Spider Catalog (Theraphosidae) where linked.",
     "catalogBannerTitleFallback": "Search the public species catalog",
     "browsePageTitle": "Catalog browse",
+    "filtersTitle": "Aggressive filters",
+    "filterAnyExperience": "Any experience",
+    "filterAnyGrowth": "Any growth speed",
+    "sizeMin": "Min cm",
+    "sizeMax": "Max cm",
+    "sortScientific": "Sort: scientific name",
+    "sortCommon": "Sort: common name",
+    "sortExperience": "Sort: experience",
+    "sortHabitat": "Sort: habitat",
+    "sortAsc": "Asc",
+    "sortDesc": "Desc",
     "browseBack": "Back to Discover",
     "browseTitleNewWorld": "New World species",
     "browseTitleOldWorld": "Old World species",
@@ -609,6 +620,11 @@
     "resetSuccess": "Password updated. You can now sign in.",
     "fillRequired": "Enter your email and password.",
     "passwordTooShort": "Password must be at least 6 characters.",
+    "legalMustAccept": "You must accept Terms and Privacy to create your account.",
+    "legalAcceptPrefix": "I accept the",
+    "legalTerms": "Terms of Service",
+    "legalPrivacy": "Privacy Policy",
+    "legalAnd": "and",
     "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After that: stay on Free (Cases, Community, Discover, basic AI) or move to Pro at the regional price on the Pro page (US, CA, MX, CO) for full logs, exports, and bulk QR. Referrals add short trial days and milestones — invite other keepers and improve your results.",
     "proTeaserTitle": "Pro at a glance",
     "proTeaserExcelLead": "Excel export:",
@@ -672,6 +688,11 @@
     "pageFocusTitle": "Peer listings",
     "communityIntro": "This is TarantulApp\u2122's commercial engine: publish, discover, and close tarantula deals between keepers and breeders. We are building for small and mid breeders to compete with professional storefront presence and real visibility.",
     "communityDisclaimer": "TarantulApp\u2122 powers discovery and contact; we do not custody payments or intermediate private deals. Meet safely, keep chat evidence, verify local wildlife/shipping laws, and report suspicious behavior fast.",
+    "sellerLegalNotice": "By publishing listings you confirm legal trade compliance, accurate disclosures, and acceptance of marketplace transaction rules.",
+    "orderLegalNotice": "Marketplace orders are subject to hold, dispute, and evidence rules. Seller guarantees and shipping commitments are enforced by each seller profile.",
+    "orderPolicyAcceptLabel": "I confirm I reviewed terms, marketplace policy, and the seller shipping/guarantee terms for this transaction.",
+    "orderPolicyMustAccept": "You must accept the transaction policy before creating the order.",
+    "listingLegalNotice": "Review trade legality, shipping policy, and live-arrival guarantees directly with the seller before paying.",
     "growthBannerTitle": "Grow your breeder operation now",
     "growthBannerSub": "Publish inventory, open your storefront, and reply to leads inside the app instead of chaotic groups.",
     "growthBannerPrimaryCta": "Open / manage storefront",
@@ -723,6 +744,7 @@
     "chatYou": "You",
     "txStatusTitle": "Deal status",
     "txCurrentStatus": "Current status",
+    "txProofRules": "Rule: before 'shipped' add shipping proof with evidence; before 'delivered' add arrival proof with evidence.",
     "txStatusSaved": "Deal status updated.",
     "txTimelineTitle": "Deal timeline",
     "txTimelineEmpty": "No timeline events yet.",
@@ -772,6 +794,17 @@
     "sortNewest": "Sort: newest first",
     "sortPriceAsc": "Sort: lowest price",
     "sortPriceDesc": "Sort: highest price",
+    "anySellerTier": "Any seller tier",
+    "sellerTierCommunity": "Community",
+    "sellerTierPro": "Pro",
+    "sellerTierVendor": "Vendor",
+    "verifiedOnly": "Verified sellers only",
+    "boostedOnly": "Boosted listings only",
+    "imageFilterAny": "Any photo state",
+    "imageFilterWith": "With photo",
+    "imageFilterWithout": "Without photo",
+    "priceMin": "Min price",
+    "priceMax": "Max price",
     "savedSearchSave": "Save filters",
     "savedSearchLoad": "Load filters",
     "savedSearchSaved": "Filters saved for your next search.",
@@ -883,6 +916,13 @@
     "storefrontOnboardingProgress": "Storefront onboarding progress",
     "storefrontHealthScore": "Storefront health score",
     "storefrontHealthHint": "{{done}} of {{total}} key conversion signals completed.",
+    "programTierLabel": "Seller program",
+    "activeListingsLabel": "active listings",
+    "communityLimitHint": "Community can publish and sell, but has tighter active listing limits and no boost.",
+    "proBenefitsLive": "Pro unlocks higher volume and listing boost so you can scale your store.",
+    "vendorBenefitsLive": "Vendor is reviewed for trust and gets the strongest visibility/conversion advantages.",
+    "vendorApplyNow": "Apply for Vendor activation",
+    "boostLockedHint": "Listing boost is locked on Community. Upgrade to Pro or Vendor.",
     "storefrontNameLabel": "Storefront name",
     "storefrontTaglineLabel": "Storefront tagline",
     "storefrontShippingPolicyLabel": "Shipping policy",
@@ -909,6 +949,26 @@
     "listingDetailRelatedPartner": "More from this partner",
     "listingDetailOpenChat": "Messages about this listing",
     "listingDetailOpenChatHint": "Opens your inbox with this seller and listing context.",
+    "dealQuoteTitle": "Deal summary (Phase 1)",
+    "dealQuoteSubtotal": "Subtotal",
+    "dealQuoteFee": "Platform commission",
+    "dealQuotePayout": "Estimated seller payout",
+    "dealQuoteHold": "Estimated hold",
+    "dealQuoteHoldDays": "{{days}} days after delivery confirmation",
+    "orderPanelTitle": "Order and hold (simulated)",
+    "orderPanelEmpty": "No order exists for this deal yet.",
+    "orderCreateCta": "Create order",
+    "orderStatus": "Order status",
+    "orderSimulatePay": "Simulate payment (hold)",
+    "orderStripeCheckout": "Pay with Stripe",
+    "orderSimulateRelease": "Simulate release",
+    "orderDisputeCta": "Mark dispute",
+    "orderCreated": "Order created for this deal.",
+    "orderPaidInHold": "Payment simulated. Funds are now in hold.",
+    "orderReleased": "Funds released (simulated).",
+    "orderDisputed": "Order marked as disputed.",
+    "orderCheckoutSuccess": "Payment completed. Order now in hold.",
+    "orderCheckoutCancel": "Checkout cancelled. Order remains pending payment.",
     "listingDetailOfficialCta": "Buy on official site",
     "listingDetailVisitStore": "Visit storefront",
     "listingDetailNotFound": "This listing is not available.",
@@ -1481,7 +1541,7 @@
   "pro": {
     "title": "TarantulApp\u2122 plans",
     "subtitle": "Subscription-focused: Pro for active keepers and Vendor/Business for commercial operations.",
-    "planMatrixIntro": "Founder Seller is an internal invitation-only program and is not part of the public offer. This page only shows subscription plans.",
+    "planMatrixIntro": "Plans to scale sales: Pro for advanced tooling and Vendor/Business for reviewed commercial operations.",
     "priceShownFor": "Prices for {{place}}, detected from your device language and time zone.",
     "checkoutRegionHint": "Stripe Checkout uses this region to pick the correct subscription price.",
     "changeBillingRegion": "Not your billing country?",
@@ -1550,7 +1610,7 @@
     "tierVendorLi3": "Lead analytics (clicks, origin, listings that convert).",
     "tierVendorLi4": "Human-reviewed onboarding (not self-serve verification).",
     "sellerTypesTitle": "Marketplace seller types",
-    "sellerTypesIntro": "We define three profiles to avoid policy overlap: Founder (strategic program), Business (vendor subscription), and Community (peer listings).",
+    "sellerTypesIntro": "We define clear profiles: Business/Vendor for reviewed commercial operations and Community for open peer listings.",
     "founderSellerTitle": "Founder Seller (strategic)",
     "founderSellerTagline": "Curated founding partners selected for quality, traceability, and trust signal.",
     "founderSellerLi1": "Founder badge + priority placement among official vendors.",
@@ -1570,19 +1630,19 @@
     "communitySellerLi3": "Governed by animal welfare, listing accuracy, and community reputation rules.",
     "communitySellerLi4": "Can upgrade to Business when they need volume/commercial tools.",
     "sellerPolicyFootnote": "Policy framework: Founder = curated program; Business = operational subscription; Community = open participation. Distinct benefits prevent value collision.",
-    "businessRolloutTitle": "Vendor/Business rollout: scope and limits (current phase)",
-    "businessRolloutIntro": "We are preparing subscription activation by phases to protect marketplace quality and compliance.",
-    "businessRolloutLi1": "Phase 1: pre-registration + business/category validation.",
-    "businessRolloutLi2": "Phase 2: badge/storefront activation + first commercial listings.",
-    "businessRolloutLi3": "Phase 3: public Vendor/Business checkout with consolidated policies.",
-    "businessRolloutLi4": "Founder keeps strategic perks; Business receives scalable operational benefits.",
+    "businessRolloutTitle": "Vendor/Business activation and operations",
+    "businessRolloutIntro": "Business/Vendor is live through operational and compliance review to protect marketplace quality.",
+    "businessRolloutLi1": "Activation request with business details and shipping coverage.",
+    "businessRolloutLi2": "Team review (commercial identity, category fit, and core policies).",
+    "businessRolloutLi3": "Badge/storefront activation and commercial operation in marketplace.",
+    "businessRolloutLi4": "Business/Vendor focuses on operations, trust, and conversion for small and mid-size breeders.",
     "businessWaitlistBusinessName": "Business name",
     "businessWaitlistContactName": "Contact name",
     "businessWaitlistEmail": "Contact email",
     "businessWaitlistNotes": "Category or note (optional)",
-    "businessWaitlistSubmit": "Join Business pre-registration",
+    "businessWaitlistSubmit": "Request Business activation",
     "businessWaitlistValidation": "Complete business, contact, and email to continue.",
-    "businessWaitlistSuccess": "Request submitted. We will contact you for Business onboarding.",
+    "businessWaitlistSuccess": "Request submitted. We will contact you to activate your Business profile.",
     "businessWaitlistError": "We could not save your request right now. Please try again in a few minutes.",
     "referralsBlockTitle": "Referrals",
     "referralsKeyline": "Invite other keepers — improve your results.",
@@ -1595,7 +1655,13 @@
     "referralsBase": "Each valid invite: +3 days for your friend on signup and +3 days for you (stacked onto the active trial).",
     "statusTitle": "Your current plan",
     "statusFree": "Free: great for Cases, Community, and Discover without paying.",
-    "statusPro": "Pro is active. Vendor/Business is now enabled for commercial accounts.",
+    "statusPro": "Pro is active. To activate Vendor/Business you must submit a request and pass review.",
+    "vendorActivationTitle": "How to activate Vendor/Business",
+    "vendorActivationBody": "Vendor is not enabled automatically by paying Pro. Activation uses a review step to protect quality and compliance.",
+    "vendorActivationStep1": "Complete or update your storefront in Marketplace Seller.",
+    "vendorActivationStep2": "In Marketplace, open \"I want to appear as an official partner\" and submit your request.",
+    "vendorActivationStep3": "After team approval, your vendor badge/profile is activated.",
+    "vendorActivationCta": "Go activate Vendor",
     "currentFree": "Current plan: Free",
     "currentPro": "Current plan: Pro",
     "learnMore": "Plan details",
@@ -1652,6 +1718,126 @@
     "platformOpsBody": "Operational communication with Google Play Console, App Store Connect, Stripe, or other providers.",
     "marketingTitle": "Marketing — partnerships & proposals",
     "marketingBody": "Sponsorships, collaborations, press, or commercial ideas you would like to explore with TarantulApp\u2122."
+  },
+  "legal": {
+    "lastUpdated": "Last updated: May 2026",
+    "contactTitle": "Contact",
+    "terms": {
+      "title": "Terms of Service",
+      "intro": "By using",
+      "sections": [
+        {
+          "title": "1. Eligibility and account use",
+          "bullets": [
+            "You must be old enough to enter contracts in your jurisdiction for marketplace transactions.",
+            "You are responsible for account security and all actions taken with your credentials.",
+            "Illegal wildlife trade, fraud, harassment, and policy evasion are prohibited."
+          ]
+        },
+        {
+          "title": "2. Marketplace listing and sales rules",
+          "bullets": [
+            "Sellers must provide accurate listing details, legal-origin disclosures, and required permit references when applicable.",
+            "Seller shipping, DOA/live-arrival, and replacement/refund terms must be clearly stated in storefront policies.",
+            "TarantulApp may hide or remove listings that violate legal, animal welfare, or safety requirements."
+          ]
+        },
+        {
+          "title": "3. Payments, holds, and disputes",
+          "bullets": [
+            "Marketplace orders may include platform commissions and temporary payout holds.",
+            "Release and dispute flows may require evidence (for example shipping proof and arrival proof).",
+            "Chargebacks, fraud signals, or unresolved disputes may result in account restrictions."
+          ]
+        },
+        {
+          "title": "4. Liability and guarantees",
+          "bullets": [
+            "Each seller is responsible for their guarantees and transaction outcomes.",
+            "TarantulApp provides discovery, messaging, and transaction tooling but does not replace legal compliance duties of buyer or seller.",
+            "Service is provided as-is, with no guarantee of uninterrupted operation."
+          ]
+        },
+        {
+          "title": "5. Policy updates",
+          "body": "We may update these terms as legal and product requirements evolve. Continued use means acceptance of the latest version."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "intro": "This policy explains how we collect, use, and protect data when you use",
+      "rightsTitle": "Your rights",
+      "sections": [
+        {
+          "title": "1. Data we collect",
+          "bullets": [
+            "Account data such as email, profile fields, and authentication metadata.",
+            "Marketplace and community content, including messages, listing details, and uploaded media/evidence.",
+            "Billing and order metadata from payment providers (we do not store full card numbers)."
+          ]
+        },
+        {
+          "title": "2. How we use data",
+          "bullets": [
+            "Operate accounts, marketplace matching, messaging, and trust/safety workflows.",
+            "Process subscriptions, checkout events, holds, and dispute records.",
+            "Prevent abuse, investigate fraud, and comply with legal obligations."
+          ]
+        },
+        {
+          "title": "3. Storage and retention",
+          "bullets": [
+            "Data is stored in managed infrastructure with encrypted transport.",
+            "Evidence and moderation records may be retained to resolve disputes and legal requests.",
+            "We delete or anonymize data when no longer required by legal or operational needs."
+          ]
+        },
+        {
+          "title": "4. Sharing",
+          "body": "We share data only with service providers required for platform operations (for example hosting, email, cloud media, and payment processing) and with authorities when legally required."
+        }
+      ]
+    },
+    "marketplacePolicy": {
+      "title": "Marketplace policy",
+      "intro": "This policy defines marketplace transaction, trust, and dispute rules for buyers and sellers on",
+      "contactLead": "Marketplace and Trust & Safety:",
+      "sections": [
+        {
+          "title": "1. Seller obligations",
+          "bullets": [
+            "Publish accurate listing information, legal origin disclosures, and clear shipping/guarantee terms.",
+            "Do not list prohibited wildlife or offer shipments that violate local law.",
+            "Respond in a timely way to buyers when payment, shipment, or live-arrival issues occur."
+          ]
+        },
+        {
+          "title": "2. Buyer obligations",
+          "bullets": [
+            "Confirm local legality and import/export limits before paying.",
+            "Use in-app messaging and keep evidence tied to the transaction thread.",
+            "Report non-delivery, misrepresentation, or welfare concerns quickly."
+          ]
+        },
+        {
+          "title": "3. Payment hold and release",
+          "bullets": [
+            "Some orders remain in temporary hold before seller payout release.",
+            "Release timing and status may depend on evidence milestones (shipping and arrival proof).",
+            "Disputes pause release while evidence is reviewed."
+          ]
+        },
+        {
+          "title": "4. Disputes and enforcement",
+          "bullets": [
+            "Fraud, abuse, repeated chargebacks, or policy violations may lead to listing removal or account restrictions.",
+            "We may request additional evidence from either side to resolve disputes.",
+            "Serious legal or welfare incidents may be escalated to authorities where required."
+          ]
+        }
+      ]
+    }
   },
   "accountDeletion": {
     "title": "Delete your account",

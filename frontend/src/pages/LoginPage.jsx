@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
   const [mode, setMode] = useState(() => (location.state?.initialMode === 'register' ? 'register' : 'login'))
-  const [form, setForm] = useState({ email: '', password: '', displayName: '' })
+  const [form, setForm] = useState({ email: '', password: '', displayName: '', legalAccepted: false })
   const [referralCode, setReferralCode] = useState(() => {
     const r = new URLSearchParams(location.search).get('ref')
     return r ? String(r).trim().toUpperCase() : ''
@@ -97,6 +97,10 @@ export default function LoginPage() {
       setError(t('auth.passwordTooShort'))
       return
     }
+    if (!inviteOnly && mode === 'register' && !form.legalAccepted) {
+      setError(t('auth.legalMustAccept'))
+      return
+    }
     setLoading(true)
     try {
       const endpoint = inviteOnly || mode === 'login' ? '/auth/login' : '/auth/register'
@@ -107,6 +111,7 @@ export default function LoginPage() {
             password,
             displayName: form.displayName?.trim() || undefined,
             referralCode: referralCode.trim() || undefined,
+            legalAccepted: !!form.legalAccepted,
           }
       const { data } = await publicApi.post(endpoint, body)
       const tok = data?.token != null ? String(data.token).trim() : ''
@@ -293,6 +298,25 @@ export default function LoginPage() {
                         placeholder={t('auth.namePlaceholder')}
                         autoComplete="name"
                       />
+                    </div>
+                  )}
+
+                  {showRegisterUi && mode === 'register' && (
+                    <div className="mb-3 form-check">
+                      <input
+                        id="register-legal-accept"
+                        className="form-check-input"
+                        type="checkbox"
+                        checked={!!form.legalAccepted}
+                        onChange={(e) => setForm((prev) => ({ ...prev, legalAccepted: e.target.checked }))}
+                      />
+                      <label htmlFor="register-legal-accept" className="form-check-label small">
+                        {t('auth.legalAcceptPrefix')}{' '}
+                        <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>
+                        {' '}{t('auth.legalAnd')}{' '}
+                        <Link to="/privacy" target="_blank" rel="noreferrer">{t('auth.legalPrivacy')}</Link>
+                        .
+                      </label>
                     </div>
                   )}
 

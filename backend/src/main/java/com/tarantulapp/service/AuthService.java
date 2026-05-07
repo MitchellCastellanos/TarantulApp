@@ -119,6 +119,9 @@ public class AuthService {
         if (inviteOnlyRegistration) {
             throw new IllegalArgumentException("REGISTRATION_CLOSED");
         }
+        if (!Boolean.TRUE.equals(request.getLegalAccepted())) {
+            throw new IllegalArgumentException("LEGAL_ACCEPTANCE_REQUIRED");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El email ya está registrado");
         }

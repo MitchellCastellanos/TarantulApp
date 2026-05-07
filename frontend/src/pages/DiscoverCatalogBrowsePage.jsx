@@ -15,6 +15,13 @@ export default function DiscoverCatalogBrowsePage() {
   const page = Math.max(0, parseInt(searchParams.get('page') || '0', 10) || 0)
   const hobbyWorld = (searchParams.get('hobbyWorld') || '').trim().toLowerCase()
   const habitatRaw = (searchParams.get('habitatType') || '').trim().toLowerCase()
+  const experienceLevel = (searchParams.get('experienceLevel') || '').trim().toLowerCase()
+  const growthRate = (searchParams.get('growthRate') || '').trim().toLowerCase()
+  const query = (searchParams.get('q') || '').trim()
+  const sizeMin = (searchParams.get('sizeMin') || '').trim()
+  const sizeMax = (searchParams.get('sizeMax') || '').trim()
+  const sort = (searchParams.get('sort') || 'scientificName').trim()
+  const direction = (searchParams.get('direction') || 'asc').trim()
   const semi = searchParams.get('semi') === '1'
   const habitatType = habitatRaw
 
@@ -40,13 +47,20 @@ export default function DiscoverCatalogBrowsePage() {
         pageSize: PAGE_SIZE,
         ...(hobbyWorld ? { hobbyWorld } : {}),
         ...(habitatType ? { habitatType } : {}),
+        ...(experienceLevel ? { experienceLevel } : {}),
+        ...(growthRate ? { growthRate } : {}),
+        ...(query ? { q: query } : {}),
+        ...(sizeMin ? { sizeMin: Number(sizeMin) } : {}),
+        ...(sizeMax ? { sizeMax: Number(sizeMax) } : {}),
+        sort,
+        direction,
       })
       .then(setData)
       .catch(() => {
         setData(null)
         setError(true)
       })
-  }, [page, hobbyWorld, habitatType])
+  }, [page, hobbyWorld, habitatType, experienceLevel, growthRate, query, sizeMin, sizeMax, sort, direction])
 
   useEffect(() => {
     load()
@@ -63,6 +77,14 @@ export default function DiscoverCatalogBrowsePage() {
   const totalPages = typeof data?.totalPages === 'number' ? Math.max(1, data.totalPages) : 1
   const currentPage = typeof data?.number === 'number' ? data.number : page
 
+  const updateFilter = (key, value) => {
+    const next = new URLSearchParams(searchParams)
+    if (value == null || value === '') next.delete(key)
+    else next.set(key, String(value))
+    next.delete('page')
+    setSearchParams(next, { replace: true })
+  }
+
   return (
     <PublicShell>
       <div className="mx-auto ta-premium-page">
@@ -77,6 +99,63 @@ export default function DiscoverCatalogBrowsePage() {
           </div>
           <h1 className="h4 fw-bold mb-1 cinzel" style={{ color: 'var(--ta-parchment)' }}>{title}</h1>
           <p className="small mb-4" style={{ color: 'var(--ta-text-muted)' }}>{t('discover.browsePageTitle')}</p>
+
+          <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
+            <div className="card-body p-3">
+              <h2 className="h6 mb-2">{t('discover.filtersTitle')}</h2>
+              <div className="d-flex flex-wrap gap-2">
+                <input
+                  className="form-control form-control-sm"
+                  style={{ minWidth: 160, flex: '1 1 220px' }}
+                  placeholder={t('discover.searchPlaceholder')}
+                  value={query}
+                  onChange={(e) => updateFilter('q', e.target.value)}
+                />
+                <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 140 }} value={experienceLevel} onChange={(e) => updateFilter('experienceLevel', e.target.value)}>
+                  <option value="">{t('discover.filterAnyExperience')}</option>
+                  <option value="beginner">{t('species.levelBeginner')}</option>
+                  <option value="intermediate">{t('species.levelIntermediate')}</option>
+                  <option value="advanced">{t('species.levelAdvanced')}</option>
+                </select>
+                <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 140 }} value={growthRate} onChange={(e) => updateFilter('growthRate', e.target.value)}>
+                  <option value="">{t('discover.filterAnyGrowth')}</option>
+                  <option value="slow">{t('species.growthSlow')}</option>
+                  <option value="moderate">{t('species.growthModerate')}</option>
+                  <option value="fast">{t('species.growthFast')}</option>
+                </select>
+                <input
+                  className="form-control form-control-sm"
+                  style={{ width: 100 }}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={t('discover.sizeMin')}
+                  value={sizeMin}
+                  onChange={(e) => updateFilter('sizeMin', e.target.value)}
+                />
+                <input
+                  className="form-control form-control-sm"
+                  style={{ width: 100 }}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={t('discover.sizeMax')}
+                  value={sizeMax}
+                  onChange={(e) => updateFilter('sizeMax', e.target.value)}
+                />
+                <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 130 }} value={sort} onChange={(e) => updateFilter('sort', e.target.value)}>
+                  <option value="scientificName">{t('discover.sortScientific')}</option>
+                  <option value="commonName">{t('discover.sortCommon')}</option>
+                  <option value="experienceLevel">{t('discover.sortExperience')}</option>
+                  <option value="habitatType">{t('discover.sortHabitat')}</option>
+                </select>
+                <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 100 }} value={direction} onChange={(e) => updateFilter('direction', e.target.value)}>
+                  <option value="asc">{t('discover.sortAsc')}</option>
+                  <option value="desc">{t('discover.sortDesc')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           {error && (
             <p className="text-danger small">{t('discover.catalogLoadError')}</p>

@@ -176,6 +176,7 @@ public class ChatService {
         String current = thread.getTransactionStatus() == null || thread.getTransactionStatus().isBlank()
                 ? "pending"
                 : thread.getTransactionStatus();
+        assertEvidenceRequirementsForStatusTransition(thread.getId(), currentUserId, listing.getSellerUserId(), normalized);
         if (!canTransitionStatus(current, normalized, currentUserId, listing.getSellerUserId())) {
             throw new AccessDeniedException("No puedes cambiar a ese estado desde tu rol");
         }
@@ -391,6 +392,29 @@ public class ChatService {
         }
         if ("disputed".equals(from) && "delivered".equals(to)) {
             return !seller;
+        }
+        return false;
+    }
+
+    private void assertEvidenceRequirementsForStatusTransition(UUID threadId, UUID actorUserId, UUID sellerUserId, String toStatus) {
+        boolean seller = actorUserId.equals(sellerUserId);
+        if ("shipped".equals(toStatus) && seller && !hasEventEvidenceByActor(threadId, actorUserId, "shipping_proof")) {
+            throw new IllegalArgumentException("Antes de marcar como enviado agrega prueba de envio con evidencia.");
+        }
+        if ("delivered".equals(toStatus) && !seller && !hasEventEvidenceByActor(threadId, actorUserId, "arrival_proof")) {
+            throw new IllegalArgumentException("Antes de confirmar entrega agrega prueba de llegada con evidencia.");
+        }
+    }
+
+    private boolean hasEventEvidenceByActor(UUID threadId, UUID actorUserId, String eventType) {
+        List<ChatThreadEvent> events = chatThreadEventRepository.findTop200ByThreadIdOrderByCreatedAtDesc(threadId);
+        for (ChatThreadEvent e : events) {
+            if (!eventType.equalsIgnoreCase(String.valueOf(e.getEventType()))) continue;
+            if (!actorUserId.equals(e.getCreatedByUserId())) continue;
+            boolean hasPrimary = e.getEvidenceUrl() != null && !e.getEvidenceUrl().isBlank();
+            if (hasPrimary) return true;
+            List<ChatThreadEventEvidence> extra = chatThreadEventEvidenceRepository.findByEventIdInOrderByCreatedAtAsc(List.of(e.getId()));
+            if (!extra.isEmpty()) return true;
         }
         return false;
     }

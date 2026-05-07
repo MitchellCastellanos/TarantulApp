@@ -17,12 +17,14 @@ import com.tarantulapp.entity.ProcessedWebhookEvent;
 import com.tarantulapp.entity.Subscription;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
+import com.tarantulapp.entity.MarketplaceOrder;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.BillingEmailEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.ProcessedWebhookEventRepository;
 import com.tarantulapp.repository.SubscriptionRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.repository.MarketplaceOrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,6 +41,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +62,7 @@ public class BillingService {
     private final AdminAccessService adminAccessService;
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final ProcessedWebhookEventRepository processedWebhookEventRepository;
+    private final MarketplaceOrderRepository marketplaceOrderRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /** One-time payment price for marketplace listing boost ($2); optional. */
@@ -119,7 +123,8 @@ public class BillingService {
                           BillingEmailEventRepository billingEmailEventRepository,
                           AdminAccessService adminAccessService,
                           MarketplaceListingRepository marketplaceListingRepository,
-                          ProcessedWebhookEventRepository processedWebhookEventRepository) {
+                          ProcessedWebhookEventRepository processedWebhookEventRepository,
+                          MarketplaceOrderRepository marketplaceOrderRepository) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -129,6 +134,7 @@ public class BillingService {
         this.adminAccessService = adminAccessService;
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.processedWebhookEventRepository = processedWebhookEventRepository;
+        this.marketplaceOrderRepository = marketplaceOrderRepository;
     }
 
     @Transactional(readOnly = true)
@@ -313,6 +319,59 @@ public class BillingService {
         }
     }
 
+    public String createMarketplaceOrderCheckoutSession(UUID actorUserId, MarketplaceOrder order, String actorEmail) {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            throw new IllegalArgumentException("STRIPE_NOT_CONFIGURED");
+        }
+        if (!actorUserId.equals(order.getBuyerUserId())) {
+            throw new AccessDeniedException("Solo el comprador puede iniciar checkout");
+        }
+        if (!"payment_pending".equals(order.getStatus())) {
+            throw new IllegalArgumentException("ORDER_NOT_PAYMENT_PENDING");
+        }
+        String successUrl = appBaseUrl + "/marketplace/messages?thread=" + order.getThreadId() + "&orderCheckout=success&session_id={CHECKOUT_SESSION_ID}";
+        String cancelUrl = appBaseUrl + "/marketplace/messages?thread=" + order.getThreadId() + "&orderCheckout=cancel";
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("mode", "payment");
+        body.add("success_url", successUrl);
+        body.add("cancel_url", cancelUrl);
+        long amount = order.getSubtotal().movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValue();
+        body.add("line_items[0][price_data][currency]", String.valueOf(order.getCurrency()).toLowerCase());
+        body.add("line_items[0][price_data][unit_amount]", String.valueOf(amount));
+        body.add("line_items[0][price_data][product_data][name]", "Marketplace order " + order.getListingId());
+        body.add("line_items[0][quantity]", "1");
+        body.add("client_reference_id", actorUserId.toString());
+        if (actorEmail != null && !actorEmail.isBlank()) {
+            body.add("customer_email", actorEmail);
+        }
+        body.add("metadata[purpose]", "marketplace_order");
+        body.add("metadata[userId]", actorUserId.toString());
+        body.add("metadata[orderId]", order.getId().toString());
+        body.add("metadata[threadId]", order.getThreadId().toString());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setBasicAuth(stripeSecretKey, "");
+        HttpEntity<MultiValueMap<String, String>> req = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://api.stripe.com/v1/checkout/sessions",
+                req,
+                String.class
+        );
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new IllegalArgumentException("ORDER_CHECKOUT_FAILED");
+        }
+        try {
+            JsonNode json = objectMapper.readTree(response.getBody());
+            String url = json.path("url").asText("");
+            if (url.isBlank()) {
+                throw new IllegalArgumentException("ORDER_CHECKOUT_URL_MISSING");
+            }
+            return url;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("ORDER_CHECKOUT_RESPONSE_INVALID");
+        }
+    }
+
     @Transactional
     public void handleStripeWebhook(String payload, String signatureHeader) {
         if (stripeWebhookSecret == null || stripeWebhookSecret.isBlank()) {
@@ -389,6 +448,13 @@ public class BillingService {
                     );
                 }
             }
+            if ("marketplace_order".equals(purpose)) {
+                String orderIdRaw = checkout.path("metadata").path("orderId").asText("");
+                String userIdRaw = checkout.path("metadata").path("userId").asText("");
+                if (!orderIdRaw.isBlank() && !userIdRaw.isBlank()) {
+                    applyMarketplaceOrderPayment(UUID.fromString(orderIdRaw), UUID.fromString(userIdRaw), checkout);
+                }
+            }
             return;
         }
 
@@ -458,6 +524,34 @@ public class BillingService {
                     currency,
                     ""
             );
+        }
+    }
+
+    private void applyMarketplaceOrderPayment(UUID orderId, UUID buyerId, JsonNode checkout) {
+        MarketplaceOrder order = marketplaceOrderRepository.findById(orderId).orElse(null);
+        if (order == null) return;
+        if (!buyerId.equals(order.getBuyerUserId())) return;
+        if (!"payment_pending".equals(order.getStatus())) return;
+        String sessionId = checkout.path("id").asText("");
+        String paymentIntent = checkout.path("payment_intent").asText("");
+        order.setStatus("paid_in_hold");
+        order.setProvider("stripe");
+        order.setProviderRef(!paymentIntent.isBlank() ? paymentIntent : sessionId);
+        order.setHoldReleaseAt(Instant.now().plus(3, ChronoUnit.DAYS));
+        marketplaceOrderRepository.save(order);
+        User buyer = userRepository.findById(buyerId).orElse(null);
+        if (buyer != null) {
+            long amountTotal = checkout.path("amount_total").asLong(0L);
+            String currency = checkout.path("currency").asText("usd");
+            if (amountTotal > 0 && !sessionId.isBlank()) {
+                sendPaymentReceiptOnce(
+                        buyer,
+                        "PAYMENT_RECEIPT_MARKETPLACE_ORDER:" + sessionId,
+                        amountTotal,
+                        currency,
+                        ""
+                );
+            }
         }
     }
 

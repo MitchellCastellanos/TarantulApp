@@ -328,6 +328,18 @@ export default function ProPage() {
               <p className="small text-muted mb-2">
                 {isPro ? t('pro.statusPro') : t('pro.statusFree')}
               </p>
+              <div className="border rounded p-3 mb-3" style={{ borderColor: 'var(--ta-border)' }}>
+                <div className="small fw-semibold mb-2">{t('pro.vendorActivationTitle')}</div>
+                <p className="small text-muted mb-2">{t('pro.vendorActivationBody')}</p>
+                <ol className="small mb-2 ps-3" style={{ lineHeight: 1.45 }}>
+                  <li>{t('pro.vendorActivationStep1')}</li>
+                  <li>{t('pro.vendorActivationStep2')}</li>
+                  <li>{t('pro.vendorActivationStep3')}</li>
+                </ol>
+                <Link to="/marketplace#vendor-activation" className="btn btn-sm btn-outline-secondary">
+                  {t('pro.vendorActivationCta')}
+                </Link>
+              </div>
               {!isPro && user && !inTrial && (
                 <p className="small text-muted mb-3">{t('pro.ctaRegisterTrialReminder')}</p>
               )}

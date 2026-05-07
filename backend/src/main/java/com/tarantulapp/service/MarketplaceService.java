@@ -7,6 +7,7 @@ import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.entity.SellerReview;
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
@@ -46,6 +47,13 @@ import com.tarantulapp.util.PublicHandleRules;
 @Service
 public class MarketplaceService {
     private static final Pattern ISO_COUNTRY = Pattern.compile("[A-Z]{2}");
+    private static final int FREE_ACTIVE_LISTING_LIMIT = 3;
+    private static final int PRO_ACTIVE_LISTING_LIMIT = 25;
+    private static final int VENDOR_ACTIVE_LISTING_LIMIT = 250;
+    private static final BigDecimal COMMISSION_RATE_COMMUNITY = new BigDecimal("0.10");
+    private static final BigDecimal COMMISSION_RATE_PRO = new BigDecimal("0.08");
+    private static final BigDecimal COMMISSION_RATE_VENDOR = new BigDecimal("0.06");
+    private static final int PAYOUT_HOLD_DAYS = 3;
 
     private static final long MIN_MESSAGES_TO_ENABLE_REVIEW = 6L;
     private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
@@ -151,6 +159,7 @@ public class MarketplaceService {
         out.put("badges", computeBadges(userId));
         out.put("badgesProgress", computeBadgeProgress(userId));
         out.put("reputation", computeReputation(userId));
+        out.put("sellerProgram", resolveSellerProgram(profile));
         return out;
     }
 
@@ -177,6 +186,16 @@ public class MarketplaceService {
         String permitRefs = cleanText(regulatoryPermitRefs, 420);
         String iso = normalizeIsoCountry(captureOriginCountryIso);
         validateWildCaughtOrigin(wildCaught, iso);
+        User seller = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        Map<String, Object> sellerProgram = resolveSellerProgram(seller);
+        int activeLimit = ((Number) sellerProgram.get("activeListingLimit")).intValue();
+        long activeCount = marketplaceListingRepository.countBySellerUserIdAndStatusIgnoreCase(userId, "active");
+        if (activeCount >= activeLimit) {
+            throw new IllegalArgumentException("Alcanzaste el limite de listings activos de tu plan. Actualiza a Pro/Vendor para escalar.");
+        }
+        if (requestListingBoost && !Boolean.TRUE.equals(sellerProgram.get("canRequestBoost"))) {
+            throw new IllegalArgumentException("Listing Boost requiere plan Pro o Vendor.");
+        }
 
         MarketplaceListing listing = new MarketplaceListing();
         listing.setSellerUserId(userId);
@@ -200,15 +219,13 @@ public class MarketplaceService {
         listing = marketplaceListingRepository.save(listing);
         Map<String, Object> out = mapListing(listing);
         out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
+        out.put("sellerProgram", sellerProgram);
         if (requestListingBoost && billingService.isListingBoostCheckoutAvailable()) {
-            User u = userRepository.findById(userId).orElse(null);
-            if (u != null) {
-                try {
-                    String url = billingService.createListingBoostCheckoutSession(userId, u.getEmail(), listing.getId());
-                    out.put("boostCheckoutUrl", url);
-                } catch (Exception ignored) {
-                    // Listing is still published; boost checkout can be retried later if we add that flow.
-                }
+            try {
+                String url = billingService.createListingBoostCheckoutSession(userId, seller.getEmail(), listing.getId());
+                out.put("boostCheckoutUrl", url);
+            } catch (Exception ignored) {
+                // Listing is still published; boost checkout can be retried later if we add that flow.
             }
         }
         return out;
@@ -237,7 +254,10 @@ public class MarketplaceService {
     public List<Map<String, Object>> publicListings(String q, String status,
                                                     String country, String state, String city,
                                                     String nearCountry, String nearState, String nearCity,
-                                                    String listingOrigin, Boolean hasRegulatoryRefs) {
+                                                    String listingOrigin, Boolean hasRegulatoryRefs,
+                                                    String sellerTier, Boolean verifiedOnly,
+                                                    Boolean boostedOnly, Boolean hasImage,
+                                                    BigDecimal minPrice, BigDecimal maxPrice) {
         final String filterCountry = normalizeFilter(country);
         final String filterState = normalizeFilter(state);
         final String filterCity = normalizeFilter(city);
@@ -254,7 +274,7 @@ public class MarketplaceService {
         );
         List<Map<String, Object>> peer = peerPublicListings(
                 q, status, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm,
-                listingOriginNorm, hasRegulatoryRefs
+                listingOriginNorm, hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
         );
         int partnerCap = dynamicPartnerCap(peer.size(), partner.size());
         List<Map<String, Object>> out = new ArrayList<>(partnerCap + peer.size());
@@ -335,6 +355,35 @@ public class MarketplaceService {
         return payload;
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> dealQuote(UUID listingId, BigDecimal overrideSubtotal) {
+        MarketplaceListing listing = marketplaceListingRepository.findById(listingId)
+                .orElseThrow(() -> new NotFoundException("Listing no encontrado"));
+        User seller = userRepository.findById(listing.getSellerUserId()).orElse(null);
+        String sellerTier = sellerProgramTierKey(seller);
+        BigDecimal subtotal = overrideSubtotal != null
+                ? overrideSubtotal
+                : (listing.getPriceAmount() == null ? BigDecimal.ZERO : listing.getPriceAmount());
+        if (subtotal.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Subtotal invalido");
+        }
+        BigDecimal rate = commissionRateBySellerTier(sellerTier);
+        BigDecimal commission = subtotal.multiply(rate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal payout = subtotal.subtract(commission).setScale(2, RoundingMode.HALF_UP);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("listingId", listing.getId());
+        out.put("currency", listing.getCurrency());
+        out.put("subtotal", subtotal.setScale(2, RoundingMode.HALF_UP));
+        out.put("commissionRate", rate);
+        out.put("commissionAmount", commission);
+        out.put("sellerPayoutAmount", payout);
+        out.put("sellerTier", sellerTier);
+        out.put("payoutHoldDays", PAYOUT_HOLD_DAYS);
+        out.put("requiresProofOfLifeBeforeShipping", true);
+        out.put("requiresArrivalProofBeforeRelease", true);
+        return out;
+    }
+
     private boolean isVendorEligibleForPublicFeed(OfficialVendor vendor) {
         if (vendor == null || !Boolean.TRUE.equals(vendor.getEnabled())
                 || !Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
@@ -399,7 +448,9 @@ public class MarketplaceService {
     private List<Map<String, Object>> peerPublicListings(String q, String status,
                                                          String filterCountry, String filterState, String filterCity,
                                                          String nearCountryNorm, String nearStateNorm, String nearCityNorm,
-                                                         String listingOriginNorm, Boolean hasRegulatoryRefs) {
+                                                         String listingOriginNorm, Boolean hasRegulatoryRefs,
+                                                         String sellerTier, Boolean verifiedOnly, Boolean boostedOnly,
+                                                         Boolean hasImage, BigDecimal minPrice, BigDecimal maxPrice) {
         String normalizedStatus = normalizeStatus(status);
         if (normalizedStatus == null || "hidden".equals(normalizedStatus)) {
             normalizedStatus = "active";
@@ -423,6 +474,11 @@ public class MarketplaceService {
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
                 .filter(m -> matchesListingOriginFilter(m, listingOriginNorm))
                 .filter(m -> matchesRegulatoryRefsFilter(m, hasRegulatoryRefs))
+                .filter(m -> matchesSellerTierFilter(m, sellerTier))
+                .filter(m -> matchesVerifiedFilter(m, verifiedOnly))
+                .filter(m -> matchesBoostedFilter(m, boostedOnly))
+                .filter(m -> matchesHasImageFilter(m, hasImage))
+                .filter(m -> matchesPriceRange(m, minPrice, maxPrice))
                 .sorted((a, b) -> {
                     boolean ab = isListingBoostedNow(a);
                     boolean bb = isListingBoostedNow(b);
@@ -459,6 +515,38 @@ public class MarketplaceService {
         }
         boolean hasRefs = m.getRegulatoryPermitRefs() != null && !m.getRegulatoryPermitRefs().isBlank();
         return hasRegulatoryRefs ? hasRefs : !hasRefs;
+    }
+
+    private boolean matchesSellerTierFilter(MarketplaceListing m, String sellerTier) {
+        String norm = normalizeFilter(sellerTier);
+        if (norm == null) return true;
+        User seller = userRepository.findById(m.getSellerUserId()).orElse(null);
+        String tier = sellerProgramTierKey(seller);
+        return norm.equals(tier);
+    }
+
+    private boolean matchesVerifiedFilter(MarketplaceListing m, Boolean verifiedOnly) {
+        if (!Boolean.TRUE.equals(verifiedOnly)) return true;
+        User seller = userRepository.findById(m.getSellerUserId()).orElse(null);
+        return seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder());
+    }
+
+    private boolean matchesBoostedFilter(MarketplaceListing m, Boolean boostedOnly) {
+        if (!Boolean.TRUE.equals(boostedOnly)) return true;
+        return isListingBoostedNow(m);
+    }
+
+    private static boolean matchesHasImageFilter(MarketplaceListing m, Boolean hasImage) {
+        if (hasImage == null) return true;
+        boolean image = m.getImageUrl() != null && !m.getImageUrl().isBlank();
+        return hasImage ? image : !image;
+    }
+
+    private static boolean matchesPriceRange(MarketplaceListing m, BigDecimal minPrice, BigDecimal maxPrice) {
+        if (minPrice == null && maxPrice == null) return true;
+        if (m.getPriceAmount() == null) return false;
+        if (minPrice != null && m.getPriceAmount().compareTo(minPrice) < 0) return false;
+        return maxPrice == null || m.getPriceAmount().compareTo(maxPrice) <= 0;
     }
 
     private static String normalizeListingOriginFilter(String raw) {
@@ -663,6 +751,7 @@ public class MarketplaceService {
         out.put("sellerProfilePhoto", seller == null || seller.getProfilePhoto() == null ? "" : seller.getProfilePhoto());
         out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("sellerVerifiedBreeder", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
+        out.put("sellerProgramTier", sellerProgramTierKey(seller));
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
         out.put("speciesName", l.getSpeciesName() == null ? "" : l.getSpeciesName());
@@ -689,6 +778,42 @@ public class MarketplaceService {
         out.put("canonicalUrl", null);
         out.put("officialVendor", null);
         return out;
+    }
+
+    private Map<String, Object> resolveSellerProgram(User seller) {
+        String tier = sellerProgramTierKey(seller);
+        int activeListingLimit;
+        boolean canRequestBoost;
+        if ("vendor".equals(tier)) {
+            activeListingLimit = VENDOR_ACTIVE_LISTING_LIMIT;
+            canRequestBoost = true;
+        } else if ("pro".equals(tier)) {
+            activeListingLimit = PRO_ACTIVE_LISTING_LIMIT;
+            canRequestBoost = true;
+        } else {
+            activeListingLimit = FREE_ACTIVE_LISTING_LIMIT;
+            canRequestBoost = false;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("tier", tier);
+        out.put("activeListingLimit", activeListingLimit);
+        out.put("canRequestBoost", canRequestBoost);
+        out.put("reviewedVendor", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
+        out.put("proPlan", seller != null && UserPlan.PRO.equals(seller.getPlan()));
+        return out;
+    }
+
+    private BigDecimal commissionRateBySellerTier(String sellerTier) {
+        if ("vendor".equals(sellerTier)) return COMMISSION_RATE_VENDOR;
+        if ("pro".equals(sellerTier)) return COMMISSION_RATE_PRO;
+        return COMMISSION_RATE_COMMUNITY;
+    }
+
+    private String sellerProgramTierKey(User seller) {
+        if (seller == null) return "community";
+        if (Boolean.TRUE.equals(seller.getVerifiedBreeder())) return "vendor";
+        if (UserPlan.PRO.equals(seller.getPlan())) return "pro";
+        return "community";
     }
 
     private Map<String, Object> mapPartnerListing(PartnerListing listing, OfficialVendor vendor) {

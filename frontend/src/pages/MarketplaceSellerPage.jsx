@@ -48,6 +48,13 @@ export default function MarketplaceSellerPage() {
     contactWhatsapp: '',
     contactInstagram: '',
   })
+  const [sellerProgram, setSellerProgram] = useState({
+    tier: 'community',
+    activeListingLimit: 3,
+    canRequestBoost: false,
+    reviewedVendor: false,
+    proPlan: false,
+  })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
@@ -84,6 +91,13 @@ export default function MarketplaceSellerPage() {
       storefrontLagPolicy: profile?.storefrontLagPolicy || '',
       contactWhatsapp: profile?.contactWhatsapp || '',
       contactInstagram: profile?.contactInstagram || '',
+    })
+    setSellerProgram({
+      tier: profile?.sellerProgram?.tier || 'community',
+      activeListingLimit: Number(profile?.sellerProgram?.activeListingLimit || 3),
+      canRequestBoost: !!profile?.sellerProgram?.canRequestBoost,
+      reviewedVendor: !!profile?.sellerProgram?.reviewedVendor,
+      proPlan: !!profile?.sellerProgram?.proPlan,
     })
   }, [user])
 
@@ -174,6 +188,10 @@ export default function MarketplaceSellerPage() {
     if (statusFilter === 'all') return list
     return list.filter((l) => String(l.status || '').toLowerCase() === statusFilter)
   }, [myListings, statusFilter])
+  const activeListingsCount = useMemo(
+    () => (myListings || []).filter((l) => String(l.status || '').toLowerCase() === 'active').length,
+    [myListings]
+  )
 
   const statusLabel = (s) => {
     const key = String(s || '').toLowerCase()
@@ -283,6 +301,37 @@ export default function MarketplaceSellerPage() {
 
         <div className="card border-0 shadow-sm ta-premium-pane mb-4">
           <div className="card-body">
+            <div className="border rounded p-2 mb-3" style={{ borderColor: 'var(--ta-border)' }}>
+              <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                <div>
+                  <div className="small fw-semibold">{t('marketplace.programTierLabel')}</div>
+                  <div className="small text-muted">
+                    {sellerProgram.tier === 'vendor'
+                      ? t('marketplace.sellerTierVendor')
+                      : sellerProgram.tier === 'pro'
+                        ? t('marketplace.sellerTierPro')
+                        : t('marketplace.sellerTierCommunity')}
+                  </div>
+                </div>
+                <span className="badge bg-secondary">
+                  {activeListingsCount}/{sellerProgram.activeListingLimit} {t('marketplace.activeListingsLabel')}
+                </span>
+              </div>
+              <div className="small text-muted mt-2">
+                {sellerProgram.tier === 'vendor'
+                  ? t('marketplace.vendorBenefitsLive')
+                  : sellerProgram.tier === 'pro'
+                    ? t('marketplace.proBenefitsLive')
+                    : t('marketplace.communityLimitHint')}
+              </div>
+              {!sellerProgram.reviewedVendor && (
+                <div className="mt-2">
+                  <Link to="/marketplace#vendor-activation" className="btn btn-sm btn-outline-secondary">
+                    {t('marketplace.vendorApplyNow')}
+                  </Link>
+                </div>
+              )}
+            </div>
             <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
               <div>
                 <h2 className="h6 mb-1">{t('marketplace.storefrontSetupTitle')}</h2>
@@ -400,6 +449,14 @@ export default function MarketplaceSellerPage() {
             <div className="card border-0 shadow-sm ta-premium-pane h-100">
               <div className="card-body">
                 <h2 className="h6 mb-3">{t('marketplace.publishTitle')}</h2>
+                <p className="small text-muted mb-2">
+                  {t('marketplace.sellerLegalNotice')}{' '}
+                  <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>
+                  {' '}·{' '}
+                  <Link to="/privacy" target="_blank" rel="noreferrer">{t('auth.legalPrivacy')}</Link>
+                  {' '}·{' '}
+                  <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
+                </p>
                 <form onSubmit={submitListing} className="small">
                   <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldTitle')}
                     required value={listingForm.title} onChange={(e) => setListingForm((f) => ({ ...f, title: e.target.value }))} />
@@ -508,7 +565,7 @@ export default function MarketplaceSellerPage() {
                       </label>
                     </div>
                   </div>
-                  {listingBoostAvailable && (
+                  {listingBoostAvailable && sellerProgram.canRequestBoost && (
                     <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
                       <input
                         className="form-check-input"
@@ -521,6 +578,11 @@ export default function MarketplaceSellerPage() {
                         {t('marketplace.listingBoostLabel')}
                         <span className="d-block small text-muted mt-1">{t('marketplace.listingBoostHint')}</span>
                       </label>
+                    </div>
+                  )}
+                  {listingBoostAvailable && !sellerProgram.canRequestBoost && (
+                    <div className="small text-muted mb-2">
+                      {t('marketplace.boostLockedHint')}
                     </div>
                   )}
                   <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>

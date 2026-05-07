@@ -501,6 +501,17 @@
     "catalogBannerBody": "Catálogo público en evolución, enlazado con GBIF y World Spider Catalog (Theraphosidae) cuando aplica.",
     "catalogBannerTitleFallback": "Explora el catálogo público de especies",
     "browsePageTitle": "Catálogo",
+    "filtersTitle": "Filtros agresivos",
+    "filterAnyExperience": "Cualquier nivel",
+    "filterAnyGrowth": "Cualquier velocidad de crecimiento",
+    "sizeMin": "Min cm",
+    "sizeMax": "Max cm",
+    "sortScientific": "Ordenar: nombre científico",
+    "sortCommon": "Ordenar: nombre común",
+    "sortExperience": "Ordenar: experiencia",
+    "sortHabitat": "Ordenar: hábitat",
+    "sortAsc": "Asc",
+    "sortDesc": "Desc",
     "browseBack": "Volver a Descubrir",
     "browseTitleNewWorld": "Especies de Nuevo Mundo",
     "browseTitleOldWorld": "Especies de Viejo Mundo",
@@ -609,6 +620,11 @@
     "resetSuccess": "Contraseña actualizada. Ahora puedes iniciar sesión.",
     "fillRequired": "Escribe tu correo y contraseña.",
     "passwordTooShort": "La contraseña debe tener al menos 6 caracteres.",
+    "legalMustAccept": "Debes aceptar Términos y Privacidad para crear tu cuenta.",
+    "legalAcceptPrefix": "Acepto los",
+    "legalTerms": "Términos del servicio",
+    "legalPrivacy": "Aviso de privacidad",
+    "legalAnd": "y",
     "trialRegisterPromo": "Las cuentas nuevas incluyen 7 días de prueba con todo lo de Pro. Después: Free (Cases, Comunidad, Discover, IA básica) o Pro ($4.99/mes) con bitácora completa, exportaciones y QR masivo. Los referidos suman días cortos de prueba y hitos — invita a otros keepers y mejora tus resultados.",
     "proTeaserTitle": "Pro en resumen",
     "proTeaserExcelLead": "Exportar a Excel:",
@@ -672,6 +688,11 @@
     "pageFocusTitle": "Keeper marketplace",
     "communityIntro": "Este es el motor comercial de TarantulApp\u2122: publica, descubre y cierra tratos de tarántulas entre keepers y breeders. Queremos que vendedores chicos y medianos compitan con storefront profesional, identidad clara y visibilidad real.",
     "communityDisclaimer": "TarantulApp\u2122 facilita descubrimiento y contacto; no custodiamos pagos ni actuamos como intermediario del trato. Usa lugares seguros, conserva evidencia del chat, valida normativa local (fauna/envíos/cuarentena) y reporta cualquier señal de fraude.",
+    "sellerLegalNotice": "Al publicar anuncios declaras cumplimiento legal de comercio, divulgaciones correctas y aceptación de las reglas de transacción del marketplace.",
+    "orderLegalNotice": "Las órdenes del marketplace están sujetas a retención, disputa y reglas de evidencia. Las garantías del vendedor y compromisos de envío se aplican según cada storefront.",
+    "orderPolicyAcceptLabel": "Confirmo que revisé términos, política de marketplace, envío y garantías del vendedor para esta operación.",
+    "orderPolicyMustAccept": "Debes confirmar la política antes de crear la orden.",
+    "listingLegalNotice": "Antes de pagar, confirma con el vendedor la legalidad de comercio, política de envío y garantía de arribo con vida.",
     "growthBannerTitle": "Haz crecer tu operación breeder desde hoy",
     "growthBannerSub": "Publica tu inventario, abre tu storefront y responde leads desde la app. Sin depender de grupos caóticos.",
     "growthBannerPrimaryCta": "Abrir / gestionar storefront",
@@ -723,6 +744,7 @@
     "chatYou": "Tú",
     "txStatusTitle": "Estado del trato",
     "txCurrentStatus": "Estado actual",
+    "txProofRules": "Regla: para 'enviado' agrega shipping proof con evidencia; para 'entregado' agrega arrival proof con evidencia.",
     "txStatusSaved": "Estado del trato actualizado.",
     "txTimelineTitle": "Línea de tiempo del trato",
     "txTimelineEmpty": "Todavía no hay eventos en el historial.",
@@ -772,6 +794,17 @@
     "sortNewest": "Orden: más recientes",
     "sortPriceAsc": "Orden: menor precio",
     "sortPriceDesc": "Orden: mayor precio",
+    "anySellerTier": "Cualquier nivel de seller",
+    "sellerTierCommunity": "Community",
+    "sellerTierPro": "Pro",
+    "sellerTierVendor": "Vendor",
+    "verifiedOnly": "Solo sellers verificados",
+    "boostedOnly": "Solo destacados",
+    "imageFilterAny": "Cualquier estado de foto",
+    "imageFilterWith": "Con foto",
+    "imageFilterWithout": "Sin foto",
+    "priceMin": "Precio mínimo",
+    "priceMax": "Precio máximo",
     "savedSearchSave": "Guardar filtros",
     "savedSearchLoad": "Cargar filtros",
     "savedSearchSaved": "Filtros guardados para tu próxima búsqueda.",
@@ -883,6 +916,13 @@
     "storefrontOnboardingProgress": "Progreso de onboarding de tienda",
     "storefrontHealthScore": "Salud comercial del storefront",
     "storefrontHealthHint": "{{done}} de {{total}} señales clave completadas para mejorar conversión.",
+    "programTierLabel": "Programa de seller",
+    "activeListingsLabel": "anuncios activos",
+    "communityLimitHint": "Community puede publicar y vender, pero con limite de anuncios activos y sin boost.",
+    "proBenefitsLive": "Pro desbloquea más volumen y listing boost para escalar tu tienda.",
+    "vendorBenefitsLive": "Vendor pasa revisión de confianza y recibe las mejores ventajas de visibilidad y conversión.",
+    "vendorApplyNow": "Solicitar activación Vendor",
+    "boostLockedHint": "El boost está bloqueado en Community. Sube a Pro o Vendor.",
     "storefrontNameLabel": "Nombre de tienda",
     "storefrontTaglineLabel": "Tagline de tienda",
     "storefrontShippingPolicyLabel": "Política de envíos",
@@ -909,6 +949,26 @@
     "listingDetailRelatedPartner": "Más de este socio",
     "listingDetailOpenChat": "Mensajes sobre este anuncio",
     "listingDetailOpenChatHint": "Abre tu bandeja con este vendedor y el contexto del anuncio.",
+    "dealQuoteTitle": "Resumen de transacción (Fase 1)",
+    "dealQuoteSubtotal": "Subtotal",
+    "dealQuoteFee": "Comisión plataforma",
+    "dealQuotePayout": "Pago estimado al seller",
+    "dealQuoteHold": "Retención estimada",
+    "dealQuoteHoldDays": "{{days}} días tras confirmar entrega",
+    "orderPanelTitle": "Orden y retención (simulada)",
+    "orderPanelEmpty": "Aún no hay orden creada para este trato.",
+    "orderCreateCta": "Crear orden",
+    "orderStatus": "Estado de orden",
+    "orderSimulatePay": "Simular pago (hold)",
+    "orderStripeCheckout": "Pagar con Stripe",
+    "orderSimulateRelease": "Simular liberación",
+    "orderDisputeCta": "Marcar disputa",
+    "orderCreated": "Orden creada para este trato.",
+    "orderPaidInHold": "Pago simulado. Fondos en retención.",
+    "orderReleased": "Fondos liberados (simulado).",
+    "orderDisputed": "Orden marcada en disputa.",
+    "orderCheckoutSuccess": "Pago completado. Orden en retención.",
+    "orderCheckoutCancel": "Checkout cancelado. La orden sigue pendiente de pago.",
     "listingDetailOfficialCta": "Comprar en sitio oficial",
     "listingDetailVisitStore": "Ver tienda",
     "listingDetailNotFound": "Este anuncio no está disponible.",
@@ -1463,7 +1523,7 @@
   "pro": {
     "title": "Planes TarantulApp\u2122",
     "subtitle": "Suscripciones enfocadas: Pro para keepers activos y Vendor/Business para operación comercial.",
-    "planMatrixIntro": "Founder Seller es interno por invitación y no forma parte de la oferta pública. En esta página solo mostramos suscripciones activas/comerciales.",
+    "planMatrixIntro": "Planes para crecer ventas: Pro para herramientas avanzadas y Vendor/Business para operación comercial validada.",
     "priceShownFor": "Precios para {{place}}, según el idioma y la zona horaria de tu dispositivo.",
     "checkoutRegionHint": "Stripe Checkout usa esta región para aplicar el precio correcto.",
     "changeBillingRegion": "¿No es tu país de facturación?",
@@ -1532,7 +1592,7 @@
     "tierVendorLi3": "Analytics de leads (clics, origen, anuncios que convierten).",
     "tierVendorLi4": "Onboarding con revisión humana (no es autoverificación).",
     "sellerTypesTitle": "Tipos de seller en Marketplace",
-    "sellerTypesIntro": "Definimos tres perfiles para evitar choques: Founder (programa estratégico), Business (suscripción vendor) y Community (listings entre keepers).",
+    "sellerTypesIntro": "Definimos perfiles claros: Business/Vendor para operación comercial con revisión y Community para listings abiertos entre keepers.",
     "founderSellerTitle": "Founder Seller (estratégico)",
     "founderSellerTagline": "Socios fundadores seleccionados por calidad, trazabilidad y señal de confianza en mercado.",
     "founderSellerLi1": "Badge Founder + prioridad en ranking de vendors oficiales.",
@@ -1552,19 +1612,19 @@
     "communitySellerLi3": "Sujeto a reglas de bienestar animal, veracidad y reputación comunitaria.",
     "communitySellerLi4": "Puede evolucionar a Business cuando necesite volumen/herramientas comerciales.",
     "sellerPolicyFootnote": "Política marco: Founder = programa curado; Business = suscripción operativa; Community = participación abierta. Cada uno con beneficios distintos para no canibalizar valor.",
-    "businessRolloutTitle": "Vendor/Business: alcance y límites (fase actual)",
-    "businessRolloutIntro": "Dejamos la suscripción lista por fases: se habilita por cohortes para asegurar calidad del marketplace y cumplimiento.",
-    "businessRolloutLi1": "Fase 1: pre-registro + validación de negocio y categoría.",
-    "businessRolloutLi2": "Fase 2: activación de badge/storefront + primeros listings comerciales.",
-    "businessRolloutLi3": "Fase 3: checkout Vendor/Business público con políticas consolidadas.",
-    "businessRolloutLi4": "Founder mantiene perks estratégicos; Business recibe beneficios operativos escalables.",
+    "businessRolloutTitle": "Vendor/Business: activación y operación",
+    "businessRolloutIntro": "Business/Vendor ya se puede activar con revisión operativa y de cumplimiento para mantener calidad comercial.",
+    "businessRolloutLi1": "Solicitud de activación con datos de negocio y cobertura de envío.",
+    "businessRolloutLi2": "Revisión del equipo (identidad comercial, categoría y políticas básicas).",
+    "businessRolloutLi3": "Activación de badge/storefront y operación comercial en marketplace.",
+    "businessRolloutLi4": "El enfoque Business/Vendor prioriza operación, confianza y conversión para breeders pequeños y medianos.",
     "businessWaitlistBusinessName": "Nombre del negocio",
     "businessWaitlistContactName": "Nombre del contacto",
     "businessWaitlistEmail": "Email de contacto",
     "businessWaitlistNotes": "Categoría o nota (opcional)",
-    "businessWaitlistSubmit": "Unirme al pre-registro Business",
+    "businessWaitlistSubmit": "Solicitar activación Business",
     "businessWaitlistValidation": "Completa negocio, contacto y email para continuar.",
-    "businessWaitlistSuccess": "Solicitud enviada. Te contactaremos para el onboarding Business.",
+    "businessWaitlistSuccess": "Solicitud enviada. Te contactaremos para activar tu perfil Business.",
     "businessWaitlistError": "No pudimos guardar tu solicitud ahora. Intenta de nuevo en unos minutos.",
     "referralsBlockTitle": "Referidos",
     "referralsKeyline": "Invita a otros keepers — mejora tus resultados.",
@@ -1577,7 +1637,13 @@
     "referralsBase": "Cada invitado válido: +3 días para tu amigo al registrarse y +3 días para ti (se suman al trial vigente).",
     "statusTitle": "Tu plan actual",
     "statusFree": "Free: ideal para Cases, Comunidad y Discover sin pagar.",
-    "statusPro": "Pro activo. Vendor/Business ya está habilitado para cuentas comerciales.",
+    "statusPro": "Pro activo. Para activar Vendor/Business debes enviar solicitud y pasar revisión.",
+    "vendorActivationTitle": "Como activar Vendor/Business",
+    "vendorActivationBody": "Vendor no se activa solo por pagar Pro. La activacion se hace por solicitud para mantener calidad y cumplimiento.",
+    "vendorActivationStep1": "Completa o ajusta tu storefront en Marketplace Seller.",
+    "vendorActivationStep2": "En Marketplace, abre \"Quiero aparecer como partner oficial\" y envia tu solicitud.",
+    "vendorActivationStep3": "Cuando el equipo aprueba, se activa tu badge/vendor profile.",
+    "vendorActivationCta": "Ir a activar Vendor",
     "currentFree": "Plan actual: Free",
     "currentPro": "Plan actual: Pro",
     "learnMore": "Detalle de planes",
@@ -1634,6 +1700,126 @@
     "platformOpsBody": "Comunicaciones operativas con Google Play Console, App Store Connect, Stripe u otros proveedores.",
     "marketingTitle": "Marketing — alianzas y propuestas",
     "marketingBody": "Patrocinios, colaboraciones, prensa o propuestas comerciales que quieran sumarse a TarantulApp\u2122."
+  },
+  "legal": {
+    "lastUpdated": "Última actualización: mayo 2026",
+    "contactTitle": "Contacto",
+    "terms": {
+      "title": "Términos del servicio",
+      "intro": "Al usar",
+      "sections": [
+        {
+          "title": "1. Elegibilidad y uso de cuenta",
+          "bullets": [
+            "Debes tener edad legal para contratar en tu jurisdicción cuando uses transacciones del marketplace.",
+            "Eres responsable de la seguridad de tu cuenta y de toda acción tomada con tus credenciales.",
+            "Se prohíbe comercio ilegal de fauna, fraude, acoso y evasión de políticas."
+          ]
+        },
+        {
+          "title": "2. Reglas de publicación y venta",
+          "bullets": [
+            "Cada vendedor debe publicar información exacta, origen legal y referencias regulatorias cuando apliquen.",
+            "Políticas de envío, DOA/llegada con vida y reemplazo/reembolso deben estar claras en el storefront.",
+            "TarantulApp puede ocultar o retirar anuncios que incumplan requisitos legales, de bienestar animal o de seguridad."
+          ]
+        },
+        {
+          "title": "3. Pagos, retenciones y disputas",
+          "bullets": [
+            "Las órdenes pueden incluir comisión de plataforma y retención temporal de pago al vendedor.",
+            "Flujos de liberación/disputa pueden requerir evidencia (por ejemplo prueba de envío y prueba de llegada).",
+            "Contracargos, señales de fraude o disputas sin resolver pueden limitar la cuenta."
+          ]
+        },
+        {
+          "title": "4. Responsabilidad y garantías",
+          "bullets": [
+            "Cada vendedor es responsable de sus garantías y del resultado de sus transacciones.",
+            "TarantulApp ofrece descubrimiento, mensajería y herramientas de transacción, pero no sustituye el deber legal de comprador y vendedor.",
+            "El servicio se ofrece tal cual, sin garantía de operación ininterrumpida."
+          ]
+        },
+        {
+          "title": "5. Actualizaciones de política",
+          "body": "Podemos actualizar estos términos según cambios legales y del producto. El uso continuo implica aceptación de la versión vigente."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Aviso de privacidad",
+      "intro": "Esta política explica cómo recolectamos, usamos y protegemos datos cuando usas",
+      "rightsTitle": "Tus derechos",
+      "sections": [
+        {
+          "title": "1. Datos que recolectamos",
+          "bullets": [
+            "Datos de cuenta como correo, campos de perfil y metadatos de autenticación.",
+            "Contenido de marketplace y comunidad, incluyendo mensajes, detalles de anuncio y media/evidencia subida.",
+            "Metadatos de cobro y órdenes de proveedores de pago (no guardamos números completos de tarjeta)."
+          ]
+        },
+        {
+          "title": "2. Cómo usamos los datos",
+          "bullets": [
+            "Operar cuentas, emparejamiento de marketplace, mensajería y flujos de confianza/seguridad.",
+            "Procesar suscripciones, checkouts, retenciones y registros de disputa.",
+            "Prevenir abuso, investigar fraude y cumplir obligaciones legales."
+          ]
+        },
+        {
+          "title": "3. Almacenamiento y retención",
+          "bullets": [
+            "Los datos se almacenan en infraestructura administrada con transporte cifrado.",
+            "Evidencia y registros de moderación pueden conservarse para resolver disputas y requerimientos legales.",
+            "Eliminamos o anonimizamos datos cuando dejan de ser necesarios por operación o ley."
+          ]
+        },
+        {
+          "title": "4. Compartición",
+          "body": "Compartimos datos solo con proveedores necesarios para operar la plataforma (por ejemplo hosting, correo, media en la nube y pagos) y con autoridades cuando la ley lo exija."
+        }
+      ]
+    },
+    "marketplacePolicy": {
+      "title": "Política de marketplace",
+      "intro": "Esta política define reglas de transacción, confianza y disputa para compradores y vendedores en",
+      "contactLead": "Marketplace y Trust & Safety:",
+      "sections": [
+        {
+          "title": "1. Obligaciones del vendedor",
+          "bullets": [
+            "Publicar información exacta del anuncio, divulgaciones de origen legal y términos claros de envío/garantía.",
+            "No publicar fauna prohibida ni ofrecer envíos que violen normativa local.",
+            "Responder oportunamente a compradores cuando haya temas de pago, envío o llegada con vida."
+          ]
+        },
+        {
+          "title": "2. Obligaciones del comprador",
+          "bullets": [
+            "Confirmar legalidad local y límites de importación/exportación antes de pagar.",
+            "Usar mensajería en app y mantener evidencia dentro del hilo de transacción.",
+            "Reportar rápido no-entrega, información falsa o riesgos de bienestar animal."
+          ]
+        },
+        {
+          "title": "3. Retención y liberación de pago",
+          "bullets": [
+            "Algunas órdenes permanecen en retención temporal antes de liberar pago al vendedor.",
+            "La liberación puede depender de hitos con evidencia (prueba de envío y llegada).",
+            "Las disputas pausan la liberación mientras se revisa evidencia."
+          ]
+        },
+        {
+          "title": "4. Disputas y cumplimiento",
+          "bullets": [
+            "Fraude, abuso, contracargos repetidos o violaciones de política pueden causar retiro de anuncios o restricciones de cuenta.",
+            "Podemos solicitar evidencia adicional a cualquiera de las partes para resolver disputas.",
+            "Incidentes graves legales o de bienestar animal pueden escalarse a autoridades cuando aplique."
+          ]
+        }
+      ]
+    }
   },
   "accountDeletion": {
     "title": "Eliminar tu cuenta",

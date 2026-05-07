@@ -30,6 +30,27 @@ const chatService = {
 
   threadPushDeliveries: (threadId) =>
     api.get(`/chat/threads/${threadId}/push-deliveries`).then((r) => r.data),
+
+  createOrderIntent: (threadId, { subtotalOverride = null, legalAccepted = false } = {}) =>
+    api.post(`/chat/threads/${threadId}/order-intent`, {
+      ...(subtotalOverride ? { subtotalOverride: String(subtotalOverride) } : {}),
+      legalAccepted: !!legalAccepted,
+    }).then((r) => r.data),
+
+  getThreadOrder: (threadId) =>
+    api.get(`/chat/threads/${threadId}/order`).then((r) => r.data),
+
+  simulateOrderPayment: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/simulate-payment`).then((r) => r.data),
+
+  simulateOrderRelease: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/simulate-release`).then((r) => r.data),
+
+  disputeOrder: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/dispute`).then((r) => r.data),
+
+  createOrderCheckout: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/checkout`).then((r) => r.data),
 }
 
 export default chatService

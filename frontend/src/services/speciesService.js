@@ -47,6 +47,10 @@ const speciesService = {
           ...(params.growthRate ? { growthRate: params.growthRate } : {}),
           ...(params.hobbyWorld ? { hobbyWorld: params.hobbyWorld } : {}),
           ...(params.q ? { q: params.q } : {}),
+          ...(params.sizeMin != null && params.sizeMin !== '' ? { sizeMin: params.sizeMin } : {}),
+          ...(params.sizeMax != null && params.sizeMax !== '' ? { sizeMax: params.sizeMax } : {}),
+          ...(params.sort ? { sort: params.sort } : {}),
+          ...(params.direction ? { direction: params.direction } : {}),
         },
       })
       .then((r) => r.data),

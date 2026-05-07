@@ -25,6 +25,9 @@ public class RegisterRequest {
     @Size(max = 4096)
     private String captchaToken;
 
+    /** Must be true for self-serve registration. */
+    private Boolean legalAccepted;
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
@@ -39,4 +42,7 @@ public class RegisterRequest {
 
     public String getCaptchaToken() { return captchaToken; }
     public void setCaptchaToken(String captchaToken) { this.captchaToken = captchaToken; }
+
+    public Boolean getLegalAccepted() { return legalAccepted; }
+    public void setLegalAccepted(Boolean legalAccepted) { this.legalAccepted = legalAccepted; }
 }

@@ -35,6 +35,9 @@ export default function MarketplaceMessagesPage() {
   const [uploadingEvidence, setUploadingEvidence] = useState(false)
   const [savingEvent, setSavingEvent] = useState(false)
   const [pushDeliveries, setPushDeliveries] = useState([])
+  const [threadOrder, setThreadOrder] = useState(null)
+  const [startingOrderCheckout, setStartingOrderCheckout] = useState(false)
+  const [orderPolicyAccepted, setOrderPolicyAccepted] = useState(false)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -64,6 +67,17 @@ export default function MarketplaceMessagesPage() {
 
   /** Deep-link open conversation from marketplace listing ("Message seller"). */
   useEffect(() => {
+    const checkoutFlag = searchParams.get('orderCheckout')
+    if (!checkoutFlag) return
+    if (checkoutFlag === 'success') setMessage(t('marketplace.orderCheckoutSuccess'))
+    if (checkoutFlag === 'cancel') setMessage(t('marketplace.orderCheckoutCancel'))
+    const next = new URLSearchParams(searchParams)
+    next.delete('orderCheckout')
+    next.delete('session_id')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams, t])
+
+  useEffect(() => {
     const openSeller = searchParams.get('openSeller')
     const openListing = searchParams.get('openListing')
     if (!user?.id || !openSeller?.trim()) return
@@ -82,6 +96,8 @@ export default function MarketplaceMessagesPage() {
         if (!cancelled) setThreadMessages(msgs)
         const events = await chatService.threadEvents(row.id).catch(() => [])
         if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
+        const order = row.listingId ? await chatService.getThreadOrder(row.id).catch(() => null) : null
+        if (!cancelled) setThreadOrder(order)
         const pushes = row.listingId
           ? await chatService.threadPushDeliveries(row.id).catch(() => [])
           : []
@@ -122,6 +138,8 @@ export default function MarketplaceMessagesPage() {
         if (!cancelled) setThreadMessages(msgs)
         const events = await chatService.threadEvents(th.id).catch(() => [])
         if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
+        const order = th.listingId ? await chatService.getThreadOrder(th.id).catch(() => null) : null
+        if (!cancelled) setThreadOrder(order)
         if (th.listingId) {
           const pushes = await chatService.threadPushDeliveries(th.id).catch(() => [])
           if (!cancelled) setPushDeliveries(Array.isArray(pushes) ? pushes : [])
@@ -140,6 +158,7 @@ export default function MarketplaceMessagesPage() {
     setThreadMessages({ content: [] })
     setThreadEvents([])
     setPushDeliveries([])
+    setThreadOrder(null)
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.delete('thread')
@@ -161,8 +180,75 @@ export default function MarketplaceMessagesPage() {
       setThreadMessages(msgs)
       const events = await chatService.threadEvents(thread.id).catch(() => [])
       setThreadEvents(Array.isArray(events) ? events : [])
+      const order = thread.listingId ? await chatService.getThreadOrder(thread.id).catch(() => null) : null
+      setThreadOrder(order)
     } catch {
       setMessage(t('marketplace.error'))
+    }
+  }
+
+  const createThreadOrderIntent = async () => {
+    if (!activeThread?.id) return
+    if (!orderPolicyAccepted) {
+      setMessage(t('marketplace.orderPolicyMustAccept'))
+      return
+    }
+    try {
+      const order = await chatService.createOrderIntent(activeThread.id, { legalAccepted: true })
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderCreated'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const simulateOrderPayment = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.simulateOrderPayment(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderPaidInHold'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const simulateOrderRelease = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.simulateOrderRelease(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderReleased'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const disputeThreadOrder = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.disputeOrder(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderDisputed'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const startOrderCheckout = async () => {
+    if (!activeThread?.id) return
+    setStartingOrderCheckout(true)
+    try {
+      const session = await chatService.createOrderCheckout(activeThread.id)
+      if (session?.url) {
+        window.location.assign(session.url)
+        return
+      }
+      setMessage(t('marketplace.error'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setStartingOrderCheckout(false)
     }
   }
 
@@ -288,6 +374,8 @@ export default function MarketplaceMessagesPage() {
     && activeThreadMessages.length >= MIN_CHAT_MESSAGES_FOR_REVIEW
     && sentByCurrentUser >= 2
     && sentByOtherUser >= 2
+  const isSellerInThread = !!activeThread?.listingSellerUserId && String(activeThread.listingSellerUserId) === String(user?.id)
+  const canCreateOrder = !!activeThread?.listingId && !isSellerInThread && !threadOrder
 
   const threadList = threads.content || []
 
@@ -409,9 +497,77 @@ export default function MarketplaceMessagesPage() {
                     </div>
                     {activeThread.listingId && (
                       <div className="mt-3 border rounded p-2 small">
+                        <div className="fw-semibold mb-2">{t('marketplace.orderPanelTitle')}</div>
+                        <p className="text-muted mb-2">
+                          {t('marketplace.orderLegalNotice')}{' '}
+                          <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>
+                          {' '}·{' '}
+                          <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
+                        </p>
+                        {!threadOrder && (
+                          <div className="d-flex flex-column gap-2">
+                            <span className="text-muted">{t('marketplace.orderPanelEmpty')}</span>
+                            {canCreateOrder && (
+                              <>
+                                <div className="form-check">
+                                  <input
+                                    id="order-policy-accept"
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={!!orderPolicyAccepted}
+                                    onChange={(e) => setOrderPolicyAccepted(e.target.checked)}
+                                  />
+                                  <label htmlFor="order-policy-accept" className="form-check-label text-muted">
+                                    {t('marketplace.orderPolicyAcceptLabel')}
+                                  </label>
+                                </div>
+                                <button type="button" className="btn btn-sm btn-outline-dark align-self-start" onClick={createThreadOrderIntent}>
+                                  {t('marketplace.orderCreateCta')}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {threadOrder && (
+                          <>
+                            <div className="small text-muted mb-1">{t('marketplace.orderStatus')}: {threadOrder.status}</div>
+                            <div className="small text-muted mb-1">{t('marketplace.dealQuoteSubtotal')}: {threadOrder.subtotal} {threadOrder.currency || ''}</div>
+                            <div className="small text-muted mb-1">{t('marketplace.dealQuoteFee')}: {threadOrder.commissionAmount} {threadOrder.currency || ''}</div>
+                            <div className="small text-muted mb-2">{t('marketplace.dealQuotePayout')}: {threadOrder.sellerPayoutAmount} {threadOrder.currency || ''}</div>
+                            <div className="d-flex gap-2 flex-wrap">
+                              {!isSellerInThread && threadOrder.status === 'payment_pending' && (
+                                <>
+                                  <button type="button" className="btn btn-sm btn-dark" disabled={startingOrderCheckout} onClick={startOrderCheckout}>
+                                    {startingOrderCheckout ? t('common.loading') : t('marketplace.orderStripeCheckout')}
+                                  </button>
+                                  <button type="button" className="btn btn-sm btn-outline-dark" onClick={simulateOrderPayment}>
+                                    {t('marketplace.orderSimulatePay')}
+                                  </button>
+                                </>
+                              )}
+                              {!isSellerInThread && threadOrder.status === 'paid_in_hold' && (
+                                <button type="button" className="btn btn-sm btn-outline-dark" onClick={simulateOrderRelease}>
+                                  {t('marketplace.orderSimulateRelease')}
+                                </button>
+                              )}
+                              {threadOrder.status === 'paid_in_hold' && (
+                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={disputeThreadOrder}>
+                                  {t('marketplace.orderDisputeCta')}
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {activeThread.listingId && (
+                      <div className="mt-3 border rounded p-2 small">
                         <div className="fw-semibold mb-1">{t('marketplace.txStatusTitle')}</div>
                         <div className="small text-muted mb-2">
                           {t('marketplace.txCurrentStatus')}: {t(`marketplace.txStatus.${activeThread.transactionStatus || 'pending'}`)}
+                        </div>
+                        <div className="small text-muted mb-2">
+                          {t('marketplace.txProofRules')}
                         </div>
                         <div className="d-flex gap-2 flex-wrap">
                           {TX_STATUSES.map((s) => (

@@ -2,6 +2,8 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.service.ChatService;
 import com.tarantulapp.service.ChatThreadPushDeliveryService;
+import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,13 +29,19 @@ import java.util.UUID;
 public class ChatController {
 
     private final ChatService chatService;
+    private final MarketplaceOrderService marketplaceOrderService;
+    private final BillingService billingService;
     private final ChatThreadPushDeliveryService chatThreadPushDeliveryService;
     private final SecurityHelper securityHelper;
 
     public ChatController(ChatService chatService,
+                          MarketplaceOrderService marketplaceOrderService,
+                          BillingService billingService,
                           ChatThreadPushDeliveryService chatThreadPushDeliveryService,
                           SecurityHelper securityHelper) {
         this.chatService = chatService;
+        this.marketplaceOrderService = marketplaceOrderService;
+        this.billingService = billingService;
         this.chatThreadPushDeliveryService = chatThreadPushDeliveryService;
         this.securityHelper = securityHelper;
     }
@@ -43,6 +51,7 @@ public class ChatController {
     record SendMessageRequest(@NotBlank @Size(max = 4000) String body) {}
     record UpdateTransactionStatusRequest(@NotBlank String status) {}
     record AddThreadEventRequest(@NotBlank String eventType, String note, String evidenceUrl, List<String> evidenceUrls) {}
+    record CreateOrderIntentRequest(String subtotalOverride, Boolean legalAccepted) {}
 
     @GetMapping("/threads")
     public ResponseEntity<Map<String, Object>> threads(
@@ -113,5 +122,50 @@ public class ChatController {
             @RequestPart("file") MultipartFile file) {
         UUID uid = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(chatService.uploadThreadEventEvidence(uid, threadId, file));
+    }
+
+    @PostMapping("/threads/{threadId}/order-intent")
+    public ResponseEntity<Map<String, Object>> createOrderIntent(@PathVariable UUID threadId,
+                                                                 @RequestBody(required = false) CreateOrderIntentRequest req) {
+        UUID uid = securityHelper.getCurrentUserId();
+        java.math.BigDecimal subtotal = null;
+        if (req != null && req.subtotalOverride() != null && !req.subtotalOverride().isBlank()) {
+            subtotal = new java.math.BigDecimal(req.subtotalOverride());
+        }
+        boolean legalAccepted = req != null && Boolean.TRUE.equals(req.legalAccepted());
+        return ResponseEntity.ok(marketplaceOrderService.createOrGetOrderIntent(uid, threadId, subtotal, legalAccepted));
+    }
+
+    @GetMapping("/threads/{threadId}/order")
+    public ResponseEntity<Map<String, Object>> threadOrder(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.getOrderByThread(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/simulate-payment")
+    public ResponseEntity<Map<String, Object>> simulateOrderPayment(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.simulatePaymentCapture(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/simulate-release")
+    public ResponseEntity<Map<String, Object>> simulateOrderRelease(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.simulateRelease(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/dispute")
+    public ResponseEntity<Map<String, Object>> disputeOrder(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.markDisputed(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/checkout")
+    public ResponseEntity<Map<String, Object>> orderCheckout(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        var order = marketplaceOrderService.requireOrderForBuyerCheckout(uid, threadId);
+        String email = securityHelper.getCurrentUserEmail();
+        String url = billingService.createMarketplaceOrderCheckoutSession(uid, order, email);
+        return ResponseEntity.ok(Map.of("url", url, "checkoutEnabled", true));
     }
 }
