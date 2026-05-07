@@ -547,6 +547,7 @@
     "scanWithCamera": "Scan label (camera)",
     "scanInstructions": "Point at the enclosure QR.",
     "scanError": "Could not open the camera scanner.",
+    "scanPermissionDenied": "We need camera permission to read the QR. Enable it in the app settings, or try again and accept the permission prompt.",
     "scanUnrecognized": "That QR is not a TarantulApp public link. Try another code.",
     "schemaName": "Terrarium QR generator — TarantulApp\u2122",
     "schemaDescription": "Free tool to create QR codes from your tarantula collection, linking each spider’s public profile."

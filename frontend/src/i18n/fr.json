@@ -547,6 +547,7 @@
     "scanWithCamera": "Scanner l’étiquette (caméra)",
     "scanInstructions": "Visez le QR du terrarium.",
     "scanError": "Impossible d’ouvrir la caméra scanner.",
+    "scanPermissionDenied": "L’autorisation caméra est nécessaire pour lire le QR. Activez-la dans les paramètres de l’app ou réessayez en acceptant la demande.",
     "scanUnrecognized": "Ce QR n’est pas un lien public TarantulApp. Essayez un autre code.",
     "schemaName": "Générateur QR pour terrarium — TarantulApp\u2122",
     "schemaDescription": "Outil gratuit pour créer des codes QR depuis votre collection de mygales, vers la fiche publique de chaque exemplaire."

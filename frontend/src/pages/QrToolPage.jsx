@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import QRCodeSvg from 'react-qr-code'
@@ -21,6 +21,9 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
+
+/** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
+const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
 
 function getQrLabelParts(specimen) {
   const name = specimen?.name?.trim() || specimen?.shortId || 'Sin nombre'
@@ -63,6 +66,13 @@ export default function QrToolPage() {
   const [busy, setBusy] = useState(false)
   const [busyKind, setBusyKind] = useState('')
   const [scanHint, setScanHint] = useState('')
+  const [androidScanOpen, setAndroidScanOpen] = useState(false)
+  const androidHtml5Ref = useRef(null)
+  const navigateRef = useRef(navigate)
+
+  useEffect(() => {
+    navigateRef.current = navigate
+  }, [navigate])
 
   const selected = useMemo(
     () => collection.find((x) => String(x.id) === pickId) ?? null,
@@ -266,10 +276,140 @@ export default function QrToolPage() {
 
   const bulkPreviewPx = cmToDocxDisplayPx(Math.min(sizeCm, 4))
 
+  const stopAndroidHtml5Scanner = useCallback(async () => {
+    const inst = androidHtml5Ref.current
+    androidHtml5Ref.current = null
+    if (!inst) return
+    try {
+      await inst.stop()
+    } catch {
+      /* ya detenido o nunca arrancó del todo */
+    }
+    try {
+      inst.clear()
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const cancelAndroidScan = () => {
+    void (async () => {
+      await stopAndroidHtml5Scanner()
+      setAndroidScanOpen(false)
+    })()
+  }
+
+  useEffect(() => {
+    if (!androidScanOpen) return undefined
+
+    let cancelled = false
+
+    const run = async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode')
+        await new Promise((r) => requestAnimationFrame(() => r()))
+        if (cancelled) return
+        if (!document.getElementById(TA_QR_ANDROID_READER_ID)) {
+          setScanHint(t('qrTool.scanError'))
+          setAndroidScanOpen(false)
+          return
+        }
+
+        const instance = new Html5Qrcode(TA_QR_ANDROID_READER_ID, false)
+        androidHtml5Ref.current = instance
+
+        const qrbox = (vw, vh) => {
+          const m = Math.min(vw, vh)
+          const s = Math.min(300, Math.max(200, Math.floor(m * 0.72)))
+          return { width: s, height: s }
+        }
+        const config = { fps: 12, qrbox }
+
+        const onScanSuccess = (decodedText) => {
+          if (cancelled) return
+          cancelled = true
+          const inst = androidHtml5Ref.current
+          androidHtml5Ref.current = null
+          void (async () => {
+            if (inst) {
+              try {
+                await inst.stop()
+              } catch {
+                /* ignore */
+              }
+              try {
+                inst.clear()
+              } catch {
+                /* ignore */
+              }
+            }
+            setAndroidScanOpen(false)
+            const internal = resolveAppPathFromScan(decodedText)
+            if (internal) navigateRef.current(internal)
+            else setScanHint(t('qrTool.scanUnrecognized'))
+          })()
+        }
+
+        const attachStart = (inst, constraints) =>
+          inst.start(constraints, config, onScanSuccess, () => {})
+
+        try {
+          await attachStart(instance, { facingMode: 'environment' })
+        } catch {
+          if (cancelled) return
+          try {
+            await instance.stop()
+          } catch {
+            /* ignore */
+          }
+          try {
+            await instance.clear()
+          } catch {
+            /* ignore */
+          }
+          const cameras = await Html5Qrcode.getCameras()
+          const back =
+            cameras.find((c) => /back|rear|wide|environment/i.test(c.label)) ?? cameras[0]
+          if (!back) throw new Error('no camera')
+          const instance2 = new Html5Qrcode(TA_QR_ANDROID_READER_ID, /* verbose */ false)
+          androidHtml5Ref.current = instance2
+          await attachStart(instance2, { deviceId: { exact: back.id } })
+        }
+      } catch {
+        if (!cancelled) {
+          await stopAndroidHtml5Scanner()
+          setAndroidScanOpen(false)
+          setScanHint(t('qrTool.scanError'))
+        }
+      }
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+      void stopAndroidHtml5Scanner()
+    }
+  }, [androidScanOpen, stopAndroidHtml5Scanner, t])
+
   const scanEnclosureQr = async () => {
     setScanHint('')
     if (!Capacitor.isNativePlatform()) return
+    if (androidScanOpen) return
     try {
+      const { Camera } = await import('@capacitor/camera')
+      const perm = await Camera.requestPermissions({ permissions: ['camera'] })
+      const camOk = perm.camera === 'granted' || perm.camera === 'limited'
+      if (!camOk) {
+        setScanHint(t('qrTool.scanPermissionDenied'))
+        return
+      }
+
+      if (Capacitor.getPlatform() === 'android') {
+        setAndroidScanOpen(true)
+        return
+      }
+
       const mod = await import('@capacitor/barcode-scanner')
       const { CapacitorBarcodeScanner, Html5QrcodeSupportedFormats } = mod
       const res = await CapacitorBarcodeScanner.scanBarcode({
@@ -310,7 +450,12 @@ export default function QrToolPage() {
 
         {Capacitor.isNativePlatform() && (
           <div className="mb-4">
-            <button type="button" className="btn btn-sm btn-outline-light" onClick={scanEnclosureQr}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-light"
+              onClick={scanEnclosureQr}
+              disabled={androidScanOpen}
+            >
               📷 {t('qrTool.scanWithCamera')}
             </button>
             {scanHint ? (
@@ -318,6 +463,28 @@ export default function QrToolPage() {
             ) : null}
           </div>
         )}
+
+        {androidScanOpen ? (
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center px-3"
+            style={{ zIndex: 2000, background: 'rgba(10,8,16,0.96)' }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('qrTool.scanWithCamera')}
+          >
+            <p className="small text-white text-center mb-3" style={{ maxWidth: 420 }}>
+              {t('qrTool.scanInstructions')}
+            </p>
+            <div
+              id={TA_QR_ANDROID_READER_ID}
+              className="rounded overflow-hidden bg-black"
+              style={{ width: 'min(100vw - 32px, 400px)', minHeight: 280 }}
+            />
+            <button type="button" className="btn btn-outline-light mt-4" onClick={cancelAndroidScan}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        ) : null}
 
         <FangPanel className="ta-qr-tool-fang-panel">
           <div className="card border-0 shadow-sm" style={{ background: 'rgba(18,16,28,0.65)' }}>

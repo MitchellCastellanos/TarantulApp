@@ -547,6 +547,7 @@
     "scanWithCamera": "Escanear etiqueta (cámara)",
     "scanInstructions": "Apunta al QR del terrario.",
     "scanError": "No pudimos abrir el escáner de cámara.",
+    "scanPermissionDenied": "Necesitamos permiso de cámara para leer el QR. Actívalo en ajustes de la app o vuelve a intentar y acepta el permiso.",
     "scanUnrecognized": "Ese QR no es un enlace público de TarantulApp. Prueba otro código.",
     "schemaName": "Generador QR para terrarios — TarantulApp\u2122",
     "schemaDescription": "Herramienta gratuita para crear códigos QR desde tu colección de tarántulas y enlazar la ficha pública de cada ejemplar."
