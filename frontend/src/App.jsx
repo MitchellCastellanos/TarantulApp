@@ -28,6 +28,7 @@ import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage'
 import MarketplaceMessagesPage from './pages/MarketplaceMessagesPage'
 import MarketplaceSellerPage from './pages/MarketplaceSellerPage'
+import MarketplaceStorefrontPage from './pages/MarketplaceStorefrontPage'
 import MarketplaceKeeperRedirect from './pages/MarketplaceKeeperRedirect'
 import LaunchRegistrationPage from './pages/LaunchRegistrationPage'
 import { useTranslation } from 'react-i18next'
@@ -155,6 +156,7 @@ function AppRoutes() {
       <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />
+      <Route path="/shop/:handle" element={<MarketplaceStorefrontPage />} />
       <Route path="/marketplace/messages" element={<PrivateRoute><MarketplaceMessagesPage /></PrivateRoute>} />
       <Route path="/marketplace/sell" element={<PrivateRoute><MarketplaceSellerPage /></PrivateRoute>} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<MarketplaceKeeperRedirect />} />

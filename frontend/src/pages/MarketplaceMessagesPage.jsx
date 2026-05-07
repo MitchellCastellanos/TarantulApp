@@ -6,11 +6,13 @@ import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import chatService from '../services/chatService'
+import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const MIN_CHAT_MESSAGES_FOR_REVIEW = 6
 const THREAD_PAGE_SIZE = 80
+const TX_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'disputed', 'cancelled']
 
 export default function MarketplaceMessagesPage() {
   const { t } = useTranslation()
@@ -20,10 +22,19 @@ export default function MarketplaceMessagesPage() {
   const [threads, setThreads] = useState({ content: [] })
   const [activeThread, setActiveThread] = useState(null)
   const [threadMessages, setThreadMessages] = useState({ content: [] })
+  const [threadEvents, setThreadEvents] = useState([])
   const [chatBody, setChatBody] = useState('')
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [sendingReview, setSendingReview] = useState(false)
+  const [updatingTxStatus, setUpdatingTxStatus] = useState(false)
+  const [eventType, setEventType] = useState('note')
+  const [eventNote, setEventNote] = useState('')
+  const [eventEvidenceUrl, setEventEvidenceUrl] = useState('')
+  const [eventEvidenceFiles, setEventEvidenceFiles] = useState([])
+  const [uploadingEvidence, setUploadingEvidence] = useState(false)
+  const [savingEvent, setSavingEvent] = useState(false)
+  const [pushDeliveries, setPushDeliveries] = useState([])
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -69,6 +80,12 @@ export default function MarketplaceMessagesPage() {
         setActiveThread(row)
         const msgs = await chatService.messages(row.id, 0, 50)
         if (!cancelled) setThreadMessages(msgs)
+        const events = await chatService.threadEvents(row.id).catch(() => [])
+        if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
+        const pushes = row.listingId
+          ? await chatService.threadPushDeliveries(row.id).catch(() => [])
+          : []
+        if (!cancelled) setPushDeliveries(Array.isArray(pushes) ? pushes : [])
         await loadThreads()
         setSearchParams((prev) => {
           const next = new URLSearchParams(prev)
@@ -103,6 +120,14 @@ export default function MarketplaceMessagesPage() {
       try {
         const msgs = await chatService.messages(th.id, 0, 50)
         if (!cancelled) setThreadMessages(msgs)
+        const events = await chatService.threadEvents(th.id).catch(() => [])
+        if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
+        if (th.listingId) {
+          const pushes = await chatService.threadPushDeliveries(th.id).catch(() => [])
+          if (!cancelled) setPushDeliveries(Array.isArray(pushes) ? pushes : [])
+        } else if (!cancelled) {
+          setPushDeliveries([])
+        }
       } catch {
         if (!cancelled) setMessage(t('marketplace.error'))
       }
@@ -113,6 +138,8 @@ export default function MarketplaceMessagesPage() {
   const clearActiveThread = useCallback(() => {
     setActiveThread(null)
     setThreadMessages({ content: [] })
+    setThreadEvents([])
+    setPushDeliveries([])
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.delete('thread')
@@ -132,6 +159,8 @@ export default function MarketplaceMessagesPage() {
     try {
       const msgs = await chatService.messages(thread.id, 0, 50)
       setThreadMessages(msgs)
+      const events = await chatService.threadEvents(thread.id).catch(() => [])
+      setThreadEvents(Array.isArray(events) ? events : [])
     } catch {
       setMessage(t('marketplace.error'))
     }
@@ -170,6 +199,67 @@ export default function MarketplaceMessagesPage() {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     } finally {
       setSendingReview(false)
+    }
+  }
+
+  const updateThreadTransactionStatus = async (status) => {
+    if (!activeThread?.id || !activeThread?.listingId) return
+    setUpdatingTxStatus(true)
+    setMessage('')
+    try {
+      const updated = await chatService.updateTransactionStatus(activeThread.id, status)
+      setActiveThread(updated)
+      const events = await chatService.threadEvents(updated.id).catch(() => [])
+      setThreadEvents(Array.isArray(events) ? events : [])
+      if (updated.listingId) {
+        const pushes = await chatService.threadPushDeliveries(updated.id).catch(() => [])
+        setPushDeliveries(Array.isArray(pushes) ? pushes : [])
+      }
+      await loadThreads()
+      setMessage(t('marketplace.txStatusSaved'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setUpdatingTxStatus(false)
+    }
+  }
+
+  const submitThreadEvent = async (e) => {
+    e.preventDefault()
+    if (!activeThread?.id || !activeThread?.listingId) return
+    setSavingEvent(true)
+    setMessage('')
+    try {
+      let uploadedEvidenceUrls = []
+      if (eventEvidenceFiles.length > 0) {
+        setUploadingEvidence(true)
+        for (const f of eventEvidenceFiles) {
+          // Sequential to avoid overloading weak mobile connections.
+          const upload = await chatService.uploadThreadEventEvidence(activeThread.id, f)
+          if (upload?.evidenceUrl) uploadedEvidenceUrls.push(upload.evidenceUrl)
+        }
+      }
+      await chatService.addThreadEvent(activeThread.id, {
+        eventType,
+        note: eventNote,
+        evidenceUrl: eventEvidenceUrl,
+        evidenceUrls: uploadedEvidenceUrls,
+      })
+      const events = await chatService.threadEvents(activeThread.id).catch(() => [])
+      setThreadEvents(Array.isArray(events) ? events : [])
+      if (activeThread.listingId) {
+        const pushes = await chatService.threadPushDeliveries(activeThread.id).catch(() => [])
+        setPushDeliveries(Array.isArray(pushes) ? pushes : [])
+      }
+      setEventNote('')
+      setEventEvidenceUrl('')
+      setEventEvidenceFiles([])
+      setMessage(t('marketplace.txEventSaved'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setUploadingEvidence(false)
+      setSavingEvent(false)
     }
   }
 
@@ -317,6 +407,137 @@ export default function MarketplaceMessagesPage() {
                         </button>
                       )}
                     </div>
+                    {activeThread.listingId && (
+                      <div className="mt-3 border rounded p-2 small">
+                        <div className="fw-semibold mb-1">{t('marketplace.txStatusTitle')}</div>
+                        <div className="small text-muted mb-2">
+                          {t('marketplace.txCurrentStatus')}: {t(`marketplace.txStatus.${activeThread.transactionStatus || 'pending'}`)}
+                        </div>
+                        <div className="d-flex gap-2 flex-wrap">
+                          {TX_STATUSES.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              className={`btn btn-sm ${String(activeThread.transactionStatus || 'pending') === s ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              disabled={updatingTxStatus}
+                              onClick={() => updateThreadTransactionStatus(s)}
+                            >
+                              {t(`marketplace.txStatus.${s}`)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {activeThread.listingId && (
+                      <div className="mt-3 border rounded p-2 small">
+                        <div className="fw-semibold mb-2">{t('marketplace.txTimelineTitle')}</div>
+                        <div className="d-flex flex-column gap-2 mb-3">
+                          {threadEvents.length === 0 && (
+                            <div className="text-muted">{t('marketplace.txTimelineEmpty')}</div>
+                          )}
+                          {threadEvents.map((ev) => (
+                            <div key={ev.id} className="border rounded p-2">
+                              <div className="fw-semibold">
+                                {t(`marketplace.txEventType.${ev.eventType}`, { defaultValue: ev.eventType })}
+                                {ev.eventStatus ? ` · ${t(`marketplace.txStatus.${ev.eventStatus}`, { defaultValue: ev.eventStatus })}` : ''}
+                              </div>
+                              {ev.note ? <div className="small mt-1">{ev.note}</div> : null}
+                              {(Array.isArray(ev.evidenceUrls) ? ev.evidenceUrls : []).length > 0 ? (
+                                <div className="small mt-1 d-flex flex-wrap gap-2">
+                                  {(ev.evidenceUrls || []).map((url, idx) => (
+                                    <a key={`${ev.id}-evidence-${idx}`} href={imgUrl(url) || url} target="_blank" rel="noreferrer">
+                                      {t('marketplace.txEvidenceLink')} #{idx + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : ev.evidenceUrl ? (
+                                <div className="small mt-1">
+                                  <a href={imgUrl(ev.evidenceUrl) || ev.evidenceUrl} target="_blank" rel="noreferrer">{t('marketplace.txEvidenceLink')}</a>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                        <form onSubmit={submitThreadEvent}>
+                          <div className="row g-2">
+                            <div className="col-md-4">
+                              <select
+                                className="form-select form-select-sm"
+                                value={eventType}
+                                onChange={(e) => setEventType(e.target.value)}
+                              >
+                                {['note', 'shipping_proof', 'arrival_proof', 'dispute_note'].map((tp) => (
+                                  <option key={tp} value={tp}>
+                                    {t(`marketplace.txEventType.${tp}`, { defaultValue: tp })}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-md-8">
+                              <input
+                                className="form-control form-control-sm"
+                                placeholder={t('marketplace.txEvidenceUrlPlaceholder')}
+                                value={eventEvidenceUrl}
+                                onChange={(e) => setEventEvidenceUrl(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <input
+                            type="file"
+                            className="form-control form-control-sm mt-2"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => setEventEvidenceFiles(Array.from(e.target.files || []))}
+                          />
+                          <textarea
+                            className="form-control form-control-sm mt-2"
+                            rows={2}
+                            placeholder={t('marketplace.txNotePlaceholder')}
+                            value={eventNote}
+                            onChange={(e) => setEventNote(e.target.value)}
+                          />
+                          <button className="btn btn-sm btn-dark mt-2" disabled={savingEvent || uploadingEvidence}>
+                            {(savingEvent || uploadingEvidence) ? t('common.saving') : t('marketplace.txAddEvent')}
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                    {activeThread.listingId && (
+                      <div className="mt-3 border rounded p-2 small">
+                        <div className="fw-semibold mb-1">{t('marketplace.txPushAuditTitle')}</div>
+                        <p className="text-muted mb-2" style={{ fontSize: '0.72rem' }}>{t('marketplace.txPushAuditLead')}</p>
+                        {pushDeliveries.length === 0 ? (
+                          <div className="text-muted">{t('marketplace.txPushAuditEmpty')}</div>
+                        ) : (
+                          <div className="table-responsive mb-0">
+                            <table className="table table-sm table-borderless mb-0" style={{ fontSize: '0.72rem' }}>
+                              <thead>
+                                <tr className="text-muted">
+                                  <th>{t('marketplace.txPushType')}</th>
+                                  <th>{t('marketplace.txPushRecipient')}</th>
+                                  <th className="text-end">{t('marketplace.txPushDevices')}</th>
+                                  <th className="text-end">{t('marketplace.txPushAck')}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pushDeliveries.map((row) => (
+                                  <tr key={row.id}>
+                                    <td>{t(`marketplace.pushKinds.${String(row.notificationType || '').replace(/^MARKETPLACE_/, '').toLowerCase()}`, {
+                                      defaultValue: row.notificationType || '—',
+                                    })}</td>
+                                    <td>{row.recipientIsYou ? t('marketplace.txPushYou') : t('marketplace.txPushOtherParty')}</td>
+                                    <td className="text-end">{row.fcmSuccessCount ?? '0'}</td>
+                                    <td className="text-end">
+                                      {row.receivedAckAt ? t('marketplace.txPushAckYes') : t('marketplace.txPushAckNo')}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {canReviewFromChat ? (
                       <form className="mt-4 pt-3 border-top" style={{ borderColor: 'var(--ta-border)' }} onSubmit={sendMarketplaceReview}>
                         <h3 className="h6 mb-2">{t('marketplace.leaveReviewInChat')}</h3>

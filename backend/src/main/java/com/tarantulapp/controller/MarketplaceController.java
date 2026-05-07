@@ -50,7 +50,13 @@ public class MarketplaceController {
             String country,
             String imageUrl,
             String pedigreeRef,
-            Boolean requestListingBoost
+            Boolean requestListingBoost,
+            /** Required for publish: seller certifies local legal compliance for this listing. */
+            Boolean sellerCertifiesLegalTradeCompliance,
+            Boolean wildCaught,
+            /** ISO-3166-1 alpha-2 required when wildCaught is true */
+            String captureOriginCountryIso,
+            String regulatoryPermitRefs
     ) {}
 
     record UpdateListingStatusRequest(@NotBlank String status) {}
@@ -67,7 +73,11 @@ public class MarketplaceController {
             String state,
             String city,
             Boolean searchVisible,
-            String communityProfileVisibility
+            String communityProfileVisibility,
+            String storefrontName,
+            String storefrontTagline,
+            String storefrontShippingPolicy,
+            String storefrontLagPolicy
     ) {}
 
     record CreateReviewRequest(
@@ -91,7 +101,11 @@ public class MarketplaceController {
                 req.state(),
                 req.city(),
                 req.searchVisible(),
-                req.communityProfileVisibility()
+                req.communityProfileVisibility(),
+                req.storefrontName(),
+                req.storefrontTagline(),
+                req.storefrontShippingPolicy(),
+                req.storefrontLagPolicy()
         ));
     }
 
@@ -116,7 +130,11 @@ public class MarketplaceController {
                 req.country(),
                 req.imageUrl(),
                 req.pedigreeRef(),
-                Boolean.TRUE.equals(req.requestListingBoost())
+                Boolean.TRUE.equals(req.requestListingBoost()),
+                Boolean.TRUE.equals(req.sellerCertifiesLegalTradeCompliance()),
+                Boolean.TRUE.equals(req.wildCaught()),
+                req.captureOriginCountryIso(),
+                req.regulatoryPermitRefs()
         ));
     }
 

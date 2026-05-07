@@ -32,6 +32,15 @@ public class ChatThread {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "transaction_status", length = 24)
+    private String transactionStatus;
+
+    @Column(name = "transaction_status_updated_at")
+    private Instant transactionStatusUpdatedAt;
+
+    @Column(name = "transaction_status_updated_by_user_id", columnDefinition = "uuid")
+    private UUID transactionStatusUpdatedByUserId;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
@@ -49,4 +58,10 @@ public class ChatThread {
     public void setListingId(UUID listingId) { this.listingId = listingId; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public String getTransactionStatus() { return transactionStatus; }
+    public void setTransactionStatus(String transactionStatus) { this.transactionStatus = transactionStatus; }
+    public Instant getTransactionStatusUpdatedAt() { return transactionStatusUpdatedAt; }
+    public void setTransactionStatusUpdatedAt(Instant transactionStatusUpdatedAt) { this.transactionStatusUpdatedAt = transactionStatusUpdatedAt; }
+    public UUID getTransactionStatusUpdatedByUserId() { return transactionStatusUpdatedByUserId; }
+    public void setTransactionStatusUpdatedByUserId(UUID transactionStatusUpdatedByUserId) { this.transactionStatusUpdatedByUserId = transactionStatusUpdatedByUserId; }
 }

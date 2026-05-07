@@ -66,6 +66,7 @@ public class SexIdCaseService {
     private final SexIdExplanationService sexIdExplanationService;
     private final NotificationService notificationService;
     private final SexIdPointService sexIdPointService;
+    private final KeeperRankCalculator keeperRankCalculator;
 
     public SexIdCaseService(SexIdCaseRepository sexIdCaseRepository,
                             SexIdCaseVoteRepository sexIdCaseVoteRepository,
@@ -76,7 +77,8 @@ public class SexIdCaseService {
                             BehaviorLogRepository behaviorLogRepository,
                             SexIdExplanationService sexIdExplanationService,
                             NotificationService notificationService,
-                            SexIdPointService sexIdPointService) {
+                            SexIdPointService sexIdPointService,
+                            KeeperRankCalculator keeperRankCalculator) {
         this.sexIdCaseRepository = sexIdCaseRepository;
         this.sexIdCaseVoteRepository = sexIdCaseVoteRepository;
         this.userRepository = userRepository;
@@ -87,6 +89,7 @@ public class SexIdCaseService {
         this.sexIdExplanationService = sexIdExplanationService;
         this.notificationService = notificationService;
         this.sexIdPointService = sexIdPointService;
+        this.keeperRankCalculator = keeperRankCalculator;
     }
 
     @Transactional
@@ -506,12 +509,7 @@ public class SexIdCaseService {
     }
 
     private double computeReputationScore(UUID userId) {
-        long total = tarantulaRepository.countByUserId(userId);
-        long species = tarantulaRepository.countDistinctSpeciesByUserId(userId);
-        long events = feedingLogRepository.countByOwnerUserId(userId)
-                + moltLogRepository.countByOwnerUserId(userId)
-                + behaviorLogRepository.countByOwnerUserId(userId);
-        return Math.min(100.0, (total * 2.0) + (species * 3.0) + Math.min(30.0, events / 5.0));
+        return keeperRankCalculator.linearInfluenceScore(userId);
     }
 
     private double computeExpertiseScore(UUID userId) {

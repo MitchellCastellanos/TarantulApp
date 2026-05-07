@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
+import { keeperRankName } from '../utils/keeperRank'
 
 const profileCache = new Map()
 const keeperCache = new Map()
@@ -134,7 +135,7 @@ export default function PublicKeeperHandle({
           <div className="small mb-1">
             <span className="fw-semibold">{t('marketplace.reputationTitle')}:</span>{' '}
             {t('marketplace.reputationLine', {
-              tier: reputation.tier,
+              rank: keeperRankName(t, reputation.tier),
               score: reputation.score,
             })}
             <div className="progress mt-1" style={{ height: 6 }}>

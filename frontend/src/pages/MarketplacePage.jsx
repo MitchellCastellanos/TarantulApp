@@ -60,7 +60,14 @@ export default function MarketplacePage() {
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
   const [myReputation, setMyReputation] = useState(null)
-  const [filters, setFilters] = useState({ country: '', state: '', city: '', nearMe: true })
+  const [filters, setFilters] = useState({
+    country: '',
+    state: '',
+    city: '',
+    nearMe: true,
+    listingOrigin: '',
+    hasRegulatoryRefs: false,
+  })
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
   const [officialStripEdge, setOfficialStripEdge] = useState({ atStart: true, atEnd: false })
@@ -143,6 +150,8 @@ export default function MarketplacePage() {
         nearCountry,
         nearState,
         nearCity,
+        listingOrigin: filters.listingOrigin || undefined,
+        hasRegulatoryRefs: filters.hasRegulatoryRefs || undefined,
       })
       const normalized = Array.isArray(data) ? data : []
       setListings(normalized)
@@ -456,6 +465,28 @@ export default function MarketplacePage() {
                   {t('marketplace.nearMe')}
                 </label>
               </div>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: 140 }}
+                value={filters.listingOrigin}
+                onChange={(e) => setFilters((f) => ({ ...f, listingOrigin: e.target.value }))}
+              >
+                <option value="">{t('marketplace.anyOrigin')}</option>
+                <option value="captive_bred">{t('marketplace.originCaptiveBred')}</option>
+                <option value="wild_caught">{t('marketplace.originWildCaught')}</option>
+              </select>
+              <div className="form-check d-flex align-items-center mb-0">
+                <input
+                  className="form-check-input me-1"
+                  type="checkbox"
+                  id="hasRegulatoryRefs"
+                  checked={filters.hasRegulatoryRefs}
+                  onChange={(e) => setFilters((f) => ({ ...f, hasRegulatoryRefs: e.target.checked }))}
+                />
+                <label className="form-check-label small mb-0" htmlFor="hasRegulatoryRefs">
+                  {t('marketplace.withRegulatoryRefsOnly')}
+                </label>
+              </div>
               <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
                 {t('common.search')}
               </button>
@@ -616,6 +647,9 @@ export default function MarketplacePage() {
                         }`}
                       >
                         <span>{l.title}</span>
+                        {l.sellerVerifiedBreeder && (
+                          <span className="badge bg-info-subtle text-dark border">{t('marketplace.verifiedBreederBadge')}</span>
+                        )}
                         {l.boosted && (
                           <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                         )}
@@ -639,6 +673,14 @@ export default function MarketplacePage() {
                         </div>
                       )}
                       <div className="d-flex gap-2 flex-wrap align-items-center">
+                        {l.sellerHandle && (
+                          <Link
+                            to={`/shop/${encodeURIComponent(l.sellerHandle)}`}
+                            className="btn btn-sm btn-outline-dark"
+                          >
+                            {t('marketplace.listingDetailVisitStore')}
+                          </Link>
+                        )}
                         <Link
                           to={l.sellerHandle ? `/u/${encodeURIComponent(l.sellerHandle)}` : `/marketplace/keeper/${l.sellerUserId}`}
                           className="btn btn-sm ta-marketplace-view-profile-btn"

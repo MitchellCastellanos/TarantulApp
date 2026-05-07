@@ -1,5 +1,7 @@
 /**
  * Heurística de terrario con leg-span adaptable (no fijo 2x).
+ * Terrestres incluyen sustrato y “headroom” (espacio sobre el sustrato al techo);
+ * fosoriales corrigen profundidad de sustrato a rangos típicos (no DL×3 extremo).
  * @param {number|string|null|undefined} currentSizeCm
  * @param {{ habitatType?: string, adultSizeCmMax?: unknown }} species
  * @returns {{ enclosureI18n: { key: string, params: Record<string, number> }, pct: number|null, adultSizeCmMax: unknown }|null}
@@ -13,7 +15,6 @@ export function computeTerrariumRecommendation(currentSizeCm, species) {
   const adultMax = Number(adultSizeCmMax)
   const hasAdultMax = Number.isFinite(adultMax) && adultMax > 0
 
-  // Evita sobreestimar en ejemplares grandes: el factor baja al acercarse al tamaño adulto.
   const legSpanFactor = hasAdultMax
     ? (() => {
       const ratioToAdult = body / adultMax
@@ -35,12 +36,16 @@ export function computeTerrariumRecommendation(currentSizeCm, species) {
     enclosureI18n = { key: 'terrarium.enclosureArboreal', params: { w, h } }
   } else if (habitatType === 'fossorial') {
     const floor = Math.ceil(legSpan * 2)
-    const substrate = Math.ceil(body * 3)
+    // ~1–1.5× DL en coleo de hobby; techo alto sin sentido si el spider vive debajo del sustrato.
+    const substrate = Math.ceil(Math.min(45, Math.max(10, body * 1.25)))
     enclosureI18n = { key: 'terrarium.enclosureFossorial', params: { floor, substrate } }
   } else {
     const floor = Math.ceil(legSpan * 2.5)
-    const height = Math.ceil(legSpan * 1.2)
-    enclosureI18n = { key: 'terrarium.enclosureTerrestrial', params: { floor, height } }
+    const substrate = Math.ceil(Math.min(42, Math.max(8, body * 1.2)))
+    // Espacio sobre el sustrato (no altura interior total): terrestres y semi-fossoriales típicamente poco más que su DL antes del tapa.
+    const headroom = Math.ceil(Math.max(5, Math.min(18, body * 0.5)))
+    const minHeight = substrate + headroom
+    enclosureI18n = { key: 'terrarium.enclosureTerrestrial', params: { floor, substrate, headroom, minHeight } }
   }
 
   const pct = adultSizeCmMax

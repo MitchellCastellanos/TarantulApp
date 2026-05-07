@@ -2,6 +2,7 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.dto.AuthResponse;
 import com.tarantulapp.dto.ChangePasswordRequest;
+import com.tarantulapp.service.AccountDeletionService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.util.SecurityHelper;
@@ -34,11 +35,14 @@ class AuthControllerTest {
     @Mock
     private CaptchaService captchaService;
 
+    @Mock
+    private AccountDeletionService accountDeletionService;
+
     private AuthController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AuthController(authService, securityHelper, captchaService);
+        controller = new AuthController(authService, accountDeletionService, securityHelper, captchaService);
     }
 
     @Test

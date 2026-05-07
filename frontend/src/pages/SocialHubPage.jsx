@@ -10,6 +10,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import communityService from '../services/communityService'
 import tarantulaService from '../services/tarantulaService'
 import referralService from '../services/referralService'
+import { resolvePublicFrontOrigin } from '../utils/publicFrontBaseUrl'
 import sexIdCaseService from '../services/sexIdCaseService'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
@@ -115,7 +116,7 @@ export default function SocialHubPage() {
 
   const inviteLink = useMemo(() => {
     if (!referral?.code) return ''
-    const base = `${window.location.origin}/login`
+    const base = `${resolvePublicFrontOrigin()}/login`
     return `${base}?ref=${encodeURIComponent(referral.code)}`
   }, [referral?.code])
 

@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import com.tarantulapp.util.FileStorageService;
@@ -44,6 +45,8 @@ import com.tarantulapp.util.PublicHandleRules;
 
 @Service
 public class MarketplaceService {
+    private static final Pattern ISO_COUNTRY = Pattern.compile("[A-Z]{2}");
+
     private static final long MIN_MESSAGES_TO_ENABLE_REVIEW = 6L;
     private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
 
@@ -65,6 +68,7 @@ public class MarketplaceService {
     private final ChatMessageRepository chatMessageRepository;
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
+    private final KeeperRankCalculator keeperRankCalculator;
     @Value("${app.marketplace.partner-feed.hard-cap:50}")
     private int partnerFeedHardCap = 50;
     @Value("${app.marketplace.partner-feed.share.bootstrap-under-10:0.60}")
@@ -89,7 +93,8 @@ public class MarketplaceService {
                               ChatThreadRepository chatThreadRepository,
                               ChatMessageRepository chatMessageRepository,
                               FileStorageService fileStorageService,
-                              BillingService billingService) {
+                              BillingService billingService,
+                              KeeperRankCalculator keeperRankCalculator) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.officialVendorRepository = officialVendorRepository;
@@ -104,13 +109,16 @@ public class MarketplaceService {
         this.chatMessageRepository = chatMessageRepository;
         this.fileStorageService = fileStorageService;
         this.billingService = billingService;
+        this.keeperRankCalculator = keeperRankCalculator;
     }
 
     @Transactional
     public Map<String, Object> upsertMyProfile(UUID userId, String displayName, String handle, String bio, String location,
                                                String featuredCollection, String contactWhatsapp,
                                                String contactInstagram, String country, String state, String city,
-                                               Boolean searchVisible, String communityProfileVisibility) {
+                                               Boolean searchVisible, String communityProfileVisibility,
+                                               String storefrontName, String storefrontTagline,
+                                               String storefrontShippingPolicy, String storefrontLagPolicy) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
@@ -129,6 +137,10 @@ public class MarketplaceService {
         profile.setProfileCity(cleanText(city, 80));
         profile.setSearchVisible(searchVisible == null ? Boolean.TRUE : searchVisible);
         profile.setCommunityProfileVisibility(normalizeCommunityProfileVisibility(communityProfileVisibility));
+        profile.setStorefrontName(cleanText(storefrontName, 120));
+        profile.setStorefrontTagline(cleanText(storefrontTagline, 180));
+        profile.setStorefrontShippingPolicy(cleanText(storefrontShippingPolicy, 1000));
+        profile.setStorefrontLagPolicy(cleanText(storefrontLagPolicy, 1000));
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -151,10 +163,21 @@ public class MarketplaceService {
     public Map<String, Object> createListing(UUID userId, String title, String description, String speciesName,
                                              String stage, String sex, BigDecimal priceAmount, String currency,
                                              String city, String state, String country, String imageUrl, String pedigreeRef,
-                                             boolean requestListingBoost) {
+                                             boolean requestListingBoost,
+                                             boolean sellerCertifiesLegalTradeCompliance,
+                                             boolean wildCaught,
+                                             String captureOriginCountryIso,
+                                             String regulatoryPermitRefs) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Titulo requerido");
         }
+        if (!sellerCertifiesLegalTradeCompliance) {
+            throw new IllegalArgumentException("Debes confirmar el cumplimiento legal de comercio para publicar");
+        }
+        String permitRefs = cleanText(regulatoryPermitRefs, 420);
+        String iso = normalizeIsoCountry(captureOriginCountryIso);
+        validateWildCaughtOrigin(wildCaught, iso);
+
         MarketplaceListing listing = new MarketplaceListing();
         listing.setSellerUserId(userId);
         listing.setTitle(cleanText(title, 140));
@@ -169,6 +192,10 @@ public class MarketplaceService {
         listing.setCountry(cleanText(country, 80));
         listing.setImageUrl(cleanText(imageUrl, 350));
         listing.setPedigreeRef(cleanText(pedigreeRef, 180));
+        listing.setWildCaught(wildCaught);
+        listing.setCaptureOriginCountryIso(wildCaught ? iso : null);
+        listing.setRegulatoryPermitRefs(permitRefs);
+        listing.setSellerTradeDisclosureAcceptedAt(Instant.now());
         listing.setStatus("active");
         listing = marketplaceListingRepository.save(listing);
         Map<String, Object> out = mapListing(listing);
@@ -209,19 +236,25 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> publicListings(String q, String status,
                                                     String country, String state, String city,
-                                                    String nearCountry, String nearState, String nearCity) {
+                                                    String nearCountry, String nearState, String nearCity,
+                                                    String listingOrigin, Boolean hasRegulatoryRefs) {
         final String filterCountry = normalizeFilter(country);
         final String filterState = normalizeFilter(state);
         final String filterCity = normalizeFilter(city);
         final String nearCountryNorm = normalizeFilter(nearCountry);
         final String nearStateNorm = normalizeFilter(nearState);
         final String nearCityNorm = normalizeFilter(nearCity);
+        final String listingOriginNorm = normalizeListingOriginFilter(listingOrigin);
+        final boolean withTradeFilters = listingOriginNorm != null || hasRegulatoryRefs != null;
 
-        List<Map<String, Object>> partner = partnerPublicListings(
+        List<Map<String, Object>> partner = withTradeFilters
+                ? List.of()
+                : partnerPublicListings(
                 q, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
         );
         List<Map<String, Object>> peer = peerPublicListings(
-                q, status, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
+                q, status, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm,
+                listingOriginNorm, hasRegulatoryRefs
         );
         int partnerCap = dynamicPartnerCap(peer.size(), partner.size());
         List<Map<String, Object>> out = new ArrayList<>(partnerCap + peer.size());
@@ -365,7 +398,8 @@ public class MarketplaceService {
 
     private List<Map<String, Object>> peerPublicListings(String q, String status,
                                                          String filterCountry, String filterState, String filterCity,
-                                                         String nearCountryNorm, String nearStateNorm, String nearCityNorm) {
+                                                         String nearCountryNorm, String nearStateNorm, String nearCityNorm,
+                                                         String listingOriginNorm, Boolean hasRegulatoryRefs) {
         String normalizedStatus = normalizeStatus(status);
         if (normalizedStatus == null || "hidden".equals(normalizedStatus)) {
             normalizedStatus = "active";
@@ -387,6 +421,8 @@ public class MarketplaceService {
                 .filter(m -> filterCountry == null || normalizeFilter(m.getCountry()).equals(filterCountry))
                 .filter(m -> filterState == null || normalizeFilter(m.getState()).equals(filterState))
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
+                .filter(m -> matchesListingOriginFilter(m, listingOriginNorm))
+                .filter(m -> matchesRegulatoryRefsFilter(m, hasRegulatoryRefs))
                 .sorted((a, b) -> {
                     boolean ab = isListingBoostedNow(a);
                     boolean bb = isListingBoostedNow(b);
@@ -401,6 +437,42 @@ public class MarketplaceService {
                 .limit(100)
                 .map(this::mapListing)
                 .collect(Collectors.toList());
+    }
+
+    private static boolean matchesListingOriginFilter(MarketplaceListing m, String listingOriginNorm) {
+        if (listingOriginNorm == null) {
+            return true;
+        }
+        boolean wild = m.isWildCaught();
+        if ("wild_caught".equals(listingOriginNorm)) {
+            return wild;
+        }
+        if ("captive_bred".equals(listingOriginNorm)) {
+            return !wild;
+        }
+        return true;
+    }
+
+    private static boolean matchesRegulatoryRefsFilter(MarketplaceListing m, Boolean hasRegulatoryRefs) {
+        if (hasRegulatoryRefs == null) {
+            return true;
+        }
+        boolean hasRefs = m.getRegulatoryPermitRefs() != null && !m.getRegulatoryPermitRefs().isBlank();
+        return hasRegulatoryRefs ? hasRefs : !hasRefs;
+    }
+
+    private static String normalizeListingOriginFilter(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String v = raw.trim().toLowerCase();
+        if ("wild".equals(v) || "wild_caught".equals(v)) {
+            return "wild_caught";
+        }
+        if ("captive".equals(v) || "captive_bred".equals(v)) {
+            return "captive_bred";
+        }
+        return null;
     }
 
     private List<Map<String, Object>> partnerPublicListings(String q,
@@ -519,11 +591,31 @@ public class MarketplaceService {
         out.put("reputation", computeReputation(sellerUserId));
         out.put("ratingAvg", avg);
         out.put("reviewsCount", reviewsCount);
+        out.put("storefrontMetrics", computeStorefrontMetrics(sellerUserId, reviewsCount));
         out.put("activeListings", activeListings);
         out.put("collectionPublic", collectionPublic);
         out.put("communityProfileVisibility", profileVisibility);
         out.put("publicCollection", publicCollection);
         out.put("publicCollectionCount", publicCollection.size());
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicStorefrontByHandle(String handle) {
+        String normalized = PublicHandleRules.normalize(handle);
+        if (normalized == null || normalized.isBlank()) {
+            throw new NotFoundException("Storefront no encontrado");
+        }
+        User user = userRepository.findByPublicHandleIgnoreCase(normalized)
+                .orElseThrow(() -> new NotFoundException("Storefront no encontrado"));
+        if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            throw new NotFoundException("Storefront no encontrado");
+        }
+        Map<String, Object> seller = publicSellerProfile(user.getId());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("storefrontHandle", user.getPublicHandle());
+        out.put("storefrontUrl", "/shop/" + user.getPublicHandle());
+        out.put("seller", seller);
         return out;
     }
 
@@ -570,6 +662,7 @@ public class MarketplaceService {
         out.put("sellerDisplayName", sellerLabel);
         out.put("sellerProfilePhoto", seller == null || seller.getProfilePhoto() == null ? "" : seller.getProfilePhoto());
         out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
+        out.put("sellerVerifiedBreeder", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
         out.put("speciesName", l.getSpeciesName() == null ? "" : l.getSpeciesName());
@@ -586,6 +679,10 @@ public class MarketplaceService {
         out.put("createdAt", l.getCreatedAt());
         out.put("boostedUntil", l.getBoostedUntil());
         out.put("boosted", isListingBoostedNow(l));
+        out.put("wildCaught", l.isWildCaught());
+        out.put("captureOriginCountryIso", l.getCaptureOriginCountryIso() == null ? "" : l.getCaptureOriginCountryIso());
+        out.put("regulatoryPermitRefs", l.getRegulatoryPermitRefs() == null ? "" : l.getRegulatoryPermitRefs());
+        out.put("sellerTradeDisclosureAcceptedAt", l.getSellerTradeDisclosureAcceptedAt());
         out.put("source", "peer");
         out.put("isPartner", false);
         out.put("badgeLabel", null);
@@ -653,6 +750,12 @@ public class MarketplaceService {
         out.put("featuredCollection", p.getFeaturedCollection() == null ? "" : p.getFeaturedCollection());
         out.put("contactWhatsapp", p.getContactWhatsapp() == null ? "" : p.getContactWhatsapp());
         out.put("contactInstagram", p.getContactInstagram() == null ? "" : p.getContactInstagram());
+        out.put("verifiedBreeder", Boolean.TRUE.equals(p.getVerifiedBreeder()));
+        out.put("verifiedBreederAt", p.getVerifiedBreederAt());
+        out.put("storefrontName", p.getStorefrontName() == null ? "" : p.getStorefrontName());
+        out.put("storefrontTagline", p.getStorefrontTagline() == null ? "" : p.getStorefrontTagline());
+        out.put("storefrontShippingPolicy", p.getStorefrontShippingPolicy() == null ? "" : p.getStorefrontShippingPolicy());
+        out.put("storefrontLagPolicy", p.getStorefrontLagPolicy() == null ? "" : p.getStorefrontLagPolicy());
         out.put("country", p.getProfileCountry() == null ? "" : p.getProfileCountry());
         out.put("state", p.getProfileState() == null ? "" : p.getProfileState());
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
@@ -660,6 +763,25 @@ public class MarketplaceService {
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
         return out;
+    }
+
+    private Map<String, Object> computeStorefrontMetrics(UUID sellerUserId, long reviewsCount) {
+        long totalListings = marketplaceListingRepository.countBySellerUserId(sellerUserId);
+        long activeListings = marketplaceListingRepository.countBySellerUserIdAndStatusIgnoreCase(sellerUserId, "active");
+        long soldListings = marketplaceListingRepository.countBySellerUserIdAndStatusIgnoreCase(sellerUserId, "sold");
+        long listingThreads = chatThreadRepository.countListingThreadsForSeller(sellerUserId);
+        long repliedThreads = chatThreadRepository.countListingThreadsWithSellerReply(sellerUserId);
+        long responseRatePct = listingThreads <= 0 ? 0L : Math.round((repliedThreads * 100.0d) / listingThreads);
+
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("totalListings", totalListings);
+        metrics.put("activeListings", activeListings);
+        metrics.put("soldListings", soldListings);
+        metrics.put("reviewsCount", reviewsCount);
+        metrics.put("listingThreads", listingThreads);
+        metrics.put("repliedThreads", repliedThreads);
+        metrics.put("responseRatePct", Math.max(0L, Math.min(100L, responseRatePct)));
+        return metrics;
     }
 
     private String normalizeCommunityProfileVisibility(String raw) {
@@ -735,26 +857,13 @@ public class MarketplaceService {
     }
 
     private Map<String, Object> computeReputation(UUID userId) {
-        long total = tarantulaRepository.countByUserId(userId);
-        long species = tarantulaRepository.countDistinctSpeciesByUserId(userId);
-        long events = feedingLogRepository.countByOwnerUserId(userId)
-                + moltLogRepository.countByOwnerUserId(userId)
-                + behaviorLogRepository.countByOwnerUserId(userId);
-        int qrPrints = userRepository.findById(userId).map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
-        double reviewsAvg = sellerReviewRepository.avgRatingBySellerUserId(userId) == null ? 0 : sellerReviewRepository.avgRatingBySellerUserId(userId);
-        long reviewsCount = sellerReviewRepository.countBySellerUserId(userId);
-        int score = (int) Math.min(100, total * 2 + species * 3 + Math.min(30, events / 5) + qrPrints * 2 + Math.round(reviewsAvg * Math.min(10, reviewsCount)));
-
-        String tier;
-        if (score >= 70) tier = "Gold";
-        else if (score >= 35) tier = "Silver";
-        else tier = "Bronze";
-
+        KeeperRankCalculator.KeeperRankSnapshot snap = keeperRankCalculator.compute(userId);
         Map<String, Object> out = new HashMap<>();
-        out.put("score", score);
-        out.put("tier", tier);
-        out.put("nextTier", "Bronze".equals(tier) ? "Silver" : ("Silver".equals(tier) ? "Gold" : "Max"));
-        out.put("nextTierTarget", "Bronze".equals(tier) ? 35 : ("Silver".equals(tier) ? 70 : 100));
+        out.put("score", snap.progressPercent());
+        out.put("tier", snap.rankKey());
+        out.put("nextTier", snap.nextTierKey());
+        out.put("remainingPercent", snap.remainingPercent());
+        out.put("nextTierTarget", snap.remainingPercent());
         return out;
     }
 
@@ -809,6 +918,27 @@ public class MarketplaceService {
         out.put("comment", r.getComment() == null ? "" : r.getComment());
         out.put("createdAt", r.getCreatedAt());
         return out;
+    }
+
+    private static void validateWildCaughtOrigin(boolean wildCaught, String isoNormalized) {
+        if (!wildCaught) {
+            return;
+        }
+        if (isoNormalized == null || !ISO_COUNTRY.matcher(isoNormalized).matches()) {
+            throw new IllegalArgumentException("Para ejemplares de origen silvestre indica pais de origen valido (codigo ISO de 2 letras)");
+        }
+    }
+
+    /** @return uppercase ISO-3166-1 alpha-2 or null if absent/blank */
+    private static String normalizeIsoCountry(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String t = raw.trim().toUpperCase();
+        if (t.isEmpty()) {
+            return null;
+        }
+        return t.length() > 2 ? t.substring(0, 2) : t;
     }
 
     private String cleanText(String value, int maxLen) {

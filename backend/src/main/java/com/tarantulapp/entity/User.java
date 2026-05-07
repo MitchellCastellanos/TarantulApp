@@ -41,6 +41,18 @@ public class User {
     @Column(name = "contact_instagram", length = 80)
     private String contactInstagram;
 
+    @Column(name = "storefront_name", length = 120)
+    private String storefrontName;
+
+    @Column(name = "storefront_tagline", length = 180)
+    private String storefrontTagline;
+
+    @Column(name = "storefront_shipping_policy", length = 1000)
+    private String storefrontShippingPolicy;
+
+    @Column(name = "storefront_lag_policy", length = 1000)
+    private String storefrontLagPolicy;
+
     @Column(name = "profile_country", length = 80)
     private String profileCountry;
 
@@ -90,6 +102,12 @@ public class User {
     @Column(name = "is_beta_tester", nullable = false)
     private Boolean isBetaTester = false;
 
+    @Column(name = "verified_breeder", nullable = false)
+    private Boolean verifiedBreeder = false;
+
+    @Column(name = "verified_breeder_at")
+    private Instant verifiedBreederAt;
+
     @Column(name = "beta_cohort", length = 80)
     private String betaCohort;
 
@@ -121,6 +139,9 @@ public class User {
         }
         if (isBetaTester == null) {
             isBetaTester = false;
+        }
+        if (verifiedBreeder == null) {
+            verifiedBreeder = false;
         }
         if (searchVisible == null) {
             searchVisible = true;
@@ -159,6 +180,18 @@ public class User {
 
     public String getContactInstagram() { return contactInstagram; }
     public void setContactInstagram(String contactInstagram) { this.contactInstagram = contactInstagram; }
+
+    public String getStorefrontName() { return storefrontName; }
+    public void setStorefrontName(String storefrontName) { this.storefrontName = storefrontName; }
+
+    public String getStorefrontTagline() { return storefrontTagline; }
+    public void setStorefrontTagline(String storefrontTagline) { this.storefrontTagline = storefrontTagline; }
+
+    public String getStorefrontShippingPolicy() { return storefrontShippingPolicy; }
+    public void setStorefrontShippingPolicy(String storefrontShippingPolicy) { this.storefrontShippingPolicy = storefrontShippingPolicy; }
+
+    public String getStorefrontLagPolicy() { return storefrontLagPolicy; }
+    public void setStorefrontLagPolicy(String storefrontLagPolicy) { this.storefrontLagPolicy = storefrontLagPolicy; }
 
     public String getProfileCountry() { return profileCountry; }
     public void setProfileCountry(String profileCountry) { this.profileCountry = profileCountry; }
@@ -204,6 +237,12 @@ public class User {
 
     public Boolean getIsBetaTester() { return isBetaTester; }
     public void setIsBetaTester(Boolean isBetaTester) { this.isBetaTester = isBetaTester; }
+
+    public Boolean getVerifiedBreeder() { return verifiedBreeder; }
+    public void setVerifiedBreeder(Boolean verifiedBreeder) { this.verifiedBreeder = verifiedBreeder; }
+
+    public Instant getVerifiedBreederAt() { return verifiedBreederAt; }
+    public void setVerifiedBreederAt(Instant verifiedBreederAt) { this.verifiedBreederAt = verifiedBreederAt; }
 
     public String getBetaCohort() { return betaCohort; }
     public void setBetaCohort(String betaCohort) { this.betaCohort = betaCohort; }

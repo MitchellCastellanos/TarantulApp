@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import QRCodeSvg from 'react-qr-code'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
@@ -27,10 +28,27 @@ function getQrLabelParts(specimen) {
   return { name, species }
 }
 
+function resolveAppPathFromScan(raw) {
+  const s = (raw || '').trim()
+  if (!s) return null
+  try {
+    const u = new URL(s)
+    if (u.pathname.startsWith('/t/') && u.pathname.length > 3) {
+      return `${u.pathname}${u.search || ''}`
+    }
+  } catch {
+    if (s.startsWith('/t/')) {
+      return s.split('#')[0].split(/\s+/)[0]
+    }
+  }
+  return null
+}
+
 export default function QrToolPage() {
   const { t, i18n } = useTranslation()
   const { token, user } = useAuth()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
   const mode = searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
@@ -44,6 +62,7 @@ export default function QrToolPage() {
   const [sizeCm, setSizeCm] = useState(5)
   const [busy, setBusy] = useState(false)
   const [busyKind, setBusyKind] = useState('')
+  const [scanHint, setScanHint] = useState('')
 
   const selected = useMemo(
     () => collection.find((x) => String(x.id) === pickId) ?? null,
@@ -247,6 +266,32 @@ export default function QrToolPage() {
 
   const bulkPreviewPx = cmToDocxDisplayPx(Math.min(sizeCm, 4))
 
+  const scanEnclosureQr = async () => {
+    setScanHint('')
+    if (!Capacitor.isNativePlatform()) return
+    try {
+      const mod = await import('@capacitor/barcode-scanner')
+      const { CapacitorBarcodeScanner, Html5QrcodeSupportedFormats } = mod
+      const res = await CapacitorBarcodeScanner.scanBarcode({
+        hint: Html5QrcodeSupportedFormats.QR_CODE,
+        scanInstructions: t('qrTool.scanInstructions'),
+        scanText: t('qrTool.scanWithCamera'),
+      })
+      const text = String(res?.ScanResult ?? '').trim()
+      const internal = resolveAppPathFromScan(text)
+      if (internal) {
+        navigate(internal)
+        return
+      }
+      setScanHint(t('qrTool.scanUnrecognized'))
+    } catch (e) {
+      const name = String(e?.name ?? '')
+      const detail = String(e?.message ?? e ?? '')
+      if (/cancel/i.test(name) || /cancel/i.test(detail)) return
+      setScanHint(t('qrTool.scanError'))
+    }
+  }
+
   return (
     <PublicShell>
       <div className="mx-auto" style={{ maxWidth: 560 }}>
@@ -262,6 +307,17 @@ export default function QrToolPage() {
         <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
           {t('qrTool.intro')}
         </p>
+
+        {Capacitor.isNativePlatform() && (
+          <div className="mb-4">
+            <button type="button" className="btn btn-sm btn-outline-light" onClick={scanEnclosureQr}>
+              📷 {t('qrTool.scanWithCamera')}
+            </button>
+            {scanHint ? (
+              <div className="small text-warning mt-2 mb-0" style={{ maxWidth: 520 }}>{scanHint}</div>
+            ) : null}
+          </div>
+        )}
 
         <FangPanel className="ta-qr-tool-fang-panel">
           <div className="card border-0 shadow-sm" style={{ background: 'rgba(18,16,28,0.65)' }}>
