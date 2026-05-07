@@ -5,6 +5,7 @@ import { toSpeciesSlug } from '../utils/speciesSlug'
 import { pickSpeciesNarrativeField } from '../utils/speciesNarrative'
 import SpeciesReferenceImage from './SpeciesReferenceImage'
 import SpeciesCarePanels from './SpeciesCarePanels'
+import { hasKeeperGradeSignal } from '../utils/speciesKeeperSignal'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const LEVEL_COLOR = { beginner: 'success', intermediate: 'warning', advanced: 'danger' }
@@ -110,6 +111,8 @@ export default function SpeciesProfileCard({
     !tarantula.profilePhoto &&
     (Boolean(species.referencePhotoUrl?.trim()) || Boolean(fallbackPhoto?.url))
 
+  const showThinSheetBanner = !hasKeeperGradeSignal(species)
+
   return (
     <div className="ta-spec-profile-card">
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 ta-spec-header-row">
@@ -118,6 +121,23 @@ export default function SpeciesProfileCard({
         </h2>
         <SourceCatalog species={species} t={t} />
       </div>
+
+      {showThinSheetBanner && (
+        <div
+          className="alert py-2 px-3 small mb-3 border-0"
+          style={{
+            background: 'rgba(212, 175, 55, 0.12)',
+            color: 'var(--ta-parchment)',
+            borderLeft: '3px solid var(--ta-gold)',
+          }}
+          role="status"
+        >
+          <div className="fw-semibold mb-1">{t('species.sheetIncompleteTitle')}</div>
+          <div className="mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.45 }}>
+            {t('species.sheetIncompleteBody')}
+          </div>
+        </div>
+      )}
 
       {showPhotoSection && (
         <div className="mb-3 text-center position-relative">

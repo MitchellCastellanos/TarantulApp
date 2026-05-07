@@ -471,7 +471,7 @@
     "pageFooterDisclaimer": "Les paramètres de soins et notes « hobby » (dont Nouveau vs Ancien Monde) viennent du catalogue public TarantulApp\u2122 et de textes orientés keepers lorsqu’ils existent ; là où c’est indiqué, il s’agit d’inférences ou de généralisations. Les noms taxonomiques et liens s’appuient sur GBIF / WSC. Les photos de référence peuvent provenir d’iNaturalist ou d’autres données ouvertes. Rien ici ne constitue un avis vétérinaire ou juridique.",
     "speciesProfileMeta": "{{habitat}} · Adulte : {{min}}–{{max}} cm · {{level}}",
     "speciesProfileTaxonomyShort": "Taxonomie ({{source}}) — pas encore de fiche de soins dans le catalogue de l’app.",
-    "speciesProfileTaxonomyApology": "Taxonomie GBIF/WSC seulement. Notre catalogue public ne relie pas encore une fiche de soins pour ce nom — c’est courant, ce n’est pas de votre faute.",
+    "speciesProfileTaxonomyApology": "Taxonomie GBIF/WSC seulement : on sait que le nom existe pour la recherche, mais il n’y a pas encore une fiche d’élevage complète ici. C’est courant ; quand les imports ou notre catalogue avancent, cette page peut gagner des champs élevage.",
     "seoHubTitle": "Catalogue d’espèces de mygales : fiches de soins et taxonomie | TarantulApp\u2122",
     "seoHubDescription": "Recherche par nom scientifique : fiches de soins (habitat, taille, humidité, substrat), taxonomie officielle WSC/GBIF et photos de référence. Gratuit sans compte.",
     "seoSpeciesTitle": "{{name}} : soins et fiche technique | TarantulApp\u2122",
@@ -1254,6 +1254,8 @@
   },
   "species": {
     "cardTitle": "📋 Fiche d'espèce",
+    "sheetIncompleteTitle": "Espèce répertoriée — fiche d’élevage encore légère",
+    "sheetIncompleteBody": "Ce nom scientifique est dans notre index (imports taxonomiques). Les champs élevage se complètent au fil du curage ou quand les sources amont s’améliorent — la fiche peut se mettre à jour à la synchro. Tu peux déjà ajouter cette araignée à ta collection.",
     "origin": "Origine",
     "habitat": "Habitat",
     "adultSize": "Taille adulte",

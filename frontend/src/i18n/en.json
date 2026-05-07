@@ -471,7 +471,7 @@
     "pageFooterDisclaimer": "Care parameters and hobby notes (including New vs Old World) come from TarantulApp\u2122’s curated public catalog and keeper-oriented text where present; they are inferred or generalized when noted. Taxonomic names and links use GBIF / WSC. Reference photos may come from iNaturalist or other open data. Nothing here is veterinary or legal advice.",
     "speciesProfileMeta": "{{habitat}} · Adult: {{min}}–{{max}} cm · {{level}}",
     "speciesProfileTaxonomyShort": "Taxonomy ({{source}}) — no keeper care block in the app catalog yet.",
-    "speciesProfileTaxonomyApology": "Taxonomy from GBIF/WSC only. Our public species catalog doesn’t link a care sheet for this name yet — that’s normal, not a problem on your side.",
+    "speciesProfileTaxonomyApology": "Taxonomy from GBIF/WSC only—we know this name exists for search, but we don’t host a full keeper sheet here yet. That’s normal; when imports or our catalog catch up, this page can gain husbandry fields.",
     "seoHubTitle": "Tarantula species catalog: care sheets & taxonomy | TarantulApp\u2122",
     "seoHubDescription": "Search by scientific name: husbandry sheets (habitat, size, humidity, substrate), official WSC/GBIF taxonomy, and reference photos. Free without signing in.",
     "seoSpeciesTitle": "{{name}}: care sheet & husbandry guide | TarantulApp\u2122",
@@ -1270,6 +1270,8 @@
   },
   "species": {
     "cardTitle": "📋 Species profile",
+    "sheetIncompleteTitle": "Indexed species — husbandry sheet still thin",
+    "sheetIncompleteBody": "This scientific name is in our searchable index (taxonomy imports). Keeper-focused fields fill in as we curate or as upstream sources improve—the profile can update on sync. You can still add this spider to your collection now.",
     "origin": "Origin",
     "habitat": "Habitat",
     "adultSize": "Adult size",

@@ -471,7 +471,7 @@
     "pageFooterDisclaimer": "Los parámetros de cuidado y notas de hobby (incluido Nuevo vs Viejo Mundo) provienen del catálogo público curado de TarantulApp\u2122 y texto orientado a keepers cuando existe; donde se indica, son inferidos o generalizaciones. Los nombres taxonómicos y enlaces usan GBIF / WSC. Las fotos de referencia pueden venir de iNaturalist u otros datos abiertos. Nada de esto es consejo veterinario ni legal.",
     "speciesProfileMeta": "{{habitat}} · Adulto: {{min}}–{{max}} cm · {{level}}",
     "speciesProfileTaxonomyShort": "Solo taxonomía ({{source}}) — aún no hay bloque de crianza en el catálogo de la app.",
-    "speciesProfileTaxonomyApology": "Solo taxonomía GBIF/WSC. Nuestro catálogo público aún no enlaza una ficha de cuidados para este nombre — es normal, no es un fallo tuyo.",
+    "speciesProfileTaxonomyApology": "Solo taxonomía GBIF/WSC: sabemos que el nombre existe para búsqueda, pero aquí aún no hay ficha completa de cuidados. Es normal; cuando los imports o nuestro catálogo avancen, esta página puede ganar campos de manejo.",
     "seoHubTitle": "Catálogo de tarántulas: especies, cuidados y taxonomía | TarantulApp\u2122",
     "seoHubDescription": "Explora especies por nombre científico: fichas de cuidados (hábitat, talla, humedad, sustrato), taxonomía oficial WSC/GBIF y fotos de referencia. Gratis sin iniciar sesión.",
     "seoSpeciesTitle": "Cuidados de {{name}} | Ficha técnica | TarantulApp\u2122",
@@ -1251,6 +1251,8 @@
   },
   "species": {
     "cardTitle": "📋 Ficha de especie",
+    "sheetIncompleteTitle": "Especies indexadas — ficha de cuidados aún delgada",
+    "sheetIncompleteBody": "Este nombre científico está en nuestro índice buscable (importaciones taxonómicas). Los campos de manejo se completan conforme curamos o mejoran las fuentes—la ficha puede actualizarse en sincronización. Igual puedes agregar este ejemplar a tu colección ya.",
     "origin": "Origen",
     "habitat": "Hábitat",
     "adultSize": "Tamaño adulto",
