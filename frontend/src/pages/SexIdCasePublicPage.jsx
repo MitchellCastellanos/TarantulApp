@@ -9,9 +9,26 @@ import sexIdCaseService from '../services/sexIdCaseService'
 import referralService from '../services/referralService'
 import { imgUrl } from '../services/api'
 import './SexIdCasePublicPage.css'
+import { resolvePublicFrontOrigin } from '../utils/publicFrontBaseUrl'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const CHOICES = ['MALE', 'FEMALE', 'UNCERTAIN']
+
+/** Map API enum → i18n key under sexIdCase.choice.* */
+function choiceI18nKey(raw) {
+  const u = String(raw || '').toUpperCase()
+  if (u === 'MALE') return 'male'
+  if (u === 'FEMALE') return 'female'
+  if (u === 'UNCERTAIN') return 'uncertain'
+  const f = String(raw || '').trim().toLowerCase()
+  return f || 'uncertain'
+}
+
+function translateConfidenceBand(t, raw) {
+  let k = String(raw == null ? 'medium' : raw).trim().toLowerCase().replace(/\s+/g, '_')
+  if (!['low', 'medium', 'high'].includes(k)) k = 'medium'
+  return t(`sexIdCase.confidenceLevel.${k}`)
+}
 
 function initialsFromName(name) {
   const s = String(name || '').trim()
@@ -64,10 +81,11 @@ export default function SexIdCasePublicPage() {
 
   const refParam = (searchParams.get('ref') || '').trim()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const publicOrigin = resolvePublicFrontOrigin()
   const shareBase = useMemo(() => {
-    if (!data?.id || !origin) return ''
-    return `${origin}/sex-id/${data.id}`
-  }, [data?.id, origin])
+    if (!data?.id) return ''
+    return `${publicOrigin}/sex-id/${data.id}`
+  }, [data?.id, publicOrigin])
 
   const shareUrl = useMemo(() => {
     if (!shareBase) return ''
@@ -443,7 +461,7 @@ export default function SexIdCasePublicPage() {
           <div className="ta-sid-card mt-3">
             <p className="small fw-semibold mb-2" style={{ color: 'var(--sid-text, #f4f4f8)' }}>
               {data.myChoice
-                ? t('sexIdCase.yourPickChange', { choice: t(`sexIdCase.choice.${String(data.myChoice).toLowerCase()}`) })
+                ? t('sexIdCase.yourPickChange', { choice: t(`sexIdCase.choice.${choiceI18nKey(data.myChoice)}`) })
                 : t('sexIdCase.yourPick')}
             </p>
             <div className="ta-sid-vote-btns">
@@ -455,7 +473,7 @@ export default function SexIdCasePublicPage() {
                   disabled={voting}
                   onClick={() => onVote(c)}
                 >
-                  {t(`sexIdCase.choice.${c.toLowerCase()}`)}
+                  {t(`sexIdCase.choice.${choiceI18nKey(c)}`)}
                 </button>
               ))}
             </div>
@@ -480,7 +498,7 @@ export default function SexIdCasePublicPage() {
               {t('sexIdCase.aiTitle')} (<BrandName />)
             </p>
             <p className="mb-2">{ai.message || t('sexIdCase.aiFallback')}</p>
-            <p className="mb-1 small">{t('sexIdCase.aiConfidenceLabel', { level: ai.confidenceLabel || 'medium' })}</p>
+            <p className="mb-1 small">{t('sexIdCase.aiConfidenceLabel', { level: translateConfidenceBand(t, ai.confidenceLabel) })}</p>
             {ai.explanation ? <p className="mb-3 small">{ai.explanation}</p> : null}
             <p className="mb-1 fw-semibold" style={{ color: 'var(--sid-purple, #b565f8)' }}>
               {t('sexIdCase.finalTitle')}
@@ -489,8 +507,8 @@ export default function SexIdCasePublicPage() {
               {finalOpinion.leadingChoice
                 ? t('sexIdCase.finalLine', {
                     p: finalOpinion.scorePercent ?? 0,
-                    choice: t(`sexIdCase.choice.${String(finalOpinion.leadingChoice).toLowerCase()}`),
-                    confidence: finalOpinion.confidenceLabel || 'medium',
+                    choice: t(`sexIdCase.choice.${choiceI18nKey(finalOpinion.leadingChoice)}`),
+                    confidence: translateConfidenceBand(t, finalOpinion.confidenceLabel),
                   })
                 : t('sexIdCase.finalPending')}
             </p>

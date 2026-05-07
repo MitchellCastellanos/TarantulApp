@@ -29,6 +29,8 @@ const marketplaceService = {
   },
 
   getKeeperPublic: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}`).then((r) => r.data),
+  getStorefrontByHandle: (handle) =>
+    publicApi.get(`/public/marketplace/storefront/${encodeURIComponent(handle)}`).then((r) => r.data),
   getKeeperReviews: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}/reviews`).then((r) => r.data),
   addReview: (sellerUserId, payload) => api.post(`/marketplace/sellers/${sellerUserId}/reviews`, payload).then((r) => r.data),
 }

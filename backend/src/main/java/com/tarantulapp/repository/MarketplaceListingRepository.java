@@ -13,6 +13,8 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
     List<MarketplaceListing> findTop100ByStatusAndTitleContainingIgnoreCaseOrderByCreatedAtDesc(String status, String title);
     List<MarketplaceListing> findTop100ByStatusAndSpeciesNameContainingIgnoreCaseOrderByCreatedAtDesc(String status, String speciesName);
     List<MarketplaceListing> findTop100BySellerUserIdOrderByCreatedAtDesc(UUID sellerUserId);
+    long countBySellerUserId(UUID sellerUserId);
+    long countBySellerUserIdAndStatusIgnoreCase(UUID sellerUserId, String status);
 
     @Modifying
     @Query(value = "delete from marketplace_listings where title like :prefix", nativeQuery = true)

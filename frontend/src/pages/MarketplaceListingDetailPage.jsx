@@ -120,6 +120,7 @@ export default function MarketplaceListingDetailPage() {
 
   const isPartner = listing && (listing.source === 'partner' || listing.isPartner)
   const sellerId = listing?.sellerUserId
+  const sellerHandle = listing?.sellerHandle
   const canMessage = sellerId && user && String(user.id) !== String(sellerId)
   const chatHref =
     sellerId && listing?.id
@@ -219,6 +220,9 @@ export default function MarketplaceListingDetailPage() {
                 <h1 className="h4 fw-bold mb-2 d-flex align-items-center gap-2 flex-wrap">
                   {isPartner && <OfficialPartnerShield width={26} height={28} />}
                   <span>{listing.title}</span>
+                  {listing.sellerVerifiedBreeder && (
+                    <span className="badge bg-info-subtle text-dark border">{t('marketplace.verifiedBreederBadge')}</span>
+                  )}
                   {listing.boosted && (
                     <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                   )}
@@ -278,6 +282,41 @@ export default function MarketplaceListingDetailPage() {
                   {t('marketplace.fieldPedigree')}: {listing.pedigreeRef}
                 </p>
               )}
+
+              {!isPartner && listing.sellerTradeDisclosureAcceptedAt && (
+                <section
+                  className="mt-4 p-3 rounded border border-secondary border-opacity-25 small"
+                  style={{ background: 'rgba(0,0,0,0.03)' }}
+                >
+                  <h3 className="h6 fw-bold mb-2">{t('marketplace.listingDetailTradeTitle')}</h3>
+                  <p className="text-muted mb-2 mb-md-3">
+                    {t('marketplace.listingDetailCertifiedAt')}:{' '}
+                    <time dateTime={String(listing.sellerTradeDisclosureAcceptedAt)}>
+                      {formatListedAt(listing.sellerTradeDisclosureAcceptedAt, locale)}
+                    </time>
+                  </p>
+                  <p className="mb-2 mb-md-3">
+                    {listing.wildCaught
+                      ? t('marketplace.listingDetailWildCaught')
+                      : t('marketplace.listingDetailCaptiveBred')}
+                    {listing.wildCaught && listing.captureOriginCountryIso ? (
+                      <>
+                        {' '}
+                        — {t('marketplace.listingDetailCaptureCountry')}:{' '}
+                        <strong>{String(listing.captureOriginCountryIso)}</strong>
+                      </>
+                    ) : null}
+                  </p>
+                  {listing.regulatoryPermitRefs ? (
+                    <div>
+                      <div className="text-muted mb-1">{t('marketplace.listingDetailRegulatoryRefs')}</div>
+                      <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
+                        {listing.regulatoryPermitRefs}
+                      </p>
+                    </div>
+                  ) : null}
+                </section>
+              )}
             </div>
 
             <div className="col-lg-4">
@@ -305,6 +344,14 @@ export default function MarketplaceListingDetailPage() {
                         </p>
                       )}
                       <div className="d-grid gap-2">
+                        {sellerHandle ? (
+                          <Link
+                            className="btn btn-sm btn-outline-dark"
+                            to={`/shop/${encodeURIComponent(sellerHandle)}`}
+                          >
+                            {t('marketplace.listingDetailVisitStore')}
+                          </Link>
+                        ) : null}
                         <Link
                           className="btn ta-marketplace-view-profile-btn btn-sm"
                           to={

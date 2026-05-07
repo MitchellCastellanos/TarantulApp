@@ -27,17 +27,24 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    private static final Set<String> THREAD_PUSH_AUDIT_TYPES = Set.of(
+            "MARKETPLACE_DEAL_STATUS",
+            "MARKETPLACE_DEAL_EVENT"
+    );
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final PushNotificationService pushNotificationService;
+    private final ChatThreadPushDeliveryService chatThreadPushDeliveryService;
 
     public NotificationService(NotificationRepository notificationRepository,
                                UserRepository userRepository,
-                               PushNotificationService pushNotificationService) {
+                               PushNotificationService pushNotificationService,
+                               ChatThreadPushDeliveryService chatThreadPushDeliveryService) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.pushNotificationService = pushNotificationService;
+        this.chatThreadPushDeliveryService = chatThreadPushDeliveryService;
     }
 
     @Transactional
@@ -50,15 +57,29 @@ public class NotificationService {
         n.setType(clean(type, 40));
         n.setTitle(clean(title, 160));
         n.setBody(clean(body, 600));
-        n.setData(data == null ? Collections.emptyMap() : data);
+        n.setData(copyDataMap(data));
         notificationRepository.save(n);
-        pushNotificationService.sendEventPushToUser(
+
+        UUID threadId = parseThreadId(n.getData());
+        UUID pushDeliveryId = null;
+        if (threadId != null && shouldAuditDealPush(n.getType())) {
+            pushDeliveryId = chatThreadPushDeliveryService.recordPendingDelivery(
+                    threadId, n.getId(), userId, n.getType());
+        }
+
+        Map<String, Object> pushPayload = copyDataMap(n.getData());
+        if (pushDeliveryId != null) {
+            pushPayload.put("pushDeliveryId", pushDeliveryId.toString());
+        }
+        int sent = pushNotificationService.sendEventPushToUser(
                 userId,
                 n.getTitle() == null ? "Nueva notificacion" : n.getTitle(),
                 n.getBody() == null ? "Tienes actividad nueva en tu cuenta." : n.getBody(),
                 n.getType(),
-                n.getData()
-        );
+                pushPayload);
+        if (pushDeliveryId != null) {
+            chatThreadPushDeliveryService.applyFcmOutcome(pushDeliveryId, sent);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -132,5 +153,27 @@ public class NotificationService {
         String s = value.trim();
         if (s.isEmpty()) return null;
         return s.length() > max ? s.substring(0, max) : s;
+    }
+
+    private static Map<String, Object> copyDataMap(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return new LinkedHashMap<>();
+        }
+        return new LinkedHashMap<>(data);
+    }
+
+    private static UUID parseThreadId(Map<String, Object> data) {
+        if (data == null || !data.containsKey("threadId")) {
+            return null;
+        }
+        try {
+            return UUID.fromString(String.valueOf(data.get("threadId")));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static boolean shouldAuditDealPush(String type) {
+        return type != null && THREAD_PUSH_AUDIT_TYPES.contains(type);
     }
 }

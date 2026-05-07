@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,6 +114,7 @@ public class AdminController {
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
+    record SetVerifiedBreederRequest(Boolean verifiedBreeder) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
      * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
@@ -412,6 +414,22 @@ public class AdminController {
         }
         userRepository.save(user);
         return ResponseEntity.ok(mapBetaTester(user));
+    }
+
+    @PatchMapping("/users/{id}/verified-breeder")
+    public ResponseEntity<Map<String, Object>> setUserVerifiedBreeder(@PathVariable UUID id,
+                                                                       @RequestBody(required = false) SetVerifiedBreederRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean verified = req != null && Boolean.TRUE.equals(req.verifiedBreeder());
+        user.setVerifiedBreeder(verified);
+        user.setVerifiedBreederAt(verified ? Instant.now() : null);
+        userRepository.save(user);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", user.getId());
+        out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
+        out.put("verifiedBreederAt", user.getVerifiedBreederAt());
+        return ResponseEntity.ok(out);
     }
 
     @PostMapping("/users/{id}/password")
@@ -783,6 +801,8 @@ public class AdminController {
         out.put("betaExperienceLevel", user.getBetaExperienceLevel() == null ? "" : user.getBetaExperienceLevel());
         out.put("betaPreferredLocale", user.getBetaPreferredLocale() == null ? "" : user.getBetaPreferredLocale());
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
+        out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
+        out.put("verifiedBreederAt", user.getVerifiedBreederAt());
         out.put("createdAt", user.getCreatedAt());
         out.put("lastActivityAt", user.getLastActivityAt());
         long spiders = spiderCounts != null

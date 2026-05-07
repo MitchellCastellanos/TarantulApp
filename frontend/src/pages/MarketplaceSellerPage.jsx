@@ -23,6 +23,10 @@ const EMPTY_LISTING_FORM = {
   imageUrl: '',
   pedigreeRef: '',
   requestBoost: false,
+  sellerCertifiesLegalTradeCompliance: false,
+  wildCaught: false,
+  captureOriginCountryIso: '',
+  regulatoryPermitRefs: '',
 }
 
 const FILTERS = ['all', 'active', 'sold', 'hidden']
@@ -37,11 +41,18 @@ export default function MarketplaceSellerPage() {
     country: 'Mexico',
     state: '',
     city: '',
+    storefrontName: '',
+    storefrontTagline: '',
+    storefrontShippingPolicy: '',
+    storefrontLagPolicy: '',
+    contactWhatsapp: '',
+    contactInstagram: '',
   })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
   const [uploadingListingImage, setUploadingListingImage] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
   const [message, setMessage] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -67,6 +78,12 @@ export default function MarketplaceSellerPage() {
       country: profile?.country || user?.profileCountry || 'Mexico',
       state: profile?.state || user?.profileState || '',
       city: profile?.city || user?.profileCity || '',
+      storefrontName: profile?.storefrontName || '',
+      storefrontTagline: profile?.storefrontTagline || '',
+      storefrontShippingPolicy: profile?.storefrontShippingPolicy || '',
+      storefrontLagPolicy: profile?.storefrontLagPolicy || '',
+      contactWhatsapp: profile?.contactWhatsapp || '',
+      contactInstagram: profile?.contactInstagram || '',
     })
   }, [user])
 
@@ -110,9 +127,21 @@ export default function MarketplaceSellerPage() {
     setSavingListing(true)
     setMessage('')
     try {
+      if (!listingForm.sellerCertifiesLegalTradeCompliance) {
+        setMessage(t('marketplace.certificationRequired'))
+        setSavingListing(false)
+        return
+      }
+      if (listingForm.wildCaught && String(listingForm.captureOriginCountryIso || '').trim().length < 2) {
+        setMessage(t('marketplace.wcOriginRequired'))
+        setSavingListing(false)
+        return
+      }
       const { requestBoost, ...rest } = listingForm
+      const isoRaw = listingForm.captureOriginCountryIso || ''
       const data = await marketplaceService.createListing({
         ...rest,
+        captureOriginCountryIso: listingForm.wildCaught ? isoRaw.trim().toUpperCase().slice(0, 2) : null,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
         requestListingBoost: !!requestBoost,
       })
@@ -153,6 +182,49 @@ export default function MarketplaceSellerPage() {
     return t('marketplace.listingStatusActive')
   }
 
+  const storefrontOnboarding = useMemo(() => {
+    const checks = [
+      !!String(myProfile.handle || '').trim(),
+      !!String(myProfile.storefrontName || '').trim(),
+      !!String(myProfile.storefrontShippingPolicy || '').trim(),
+      !!String(myProfile.storefrontLagPolicy || '').trim(),
+      myListings.some((l) => String(l.status || '').toLowerCase() === 'active'),
+    ]
+    const completed = checks.filter(Boolean).length
+    return {
+      completed,
+      total: checks.length,
+      percent: Math.round((completed / checks.length) * 100),
+      items: checks,
+    }
+  }, [myListings, myProfile.handle, myProfile.storefrontLagPolicy, myProfile.storefrontName, myProfile.storefrontShippingPolicy])
+
+  const saveStorefrontProfile = async (e) => {
+    e.preventDefault()
+    setSavingProfile(true)
+    setMessage('')
+    try {
+      await marketplaceService.saveMyProfile({
+        handle: myProfile.handle || null,
+        country: myProfile.country || null,
+        state: myProfile.state || null,
+        city: myProfile.city || null,
+        contactWhatsapp: myProfile.contactWhatsapp || null,
+        contactInstagram: myProfile.contactInstagram || null,
+        storefrontName: myProfile.storefrontName || null,
+        storefrontTagline: myProfile.storefrontTagline || null,
+        storefrontShippingPolicy: myProfile.storefrontShippingPolicy || null,
+        storefrontLagPolicy: myProfile.storefrontLagPolicy || null,
+      })
+      await loadMine()
+      setMessage(t('marketplace.profileSaved'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
   return (
     <div className="ta-premium-page">
       <Navbar />
@@ -188,6 +260,105 @@ export default function MarketplaceSellerPage() {
         </div>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
+
+        <div className="card border-0 shadow-sm ta-premium-pane mb-4">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+              <div>
+                <h2 className="h6 mb-1">{t('marketplace.storefrontSetupTitle')}</h2>
+                <p className="small text-muted mb-0">{t('marketplace.storefrontSetupSub')}</p>
+              </div>
+              {(myProfile.handle || user?.publicHandle) && (
+                <Link
+                  to={`/shop/${encodeURIComponent(myProfile.handle || user?.publicHandle || '')}`}
+                  className="btn btn-sm btn-outline-dark"
+                >
+                  {t('marketplace.listingDetailVisitStore')}
+                </Link>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="d-flex justify-content-between small mb-1">
+                <span>{t('marketplace.storefrontOnboardingProgress')}</span>
+                <span>{storefrontOnboarding.completed}/{storefrontOnboarding.total}</span>
+              </div>
+              <div className="progress" style={{ height: 8 }}>
+                <div className="progress-bar bg-warning" style={{ width: `${storefrontOnboarding.percent}%` }} />
+              </div>
+            </div>
+
+            <form onSubmit={saveStorefrontProfile} className="small">
+              <div className="row g-2">
+                <div className="col-md-4">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.fieldHandle')}
+                    value={myProfile.handle}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, handle: e.target.value }))}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.storefrontNameLabel')}
+                    value={myProfile.storefrontName}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, storefrontName: e.target.value }))}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.storefrontTaglineLabel')}
+                    value={myProfile.storefrontTagline}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, storefrontTagline: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="row g-2 mt-1">
+                <div className="col-md-6">
+                  <textarea
+                    className="form-control form-control-sm"
+                    rows={2}
+                    placeholder={t('marketplace.storefrontShippingPolicyLabel')}
+                    value={myProfile.storefrontShippingPolicy}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, storefrontShippingPolicy: e.target.value }))}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <textarea
+                    className="form-control form-control-sm"
+                    rows={2}
+                    placeholder={t('marketplace.storefrontLagPolicyLabel')}
+                    value={myProfile.storefrontLagPolicy}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, storefrontLagPolicy: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="row g-2 mt-1">
+                <div className="col-md-6">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.storefrontWhatsappLabel')}
+                    value={myProfile.contactWhatsapp}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, contactWhatsapp: e.target.value }))}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder={t('marketplace.storefrontInstagramLabel')}
+                    value={myProfile.contactInstagram}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, contactInstagram: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <button className="btn btn-sm btn-dark mt-2" disabled={savingProfile}>
+                {savingProfile ? t('common.saving') : t('marketplace.saveProfile')}
+              </button>
+            </form>
+          </div>
+        </div>
 
         <div className="row g-4">
           <div className="col-lg-5">
@@ -242,6 +413,66 @@ export default function MarketplaceSellerPage() {
                     onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))}
                   />
                   {uploadingListingImage && <p className="small text-muted mb-1">{t('marketplace.uploadingImage')}</p>}
+                  <div className="border rounded p-2 mb-2" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                    <p className="small fw-semibold mb-2">{t('marketplace.tradeDisclosureSectionTitle')}</p>
+                    <div className="form-check mb-2">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="seller-wild-caught"
+                        checked={!!listingForm.wildCaught}
+                        onChange={(e) =>
+                          setListingForm((f) => ({
+                            ...f,
+                            wildCaught: e.target.checked,
+                            captureOriginCountryIso: e.target.checked ? f.captureOriginCountryIso : '',
+                          }))
+                        }
+                      />
+                      <label className="form-check-label small" htmlFor="seller-wild-caught" style={{ cursor: 'pointer' }}>
+                        {t('marketplace.wildCaughtSellerLabel')}
+                      </label>
+                    </div>
+                    {listingForm.wildCaught && (
+                      <input
+                        className="form-control form-control-sm mb-2"
+                        maxLength={2}
+                        placeholder={t('marketplace.captureIsoPlaceholder')}
+                        value={listingForm.captureOriginCountryIso}
+                        onChange={(e) =>
+                          setListingForm((f) => ({
+                            ...f,
+                            captureOriginCountryIso: e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2),
+                          }))
+                        }
+                      />
+                    )}
+                    <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                      {t('marketplace.regulatoryPermitRefsLabel')}
+                    </label>
+                    <textarea
+                      className="form-control form-control-sm mb-2"
+                      rows={2}
+                      placeholder={t('marketplace.regulatoryPermitRefsPlaceholder')}
+                      value={listingForm.regulatoryPermitRefs}
+                      onChange={(e) => setListingForm((f) => ({ ...f, regulatoryPermitRefs: e.target.value }))}
+                    />
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="seller-trade-certifies"
+                        required
+                        checked={!!listingForm.sellerCertifiesLegalTradeCompliance}
+                        onChange={(e) =>
+                          setListingForm((f) => ({ ...f, sellerCertifiesLegalTradeCompliance: e.target.checked }))
+                        }
+                      />
+                      <label className="form-check-label small" htmlFor="seller-trade-certifies" style={{ cursor: 'pointer' }}>
+                        {t('marketplace.sellerLegalCertificationLabel')}
+                      </label>
+                    </div>
+                  </div>
                   {listingBoostAvailable && (
                     <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
                       <input
@@ -296,14 +527,14 @@ export default function MarketplaceSellerPage() {
                             {l.imageUrl ? (
                               <img src={imgUrl(l.imageUrl) || l.imageUrl} alt="" className="w-100 h-100" style={{ objectFit: 'cover' }} />
                             ) : (
-                              <div className="w-100 h-100 d-flex align-items-center justify-content-center small text-muted">ù</div>
+                              <div className="w-100 h-100 d-flex align-items-center justify-content-center small text-muted">?</div>
                             )}
                           </div>
                           <div className="flex-grow-1 min-w-0">
                             <div className="fw-semibold text-truncate">{l.title}</div>
                             <span className="badge bg-secondary mb-1">{statusLabel(st)}</span>
                             <div className="small text-muted">
-                              {[l.city, l.state, l.country].filter(Boolean).join(' ù ') || '\u2014'}
+                              {[l.city, l.state, l.country].filter(Boolean).join(' ? ') || '\u2014'}
                             </div>
                             <div className="d-flex flex-wrap gap-1 mt-2">
                               {st === 'active' && (

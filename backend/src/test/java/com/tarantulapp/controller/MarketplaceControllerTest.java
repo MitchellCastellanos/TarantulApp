@@ -52,7 +52,11 @@ class MarketplaceControllerTest {
                 "CA",
                 "https://img.test/1.jpg",
                 "PED-01",
-                true
+                true,
+                true,
+                false,
+                null,
+                null
         )).thenReturn(Map.of("id", UUID.randomUUID(), "title", "Listing 1"));
 
         MarketplaceController.CreateListingRequest request = new MarketplaceController.CreateListingRequest(
@@ -68,7 +72,11 @@ class MarketplaceControllerTest {
                 "CA",
                 "https://img.test/1.jpg",
                 "PED-01",
-                true
+                true,
+                true,
+                false,
+                null,
+                null
         );
 
         ResponseEntity<Map<String, Object>> response = controller.createListing(request);
@@ -90,7 +98,11 @@ class MarketplaceControllerTest {
                 "CA",
                 "https://img.test/1.jpg",
                 "PED-01",
-                true
+                true,
+                true,
+                false,
+                null,
+                null
         );
     }
 

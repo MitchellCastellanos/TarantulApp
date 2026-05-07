@@ -37,6 +37,7 @@ const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
 const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))
 const MarketplaceMessagesPage = lazy(() => import('./pages/MarketplaceMessagesPage'))
 const MarketplaceSellerPage = lazy(() => import('./pages/MarketplaceSellerPage'))
+const MarketplaceStorefrontPage = lazy(() => import('./pages/MarketplaceStorefrontPage'))
 const MarketplaceKeeperRedirect = lazy(() => import('./pages/MarketplaceKeeperRedirect'))
 const LaunchRegistrationPage = lazy(() => import('./pages/LaunchRegistrationPage'))
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -158,6 +159,7 @@ function AppRoutes() {
       <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />
+      <Route path="/shop/:handle" element={<MarketplaceStorefrontPage />} />
       <Route path="/marketplace/messages" element={<PrivateRoute><MarketplaceMessagesPage /></PrivateRoute>} />
       <Route path="/marketplace/sell" element={<PrivateRoute><MarketplaceSellerPage /></PrivateRoute>} />
       <Route path="/marketplace/keeper/:sellerUserId" element={<MarketplaceKeeperRedirect />} />

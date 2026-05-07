@@ -41,7 +41,6 @@ class AuthControllerTest {
 
     @Mock
     private TokenBlacklistService tokenBlacklistService;
-
     private AuthController controller;
 
     @BeforeEach

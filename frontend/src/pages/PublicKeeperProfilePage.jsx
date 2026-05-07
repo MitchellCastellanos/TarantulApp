@@ -9,6 +9,7 @@ import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
+import { keeperRankName } from '../utils/keeperRank'
 
 export default function PublicKeeperProfilePage() {
   const { t } = useTranslation()
@@ -142,7 +143,10 @@ export default function PublicKeeperProfilePage() {
                   <div className="ta-keeper-reputation-strip mb-2">
                     <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-text)' }}>
                       {t('marketplace.reputationTitle')} ·{' '}
-                      {t('marketplace.reputationLine', { tier: reputation.tier, score: reputation.score })}
+                      {t('marketplace.reputationLine', {
+                        rank: keeperRankName(t, reputation.tier),
+                        score: reputation.score,
+                      })}
                     </div>
                     <div className="progress mt-1" style={{ height: 8 }}>
                       <div
@@ -150,13 +154,23 @@ export default function PublicKeeperProfilePage() {
                         style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }}
                       />
                     </div>
-                    {reputation.nextTier !== 'Max' && (
+                    {reputation.nextTier === 'none' && reputation.tier === 'breeder' && (
                       <div className="small text-muted mt-1">
-                        {t('marketplace.reputationNext', {
-                          tier: reputation.nextTier,
-                          target: reputation.nextTierTarget,
+                        {t('marketplace.reputationNextLastRank', {
+                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
                         })}
                       </div>
+                    )}
+                    {reputation.nextTier !== 'Max' && reputation.nextTier !== 'none' && (
+                      <div className="small text-muted mt-1">
+                        {t('marketplace.reputationNext', {
+                          nextRank: keeperRankName(t, reputation.nextTier),
+                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
+                        })}
+                      </div>
+                    )}
+                    {reputation.nextTier === 'Max' && (
+                      <div className="small text-muted mt-1">{t('marketplace.reputationNextCap')}</div>
                     )}
                   </div>
                 )}

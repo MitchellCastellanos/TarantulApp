@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -79,12 +80,9 @@ public class PushNotificationService {
     }
 
     private boolean sendFcm(String deviceToken, String title, String body, String type, Map<String, Object> data) {
-        String route = data != null && data.get("route") != null ? String.valueOf(data.get("route")) : "/account";
         String payload = "{\"to\":\"" + escape(deviceToken) + "\",\"notification\":{\"title\":\""
                 + escape(title) + "\",\"body\":\"" + escape(body)
-                + "\"},\"data\":{\"type\":\"" + escape(type == null ? "" : type)
-                + "\",\"route\":\"" + escape(route)
-                + "\"},\"priority\":\"high\"}";
+                + "\"},\"data\":" + buildFcmDataJson(type, data) + ",\"priority\":\"high\"}";
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://fcm.googleapis.com/fcm/send"))
                 .header("Authorization", "key=" + fcmServerKey)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -99,6 +97,39 @@ public class PushNotificationService {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /** FCM legacy HTTP API requires string entries in {@code data}. */
+    static String buildFcmDataJson(String type, Map<String, Object> data) {
+        Map<String, String> merged = new LinkedHashMap<>();
+        merged.put("type", type == null ? "" : type.trim());
+        if (data != null) {
+            for (Map.Entry<String, Object> e : data.entrySet()) {
+                if (e.getKey() == null) {
+                    continue;
+                }
+                String key = e.getKey().trim();
+                if (key.isEmpty()) {
+                    continue;
+                }
+                merged.put(key, e.getValue() == null ? "" : String.valueOf(e.getValue()));
+            }
+        }
+        if (!merged.containsKey("route") || merged.get("route") == null || merged.get("route").isEmpty()) {
+            merged.putIfAbsent("route", "/account");
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        boolean first = true;
+        for (Map.Entry<String, String> e : merged.entrySet()) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            sb.append('"').append(escape(e.getKey())).append("\":\"").append(escape(e.getValue())).append('"');
+        }
+        sb.append('}');
+        return sb.toString();
     }
 
     private static String escape(String value) {

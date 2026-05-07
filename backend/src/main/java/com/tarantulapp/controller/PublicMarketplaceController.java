@@ -65,9 +65,11 @@ public class PublicMarketplaceController {
                                                                     @RequestParam(required = false) String city,
                                                                     @RequestParam(required = false) String nearCountry,
                                                                     @RequestParam(required = false) String nearState,
-                                                                    @RequestParam(required = false) String nearCity) {
+                                                                    @RequestParam(required = false) String nearCity,
+                                                                    @RequestParam(required = false) String listingOrigin,
+                                                                    @RequestParam(required = false) Boolean hasRegulatoryRefs) {
         return ResponseEntity.ok(marketplaceService.publicListings(
-                q, status, country, state, city, nearCountry, nearState, nearCity
+                q, status, country, state, city, nearCountry, nearState, nearCity, listingOrigin, hasRegulatoryRefs
         ));
     }
 
@@ -104,6 +106,11 @@ public class PublicMarketplaceController {
         return ResponseEntity.ok(marketplaceService.publicSellerProfile(sellerUserId));
     }
 
+    @GetMapping("/storefront/{handle}")
+    public ResponseEntity<Map<String, Object>> storefrontByHandle(@PathVariable String handle) {
+        return ResponseEntity.ok(marketplaceService.publicStorefrontByHandle(handle));
+    }
+
     @GetMapping("/keepers/{sellerUserId}/reviews")
     public ResponseEntity<List<Map<String, Object>>> sellerReviews(@PathVariable UUID sellerUserId) {
         return ResponseEntity.ok(marketplaceService.sellerReviews(sellerUserId));
@@ -119,7 +126,8 @@ public class PublicMarketplaceController {
         return ResponseEntity.ok(Map.of(
                 "futurePaidStorefrontEnabled", futurePaidStorefrontEnabled,
                 "futurePaidBadgesEnabled", futurePaidBadgesEnabled,
-                "strategicPartnerBootstrapMode", strategicPartnerBootstrapMode
+                "strategicPartnerBootstrapMode", strategicPartnerBootstrapMode,
+                "sellerListingTradeCertificationRequired", true
         ));
     }
 }

@@ -74,6 +74,20 @@ public class MarketplaceListing {
     @Column(name = "boosted_until")
     private Instant boostedUntil;
 
+    /** Wild-caught origin (seller-declared); if true, {@link #captureOriginCountryIso} should be set. */
+    @Column(name = "wild_caught", nullable = false)
+    private boolean wildCaught = false;
+
+    @Column(name = "capture_origin_country_iso", length = 2)
+    private String captureOriginCountryIso;
+
+    @Column(name = "regulatory_permit_refs", length = 420)
+    private String regulatoryPermitRefs;
+
+    /** Present when seller agreed to trade-disclosure certification at publish time. */
+    @Column(name = "seller_trade_disclosure_accepted_at")
+    private Instant sellerTradeDisclosureAcceptedAt;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -120,4 +134,14 @@ public class MarketplaceListing {
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getBoostedUntil() { return boostedUntil; }
     public void setBoostedUntil(Instant boostedUntil) { this.boostedUntil = boostedUntil; }
+    public boolean isWildCaught() { return wildCaught; }
+    public void setWildCaught(boolean wildCaught) { this.wildCaught = wildCaught; }
+    public String getCaptureOriginCountryIso() { return captureOriginCountryIso; }
+    public void setCaptureOriginCountryIso(String captureOriginCountryIso) { this.captureOriginCountryIso = captureOriginCountryIso; }
+    public String getRegulatoryPermitRefs() { return regulatoryPermitRefs; }
+    public void setRegulatoryPermitRefs(String regulatoryPermitRefs) { this.regulatoryPermitRefs = regulatoryPermitRefs; }
+    public Instant getSellerTradeDisclosureAcceptedAt() { return sellerTradeDisclosureAcceptedAt; }
+    public void setSellerTradeDisclosureAcceptedAt(Instant sellerTradeDisclosureAcceptedAt) {
+        this.sellerTradeDisclosureAcceptedAt = sellerTradeDisclosureAcceptedAt;
+    }
 }
