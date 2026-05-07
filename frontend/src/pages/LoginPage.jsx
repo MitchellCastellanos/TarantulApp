@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
@@ -12,6 +12,8 @@ import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
+
+const LOGIN_AUDIENCE_KEY = 'ta-login-audience'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -30,6 +32,15 @@ export default function LoginPage() {
   const [communityLoading, setCommunityLoading] = useState(true)
   const [theme, setTheme] = useState(() => getStoredTheme())
   const [showIntro, setShowIntro] = useState(false)
+  const [loginAudience, setLoginAudience] = useState(() => {
+    try {
+      const s = localStorage.getItem(LOGIN_AUDIENCE_KEY)
+      if (s === 'seller' || s === 'collector') return s
+    } catch (_) {
+      /* ignore */
+    }
+    return 'collector'
+  })
   const googleBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   const loginRef = useRef(login)
@@ -68,6 +79,14 @@ export default function LoginPage() {
     window.addEventListener(THEME_CHANGE_EVENT, syncTheme)
     return () => window.removeEventListener(THEME_CHANGE_EVENT, syncTheme)
   }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOGIN_AUDIENCE_KEY, loginAudience)
+    } catch (_) {
+      /* ignore */
+    }
+  }, [loginAudience])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -202,12 +221,37 @@ export default function LoginPage() {
 
   const isLight = theme === 'light'
   const showRegisterUi = !inviteOnly
-  const loginFeatures = [
-    { title: t('auth.loginPage.featureDiscoverTitle'), bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')] },
-    { title: t('auth.loginPage.featureCollectionTitle'), bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')] },
-    { title: t('auth.loginPage.featureMarketplaceTitle'), bullets: [t('auth.loginPage.featureMarketplaceB1'), t('auth.loginPage.featureMarketplaceB2')] },
-    { title: t('auth.loginPage.featureCommunityTitle'), bullets: [t('auth.loginPage.featureCommunityB1'), t('auth.loginPage.featureCommunityB2')] },
-  ]
+  const loginFeatureBlocks = useMemo(() => {
+    const blocks = {
+      discover: {
+        title: t('auth.loginPage.featureDiscoverTitle'),
+        bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')],
+      },
+      collection: {
+        title: t('auth.loginPage.featureCollectionTitle'),
+        bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')],
+      },
+      marketplace: {
+        title: t('auth.loginPage.featureMarketplaceTitle'),
+        bullets: [t('auth.loginPage.featureMarketplaceB1'), t('auth.loginPage.featureMarketplaceB2')],
+      },
+      community: {
+        title: t('auth.loginPage.featureCommunityTitle'),
+        bullets: [t('auth.loginPage.featureCommunityB1'), t('auth.loginPage.featureCommunityB2')],
+      },
+    }
+    const order = loginAudience === 'seller'
+      ? ['marketplace', 'collection', 'discover', 'community']
+      : ['discover', 'collection', 'marketplace', 'community']
+    return order.map((k) => blocks[k])
+  }, [t, loginAudience])
+
+  const heroTagline = loginAudience === 'seller'
+    ? t('auth.loginPage.heroTaglineSeller')
+    : t('auth.loginPage.heroTaglineCollector')
+  const heroLead = loginAudience === 'seller'
+    ? t('auth.loginPage.heroLeadSeller')
+    : t('auth.loginPage.heroLeadCollector')
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
@@ -215,47 +259,87 @@ export default function LoginPage() {
 
       <main className="container py-3 py-lg-4">
         <div className="row justify-content-center g-0">
-          <div className="col-12 col-lg-11 col-xl-9 col-xxl-8 d-flex flex-column gap-4 gap-lg-5">
-            {/* Primary: one surface — pitch + sign-in (same width, one frame) */}
-            <section
-              className="rounded-4 overflow-hidden w-100"
-              style={{
-                border: '1px solid var(--ta-border)',
-                background: isLight
-                  ? 'linear-gradient(160deg, rgba(255,252,245,0.95) 0%, rgba(248,239,223,0.95) 60%, rgba(242,232,214,0.95) 100%)'
-                  : 'linear-gradient(165deg, rgba(21,18,14,0.95) 0%, rgba(16,14,11,0.9) 60%, rgba(12,10,8,0.96) 100%)',
-                boxShadow: isLight ? '0 14px 34px rgba(82,60,26,0.12)' : '0 24px 60px rgba(0,0,0,0.35)',
-              }}
-            >
-              <div className="p-3 p-md-4 p-lg-5">
-                <div className="d-flex align-items-center gap-3 mb-3">
-                  <BrandLogoMark size={56} showIntro />
-                  <div>
-                    <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
-                      {t('auth.loginPage.heroEyebrow')}
-                    </p>
-                    <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}><BrandName /></h1>
+          <div className="col-12 col-xl-11 col-xxl-10 d-flex flex-column gap-4 gap-lg-5">
+            <div className="row g-4 align-items-stretch">
+              {/* Pitch — identity + audience toggle */}
+              <div className="col-lg-6">
+                <section
+                  className="rounded-4 h-100 p-3 p-md-4 p-lg-5 d-flex flex-column"
+                  style={{
+                    border: '1px solid var(--ta-border)',
+                    background: isLight
+                      ? 'linear-gradient(160deg, rgba(255,252,245,0.95) 0%, rgba(248,239,223,0.95) 60%, rgba(242,232,214,0.95) 100%)'
+                      : 'linear-gradient(165deg, rgba(21,18,14,0.95) 0%, rgba(16,14,11,0.9) 60%, rgba(12,10,8,0.96) 100%)',
+                    boxShadow: isLight ? '0 14px 34px rgba(82,60,26,0.12)' : '0 24px 60px rgba(0,0,0,0.35)',
+                  }}
+                >
+                  <div className="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <BrandLogoMark size={56} showIntro />
+                      <div>
+                        <p className="mb-1 small text-uppercase" style={{ letterSpacing: '0.12em', color: 'var(--ta-text-muted)' }}>
+                          {t('auth.loginPage.heroEyebrow')}
+                        </p>
+                        <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}><BrandName /></h1>
+                      </div>
+                    </div>
+                    <div className="btn-group btn-group-sm" role="group" aria-label={t('auth.loginPage.audienceToggleAria')}>
+                      <button
+                        type="button"
+                        className={`btn ${loginAudience === 'collector' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setLoginAudience('collector')}
+                      >
+                        {t('auth.loginPage.audienceCollector')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${loginAudience === 'seller' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        onClick={() => setLoginAudience('seller')}
+                      >
+                        {t('auth.loginPage.audienceSeller')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
-                  {t('auth.loginPage.heroTagline')}
-                </h2>
-                <p className="small mb-3 mb-md-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.6 }}>
-                  {t('auth.loginPage.heroLead')}
-                </p>
-                {!inviteOnly && (
-                <div className="d-flex flex-wrap gap-2 mt-3">
-                  <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
-                  <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
-                  <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
-                </div>
-                )}
+                  <h2 className="h4 fw-semibold mb-2" style={{ color: 'var(--ta-parchment)' }}>
+                    {heroTagline}
+                  </h2>
+                  <p className="small mb-3 flex-grow-1" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.65 }}>
+                    {heroLead}
+                  </p>
+                  {!inviteOnly && (
+                    <div className="d-flex flex-wrap gap-2 mt-auto pt-1">
+                      {loginAudience === 'seller' ? (
+                        <>
+                          <Link to="/marketplace" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaMarketplace')}</Link>
+                          <Link to="/marketplace/sell" className="btn btn-sm btn-outline-light">{t('publicBetaHome.ctaSell')}</Link>
+                          <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                          <Link to="/community" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaCommunity')}</Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                          <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
+                          <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
+                        </>
+                      )}
+                      <Link to="/pro" className="btn btn-sm btn-outline-secondary">{t('publicBetaHome.ctaPro')}</Link>
+                    </div>
+                  )}
+                </section>
               </div>
 
+              {/* Auth form */}
+              <div className="col-lg-6">
+                <section
+                  className="rounded-4 overflow-hidden h-100 d-flex flex-column"
+                  style={{
+                    border: '1px solid var(--ta-border)',
+                    boxShadow: isLight ? '0 14px 34px rgba(82,60,26,0.12)' : '0 24px 60px rgba(0,0,0,0.35)',
+                  }}
+                >
               <div
-                className="px-3 px-md-4 px-lg-5 py-3 py-md-4"
+                className="px-3 px-md-4 px-lg-5 py-3 py-md-4 flex-grow-1 d-flex flex-column"
                 style={{
-                  borderTop: '1px solid var(--ta-border)',
                   background: isLight ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.22)',
                 }}
               >
@@ -430,12 +514,14 @@ export default function LoginPage() {
                 </>
                 )}
               </div>
-            </section>
+                </section>
+              </div>
+            </div>
 
           {/* Feature bullets + community preview */}
           <section className="w-100">
             <div className="row g-3 mb-3">
-              {loginFeatures.map((block) => (
+              {loginFeatureBlocks.map((block) => (
                 <div className="col-12 col-md-6" key={block.title}>
                   <div
                     className="h-100 rounded-3 p-3"

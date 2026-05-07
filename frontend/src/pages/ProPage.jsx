@@ -11,6 +11,7 @@ import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import { BILLING_REGION_CODES, inferBillingRegion } from '../utils/inferBillingRegion'
 
 const REGION_OVERRIDE_KEY = 'tarantulapp-billing-region-override'
+const PRO_AUDIENCE_KEY = 'tarantulapp-pro-audience'
 
 export default function ProPage() {
   const { t } = useTranslation()
@@ -39,6 +40,23 @@ export default function ProPage() {
   const [androidProductId, setAndroidProductId] = useState(import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || '')
   const [androidSyncing, setAndroidSyncing] = useState(false)
   const [androidMessage, setAndroidMessage] = useState('')
+  const [proAudience, setProAudience] = useState(() => {
+    try {
+      const s = localStorage.getItem(PRO_AUDIENCE_KEY)
+      if (s === 'seller' || s === 'collector') return s
+    } catch (_) {
+      /* ignore */
+    }
+    return 'collector'
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PRO_AUDIENCE_KEY, proAudience)
+    } catch (_) {
+      /* ignore */
+    }
+  }, [proAudience])
 
   const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
@@ -281,7 +299,27 @@ export default function ProPage() {
                 </p>
               )}
 
-              <p className="small mb-2" style={{ lineHeight: 1.55 }}>{t('pro.planMatrixIntro')}</p>
+              <div className="d-flex flex-column flex-md-row align-items-start justify-content-between gap-2 mb-3">
+                <div className="btn-group btn-group-sm" role="group" aria-label={t('pro.audienceToggleAria')}>
+                  <button
+                    type="button"
+                    className={`btn ${proAudience === 'collector' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setProAudience('collector')}
+                  >
+                    {t('pro.audienceCollector')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${proAudience === 'seller' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    onClick={() => setProAudience('seller')}
+                  >
+                    {t('pro.audienceSeller')}
+                  </button>
+                </div>
+              </div>
+              <p className="small mb-2" style={{ lineHeight: 1.55 }}>
+                {proAudience === 'seller' ? t('pro.planMatrixIntroSeller') : t('pro.planMatrixIntroCollector')}
+              </p>
               <p className="small text-muted mb-3">
                 {t('pro.priceShownFor', { place: t(`pro.regions.${billingRegion}.countryName`) })}
                 {' '}
@@ -289,14 +327,26 @@ export default function ProPage() {
               </p>
 
               <div className="row g-3 mb-3">
-                <div className="col-lg-4 col-md-6">
+                <div
+                  className={
+                    proAudience === 'seller'
+                      ? 'col-lg-4 col-md-6 order-2 order-lg-2'
+                      : 'col-lg-4 col-md-6'
+                  }
+                >
                   {tierCard({
                     titleKey: 'pro.tierFreeTitle',
                     taglineKey: 'pro.tierFreeTagline',
                     listKeys: ['pro.tierFreeLi1', 'pro.tierFreeLi2', 'pro.tierFreeLi3', 'pro.tierFreeLi4', 'pro.tierFreeLi5'],
                   })}
                 </div>
-                <div className="col-lg-4 col-md-6">
+                <div
+                  className={
+                    proAudience === 'seller'
+                      ? 'col-lg-4 col-md-6 order-3 order-lg-3'
+                      : 'col-lg-4 col-md-6'
+                  }
+                >
                   {tierCard({
                     titleKey: 'pro.tierProTitle',
                     priceOverride: t(`pro.regions.${billingRegion}.tierHeadline`),
@@ -305,10 +355,19 @@ export default function ProPage() {
                     corner: <span className="badge bg-dark position-absolute" style={{ top: 8, right: 10 }}>PRO</span>,
                   })}
                 </div>
-                <div className="col-lg-4 col-md-6">
+                <div
+                  className={
+                    proAudience === 'seller'
+                      ? 'col-lg-4 col-md-6 order-1 order-lg-1'
+                      : 'col-lg-4 col-md-6'
+                  }
+                >
                   {tierCard({
+                    toneClass: proAudience === 'seller' ? 'border border-warning border-opacity-75 shadow-sm' : '',
                     titleKey: 'pro.tierVendorTitle',
-                    priceKey: 'pro.tierVendorPrice',
+                    priceOverride: t(`pro.regions.${billingRegion}.vendorTierHeadline`, {
+                      defaultValue: t('pro.tierVendorPrice'),
+                    }),
                     taglineKey: 'pro.tierVendorTagline',
                     listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4'],
                     footer: (

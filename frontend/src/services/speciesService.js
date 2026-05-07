@@ -36,6 +36,9 @@ const speciesService = {
   searchWsc: (q) => publicApi.get('/wsc/search', { params: { q } }).then((r) => r.data),
   importFromWsc: (name, family) => api.post('/wsc/import', { name, family }).then(r => r.data),
   /** Página del catálogo público (Spring Data Page JSON). */
+  /** Aggregate counts: indexed Theraphosidae names vs rows with keeper-grade profile data. */
+  getDiscoverCatalogStats: () =>
+    publicApi.get('public/discover/catalog-stats').then((r) => r.data),
   discoverCatalogPage: (params = {}) =>
     publicApi
       .get('public/discover/species', {

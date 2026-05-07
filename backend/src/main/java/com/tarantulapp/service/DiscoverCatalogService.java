@@ -1,5 +1,6 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.dto.DiscoverCatalogStatsDTO;
 import com.tarantulapp.dto.DiscoverLocalSpeciesViewDTO;
 import com.tarantulapp.dto.DiscoverPhotoDTO;
 import com.tarantulapp.dto.SpeciesDTO;
@@ -45,6 +46,14 @@ public class DiscoverCatalogService {
             Pageable pageable) {
         Specification<Species> spec = buildSpec(experienceLevel, habitatType, growthRate, hobbyWorld, q, sizeMin, sizeMax);
         return speciesRepository.findAll(spec, pageable).map(SpeciesDTO::from);
+    }
+
+    /** Honest counts for the Discover hub: full index vs rows with keeper-facing care signal. */
+    public DiscoverCatalogStatsDTO getPublicCatalogStats() {
+        Specification<Species> base = publicCatalogBaseSpecification();
+        long indexed = speciesRepository.count(base);
+        long profiles = speciesRepository.count(base.and(keeperGradeProfileSpecification()));
+        return new DiscoverCatalogStatsDTO(indexed, profiles);
     }
 
     public Optional<SpeciesDTO> findPublicCatalogById(int id) {
@@ -129,6 +138,33 @@ public class DiscoverCatalogService {
         return notUserOwned && notCustom;
     }
 
+    /**
+     * Same row set as {@link #findCatalogPage} without extra filters: shared taxonomy / import rows
+     * plus legacy “catalog-shaped” rows when {@code data_source} was not backfilled.
+     */
+    private static Specification<Species> publicCatalogBaseSpecification() {
+        return (root, query, cb) -> cb.or(
+                root.get("dataSource").in("seed", "gbif", "wsc"),
+                cb.and(
+                        root.get("createdBy").isNull(),
+                        cb.or(cb.isNull(root.get("isCustom")), cb.isFalse(root.get("isCustom")))
+                )
+        );
+    }
+
+    /**
+     * Rows we can honestly market as having keeper-grade profile data (not GBIF-only stubs).
+     */
+    private static Specification<Species> keeperGradeProfileSpecification() {
+        return (root, query, cb) -> cb.or(
+                cb.equal(root.get("dataSource"), "seed"),
+                cb.isNotNull(root.get("careProfileSource")),
+                cb.and(cb.isNotNull(root.get("humidityMin")), cb.isNotNull(root.get("humidityMax"))),
+                cb.and(cb.isNotNull(root.get("careNotes")), cb.gt(cb.length(root.get("careNotes")), 8)),
+                cb.and(cb.isNotNull(root.get("narrativeI18n")), cb.gt(cb.length(root.get("narrativeI18n")), 8))
+        );
+    }
+
     private static Specification<Species> buildSpec(
             String experienceLevel,
             String habitatType,
@@ -137,15 +173,7 @@ public class DiscoverCatalogService {
             String q,
             BigDecimal sizeMin,
             BigDecimal sizeMax) {
-        // Catálogo público: fuentes oficiales / importadas compartidas, más filas “tipo catálogo”
-        // (created_by nulo y no custom) por si data_source quedó desactualizado en algún entorno.
-        Specification<Species> base = (root, query, cb) -> cb.or(
-                root.get("dataSource").in("seed", "gbif", "wsc"),
-                cb.and(
-                        root.get("createdBy").isNull(),
-                        cb.or(cb.isNull(root.get("isCustom")), cb.isFalse(root.get("isCustom")))
-                )
-        );
+        Specification<Species> base = publicCatalogBaseSpecification();
 
         if (experienceLevel != null && !experienceLevel.isBlank()) {
             String v = experienceLevel.trim();

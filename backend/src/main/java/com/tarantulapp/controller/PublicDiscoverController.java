@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.dto.DiscoverCatalogStatsDTO;
 import com.tarantulapp.dto.DiscoverLocalSpeciesViewDTO;
 import com.tarantulapp.dto.DiscoverSearchHitDTO;
 import com.tarantulapp.dto.DiscoverTaxonDetailDTO;
@@ -82,5 +83,10 @@ public class PublicDiscoverController {
         return discoverCatalogService.findPublicCatalogViewById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/catalog-stats")
+    public ResponseEntity<DiscoverCatalogStatsDTO> catalogStats() {
+        return ResponseEntity.ok(discoverCatalogService.getPublicCatalogStats());
     }
 }

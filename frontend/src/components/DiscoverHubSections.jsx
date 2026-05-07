@@ -18,7 +18,7 @@ const EXPLORE_TILES = [
 export default function DiscoverHubSections() {
   const { t } = useTranslation()
   const [popular, setPopular] = useState([])
-  const [catalogTotal, setCatalogTotal] = useState(null)
+  const [catalogStats, setCatalogStats] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -46,10 +46,16 @@ export default function DiscoverHubSections() {
 
   useEffect(() => {
     speciesService
-      .discoverCatalogPage({ page: 0, pageSize: 1 })
-      .then((p) => {
-        if (typeof p?.totalElements === 'number' && Number.isFinite(p.totalElements)) {
-          setCatalogTotal(p.totalElements)
+      .getDiscoverCatalogStats()
+      .then((s) => {
+        if (
+          s &&
+          typeof s.indexedNames === 'number' &&
+          Number.isFinite(s.indexedNames) &&
+          typeof s.keeperProfiles === 'number' &&
+          Number.isFinite(s.keeperProfiles)
+        ) {
+          setCatalogStats(s)
         }
       })
       .catch(() => {})
@@ -58,11 +64,18 @@ export default function DiscoverHubSections() {
   const spiderPh = publicUrl('spider-default.png')
 
   const bannerTitle = useMemo(() => {
-    if (catalogTotal != null && catalogTotal > 0) {
-      return t('discover.catalogBannerTitle', { count: catalogTotal })
+    if (
+      catalogStats &&
+      catalogStats.indexedNames > 0 &&
+      catalogStats.keeperProfiles >= 0
+    ) {
+      return t('discover.catalogBannerHeadline', {
+        keeperProfiles: catalogStats.keeperProfiles,
+        indexedNames: catalogStats.indexedNames,
+      })
     }
     return t('discover.catalogBannerTitleFallback')
-  }, [catalogTotal, t])
+  }, [catalogStats, t])
 
   return (
     <div className="mb-4">
