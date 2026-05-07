@@ -628,6 +628,18 @@ hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
   padding: 0 !important;
 }
 
+.ta-mobile-qr-nav-btn {
+  border-color: rgba(232, 197, 71, 0.42) !important;
+  box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.12);
+}
+
+.ta-qr-native-scan-btn {
+  background: linear-gradient(135deg, #e8c547 0%, #b8942e 100%) !important;
+  color: #140c02 !important;
+  border: 1px solid rgba(90, 65, 18, 0.45) !important;
+  box-shadow: 0 6px 22px rgba(120, 90, 24, 0.35);
+}
+
 .ta-mobile-collection-cta {
   background: linear-gradient(135deg, #c9a84c 0%, #a8842e 100%) !important;
   color: #140c02 !important;

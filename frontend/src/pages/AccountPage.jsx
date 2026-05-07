@@ -81,7 +81,7 @@ export default function AccountPage() {
   const googleDeleteBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.12'
+  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.13'
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
   const loadBilling = useCallback(() => {

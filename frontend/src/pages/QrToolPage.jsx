@@ -432,6 +432,8 @@ export default function QrToolPage() {
     }
   }
 
+  const isNative = Capacitor.isNativePlatform()
+
   return (
     <PublicShell>
       <div className="mx-auto" style={{ maxWidth: 560 }}>
@@ -441,18 +443,11 @@ export default function QrToolPage() {
           </Link>
         </p>
 
-        <h1 className="h3 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>
-          {t('qrTool.heading')}
-        </h1>
-        <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
-          {t('qrTool.intro')}
-        </p>
-
-        {Capacitor.isNativePlatform() && (
+        {isNative && (
           <div className="mb-4">
             <button
               type="button"
-              className="btn btn-sm btn-outline-light"
+              className="btn btn-lg w-100 py-3 fw-semibold ta-qr-native-scan-btn"
               onClick={scanEnclosureQr}
               disabled={androidScanOpen}
             >
@@ -460,9 +455,20 @@ export default function QrToolPage() {
             </button>
             {scanHint ? (
               <div className="small text-warning mt-2 mb-0" style={{ maxWidth: 520 }}>{scanHint}</div>
-            ) : null}
+            ) : (
+              <p className="small mt-2 mb-0" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
+                {t('qrTool.scanHeroHint')}
+              </p>
+            )}
           </div>
         )}
+
+        <h1 className="h3 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>
+          {t('qrTool.heading')}
+        </h1>
+        <p className="small mb-4" style={{ color: 'var(--ta-text-muted)', maxWidth: 520 }}>
+          {isNative ? t('qrTool.introNativeOneLine') : t('qrTool.intro')}
+        </p>
 
         {androidScanOpen ? (
           <div

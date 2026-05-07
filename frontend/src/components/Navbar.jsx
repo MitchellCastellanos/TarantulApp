@@ -13,13 +13,14 @@ import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 
 /** Invite-only guests: show destination styling but block navigation. */
-function NavDest({ lock, to, className, title, style, children, onClick }) {
+function NavDest({ lock, to, className, title, style, children, onClick, 'aria-label': ariaLabel }) {
   if (lock) {
     return (
       <span
         className={className}
         style={{ ...(style || {}), opacity: 0.55, cursor: 'not-allowed' }}
         title={title}
+        aria-label={ariaLabel}
         aria-disabled="true"
       >
         {children}
@@ -27,7 +28,7 @@ function NavDest({ lock, to, className, title, style, children, onClick }) {
     )
   }
   return (
-    <Link to={to} className={className} style={style} title={title} onClick={onClick}>
+    <Link to={to} className={className} style={style} title={title} onClick={onClick} aria-label={ariaLabel}>
       {children}
     </Link>
   )
@@ -58,7 +59,9 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const searchTab = new URLSearchParams(location.search).get('tab')
   const navDiscover = path.startsWith('/descubrir')
   const navQr =
-    path.startsWith('/herramientas/qr') || path.startsWith('/tarantulas/qr-print')
+    path.startsWith('/tools/qr') ||
+    path.startsWith('/herramientas/qr') ||
+    path.startsWith('/tarantulas/qr-print')
   const navMarketplace = path.startsWith('/marketplace')
   const navCollection = Boolean(token) && path === '/'
   const navInsights = Boolean(token) && path.startsWith('/insights')
@@ -120,10 +123,10 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
               ]
             : []),
           {
-            to: '/herramientas/qr',
+            to: '/tools/qr',
             label: t('nav.qrTool'),
             title: t('nav.qrToolTitle'),
-            routeMatchers: ['/herramientas/qr', '/tarantulas/qr-print'],
+            routeMatchers: ['/tools/qr', '/herramientas/qr', '/tarantulas/qr-print'],
           },
           {
             to: '/marketplace',
@@ -356,9 +359,20 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   })()
 
   return (
+    <>
     <nav className="navbar navbar-dark px-3 px-md-4 py-2" style={{ overflow: 'visible' }}>
       <BrandNavbarLogo key={path} homeTo={logoHome} showIntro disableLink={lockPublicNav} />
-      <div className="d-md-none ms-auto d-flex align-items-center gap-2">
+      <div className="d-md-none ms-auto d-flex align-items-center gap-1 gap-sm-2">
+        <NavDest
+          lock={lockPublicNav}
+          to="/tools/qr"
+          onClick={closeMobileMenu}
+          className="btn btn-sm ta-mobile-icon-btn ta-mobile-qr-nav-btn"
+          title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('nav.qrToolTitle')}
+          aria-label={t('nav.qrScanAria')}
+        >
+          📷
+        </NavDest>
         <Link
           to={token ? myPublicProfilePath : '/login'}
           onClick={closeMobileMenu}
@@ -512,7 +526,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
           </NavDest>
           <NavDest
             lock={lockPublicNav}
-            to="/herramientas/qr"
+            to="/tools/qr"
             className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navQr ? 'ta-navbar-primary-link--active' : ''}`}
             title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('nav.qrToolTitle')}
           >
@@ -673,5 +687,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
         </div>
       </div>
     </nav>
+    </>
   )
 }
