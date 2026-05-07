@@ -19,7 +19,10 @@ public class TokenBlacklistEntry {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    // V66 created token_hash as char(64) (Postgres bpchar). Default JPA mapping for String would
+    // expect varchar, so we pin columnDefinition to match. char(64) is the right shape: the value
+    // is always a hex SHA-256 digest of fixed length.
+    @Column(name = "token_hash", nullable = false, unique = true, columnDefinition = "char(64)")
     private String tokenHash;
 
     @Column(name = "user_id", columnDefinition = "uuid")
