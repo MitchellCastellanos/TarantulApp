@@ -6,6 +6,7 @@ import com.tarantulapp.dto.DiscoverPhotoDTO;
 import com.tarantulapp.dto.SpeciesDTO;
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.SpeciesSynonym;
+import com.tarantulapp.util.SpeciesKeeperProfileSignals;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.SpeciesSynonymRepository;
 import org.springframework.data.domain.Page;
@@ -52,7 +53,7 @@ public class DiscoverCatalogService {
     public DiscoverCatalogStatsDTO getPublicCatalogStats() {
         Specification<Species> base = publicCatalogBaseSpecification();
         long indexed = speciesRepository.count(base);
-        long profiles = speciesRepository.count(base.and(keeperGradeProfileSpecification()));
+        long profiles = speciesRepository.count(base.and(SpeciesKeeperProfileSignals.keeperGradeProfileSpecification()));
         return new DiscoverCatalogStatsDTO(indexed, profiles);
     }
 
@@ -149,19 +150,6 @@ public class DiscoverCatalogService {
                         root.get("createdBy").isNull(),
                         cb.or(cb.isNull(root.get("isCustom")), cb.isFalse(root.get("isCustom")))
                 )
-        );
-    }
-
-    /**
-     * Rows we can honestly market as having keeper-grade profile data (not GBIF-only stubs).
-     */
-    private static Specification<Species> keeperGradeProfileSpecification() {
-        return (root, query, cb) -> cb.or(
-                cb.equal(root.get("dataSource"), "seed"),
-                cb.isNotNull(root.get("careProfileSource")),
-                cb.and(cb.isNotNull(root.get("humidityMin")), cb.isNotNull(root.get("humidityMax"))),
-                cb.and(cb.isNotNull(root.get("careNotes")), cb.gt(cb.length(root.get("careNotes")), 8)),
-                cb.and(cb.isNotNull(root.get("narrativeI18n")), cb.gt(cb.length(root.get("narrativeI18n")), 8))
         );
     }
 

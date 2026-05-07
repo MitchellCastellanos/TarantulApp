@@ -2,6 +2,7 @@ package com.tarantulapp.dto;
 
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.util.HobbyWorldResolver;
+import com.tarantulapp.util.SpeciesKeeperProfileSignals;
 import com.tarantulapp.util.SpeciesNarrativeJson;
 
 import java.math.BigDecimal;
@@ -35,6 +36,8 @@ public class SpeciesDTO {
     private LocalDateTime taxonomyLastSyncedAt;
     private String careProfileSource;
     private BigDecimal careProfileConfidence;
+    /** True when this row matches {@link SpeciesKeeperProfileSignals#hasKeeperGradeProfile(Species)}. */
+    private Boolean hasKeeperGradeProfile;
 
     public static SpeciesDTO from(Species s) {
         if (s == null) return null;
@@ -67,6 +70,7 @@ public class SpeciesDTO {
         dto.taxonomyLastSyncedAt = s.getTaxonomyLastSyncedAt();
         dto.careProfileSource = s.getCareProfileSource();
         dto.careProfileConfidence = s.getCareProfileConfidence();
+        dto.hasKeeperGradeProfile = SpeciesKeeperProfileSignals.hasKeeperGradeProfile(s);
         return dto;
     }
 
@@ -95,4 +99,5 @@ public class SpeciesDTO {
     public LocalDateTime getTaxonomyLastSyncedAt() { return taxonomyLastSyncedAt; }
     public String getCareProfileSource() { return careProfileSource; }
     public BigDecimal getCareProfileConfidence() { return careProfileConfidence; }
+    public Boolean getHasKeeperGradeProfile() { return hasKeeperGradeProfile; }
 }
