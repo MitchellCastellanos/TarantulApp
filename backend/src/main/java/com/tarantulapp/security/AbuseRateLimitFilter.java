@@ -16,19 +16,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Caps abuse-prone POST endpoints that the existing filters do not yet cover.
- * <p>
- * Today: public moderation reports (one bucket per IP) and Sex ID voting
- * (bucket keyed by authenticated user, with IP fallback for unauthenticated
- * fallthroughs while the security chain is still resolving). All buckets are
- * in-memory and per-instance — fine for a single Railway/Fly.io node, would
- * need Redis once we scale horizontally (tracked in Stream F).
+ * Caps abuse-prone POST endpoints that the existing filters do not yet cover (public moderation
+ * reports and Sex ID voting). Now backed by {@link RateLimiter}, so it shares the Redis bucket
+ * with all other filters when {@code app.redis.enabled=true} — no more per-replica drift.
  */
 @Component
 public class AbuseRateLimitFilter extends OncePerRequestFilter {
@@ -39,13 +31,15 @@ public class AbuseRateLimitFilter extends OncePerRequestFilter {
     private static final String SEX_ID_PREFIX = "/api/sex-id-cases/";
     private static final String SEX_ID_VOTE_SUFFIX = "/vote";
 
+    private final RateLimiter rateLimiter;
     private final int reportsMaxPerWindow;
     private final int sexIdVoteMaxPerWindow;
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public AbuseRateLimitFilter(
+            RateLimiter rateLimiter,
             @Value("${app.rate-limit.reports-per-minute:8}") int reportsMaxPerWindow,
             @Value("${app.rate-limit.sex-id-vote-per-minute:30}") int sexIdVoteMaxPerWindow) {
+        this.rateLimiter = rateLimiter;
         this.reportsMaxPerWindow = Math.max(1, reportsMaxPerWindow);
         this.sexIdVoteMaxPerWindow = Math.max(1, sexIdVoteMaxPerWindow);
     }
@@ -65,8 +59,7 @@ public class AbuseRateLimitFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String path = RequestPaths.stripContextPath(request);
         Limit limit = limitFor(path, request);
-        Bucket bucket = buckets.computeIfAbsent(limit.key, ignored -> new Bucket());
-        if (!bucket.allow(limit.maxPerWindow)) {
+        if (!rateLimiter.allow(limit.key, limit.maxPerWindow, WINDOW)) {
             if (log.isWarnEnabled()) {
                 log.warn("rate_limit_abuse path={} key={} max_per_minute={}",
                         path, limit.key, limit.maxPerWindow);
@@ -93,7 +86,6 @@ public class AbuseRateLimitFilter extends OncePerRequestFilter {
         if (path == null || !path.startsWith(SEX_ID_PREFIX) || !path.endsWith(SEX_ID_VOTE_SUFFIX)) {
             return false;
         }
-        // The id segment between the prefix and the /vote suffix must be non-empty.
         int idStart = SEX_ID_PREFIX.length();
         int idEnd = path.length() - SEX_ID_VOTE_SUFFIX.length();
         return idEnd > idStart;
@@ -120,22 +112,4 @@ public class AbuseRateLimitFilter extends OncePerRequestFilter {
     }
 
     private record Limit(String key, int maxPerWindow) {}
-
-    private static final class Bucket {
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile Instant windowStart = Instant.now();
-
-        boolean allow(int maxPerWindow) {
-            Instant now = Instant.now();
-            if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                synchronized (this) {
-                    if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                        windowStart = now;
-                        count.set(0);
-                    }
-                }
-            }
-            return count.incrementAndGet() <= maxPerWindow;
-        }
-    }
 }

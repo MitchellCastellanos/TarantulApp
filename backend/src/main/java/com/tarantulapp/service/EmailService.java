@@ -274,7 +274,7 @@ public class EmailService {
         }
     }
 
-    @Async
+    @Async("emailExecutor")
     public void sendAdminBetaApplicationNotification(
             UUID applicationId,
             String email,

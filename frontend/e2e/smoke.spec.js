@@ -22,8 +22,10 @@ test.describe('Sprint 1 public routes', () => {
   })
 
   test('Community route is public when logged out (no redirect to login)', async ({ page }) => {
+    // /comunidad is a legacy path that redirects to the canonical /community.
+    // The check that matters here is "not bounced to /login" — the public hub must render.
     await page.goto('/comunidad')
-    await expect(page).toHaveURL(/\/comunidad/)
+    await expect(page).toHaveURL(/\/community/)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 })

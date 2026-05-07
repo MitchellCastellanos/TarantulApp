@@ -5,6 +5,7 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.entity.TrialEmailEvent;
 import com.tarantulapp.repository.TrialEmailEventRepository;
 import com.tarantulapp.repository.UserRepository;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,7 @@ public class TrialReminderService {
     }
 
     @Scheduled(cron = "${app.trial-reminder.cron:0 0 9 * * *}")
+    @SchedulerLock(name = "trialReminders", lockAtLeastFor = "PT1M", lockAtMostFor = "PT15M")
     @Transactional
     public void sendTrialEndingReminders() {
         if (!trialReminderEnabled) {

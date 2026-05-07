@@ -14,10 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Rate-limits anonymous GET requests to the public community feed. */
 @Component
@@ -26,11 +22,13 @@ public class PublicFeedRateLimitFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(PublicFeedRateLimitFilter.class);
     private static final Duration WINDOW = Duration.ofMinutes(1);
 
+    private final RateLimiter rateLimiter;
     private final int maxPerWindow;
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public PublicFeedRateLimitFilter(
+            RateLimiter rateLimiter,
             @Value("${app.rate-limit.public-feed-per-minute:90}") int maxPerWindow) {
+        this.rateLimiter = rateLimiter;
         this.maxPerWindow = Math.max(1, maxPerWindow);
     }
 
@@ -47,8 +45,7 @@ public class PublicFeedRateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String ip = clientIp(request);
         String key = "pubfeed|" + ip;
-        Bucket bucket = buckets.computeIfAbsent(key, ignored -> new Bucket());
-        if (!bucket.allow(maxPerWindow)) {
+        if (!rateLimiter.allow(key, maxPerWindow, WINDOW)) {
             if (log.isWarnEnabled()) {
                 log.warn("rate_limit_feed ip={} path={}", ip, request.getRequestURI());
             }
@@ -64,23 +61,5 @@ public class PublicFeedRateLimitFilter extends OncePerRequestFilter {
             return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
         }
         return request.getRemoteAddr();
-    }
-
-    private static final class Bucket {
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile Instant windowStart = Instant.now();
-
-        boolean allow(int maxPerWindow) {
-            Instant now = Instant.now();
-            if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                synchronized (this) {
-                    if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                        windowStart = now;
-                        count.set(0);
-                    }
-                }
-            }
-            return count.incrementAndGet() <= maxPerWindow;
-        }
     }
 }

@@ -15,12 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 /**
@@ -37,15 +33,17 @@ public class ChatMessageRateLimitFilter extends OncePerRequestFilter {
             "^/api/chat/threads/[0-9a-fA-F\\-]{36}/messages$");
 
     private final SecurityHelper securityHelper;
+    private final RateLimiter rateLimiter;
     private final int maxMessagesPerWindow;
     private final int maxOpenThreadPerWindow;
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public ChatMessageRateLimitFilter(
             SecurityHelper securityHelper,
+            RateLimiter rateLimiter,
             @Value("${app.rate-limit.chat-message-per-minute:40}") int maxMessagesPerWindow,
             @Value("${app.rate-limit.chat-open-thread-per-minute:25}") int maxOpenThreadPerWindow) {
         this.securityHelper = securityHelper;
+        this.rateLimiter = rateLimiter;
         this.maxMessagesPerWindow = Math.max(1, maxMessagesPerWindow);
         this.maxOpenThreadPerWindow = Math.max(1, maxOpenThreadPerWindow);
     }
@@ -70,8 +68,7 @@ public class ChatMessageRateLimitFilter extends OncePerRequestFilter {
         Optional<UUID> uid = securityHelper.tryGetCurrentUserId();
         String ip = clientIp(request);
         String key = keyPrefix + "|" + uid.map(u -> "u|" + u).orElseGet(() -> "ip|" + ip);
-        Bucket bucket = buckets.computeIfAbsent(key, ignored -> new Bucket());
-        if (!bucket.allow(limit)) {
+        if (!rateLimiter.allow(key, limit, WINDOW)) {
             if (log.isWarnEnabled()) {
                 log.warn("rate_limit_chat kind={} userId={} ip={} path={}",
                         keyPrefix,
@@ -93,23 +90,5 @@ public class ChatMessageRateLimitFilter extends OncePerRequestFilter {
             return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
         }
         return request.getRemoteAddr();
-    }
-
-    private static final class Bucket {
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile Instant windowStart = Instant.now();
-
-        boolean allow(int maxPerWindow) {
-            Instant now = Instant.now();
-            if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                synchronized (this) {
-                    if (Duration.between(windowStart, now).compareTo(WINDOW) > 0) {
-                        windowStart = now;
-                        count.set(0);
-                    }
-                }
-            }
-            return count.incrementAndGet() <= maxPerWindow;
-        }
     }
 }

@@ -9,6 +9,7 @@ import com.tarantulapp.repository.SubscriptionRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class BillingEmailSchedulerService {
     }
 
     @Scheduled(cron = "${app.billing-reminder.cron:0 20 9 * * *}")
+    @SchedulerLock(name = "billingDailyNotifications", lockAtLeastFor = "PT1M", lockAtMostFor = "PT15M")
     @Transactional
     public void runDailyBillingNotifications() {
         sendProExpiringReminders();

@@ -3,6 +3,8 @@ package com.tarantulapp.config;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.exception.RateLimitExceededException;
 import com.tarantulapp.exception.ReadOnlyModeException;
+import com.tarantulapp.service.AppMetrics;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,12 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final ObjectProvider<AppMetrics> appMetricsProvider;
+
+    public GlobalExceptionHandler(ObjectProvider<AppMetrics> appMetricsProvider) {
+        this.appMetricsProvider = appMetricsProvider;
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException e) {
@@ -52,6 +60,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<Map<String, String>> handleRateLimit(RateLimitExceededException e) {
+        AppMetrics m = appMetricsProvider.getIfAvailable();
+        if (m != null) m.rateLimitBlocked("global");
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("error", e.getMessage()));
     }
