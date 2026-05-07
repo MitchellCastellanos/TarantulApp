@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders } from 'axios'
-import { normalizeViteApiBase } from '../utils/apiBaseUrl'
+import { normalizeViteApiBase, resolveViteApiOrigin } from '../utils/apiBaseUrl'
 import { getTokenForApiRequest } from './authApiToken'
 import { notifyUnauthorized } from './authSession'
 
@@ -113,7 +113,7 @@ export function imgUrl(path) {
   if (!path) return null
   const s = String(path).trim()
   if (s.startsWith('http://') || s.startsWith('https://')) return s
-  const base = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+  const base = resolveViteApiOrigin()
   if (s.startsWith('/uploads/')) {
     return base ? `${base}${s}` : s
   }
