@@ -11,6 +11,7 @@ import com.tarantulapp.repository.ActivityPostCommentRepository;
 import com.tarantulapp.repository.ActivityPostLikeRepository;
 import com.tarantulapp.repository.ActivityPostRepository;
 import com.tarantulapp.repository.CommunityModerationTraceRepository;
+import com.tarantulapp.repository.DevicePushTokenRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.FileStorageService;
@@ -62,6 +63,7 @@ public class ActivityPostService {
     private final ActivityPostCommentRepository activityPostCommentRepository;
     private final TarantulaRepository tarantulaRepository;
     private final UserRepository userRepository;
+    private final DevicePushTokenRepository devicePushTokenRepository;
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
     private final CommunityModerationTraceRepository communityModerationTraceRepository;
@@ -71,6 +73,7 @@ public class ActivityPostService {
                                ActivityPostCommentRepository activityPostCommentRepository,
                                TarantulaRepository tarantulaRepository,
                                UserRepository userRepository,
+                               DevicePushTokenRepository devicePushTokenRepository,
                                NotificationService notificationService,
                                FileStorageService fileStorageService,
                                CommunityModerationTraceRepository communityModerationTraceRepository) {
@@ -79,6 +82,7 @@ public class ActivityPostService {
         this.activityPostCommentRepository = activityPostCommentRepository;
         this.tarantulaRepository = tarantulaRepository;
         this.userRepository = userRepository;
+        this.devicePushTokenRepository = devicePushTokenRepository;
         this.notificationService = notificationService;
         this.fileStorageService = fileStorageService;
         this.communityModerationTraceRepository = communityModerationTraceRepository;
@@ -162,6 +166,7 @@ public class ActivityPostService {
         post.setTarantulaId(tarantulaId);
         ActivityPost saved = activityPostRepository.save(post);
         User author = userRepository.findById(authorId).orElse(null);
+        notifyCommunityFollowersForRealPublicPost(saved, author);
         Tarantula spider = saved.getTarantulaId() == null
                 ? null
                 : tarantulaRepository.findById(saved.getTarantulaId()).orElse(null);
@@ -548,6 +553,39 @@ public class ActivityPostService {
             return out;
         }
         return out.substring(0, Math.max(0, maxLen - 1)).trim() + "…";
+    }
+
+    private void notifyCommunityFollowersForRealPublicPost(ActivityPost post, User author) {
+        if (!"public".equals(post.getVisibility()) || Boolean.TRUE.equals(post.getIsDemoContent())) {
+            return;
+        }
+        List<UUID> recipientIds = devicePushTokenRepository
+                .findDistinctEnabledUserIdsByPlatformExcludingUserId("android", post.getAuthorUserId());
+        if (recipientIds.isEmpty()) {
+            return;
+        }
+        String actorLabel = author != null && author.getDisplayName() != null && !author.getDisplayName().isBlank()
+                ? author.getDisplayName()
+                : "Un keeper";
+        String title = actorLabel + " publico en el feed";
+        String body = snippet(post.getBody(), 120);
+        if (body.isBlank()) {
+            body = "Hay un nuevo post en la comunidad.";
+        }
+        Map<String, Object> payload = Map.of(
+                "postId", String.valueOf(post.getId()),
+                "route", "/community/post/" + post.getId()
+        );
+        for (UUID recipientId : recipientIds) {
+            notificationService.create(
+                    recipientId,
+                    post.getAuthorUserId(),
+                    "COMMUNITY_NEW_POST",
+                    title,
+                    body,
+                    payload
+            );
+        }
     }
 
     private boolean containsBlockedLanguage(String raw) {
