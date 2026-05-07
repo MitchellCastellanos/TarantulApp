@@ -22,8 +22,7 @@ public class RefreshToken {
     @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
     private UUID userId;
 
-    // Same convention as TokenBlacklistEntry: V69 creates char(64), so pin columnDefinition.
-    @Column(name = "token_hash", nullable = false, unique = true, columnDefinition = "char(64)")
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
     @Column(name = "device_label", length = 120)
