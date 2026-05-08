@@ -1,6 +1,7 @@
 package com.tarantulapp.util;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -87,13 +88,21 @@ public class FileStorageService {
 
     @SuppressWarnings("unchecked")
     private String uploadToCloudinary(MultipartFile file, String subfolder) throws IOException {
+        // NOTE: Cloudinary's Java SDK requires a Transformation object (or a pre-formatted
+        // string like "q_auto,f_auto,w_1600,c_limit") here — passing a raw Map serializes to
+        // Java's default `{key=value}` format and the server returns "Invalid transformation
+        // component".
         Map<String, Object> params = ObjectUtils.asMap(
                 "folder", "tarantulapp/" + sanitizeSubfolder(subfolder),
                 "resource_type", "image",
                 // Cloudinary will reject non-image bytes too, but we already checked magic.
                 "format", "auto",
                 // Cap output dimensions; protects bandwidth and downstream rendering.
-                "transformation", ObjectUtils.asMap("quality", "auto", "fetch_format", "auto", "width", 1600, "crop", "limit")
+                "transformation", new Transformation()
+                        .quality("auto")
+                        .fetchFormat("auto")
+                        .width(1600)
+                        .crop("limit")
         );
         Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), params);
         return (String) result.get("secure_url");
