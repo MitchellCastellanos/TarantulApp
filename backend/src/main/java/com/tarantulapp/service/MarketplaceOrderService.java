@@ -83,7 +83,13 @@ public class MarketplaceOrderService {
         order.setProvider("simulated_escrow");
         order.setProviderRef("sim-" + threadId);
         order.setBuyerPolicyAcceptedAt(Instant.now());
+        order.setTermsSummary(buildTermsSummarySnapshot(listing));
         order.setHoldReleaseAt(null);
+        order.setPaymentReference(null);
+        order.setPaymentReportedAt(null);
+        order.setShippedAt(null);
+        order.setDeliveredAt(null);
+        order.setClosedAt(null);
         order = marketplaceOrderRepository.save(order);
         return toDto(order);
     }
@@ -125,9 +131,71 @@ public class MarketplaceOrderService {
     }
 
     @Transactional
+    public Map<String, Object> reportPayment(UUID actorUserId, UUID threadId, String paymentReference) {
+        MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
+        if (!actorUserId.equals(order.getBuyerUserId())) {
+            throw new AccessDeniedException("Solo el comprador puede reportar pago");
+        }
+        if (!"payment_pending".equals(order.getStatus())) {
+            throw new IllegalArgumentException("La orden no esta lista para reportar pago");
+        }
+        order.setStatus("payment_reported");
+        order.setPaymentReportedAt(Instant.now());
+        order.setPaymentReference(trimTo(paymentReference, 160));
+        return toDto(marketplaceOrderRepository.save(order));
+    }
+
+    @Transactional
+    public Map<String, Object> markInTransit(UUID actorUserId, UUID threadId) {
+        MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
+        if (!actorUserId.equals(order.getSellerUserId())) {
+            throw new AccessDeniedException("Solo el vendedor puede marcar envio");
+        }
+        if (!"payment_reported".equals(order.getStatus()) && !"paid_in_hold".equals(order.getStatus())) {
+            throw new IllegalArgumentException("La orden no esta lista para marcar envio");
+        }
+        order.setStatus("in_transit");
+        order.setShippedAt(Instant.now());
+        return toDto(marketplaceOrderRepository.save(order));
+    }
+
+    @Transactional
+    public Map<String, Object> markDelivered(UUID actorUserId, UUID threadId) {
+        MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
+        if (!actorUserId.equals(order.getBuyerUserId())) {
+            throw new AccessDeniedException("Solo el comprador puede confirmar entrega");
+        }
+        if (!"in_transit".equals(order.getStatus())) {
+            throw new IllegalArgumentException("La orden no esta en transito");
+        }
+        order.setStatus("delivered");
+        order.setDeliveredAt(Instant.now());
+        return toDto(marketplaceOrderRepository.save(order));
+    }
+
+    @Transactional
+    public Map<String, Object> closeOrder(UUID actorUserId, UUID threadId) {
+        MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
+        boolean participant = actorUserId.equals(order.getBuyerUserId()) || actorUserId.equals(order.getSellerUserId());
+        if (!participant) {
+            throw new AccessDeniedException("No participas en esta orden");
+        }
+        if (!"delivered".equals(order.getStatus()) && !"released".equals(order.getStatus())) {
+            throw new IllegalArgumentException("Solo puedes cerrar ordenes entregadas/liberadas");
+        }
+        order.setStatus("closed");
+        order.setClosedAt(Instant.now());
+        return toDto(marketplaceOrderRepository.save(order));
+    }
+
+    @Transactional
     public Map<String, Object> markDisputed(UUID actorUserId, UUID threadId) {
         MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
-        if (!"paid_in_hold".equals(order.getStatus()) && !"released".equals(order.getStatus())) {
+        if (!"paid_in_hold".equals(order.getStatus())
+                && !"released".equals(order.getStatus())
+                && !"payment_reported".equals(order.getStatus())
+                && !"in_transit".equals(order.getStatus())
+                && !"delivered".equals(order.getStatus())) {
             throw new IllegalArgumentException("Solo puedes disputar ordenes pagadas");
         }
         order.setStatus("disputed");
@@ -210,7 +278,55 @@ public class MarketplaceOrderService {
         out.put("provider", order.getProvider());
         out.put("providerRef", order.getProviderRef());
         out.put("buyerPolicyAcceptedAt", order.getBuyerPolicyAcceptedAt());
+        out.put("termsSummary", order.getTermsSummary());
+        out.put("paymentReference", order.getPaymentReference());
+        out.put("paymentReportedAt", order.getPaymentReportedAt());
+        out.put("shippedAt", order.getShippedAt());
+        out.put("deliveredAt", order.getDeliveredAt());
+        out.put("closedAt", order.getClosedAt());
         out.put("simulated", true);
         return out;
+    }
+
+    private String buildTermsSummarySnapshot(MarketplaceListing listing) {
+        if (listing == null) return null;
+        StringBuilder sb = new StringBuilder();
+        appendSummary(sb, "listing", listing.getTitle());
+        appendSummary(sb, "species", listing.getSpeciesName());
+        appendSummary(sb, "price", listing.getPriceAmount() != null ? listing.getPriceAmount() + " " + (listing.getCurrency() == null ? "" : listing.getCurrency()) : null);
+        appendSummary(sb, "location", joinParts(listing.getCity(), listing.getState(), listing.getCountry()));
+        appendSummary(sb, "pedigreeRef", listing.getPedigreeRef());
+        appendSummary(sb, "wildCaught", listing.isWildCaught() ? "yes" : "no");
+        appendSummary(sb, "captureOriginIso", listing.getCaptureOriginCountryIso());
+        appendSummary(sb, "permitRefs", listing.getRegulatoryPermitRefs());
+        return sb.toString();
+    }
+
+    private static void appendSummary(StringBuilder sb, String key, String value) {
+        String v = trimTo(value, 420);
+        if (v == null || v.isBlank()) return;
+        if (!sb.isEmpty()) sb.append(" | ");
+        sb.append(key).append(": ").append(v);
+    }
+
+    private static String joinParts(String a, String b, String c) {
+        StringBuilder sb = new StringBuilder();
+        if (a != null && !a.isBlank()) sb.append(a.trim());
+        if (b != null && !b.isBlank()) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append(b.trim());
+        }
+        if (c != null && !c.isBlank()) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append(c.trim());
+        }
+        return sb.toString();
+    }
+
+    private static String trimTo(String value, int max) {
+        if (value == null) return null;
+        String out = value.trim();
+        if (out.isEmpty()) return null;
+        return out.length() <= max ? out : out.substring(0, max);
     }
 }

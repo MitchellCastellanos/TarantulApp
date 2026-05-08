@@ -49,6 +49,18 @@ const chatService = {
   disputeOrder: (threadId) =>
     api.post(`/chat/threads/${threadId}/order/dispute`).then((r) => r.data),
 
+  reportOrderPayment: (threadId, paymentReference = '') =>
+    api.post(`/chat/threads/${threadId}/order/report-payment`, { paymentReference }).then((r) => r.data),
+
+  markOrderInTransit: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/mark-in-transit`).then((r) => r.data),
+
+  markOrderDelivered: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/mark-delivered`).then((r) => r.data),
+
+  closeOrder: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/close`).then((r) => r.data),
+
   createOrderCheckout: (threadId) =>
     api.post(`/chat/threads/${threadId}/order/checkout`).then((r) => r.data),
 }

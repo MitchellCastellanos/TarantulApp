@@ -160,6 +160,34 @@ public class ChatController {
         return ResponseEntity.ok(marketplaceOrderService.markDisputed(uid, threadId));
     }
 
+    record ReportOrderPaymentRequest(String paymentReference) {}
+
+    @PostMapping("/threads/{threadId}/order/report-payment")
+    public ResponseEntity<Map<String, Object>> reportOrderPayment(@PathVariable UUID threadId,
+                                                                  @RequestBody(required = false) ReportOrderPaymentRequest req) {
+        UUID uid = securityHelper.getCurrentUserId();
+        String paymentReference = req == null ? null : req.paymentReference();
+        return ResponseEntity.ok(marketplaceOrderService.reportPayment(uid, threadId, paymentReference));
+    }
+
+    @PostMapping("/threads/{threadId}/order/mark-in-transit")
+    public ResponseEntity<Map<String, Object>> markOrderInTransit(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.markInTransit(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/mark-delivered")
+    public ResponseEntity<Map<String, Object>> markOrderDelivered(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.markDelivered(uid, threadId));
+    }
+
+    @PostMapping("/threads/{threadId}/order/close")
+    public ResponseEntity<Map<String, Object>> closeOrder(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.closeOrder(uid, threadId));
+    }
+
     @PostMapping("/threads/{threadId}/order/checkout")
     public ResponseEntity<Map<String, Object>> orderCheckout(@PathVariable UUID threadId) {
         UUID uid = securityHelper.getCurrentUserId();

@@ -38,6 +38,7 @@ export default function MarketplaceMessagesPage() {
   const [threadOrder, setThreadOrder] = useState(null)
   const [startingOrderCheckout, setStartingOrderCheckout] = useState(false)
   const [orderPolicyAccepted, setOrderPolicyAccepted] = useState(false)
+  const [orderPaymentRef, setOrderPaymentRef] = useState('')
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -230,6 +231,50 @@ export default function MarketplaceMessagesPage() {
       const order = await chatService.disputeOrder(activeThread.id)
       setThreadOrder(order)
       setMessage(t('marketplace.orderDisputed'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const reportOrderPayment = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.reportOrderPayment(activeThread.id, orderPaymentRef)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderPaymentReported'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const markOrderInTransit = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.markOrderInTransit(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderMarkedInTransit'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const markOrderDelivered = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.markOrderDelivered(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderMarkedDelivered'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const closeThreadOrder = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.closeOrder(activeThread.id)
+      setThreadOrder(order)
+      setMessage(t('marketplace.orderClosed'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     }
@@ -544,6 +589,17 @@ export default function MarketplaceMessagesPage() {
                             <div className="small text-muted mb-1">{t('marketplace.dealQuoteSubtotal')}: {threadOrder.subtotal} {threadOrder.currency || ''}</div>
                             <div className="small text-muted mb-1">{t('marketplace.dealQuoteFee')}: {threadOrder.commissionAmount} {threadOrder.currency || ''}</div>
                             <div className="small text-muted mb-2">{t('marketplace.dealQuotePayout')}: {threadOrder.sellerPayoutAmount} {threadOrder.currency || ''}</div>
+                            <div className="small text-muted mb-2">
+                              {threadOrder.paymentReportedAt && <div>{t('marketplace.orderTimelinePaymentReported')}: {new Date(threadOrder.paymentReportedAt).toLocaleString()}</div>}
+                              {threadOrder.shippedAt && <div>{t('marketplace.orderTimelineShipped')}: {new Date(threadOrder.shippedAt).toLocaleString()}</div>}
+                              {threadOrder.deliveredAt && <div>{t('marketplace.orderTimelineDelivered')}: {new Date(threadOrder.deliveredAt).toLocaleString()}</div>}
+                              {threadOrder.closedAt && <div>{t('marketplace.orderTimelineClosed')}: {new Date(threadOrder.closedAt).toLocaleString()}</div>}
+                            </div>
+                            {threadOrder.termsSummary && (
+                              <div className="small text-muted mb-2">
+                                <span className="fw-semibold">{t('marketplace.orderTermsSnapshot')}:</span> {threadOrder.termsSummary}
+                              </div>
+                            )}
                             <div className="d-flex gap-2 flex-wrap">
                               {!isSellerInThread && threadOrder.status === 'payment_pending' && (
                                 <>
@@ -553,7 +609,34 @@ export default function MarketplaceMessagesPage() {
                                   <button type="button" className="btn btn-sm btn-outline-dark" onClick={simulateOrderPayment}>
                                     {t('marketplace.orderSimulatePay')}
                                   </button>
+                                  <div className="d-flex gap-2 align-items-center flex-wrap">
+                                    <input
+                                      className="form-control form-control-sm"
+                                      style={{ maxWidth: 220 }}
+                                      value={orderPaymentRef}
+                                      onChange={(e) => setOrderPaymentRef(e.target.value)}
+                                      placeholder={t('marketplace.orderPaymentReference')}
+                                    />
+                                    <button type="button" className="btn btn-sm btn-outline-dark" onClick={reportOrderPayment}>
+                                      {t('marketplace.orderReportPaymentCta')}
+                                    </button>
+                                  </div>
                                 </>
+                              )}
+                              {isSellerInThread && (threadOrder.status === 'payment_reported' || threadOrder.status === 'paid_in_hold') && (
+                                <button type="button" className="btn btn-sm btn-outline-dark" onClick={markOrderInTransit}>
+                                  {t('marketplace.orderMarkInTransitCta')}
+                                </button>
+                              )}
+                              {!isSellerInThread && threadOrder.status === 'in_transit' && (
+                                <button type="button" className="btn btn-sm btn-outline-dark" onClick={markOrderDelivered}>
+                                  {t('marketplace.orderMarkDeliveredCta')}
+                                </button>
+                              )}
+                              {threadOrder.status === 'delivered' && (
+                                <button type="button" className="btn btn-sm btn-outline-dark" onClick={closeThreadOrder}>
+                                  {t('marketplace.orderCloseCta')}
+                                </button>
                               )}
                               {!isSellerInThread && threadOrder.status === 'paid_in_hold' && (
                                 <button type="button" className="btn btn-sm btn-outline-dark" onClick={simulateOrderRelease}>

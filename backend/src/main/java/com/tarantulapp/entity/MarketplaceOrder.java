@@ -64,6 +64,24 @@ public class MarketplaceOrder {
     @Column(name = "buyer_policy_accepted_at")
     private Instant buyerPolicyAcceptedAt;
 
+    @Column(name = "terms_summary", columnDefinition = "text")
+    private String termsSummary;
+
+    @Column(name = "payment_reference", length = 160)
+    private String paymentReference;
+
+    @Column(name = "payment_reported_at")
+    private Instant paymentReportedAt;
+
+    @Column(name = "shipped_at")
+    private Instant shippedAt;
+
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
+
+    @Column(name = "closed_at")
+    private Instant closedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -112,6 +130,18 @@ public class MarketplaceOrder {
     public void setProviderRef(String providerRef) { this.providerRef = providerRef; }
     public Instant getBuyerPolicyAcceptedAt() { return buyerPolicyAcceptedAt; }
     public void setBuyerPolicyAcceptedAt(Instant buyerPolicyAcceptedAt) { this.buyerPolicyAcceptedAt = buyerPolicyAcceptedAt; }
+    public String getTermsSummary() { return termsSummary; }
+    public void setTermsSummary(String termsSummary) { this.termsSummary = termsSummary; }
+    public String getPaymentReference() { return paymentReference; }
+    public void setPaymentReference(String paymentReference) { this.paymentReference = paymentReference; }
+    public Instant getPaymentReportedAt() { return paymentReportedAt; }
+    public void setPaymentReportedAt(Instant paymentReportedAt) { this.paymentReportedAt = paymentReportedAt; }
+    public Instant getShippedAt() { return shippedAt; }
+    public void setShippedAt(Instant shippedAt) { this.shippedAt = shippedAt; }
+    public Instant getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(Instant deliveredAt) { this.deliveredAt = deliveredAt; }
+    public Instant getClosedAt() { return closedAt; }
+    public void setClosedAt(Instant closedAt) { this.closedAt = closedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
