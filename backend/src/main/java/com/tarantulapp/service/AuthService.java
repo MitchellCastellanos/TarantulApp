@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.dto.AuthResponse;
+import com.tarantulapp.config.AuthRegistrationMode;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
 import com.tarantulapp.entity.BetaApplication;
@@ -54,7 +55,7 @@ public class AuthService {
     private final AdminAccessService adminAccessService;
     private final BetaApplicationRepository betaApplicationRepository;
     private final AppMetrics appMetrics;
-    private final boolean inviteOnlyRegistration;
+    private final AuthRegistrationMode registrationMode;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
@@ -65,7 +66,7 @@ public class AuthService {
                        AdminAccessService adminAccessService,
                        BetaApplicationRepository betaApplicationRepository,
                        AppMetrics appMetrics,
-                       @Value("${app.auth.invite-only-registration:false}") boolean inviteOnlyRegistration) {
+                       @Value("${app.auth.registration-mode:invite_only}") String registrationModeRaw) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -77,7 +78,7 @@ public class AuthService {
         this.adminAccessService = adminAccessService;
         this.betaApplicationRepository = betaApplicationRepository;
         this.appMetrics = appMetrics;
-        this.inviteOnlyRegistration = inviteOnlyRegistration;
+        this.registrationMode = AuthRegistrationMode.fromProperty(registrationModeRaw);
     }
 
     /** If an approved beta application exists for this email, mark the user as a beta tester. */
@@ -116,7 +117,7 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
-        if (inviteOnlyRegistration) {
+        if (!registrationMode.allowsSelfServeRegistration()) {
             throw new IllegalArgumentException("REGISTRATION_CLOSED");
         }
         if (!Boolean.TRUE.equals(request.getLegalAccepted())) {
@@ -181,7 +182,7 @@ public class AuthService {
         String email = extractVerifiedEmailFromGoogleTokenInfo(tokenInfo);
 
         User user = findByEmailWithOneRetry(email).orElseGet(() -> {
-            if (inviteOnlyRegistration) {
+            if (!registrationMode.allowsSelfServeRegistration()) {
                 throw new IllegalArgumentException("REGISTRATION_CLOSED");
             }
             User created = new User();
@@ -350,7 +351,13 @@ public class AuthService {
                 || adminAccessService.shouldBootstrapAdmin(user));
         r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));
         r.setBetaAgreementAcceptedAt(user.getBetaAgreementAcceptedAt());
+        r.setRegistrationMode(registrationMode.wireName());
+        r.setRegistrationOpen(registrationMode.allowsSelfServeRegistration());
         return r;
+    }
+
+    public AuthRegistrationMode getRegistrationMode() {
+        return registrationMode;
     }
 
     @Transactional

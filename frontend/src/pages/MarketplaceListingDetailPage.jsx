@@ -406,6 +406,14 @@ export default function MarketplaceListingDetailPage() {
                         {' '}·{' '}
                         <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
                       </p>
+                      <div className="small text-muted mt-2">
+                        <div className="fw-semibold mb-1">{t('marketplace.orderChecklistTitle')}</div>
+                        <ul className="mb-0 ps-3">
+                          <li>{t('marketplace.orderChecklistRule1')}</li>
+                          <li>{t('marketplace.orderChecklistRule2')}</li>
+                          <li>{t('marketplace.orderChecklistRule3')}</li>
+                        </ul>
+                      </div>
                     </>
                   )}
 

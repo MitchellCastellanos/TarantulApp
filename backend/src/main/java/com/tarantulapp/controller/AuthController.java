@@ -1,6 +1,7 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.dto.AuthResponse;
+import com.tarantulapp.dto.AuthRegistrationPolicyResponse;
 import com.tarantulapp.dto.ChangePasswordRequest;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
@@ -46,6 +47,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         captchaService.verifyOrThrow(request.getCaptchaToken(), clientIp(httpRequest), "register");
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @GetMapping("/registration-policy")
+    public ResponseEntity<AuthRegistrationPolicyResponse> registrationPolicy() {
+        var mode = authService.getRegistrationMode();
+        return ResponseEntity.ok(new AuthRegistrationPolicyResponse(mode.wireName(), mode.allowsSelfServeRegistration()));
     }
 
     @PostMapping("/login")

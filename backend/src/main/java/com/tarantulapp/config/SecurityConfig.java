@@ -146,11 +146,13 @@ public class SecurityConfig {
                         .requestMatchers(
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/register"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/auth/registration-policy"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/forgot-password"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/reset-password"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/oauth/google"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/login"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/register"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/registration-policy"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/forgot-password"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/oauth/google")

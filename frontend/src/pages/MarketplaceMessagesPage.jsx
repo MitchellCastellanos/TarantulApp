@@ -504,6 +504,16 @@ export default function MarketplaceMessagesPage() {
                           {' '}·{' '}
                           <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
                         </p>
+                        <div className="small text-muted mb-2">
+                          <div className="fw-semibold mb-1">{t('marketplace.orderChecklistTitle')}</div>
+                          <ul className="mb-0 ps-3">
+                            <li>{t('marketplace.orderChecklistRule1')}</li>
+                            <li>{t('marketplace.orderChecklistRule2')}</li>
+                            <li>{t('marketplace.orderChecklistRule3')}</li>
+                            <li>{t('marketplace.orderChecklistRule4')}</li>
+                            <li>{t('marketplace.orderChecklistRule5')}</li>
+                          </ul>
+                        </div>
                         {!threadOrder && (
                           <div className="d-flex flex-column gap-2">
                             <span className="text-muted">{t('marketplace.orderPanelEmpty')}</span>

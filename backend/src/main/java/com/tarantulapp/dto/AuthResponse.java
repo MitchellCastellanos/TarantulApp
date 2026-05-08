@@ -31,6 +31,8 @@ public class AuthResponse {
     private boolean admin;
     private boolean betaTester;
     private Instant betaAgreementAcceptedAt;
+    private String registrationMode;
+    private boolean registrationOpen;
 
     public AuthResponse(String token, String email, String displayName, UUID userId, String plan) {
         this.token = token;
@@ -93,4 +95,8 @@ public class AuthResponse {
 
     public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
     public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }
+    public String getRegistrationMode() { return registrationMode; }
+    public void setRegistrationMode(String registrationMode) { this.registrationMode = registrationMode; }
+    public boolean isRegistrationOpen() { return registrationOpen; }
+    public void setRegistrationOpen(boolean registrationOpen) { this.registrationOpen = registrationOpen; }
 }

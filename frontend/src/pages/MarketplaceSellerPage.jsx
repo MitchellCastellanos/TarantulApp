@@ -457,6 +457,14 @@ export default function MarketplaceSellerPage() {
                   {' '}·{' '}
                   <Link to="/marketplace-policy" target="_blank" rel="noreferrer">{t('legal.marketplacePolicy.title')}</Link>
                 </p>
+                <div className="small text-muted mb-3">
+                  <div className="fw-semibold mb-1">{t('marketplace.orderChecklistTitle')}</div>
+                  <ul className="mb-0 ps-3">
+                    <li>{t('marketplace.orderChecklistRule1')}</li>
+                    <li>{t('marketplace.orderChecklistRule2')}</li>
+                    <li>{t('marketplace.orderChecklistRule5')}</li>
+                  </ul>
+                </div>
                 <form onSubmit={submitListing} className="small">
                   <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldTitle')}
                     required value={listingForm.title} onChange={(e) => setListingForm((f) => ({ ...f, title: e.target.value }))} />
