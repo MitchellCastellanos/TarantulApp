@@ -108,8 +108,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String userId = null;
 
         if (token != null) {
-            if (!jwtUtil.isTokenValid(token)) {
-                log.warn("Invalid JWT on {}", request.getRequestURI());
+            JwtUtil.ValidationResult jwtStatus = jwtUtil.validateToken(token);
+            if (jwtStatus == JwtUtil.ValidationResult.EXPIRED) {
+                log.debug("Expired JWT on {}", request.getRequestURI());
+            } else if (jwtStatus == JwtUtil.ValidationResult.INVALID) {
+                log.debug("Invalid JWT on {}", request.getRequestURI());
             } else if (tokenBlacklistService.isRevoked(token)) {
                 log.debug("Revoked JWT presented on {}", request.getRequestURI());
             } else {

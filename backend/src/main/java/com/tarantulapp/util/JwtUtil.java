@@ -14,6 +14,13 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
+    /** Outcome of verifying a Bearer token (expiry is routine; invalid signature is not). */
+    public enum ValidationResult {
+        VALID,
+        EXPIRED,
+        INVALID
+    }
+
     private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${app.jwt.secret}")
@@ -50,13 +57,22 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    public boolean isTokenValid(String token) {
+    /**
+     * Verifies signature and expiry. Expired tokens do not log at WARN (mobile/web clients often send stale Bearer tokens).
+     */
+    public ValidationResult validateToken(String token) {
         try {
             Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
-            return true;
+            return ValidationResult.VALID;
+        } catch (ExpiredJwtException e) {
+            return ValidationResult.EXPIRED;
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("JWT validation failed [{}]: {}", e.getClass().getSimpleName(), e.getMessage());
-            return false;
+            return ValidationResult.INVALID;
         }
+    }
+
+    public boolean isTokenValid(String token) {
+        return validateToken(token) == ValidationResult.VALID;
     }
 }
