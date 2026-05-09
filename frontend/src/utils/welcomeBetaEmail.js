@@ -1,10 +1,16 @@
-import { ANDROID_PLAY_INTERNAL_TEST_URL } from '../constants/playStoreUrls.js'
+import {
+  ANDROID_PLAY_STORE_URL,
+  ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL,
+} from '../constants/playStoreUrls.js'
 
 /** Canonical production URL (override via param when copying from staging). */
 export const DEFAULT_BETA_APP_URL = 'https://tarantulapp.com'
 
-/** Google Play internal-test URL for closed beta (same as in-app callout). */
-export { ANDROID_PLAY_INTERNAL_TEST_URL }
+/** Google Play listing URL for closed-beta installs (same as in-app callout). */
+export { ANDROID_PLAY_STORE_URL }
+
+/** Legacy internal-test URL — only mentioned so testers stop using it. */
+export { ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL }
 
 /** WhatsApp community groups for beta testers. Keep in sync with backend `BetaMailBodies.java`. */
 export const WHATSAPP_GROUP_URL_ES = 'https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t'
@@ -21,6 +27,7 @@ export function buildSpanishBetaWelcomeEmail(p) {
   const appUrl = p.appUrl || DEFAULT_BETA_APP_URL
   const sendDate = p.sendDate || new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date())
   const name = (p.name || '').trim() || 'criador'
+  const play = ANDROID_PLAY_STORE_URL
   return [
     `Hola ${name},`,
     '',
@@ -29,8 +36,9 @@ export function buildSpanishBetaWelcomeEmail(p) {
     'Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.',
     '',
     'Importante para este batch:',
-    `• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
-    '• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.',
+    `• Instala la app Android desde Google Play (lista de prueba cerrada). Enlace: ${play}`,
+    '• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala o actualiza TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.',
+    `• Si antes usabas el enlace antiguo de prueba interna (${ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL}), déjalo de usar: desinstala esa instalación si hace falta y vuelve a instalar desde el enlace de la tienda de arriba.`,
     '• La web app sigue disponible en cualquier navegador si lo prefieres.',
     '',
     'Únete a nuestro grupo de WhatsApp para testers (español):',
@@ -49,7 +57,7 @@ export function buildSpanishBetaWelcomeEmail(p) {
     '',
     '1) Tu acceso',
     `   • Web: ${appUrl}`,
-    `   • Android (Play — prueba interna): ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
+    `   • Android (Play — prueba cerrada): ${play}`,
     `   • Email: ${p.email}`,
     `   • Contraseña: ${p.password}`,
     '',
@@ -88,6 +96,7 @@ export function buildEnglishBetaWelcomeEmail(p) {
     p.sendDate ||
     new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(new Date())
   const name = (p.name || '').trim() || 'keeper'
+  const play = ANDROID_PLAY_STORE_URL
   return [
     `Hi ${name},`,
     '',
@@ -96,8 +105,9 @@ export function buildEnglishBetaWelcomeEmail(p) {
     'Congratulations — you’ve been accepted into the TarantulApp closed beta. Among everyone who applied, you’re one of the few helping us shape the platform before public launch.',
     '',
     'Important for this batch:',
-    `• Android is available on Google Play for testers (internal testing track). Link: ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
-    '• Open that link on your phone while signed into the Google account that has access to the test, install TarantulApp, then sign in with the same email and password as the web app.',
+    `• Install the Android app from Google Play (closed testing). Link: ${play}`,
+    '• Open that link on your phone while signed into the Google account that has access to the test, install or update TarantulApp, then sign in with the same email and password as the web app.',
+    `• If you previously installed via the old internal-testing link (${ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL}), stop using it — uninstall that build if needed and reinstall from the Store link above.`,
     '• The web app still works in any browser if you prefer.',
     '',
     'Join our WhatsApp group for testers (English):',
@@ -116,7 +126,7 @@ export function buildEnglishBetaWelcomeEmail(p) {
     '',
     '1) Your access',
     `   • Web: ${appUrl}`,
-    `   • Android (Play — internal test): ${ANDROID_PLAY_INTERNAL_TEST_URL}`,
+    `   • Android (Play — closed testing): ${play}`,
     `   • Email: ${p.email}`,
     `   • Password: ${p.password}`,
     '',

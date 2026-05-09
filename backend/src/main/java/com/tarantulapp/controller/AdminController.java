@@ -326,7 +326,7 @@ public class AdminController {
                 {"creator_partner_onboarding", "Creadores — brief y beneficios (post-bienvenida)", "Creators — brief & perks (after welcome)"},
                 {"creator_partner_reminder", "Creadores — recordatorio suave (video / contenido)", "Creators — gentle reminder (video)"},
                 {"whatsapp_group_invite", "Grupo de WhatsApp (invitación)", "WhatsApp group (invitation)"},
-                {"android_play_beta", "Android en Google Play (prueba interna)", "Android on Google Play (internal test)"},
+                {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
                 {"week_1", "Semana 1 — día a día", "Week 1 — day-to-day"},
                 {"week_2", "Semana 2 — fotos y rutina", "Week 2 — photos & routine"},
                 {"week_3", "Semana 3 — comunidad", "Week 3 — community"},

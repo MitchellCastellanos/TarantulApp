@@ -44,7 +44,7 @@ let md = `# TarantulApp — Emails de bienvenida beta (español, lote 1)
 Fecha de referencia del envío: **${sendDate}**.  
 URL de la app: **https://tarantulapp.com**
 
-**Nota de este lote:** ya tenemos **webapp** y también la app **Android** en Google Play (prueba interna). Los testers pueden instalar desde Play e iniciar sesión con las mismas credenciales. La misión de la semana 1 ya viene en este correo como primeros pasos.
+**Nota de este lote:** ya tenemos **webapp** y también la app **Android** en Google Play (prueba cerrada). Los testers pueden instalar desde Play e iniciar sesión con las mismas credenciales. La misión de la semana 1 ya viene en este correo como primeros pasos.
 
 **Entrada:** botón de acceso beta en la pantalla previa (gate) → inicio de sesión con el correo y la contraseña de cada bloque.
 

@@ -11,8 +11,14 @@ public final class BetaMailBodies {
 
     public static final String DEFAULT_APP_URL = "https://tarantulapp.com";
 
-    /** Google Play internal testing (closed beta). Keep in sync with {@code frontend/src/constants/playStoreUrls.js}. */
-    public static final String ANDROID_PLAY_INTERNAL_TEST_URL =
+    /**
+     * Public Play Store listing (closed testing). Keep in sync with {@code frontend/src/constants/playStoreUrls.js}.
+     */
+    public static final String ANDROID_PLAY_STORE_URL =
+            "https://play.google.com/store/apps/details?id=com.tarantulapp.app";
+
+    /** Old internal-testing URL — only referenced when telling testers to stop using it. */
+    public static final String ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL =
             "https://play.google.com/apps/internaltest/4700991665399344151";
 
     /** WhatsApp community groups for beta testers. Keep in sync with {@code frontend/src/utils/welcomeBetaEmail.js}. */
@@ -70,8 +76,8 @@ public final class BetaMailBodies {
                     ? "TarantulApp beta — Week 6 — final check-in"
                     : "TarantulApp beta — Semana 6 — cierre";
             case "android_play_beta" -> en
-                    ? "TarantulApp beta — Android app is on Google Play (internal testing)"
-                    : "Beta TarantulApp — la app Android ya está en Google Play (prueba interna)";
+                    ? "TarantulApp beta — Android on Google Play (closed testing)"
+                    : "Beta TarantulApp — Android ya en Google Play (prueba cerrada)";
             case "whatsapp_group_invite" -> en
                     ? "TarantulApp beta — Join our WhatsApp group for testers"
                     : "Beta TarantulApp — Únete a nuestro grupo de WhatsApp para testers";
@@ -98,7 +104,8 @@ public final class BetaMailBodies {
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         String wa = WHATSAPP_GROUP_URL_ES;
         return "Hola " + n + ",\n"
                 + "\n"
@@ -108,9 +115,11 @@ public final class BetaMailBodies {
                 + "eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.\n"
                 + "\n"
                 + "Importante para este batch:\n"
-                + "• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: " + play + "\n"
-                + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e "
-                + "inicia sesión con el mismo correo y contraseña que para la web.\n"
+                + "• Instala la app Android desde Google Play (lista de prueba cerrada). Enlace: " + play + "\n"
+                + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala o actualiza "
+                + "TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.\n"
+                + "• Si antes usabas el enlace antiguo de prueba interna (" + legacy + "), déjalo de usar: desinstala esa "
+                + "instalación si hace falta y vuelve a instalar desde el enlace de la tienda arriba.\n"
                 + "• La web app sigue disponible en cualquier navegador si lo prefieres.\n"
                 + "\n"
                 + "Únete a nuestro grupo de WhatsApp para testers (español):\n"
@@ -130,7 +139,7 @@ public final class BetaMailBodies {
                 + "\n"
                 + "1) Tu acceso\n"
                 + "   • Web: " + url + "\n"
-                + "   • Android (Play — prueba interna): " + play + "\n"
+                + "   • Android (Play — prueba cerrada): " + play + "\n"
                 + "   • Email: " + e + "\n"
                 + "   • Contraseña: " + p + "\n"
                 + "\n"
@@ -163,7 +172,8 @@ public final class BetaMailBodies {
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String e = email == null ? "" : email.trim();
         String p = password == null ? "" : password;
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         String wa = WHATSAPP_GROUP_URL_EN;
         return "Hi " + n + ",\n"
                 + "\n"
@@ -173,9 +183,11 @@ public final class BetaMailBodies {
                 + "you're one of the few helping us shape the platform before public launch.\n"
                 + "\n"
                 + "Important for this batch:\n"
-                + "• Android is available on Google Play for testers (internal testing track). Link: " + play + "\n"
+                + "• Install the Android app from Google Play (closed testing). Link: " + play + "\n"
                 + "• Open that link on your phone while signed into the Google account that has access to the test, install "
-                + "TarantulApp, then sign in with the same email and password as the web app.\n"
+                + "or update TarantulApp, then sign in with the same email and password as the web app.\n"
+                + "• If you previously installed via the old internal-testing link (" + legacy + "), stop using it — "
+                + "uninstall that build if needed and reinstall from the Store link above.\n"
                 + "• The web app still works in any browser if you prefer.\n"
                 + "\n"
                 + "Join our WhatsApp group for testers (English):\n"
@@ -195,7 +207,7 @@ public final class BetaMailBodies {
                 + "\n"
                 + "1) Your access\n"
                 + "   • Web: " + url + "\n"
-                + "   • Android (Play — internal test): " + play + "\n"
+                + "   • Android (Play — closed testing): " + play + "\n"
                 + "   • Email: " + e + "\n"
                 + "   • Password: " + p + "\n"
                 + "\n"
@@ -271,7 +283,7 @@ public final class BetaMailBodies {
      * Recipients must already be beta testers (same as other batch campaigns).
      */
     private static String creatorPartnerOnboardingEs(String n, String url, String sendDate) {
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
         String wa = WHATSAPP_GROUP_URL_ES;
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
@@ -283,7 +295,7 @@ public final class BetaMailBodies {
                 + "para la comunidad latina y de EE. UU. que ya está probando la beta.\n\n"
                 + "Acceso\n"
                 + "• Web: " + url + "\n"
-                + "• Android (Play — prueba interna): " + play + "\n"
+                + "• Android (Play — prueba cerrada): " + play + "\n"
                 + "• Misma cuenta en todos lados. Si algo no te deja entrar, responde a este correo.\n\n"
                 + "Qué te pedimos (ajustable contigo)\n"
                 + "• 1 video corto (60–120 s) o reel mostrando la app en tu rutina real: feed, recordatorio o "
@@ -302,7 +314,7 @@ public final class BetaMailBodies {
     }
 
     private static String creatorPartnerOnboardingEn(String n, String url, String sendDate) {
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
         String wa = WHATSAPP_GROUP_URL_EN;
         return "Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
@@ -314,7 +326,7 @@ public final class BetaMailBodies {
                 + "who are already on the closed beta.\n\n"
                 + "Access\n"
                 + "• Web: " + url + "\n"
-                + "• Android (Play — internal test): " + play + "\n"
+                + "• Android (Play — closed testing): " + play + "\n"
                 + "• Same account everywhere. If login fails, reply to this email.\n\n"
                 + "What we ask (we can adapt with you)\n"
                 + "• One short video (60–120s) or reel using the app in your real workflow — feeding log, reminder, "
@@ -357,46 +369,52 @@ public final class BetaMailBodies {
     }
 
     private static String androidPlayBetaAnnouncementEs(String n, String url, String sendDate) {
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
-                + "Tenemos buenas noticias: TarantulApp para Android ya está en Google Play para nuestra beta cerrada "
-                + "(lista de prueba interna).\n\n"
-                + "Enlace de instalación (ábrelo en tu móvil Android):\n"
+                + "¡Gran noticia! Hemos pasado la app Android de la lista de prueba interna a la prueba cerrada en Google Play. "
+                + "A partir de ahora usa solo el enlace de la tienda de aquí abajo.\n\n"
+                + "Enlace en Google Play (ábrelo en tu móvil Android):\n"
                 + play
                 + "\n\n"
                 + "Pasos rápidos:\n\n"
-                + "1. Abre el enlace estando en la cuenta de Google que tiene acceso a la prueba interna "
+                + "1. Abre el enlace en la cuenta de Google que tiene acceso a la prueba cerrada "
                 + "(la misma que usas en Play Store).\n"
-                + "2. Acepta la prueba e instala TarantulApp desde Google Play.\n"
+                + "2. Instala o actualiza TarantulApp desde Google Play.\n"
                 + "3. Abre la app e inicia sesión con el mismo correo y contraseña que en la web.\n\n"
+                + "Importante: si instalaste antes con el enlace viejo de prueba interna (" + legacy + "), "
+                + "no lo uses más — desinstala esa versión si hace falta y vuelve a instalar desde el enlace de la tienda.\n\n"
                 + "La web sigue en "
                 + url
                 + " y puedes usar la PWA en Chrome si prefieres ese flujo.\n\n"
-                + "Si el enlace de Play dice que no tienes acceso, revisa la cuenta de Google correcta, o escríbenos: "
+                + "Si Play dice que no tienes acceso, revisa la cuenta de Google correcta, o escríbenos: "
                 + "responde a este correo o hello@tarantulapp.com.\n\n"
                 + "Gracias por probar con nosotros.\n\n"
                 + "— El equipo de TarantulApp\n";
     }
 
     private static String androidPlayBetaAnnouncementEn(String n, String url, String sendDate) {
-        String play = ANDROID_PLAY_INTERNAL_TEST_URL;
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         return "Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
-                + "Great news: TarantulApp for Android is now available on Google Play for our closed beta "
-                + "(internal testing track).\n\n"
-                + "Install link (open on your Android phone):\n"
+                + "Big news: we’ve moved the Android app from the internal testing track to closed testing on Google Play. "
+                + "From now on, use only the Store link below.\n\n"
+                + "Google Play link (open on your Android phone):\n"
                 + play
                 + "\n\n"
                 + "Quick steps:\n\n"
-                + "1. Open the link while signed into the Google account invited to the internal test "
+                + "1. Open the link while signed into the Google account that has access to closed testing "
                 + "(same account you use with the Play Store).\n"
-                + "2. Accept the test and install TarantulApp from Google Play.\n"
+                + "2. Install or update TarantulApp from Google Play.\n"
                 + "3. Open the app and sign in with the same email and password as the website.\n\n"
+                + "Important: if you previously installed via the old internal-testing link (" + legacy + "), "
+                + "don’t use it anymore — uninstall that build if needed and reinstall from the Store link above.\n\n"
                 + "The web app at "
                 + url
                 + " still works, and you can install the PWA from Chrome on Android if you prefer.\n\n"
-                + "If the Play link says you don't have access, double-check your Google account, or reach out — "
+                + "If Play says you don’t have access, double-check your Google account, or reach out — "
                 + "reply to this email or hello@tarantulapp.com.\n\n"
                 + "Thank you for testing with us.\n\n"
                 + "— The TarantulApp team\n";

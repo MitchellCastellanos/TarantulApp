@@ -3,7 +3,7 @@
 Fecha de referencia del envío: **1 de mayo de 2026**.  
 URL de la app: **https://tarantulapp.com**
 
-**Nota de este lote:** ya tenemos **webapp** y también la app **Android** en Google Play (prueba interna). Los testers pueden instalar desde Play e iniciar sesión con las mismas credenciales. La misión de la semana 1 ya viene en este correo como primeros pasos.
+**Nota de este lote:** ya tenemos **webapp** y también la app **Android** en Google Play (prueba cerrada). Los testers pueden instalar desde Play e iniciar sesión con las mismas credenciales. La misión de la semana 1 ya viene en este correo como primeros pasos.
 
 **Entrada:** botón de acceso beta en la pantalla previa (gate) → inicio de sesión con el correo y la contraseña de cada bloque.
 
@@ -23,7 +23,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -43,7 +43,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: rubiiog.01@gmail.com
    • Contraseña: TaBetajTfcR3CWnK!1
 
@@ -86,7 +86,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -106,7 +106,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: aranalopez89@gmail.com
    • Contraseña: TaBetaWKjvDWRgxk!1
 
@@ -149,7 +149,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -169,7 +169,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: espinozafelixnehemiasrussell@gmail.com
    • Contraseña: TaBetac3AMvZ4D3J!1
 
@@ -212,7 +212,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -232,7 +232,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: danyross980314@gmail.com
    • Contraseña: TaBetabASzkmsRTa!1
 
@@ -275,7 +275,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -295,7 +295,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: bravociber784@gmail.com
    • Contraseña: TaBetaTKNpEBmj9r!1
 
@@ -338,7 +338,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -358,7 +358,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: edgarhgr4782@outlook.com
    • Contraseña: TaBetar3ypbGZDb6!1
 
@@ -401,7 +401,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -421,7 +421,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: leslyvcruz@gmail.com
    • Contraseña: TaBetaV2qSKu6Kfq!1
 
@@ -464,7 +464,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -484,7 +484,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: oswaldo.argote03@gmail.com
    • Contraseña: TaBetaVcEyk3KnSV!1
 
@@ -527,7 +527,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -547,7 +547,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: yamilzuniga923@gmail.com
    • Contraseña: TaBetajEP7tzPcWY!1
 
@@ -590,7 +590,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -610,7 +610,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: dairacortes862@gmail.com
    • Contraseña: TaBetaZkbFNchkyC!1
 
@@ -653,7 +653,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -673,7 +673,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: perrometalpunk@gmail.com
    • Contraseña: TaBetacyDts5cqPq!1
 
@@ -716,7 +716,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -736,7 +736,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: mvzroboamr@gmail.com
    • Contraseña: TaBetawA7c3MFKm8!1
 
@@ -779,7 +779,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -799,7 +799,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: hodgsonabader@gmail.com
    • Contraseña: TaBeta7ntnFpCsDy!1
 
@@ -842,7 +842,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -862,7 +862,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: cesarratab@gmail.com
    • Contraseña: TaBetaQHBVrFAJbF!1
 
@@ -905,7 +905,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -925,7 +925,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: abelcastilloperez@gmail.com
    • Contraseña: TaBetaWXr8EvREan!1
 
@@ -968,7 +968,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -988,7 +988,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: engardi.84@gmail.com
    • Contraseña: TaBetatbfZg72yyG!1
 
@@ -1031,7 +1031,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1051,7 +1051,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: mocosito246@gmail.com
    • Contraseña: TaBetaHMsZfraTfR!1
 
@@ -1094,7 +1094,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1114,7 +1114,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: betanzo@gmail.com
    • Contraseña: TaBeta4aFDX5jKuX!1
 
@@ -1157,7 +1157,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1177,7 +1177,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: edgarramirez1@yahoo.ca
    • Contraseña: TaBetaHcns7v6GXg!1
 
@@ -1220,7 +1220,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1240,7 +1240,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: martinelias1208@gmail.com
    • Contraseña: TaBetaAJBkB7n9Fv!1
 
@@ -1283,7 +1283,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1303,7 +1303,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: vanreptifana@gmail.com
    • Contraseña: TaBetaEPJ7nMedzJ!1
 
@@ -1346,7 +1346,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1366,7 +1366,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: rtradegas@gmail.com
    • Contraseña: TaBetaqhNkZYpVVX!1
 
@@ -1409,7 +1409,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1429,7 +1429,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: rodridj100@gmail.com
    • Contraseña: TaBetaBWyfdwsYQQ!1
 
@@ -1472,7 +1472,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1492,7 +1492,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: urielroj28@gmail.com
    • Contraseña: TaBetaUjzjRJemHq!1
 
@@ -1535,7 +1535,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1555,7 +1555,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: urielroj28@gmail.com
    • Contraseña: TaBetaUjzjRJemHq!1
 
@@ -1598,7 +1598,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1618,7 +1618,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: hjmm9977@gmail.com
    • Contraseña: TaBetaJX7YcPkyBD!1
 
@@ -1661,7 +1661,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1681,7 +1681,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: ricardokevindrake@gmail.com
    • Contraseña: TaBetaMde5PXvXmM!1
 
@@ -1724,7 +1724,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1744,7 +1744,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: ang3114k@icloud.com
    • Contraseña: TaBetaYFBkyZNRYh!1
 
@@ -1787,7 +1787,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1807,7 +1807,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: cesar@fucesa.com
    • Contraseña: TaBetath74dwsG7K!1
 
@@ -1850,7 +1850,7 @@ Fecha del mensaje: 1 de mayo de 2026
 Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
 
 Importante para este batch:
-• Ya puedes instalar la app Android desde Google Play (lista de prueba interna). Enlace: https://play.google.com/apps/internaltest/4700991665399344151
+• Ya puedes instalar la app Android desde Google Play (lista de prueba cerrada). Enlace: https://play.google.com/store/apps/details?id=com.tarantulapp.app
 • Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.
 • La web app sigue disponible en cualquier navegador si lo prefieres.
 
@@ -1870,7 +1870,7 @@ Esto es lo que necesitas saber:
 
 1) Tu acceso
    • Web: https://tarantulapp.com
-   • Android (Play — prueba interna): https://play.google.com/apps/internaltest/4700991665399344151
+   • Android (Play — prueba cerrada): https://play.google.com/store/apps/details?id=com.tarantulapp.app
    • Email: armagi32@gmail.com
    • Contraseña: TaBetavnXMFD3Xu7!1
 

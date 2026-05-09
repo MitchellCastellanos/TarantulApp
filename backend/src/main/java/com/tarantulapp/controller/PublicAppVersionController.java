@@ -20,8 +20,8 @@ public class PublicAppVersionController {
     private final String latestVersionName;
 
     public PublicAppVersionController(
-            @Value("${app.android.latest-version-code:18}") int latestVersionCode,
-            @Value("${app.android.latest-version-name:1.0.17}") String latestVersionName) {
+            @Value("${app.android.latest-version-code:20}") int latestVersionCode,
+            @Value("${app.android.latest-version-name:1.0.19}") String latestVersionName) {
         this.latestVersionCode = latestVersionCode;
         this.latestVersionName = latestVersionName != null ? latestVersionName.trim() : "";
     }

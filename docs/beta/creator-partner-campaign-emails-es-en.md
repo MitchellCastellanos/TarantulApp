@@ -77,7 +77,7 @@ Qué ofrecemos mientras dure tu participación en la beta del programa:
 • Badge de socio de contenido en perfil cuando la función esté lista (te avisamos).
 • Canal directo con el equipo (correo + grupo de testers).
 
-Si te late, contesta con un “sí” y te mando acceso (web + Android en prueba interna de Play).
+Si te late, contesta con un “sí” y te mando acceso (web + Android en prueba cerrada de Play).
 Si no aplica o no es tu momento, sin problema — un “ahora no” nos ayuda igual.
 
 Saludos,
@@ -114,7 +114,7 @@ What we offer during your participation in the creator beta cohort:
 • A “content partner” badge on profile when we ship it (we'll let you know).
 • Direct access to the team (email + tester WhatsApp group).
 
-If you're in, reply “yes” and we'll send access (web + Android Play internal test).
+If you're in, reply “yes” and we'll send access (web + Android Play closed testing).
 If it's not a fit or bad timing, a quick “not now” still helps us plan.
 
 Thanks,

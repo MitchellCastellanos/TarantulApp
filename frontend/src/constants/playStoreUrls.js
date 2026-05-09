@@ -1,7 +1,16 @@
-/** Google Play — internal testing (closed beta). Overridable via `VITE_ANDROID_PLAY_INTERNAL_TEST_URL`. */
-const envUrl =
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANDROID_PLAY_INTERNAL_TEST_URL
-    ? String(import.meta.env.VITE_ANDROID_PLAY_INTERNAL_TEST_URL).trim()
+/** Public Play Store listing (closed testing track). Override with `VITE_ANDROID_PLAY_STORE_URL`. */
+const DEFAULT_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tarantulapp.app'
+
+const envStore =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANDROID_PLAY_STORE_URL
+    ? String(import.meta.env.VITE_ANDROID_PLAY_STORE_URL).trim()
     : ''
-export const ANDROID_PLAY_INTERNAL_TEST_URL =
-  envUrl || 'https://play.google.com/apps/internaltest/4700991665399344151'
+
+export const ANDROID_PLAY_STORE_URL = envStore || DEFAULT_STORE_URL
+
+/**
+ * Old internal-testing install URL — referenced only when telling testers to stop using it.
+ * @deprecated Install via {@link ANDROID_PLAY_STORE_URL}.
+ */
+export const ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL =
+  'https://play.google.com/apps/internaltest/4700991665399344151'

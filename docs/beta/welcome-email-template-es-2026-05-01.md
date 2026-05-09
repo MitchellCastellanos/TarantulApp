@@ -2,9 +2,9 @@
 
 Usar con `buildSpanishBetaWelcomeEmail()` en `frontend/src/utils/welcomeBetaEmail.js`, o copiar la estructura de abajo.
 
-**Nota (mayo 2026):** La app **Android** ya está en Google Play en **prueba interna**: los testers instalan con el enlace de Play e inician sesión con las mismas credenciales que en la web.
+**Nota (mayo 2026):** La instalación en Android usa el **listado de Google Play** de la **prueba cerrada**: los testers abren el enlace de la tienda, instalan o actualizan e inician sesión con las mismas credenciales que en la web. Quienes usaban el enlace antiguo de **prueba interna** deben volver a instalar desde el enlace de la tienda.
 
-**Variables:** `{{name}}`, `{{appUrl}}`, `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (URL de prueba interna en Play, la misma que en la app)
+**Variables:** `{{name}}`, `{{appUrl}}`, `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (URL del listado en Play, la misma que en la app)
 
 ---
 
@@ -16,9 +16,12 @@ Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los c
 
 Importante para este batch:
 
-- Ya puedes instalar la **app Android** desde Google Play (lista de prueba interna). Enlace: `{{androidPlayUrl}}`
-- Abre ese enlace en el teléfono con la **cuenta de Google** que tenga acceso a la prueba; instala TarantulApp e inicia sesión con el **mismo correo y contraseña** que para la web.
+- Instala la **app Android** desde Google Play (**lista de prueba cerrada**). Enlace: `{{androidPlayUrl}}`
+- Abre ese enlace en el teléfono con la **cuenta de Google** que tenga acceso a la prueba; instala o actualiza TarantulApp e inicia sesión con el **mismo correo y contraseña** que para la web.
+- Si antes usabas el enlace antiguo de **prueba interna**, déjalo de usar y vuelve a instalar desde el enlace de la tienda.
 - La **web app** sigue disponible en cualquier navegador si lo prefieres.
+
+Únete al grupo de WhatsApp para testers (español): (enlace del grupo en la plantilla enviada)
 
 Cómo entrar (web):
 
@@ -36,7 +39,7 @@ Esto es lo que necesitas saber:
 1) Tu acceso
 
 - Web: {{appUrl}}
-- Android (Play — prueba interna): {{androidPlayUrl}}
+- Android (Play — prueba cerrada): {{androidPlayUrl}}
 - Email: {{email}}
 - Contraseña: {{password}}
 

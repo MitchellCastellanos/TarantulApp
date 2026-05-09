@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { ANDROID_PLAY_INTERNAL_TEST_URL } from '../constants/playStoreUrls'
+import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
 
 /**
- * Short notice: Android build is on Play (internal test). Shown on public beta home and beta login.
+ * Short notice: Android build is on Play (closed testing). Shown on public beta home and beta login.
  */
 export default function AndroidPlayBetaCallout({ className = '' }) {
   const { t } = useTranslation()
@@ -24,7 +24,7 @@ export default function AndroidPlayBetaCallout({ className = '' }) {
         {t('publicBetaHome.playStoreBody')}
       </p>
       <a
-        href={ANDROID_PLAY_INTERNAL_TEST_URL}
+        href={ANDROID_PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="btn btn-sm btn-outline-warning fw-semibold"

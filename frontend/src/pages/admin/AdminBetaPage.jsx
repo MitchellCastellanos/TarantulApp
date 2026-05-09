@@ -67,6 +67,7 @@ export default function AdminBetaPage() {
   const [campaignSending, setCampaignSending] = useState(false)
   const [selectedTesterIds, setSelectedTesterIds] = useState(() => ({}))
   const [testerListSort, setTesterListSort] = useState('activity')
+  const [preferredLocaleSavingId, setPreferredLocaleSavingId] = useState(null)
 
   const sortedBetaTesters = useMemo(() => {
     const rows = [...betaTesters]
@@ -79,6 +80,31 @@ export default function AdminBetaPage() {
     }
     return rows
   }, [betaTesters, testerListSort])
+
+  const selectedMissingEmailLocaleCount = useMemo(() => {
+    if (campaignLocale !== 'auto') return 0
+    const ids = Object.entries(selectedTesterIds)
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+    return betaTesters.filter(
+      (u) => ids.includes(String(u.id)) && !String(u?.betaPreferredLocale || '').trim(),
+    ).length
+  }, [campaignLocale, selectedTesterIds, betaTesters])
+
+  const updateTesterPreferredLocale = async (userId, locale) => {
+    setPreferredLocaleSavingId(String(userId))
+    setError('')
+    try {
+      const updated = await adminService.patchUserBeta(userId, {
+        preferredLocale: locale,
+      })
+      setBetaTesters((prev) => prev.map((u) => (String(u.id) === String(userId) ? updated : u)))
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setPreferredLocaleSavingId(null)
+    }
+  }
 
   const updateTesterPref = (userId, templateId) => {
     setTesterTplPref((prev) => {
@@ -779,6 +805,11 @@ export default function AdminBetaPage() {
           <div className="border rounded p-2 mb-3 bg-body-secondary bg-opacity-10">
             <h3 className="h6 mb-2">{t('admin.campaignEmailSectionTitle')}</h3>
             <p className="small text-muted mb-2">{t('admin.campaignEmailBlurb')}</p>
+            {campaignLocale === 'auto' && selectedMissingEmailLocaleCount > 0 ? (
+              <p className="small text-warning mb-2">
+                {t('admin.campaignAutoLocaleMissingHint', { count: selectedMissingEmailLocaleCount })}
+              </p>
+            ) : null}
             <div className="d-flex flex-wrap gap-2 align-items-end mb-2">
               <div>
                 <label className="form-label small mb-0" htmlFor="beta-campaign-key">
@@ -1076,17 +1107,19 @@ export default function AdminBetaPage() {
                           </td>
                           <td className="ta-beta-col-email ta-beta-sticky-email small">
                             <div className="ta-beta-tester-email-wrap fw-medium">{u.email}</div>
-                            {u.betaPreferredLocale ? (
-                              <div className="mt-1">
-                                <span
-                                  className="badge text-bg-secondary"
-                                  style={{ fontSize: '0.65rem' }}
-                                  title={t('admin.betaTesterEmailLangBadge')}
-                                >
-                                  {String(u.betaPreferredLocale).toUpperCase()}
-                                </span>
-                              </div>
-                            ) : null}
+                            <select
+                              className="form-select form-select-sm py-1 mt-1"
+                              style={{ fontSize: '0.72rem', maxWidth: '12rem' }}
+                              aria-label={t('admin.betaTesterPreferredLocaleSelect')}
+                              title={t('admin.betaTesterEmailLangBadge')}
+                              disabled={preferredLocaleSavingId === String(u.id)}
+                              value={u.betaPreferredLocale || ''}
+                              onChange={(e) => updateTesterPreferredLocale(u.id, e.target.value)}
+                            >
+                              <option value="">{t('admin.betaTesterPreferredLocaleUnset')}</option>
+                              <option value="es">ES</option>
+                              <option value="en">EN</option>
+                            </select>
                           </td>
                           <td className="ta-beta-col-plan">
                             <span className={`badge text-bg-${adminPlanBadgeClass(u)}`} style={{ fontSize: '0.65rem' }}>

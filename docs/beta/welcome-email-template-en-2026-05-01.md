@@ -2,9 +2,9 @@
 
 Use with `buildEnglishBetaWelcomeEmail()` in `frontend/src/utils/welcomeBetaEmail.js`, or copy the structure below.
 
-**Batch note (May 2026):** Android is available on Google Play **internal testing** — testers install via the Play link, then sign in with the same credentials as the web app.
+**Batch note (May 2026):** Android installs use the **Google Play Store listing** for our **closed testing** track — testers open the Play link, install or update, then sign in with the same credentials as the web app. Anyone who used the old **internal testing** link should reinstall from the Store link below.
 
-**Variables:** `{{name}}`, `{{appUrl}}` (e.g. `https://tarantulapp.com`), `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (Play internal test URL, same as in-app)
+**Variables:** `{{name}}`, `{{appUrl}}` (e.g. `https://tarantulapp.com`), `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (Play Store listing URL, same as in-app)
 
 ---
 
@@ -16,9 +16,14 @@ Congratulations — you’ve been accepted into the TarantulApp closed beta. Amo
 
 Important for this batch:
 
-- You can install the **Android app** from Google Play (internal testing). Link: `{{androidPlayUrl}}`
-- On your phone, open that link while signed into the **Google account** that has access to the test, install TarantulApp, then sign in with the **same email and password** as below.
+- Install the **Android app** from Google Play (**closed testing**). Link: `{{androidPlayUrl}}`
+- On your phone, open that link while signed into the **Google account** that has access to the test, install or update TarantulApp, then sign in with the **same email and password** as below.
+- If you previously used the **internal testing** install URL, stop using it — uninstall that build if needed and reinstall from the Store link above.
 - The **web app** still works everywhere — use Safari/Chrome as before if you prefer.
+
+Join our WhatsApp group for testers (English):
+
+- (group link from template)
 
 How to sign in (web):
 
@@ -35,7 +40,7 @@ What you need to know:
 1) Your access
 
 - Web: {{appUrl}}
-- Android (Play — internal test): {{androidPlayUrl}}
+- Android (Play — closed testing): {{androidPlayUrl}}
 - Email: {{email}}
 - Password: {{password}}
 

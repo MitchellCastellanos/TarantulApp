@@ -2,7 +2,7 @@ import {
   buildEnglishBetaWelcomeEmail,
   buildSpanishBetaWelcomeEmail,
   DEFAULT_BETA_APP_URL,
-  ANDROID_PLAY_INTERNAL_TEST_URL,
+  ANDROID_PLAY_STORE_URL,
 } from './welcomeBetaEmail'
 
 /**
@@ -16,7 +16,7 @@ export function applyBetaPlaceholders(text, ctx) {
     password: ctx.password ?? '',
     appUrl: ctx.appUrl ?? DEFAULT_BETA_APP_URL,
     sendDate: ctx.sendDate ?? '',
-    androidPlayUrl: ANDROID_PLAY_INTERNAL_TEST_URL,
+    androidPlayUrl: ANDROID_PLAY_STORE_URL,
   }
   let out = text == null ? '' : String(text)
   Object.entries(vars).forEach(([k, v]) => {
