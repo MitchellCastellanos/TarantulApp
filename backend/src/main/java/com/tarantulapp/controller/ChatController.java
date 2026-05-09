@@ -142,6 +142,12 @@ public class ChatController {
         return ResponseEntity.ok(marketplaceOrderService.getOrderByThread(uid, threadId));
     }
 
+    @GetMapping("/threads/{threadId}/order/events")
+    public ResponseEntity<List<Map<String, Object>>> threadOrderEvents(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.listOrderEventsForThread(uid, threadId));
+    }
+
     @PostMapping("/threads/{threadId}/order/simulate-payment")
     public ResponseEntity<Map<String, Object>> simulateOrderPayment(@PathVariable UUID threadId) {
         UUID uid = securityHelper.getCurrentUserId();

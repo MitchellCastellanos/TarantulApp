@@ -40,6 +40,9 @@ const chatService = {
   getThreadOrder: (threadId) =>
     api.get(`/chat/threads/${threadId}/order`).then((r) => r.data),
 
+  threadOrderEvents: (threadId) =>
+    api.get(`/chat/threads/${threadId}/order/events`).then((r) => r.data),
+
   simulateOrderPayment: (threadId) =>
     api.post(`/chat/threads/${threadId}/order/simulate-payment`).then((r) => r.data),
 

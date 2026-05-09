@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
@@ -30,10 +31,14 @@ import java.util.UUID;
 public class MarketplaceController {
 
     private final MarketplaceService marketplaceService;
+    private final MarketplaceOrderService marketplaceOrderService;
     private final SecurityHelper securityHelper;
 
-    public MarketplaceController(MarketplaceService marketplaceService, SecurityHelper securityHelper) {
+    public MarketplaceController(MarketplaceService marketplaceService,
+                                MarketplaceOrderService marketplaceOrderService,
+                                SecurityHelper securityHelper) {
         this.marketplaceService = marketplaceService;
+        this.marketplaceOrderService = marketplaceOrderService;
         this.securityHelper = securityHelper;
     }
 
@@ -157,6 +162,12 @@ public class MarketplaceController {
     @GetMapping("/listings/me")
     public ResponseEntity<List<Map<String, Object>>> myListings() {
         return ResponseEntity.ok(marketplaceService.myListings(securityHelper.getCurrentUserId()));
+    }
+
+    @GetMapping("/orders/me")
+    public ResponseEntity<List<Map<String, Object>>> myOrders(@RequestParam(name = "role", defaultValue = "all") String role,
+                                                              @RequestParam(name = "limit", defaultValue = "50") int limit) {
+        return ResponseEntity.ok(marketplaceOrderService.listMyOrders(securityHelper.getCurrentUserId(), role, limit));
     }
 
     @PatchMapping("/listings/{id}/status")

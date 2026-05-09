@@ -36,6 +36,7 @@ export default function MarketplaceMessagesPage() {
   const [savingEvent, setSavingEvent] = useState(false)
   const [pushDeliveries, setPushDeliveries] = useState([])
   const [threadOrder, setThreadOrder] = useState(null)
+  const [threadOrderEvents, setThreadOrderEvents] = useState([])
   const [startingOrderCheckout, setStartingOrderCheckout] = useState(false)
   const [orderPolicyAccepted, setOrderPolicyAccepted] = useState(false)
   const [orderPaymentRef, setOrderPaymentRef] = useState('')
@@ -65,6 +66,37 @@ export default function MarketplaceMessagesPage() {
   useEffect(() => {
     loadThreads().catch(() => {})
   }, [loadThreads])
+
+  const refreshThreadDealState = useCallback(async (thread) => {
+    const tid = thread?.id
+    if (!tid || !thread?.listingId) {
+      setThreadOrder(null)
+      setThreadOrderEvents([])
+      return
+    }
+    try {
+      const order = await chatService.getThreadOrder(tid).catch(() => null)
+      setThreadOrder(order)
+      const ev = order ? await chatService.threadOrderEvents(tid).catch(() => []) : []
+      setThreadOrderEvents(Array.isArray(ev) ? ev : [])
+    } catch {
+      setThreadOrder(null)
+      setThreadOrderEvents([])
+    }
+  }, [])
+
+  const refreshThreadOrderAuditOnly = useCallback(async (threadId) => {
+    if (!threadId) {
+      setThreadOrderEvents([])
+      return
+    }
+    try {
+      const ev = await chatService.threadOrderEvents(threadId).catch(() => [])
+      setThreadOrderEvents(Array.isArray(ev) ? ev : [])
+    } catch {
+      setThreadOrderEvents([])
+    }
+  }, [])
 
   /** Deep-link open conversation from marketplace listing ("Message seller"). */
   useEffect(() => {
@@ -97,8 +129,11 @@ export default function MarketplaceMessagesPage() {
         if (!cancelled) setThreadMessages(msgs)
         const events = await chatService.threadEvents(row.id).catch(() => [])
         if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
-        const order = row.listingId ? await chatService.getThreadOrder(row.id).catch(() => null) : null
-        if (!cancelled) setThreadOrder(order)
+        if (!cancelled && row.listingId) await refreshThreadDealState(row)
+        else if (!cancelled) {
+          setThreadOrder(null)
+          setThreadOrderEvents([])
+        }
         const pushes = row.listingId
           ? await chatService.threadPushDeliveries(row.id).catch(() => [])
           : []
@@ -122,7 +157,7 @@ export default function MarketplaceMessagesPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [searchParams, setSearchParams, loadThreads, user?.id, t])
+  }, [searchParams, setSearchParams, loadThreads, user?.id, t, refreshThreadDealState])
 
   /** Select thread from ?thread= when list has loaded. */
   useEffect(() => {
@@ -139,8 +174,11 @@ export default function MarketplaceMessagesPage() {
         if (!cancelled) setThreadMessages(msgs)
         const events = await chatService.threadEvents(th.id).catch(() => [])
         if (!cancelled) setThreadEvents(Array.isArray(events) ? events : [])
-        const order = th.listingId ? await chatService.getThreadOrder(th.id).catch(() => null) : null
-        if (!cancelled) setThreadOrder(order)
+        if (!cancelled && th.listingId) await refreshThreadDealState(th)
+        else if (!cancelled) {
+          setThreadOrder(null)
+          setThreadOrderEvents([])
+        }
         if (th.listingId) {
           const pushes = await chatService.threadPushDeliveries(th.id).catch(() => [])
           if (!cancelled) setPushDeliveries(Array.isArray(pushes) ? pushes : [])
@@ -152,7 +190,7 @@ export default function MarketplaceMessagesPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [threads.content, searchParams, activeThread, t])
+  }, [threads.content, searchParams, activeThread, t, refreshThreadDealState])
 
   const clearActiveThread = useCallback(() => {
     setActiveThread(null)
@@ -160,6 +198,7 @@ export default function MarketplaceMessagesPage() {
     setThreadEvents([])
     setPushDeliveries([])
     setThreadOrder(null)
+    setThreadOrderEvents([])
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.delete('thread')
@@ -181,8 +220,11 @@ export default function MarketplaceMessagesPage() {
       setThreadMessages(msgs)
       const events = await chatService.threadEvents(thread.id).catch(() => [])
       setThreadEvents(Array.isArray(events) ? events : [])
-      const order = thread.listingId ? await chatService.getThreadOrder(thread.id).catch(() => null) : null
-      setThreadOrder(order)
+      if (thread.listingId) await refreshThreadDealState(thread)
+      else {
+        setThreadOrder(null)
+        setThreadOrderEvents([])
+      }
     } catch {
       setMessage(t('marketplace.error'))
     }
@@ -197,6 +239,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.createOrderIntent(activeThread.id, { legalAccepted: true })
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderCreated'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -208,6 +251,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.simulateOrderPayment(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderPaidInHold'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -219,6 +263,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.simulateOrderRelease(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderReleased'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -230,6 +275,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.disputeOrder(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderDisputed'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -241,6 +287,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.reportOrderPayment(activeThread.id, orderPaymentRef)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderPaymentReported'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -252,6 +299,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.markOrderInTransit(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderMarkedInTransit'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -263,6 +311,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.markOrderDelivered(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderMarkedDelivered'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -274,6 +323,7 @@ export default function MarketplaceMessagesPage() {
     try {
       const order = await chatService.closeOrder(activeThread.id)
       setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
       setMessage(t('marketplace.orderClosed'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -643,12 +693,42 @@ export default function MarketplaceMessagesPage() {
                                   {t('marketplace.orderSimulateRelease')}
                                 </button>
                               )}
-                              {threadOrder.status === 'paid_in_hold' && (
+                              {(threadOrder.status === 'paid_in_hold'
+                                || threadOrder.status === 'payment_reported'
+                                || threadOrder.status === 'in_transit'
+                                || threadOrder.status === 'delivered'
+                                || threadOrder.status === 'released') && (
                                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={disputeThreadOrder}>
                                   {t('marketplace.orderDisputeCta')}
                                 </button>
                               )}
                             </div>
+                            {threadOrderEvents.length > 0 && (
+                              <details className="mt-2 pt-2 border-top">
+                                <summary className="text-muted fw-semibold" style={{ cursor: 'pointer' }}>
+                                  {t('marketplace.orderAuditTitle')}
+                                </summary>
+                                <ul className="small text-muted mt-2 mb-0 ps-3" style={{ lineHeight: 1.5 }}>
+                                  {threadOrderEvents.map((ev) => (
+                                    <li key={ev.id} className="mb-1">
+                                      <span>{ev.createdAt ? new Date(ev.createdAt).toLocaleString() : '—'} — </span>
+                                      <span>
+                                        {t(`marketplace.orderEvent.${ev.eventType}`, { defaultValue: String(ev.eventType || '') })}
+                                      </span>
+                                      {(ev.fromStatus || ev.toStatus) && (
+                                        <span>
+                                          {' '}
+                                          ({[ev.fromStatus, ev.toStatus].filter(Boolean).join(' → ')})
+                                        </span>
+                                      )}
+                                      {ev.payload && (
+                                        <div className="mt-1 text-break opacity-75">{ev.payload}</div>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
                           </>
                         )}
                       </div>

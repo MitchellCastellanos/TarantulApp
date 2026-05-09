@@ -35,6 +35,9 @@ const marketplaceService = {
     publicApi.get(`/public/marketplace/storefront/${encodeURIComponent(handle)}`).then((r) => r.data),
   getKeeperReviews: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}/reviews`).then((r) => r.data),
   addReview: (sellerUserId, payload) => api.post(`/marketplace/sellers/${sellerUserId}/reviews`, payload).then((r) => r.data),
+
+  listMyOrders: (params = {}) =>
+    api.get('/marketplace/orders/me', { params }).then((r) => r.data),
 }
 
 export default marketplaceService

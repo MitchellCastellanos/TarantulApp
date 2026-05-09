@@ -5,8 +5,10 @@ import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.MarketplaceOrder;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.entity.MarketplaceOrderEvent;
 import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
+import com.tarantulapp.repository.MarketplaceOrderEventRepository;
 import com.tarantulapp.repository.MarketplaceOrderRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,33 +19,49 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class MarketplaceOrderService {
-    private static final Set<String> ACTIVE_ORDER_STATUSES = Set.of("payment_pending", "paid_in_hold", "released", "disputed");
+    /**
+     * In-flight statuses (one marketplace order row per chat thread): do not replace the row once the deal progressed.
+     * {@code closed} is terminal; disputed/released/etc. stay immutable until dispute resolution elsewhere.
+     */
+    private static final Set<String> OPEN_PIPELINE_STATUSES = Set.of(
+            "payment_pending", "payment_reported", "paid_in_hold", "in_transit", "delivered", "released", "disputed"
+    );
     private static final Set<String> SUPPORTED_CURRENCIES = Set.of("MXN", "USD", "CAD");
     private static final int HOLD_DAYS_DEFAULT = 3;
 
     private final ChatThreadRepository chatThreadRepository;
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final MarketplaceOrderRepository marketplaceOrderRepository;
+    private final MarketplaceOrderEventRepository marketplaceOrderEventRepository;
     private final UserRepository userRepository;
     private final MarketplaceService marketplaceService;
+    private final MarketplaceOrderAuditService marketplaceOrderAuditService;
 
     public MarketplaceOrderService(ChatThreadRepository chatThreadRepository,
                                    MarketplaceListingRepository marketplaceListingRepository,
                                    MarketplaceOrderRepository marketplaceOrderRepository,
+                                   MarketplaceOrderEventRepository marketplaceOrderEventRepository,
                                    UserRepository userRepository,
-                                   MarketplaceService marketplaceService) {
+                                   MarketplaceService marketplaceService,
+                                   MarketplaceOrderAuditService marketplaceOrderAuditService) {
         this.chatThreadRepository = chatThreadRepository;
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.marketplaceOrderRepository = marketplaceOrderRepository;
+        this.marketplaceOrderEventRepository = marketplaceOrderEventRepository;
         this.userRepository = userRepository;
         this.marketplaceService = marketplaceService;
+        this.marketplaceOrderAuditService = marketplaceOrderAuditService;
     }
 
     @Transactional
@@ -61,12 +79,18 @@ public class MarketplaceOrderService {
             throw new AccessDeniedException("Solo el comprador puede iniciar la orden");
         }
         MarketplaceOrder existing = marketplaceOrderRepository.findByThreadId(threadId).orElse(null);
-        if (existing != null && ACTIVE_ORDER_STATUSES.contains(existing.getStatus())) {
-            return toDto(existing);
+        if (existing != null) {
+            if ("closed".equals(existing.getStatus())) {
+                return toDto(existing);
+            }
+            if (OPEN_PIPELINE_STATUSES.contains(existing.getStatus())) {
+                return toDto(existing);
+            }
         }
         if (!legalAccepted) {
             throw new IllegalArgumentException("ORDER_POLICY_ACCEPTANCE_REQUIRED");
         }
+        String prevStatusSnapshot = existing == null ? null : existing.getStatus();
         Map<String, Object> quote = marketplaceService.dealQuote(listing.getId(), subtotalOverride);
         MarketplaceOrder order = existing == null ? new MarketplaceOrder() : existing;
         order.setThreadId(threadId);
@@ -91,7 +115,55 @@ public class MarketplaceOrderService {
         order.setDeliveredAt(null);
         order.setClosedAt(null);
         order = marketplaceOrderRepository.save(order);
+        String eventLabel = prevStatusSnapshot == null ? "order_created" : "order_refreshed";
+        marketplaceOrderAuditService.append(order.getId(), buyerId, eventLabel, prevStatusSnapshot, order.getStatus(), null);
         return toDto(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listOrderEventsForThread(UUID actorUserId, UUID threadId) {
+        MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
+        List<MarketplaceOrderEvent> rows = marketplaceOrderEventRepository.findTop200ByOrderIdOrderByCreatedAtAsc(order.getId());
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (MarketplaceOrderEvent e : rows) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", e.getId());
+            m.put("orderId", e.getOrderId());
+            m.put("actorUserId", e.getActorUserId());
+            m.put("eventType", e.getEventType());
+            m.put("fromStatus", e.getFromStatus());
+            m.put("toStatus", e.getToStatus());
+            m.put("payload", e.getPayload());
+            m.put("createdAt", e.getCreatedAt());
+            out.add(m);
+        }
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listMyOrders(UUID actorUserId, String role, int limitRaw) {
+        int limit = Math.max(1, Math.min(limitRaw, 100));
+        String normalized = role == null ? "all" : role.trim().toLowerCase();
+        List<MarketplaceOrder> merged = new ArrayList<>();
+        if ("seller".equals(normalized) || "selling".equals(normalized)) {
+            merged.addAll(marketplaceOrderRepository.findTop100BySellerUserIdOrderByCreatedAtDesc(actorUserId));
+        } else if ("buyer".equals(normalized) || "buying".equals(normalized)) {
+            merged.addAll(marketplaceOrderRepository.findTop100ByBuyerUserIdOrderByCreatedAtDesc(actorUserId));
+        } else {
+            merged.addAll(marketplaceOrderRepository.findTop100ByBuyerUserIdOrderByCreatedAtDesc(actorUserId));
+            merged.addAll(marketplaceOrderRepository.findTop100BySellerUserIdOrderByCreatedAtDesc(actorUserId));
+        }
+        Map<UUID, MarketplaceOrder> byId = new LinkedHashMap<>();
+        for (MarketplaceOrder o : merged) {
+            byId.merge(o.getId(), o, (a, b) -> {
+                Instant ua = Objects.requireNonNullElse(a.getUpdatedAt(), Instant.EPOCH);
+                Instant ub = Objects.requireNonNullElse(b.getUpdatedAt(), Instant.EPOCH);
+                return ua.isBefore(ub) ? b : a;
+            });
+        }
+        List<MarketplaceOrder> sorted = new ArrayList<>(byId.values());
+        sorted.sort(Comparator.comparing((MarketplaceOrder o) -> Objects.requireNonNullElse(o.getUpdatedAt(), Instant.EPOCH)).reversed());
+        return sorted.stream().limit(limit).map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -112,9 +184,12 @@ public class MarketplaceOrderService {
         if (!"payment_pending".equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden no esta lista para capturar pago");
         }
+        String from = order.getStatus();
         order.setStatus("paid_in_hold");
         order.setHoldReleaseAt(Instant.now().plus(HOLD_DAYS_DEFAULT, ChronoUnit.DAYS));
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "simulate_payment_capture", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional
@@ -126,8 +201,11 @@ public class MarketplaceOrderService {
         if (!"paid_in_hold".equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden no esta en retencion");
         }
+        String from = order.getStatus();
         order.setStatus("released");
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "simulate_release", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional
@@ -139,10 +217,14 @@ public class MarketplaceOrderService {
         if (!"payment_pending".equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden no esta lista para reportar pago");
         }
+        String from = order.getStatus();
         order.setStatus("payment_reported");
         order.setPaymentReportedAt(Instant.now());
         order.setPaymentReference(trimTo(paymentReference, 160));
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "payment_reported", from, order.getStatus(),
+                order.getPaymentReference() == null ? null : ("paymentReference=" + order.getPaymentReference()));
+        return toDto(order);
     }
 
     @Transactional
@@ -154,9 +236,12 @@ public class MarketplaceOrderService {
         if (!"payment_reported".equals(order.getStatus()) && !"paid_in_hold".equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden no esta lista para marcar envio");
         }
+        String from = order.getStatus();
         order.setStatus("in_transit");
         order.setShippedAt(Instant.now());
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "marked_in_transit", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional
@@ -168,9 +253,12 @@ public class MarketplaceOrderService {
         if (!"in_transit".equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden no esta en transito");
         }
+        String from = order.getStatus();
         order.setStatus("delivered");
         order.setDeliveredAt(Instant.now());
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "delivered_confirmed", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional
@@ -183,9 +271,12 @@ public class MarketplaceOrderService {
         if (!"delivered".equals(order.getStatus()) && !"released".equals(order.getStatus())) {
             throw new IllegalArgumentException("Solo puedes cerrar ordenes entregadas/liberadas");
         }
+        String from = order.getStatus();
         order.setStatus("closed");
         order.setClosedAt(Instant.now());
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "closed", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional
@@ -198,8 +289,11 @@ public class MarketplaceOrderService {
                 && !"delivered".equals(order.getStatus())) {
             throw new IllegalArgumentException("Solo puedes disputar ordenes pagadas");
         }
+        String from = order.getStatus();
         order.setStatus("disputed");
-        return toDto(marketplaceOrderRepository.save(order));
+        order = marketplaceOrderRepository.save(order);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "disputed", from, order.getStatus(), null);
+        return toDto(order);
     }
 
     @Transactional(readOnly = true)

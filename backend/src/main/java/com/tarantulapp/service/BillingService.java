@@ -63,6 +63,7 @@ public class BillingService {
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final ProcessedWebhookEventRepository processedWebhookEventRepository;
     private final MarketplaceOrderRepository marketplaceOrderRepository;
+    private final MarketplaceOrderAuditService marketplaceOrderAuditService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /** One-time payment price for marketplace listing boost ($2); optional. */
@@ -124,7 +125,8 @@ public class BillingService {
                           AdminAccessService adminAccessService,
                           MarketplaceListingRepository marketplaceListingRepository,
                           ProcessedWebhookEventRepository processedWebhookEventRepository,
-                          MarketplaceOrderRepository marketplaceOrderRepository) {
+                          MarketplaceOrderRepository marketplaceOrderRepository,
+                          MarketplaceOrderAuditService marketplaceOrderAuditService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -135,6 +137,7 @@ public class BillingService {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.processedWebhookEventRepository = processedWebhookEventRepository;
         this.marketplaceOrderRepository = marketplaceOrderRepository;
+        this.marketplaceOrderAuditService = marketplaceOrderAuditService;
     }
 
     @Transactional(readOnly = true)
@@ -532,6 +535,7 @@ public class BillingService {
         if (order == null) return;
         if (!buyerId.equals(order.getBuyerUserId())) return;
         if (!"payment_pending".equals(order.getStatus())) return;
+        String from = order.getStatus();
         String sessionId = checkout.path("id").asText("");
         String paymentIntent = checkout.path("payment_intent").asText("");
         order.setStatus("paid_in_hold");
@@ -539,6 +543,8 @@ public class BillingService {
         order.setProviderRef(!paymentIntent.isBlank() ? paymentIntent : sessionId);
         order.setHoldReleaseAt(Instant.now().plus(3, ChronoUnit.DAYS));
         marketplaceOrderRepository.save(order);
+        String stripePayload = ("sessionId=" + sessionId + "&paymentIntent=" + paymentIntent).trim();
+        marketplaceOrderAuditService.append(order.getId(), buyerId, "stripe_checkout_completed", from, order.getStatus(), stripePayload);
         User buyer = userRepository.findById(buyerId).orElse(null);
         if (buyer != null) {
             long amountTotal = checkout.path("amount_total").asLong(0L);
