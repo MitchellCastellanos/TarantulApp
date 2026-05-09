@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.util.SecurityHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,13 +26,16 @@ class MarketplaceControllerTest {
     private MarketplaceService marketplaceService;
 
     @Mock
+    private MarketplaceOrderService marketplaceOrderService;
+
+    @Mock
     private SecurityHelper securityHelper;
 
     private MarketplaceController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new MarketplaceController(marketplaceService, securityHelper);
+        controller = new MarketplaceController(marketplaceService, marketplaceOrderService, securityHelper);
     }
 
     @Test
