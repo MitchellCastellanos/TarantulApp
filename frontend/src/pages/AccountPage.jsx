@@ -81,7 +81,7 @@ export default function AccountPage() {
   const googleDeleteBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.16'
+  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.17'
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
 
   const loadBilling = useCallback(() => {
@@ -270,6 +270,18 @@ export default function AccountPage() {
   const handleProfilePhotoUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    
+    // Basic validation for bug #7
+    const MAX_SIZE = 8 * 1024 * 1024 // 8MB
+    if (file.size > MAX_SIZE) {
+      setProfileMessage(t('social.uploadErrorSize', 'File too large (max 8MB)'))
+      return
+    }
+    if (file.size < 100) {
+      setProfileMessage(t('social.uploadErrorSmall', 'File too small'))
+      return
+    }
+
     setPhotoUploading(true)
     setProfileMessage('')
     try {
@@ -478,7 +490,7 @@ export default function AccountPage() {
                     {t('account.profile.collectionPublicLabel')}
                   </label>
                 </div>
-                <button className="btn btn-sm btn-outline-light" disabled={profileSaving}>
+                <button className="btn btn-sm btn-dark px-4" disabled={profileSaving}>
                   {profileSaving ? t('common.saving') : t('common.save')}
                 </button>
                 {profileMessage && <span className="small text-muted">{profileMessage}</span>}

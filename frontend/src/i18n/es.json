@@ -1733,7 +1733,7 @@
     "priceOr": "o",
     "priceYearly": "$49.99 USD / año",
     "priceSaveLabel": "≈17% vs 12× mensual",
-    "priceYearlyNote": "Variables en backend: STRIPE_PRICE_ID_MONTHLY_* y STRIPE_PRICE_ID_YEARLY_* por región (respaldo: STRIPE_PRICE_ID_MONTHLY / YEARLY).",
+    "priceYearlyNote": "Elige el plan que mejor se adapte a tu colección.",
     "checkoutSuccessTitle": "🎉 ¡Bienvenido a Pro!",
     "checkoutSuccessBody": "Tu plan fue actualizado. Funciones Pro y Vendor/Business ya están activas.",
     "checkoutUpdating": "Confirmando tu suscripción…",

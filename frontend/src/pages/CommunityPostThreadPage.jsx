@@ -41,17 +41,22 @@ export default function CommunityPostThreadPage() {
     load().catch(() => setErr(t('social.loadError')))
   }, [postId, t])
 
+  const [liking, setLiking] = useState(false)
   const onToggleLike = async () => {
     if (!token) {
       navigate('/login', { state: { redirectAfterAuth: `/community/post/${postId}` } })
       return
     }
+    if (liking) return
+    setLiking(true)
     setErr('')
     try {
       const updated = await communityService.toggleLike(postId)
       setPost((prev) => ({ ...(prev || {}), ...updated }))
     } catch {
       setErr(t('social.saveError'))
+    } finally {
+      setLiking(false)
     }
   }
 

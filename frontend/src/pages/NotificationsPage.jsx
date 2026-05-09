@@ -110,9 +110,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="container py-4" style={{ maxWidth: 640 }}>
+    <div>
       <Navbar />
-      <header className="mb-4">
+      <div className="container py-4" style={{ maxWidth: 820 }}>
+        <header className="mb-4">
         <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
           <div>
             <h1 className="h4 mb-1">{t('notificationsScreen.pageTitle')}</h1>
@@ -205,6 +206,7 @@ export default function NotificationsPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -77,7 +77,11 @@ export default function ProPage() {
   }
 
   useEffect(() => {
-    if (user) loadBilling()
+    if (user) {
+      loadBilling().finally(() => {
+        setLoadingCheckout(false)
+      })
+    }
   }, [user?.id])
 
   useEffect(() => {
@@ -452,7 +456,11 @@ export default function ProPage() {
                     <>
                       <div>
                         <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
-                        <p className="small text-muted mb-2">{t('pro.checkoutRegionHint')}</p>
+                        <p className="small text-muted mb-2">
+                          {t('pro.checkoutRegionHint')}
+                          <br />
+                          <strong>{t('pro.billingRegionManualLabel')}: {t(`pro.regions.${billingRegion}.countryName`)}</strong>
+                        </p>
                         <details className="small mb-3">
                           <summary className="text-muted" style={{ cursor: 'pointer' }}>
                             {t('pro.changeBillingRegion')}

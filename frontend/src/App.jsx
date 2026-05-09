@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation,
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setUnauthorizedHandler } from './services/authSession'
 import BrandName from './components/BrandName'
+import ScrollToTop from './components/ScrollToTop'
 // Eager: critical first paint surfaces (login + public discovery + branding shell)
 import LoginPage from './pages/LoginPage'
 import DiscoverPage from './pages/DiscoverPage'
@@ -293,6 +294,7 @@ export default function App() {
         }}
       >
         <AuthSessionBridge />
+        <ScrollToTop />
         <Suspense fallback={null}>
           <AppRoutes />
         </Suspense>

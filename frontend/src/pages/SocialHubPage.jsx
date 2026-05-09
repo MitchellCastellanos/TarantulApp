@@ -330,11 +330,14 @@ export default function SocialHubPage() {
     }
   }
 
+  const [likingPostIds, setLikingPostIds] = useState(new Set())
   const onToggleLike = async (postId) => {
     if (!token) {
       navigate('/login', { state: { redirectAfterAuth: '/community' } })
       return
     }
+    if (likingPostIds.has(postId)) return
+    setLikingPostIds((prev) => new Set(prev).add(postId))
     setErr('')
     try {
       const updated = await communityService.toggleLike(postId)
@@ -344,6 +347,12 @@ export default function SocialHubPage() {
       setMine((m) => ({ ...m, content: merge(m.content) }))
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('social.saveError'))
+    } finally {
+      setLikingPostIds((prev) => {
+        const next = new Set(prev)
+        next.delete(postId)
+        return next
+      })
     }
   }
 
