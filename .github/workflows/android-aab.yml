@@ -45,7 +45,7 @@ jobs:
       - name: Decode Keystore
         working-directory: frontend/android
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release-keystore.jks
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/release-keystore.jks
 
       - name: Create key.properties
         working-directory: frontend/android
