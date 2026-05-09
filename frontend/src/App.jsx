@@ -10,6 +10,7 @@ import DiscoverPage from './pages/DiscoverPage'
 import { useTranslation } from 'react-i18next'
 import { getStoredTheme, setStoredTheme } from './utils/themePreference'
 import RateAppPrompt from './components/RateAppPrompt'
+import AndroidUpdateBanner from './components/AndroidUpdateBanner'
 import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
@@ -300,6 +301,7 @@ export default function App() {
         </Suspense>
         <BugReportFAB />
         <BetaTesterAgreementModal />
+        <AndroidUpdateBanner />
         <RateAppPrompt />
         <Footer />
       </BrowserRouter>

@@ -2227,6 +2227,13 @@
     "never": "No volver a preguntar",
     "close": "Cerrar"
   },
+  "appUpdate": {
+    "title": "Hay una nueva versión",
+    "body": "Actualiza cuando puedas para recibir correcciones y mejoras.",
+    "update": "Actualizar",
+    "later": "Más tarde",
+    "versionHint": "Última en Play: {{version}}"
+  },
   "account": {
     "title": "Cuenta",
     "sections": {

@@ -2216,6 +2216,13 @@
     "never": "Ne plus demander",
     "close": "Fermer"
   },
+  "appUpdate": {
+    "title": "Une nouvelle version est disponible",
+    "body": "Mettez à jour quand vous voulez pour les derniers correctifs et améliorations.",
+    "update": "Mettre à jour",
+    "later": "Plus tard",
+    "versionHint": "Dernière sur Play : {{version}}"
+  },
   "account": {
     "title": "Compte",
     "sections": {

@@ -2245,6 +2245,13 @@
     "never": "Don't ask again",
     "close": "Close"
   },
+  "appUpdate": {
+    "title": "A new version is available",
+    "body": "Update when you can to get the latest fixes and improvements.",
+    "update": "Update",
+    "later": "Later",
+    "versionHint": "Latest on Play: {{version}}"
+  },
   "account": {
     "title": "Account",
     "sections": {
