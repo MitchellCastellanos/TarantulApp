@@ -1,41 +1,30 @@
--- Idempotent: inserts 8 storefront slugs expected by local_seed_marketplace_screenshots.sql
--- when app.official-vendors.seed-on-startup is false (default local).
+-- Idempotent: inserts placeholder "Become an official partner" recruitment cards.
+-- Used as the official vendor strip in local dev / screenshots so the marketplace
+-- has content while every real partner slot is still open for application.
 begin;
 insert into official_vendors (
   slug, name, country, state, city, website_url, national_shipping, ships_to_countries,
-  influence_score, note, badge, enabled, partner_program_tier, listing_import_enabled
+  influence_score, note, badge, enabled, partner_program_tier, listing_import_enabled, is_demo
 ) values
-('fear-not-tarantulas', 'Fear Not Tarantulas', 'United States', 'Virginia', 'Virginia Beach',
- 'https://www.fearnottarantulas.com', true, 'United States,Mexico,Canada', 93,
- 'Launch cohort founding partner · national shipping footprint across North America.',
- 'Founding partner', true, 'STRATEGIC_FOUNDER', true),
-('swifts-invertebrates', 'Swift''s Invertebrates', 'United States', 'Mississippi', 'Little Rock',
- 'https://www.swiftinverts.com', true, 'United States', 88,
- 'Certified breeder — deep catalog with consistent shipping standards.',
- 'Verified partner', true, 'STRATEGIC_PARTNER', true),
-('spider-shoppe', 'Spider Shoppe', 'United States', 'Washington', 'Tacoma',
- 'https://spidershoppe.com', true, 'United States', 84,
- 'Trusted Pacific Northwest storefront with proactive customer support.',
- 'Verified partner', true, 'STRATEGIC_PARTNER', true),
-('pinchers-pokies', 'Pinchers & Pokies Exotics', 'United States', 'South Carolina', 'Summerville',
- 'https://www.pinchersandpokies.com', true, 'United States', 82,
- 'Community-forward seller with specialization in arboreal species.',
- 'Verified partner', true, 'STRATEGIC_PARTNER', true),
-('primal-fear', 'Primal Fear Tarantulas', 'United States', 'California', 'Los Angeles',
- 'https://primalfeartarantulas.com', true, 'United States', 78,
- 'Southern California breeder with curated availability updates.',
- 'Verified partner', true, 'STRATEGIC_PARTNER', true),
-('tarantula-canada', 'Tarantula Canada', 'Canada', 'Quebec', 'Montreal',
- 'https://www.tarantulacanada.ca', true, 'Canada', 90,
- 'Founding partner serving Canada-wide shipping with bilingual support.',
- 'Founding partner', true, 'STRATEGIC_FOUNDER', true),
-('tarantulas-de-mexico', 'Tarantulas de México', 'Mexico', 'Jalisco', 'Zapopan',
- 'http://www.tarantulasdemexico.com', true, 'Mexico', 91,
- 'Founding cohort · legally operated breeding hub and education-first listings.',
- 'Founding partner', true, 'STRATEGIC_FOUNDER', true),
-('mexico-exotico', 'México Exótico (PIMVS)', 'Mexico', 'CDMX', 'Ciudad de México',
- 'https://pimvsmexicoexotico.wixsite.com/pimvsmexicoexotico', true, 'Mexico', 79,
- 'Certified partner focused on conservation-aligned traceability.',
- 'Verified partner', true, 'STRATEGIC_PARTNER', true)
+('become-partner-us-breeder', 'Are you a U.S. breeder?', 'United States', null, null,
+ 'https://tarantulapp.com/marketplace#vendor-activation', true, 'United States', 95,
+ 'This featured spot is open. Apply to become an official partner and get listed in front of every U.S. keeper.',
+ 'Open spot', true, null, false, false),
+('become-partner-mexico-breeder', 'Â¿Eres breeder en MÃ©xico?', 'Mexico', null, null,
+ 'https://tarantulapp.com/marketplace#vendor-activation', true, 'Mexico', 94,
+ 'Este lugar destacado estÃ¡ disponible. Aplica para ser partner oficial y aparecer aquÃ­.',
+ 'Lugar disponible', true, null, false, false),
+('become-partner-canada-breeder', 'Breeder in Canada?', 'Canada', null, null,
+ 'https://tarantulapp.com/marketplace#vendor-activation', true, 'Canada', 93,
+ 'This featured slot is open for a vetted Canadian breeder or shop. Apply to claim it.',
+ 'Open spot', true, null, false, false),
+('become-partner-exotic-shop', 'Run an exotic invert shop?', 'United States', null, null,
+ 'https://tarantulapp.com/marketplace#vendor-activation', true, 'United States,Mexico,Canada', 92,
+ 'Showcase your storefront here. Apply for the official partner program in minutes â€” our team reviews every request.',
+ 'Open spot', true, null, false, false),
+('become-partner-international', 'Ship internationally?', 'International', null, null,
+ 'https://tarantulapp.com/marketplace#vendor-activation', true, 'United States,Mexico,Canada', 91,
+ 'Cross-border breeders welcome. Submit your operation to be reviewed for verified partner status.',
+ 'Open spot', true, null, false, false)
 on conflict (slug) do nothing;
 commit;

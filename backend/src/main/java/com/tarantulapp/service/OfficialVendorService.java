@@ -229,44 +229,31 @@ public class OfficialVendorService {
 
     private void ensureSeedData() {
         if (officialVendorRepository.count() > 0) return;
-        officialVendorRepository.save(seedVendor("fear-not-tarantulas", "Fear Not Tarantulas", "United States", "Virginia", "Virginia Beach",
-                "https://www.fearnottarantulas.com", true, "United States,Mexico,Canada", 93,
-                "Launch cohort founding partner · national shipping footprint across North America.",
-                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
-        officialVendorRepository.save(seedVendor("swifts-invertebrates", "Swift's Invertebrates", "United States", "Mississippi", "Little Rock",
-                "https://www.swiftinverts.com", true, "United States", 88,
-                "Certified breeder — deep catalog with consistent shipping standards.",
-                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
-        officialVendorRepository.save(seedVendor("spider-shoppe", "Spider Shoppe", "United States", "Washington", "Tacoma",
-                "https://spidershoppe.com", true, "United States", 84,
-                "Trusted Pacific Northwest storefront with proactive customer support.",
-                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
-        officialVendorRepository.save(seedVendor("pinchers-pokies", "Pinchers & Pokies Exotics", "United States", "South Carolina", "Summerville",
-                "https://www.pinchersandpokies.com", true, "United States", 82,
-                "Community-forward seller with specialization in arboreal species.",
-                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
-        officialVendorRepository.save(seedVendor("primal-fear", "Primal Fear Tarantulas", "United States", "California", "Los Angeles",
-                "https://primalfeartarantulas.com", true, "United States", 78,
-                "Southern California breeder with curated availability updates.",
-                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
-        officialVendorRepository.save(seedVendor("tarantula-canada", "Tarantula Canada", "Canada", "Quebec", "Montreal",
-                "https://www.tarantulacanada.ca", true, "Canada", 90,
-                "Founding partner serving Canada-wide shipping with bilingual support.",
-                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
-        officialVendorRepository.save(seedVendor("tarantulas-de-mexico", "Tarantulas de México", "Mexico", "Jalisco", "Zapopan",
-                "http://www.tarantulasdemexico.com", true, "Mexico", 91,
-                "Founding cohort · legally operated breeding hub and education-first listings.",
-                PartnerProgramTier.STRATEGIC_FOUNDER, "Founding partner", true));
-        officialVendorRepository.save(seedVendor("mexico-exotico", "México Exótico (PIMVS)", "Mexico", "CDMX", "Ciudad de México",
-                "https://pimvsmexicoexotico.wixsite.com/pimvsmexicoexotico", true, "Mexico", 79,
-                "Certified partner focused on conservation-aligned traceability.",
-                PartnerProgramTier.STRATEGIC_PARTNER, "Verified partner", true));
+        officialVendorRepository.save(seedVendor("become-partner-us-breeder", "Are you a U.S. breeder?", "United States", null, null,
+                "https://tarantulapp.com/marketplace#vendor-activation", true, "United States", 95,
+                "This featured spot is open. Apply to become an official partner and get listed in front of every U.S. keeper.",
+                "Open spot"));
+        officialVendorRepository.save(seedVendor("become-partner-mexico-breeder", "¿Eres breeder en México?", "Mexico", null, null,
+                "https://tarantulapp.com/marketplace#vendor-activation", true, "Mexico", 94,
+                "Este lugar destacado está disponible. Aplica para ser partner oficial y aparecer aquí.",
+                "Lugar disponible"));
+        officialVendorRepository.save(seedVendor("become-partner-canada-breeder", "Breeder in Canada?", "Canada", null, null,
+                "https://tarantulapp.com/marketplace#vendor-activation", true, "Canada", 93,
+                "This featured slot is open for a vetted Canadian breeder or shop. Apply to claim it.",
+                "Open spot"));
+        officialVendorRepository.save(seedVendor("become-partner-exotic-shop", "Run an exotic invert shop?", "United States", null, null,
+                "https://tarantulapp.com/marketplace#vendor-activation", true, "United States,Mexico,Canada", 92,
+                "Showcase your storefront here. Apply for the official partner program in minutes — our team reviews every request.",
+                "Open spot"));
+        officialVendorRepository.save(seedVendor("become-partner-international", "Ship internationally?", "International", null, null,
+                "https://tarantulapp.com/marketplace#vendor-activation", true, "United States,Mexico,Canada", 91,
+                "Cross-border breeders welcome. Submit your operation to be reviewed for verified partner status.",
+                "Open spot"));
     }
 
     private OfficialVendor seedVendor(String slug, String name, String country, String state, String city,
                                       String websiteUrl, boolean nationalShipping, String shipsToCountries,
-                                      int influenceScore, String note,
-                                      PartnerProgramTier tier, String badge, boolean listingImportEnabled) {
+                                      int influenceScore, String note, String badge) {
         OfficialVendor v = new OfficialVendor();
         v.setSlug(slug);
         v.setName(name);
@@ -280,8 +267,8 @@ public class OfficialVendorService {
         v.setBadge(badge);
         v.setNote(note);
         v.setEnabled(true);
-        v.setPartnerProgramTier(tier);
-        v.setListingImportEnabled(listingImportEnabled);
+        v.setPartnerProgramTier(null);
+        v.setListingImportEnabled(false);
         v.setIsDemo(false);
         return v;
     }
