@@ -95,8 +95,6 @@ public class FileStorageService {
         Map<String, Object> params = ObjectUtils.asMap(
                 "folder", "tarantulapp/" + sanitizeSubfolder(subfolder),
                 "resource_type", "image",
-                // Cloudinary will reject non-image bytes too, but we already checked magic.
-                "format", "auto",
                 // Cap output dimensions; protects bandwidth and downstream rendering.
                 "transformation", new Transformation()
                         .quality("auto")
