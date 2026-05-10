@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "android:bump": "node scripts/bump-android-version.cjs",
     "dev": "vite",
     "build": "vite build",
     "build:android-emulator": "vite build --mode android-emulator",
