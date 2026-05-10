@@ -28,7 +28,7 @@ After these code changes, you must build a new version of your Android applicati
 
 Once your new build is processed and recognized by the Play Console, you will be able to create and manage your subscription products.
 
-*   **Create Subscription Product**: Create a new subscription product with the Product ID: `tarantulapp_pro_monthly`. This ID must exactly match the one used in your backend configuration and the `VITE_ANDROID_PLAY_PRODUCT_ID` environment variable (if set).
+*   **Create Subscription Product**: Create a new subscription product with the Product ID: `tarantulapp_pro`. This ID must exactly match the one used in your backend configuration and the `VITE_ANDROID_PLAY_PRODUCT_ID` environment variable (if set).
 *   **Configure Product Details**: Set up the pricing, trial periods (if any), and other details for your subscription product.
 
 ### 3. Set Up Google Cloud Service Account for Backend Verification

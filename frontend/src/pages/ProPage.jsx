@@ -175,7 +175,7 @@ export default function ProPage() {
     }
 
     const { store, ProductType, Platform } = window.CdvPurchase
-    const productId = import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || 'tarantulapp_pro_monthly'
+    const productId = import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || 'tarantulapp_pro'
 
     setAndroidSyncing(true)
     setAndroidMessage(t('pro.androidStartingPurchase'))
@@ -222,11 +222,25 @@ export default function ProPage() {
         if (product && product.canPurchase) {
           product.getOffer().order()
         } else {
-          setAndroidMessage(t('pro.androidProductUnavailable'))
+          console.warn('[Billing] Product not found or not purchasable:', productId)
+          // Log to Sentry as requested
+          import('../utils/observability').then(({ Sentry }) => {
+            Sentry.captureMessage('Pro temporarily unavailable: product missing', {
+              level: 'warning',
+              extra: { productId, storeState: store.state }
+            })
+          })
+          setAndroidMessage(t('pro.androidProductUnavailable', 'Pro temporarily unavailable'))
           setAndroidSyncing(false)
         }
       })
       .catch((err) => {
+        console.error('[Billing] Store initialization error:', err)
+        import('../utils/observability').then(({ Sentry }) => {
+          Sentry.captureException(err, {
+            extra: { productId, billingCode: err.code }
+          })
+        })
         setAndroidMessage(err.message)
         setAndroidSyncing(false)
       })

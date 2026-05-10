@@ -91,7 +91,7 @@ curl -i -X POST https://api.tarantulapp.com/api/billing/webhook \
 # 2. Google Play en prod sin server-side verify -> rechaza
 curl -i -X POST https://api.tarantulapp.com/api/billing/google-play/verify \
   -H "Authorization: Bearer $JWT" \
-  -d '{"purchaseToken":"test_token","productId":"tarantulapp_pro_monthly"}'
+  -d '{"purchaseToken":"test_token","productId":"tarantulapp_pro"}'
 # -> 400 {"error":"GOOGLE_PLAY_STUB_DISABLED_IN_PRODUCTION"}
 
 # 3. Verificar tabla idempotencia (admin)

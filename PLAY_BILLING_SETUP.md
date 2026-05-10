@@ -21,7 +21,7 @@ Add these variables in your backend environment:
 - `GOOGLE_PLAY_BILLING_MODE=stub`
 - `GOOGLE_PLAY_BILLING_ALLOW_TEST_TOKENS=true`
 - `GOOGLE_PLAY_PACKAGE_NAME=com.tarantulapp.app`
-- `GOOGLE_PLAY_SUBSCRIPTION_PRODUCT_ID=tarantulapp_pro_monthly`
+- `GOOGLE_PLAY_SUBSCRIPTION_PRODUCT_ID=tarantulapp_pro`
 
 ### Stub test token format
 
@@ -39,7 +39,7 @@ Example token:
 
 1. Log into Android app with a valid user.
 2. Open `Pro` page.
-3. Enter product id (example: `tarantulapp_pro_monthly`).
+3. Enter product id (example: `tarantulapp_pro`).
 4. Enter token (example: `test_first_android_purchase_001`).
 5. Click `Sync Android purchase`.
 6. Account should switch to `PRO`.
