@@ -103,13 +103,14 @@ jobs:
         working-directory: frontend/android
         run: chmod +x gradlew
 
-      # versionCode en Play debe subir siempre. github.run_number solo suele ser bajo (1,2,…);
-      # un offset fijo evita colisión con versiones ya subidas (p. ej. 24) cuando run_number < 24.
+      # versionCode en Play debe subir siempre. run_number solo suele ser bajo (1,2,…);
+      # offset fijo evita colisión con builds ya publicados. Sumamos en bash (GITHUB_RUN_NUMBER)
+      # porque la expresión ${{ github.run_number + 1000 }} falla al validar el workflow en GitHub.
       - name: Build AAB
         working-directory: frontend/android
-        env:
-          VERSION_CODE: ${{ github.run_number + 1000 }}
-        run: ./gradlew bundleRelease
+        run: |
+          export VERSION_CODE=$((GITHUB_RUN_NUMBER + 1000))
+          ./gradlew bundleRelease
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
