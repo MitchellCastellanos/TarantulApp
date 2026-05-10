@@ -2,6 +2,31 @@ name: Build Android AAB
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_play:
+        type: boolean
+        description: Subir el AAB a Google Play (necesitas el secret GOOGLE_PLAY_SERVICE_ACCOUNT_JSON y permisos en Play Console)
+        default: false
+      play_track:
+        type: choice
+        description: Carril API (internal / alpha / beta / production). Prueba cerrada suele ser alpha o beta según tu consola.
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+        default: alpha
+      play_release_status:
+        type: choice
+        description: completed = publicar en ese carril; draft = subir sin completar el release
+        options:
+          - completed
+          - draft
+        default: completed
+      upload_to_drive:
+        type: boolean
+        description: Copiar el AAB a una carpeta de Google Drive (secret GOOGLE_DRIVE_FOLDER_ID + misma cuenta de servicio con Drive API)
+        default: false
   push:
     branches:
       - main
@@ -29,8 +54,23 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Vite inyecta VITE_* en build time. Sin VITE_API_URL, axios usa "/api" → en Capacitor eso apunta al WebView (localhost), no a Railway.
+      # Define los mismos valores que en Vercel (Production) para que el AAB coincida con la web.
       - name: Build web assets (Vite → dist)
         working-directory: frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_PUBLIC_SITE_URL: ${{ secrets.VITE_PUBLIC_SITE_URL }}
+          VITE_PUBLIC_INVITE_ONLY: ${{ secrets.VITE_PUBLIC_INVITE_ONLY }}
+          VITE_ANDROID_PLAY_STORE_URL: ${{ secrets.VITE_ANDROID_PLAY_STORE_URL }}
+          VITE_ANDROID_PLAY_PRODUCT_ID: ${{ secrets.VITE_ANDROID_PLAY_PRODUCT_ID }}
+          VITE_HCAPTCHA_SITE_KEY: ${{ secrets.VITE_HCAPTCHA_SITE_KEY }}
+          VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION }}
+          VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_ENVIRONMENT: ${{ secrets.VITE_SENTRY_ENVIRONMENT }}
+          VITE_SENTRY_RELEASE: ${{ secrets.VITE_SENTRY_RELEASE }}
         run: npm run build
 
       - name: Sync Capacitor Android
@@ -72,3 +112,25 @@ jobs:
         with:
           name: app-release-aab
           path: frontend/android/app/build/outputs/bundle/release/*.aab
+
+      # Requiere: JSON de cuenta de servicio + Play Console → Usuarios → invitar el email de la SA con permiso de releases.
+      # API: https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com
+      - name: Upload to Google Play
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_play == 'true' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.tarantulapp.app
+          releaseFiles: frontend/android/app/build/outputs/bundle/release/*.aab
+          tracks: ${{ github.event.inputs.play_track }}
+          status: ${{ github.event.inputs.play_release_status }}
+
+      # Misma clave JSON que Play si habilitas Drive API y compartes la carpeta con el email de la cuenta de servicio.
+      - name: Upload AAB to Google Drive
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_drive == 'true' }}
+        env:
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          python3 -m pip install --user google-api-python-client google-auth-httplib2
+          python3 .github/scripts/upload_aab_to_drive.py

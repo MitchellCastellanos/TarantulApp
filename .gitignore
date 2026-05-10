@@ -14,6 +14,8 @@ frontend/playwright-report/
 .env
 *.env
 backend/src/main/resources/application-local.properties
+# GCP downloaded service-account JSON at repo root (never commit)
+project-*.json
 
 # ─── Uploads (fotos) ────────────────────────────────────────
 uploads/
