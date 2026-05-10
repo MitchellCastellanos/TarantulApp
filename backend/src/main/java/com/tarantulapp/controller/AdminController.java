@@ -1,6 +1,7 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.entity.BugReport;
 import com.tarantulapp.entity.BetaApplication;
 import com.tarantulapp.entity.BetaEmailSend;
@@ -12,6 +13,7 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
+import com.tarantulapp.service.BetaTesterGoogleGroupSyncService;
 import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.service.OfficialVendorService;
@@ -38,6 +40,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -65,6 +68,7 @@ public class AdminController {
     private final AuthService authService;
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
+    private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -91,7 +95,8 @@ public class AdminController {
                            BetaEmailSendRepository betaEmailSendRepository,
                            AuthService authService,
                            EmailService emailService,
-                           PlanAccessService planAccessService) {
+                           PlanAccessService planAccessService,
+                           BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -106,6 +111,7 @@ public class AdminController {
         this.authService = authService;
         this.emailService = emailService;
         this.planAccessService = planAccessService;
+        this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -133,6 +139,9 @@ public class AdminController {
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
     record SendBetaWelcomeEmailRequest(String locale, String plainPassword) {}
+
+    /** {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end). */
+    record AdminSetPlanRequest(String plan, Integer extendTrialDays) {}
 
     record MailTestSendRequest(@NotBlank @Email String to) {}
 
@@ -413,7 +422,11 @@ public class AdminController {
             }
         }
         userRepository.save(user);
-        return ResponseEntity.ok(mapBetaTester(user));
+        if (Boolean.TRUE.equals(user.getIsBetaTester())) {
+            betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(user.getId());
+        }
+        User refreshedUser = userRepository.findById(user.getId()).orElse(user);
+        return ResponseEntity.ok(mapBetaTester(refreshedUser));
     }
 
     @PatchMapping("/users/{id}/verified-breeder")
@@ -430,6 +443,26 @@ public class AdminController {
         out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
         out.put("verifiedBreederAt", user.getVerifiedBreederAt());
         return ResponseEntity.ok(out);
+    }
+
+    @PatchMapping("/users/{id}/plan")
+    public ResponseEntity<Map<String, Object>> adminSetUserPlan(@PathVariable UUID id,
+                                                                @RequestBody(required = false) AdminSetPlanRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        if (req != null && req.plan() != null && !req.plan().isBlank()) {
+            user.setPlan(UserPlan.valueOf(req.plan().trim().toUpperCase(Locale.ROOT)));
+        }
+        if (req != null && req.extendTrialDays() != null && req.extendTrialDays() > 0) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime base = user.getTrialEndsAt() != null && user.getTrialEndsAt().isAfter(now)
+                    ? user.getTrialEndsAt()
+                    : now;
+            user.setTrialEndsAt(base.plusDays(req.extendTrialDays()));
+        }
+        userRepository.save(user);
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        return ResponseEntity.ok(mapUser(user, counts));
     }
 
     @PostMapping("/users/{id}/password")
@@ -462,8 +495,9 @@ public class AdminController {
         }
         AuthService.AdminUserPasswordResult result = authService.adminProvisionBetaTester(
                 req.identifier(), req.newPassword(), gen, req.displayName());
+        User provisioned = userRepository.findById(result.user().getId()).orElse(result.user());
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("user", mapBetaTester(result.user()));
+        out.put("user", mapBetaTester(provisioned));
         out.put("created", result.created());
         if (gen) {
             out.put("plainPassword", result.plainPassword());
@@ -578,6 +612,7 @@ public class AdminController {
         app.setReviewedAt(LocalDateTime.now());
         String plainPassword = null;
         User approvedUser = null;
+        boolean approvedViaProvision = false;
         if ("approve".equals(action)) {
             boolean gen = req.generatePassword() == null || Boolean.TRUE.equals(req.generatePassword());
             User user = null;
@@ -607,6 +642,7 @@ public class AdminController {
                         null,
                         true,
                         app.getName());
+                approvedViaProvision = true;
                 plainPassword = res.plainPassword();
                 approvedUser = res.user();
             }
@@ -615,6 +651,12 @@ public class AdminController {
             app.setApprovedUserId(approvedUser.getId());
         }
         betaApplicationRepository.save(app);
+        if ("approve".equals(action) && approvedUser != null && !approvedViaProvision) {
+            betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(approvedUser.getId());
+        }
+        if (approvedUser != null) {
+            approvedUser = userRepository.findById(approvedUser.getId()).orElse(approvedUser);
+        }
         Map<String, Object> out = new LinkedHashMap<>(mapBetaApplication(app));
         if (plainPassword != null) {
             out.put("plainPassword", plainPassword);
@@ -820,6 +862,9 @@ public class AdminController {
                     .orElse("");
         }
         out.put("betaDevices", betaDevices);
+        out.put("googleGroupSyncStatus", user.getGoogleGroupSyncStatus() == null ? "" : user.getGoogleGroupSyncStatus());
+        out.put("googleGroupSyncLastError",
+                user.getGoogleGroupSyncLastError() == null ? "" : user.getGoogleGroupSyncLastError());
         return out;
     }
 

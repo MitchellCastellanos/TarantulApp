@@ -5,7 +5,6 @@ import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
 import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
-import logsService from '../services/logsService'
 import moderationService from '../services/moderationService'
 import FangPanel from '../components/FangPanel'
 import { publicUrl } from '../utils/publicAssets.js'
@@ -171,17 +170,35 @@ export default function PublicProfilePage() {
     }
   }
 
-  const saveFeed  = () => doSave(() =>
-    logsService.addFeeding(profile.tarantulaId, { ...feed, fedAt: new Date().toISOString(), quantity: Number(feed.quantity) }))
-  const saveMolt  = () => doSave(() =>
-    logsService.addMolt(profile.tarantulaId, {
-      moltedAt: new Date().toISOString(),
-      preSizeCm:  molt.preSizeCm  ? Number(molt.preSizeCm)  : null,
-      postSizeCm: molt.postSizeCm ? Number(molt.postSizeCm) : null,
-      notes: molt.notes || null,
-    }))
-  const saveBehav = () => doSave(() =>
-    logsService.addBehavior(profile.tarantulaId, { ...behav, loggedAt: new Date().toISOString() }))
+  const saveFeed = () =>
+    doSave(() =>
+      api.post(`/public/t/${shortId}/owner/feedings`, {
+        fedAt: new Date().toISOString(),
+        preyType: feed.preyType,
+        preySize: feed.preySize,
+        quantity: Number(feed.quantity),
+        accepted: feed.accepted,
+        notes: feed.notes || null,
+        publishToFeed: false,
+      }),
+    )
+  const saveMolt = () =>
+    doSave(() =>
+      api.post(`/public/t/${shortId}/owner/molts`, {
+        moltedAt: new Date().toISOString(),
+        preSizeCm: molt.preSizeCm ? Number(molt.preSizeCm) : null,
+        postSizeCm: molt.postSizeCm ? Number(molt.postSizeCm) : null,
+        notes: molt.notes || null,
+      }),
+    )
+  const saveBehav = () =>
+    doSave(() =>
+      api.post(`/public/t/${shortId}/owner/behaviors`, {
+        loggedAt: new Date().toISOString(),
+        mood: behav.mood,
+        notes: behav.notes || null,
+      }),
+    )
 
   const eventGlyph = (type) => {
     if (type === 'feeding') return t('timeline.glyphFeeding')
@@ -297,8 +314,15 @@ export default function PublicProfilePage() {
 
           <div className="card-body p-4">
             <div className="d-flex justify-content-between align-items-start mb-2">
-              <h4 className="fw-bold mb-0">{profile.name}</h4>
-              <div className="d-flex align-items-center gap-2">
+              <div className="min-w-0">
+                <h4 className="fw-bold mb-0">{profile.name}</h4>
+                {profile.viewerIsOwner && (
+                  <div className="small text-muted mt-1">
+                    🕷️ {t('public.spoodsReceived', { count: profile.spoodCount ?? 0 })}
+                  </div>
+                )}
+              </div>
+              <div className="d-flex align-items-center gap-2 flex-shrink-0">
                 {!profile.viewerIsOwner && (
                   <button
                     type="button"

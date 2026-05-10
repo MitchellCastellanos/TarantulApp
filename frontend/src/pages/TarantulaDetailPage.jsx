@@ -20,7 +20,6 @@ import tarantulaService from '../services/tarantulaService'
 import logsService from '../services/logsService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
-import { useAppTheme } from '../hooks/useAppTheme'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone, formatDateTimeInUserZone } from '../utils/dateFormat'
 import { exportTarantulaPdf } from '../services/pdfExportService'
@@ -39,6 +38,8 @@ import { detectFeedingPreMoltSignal } from '../utils/preMoltSignals'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const REMINDER_TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
+
+const CARD_CORNER_MARK = publicUrl('tarantula-card-corner-mark.png')
 
 function reminderOverdue(iso) {
   return new Date(iso) < new Date()
@@ -87,7 +88,6 @@ export default function TarantulaDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
-  const theme = useAppTheme()
   const { user, token } = useAuth()
   const hasProFeatures = user?.hasProFeatures === true
 
@@ -296,8 +296,6 @@ export default function TarantulaDetailPage() {
   const displayProfilePhoto = tarantula.profilePhoto
     ? imgUrl(tarantula.profilePhoto)
     : imgUrl(species?.referencePhotoUrl) || spiderPlaceholder
-  const brandLogoSrc = publicUrl(theme === 'light' ? 'logo-black.png' : 'logo-neon.png')
-
   // ─── Terrarium recommendation ──────────────────────────────────────────────
   const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
 
@@ -363,7 +361,18 @@ export default function TarantulaDetailPage() {
       <div className="container mt-4 ta-premium-shell ta-premium-shell--detail-wide">
         {/* Breadcrumb */}
         <div className="d-flex align-items-center gap-2 mb-3">
-          <button className="btn btn-link p-0 text-collection text-decoration-none" onClick={() => navigate('/')}>
+          <button
+            type="button"
+            className="btn btn-link p-0 text-collection text-decoration-none"
+            onClick={() => {
+              try {
+                sessionStorage.setItem('ta-dash-restore', '1')
+              } catch {
+                /* ignore */
+              }
+              navigate('/')
+            }}
+          >
             {t('common.back')}
           </button>
           <span className="text-collection">/</span>
@@ -409,11 +418,11 @@ export default function TarantulaDetailPage() {
                     }}
                   />
                   <img
-                    src={`${brandLogoSrc}?v=2`}
+                    src={`${CARD_CORNER_MARK}?v=1`}
                     alt=""
                     className="ta-tarantula-detail-brand-mark"
-                    width={48}
-                    height={48}
+                    width={52}
+                    height={52}
                     loading="lazy"
                     decoding="async"
                     aria-hidden
@@ -430,6 +439,9 @@ export default function TarantulaDetailPage() {
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <h5 className="fw-bold mb-0">{tarantula.name}</h5>
                     <StatusBadge status={tarantula.status} />
+                  </div>
+                  <div className="small text-muted mb-2">
+                    🕷️ {t('public.spoodsReceived', { count: Number(tarantula.spoodCount ?? 0) })}
                   </div>
 
                   {species && (

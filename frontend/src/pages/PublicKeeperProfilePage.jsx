@@ -10,6 +10,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
 import { keeperRankName } from '../utils/keeperRank'
+import { keeperBadgeEmoji } from '../utils/keeperBadgeIcons'
 
 export default function PublicKeeperProfilePage() {
   const { t } = useTranslation()
@@ -131,6 +132,7 @@ export default function PublicKeeperProfilePage() {
                   <div className="d-flex gap-1 flex-wrap mb-2">
                     {badges.map((b) => (
                       <span className="badge bg-light text-dark border" key={b.key || b.label}>
+                        <span className="me-1" aria-hidden="true">{keeperBadgeEmoji(b.key)}</span>
                         {badgeText(b)}
                       </span>
                     ))}

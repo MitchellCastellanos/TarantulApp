@@ -125,6 +125,13 @@ public class User {
     @Column(name = "beta_agreement_accepted_at")
     private Instant betaAgreementAcceptedAt;
 
+    /** Play closed-testing Google Group sync status; see GoogleGroupSyncStatus. Meaningful when isBetaTester is true. */
+    @Column(name = "google_group_sync_status", length = 32)
+    private String googleGroupSyncStatus;
+
+    @Column(name = "google_group_sync_last_error", length = 500)
+    private String googleGroupSyncLastError;
+
     /** Per-user admin flag (V65). APP_ADMIN_EMAILS is bootstrap-only: AuthService promotes on first login. */
     @Column(name = "is_admin", nullable = false)
     private Boolean isAdmin = false;
@@ -265,6 +272,12 @@ public class User {
 
     public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
     public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }
+
+    public String getGoogleGroupSyncStatus() { return googleGroupSyncStatus; }
+    public void setGoogleGroupSyncStatus(String googleGroupSyncStatus) { this.googleGroupSyncStatus = googleGroupSyncStatus; }
+
+    public String getGoogleGroupSyncLastError() { return googleGroupSyncLastError; }
+    public void setGoogleGroupSyncLastError(String googleGroupSyncLastError) { this.googleGroupSyncLastError = googleGroupSyncLastError; }
 
     public Boolean getIsAdmin() { return isAdmin; }
     public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }

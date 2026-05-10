@@ -38,6 +38,8 @@ const adminService = {
     api.get('/admin/beta-testers').then((r) => r.data),
   patchUserBeta: (id, payload) =>
     api.patch(`/admin/users/${id}/beta`, payload).then((r) => r.data),
+  patchUserPlan: (id, payload) =>
+    api.patch(`/admin/users/${id}/plan`, payload).then((r) => r.data),
   betaApplications: (status = '') =>
     api.get('/admin/beta-applications', { params: status ? { status } : {} }).then((r) => r.data),
   betaStats: () => api.get('/admin/beta-stats').then((r) => r.data),

@@ -7,24 +7,30 @@ import {
   downloadBrandedQrPng,
   qrCenterLogoOverlayStyles,
 } from '../utils/qrBrandComposite'
+import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 
 export default function QRModal({ tarantula, onClose }) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const hasProFeatures = user?.hasProFeatures === true
-  const url = `${window.location.origin}/t/${tarantula.shortId}`
+  const url = specimenPublicUrl(tarantula.shortId)
   const [copied, setCopied] = useState(false)
   const qrName = tarantula?.name?.trim() || tarantula?.shortId || 'Sin nombre'
   const qrSpecies = tarantula?.species?.scientificName?.trim() || 'Especie no definida'
 
   const downloadQR = async () => {
-    await downloadBrandedQrPng({
-      url,
-      nameLine: qrName,
-      speciesLine: qrSpecies,
-      shortIdLine: tarantula.shortId ? `ID: ${tarantula.shortId}` : '',
-      filenameBase: qrName,
-    })
+    try {
+      await downloadBrandedQrPng({
+        url,
+        nameLine: qrName,
+        speciesLine: qrSpecies,
+        shortIdLine: tarantula.shortId ? `ID: ${tarantula.shortId}` : '',
+        filenameBase: qrName,
+      })
+    } catch (e) {
+      console.warn('downloadBrandedQrPng', e)
+      window.alert(t('qrTool.pngDownloadFailed'))
+    }
   }
 
   const copyLink = async () => {
@@ -83,7 +89,7 @@ export default function QRModal({ tarantula, onClose }) {
             )}
           </div>
           <div className="modal-footer justify-content-center gap-2 flex-wrap">
-            <button type="button" className="btn btn-dark" onClick={() => downloadQR().catch(() => {})}>
+            <button type="button" className="btn btn-dark" onClick={() => downloadQR()}>
               ⬇ {t('tarantula.qrDownloadPng')}
             </button>
             <button type="button" className="btn btn-outline-secondary" onClick={copyLink}>

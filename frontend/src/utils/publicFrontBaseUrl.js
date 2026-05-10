@@ -19,6 +19,13 @@ function isLoopbackOrigin(origin) {
   }
 }
 
+/** Full URL for a specimen public card (printed QR). Never uses localhost when env or fallback prod is set. */
+export function specimenPublicUrl(shortId) {
+  const id = String(shortId || '').trim()
+  if (!id) return ''
+  return `${resolvePublicFrontOrigin()}/t/${encodeURIComponent(id)}`
+}
+
 /** @returns {string} e.g. https://tarantulapp.com */
 export function resolvePublicFrontOrigin() {
   const env = normalizeOrigin(import.meta.env?.VITE_PUBLIC_SITE_URL || '')

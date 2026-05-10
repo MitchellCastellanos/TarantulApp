@@ -48,6 +48,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     long countByIsBetaTesterTrue();
 
+    @Query("""
+            select u from User u
+            where u.isBetaTester = true
+              and (u.googleGroupSyncStatus is null or u.googleGroupSyncStatus <> 'synced')
+            """)
+    List<User> findBetaTestersNeedingGoogleGroupSync();
+
     @Modifying
     @Query("update User u set u.lastActivityAt = :ts where u.id = :id")
     void touchLastActivity(@Param("id") UUID id, @Param("ts") LocalDateTime ts);

@@ -27,6 +27,8 @@ public class TarantulaResponse {
     private String deathNotes;
     /** True si el plan Free aplica cupo y esta tarántula está fuera de las 6 más antiguas (solo lectura). */
     private boolean locked;
+    /** Spoods (likes) en la ficha pública; 0 si sin registros. */
+    private long spoodCount;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -67,4 +69,7 @@ public class TarantulaResponse {
 
     public boolean isLocked() { return locked; }
     public void setLocked(boolean locked) { this.locked = locked; }
+
+    public long getSpoodCount() { return spoodCount; }
+    public void setSpoodCount(long spoodCount) { this.spoodCount = spoodCount; }
 }

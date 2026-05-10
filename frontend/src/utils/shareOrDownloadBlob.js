@@ -19,15 +19,43 @@ function blobToBase64(blob) {
   })
 }
 
-/** @param {unknown} err */
-function isUserCanceledShare(err) {
-  const n = err && typeof err === 'object' && 'name' in err ? err.name : ''
-  const m = String(
-    err && typeof err === 'object' && 'message' in err && err.message != null
-      ? err.message
-      : err || '',
-  )
-  return n === 'AbortError' || /canceled|cancelled/i.test(m)
+/** Revocar blob: URL después de un delay — revocar en el mismo tick que `.click()` rompe la descarga en Chrome/Edge/Safari. */
+function scheduleRevokeObjectURL(url) {
+  if (typeof window === 'undefined') {
+    try {
+      URL.revokeObjectURL(url)
+    } catch {
+      /* ignore */
+    }
+    return
+  }
+  window.setTimeout(() => {
+    try {
+      URL.revokeObjectURL(url)
+    } catch {
+      /* ignore */
+    }
+  }, 60_000)
+}
+
+/**
+ * Descarga vía `<a download>` (Web y fallback en WebView si falla el share nativo).
+ * @param {Blob} blob
+ * @param {string} filename
+ */
+function anchorDownloadBlobUrl(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } finally {
+    scheduleRevokeObjectURL(url)
+  }
 }
 
 /**
@@ -86,8 +114,8 @@ export async function shareOrDownloadBlob({
           dialogTitle: dTitle,
         })
         return
-      } catch (e) {
-        if (isUserCanceledShare(e)) return
+      } catch {
+        /* cancelado o error: seguir con otros fallbacks */
       }
     }
 
@@ -101,26 +129,16 @@ export async function shareOrDownloadBlob({
           dialogTitle: dTitle,
         })
         return
-      } catch (e) {
-        if (isUserCanceledShare(e)) return
+      } catch {
+        /* cancelado o error: anchor fallback abajo */
       }
     }
 
+    anchorDownloadBlobUrl(b, name)
     return
   }
 
-  const url = URL.createObjectURL(b)
-  try {
-    const a = document.createElement('a')
-    a.href = url
-    a.download = name
-    a.rel = 'noopener'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+  anchorDownloadBlobUrl(b, name)
 }
 
 /**
@@ -139,7 +157,7 @@ async function tryNavigatorShareFiles(blob, filename, mimeType, title) {
     await navigator.share(data)
     return true
   } catch (e) {
-    if (isUserCanceledShare(e)) return true
+    /* Cancelación del sheet: intentar siguiente método (p. ej. descarga con <a>). */
     return false
   }
 }
@@ -150,8 +168,25 @@ async function tryNavigatorShareFiles(blob, filename, mimeType, title) {
  * @param {{ mimeType?: string, title?: string, dialogTitle?: string }} [options]
  */
 export async function shareOrDownloadDataUrl(dataUrl, filename, options = {}) {
-  const res = await fetch(String(dataUrl))
-  const blob = await res.blob()
+  let blob
+  try {
+    const res = await fetch(String(dataUrl))
+    blob = await res.blob()
+  } catch {
+    const s = String(dataUrl)
+    const comma = s.indexOf(',')
+    if (comma < 0 || !s.startsWith('data:')) {
+      throw new Error('invalid data url')
+    }
+    const header = s.slice(0, comma)
+    const base64 = s.slice(comma + 1)
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    const mimeMatch = /^data:([^;,]+)/.exec(header)
+    const mime = mimeMatch?.[1] || options.mimeType || 'application/octet-stream'
+    blob = new Blob([bytes], { type: mime })
+  }
   return shareOrDownloadBlob({
     blob,
     filename,

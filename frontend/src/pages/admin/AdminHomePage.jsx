@@ -101,6 +101,60 @@ export default function AdminHomePage() {
     }
   }
 
+  const mergePlanFields = (prevRow, updated) => {
+    if (!updated || typeof updated !== 'object') return prevRow
+    return {
+      ...prevRow,
+      plan: updated.plan ?? prevRow.plan,
+      inTrial: typeof updated.inTrial === 'boolean' ? updated.inTrial : prevRow.inTrial,
+      trialEndsAt: updated.trialEndsAt !== undefined ? updated.trialEndsAt : prevRow.trialEndsAt,
+      hasProFeatures: typeof updated.hasProFeatures === 'boolean' ? updated.hasProFeatures : prevRow.hasProFeatures,
+    }
+  }
+
+  const grantProUser = async (u) => {
+    try {
+      const updated = await adminService.patchUserPlan(u.id, { plan: 'PRO' })
+      setRecentUsers((prev) =>
+        prev.map((row) => (String(row.id) === String(u.id) ? mergePlanFields(row, updated) : row)),
+      )
+      setSuccess(t('admin.planUpdated'))
+    } catch {
+      setError(t('admin.planUpdateError'))
+    }
+  }
+
+  const setFreeUser = async (u) => {
+    try {
+      const updated = await adminService.patchUserPlan(u.id, { plan: 'FREE' })
+      setRecentUsers((prev) =>
+        prev.map((row) => (String(row.id) === String(u.id) ? mergePlanFields(row, updated) : row)),
+      )
+      setSuccess(t('admin.planUpdated'))
+    } catch {
+      setError(t('admin.planUpdateError'))
+    }
+  }
+
+  const extendTrialUser = async (u) => {
+    const raw = window.prompt(t('admin.extendTrialPrompt'), '14')
+    if (raw == null) return
+    const days = Number.parseInt(String(raw).trim(), 10)
+    if (!Number.isFinite(days) || days <= 0 || days > 3650) {
+      setError(t('admin.planUpdateError'))
+      return
+    }
+    try {
+      const updated = await adminService.patchUserPlan(u.id, { extendTrialDays: days })
+      setRecentUsers((prev) =>
+        prev.map((row) => (String(row.id) === String(u.id) ? mergePlanFields(row, updated) : row)),
+      )
+      setSuccess(t('admin.planUpdated'))
+    } catch {
+      setError(t('admin.planUpdateError'))
+    }
+  }
+
   const hideActionForReport = (report) => {
     if (report?.targetType === 'marketplace_listing') return 'hide_listing'
     if (report?.targetType === 'activity_post') return 'hide_activity_post'
@@ -313,13 +367,24 @@ export default function AdminHomePage() {
                         <td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
                         <td>{formatUsageTime(u.lastActivityAt, t)}</td>
                         <td>
-                          <button
-                            type="button"
-                            className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                            onClick={() => toggleRecentUserTester(u)}
-                          >
-                            {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
-                          </button>
+                          <div className="d-flex flex-column gap-1 align-items-stretch" style={{ minWidth: 168 }}>
+                            <button
+                              type="button"
+                              className={`btn btn-sm ${u.isBetaTester ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                              onClick={() => toggleRecentUserTester(u)}
+                            >
+                              {u.isBetaTester ? t('admin.removeTester') : t('admin.makeTester')}
+                            </button>
+                            <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => grantProUser(u)}>
+                              {t('admin.grantPro')}
+                            </button>
+                            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFreeUser(u)}>
+                              {t('admin.setFree')}
+                            </button>
+                            <button type="button" className="btn btn-sm btn-outline-info" onClick={() => extendTrialUser(u)}>
+                              {t('admin.extendTrial')}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )

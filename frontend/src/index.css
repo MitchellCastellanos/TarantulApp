@@ -2304,16 +2304,16 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   z-index: 1;
 }
 
-/* Marca TarantulApp en tarjeta de colección: bloque inferior derecho, alineada con las líneas técnicas (debajo del badge) */
+/* Marca (PNG sin fondo) en tarjeta de colección: esquina inferior-derecha del bloque de texto */
 .ta-premium-tarantula-card .ta-tarantula-card-brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
-  opacity: 0.9;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+  object-position: 100% 100%;
+  opacity: 0.98;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 14px rgba(115, 70, 248, 0.22));
   user-select: none;
-  /* Un poco de aire respecto al borde de la tarjeta, sin pegarse a la esquina */
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.05rem;
   margin-left: 0.35rem;
 }
 
@@ -2326,12 +2326,13 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   position: absolute;
   right: 1rem;
   bottom: 0.85rem;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
+  object-position: 100% 100%;
   z-index: 2;
-  opacity: 0.9;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55));
+  opacity: 0.98;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 16px rgba(115, 70, 248, 0.2));
   pointer-events: none;
   user-select: none;
 }
@@ -2855,9 +2856,32 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   text-decoration: none !important;
 }
 
+.ta-social-thread-actions {
+  flex-shrink: 0;
+}
+
 .ta-social-open-thread-icon {
-  min-width: 30px;
-  line-height: 1.1;
+  min-width: 2rem;
+  line-height: 1;
+}
+
+.ta-social-open-thread-icon .bi-three-dots {
+  font-size: 1.15rem;
+  line-height: 1;
+  display: block;
+}
+
+.ta-social-post-card .input-group .ta-social-send-comment.btn-dark {
+  color: #f8fafc !important;
+  background-color: #292524 !important;
+  border-color: rgba(232, 197, 71, 0.55) !important;
+  font-weight: 600;
+}
+
+:root[data-theme='light'] .ta-social-post-card .input-group .ta-social-send-comment.btn-dark {
+  background-color: #0f172a !important;
+  border-color: rgba(180, 83, 9, 0.45) !important;
+  color: #fff !important;
 }
 
 .ta-social-comment-preview {
@@ -3036,8 +3060,8 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   }
 
   .ta-premium-tarantula-card .ta-tarantula-card-brand-mark {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     margin-left: 0.25rem;
   }
 }
@@ -3555,4 +3579,116 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 :root[data-theme='light'] .ta-insights-days-urgent {
   color: #b45309 !important;
+}
+
+/* ─── Android / Capacitor: aviso de nueva versión (encima de todo, tema app) ─── */
+.ta-app-update-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 10050;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: linear-gradient(175deg, #151821 0%, #0a0c12 55%, #07080c 100%);
+  border-bottom: 2px solid rgba(232, 197, 71, 0.42);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--ta-text);
+  animation: ta-app-update-banner-in 0.38s ease-out;
+}
+
+@keyframes ta-app-update-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ta-app-update-banner__icon {
+  flex-shrink: 0;
+  font-size: 1.35rem;
+  line-height: 1;
+  margin-top: 0.1rem;
+  color: var(--ta-gold);
+  filter: drop-shadow(0 0 10px rgba(232, 197, 71, 0.35));
+}
+
+.ta-app-update-banner__title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+  color: var(--ta-parchment);
+}
+
+.ta-app-update-banner__body,
+.ta-app-update-banner__hint {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.ta-app-update-banner__hint {
+  font-size: 0.78rem;
+  opacity: 0.92;
+}
+
+.ta-app-update-banner__btn-later {
+  border-radius: 999px !important;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: rgba(248, 250, 252, 0.92) !important;
+  background: rgba(0, 0, 0, 0.22) !important;
+}
+
+.ta-app-update-banner__btn-later:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(232, 197, 71, 0.35) !important;
+  color: #fff !important;
+}
+
+.ta-app-update-banner__btn-update {
+  border-radius: 999px !important;
+  font-weight: 700;
+  border: 1px solid rgba(232, 197, 71, 0.55) !important;
+  color: #140c02 !important;
+  background: linear-gradient(135deg, #f2d675 0%, #d4a84b 48%, #b8892a 100%) !important;
+  box-shadow: 0 4px 16px rgba(90, 65, 18, 0.38);
+}
+
+.ta-app-update-banner__btn-update:hover {
+  filter: brightness(1.06);
+  color: #0a0704 !important;
+}
+
+:root[data-theme='light'] .ta-app-update-banner {
+  background: linear-gradient(175deg, #fffefb 0%, #f5efe6 45%, #ebe4d8 100%);
+  border-bottom-color: rgba(180, 83, 9, 0.35);
+  box-shadow:
+    0 10px 32px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(120, 88, 32, 0.12);
+  color: var(--ta-text);
+}
+
+:root[data-theme='light'] .ta-app-update-banner__title {
+  color: var(--ta-heading-gold);
+}
+
+:root[data-theme='light'] .ta-app-update-banner__body,
+:root[data-theme='light'] .ta-app-update-banner__hint {
+  color: var(--ta-text-muted);
+}
+
+:root[data-theme='light'] .ta-app-update-banner__btn-later {
+  border-color: rgba(71, 85, 105, 0.35) !important;
+  color: var(--ta-text) !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+}
+
+:root[data-theme='light'] .ta-app-update-banner__btn-update {
+  border-color: rgba(180, 83, 9, 0.45) !important;
 }

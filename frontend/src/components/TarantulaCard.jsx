@@ -4,16 +4,16 @@ import StatusBadge from './StatusBadge'
 import FangPanel from './FangPanel'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
-import { useAppTheme } from '../hooks/useAppTheme'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 
+/** Marca inferior-derecha en tarjetas de colección (PNG sin fondo). */
+const CARD_CORNER_MARK = publicUrl('tarantula-card-corner-mark.png')
+
 export default function TarantulaCard({ tarantula }) {
   const { t } = useTranslation()
-  const theme = useAppTheme()
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
   const placeholder = publicUrl('spider-default.png')
-  const brandLogoSrc = publicUrl(theme === 'light' ? 'logo-black.png' : 'logo-neon.png')
   // Own upload first, then species reference (DB / iNat URL), then placeholder; broken URLs fall back on error.
   const primarySrc = profilePhoto
     ? imgUrl(profilePhoto)
@@ -75,11 +75,11 @@ export default function TarantulaCard({ tarantula }) {
                 </div>
               </div>
               <img
-                src={`${brandLogoSrc}?v=2`}
+                src={`${CARD_CORNER_MARK}?v=1`}
                 alt=""
                 className="ta-tarantula-card-brand-mark flex-shrink-0"
-                width={44}
-                height={44}
+                width={48}
+                height={48}
                 loading="lazy"
                 decoding="async"
                 aria-hidden

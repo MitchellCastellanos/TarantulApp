@@ -54,6 +54,7 @@ public class AuthService {
     private final PublicHandleService publicHandleService;
     private final AdminAccessService adminAccessService;
     private final BetaApplicationRepository betaApplicationRepository;
+    private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
     private final AppMetrics appMetrics;
     private final AuthRegistrationMode registrationMode;
     private final RestClient restClient = RestClient.create();
@@ -65,6 +66,7 @@ public class AuthService {
                        PublicHandleService publicHandleService,
                        AdminAccessService adminAccessService,
                        BetaApplicationRepository betaApplicationRepository,
+                       BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService,
                        AppMetrics appMetrics,
                        @Value("${app.auth.registration-mode:invite_only}") String registrationModeRaw) {
         this.userRepository = userRepository;
@@ -77,6 +79,7 @@ public class AuthService {
         this.publicHandleService = publicHandleService;
         this.adminAccessService = adminAccessService;
         this.betaApplicationRepository = betaApplicationRepository;
+        this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
         this.appMetrics = appMetrics;
         this.registrationMode = AuthRegistrationMode.fromProperty(registrationModeRaw);
     }
@@ -106,6 +109,7 @@ public class AuthService {
                         app.setApprovedUserId(user.getId());
                         betaApplicationRepository.save(app);
                     }
+                    betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(user.getId());
                 });
     }
 
@@ -465,6 +469,7 @@ public class AuthService {
                 user.setDisplayName(displayName.trim());
             }
             userRepository.save(user);
+            betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(user.getId());
             return new AdminUserPasswordResult(user, plain, false);
         }
         String email = identifierToEmailForNewUserOrNull(identifier);
@@ -486,6 +491,7 @@ public class AuthService {
         referralService.applyReferralForNewAccount(user.getId(), null);
         referralService.ensureReferralCodeForUser(user.getId());
         User refreshed = userRepository.findById(user.getId()).orElse(user);
+        betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(refreshed.getId());
         return new AdminUserPasswordResult(refreshed, plain, true);
     }
 

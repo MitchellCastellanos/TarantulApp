@@ -306,6 +306,35 @@ export default function SocialHubPage() {
     [navigate]
   )
 
+  /** Comparte el enlace del hilo con el sheet nativo y luego abre el post (siempre navega). */
+  const openPostThreadWithShare = useCallback(
+    async (postId, openComments = false) => {
+      const suffix = openComments ? '?comments=1' : ''
+      const path = `/community/post/${encodeURIComponent(postId)}${suffix}`
+      const threadUrl =
+        typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}${path}`
+          : path
+
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({
+            title: t('social.openThread'),
+            text: t('social.threadShareText'),
+            url: threadUrl,
+          })
+        } catch (e) {
+          const aborted =
+            e?.name === 'AbortError' ||
+            /canceled|cancelled/i.test(String(e?.message || ''))
+          if (!aborted && import.meta.env.DEV) console.warn('navigator.share', e)
+        }
+      }
+      navigate(path)
+    },
+    [navigate, t],
+  )
+
   const submitPost = async (e) => {
     e.preventDefault()
     setErr('')
@@ -746,18 +775,18 @@ export default function SocialHubPage() {
               {t('social.comments')} ({p.commentsCount ?? 0})
             </button>
           </div>
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-3 ta-social-thread-actions">
             <button type="button" className="btn btn-sm btn-link p-0 text-muted ta-social-mini-action" onClick={() => reportPost(p.id)}>
               {t('marketplace.report')}
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary py-0 px-2 ta-social-open-thread-icon"
-              onClick={() => openPostThread(p.id, false)}
-              title="Open thread"
-              aria-label="Open thread"
+              className="btn btn-sm btn-dark rounded-pill px-2 py-1 ta-social-open-thread-icon"
+              onClick={() => openPostThreadWithShare(p.id, false)}
+              title={t('social.openThread')}
+              aria-label={t('social.openThread')}
             >
-              {'\u2197'}
+              <i className="bi bi-three-dots" aria-hidden />
             </button>
           </div>
         </div>
@@ -787,7 +816,7 @@ export default function SocialHubPage() {
               value={commentDraft[p.id] || ''}
               onChange={(e) => setCommentDraft((d) => ({ ...d, [p.id]: e.target.value }))}
             />
-            <button type="button" className="btn btn-outline-dark" onClick={() => submitComment(p.id)}>
+            <button type="button" className="btn btn-dark ta-social-send-comment" onClick={() => submitComment(p.id)}>
               {t('social.sendComment')}
             </button>
           </div>

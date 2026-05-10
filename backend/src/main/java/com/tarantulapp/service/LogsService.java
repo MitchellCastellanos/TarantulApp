@@ -41,6 +41,27 @@ public class LogsService {
 
     // ─── Feeding ────────────────────────────────────────────────────────────
 
+    /**
+     * Registro rápido desde la ficha pública escaneada (QR): exige Pro/prueba además del cupo Free.
+     */
+    public FeedingLogResponse addFeedingFromPublicQrCard(String shortId, FeedingLogRequest req, UUID userId) {
+        UUID tarantulaId = requireOwnedTarantulaIdByShortId(shortId, userId);
+        planAccessService.enforceProOrTrialForPublicQrQuickActions(userId);
+        return addFeeding(tarantulaId, req, userId);
+    }
+
+    public MoltLogResponse addMoltFromPublicQrCard(String shortId, MoltLogRequest req, UUID userId) {
+        UUID tarantulaId = requireOwnedTarantulaIdByShortId(shortId, userId);
+        planAccessService.enforceProOrTrialForPublicQrQuickActions(userId);
+        return addMolt(tarantulaId, req, userId);
+    }
+
+    public BehaviorLogResponse addBehaviorFromPublicQrCard(String shortId, BehaviorLogRequest req, UUID userId) {
+        UUID tarantulaId = requireOwnedTarantulaIdByShortId(shortId, userId);
+        planAccessService.enforceProOrTrialForPublicQrQuickActions(userId);
+        return addBehavior(tarantulaId, req, userId);
+    }
+
     public FeedingLogResponse addFeeding(UUID tarantulaId, FeedingLogRequest req, UUID userId) {
         planAccessService.enforceTarantulaWrite(userId, tarantulaId);
         verifyOwnership(tarantulaId, userId);
@@ -141,6 +162,18 @@ public class LogsService {
     }
 
     // ─── Private ────────────────────────────────────────────────────────────
+
+    private UUID requireOwnedTarantulaIdByShortId(String shortId, UUID userId) {
+        if (shortId == null || shortId.isBlank()) {
+            throw new NotFoundException("Tarántula no encontrada");
+        }
+        Tarantula t = tarantulaRepository.findByShortId(shortId.trim())
+                .orElseThrow(() -> new NotFoundException("Tarántula no encontrada"));
+        if (!t.getUserId().equals(userId)) {
+            throw new AccessDeniedException("No eres el dueño de esta tarántula");
+        }
+        return t.getId();
+    }
 
     private void verifyOwnership(UUID tarantulaId, UUID userId) {
         Tarantula t = tarantulaRepository.findById(tarantulaId)

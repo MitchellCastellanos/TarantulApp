@@ -94,4 +94,17 @@ public class PlanAccessService {
         }
     }
 
+    /**
+     * Quick logs desde la ficha pública /t/{shortId} (QR): el dueño necesita Pro o prueba activa aunque la tarántula
+     * sea pública en el perfil keeper. La colección completa sigue usando {@link #enforceTarantulaWrite} solo por cupo.
+     */
+    public void enforceProOrTrialForPublicQrQuickActions(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        if (!hasProFeatures(user)) {
+            throw new ReadOnlyModeException(
+                    "Las acciones rápidas desde la tarjeta QR pública requieren Pro o periodo de prueba activo.");
+        }
+    }
+
 }

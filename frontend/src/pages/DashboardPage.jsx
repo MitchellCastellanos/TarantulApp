@@ -15,6 +15,7 @@ import { downloadCollectionJson, importCollectionJsonFile } from '../utils/expor
 import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import { keeperRankName } from '../utils/keeperRank'
+import { keeperBadgeEmoji } from '../utils/keeperBadgeIcons'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -37,6 +38,38 @@ export default function DashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const DASH_SCROLL_KEY = 'ta-dash-scroll-y'
+  const DASH_RESTORE_FLAG = 'ta-dash-restore'
+
+  useEffect(() => {
+    const onScroll = () => {
+      try {
+        sessionStorage.setItem(DASH_SCROLL_KEY, String(window.scrollY))
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(DASH_RESTORE_FLAG) === '1') {
+        sessionStorage.removeItem(DASH_RESTORE_FLAG)
+        const raw = sessionStorage.getItem(DASH_SCROLL_KEY)
+        if (raw != null) {
+          const y = parseInt(raw, 10)
+          if (!Number.isNaN(y)) {
+            requestAnimationFrame(() => window.scrollTo(0, y))
+          }
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
   useEffect(() => {
     if (!user) return
     marketplaceService.getMyProfile().then(setKeeperProfile).catch(() => setKeeperProfile(null))
@@ -55,14 +88,18 @@ export default function DashboardPage() {
     return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
   }
   const speciesSet = new Set(alive.map((t) => t.species?.scientificName).filter(Boolean))
-  const profileBadges = Array.isArray(keeperProfile?.badges)
-    ? keeperProfile.badges.map((b) => translateBadgeLabel(b)).filter(Boolean)
+  const profileBadgeRows = Array.isArray(keeperProfile?.badges)
+    ? keeperProfile.badges.map((b) => ({
+        key: String(b.key || b.label || ''),
+        label: translateBadgeLabel(b),
+        iconKey: b.key,
+      }))
     : [
-        alive.length >= 1 ? 'Starter keeper' : null,
-        alive.length >= 10 ? 'Collection 10+' : null,
-        alive.length >= 25 ? 'Collection 25+' : null,
-        speciesSet.size >= 5 ? 'Species diversity 5+' : null,
-        speciesSet.size >= 12 ? 'Species diversity 12+' : null,
+        alive.length >= 1 ? { key: 'fallback_start', label: 'Starter keeper', iconKey: 'starter_keeper' } : null,
+        alive.length >= 10 ? { key: 'fallback_c10', label: 'Collection 10+', iconKey: 'collection_10' } : null,
+        alive.length >= 25 ? { key: 'fallback_c25', label: 'Collection 25+', iconKey: 'collection_25' } : null,
+        speciesSet.size >= 5 ? { key: 'fallback_d5', label: 'Species diversity 5+', iconKey: 'species_diversity_5' } : null,
+        speciesSet.size >= 12 ? { key: 'fallback_d12', label: 'Species diversity 12+', iconKey: 'species_diversity_12' } : null,
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
   const badgesProgress = keeperProfile?.badgesProgress || null
@@ -218,10 +255,13 @@ export default function DashboardPage() {
                     })}
                   </div>
                 )}
-                {profileBadges.length > 0 && (
+                {profileBadgeRows.length > 0 && (
                   <div className="d-flex gap-1 flex-wrap mt-2">
-                    {profileBadges.map((badge) => (
-                      <span className="badge bg-light text-dark border" key={badge}>{badge}</span>
+                    {profileBadgeRows.map((row) => (
+                      <span className="badge bg-light text-dark border" key={row.key}>
+                        <span className="me-1" aria-hidden="true">{keeperBadgeEmoji(row.iconKey)}</span>
+                        {row.label}
+                      </span>
                     ))}
                   </div>
                 )}

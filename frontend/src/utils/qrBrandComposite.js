@@ -85,9 +85,10 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
  */
 export const FULL_LABEL_LAYOUT = {
   canvasW: 320,
-  canvasH: 380,
+  /** Altura extra para nombre/especie en varias líneas (Word flexible / QR grandes). */
+  canvasH: 430,
   /** Un poco menor que antes para dar aire al nombre/especie sin agrandar la etiqueta impresa. */
-  qrSize: 228,
+  qrSize: 224,
   /** Poco margen blanco entre el borde de recorte y el QR (similar a etiqueta física). */
   qrTop: 5,
 }
@@ -102,19 +103,36 @@ export function labelDocxDimensions(displayQrPx) {
   }
 }
 
-function fillTextTruncatedCenter(ctx, text, centerX, y, maxWidth) {
-  const t = String(text ?? '')
-  if (!t) return
-  if (ctx.measureText(t).width <= maxWidth) {
-    ctx.fillText(t, centerX, y)
-    return
+/** Parte texto en líneas que caben en maxWidth (palabras; tokens largos se cortan con …). */
+function wrapLinesToWidth(ctx, text, maxWidth) {
+  const raw = String(text ?? '').trim()
+  if (!raw) return []
+  const words = raw.split(/\s+/).filter(Boolean)
+  const lines = []
+  let line = ''
+  for (const word of words) {
+    const trial = line ? `${line} ${word}` : word
+    if (ctx.measureText(trial).width <= maxWidth) {
+      line = trial
+      continue
+    }
+    if (line) {
+      lines.push(line.trimEnd())
+      line = ''
+    }
+    if (ctx.measureText(word).width <= maxWidth) {
+      line = word
+    } else {
+      let w = word
+      const ell = '…'
+      while (w.length > 1 && ctx.measureText(w + ell).width > maxWidth) {
+        w = w.slice(0, -1)
+      }
+      lines.push(w + (w.length < word.length ? ell : ''))
+    }
   }
-  let s = t
-  const ell = '…'
-  while (s.length > 1 && ctx.measureText(s + ell).width > maxWidth) {
-    s = s.slice(0, -1)
-  }
-  ctx.fillText(s + ell, centerX, y)
+  if (line) lines.push(line.trimEnd())
+  return lines
 }
 
 /**
@@ -150,26 +168,39 @@ export async function buildFullLabelPngDataUrl({
   const textPad = 10
   const maxTextW = W - textPad * 2
   const baseY = qrTop + qrSize
+  const nameLineH = 22
+  const speciesLineH = 18
+  const markSize = Math.round(30 * (W / 320))
+  const markBottomPad = 10
 
   ctx.textAlign = 'center'
   ctx.fillStyle = '#111'
   ctx.font = 'bold 19px sans-serif'
-  fillTextTruncatedCenter(ctx, nameLine, W / 2, baseY + 24, maxTextW)
+  const nameLines = wrapLinesToWidth(ctx, nameLine, maxTextW).slice(0, 2)
+  let y = baseY + 22
+  nameLines.forEach((ln, i) => {
+    ctx.fillText(ln, W / 2, y + i * nameLineH)
+  })
+  y += nameLines.length * nameLineH + (nameLines.length ? 6 : 0)
 
   ctx.fillStyle = '#444'
   ctx.font = 'italic 15px sans-serif'
-  fillTextTruncatedCenter(ctx, speciesLine, W / 2, baseY + 50, maxTextW)
+  const speciesLines = wrapLinesToWidth(ctx, speciesLine, maxTextW).slice(0, 3)
+  speciesLines.forEach((ln, i) => {
+    ctx.fillText(ln, W / 2, y + i * speciesLineH)
+  })
+  y += speciesLines.length * speciesLineH + (speciesLines.length ? 4 : 0)
 
   if (shortIdLine) {
     ctx.fillStyle = '#777'
     ctx.font = '11px sans-serif'
-    fillTextTruncatedCenter(ctx, shortIdLine, W / 2, baseY + 74, maxTextW)
+    ctx.fillText(String(shortIdLine).trim(), W / 2, y + 14)
   }
 
   try {
     const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
-    const lw = 28
-    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - 7, lw, lw)
+    const lw = markSize
+    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - markBottomPad, lw, lw)
   } catch {
     ctx.fillStyle = '#888'
     ctx.font = '11px sans-serif'

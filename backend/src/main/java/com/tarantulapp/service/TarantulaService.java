@@ -415,6 +415,7 @@ public class TarantulaService {
                 .ifPresent(m -> r.setLastMoltAt(m.getMoltedAt()));
 
         r.setLocked(lockedIds != null && lockedIds.contains(t.getId()));
+        r.setSpoodCount(tarantulaSpoodRepository.countByTarantulaId(t.getId()));
 
         return r;
     }

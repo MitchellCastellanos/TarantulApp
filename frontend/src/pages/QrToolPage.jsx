@@ -21,6 +21,7 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
+import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 
 /** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
 const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
@@ -80,7 +81,7 @@ export default function QrToolPage() {
   )
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const qrHref = selected?.shortId ? `${origin}/t/${selected.shortId}` : ''
+  const qrHref = selected?.shortId ? specimenPublicUrl(selected.shortId) : ''
   const parsed = useMemo(() => {
     if (!qrHref) return { ok: false, empty: true, href: '' }
     return { ok: true, empty: false, href: qrHref }
@@ -190,13 +191,18 @@ export default function QrToolPage() {
   const handleDownload = async () => {
     if (!parsed.ok || !selected) return
     const { name, species } = getQrLabelParts(selected)
-    await downloadBrandedQrPng({
-      url: parsed.href,
-      nameLine: name,
-      speciesLine: species,
-      shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
-      filenameBase: name,
-    })
+    try {
+      await downloadBrandedQrPng({
+        url: parsed.href,
+        nameLine: name,
+        speciesLine: species,
+        shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
+        filenameBase: name,
+      })
+    } catch (e) {
+      console.warn('downloadBrandedQrPng', e)
+      window.alert(t('qrTool.pngDownloadFailed'))
+    }
   }
 
   const bulkList = useMemo(() => {
@@ -756,7 +762,7 @@ export default function QrToolPage() {
                           </button>
                           <button
                             type="button"
-                            className="btn btn-outline-dark"
+                            className="btn btn-outline-warning text-dark"
                             disabled={!bulkSelectedList.length || busy}
                             onClick={downloadBulkFlex}
                           >

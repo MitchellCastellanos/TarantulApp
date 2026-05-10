@@ -463,12 +463,18 @@ export default function ProPage() {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <div className="small fw-semibold mb-1">{t('pro.checkoutProLabel')}</div>
-                        <p className="small text-muted mb-2">
-                          {t('pro.checkoutRegionHint')}
-                          <br />
-                          <strong>{t('pro.billingRegionManualLabel')}: {t(`pro.regions.${billingRegion}.countryName`)}</strong>
+                      <div
+                        className="rounded-3 border p-3 mb-1"
+                        style={{
+                          borderColor: 'var(--ta-border)',
+                          background: 'color-mix(in srgb, var(--ta-bg-card) 92%, transparent)',
+                        }}
+                      >
+                        <div className="fw-semibold small mb-2">{t('pro.checkoutProLabel')}</div>
+                        <p className="small text-muted mb-3" style={{ lineHeight: 1.55 }}>
+                          {t('pro.checkoutBillingExplainer', {
+                            country: t(`pro.regions.${billingRegion}.countryName`),
+                          })}
                         </p>
                         <details className="small mb-3">
                           <summary className="text-muted" style={{ cursor: 'pointer' }}>
@@ -493,7 +499,7 @@ export default function ProPage() {
                             ))}
                           </select>
                         </details>
-                        <div className="d-flex flex-wrap gap-2">
+                        <div className="d-flex flex-wrap gap-2 align-items-center">
                           <button
                             type="button"
                             className={`btn btn-sm ${interval === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
@@ -512,7 +518,9 @@ export default function ProPage() {
                             </span>
                           </button>
                         </div>
-                        <div className="small text-muted mt-1">{t('pro.priceYearlyNote')}</div>
+                        <p className="small text-muted mt-3 mb-0" style={{ lineHeight: 1.45 }}>
+                          {t('pro.priceYearlyNote')}
+                        </p>
                       </div>
                       {!user ? (
                         <button

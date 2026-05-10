@@ -15,10 +15,10 @@ import {
 } from '../utils/buildQrBulkDocx.js'
 import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrBrandComposite'
 import marketplaceService from '../services/marketplaceService'
+import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 
 function specimenQrUrl(shortId) {
-  if (!shortId || typeof window === 'undefined') return ''
-  return `${window.location.origin}/t/${shortId}`
+  return specimenPublicUrl(shortId)
 }
 
 export default function QrBulkPrintPage() {
@@ -288,7 +288,7 @@ export default function QrBulkPrintPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-outline-dark"
+                    className="btn btn-outline-warning text-dark"
                     disabled={!selectedList.length || busy}
                     onClick={downloadFlex}
                   >

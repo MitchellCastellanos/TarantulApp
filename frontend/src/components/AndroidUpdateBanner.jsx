@@ -8,6 +8,12 @@ import {
   markDismissedForLatestVersion,
 } from '../utils/androidUpdateBannerState'
 
+const PLAY_STORE_FALLBACK =
+  'https://play.google.com/store/apps/details?id=com.tarantulapp.app'
+
+/** Tras el splash / primer layout: evita banner “cortado” o solapado. */
+const OPEN_APP_DELAY_MS = 720
+
 function isAndroidNative() {
   return Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform()
 }
@@ -17,10 +23,31 @@ function parseBuildCode(build) {
   return Number.isFinite(n) ? n : null
 }
 
+async function fetchUpdatePayload() {
+  const [{ build }, { data }] = await Promise.all([
+    App.getInfo(),
+    publicApi.get('public/app/android'),
+  ])
+  const current = parseBuildCode(build)
+  const latest = Number(data?.latestVersionCode)
+  const playStoreUrl =
+    typeof data?.playStoreUrl === 'string' ? data.playStoreUrl.trim() : ''
+  if (current == null || !Number.isFinite(latest)) return null
+  if (latest <= current) return null
+  if (isDismissedForLatestVersion(latest)) return null
+  return {
+    latestVersionCode: latest,
+    latestVersionName: data?.latestVersionName,
+    playStoreUrl: playStoreUrl || PLAY_STORE_FALLBACK,
+  }
+}
+
 export default function AndroidUpdateBanner() {
   const { t } = useTranslation()
   const [info, setInfo] = useState(null)
   const bannerRef = useRef(null)
+  const cancelledRef = useRef(false)
+  const seqRef = useRef(0)
 
   useLayoutEffect(() => {
     if (!info) {
@@ -45,34 +72,37 @@ export default function AndroidUpdateBanner() {
   useEffect(() => {
     if (!isAndroidNative()) return undefined
 
-    let cancelled = false
-    ;(async () => {
-      try {
-        const [{ build }, { data }] = await Promise.all([
-          App.getInfo(),
-          publicApi.get('public/app/android'),
-        ])
-        if (cancelled) return
-        const current = parseBuildCode(build)
-        const latest = Number(data?.latestVersionCode)
-        const playStoreUrl = typeof data?.playStoreUrl === 'string' ? data.playStoreUrl.trim() : ''
-        if (current == null || !Number.isFinite(latest)) return
-        if (latest <= current) return
-        if (isDismissedForLatestVersion(latest)) return
-        setInfo({
-          latestVersionCode: latest,
-          latestVersionName: data?.latestVersionName,
-          playStoreUrl:
-            playStoreUrl ||
-            'https://play.google.com/store/apps/details?id=com.tarantulapp.app',
-        })
-      } catch (_) {
-        // Sin red / backend: no molestar
+    cancelledRef.current = false
+
+    const run = async (delayMs) => {
+      if (delayMs > 0) {
+        await new Promise((r) => setTimeout(r, delayMs))
       }
-    })()
+      if (cancelledRef.current) return
+      const mySeq = ++seqRef.current
+      try {
+        const payload = await fetchUpdatePayload()
+        if (cancelledRef.current || mySeq !== seqRef.current) return
+        setInfo(payload)
+      } catch {
+        if (cancelledRef.current || mySeq !== seqRef.current) return
+        /* sin red: no molestar */
+      }
+    }
+
+    void run(OPEN_APP_DELAY_MS)
+
+    let resumeListener
+    App.addListener('resume', () => {
+      void run(0)
+    }).then((handle) => {
+      resumeListener = handle
+    })
 
     return () => {
-      cancelled = true
+      cancelledRef.current = true
+      seqRef.current += 1
+      resumeListener?.remove?.()
     }
   }, [])
 
@@ -95,31 +125,37 @@ export default function AndroidUpdateBanner() {
   return (
     <div
       ref={bannerRef}
-      className="position-fixed start-0 end-0 border-bottom shadow-sm"
-      style={{
-        top: 0,
-        zIndex: 1060,
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        background: 'linear-gradient(180deg, rgba(13,110,253,0.09) 0%, rgba(255,255,255,0.96) 100%)',
-        backdropFilter: 'blur(6px)',
-      }}
+      className="ta-app-update-banner"
       role="status"
       aria-live="polite"
     >
-      <div className="container-fluid px-3 py-2">
-        <div className="d-flex flex-wrap align-items-center gap-2 gap-md-3">
-          <div className="flex-grow-1 small text-body" style={{ minWidth: '12rem' }}>
-            <strong className="d-block">{t('appUpdate.title')}</strong>
-            <span className="text-body-secondary">{t('appUpdate.body')}</span>
-            {versionHint ? (
-              <span className="text-body-secondary d-block mt-1">{versionHint}</span>
-            ) : null}
+      <div className="container-fluid px-3 py-3">
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <div className="flex-grow-1" style={{ minWidth: 'min(100%, 14rem)' }}>
+            <div className="d-flex align-items-start gap-2">
+              <i className="bi bi-stars ta-app-update-banner__icon" aria-hidden />
+              <div>
+                <strong className="d-block ta-app-update-banner__title">{t('appUpdate.title')}</strong>
+                <span className="ta-app-update-banner__body">{t('appUpdate.body')}</span>
+                {versionHint ? (
+                  <span className="ta-app-update-banner__hint d-block mt-1">{versionHint}</span>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <div className="d-flex flex-shrink-0 gap-2 ms-md-auto">
-            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleLater}>
+          <div className="d-flex flex-shrink-0 gap-2 ms-md-auto w-100 w-md-auto justify-content-stretch justify-content-md-end">
+            <button
+              type="button"
+              className="btn btn-sm ta-app-update-banner__btn-later flex-grow-1 flex-md-grow-0"
+              onClick={handleLater}
+            >
               {t('appUpdate.later')}
             </button>
-            <button type="button" className="btn btn-primary btn-sm" onClick={handleUpdate}>
+            <button
+              type="button"
+              className="btn btn-sm ta-app-update-banner__btn-update flex-grow-1 flex-md-grow-0"
+              onClick={handleUpdate}
+            >
               {t('appUpdate.update')}
             </button>
           </div>
