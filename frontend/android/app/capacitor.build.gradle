@@ -15,7 +15,7 @@ dependencies {
     implementation project(':capacitor-filesystem')
     implementation project(':capacitor-push-notifications')
     implementation project(':capacitor-share')
-
+    implementation "com.android.billingclient:billing:8.3.0"
 }
 
 

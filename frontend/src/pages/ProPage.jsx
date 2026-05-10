@@ -36,8 +36,6 @@ export default function ProPage() {
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
-  const [androidToken, setAndroidToken] = useState('')
-  const [androidProductId, setAndroidProductId] = useState(import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || '')
   const [androidSyncing, setAndroidSyncing] = useState(false)
   const [androidMessage, setAndroidMessage] = useState('')
   const [proAudience, setProAudience] = useState(() => {
@@ -148,11 +146,16 @@ export default function ProPage() {
   }, [checkout, user?.id, sessionId])
 
   const handleUpgrade = async () => {
-    if (isAndroidNative) return
     if (!user) {
       navigate('/login')
       return
     }
+
+    if (isAndroidNative) {
+      handleAndroidPurchase()
+      return
+    }
+
     setError('')
     setLoadingCheckout(true)
     try {
@@ -165,39 +168,68 @@ export default function ProPage() {
     }
   }
 
-  const handleAndroidSync = async () => {
-    if (!user) {
-      navigate('/login')
+  const handleAndroidPurchase = async () => {
+    if (!window.CdvPurchase) {
+      setAndroidMessage(t('pro.androidPurchaseUnavailable'))
       return
     }
-    setAndroidMessage('')
-    setError('')
-    if (!androidToken.trim()) {
-      setAndroidMessage(t('pro.androidTokenRequired'))
-      return
-    }
+
+    const { store, ProductType, Platform } = window.CdvPurchase
+    const productId = import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || 'tarantulapp_pro_monthly'
+
     setAndroidSyncing(true)
-    try {
-      const data = await billingService.verifyGooglePlayPurchase({
-        purchaseToken: androidToken.trim(),
-        productId: androidProductId.trim(),
+    setAndroidMessage(t('pro.androidStartingPurchase'))
+
+    store.register([{
+      id: productId,
+      type: ProductType.PAID_SUBSCRIPTION,
+      platform: Platform.GOOGLE_PLAY,
+    }])
+
+    store.when()
+      .approved(async (transaction) => {
+        setAndroidMessage(t('pro.androidVerifyingPurchase'))
+        try {
+          const data = await billingService.verifyGooglePlayPurchase({
+            purchaseToken: transaction.purchaseToken,
+            productId: productId,
+          })
+          if (data?.plan === 'PRO') {
+            await loadBilling()
+            setAndroidMessage(t('pro.androidPurchaseSynced'))
+            transaction.finish()
+          } else {
+            setAndroidMessage(t('pro.androidPurchasePending'))
+          }
+        } catch (e) {
+          setAndroidMessage(t('pro.androidSyncError'))
+        } finally {
+          setAndroidSyncing(false)
+        }
       })
-      if (data?.plan === 'PRO') {
-        await loadBilling()
-        setAndroidMessage(t('pro.androidPurchaseSynced'))
-      } else {
-        setAndroidMessage(t('pro.androidPurchasePending'))
-      }
-    } catch (e) {
-      const backendError = e?.response?.data?.error
-      setAndroidMessage(
-        t('pro.androidSyncErrorWithCode', {
-          code: backendError || 'UNKNOWN',
-        }),
-      )
-    } finally {
-      setAndroidSyncing(false)
-    }
+      .cancelled(() => {
+        setAndroidMessage(t('pro.checkoutCancel'))
+        setAndroidSyncing(false)
+      })
+      .error((err) => {
+        setAndroidMessage(err.message)
+        setAndroidSyncing(false)
+      })
+
+    store.initialize([Platform.GOOGLE_PLAY])
+      .then(() => {
+        const product = store.get(productId)
+        if (product && product.canPurchase) {
+          product.getOffer().order()
+        } else {
+          setAndroidMessage(t('pro.androidProductUnavailable'))
+          setAndroidSyncing(false)
+        }
+      })
+      .catch((err) => {
+        setAndroidMessage(err.message)
+        setAndroidSyncing(false)
+      })
   }
 
   const tierCard = ({
@@ -295,11 +327,6 @@ export default function ProPage() {
               {!isPro && inTrial && (
                 <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
                   {t('pro.pricingAfterTrial')}
-                </p>
-              )}
-              {!isPro && !inTrial && (
-                <p className="small fw-semibold mb-3 pb-2 ta-accent-heading" style={{ borderBottom: '1px solid var(--ta-border-gold)' }}>
-                  {t('pro.trialThenPricing')}
                 </p>
               )}
 
@@ -410,8 +437,8 @@ export default function ProPage() {
                 <div className="d-flex flex-column gap-3">
                   {isAndroidNative ? (
                     <div className="border rounded p-3" style={{ borderColor: 'var(--ta-border)' }}>
-                      <p className="small mb-2">{t('pro.androidPurchaseUnavailable')}</p>
-                      <p className="small text-muted mb-3">{t('pro.androidPlaceholderHelp')}</p>
+                      <p className="small mb-2">{t('pro.androidPurchaseTitle', 'Google Play Billing')}</p>
+                      <p className="small text-muted mb-3">{t('pro.androidPurchaseBody', 'Upgrade to Pro directly through your Google account.')}</p>
                       {!user ? (
                         <button
                           type="button"
@@ -422,33 +449,15 @@ export default function ProPage() {
                         </button>
                       ) : (
                         <div className="d-flex flex-column gap-2">
-                          <label className="small mb-0">{t('pro.androidProductIdLabel')}</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-sm"
-                            value={androidProductId}
-                            onChange={(e) => setAndroidProductId(e.target.value)}
-                            placeholder="tarantulapp_pro_monthly"
-                          />
-                          <label className="small mb-0 mt-1">{t('pro.androidTokenLabel')}</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-sm"
-                            value={androidToken}
-                            onChange={(e) => setAndroidToken(e.target.value)}
-                            placeholder="test_..."
-                          />
-                          <div className="d-flex gap-2 mt-2">
-                            <button
-                              type="button"
-                              className="btn btn-dark btn-sm"
-                              onClick={handleAndroidSync}
-                              disabled={androidSyncing}
-                            >
-                              {androidSyncing ? t('common.loading') : t('pro.androidSyncButton')}
-                            </button>
-                          </div>
-                          {androidMessage && <p className="small text-muted mb-0">{androidMessage}</p>}
+                          <button
+                            type="button"
+                            className="btn btn-dark btn-sm align-self-start"
+                            onClick={handleUpgrade}
+                            disabled={androidSyncing}
+                          >
+                            {androidSyncing ? t('common.loading') : t('pro.upgradeNow')}
+                          </button>
+                          {androidMessage && <p className="small text-muted mb-0 mt-2">{androidMessage}</p>}
                         </div>
                       )}
                     </div>
@@ -498,7 +507,7 @@ export default function ProPage() {
                             onClick={() => setInterval('year')}
                           >
                             {t(`pro.regions.${billingRegion}.priceYearly`)}{' '}
-                            <span className="badge bg-success ms-1" style={{ fontSize: '0.65rem' }}>
+                            <span className="badge bg-success ms-1">
                               {t(`pro.regions.${billingRegion}.saveLabel`)}
                             </span>
                           </button>
