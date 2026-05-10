@@ -61,3 +61,8 @@ spring.datasource.password=TU_PASSWORD_DOCKER
 # Billing safety guards
 # app.environment=production    # Detectado por safety guards y Sentry. Default: development.
 # billing.google-play.production-stub-guard=true   # Bloquea Play Billing en stub si APP_ENVIRONMENT=production.
+#
+# Google Play real verify (Android Publisher API subscriptionsv2):
+# GOOGLE_PLAY_BILLING_MODE=real
+# GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH=C:/path/to/play-sa.json   # JSON de cuenta de servicio con acceso en Play Console
+# GOOGLE_PLAY_REJECT_TEST_PURCHASES_IN_PROD=false   # Opcional: permite compras de prueba en prod (license testers).

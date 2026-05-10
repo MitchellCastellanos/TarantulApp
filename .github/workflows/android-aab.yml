@@ -103,8 +103,12 @@ jobs:
         working-directory: frontend/android
         run: chmod +x gradlew
 
+      # versionCode en Play debe subir siempre. github.run_number solo suele ser bajo (1,2,…);
+      # un offset fijo evita colisión con versiones ya subidas (p. ej. 24) cuando run_number < 24.
       - name: Build AAB
         working-directory: frontend/android
+        env:
+          VERSION_CODE: ${{ github.run_number + 1000 }}
         run: ./gradlew bundleRelease
 
       - name: Upload AAB

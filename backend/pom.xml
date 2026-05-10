@@ -177,6 +177,13 @@
             <version>25.1.0</version>
         </dependency>
 
+        <!-- Google Play Android Publisher API (subscriptionsv2 server-side verify) -->
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-androidpublisher</artifactId>
+            <version>v3-rev20241016-2.0.0</version>
+        </dependency>
+
         <!-- Actuator (health/info/metrics for observability) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

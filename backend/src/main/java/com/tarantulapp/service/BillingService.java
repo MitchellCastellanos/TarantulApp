@@ -2,6 +2,8 @@ package com.tarantulapp.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.services.androidpublisher.model.SubscriptionPurchaseLineItem;
+import com.google.api.services.androidpublisher.model.SubscriptionPurchaseV2;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -42,9 +44,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -112,6 +116,11 @@ public class BillingService {
     @Value("${billing.google-play.production-stub-guard:true}")
     private boolean googlePlayProductionStubGuard;
 
+    @Value("${billing.google-play.reject-test-purchases-in-production:true}")
+    private boolean googlePlayRejectTestPurchasesInProduction;
+
+    private final GooglePlayBillingClient googlePlayBillingClient;
+
     /** Falls back to {@code spring.profiles.active} so existing deployments keep working. */
     @Value("${app.environment:${spring.profiles.active:development}}")
     private String appEnvironment;
@@ -126,7 +135,8 @@ public class BillingService {
                           MarketplaceListingRepository marketplaceListingRepository,
                           ProcessedWebhookEventRepository processedWebhookEventRepository,
                           MarketplaceOrderRepository marketplaceOrderRepository,
-                          MarketplaceOrderAuditService marketplaceOrderAuditService) {
+                          MarketplaceOrderAuditService marketplaceOrderAuditService,
+                          GooglePlayBillingClient googlePlayBillingClient) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -138,6 +148,7 @@ public class BillingService {
         this.processedWebhookEventRepository = processedWebhookEventRepository;
         this.marketplaceOrderRepository = marketplaceOrderRepository;
         this.marketplaceOrderAuditService = marketplaceOrderAuditService;
+        this.googlePlayBillingClient = googlePlayBillingClient;
     }
 
     @Transactional(readOnly = true)
@@ -697,7 +708,8 @@ public class BillingService {
             throw new IllegalArgumentException("GOOGLE_PLAY_PACKAGE_NAME_REQUIRED");
         }
 
-        boolean acceptedInStub = false;
+        boolean verified;
+        LocalDateTime periodEnd;
         if ("stub".equalsIgnoreCase(googlePlayMode)) {
             // Production safety net: a stub-mode deployment in prod would let any caller
             // upgrade themselves to PRO with a `test_*` token. Refuse unless explicitly opted out.
@@ -710,15 +722,48 @@ public class BillingService {
                     || trimmedToken.startsWith("sandbox_")
                     || trimmedToken.startsWith("fake_");
             if (googlePlayAllowTestTokens && looksTestToken) {
-                acceptedInStub = true;
+                verified = true;
+                periodEnd = LocalDateTime.now().plusDays(30);
             } else {
                 throw new IllegalArgumentException("GOOGLE_PLAY_STUB_TOKEN_REJECTED");
             }
+        } else if ("real".equalsIgnoreCase(googlePlayMode)) {
+            SubscriptionPurchaseV2 purchase;
+            try {
+                purchase = googlePlayBillingClient.getSubscriptionPurchaseV2(googlePlayPackageName, trimmedToken);
+            } catch (IllegalStateException ex) {
+                log.error("Google Play verify unavailable: {}", ex.getMessage());
+                throw new IllegalArgumentException("GOOGLE_PLAY_VERIFY_UNAVAILABLE");
+            }
+            if (purchase == null) {
+                throw new IllegalArgumentException("GOOGLE_PLAY_PURCHASE_NOT_FOUND");
+            }
+            if (googlePlayRejectTestPurchasesInProduction && isProductionEnvironment()
+                    && purchase.getTestPurchase() != null) {
+                throw new IllegalArgumentException("GOOGLE_PLAY_TEST_PURCHASE_REJECTED");
+            }
+            String state = purchase.getSubscriptionState();
+            if (!googlePlaySubscriptionStateEntitlesPro(state)) {
+                throw new IllegalArgumentException("GOOGLE_PLAY_SUBSCRIPTION_NOT_ACTIVE");
+            }
+            if (purchase.getLineItems() == null || purchase.getLineItems().isEmpty()) {
+                throw new IllegalArgumentException("GOOGLE_PLAY_NO_LINE_ITEMS");
+            }
+            boolean productMatches = purchase.getLineItems().stream()
+                    .filter(Objects::nonNull)
+                    .map(SubscriptionPurchaseLineItem::getProductId)
+                    .filter(pid -> pid != null && !pid.isBlank())
+                    .anyMatch(pid -> pid.equalsIgnoreCase(resolvedProductId));
+            if (!productMatches) {
+                throw new IllegalArgumentException("GOOGLE_PLAY_PRODUCT_MISMATCH");
+            }
+            verified = true;
+            periodEnd = googlePlayLatestExpiryUtc(purchase);
         } else {
-            throw new IllegalArgumentException("GOOGLE_PLAY_REAL_MODE_NOT_IMPLEMENTED");
+            throw new IllegalArgumentException("GOOGLE_PLAY_UNSUPPORTED_MODE");
         }
 
-        if (!acceptedInStub) {
+        if (!verified) {
             throw new IllegalArgumentException("GOOGLE_PLAY_VERIFICATION_FAILED");
         }
 
@@ -735,7 +780,7 @@ public class BillingService {
         sub.setProviderPriceId(resolvedProductId);
         sub.setStatus("active");
         sub.setCancelAtPeriodEnd(false);
-        sub.setCurrentPeriodEnd(LocalDateTime.now().plusDays(30));
+        sub.setCurrentPeriodEnd(periodEnd);
         subscriptionRepository.save(sub);
 
         user.setPlan(UserPlan.PRO);
@@ -796,6 +841,42 @@ public class BillingService {
         // Matches "production", "prod", "prd" — not "preprod" by accident:
         return e.equals("prod") || e.equals("prd") || e.equals("production")
                 || e.startsWith("prod,") || e.startsWith("production,");
+    }
+
+    private static boolean googlePlaySubscriptionStateEntitlesPro(String state) {
+        if (state == null) {
+            return false;
+        }
+        return "SUBSCRIPTION_STATE_ACTIVE".equalsIgnoreCase(state)
+                || "SUBSCRIPTION_STATE_IN_GRACE_PERIOD".equalsIgnoreCase(state);
+    }
+
+    /**
+     * Max {@code expiryTime} across line items (RFC3339 UTC). Fallback: now + 30 days.
+     */
+    private static LocalDateTime googlePlayLatestExpiryUtc(SubscriptionPurchaseV2 purchase) {
+        Instant latest = purchase.getLineItems().stream()
+                .filter(Objects::nonNull)
+                .map(SubscriptionPurchaseLineItem::getExpiryTime)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(BillingService::parseGooglePlayInstant)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        if (latest == null) {
+            return LocalDateTime.now(ZoneOffset.UTC).plusDays(30);
+        }
+        return LocalDateTime.ofInstant(latest, ZoneOffset.UTC);
+    }
+
+    private static Instant parseGooglePlayInstant(String rfc3339) {
+        try {
+            return Instant.parse(rfc3339);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }
 

@@ -70,9 +70,10 @@ implementada la verificacion real con Android Publisher API.
 
 ## Pendientes / siguiente fase
 
-- Implementar `verifyGooglePlaySubscription` para `mode=real` usando Android
-  Publisher API (`androidpublisher.purchases.subscriptions.get`). Cuando
-  llegue, eliminar la rama stub completa.
+- `mode=real` está implementado con **subscriptionsv2.get** (ver
+  `GooglePlayBillingClient`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH`).
+  Opcional: RTDN (webhooks Google Play) para sincronizar renovaciones/cancelaciones
+  sin depender solo del endpoint de verify.
 - Job programado: `DELETE FROM processed_webhook_events WHERE received_at < NOW() - INTERVAL '60 days'`
   cuando la tabla supere los ~100k registros.
 - Tests E2E para webhook flow con firma real (requiere fixtures con HMAC valido
