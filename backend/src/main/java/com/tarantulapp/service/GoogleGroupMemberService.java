@@ -103,7 +103,9 @@ public class GoogleGroupMemberService {
             if (directory != null) {
                 return directory;
             }
-            GoogleCredentials base = GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson()))
+            String pem = normalizePrivateKey(privateKeyPem);
+            assertPrivateKeyLooksLikePkcs8Pem(pem);
+            GoogleCredentials base = GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson(pem)))
                     .createScoped(Collections.singleton(GROUP_MEMBER_SCOPE));
             GoogleCredentials delegated = base.createDelegated(impersonateEmail.trim());
             directory = new Directory.Builder(
@@ -116,12 +118,12 @@ public class GoogleGroupMemberService {
         }
     }
 
-    private byte[] buildServiceAccountJson() throws IOException {
+    private byte[] buildServiceAccountJson(String normalizedPem) throws IOException {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("type", "service_account");
         json.put("project_id", "tarantulapp-google-directory");
         json.put("private_key_id", "unused");
-        json.put("private_key", normalizePrivateKey(privateKeyPem));
+        json.put("private_key", normalizedPem);
         json.put("client_email", clientEmail.trim());
         json.put("client_id", "0");
         json.put("auth_uri", "https://accounts.google.com/o/oauth2/auth");
@@ -129,15 +131,50 @@ public class GoogleGroupMemberService {
         return objectMapper.writeValueAsBytes(json);
     }
 
+    /**
+     * Railway / dotenv often mangle multiline PEM: outer quotes, UTF-8 BOM, or {@code \n} sent as literal two chars.
+     * Google expects PKCS#8 PEM ({@code -----BEGIN PRIVATE KEY-----}) from the service-account JSON field {@code private_key}.
+     */
     static String normalizePrivateKey(String raw) {
         if (raw == null) {
             return "";
         }
         String s = raw.trim();
+        if (s.startsWith("\uFEFF")) {
+            s = s.substring(1).trim();
+        }
+        while ((s.startsWith("\"") && s.endsWith("\"")) || (s.startsWith("'") && s.endsWith("'"))) {
+            s = s.substring(1, s.length() - 1).trim();
+        }
+        while (s.contains("\\\\n")) {
+            s = s.replace("\\\\n", "\\n");
+        }
         if (s.contains("\\n")) {
             s = s.replace("\\n", "\n");
         }
-        return s;
+        s = s.replace("\r\n", "\n").replace("\r", "\n");
+        return s.trim();
+    }
+
+    private static void assertPrivateKeyLooksLikePkcs8Pem(String pem) {
+        if (pem == null || pem.isBlank()) {
+            return;
+        }
+        if (pem.contains("BEGIN RSA PRIVATE KEY")) {
+            throw new IllegalArgumentException(
+                    "GOOGLE_PRIVATE_KEY must be PKCS#8 from the service account JSON (-----BEGIN PRIVATE KEY-----). "
+                            + "Do not paste an RSA-only PEM or a different key file.");
+        }
+        if (!pem.contains("BEGIN PRIVATE KEY")) {
+            throw new IllegalArgumentException(
+                    "GOOGLE_PRIVATE_KEY must include a PKCS#8 PEM header (-----BEGIN PRIVATE KEY-----). "
+                            + "Copy the private_key value from the downloaded service-account JSON.");
+        }
+        if (!pem.contains("END PRIVATE KEY")) {
+            throw new IllegalArgumentException(
+                    "GOOGLE_PRIVATE_KEY looks truncated (missing -----END PRIVATE KEY-----). "
+                            + "Re-paste the full key; multiline secrets in Railway must include every line.");
+        }
     }
 
     private static String normalizeEmail(String email) {
