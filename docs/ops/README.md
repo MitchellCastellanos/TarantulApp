@@ -48,7 +48,7 @@ Railway/Fly.io/Vercel estan seteadas estas variables (no commitear nunca):
 | `CAPTCHA_SECRET` | hcaptcha.com -> New Site |
 | `CLOUDINARY_*` | cloudinary.com -> Settings -> API Keys |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP provider |
-| `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_ADMIN_IMPERSONATE_EMAIL`, `GOOGLE_TESTERS_GROUP_EMAIL` | Google Workspace Admin SDK — añadir testers al grupo de Play (solo el **backend Java** las lee; no van en Vercel) |
+| `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_ADMIN_IMPERSONATE_EMAIL`, `GOOGLE_TESTERS_GROUP_EMAIL` | Google Workspace Admin SDK — grupo de Play (backend). Misma cuenta: también `GOOGLE_SERVICE_ACCOUNT_CLIENT_ID` (y opcional `GOOGLE_SERVICE_ACCOUNT_PROJECT_ID`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID`) del **mismo** JSON de la service account, o el token puede responder **401**. |
 
 ### Frontend (Vercel build env)
 

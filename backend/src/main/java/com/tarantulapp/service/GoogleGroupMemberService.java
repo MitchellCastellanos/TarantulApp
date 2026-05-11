@@ -44,6 +44,18 @@ public class GoogleGroupMemberService {
     @Value("${GOOGLE_TESTERS_GROUP_EMAIL:}")
     private String testersGroupEmail;
 
+    /** Numeric OAuth client id from the same service-account JSON as {@code GOOGLE_CLIENT_EMAIL} / key (field {@code client_id}). */
+    @Value("${GOOGLE_SERVICE_ACCOUNT_CLIENT_ID:}")
+    private String serviceAccountClientId;
+
+    /** GCP project id from the same JSON ({@code project_id}). */
+    @Value("${GOOGLE_SERVICE_ACCOUNT_PROJECT_ID:}")
+    private String serviceAccountProjectId;
+
+    /** From the same JSON ({@code private_key_id}); optional but keeps the credential blob faithful. */
+    @Value("${GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID:}")
+    private String serviceAccountPrivateKeyId;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private volatile Directory directory;
@@ -103,6 +115,10 @@ public class GoogleGroupMemberService {
             if (directory != null) {
                 return directory;
             }
+            if (isBlank(serviceAccountClientId)) {
+                log.warn("GOOGLE_SERVICE_ACCOUNT_CLIENT_ID is empty — token exchange may return 401. "
+                        + "Set it to the client_id from the same service-account JSON as GOOGLE_CLIENT_EMAIL.");
+            }
             String pem = normalizePrivateKey(privateKeyPem);
             assertPrivateKeyLooksLikePkcs8Pem(pem);
             GoogleCredentials base = GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson(pem)))
@@ -121,11 +137,11 @@ public class GoogleGroupMemberService {
     private byte[] buildServiceAccountJson(String normalizedPem) throws IOException {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("type", "service_account");
-        json.put("project_id", "tarantulapp-google-directory");
-        json.put("private_key_id", "unused");
+        json.put("project_id", isBlank(serviceAccountProjectId) ? "unused-project" : serviceAccountProjectId.trim());
+        json.put("private_key_id", isBlank(serviceAccountPrivateKeyId) ? "unused" : serviceAccountPrivateKeyId.trim());
         json.put("private_key", normalizedPem);
         json.put("client_email", clientEmail.trim());
-        json.put("client_id", "0");
+        json.put("client_id", isBlank(serviceAccountClientId) ? "0" : serviceAccountClientId.trim());
         json.put("auth_uri", "https://accounts.google.com/o/oauth2/auth");
         json.put("token_uri", "https://oauth2.googleapis.com/token");
         return objectMapper.writeValueAsBytes(json);
