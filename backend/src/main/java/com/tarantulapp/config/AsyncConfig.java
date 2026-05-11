@@ -10,8 +10,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * and a flood of pushes doesn't backfill the email queue. Default Spring would use
  * {@code SimpleAsyncTaskExecutor} which spawns a new thread per task — bad under load.
  *
- * Beans named {@code emailExecutor} and {@code pushExecutor} are referenced from
- * {@code @Async("emailExecutor")} / {@code @Async("pushExecutor")} call sites.
+ * Beans named {@code emailExecutor}, {@code pushExecutor}, and {@code googleGroupExecutor} are referenced from
+ * {@code @Async} call sites.
  */
 @Configuration
 public class AsyncConfig {
@@ -38,6 +38,19 @@ public class AsyncConfig {
         executor.setThreadNamePrefix("push-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(15);
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "googleGroupExecutor")
+    public TaskExecutor googleGroupExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(6);
+        executor.setQueueCapacity(1_000);
+        executor.setThreadNamePrefix("google-group-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(25);
         executor.initialize();
         return executor;
     }

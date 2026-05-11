@@ -54,7 +54,7 @@ public class AuthService {
     private final PublicHandleService publicHandleService;
     private final AdminAccessService adminAccessService;
     private final BetaApplicationRepository betaApplicationRepository;
-    private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
+    private final GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker;
     private final AppMetrics appMetrics;
     private final AuthRegistrationMode registrationMode;
     private final RestClient restClient = RestClient.create();
@@ -66,7 +66,7 @@ public class AuthService {
                        PublicHandleService publicHandleService,
                        AdminAccessService adminAccessService,
                        BetaApplicationRepository betaApplicationRepository,
-                       BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService,
+                       GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker,
                        AppMetrics appMetrics,
                        @Value("${app.auth.registration-mode:invite_only}") String registrationModeRaw) {
         this.userRepository = userRepository;
@@ -79,7 +79,7 @@ public class AuthService {
         this.publicHandleService = publicHandleService;
         this.adminAccessService = adminAccessService;
         this.betaApplicationRepository = betaApplicationRepository;
-        this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
+        this.googleGroupSyncAsyncInvoker = googleGroupSyncAsyncInvoker;
         this.appMetrics = appMetrics;
         this.registrationMode = AuthRegistrationMode.fromProperty(registrationModeRaw);
     }
@@ -109,7 +109,6 @@ public class AuthService {
                         app.setApprovedUserId(user.getId());
                         betaApplicationRepository.save(app);
                     }
-                    betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
                 });
     }
 
@@ -143,7 +142,7 @@ public class AuthService {
         User refreshed = userRepository.findById(user.getId()).orElseThrow();
         linkApprovedBetaApplication(refreshed);
         refreshed = userRepository.findById(refreshed.getId()).orElse(refreshed);
-        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(refreshed.getId());
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(refreshed.getId());
         emailService.sendWelcomeTrialStarted(refreshed.getEmail(), refreshed.getDisplayName(), refreshed.getTrialEndsAt());
         appMetrics.registerSuccess();
         String token = jwtUtil.generateToken(refreshed.getEmail());
@@ -178,7 +177,7 @@ public class AuthService {
             adminAccessService.promoteToAdmin(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
-        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }
@@ -222,7 +221,7 @@ public class AuthService {
             user = userRepository.findById(user.getId()).orElse(user);
         }
 
-        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
     }
@@ -472,7 +471,7 @@ public class AuthService {
                 user.setDisplayName(displayName.trim());
             }
             userRepository.save(user);
-            betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
+            googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
             return new AdminUserPasswordResult(user, plain, false);
         }
         String email = identifierToEmailForNewUserOrNull(identifier);
@@ -494,7 +493,7 @@ public class AuthService {
         referralService.applyReferralForNewAccount(user.getId(), null);
         referralService.ensureReferralCodeForUser(user.getId());
         User refreshed = userRepository.findById(user.getId()).orElse(user);
-        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(refreshed.getId());
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(refreshed.getId());
         return new AdminUserPasswordResult(refreshed, plain, true);
     }
 

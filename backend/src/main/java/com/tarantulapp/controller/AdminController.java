@@ -13,7 +13,7 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
-import com.tarantulapp.service.BetaTesterGoogleGroupSyncService;
+import com.tarantulapp.service.GoogleGroupSyncAsyncInvoker;
 import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.service.OfficialVendorService;
@@ -68,7 +68,7 @@ public class AdminController {
     private final AuthService authService;
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
-    private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
+    private final GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -96,7 +96,7 @@ public class AdminController {
                            AuthService authService,
                            EmailService emailService,
                            PlanAccessService planAccessService,
-                           BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService) {
+                           GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -111,7 +111,7 @@ public class AdminController {
         this.authService = authService;
         this.emailService = emailService;
         this.planAccessService = planAccessService;
-        this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
+        this.googleGroupSyncAsyncInvoker = googleGroupSyncAsyncInvoker;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -422,7 +422,7 @@ public class AdminController {
             }
         }
         userRepository.save(user);
-        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
         User refreshedUser = userRepository.findById(user.getId()).orElse(user);
         return ResponseEntity.ok(mapBetaTester(refreshedUser));
     }
@@ -650,7 +650,7 @@ public class AdminController {
         }
         betaApplicationRepository.save(app);
         if ("approve".equals(action) && approvedUser != null && !approvedViaProvision) {
-            betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(approvedUser.getId());
+            googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(approvedUser.getId());
         }
         if (approvedUser != null) {
             approvedUser = userRepository.findById(approvedUser.getId()).orElse(approvedUser);

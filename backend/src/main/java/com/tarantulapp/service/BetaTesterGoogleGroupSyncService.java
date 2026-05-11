@@ -16,6 +16,8 @@ import java.util.UUID;
 
 /**
  * Adds users to the Play testing Google Group (open/closed test track) and tracks sync status for retries.
+ * Interactive flows call {@link GoogleGroupSyncAsyncInvoker#scheduleAfterCommitOrNow} so HTTP threads are not blocked
+ * on Google's token/API latency; this service still performs the actual work (and the CLI batch calls it directly).
  */
 @Service
 public class BetaTesterGoogleGroupSyncService {
