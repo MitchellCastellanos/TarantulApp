@@ -1,0 +1,14 @@
+# Repo-local gitleaks config. gitleaks-action@v2 has no action inputs; config is loaded from here.
+title = "TarantulApp"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ops doc curl placeholders; GBIF WSC checklist datasetKey is public metadata."
+paths = [
+  '''docs/operations/strategic-partner-day-zero-playbook.md''',
+]
+regexes = [
+  '''80dd9c94-241b-4d49-999f-c89de7648525''',
+]

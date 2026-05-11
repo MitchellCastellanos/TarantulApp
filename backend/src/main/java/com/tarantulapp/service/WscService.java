@@ -42,7 +42,7 @@ public class WscService {
 
     private static final Logger log = LoggerFactory.getLogger(WscService.class);
 
-    /** GBIF dataset key for the World Spider Catalog checklist. */
+    /** GBIF dataset key for the World Spider Catalog checklist (public metadata, not a credential). */
     private static final String WSC_DATASET_KEY = "80dd9c94-241b-4d49-999f-c89de7648525";
     private static final String GBIF_SPECIES_SEARCH = "https://api.gbif.org/v1/species/search";
     private static final String GBIF_SPECIES_MATCH = "https://api.gbif.org/v1/species/match";
