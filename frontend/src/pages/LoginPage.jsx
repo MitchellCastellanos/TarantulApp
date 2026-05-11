@@ -7,7 +7,7 @@ import communityService from '../services/communityService'
 import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
-import AndroidPlayBetaCallout from '../components/AndroidPlayBetaCallout'
+import PlayStoreEarlyAccessCallout from '../components/PlayStoreEarlyAccessCallout'
 import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
@@ -65,6 +65,15 @@ export default function LoginPage() {
   useEffect(() => {
     if (inviteOnly) setMode('login')
   }, [inviteOnly])
+
+  /** Banner “Create account” navigates here with state; sync tab when already on /login */
+  useEffect(() => {
+    if (location.state?.initialMode !== 'register') return
+    if (inviteOnly) return
+    if (!registrationPolicy.registrationOpen) return
+    setMode('register')
+    setError('')
+  }, [location.state, inviteOnly, registrationPolicy.registrationOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -430,7 +439,18 @@ export default function LoginPage() {
                   </p>
                 )}
 
-                {inviteOnly && mode === 'login' && <AndroidPlayBetaCallout className="mb-3" />}
+                <PlayStoreEarlyAccessCallout
+                  className="mb-3"
+                  inviteOnly={inviteOnly}
+                  onGoRegister={
+                    showRegisterUi
+                      ? () => {
+                          setMode('register')
+                          setError('')
+                        }
+                      : undefined
+                  }
+                />
 
                 {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
                 {showRegisterUi && mode === 'register' && (

@@ -50,10 +50,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("""
             select u from User u
-            where u.isBetaTester = true
-              and (u.googleGroupSyncStatus is null or u.googleGroupSyncStatus <> 'synced')
+            where u.googleGroupSyncStatus is null or u.googleGroupSyncStatus <> 'synced'
             """)
-    List<User> findBetaTestersNeedingGoogleGroupSync();
+    List<User> findUsersNeedingGoogleGroupSync();
 
     @Modifying
     @Query("update User u set u.lastActivityAt = :ts where u.id = :id")

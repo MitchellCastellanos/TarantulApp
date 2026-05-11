@@ -90,8 +90,8 @@
     "demoPartnersBanner": "Partners marked DEMO are placeholder data for the beta so the marketplace strip is not empty. They are not real stores — do not expect real purchases or shipping.",
     "demoFeedBanner": "Posts with a DEMO badge are seeded sample content so the community feed is not empty during the beta. Your own posts are real.",
     "demoPostBadge": "DEMO",
-    "agreementTitle": "Beta tester agreement",
-    "agreementIntro": "You are joining early access. Please confirm the following so we can keep feedback structured and protect both you and the product.",
+    "agreementTitle": "Open testing acknowledgment",
+    "agreementIntro": "You are using the build while we widen access on Google Play. Please confirm the following so expectations stay clear as we stabilize the release.",
     "agreementBullet1": "You will use pre-release software that may change, break, or lose data; keep backups of anything important outside the app.",
     "agreementBullet2": "You agree to send honest feedback (bugs, confusion, ideas) through the in-app bug reporter or by replying to team emails.",
     "agreementBullet3": "You will not hold TarantulApp liable for issues arising from beta use; support may be limited and features may be reset.",
@@ -100,6 +100,21 @@
     "agreementSubmit": "Continue to the app",
     "agreementNeedCheckbox": "Please confirm the checkbox to continue.",
     "agreementError": "Could not save your acceptance. Try again."
+  },
+  "playStore": {
+    "webBannerTitle": "Android: open testing on Google Play",
+    "webBannerBody": "Create a free TarantulApp account first — we add your email to the early access list so Play will let you install. Then open the store link (it can take a few minutes).",
+    "webBannerGetApp": "Open Play Store",
+    "webBannerCreateAccount": "Create free account",
+    "webBannerSignedInHint": "You’re signed in — if the list was just updated, try the Play link (wait a few minutes if install is still blocked).",
+    "webBannerDismiss": "Hide",
+    "calloutBadge": "Early access",
+    "calloutTitle": "Get the app on Google Play",
+    "calloutBody": "We’re on open testing. Create your TarantulApp account with the same email you use on your phone so we can add you to the access list. A few minutes later, open Google Play and install. No extra “tester tasks” required.",
+    "calloutBodyInviteOnly": "We’re on open testing. Sign in with the email we invited so we can add you to the access list, then install from Google Play. If the store still says you’re not a tester, wait a few minutes and try again.",
+    "calloutCreateAccount": "Create free account",
+    "calloutSignedInHint": "You’re in — use Open Play Store on the account email.",
+    "playGoogleAccountTip": "Install still won’t start? On your phone, open Google Play while signed into the same Google account as your TarantulApp email. A mismatched Play login is the usual reason the listing looks “closed.”"
   },
   "social": {
     "pageTitle": "Community",

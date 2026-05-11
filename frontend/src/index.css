@@ -3692,3 +3692,107 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 :root[data-theme='light'] .ta-app-update-banner__btn-update {
   border-color: rgba(180, 83, 9, 0.45) !important;
 }
+
+/* Web-only: Play early-access strip (all visitors; hidden in Capacitor). Fixed TOP for visibility. */
+.ta-play-store-web-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1030;
+  border-bottom: 1px solid rgba(52, 168, 83, 0.35);
+  background: linear-gradient(180deg, rgba(8, 26, 18, 0.98), rgba(12, 18, 24, 0.97));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  animation: ta-play-store-web-banner-in 0.38s ease-out;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@keyframes ta-play-store-web-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ta-play-store-web-banner__icon {
+  color: #34a853;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.ta-play-store-web-banner__title {
+  color: var(--ta-heading-gold, #d4af37);
+  font-size: 0.92rem;
+}
+
+.ta-play-store-web-banner__body {
+  color: var(--ta-text-muted, #94a3b8);
+  font-size: 0.8125rem;
+}
+
+.ta-play-store-web-banner__hint {
+  color: rgba(183, 251, 200, 0.85);
+  font-size: 0.75rem;
+}
+
+.ta-play-store-web-banner__fine-print {
+  color: rgba(148, 163, 184, 0.82);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+:root[data-theme='light'] .ta-play-store-web-banner__fine-print {
+  color: rgba(71, 85, 105, 0.85);
+}
+
+.ta-play-store-web-banner__btn-secondary {
+  border: 1px solid rgba(148, 163, 184, 0.45) !important;
+  color: var(--ta-parchment, #f1f5f9) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.ta-play-store-web-banner__btn-secondary:hover {
+  border-color: rgba(212, 175, 55, 0.45) !important;
+  color: var(--ta-heading-gold, #d4af37) !important;
+}
+
+.ta-play-store-web-banner__btn-dismiss {
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  color: var(--ta-text-muted, #94a3b8) !important;
+  background: transparent !important;
+}
+
+.ta-play-store-web-banner__btn-dismiss:hover {
+  color: var(--ta-text, #f1f5f9) !important;
+  border-color: rgba(148, 163, 184, 0.55) !important;
+}
+
+.ta-play-store-web-banner__btn-primary {
+  border: 1px solid rgba(52, 168, 83, 0.55) !important;
+  background: rgba(52, 168, 83, 0.2) !important;
+  color: #b7fbc8 !important;
+}
+
+.ta-play-store-web-banner__btn-primary:hover {
+  background: rgba(52, 168, 83, 0.32) !important;
+}
+
+:root[data-theme='light'] .ta-play-store-web-banner {
+  background: linear-gradient(180deg, #f0fdf4, #f8fafc);
+  border-bottom-color: rgba(52, 168, 83, 0.35);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme='light'] .ta-play-store-web-banner__body {
+  color: var(--ta-text-muted);
+}
+
+:root[data-theme='light'] .ta-play-store-web-banner__btn-dismiss {
+  border-color: rgba(71, 85, 105, 0.35) !important;
+  color: var(--ta-text-muted) !important;
+}

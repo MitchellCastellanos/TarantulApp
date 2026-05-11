@@ -42,6 +42,9 @@ public class EmailService {
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
+    @Value("${app.play-store-listing-url:https://play.google.com/store/apps/details?id=com.tarantulapp.app}")
+    private String playStoreListingUrl;
+
     @Value("${app.mail.admin-notify-to:admin@tarantulapp.com}")
     private String adminNotifyTo;
 
@@ -118,23 +121,55 @@ public class EmailService {
     }
 
     public void sendWelcomeTrialStarted(String toEmail, String displayName, LocalDateTime trialEndsAt) {
-        String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
-        String trialEndsText = trialEndsAt != null ? trialEndsAt.format(DATE_FMT) : "en 7 días";
+        String greetingEs = (displayName != null && !displayName.isBlank()) ? displayName.trim() : "keeper";
+        String greetingEn = greetingEs;
+        String trialEndsEs = trialEndsAt != null ? trialEndsAt.format(DATE_FMT) : "unos 7 días";
+        String trialEndsEn = trialEndsAt != null ? trialEndsAt.format(DATE_FMT) : "about 7 days";
+        String web = stripTrailingSlash(baseUrl == null ? "" : baseUrl.trim());
+        if (web.isBlank()) {
+            web = "https://tarantulapp.com";
+        }
+        String play = (playStoreListingUrl == null || playStoreListingUrl.isBlank())
+                ? "https://play.google.com/store/apps/details?id=com.tarantulapp.app"
+                : playStoreListingUrl.trim();
         try {
             doSend(toEmail,
-                "Bienvenido a TarantulApp - Tu prueba Pro empezó",
-                "Hola " + greeting + ",\n\n" +
-                "Bienvenido a TarantulApp. Tu prueba gratuita Pro ya está activa.\n" +
-                "Finaliza el: " + trialEndsText + ".\n\n" +
-                "Importante: NO te vamos a cobrar automaticamente al terminar la prueba.\n" +
-                "Solo te enviaremos un recordatorio 2 días antes para avisarte.\n\n" +
-                "Si quieres ayuda, responde este correo.\n\n" +
-                "- TarantulApp Team"
+                "Bienvenido a TarantulApp · early users | Welcome — you're in early",
+                "Hola " + greetingEs + ",\n\n" +
+                "¡Bienvenido/a a TarantulApp! Estás entre las primeras cuentas mientras pasamos " +
+                "a prueba abierta en Google Play. No hay tareas obligatorias: usa la app a tu ritmo " +
+                "y, si te nace, mándanos feedback (desde la app o respondiendo este correo).\n\n" +
+                "Tu prueba gratuita Pro ya está activa y termina el: " + trialEndsEs + ".\n" +
+                "Importante: no hay cobro automático al cerrar la prueba. Te mandaremos un recordatorio antes.\n\n" +
+                "Descarga Android (Google Play): " + play + "\n" +
+                "Usa la web: " + web + "\n\n" +
+                "Gracias por ser de los primeros.\n\n" +
+                "— TarantulApp\n\n" +
+                "---\n\n" +
+                "Hi " + greetingEn + ",\n\n" +
+                "Welcome to TarantulApp — you're one of our early users as we widen access on Google Play. " +
+                "There are no required tasks: use the app at your own pace, and share feedback anytime " +
+                "(in-app bug reporter or by replying to this email).\n\n" +
+                "Your complimentary Pro trial is active and ends: " + trialEndsEn + ".\n" +
+                "There's no automatic charge when it ends — we'll remind you beforehand.\n\n" +
+                "Android (Google Play): " + play + "\n" +
+                "Web app: " + web + "\n\n" +
+                "Thanks for being early.\n\n" +
+                "— TarantulApp"
             );
             log.info("Welcome trial email sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
             log.error("Failed to send welcome/trial email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
+    }
+
+    private static String stripTrailingSlash(String raw) {
+        if (raw == null || raw.isEmpty()) return "";
+        int end = raw.length();
+        while (end > 0 && raw.charAt(end - 1) == '/') {
+            end--;
+        }
+        return end == raw.length() ? raw : raw.substring(0, end);
     }
 
     public void sendTrialEndingReminder(String toEmail, String displayName, LocalDateTime trialEndsAt) {

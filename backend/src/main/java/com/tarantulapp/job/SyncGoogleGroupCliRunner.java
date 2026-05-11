@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * CLI retry job: {@code mvn spring-boot:run -Dspring-boot.run.profiles=sync-google-group}
- * (see {@code scripts/sync-testers-to-google-group.*}).
+ * syncs every user pending Google Group membership (see {@code scripts/sync-testers-to-google-group.*}).
  */
 @Component
 @Profile("sync-google-group")
@@ -30,7 +30,7 @@ public class SyncGoogleGroupCliRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         BetaTesterGoogleGroupSyncService.SyncGoogleGroupBatchResult r =
                 betaTesterGoogleGroupSyncService.retryAllPending();
-        log.info("sync-testers-to-google-group: attempted={} synced={} failed={}",
+        log.info("sync-google-group: attempted={} synced={} failed={}",
                 r.attempted(), r.synced(), r.failed());
         int code = r.failed() > 0 ? 1 : 0;
         System.exit(code);

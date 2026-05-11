@@ -125,7 +125,7 @@ public class User {
     @Column(name = "beta_agreement_accepted_at")
     private Instant betaAgreementAcceptedAt;
 
-    /** Play closed-testing Google Group sync status; see GoogleGroupSyncStatus. Meaningful when isBetaTester is true. */
+    /** Play testing Google Group sync status; see {@link com.tarantulapp.service.GoogleGroupSyncStatus}. All accounts are eligible for sync. */
     @Column(name = "google_group_sync_status", length = 32)
     private String googleGroupSyncStatus;
 

@@ -422,9 +422,7 @@ public class AdminController {
             }
         }
         userRepository.save(user);
-        if (Boolean.TRUE.equals(user.getIsBetaTester())) {
-            betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(user.getId());
-        }
+        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(user.getId());
         User refreshedUser = userRepository.findById(user.getId()).orElse(user);
         return ResponseEntity.ok(mapBetaTester(refreshedUser));
     }
@@ -652,7 +650,7 @@ public class AdminController {
         }
         betaApplicationRepository.save(app);
         if ("approve".equals(action) && approvedUser != null && !approvedViaProvision) {
-            betaTesterGoogleGroupSyncService.notifyBetaTesterActivated(approvedUser.getId());
+            betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMember(approvedUser.getId());
         }
         if (approvedUser != null) {
             approvedUser = userRepository.findById(approvedUser.getId()).orElse(approvedUser);

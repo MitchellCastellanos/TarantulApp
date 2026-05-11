@@ -7,9 +7,9 @@ import {
   isDismissedForLatestVersion,
   markDismissedForLatestVersion,
 } from '../utils/androidUpdateBannerState'
+import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
 
-const PLAY_STORE_FALLBACK =
-  'https://play.google.com/store/apps/details?id=com.tarantulapp.app'
+const PLAY_STORE_FALLBACK = ANDROID_PLAY_STORE_URL
 
 /** Tras el splash / primer layout: evita banner “cortado” o solapado. */
 const OPEN_APP_DELAY_MS = 720

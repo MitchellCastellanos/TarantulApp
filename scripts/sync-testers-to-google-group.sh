@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Retry joining beta testers to the Play closed-testing Google Group (Admin SDK Directory API).
+# Retry joining all pending users to the Play testing Google Group (Admin SDK Directory API).
 # Requires DB_* (or spring.datasource.*), GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY,
 # GOOGLE_ADMIN_IMPERSONATE_EMAIL, GOOGLE_TESTERS_GROUP_EMAIL.
 set -euo pipefail

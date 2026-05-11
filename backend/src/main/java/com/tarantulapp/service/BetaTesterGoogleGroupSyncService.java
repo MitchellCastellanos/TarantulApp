@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Adds beta testers to the Play Store closed-testing Google Group and tracks sync status for retries.
+ * Adds users to the Play testing Google Group (open/closed test track) and tracks sync status for retries.
  */
 @Service
 public class BetaTesterGoogleGroupSyncService {
@@ -40,16 +40,16 @@ public class BetaTesterGoogleGroupSyncService {
     }
 
     /**
-     * Call after a user becomes an active beta tester (provision, approval, or linking an approved application).
-     * Never throws; failures are recorded as {@link GoogleGroupSyncStatus#FAILED}.
+     * Ensures the account email is a member of {@code GOOGLE_TESTERS_GROUP_EMAIL}. Call after signup or login
+     * (and when toggling beta flags in admin). Never throws; failures are recorded as {@link GoogleGroupSyncStatus#FAILED}.
      */
     @Transactional
-    public void notifyBetaTesterActivated(UUID userId) {
+    public void ensureGoogleTestersGroupMember(UUID userId) {
         if (userId == null) {
             return;
         }
         User user = userRepository.findById(userId).orElse(null);
-        if (user == null || !Boolean.TRUE.equals(user.getIsBetaTester())) {
+        if (user == null) {
             return;
         }
         if (GoogleGroupSyncStatus.SYNCED.equals(user.getGoogleGroupSyncStatus())) {
@@ -71,13 +71,13 @@ public class BetaTesterGoogleGroupSyncService {
         }
     }
 
-    /** Retries every beta tester not marked {@link GoogleGroupSyncStatus#SYNCED}. */
+    /** Retries every user not marked {@link GoogleGroupSyncStatus#SYNCED}. */
     public SyncGoogleGroupBatchResult retryAllPending() {
-        List<User> pending = userRepository.findBetaTestersNeedingGoogleGroupSync();
+        List<User> pending = userRepository.findUsersNeedingGoogleGroupSync();
         int synced = 0;
         int failed = 0;
         for (User u : pending) {
-            retryOneTx.executeWithoutResult(st -> self.notifyBetaTesterActivated(u.getId()));
+            retryOneTx.executeWithoutResult(st -> self.ensureGoogleTestersGroupMember(u.getId()));
             User refreshed = userRepository.findById(u.getId()).orElse(u);
             if (GoogleGroupSyncStatus.SYNCED.equals(refreshed.getGoogleGroupSyncStatus())) {
                 synced++;

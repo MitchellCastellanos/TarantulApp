@@ -90,8 +90,8 @@
     "demoPartnersBanner": "Les partenaires marqués DEMO sont des données fictives pour que la bande du marketplace ne soit pas vide. Ce ne sont pas de vraies boutiques.",
     "demoFeedBanner": "Les publications avec badge DEMO sont du contenu semé pour la bêta. Vos propres publications sont réelles.",
     "demoPostBadge": "DEMO",
-    "agreementTitle": "Accord testeur bêta",
-    "agreementIntro": "Vous rejoignez l’accès anticipé. Merci de confirmer les points suivants pour garder un retour structuré.",
+    "agreementTitle": "Accès test ouvert — reconnaissance",
+    "agreementIntro": "Nous élargissons l’accès sur Google Play. Merci de confirmer les points suivants pour clarifier les attentes pendant que nous stabilisons la sortie.",
     "agreementBullet1": "Vous utilisez un logiciel pré-lancement pouvant changer, planter ou perdre des données ; sauvegardez l’essentiel hors appli.",
     "agreementBullet2": "Vous vous engagez à envoyer un retour honnête (bugs, confusion, idées) via le rapport de bug ou par e-mail.",
     "agreementBullet3": "Vous ne tenez pas TarantulApp responsable des problèmes liés à la bêta ; le support peut être limité.",
@@ -100,6 +100,21 @@
     "agreementSubmit": "Continuer vers l’appli",
     "agreementNeedCheckbox": "Cochez la case pour continuer.",
     "agreementError": "Impossible d’enregistrer. Réessayez."
+  },
+  "playStore": {
+    "webBannerTitle": "Android : test ouvert sur Google Play",
+    "webBannerBody": "Créez d’abord un compte TarantulApp gratuit — nous ajoutons votre e-mail à la liste early access pour que le Play Store autorise l’installation. Ensuite ouvrez le lien (cela peut prendre quelques minutes).",
+    "webBannerGetApp": "Ouvrir le Play Store",
+    "webBannerCreateAccount": "Créer un compte gratuit",
+    "webBannerSignedInHint": "Vous êtes connecté — si la liste vient d’être mise à jour, réessayez le lien Play (attendez quelques minutes si l’installation est encore bloquée).",
+    "webBannerDismiss": "Masquer",
+    "calloutBadge": "Early access",
+    "calloutTitle": "Installer depuis Google Play",
+    "calloutBody": "Nous sommes en test ouvert. Créez votre compte TarantulApp avec le même e-mail que sur le téléphone pour que nous puissions vous ajouter à la liste d’accès. Quelques minutes plus tard, ouvrez Google Play et installez. Pas de tâches beta obligatoires.",
+    "calloutBodyInviteOnly": "Nous sommes en test ouvert. Connectez-vous avec l’e-mail invité pour que nous puissions vous ajouter à la liste d’accès, puis installez depuis Google Play. Si le magasin refuse encore, attendez quelques minutes et réessayez.",
+    "calloutCreateAccount": "Créer un compte gratuit",
+    "calloutSignedInHint": "C’est bon — utilisez « Ouvrir le Play Store » avec l’e-mail du compte.",
+    "playGoogleAccountTip": "L’installation refuse toujours ? Sur le téléphone, ouvrez Google Play connecté au même compte Google que l’e-mail de votre compte TarantulApp. Un autre compte sur Play donne souvent l’impression que l’accès est fermé."
   },
   "social": {
     "pageTitle": "Communauté",
