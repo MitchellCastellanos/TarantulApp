@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
+import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
 
 const LOGIN_AUDIENCE_KEY = 'ta-login-audience'
 // Local FE preview toggle: set to false to instantly revert.
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const [mode, setMode] = useState(() => (location.state?.initialMode === 'register' ? 'register' : 'login'))
   const [form, setForm] = useState({ email: '', password: '', displayName: '', legalAccepted: false })
+  const [captchaToken, setCaptchaToken] = useState('')
   const [referralCode, setReferralCode] = useState(() => {
     const r = new URLSearchParams(location.search).get('ref')
     return r ? String(r).trim().toUpperCase() : ''
@@ -150,6 +152,10 @@ export default function LoginPage() {
       setError(t('auth.legalMustAccept'))
       return
     }
+    if (!inviteOnly && mode === 'register' && isCaptchaEnabled() && !captchaToken) {
+      setError(t('auth.captchaRequired', 'Por favor completa el captcha.'))
+      return
+    }
     setLoading(true)
     try {
       const endpoint = inviteOnly || mode === 'login' ? '/auth/login' : '/auth/register'
@@ -161,6 +167,7 @@ export default function LoginPage() {
             displayName: form.displayName?.trim() || undefined,
             referralCode: referralCode.trim() || undefined,
             legalAccepted: !!form.legalAccepted,
+            captchaToken: captchaToken || undefined,
           }
       const { data } = await publicApi.post(endpoint, body)
       const tok = data?.token != null ? String(data.token).trim() : ''
@@ -184,6 +191,7 @@ export default function LoginPage() {
       const baseMsg = fieldMsgs || (typeof code === 'string' ? code : '') || t('common.error')
       setError(import.meta.env.DEV && st ? `${baseMsg} (HTTP ${st})` : baseMsg)
       }
+      if (mode === 'register') setCaptchaToken('')
     } finally {
       setLoading(false)
     }
@@ -502,7 +510,7 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  <div className={mode === 'login' ? 'mb-2' : 'mb-4'}>
+                  <div className={mode === 'login' ? 'mb-2' : 'mb-3'}>
                     <label className="form-label fw-semibold small">{t('auth.password')}</label>
                     <input
                       type="password"
@@ -515,6 +523,13 @@ export default function LoginPage() {
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     />
                   </div>
+
+                  {!inviteOnly && mode === 'register' && (
+                    <HCaptchaWidget
+                      onToken={setCaptchaToken}
+                      onExpire={() => setCaptchaToken('')}
+                    />
+                  )}
 
                   {mode === 'login' && (
                     <div className="mb-4 text-end">
@@ -562,7 +577,7 @@ export default function LoginPage() {
                       <button
                         className="btn btn-link btn-sm p-0 text-decoration-none"
                         style={{ color: 'var(--ta-brown)' }}
-                        onClick={() => { setMode('register'); setError('') }}
+                        onClick={() => { setMode('register'); setError(''); setCaptchaToken('') }}
                       >
                         {t('auth.registerLink')}
                       </button>
@@ -573,7 +588,7 @@ export default function LoginPage() {
                       <button
                         className="btn btn-link btn-sm p-0 text-decoration-none"
                         style={{ color: 'var(--ta-brown)' }}
-                        onClick={() => { setMode('login'); setError('') }}
+                        onClick={() => { setMode('login'); setError(''); setCaptchaToken('') }}
                       >
                         {t('auth.loginLink')}
                       </button>
