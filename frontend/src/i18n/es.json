@@ -1443,6 +1443,7 @@
     "pre_molt": "🌙 Pre-muda"
   },
   "timeline": {
+    "loadMore": "Cargar eventos anteriores",
     "growthMoltHint": "En mudas, la línea muestra lo que guardaste (tallas, notas); complicación y duración aparecen si los registraste.",
     "glyphFeeding": "▸",
     "glyphMolt": "↻",
@@ -1512,6 +1513,7 @@
     "processing": "Procesando..."
   },
   "gallery": {
+    "loadMore": "Cargar más fotos",
     "title": "📷 Galería",
     "captionPlaceholder": "Descripción (opcional)",
     "addPhoto": "+ Agregar foto",
@@ -2062,6 +2064,13 @@
     "grantPro": "Marcar PRO",
     "setFree": "Marcar FREE",
     "extendTrial": "Sumar días de prueba",
+    "playGroupSync": "Lista testers Play",
+    "playGroupSyncForce": "Forzar de nuevo",
+    "playGroupSyncHint": "Agrega el correo de esta cuenta al grupo de prueba de Google Play (igual que el alta automática). Si ya está synced, no hace llamada.",
+    "playGroupSyncForceHint": "Borra el estado local y vuelve a llamar a Google — para probar credenciales o reintentar tras un fallo.",
+    "playGroupSyncSuccess": "Grupo Play: {{status}}.",
+    "playGroupSyncResultFailed": "Grupo Play: {{status}}. {{error}}",
+    "playGroupSyncRequestError": "No se pudo contactar al servidor para el grupo de Play.",
     "extendTrialPrompt": "Días extra de prueba (se suman tras el fin de la prueba actual, o desde hoy):",
     "planUpdated": "Plan actualizado.",
     "planUpdateError": "No se pudo actualizar el plan.",

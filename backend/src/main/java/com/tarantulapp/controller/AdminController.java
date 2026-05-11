@@ -13,6 +13,7 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.AuthService;
+import com.tarantulapp.service.BetaTesterGoogleGroupSyncService;
 import com.tarantulapp.service.GoogleGroupSyncAsyncInvoker;
 import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.PlanAccessService;
@@ -69,6 +70,7 @@ public class AdminController {
     private final EmailService emailService;
     private final PlanAccessService planAccessService;
     private final GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker;
+    private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -96,7 +98,8 @@ public class AdminController {
                            AuthService authService,
                            EmailService emailService,
                            PlanAccessService planAccessService,
-                           GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker) {
+                           GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker,
+                           BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -112,6 +115,7 @@ public class AdminController {
         this.emailService = emailService;
         this.planAccessService = planAccessService;
         this.googleGroupSyncAsyncInvoker = googleGroupSyncAsyncInvoker;
+        this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -427,6 +431,26 @@ public class AdminController {
         return ResponseEntity.ok(mapBetaTester(refreshedUser));
     }
 
+    /**
+     * Manually add the user's email to the Play testing Google Group (Admin SDK). Synchronous so you see the result.
+     * {@code force=true} clears local sync flags first so Google is called again even if the row was already {@code synced}.
+     */
+    @PostMapping("/users/{id}/google-testers-group-sync")
+    public ResponseEntity<Map<String, Object>> syncGoogleTestersGroupForUser(@PathVariable UUID id,
+                                                                             @RequestParam(defaultValue = "false") boolean force) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        betaTesterGoogleGroupSyncService.ensureGoogleTestersGroupMemberForAdmin(id, force);
+        User refreshed = userRepository.findById(id).orElseThrow();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("userId", refreshed.getId());
+        out.put("email", refreshed.getEmail());
+        out.put("googleGroupSyncStatus", refreshed.getGoogleGroupSyncStatus() == null ? "" : refreshed.getGoogleGroupSyncStatus());
+        out.put("googleGroupSyncLastError",
+                refreshed.getGoogleGroupSyncLastError() == null ? "" : refreshed.getGoogleGroupSyncLastError());
+        return ResponseEntity.ok(out);
+    }
+
     @PatchMapping("/users/{id}/verified-breeder")
     public ResponseEntity<Map<String, Object>> setUserVerifiedBreeder(@PathVariable UUID id,
                                                                        @RequestBody(required = false) SetVerifiedBreederRequest req) {
@@ -732,6 +756,8 @@ public class AdminController {
         out.put("tarantulasCount", spiderCounts.getOrDefault(u.getId(), 0L));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());
+        out.put("googleGroupSyncStatus", u.getGoogleGroupSyncStatus() == null ? "" : u.getGoogleGroupSyncStatus());
+        out.put("googleGroupSyncLastError", u.getGoogleGroupSyncLastError() == null ? "" : u.getGoogleGroupSyncLastError());
         return out;
     }
 

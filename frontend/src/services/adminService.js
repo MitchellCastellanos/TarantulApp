@@ -38,6 +38,13 @@ const adminService = {
     api.get('/admin/beta-testers').then((r) => r.data),
   patchUserBeta: (id, payload) =>
     api.patch(`/admin/users/${id}/beta`, payload).then((r) => r.data),
+  /** Adds user email to Play testing Google Group (admin). {@code force} clears local "synced" and calls Google again. */
+  syncGoogleTestersGroup: (id, force = false) =>
+    api
+      .post(`/admin/users/${id}/google-testers-group-sync`, null, {
+        params: { force: force ? 'true' : 'false' },
+      })
+      .then((r) => r.data),
   patchUserPlan: (id, payload) =>
     api.patch(`/admin/users/${id}/plan`, payload).then((r) => r.data),
   betaApplications: (status = '') =>

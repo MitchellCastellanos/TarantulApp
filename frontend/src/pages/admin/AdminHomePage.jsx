@@ -29,6 +29,7 @@ export default function AdminHomePage() {
   const [recentSort, setRecentSort] = useState('activity')
   const [recentUsersTotal, setRecentUsersTotal] = useState(0)
   const [recentUsersLoading, setRecentUsersLoading] = useState(true)
+  const [playGroupBusyId, setPlayGroupBusyId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -86,6 +87,32 @@ export default function AdminHomePage() {
       setReports((prev) => prev.filter((r) => r.id !== id))
     } catch {
       setError(t('admin.resolveError'))
+    }
+  }
+
+  const syncPlayTestersGroup = async (u, force) => {
+    setPlayGroupBusyId(u.id)
+    setError('')
+    setSuccess('')
+    try {
+      const data = await adminService.syncGoogleTestersGroup(u.id, force)
+      const status = data?.googleGroupSyncStatus != null ? String(data.googleGroupSyncStatus) : ''
+      const lastErr = data?.googleGroupSyncLastError != null ? String(data.googleGroupSyncLastError) : ''
+      setRecentUsers((prev) =>
+        prev.map((row) =>
+          String(row.id) === String(u.id) ? { ...row, googleGroupSyncStatus: status, googleGroupSyncLastError: lastErr } : row,
+        ),
+      )
+      if (status === 'synced') {
+        setSuccess(t('admin.playGroupSyncSuccess', { status }))
+      } else {
+        setError(t('admin.playGroupSyncResultFailed', { status: status || '—', error: lastErr || t('common.error') }))
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || t('admin.playGroupSyncRequestError')
+      setError(msg)
+    } finally {
+      setPlayGroupBusyId(null)
     }
   }
 
@@ -384,6 +411,30 @@ export default function AdminHomePage() {
                             <button type="button" className="btn btn-sm btn-outline-info" onClick={() => extendTrialUser(u)}>
                               {t('admin.extendTrial')}
                             </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-dark"
+                              disabled={playGroupBusyId === u.id}
+                              title={t('admin.playGroupSyncHint')}
+                              onClick={() => syncPlayTestersGroup(u, false)}
+                            >
+                              {playGroupBusyId === u.id ? t('common.loading') : t('admin.playGroupSync')}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-link text-warning p-0 small text-decoration-none"
+                              disabled={playGroupBusyId === u.id}
+                              title={t('admin.playGroupSyncForceHint')}
+                              onClick={() => syncPlayTestersGroup(u, true)}
+                            >
+                              {t('admin.playGroupSyncForce')}
+                            </button>
+                            {(u.googleGroupSyncStatus || u.googleGroupSyncLastError) && (
+                              <span className="small text-muted" style={{ fontSize: '0.7rem' }}>
+                                {u.googleGroupSyncStatus ? `${u.googleGroupSyncStatus}` : ''}
+                                {u.googleGroupSyncLastError ? ` · ${u.googleGroupSyncLastError}` : ''}
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>

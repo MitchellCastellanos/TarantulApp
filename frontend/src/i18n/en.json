@@ -1462,6 +1462,7 @@
     "pre_molt": "🌙 Pre-molt"
   },
   "timeline": {
+    "loadMore": "Load older events",
     "growthMoltHint": "Molt rows show the text you saved (sizes, notes); complications and duration appear when you logged them.",
     "glyphFeeding": "▸",
     "glyphMolt": "↻",
@@ -1531,6 +1532,7 @@
     "processing": "Processing..."
   },
   "gallery": {
+    "loadMore": "Load more photos",
     "title": "📷 Gallery",
     "captionPlaceholder": "Caption (optional)",
     "addPhoto": "+ Add photo",
@@ -2080,6 +2082,13 @@
     "grantPro": "Set PRO",
     "setFree": "Set FREE",
     "extendTrial": "Add trial days",
+    "playGroupSync": "Play testers list",
+    "playGroupSyncForce": "Force re-sync",
+    "playGroupSyncHint": "Adds this account email to the Google Play testing group (same as automatic signup). Skips work if already marked synced.",
+    "playGroupSyncForceHint": "Clears local sync state and calls Google again — use to verify credentials or retry after a failure.",
+    "playGroupSyncSuccess": "Play group: {{status}}.",
+    "playGroupSyncResultFailed": "Play group: {{status}}. {{error}}",
+    "playGroupSyncRequestError": "Could not reach the server for Play group sync.",
     "extendTrialPrompt": "Extra trial days (added after current trial end, or from today):",
     "planUpdated": "Plan updated.",
     "planUpdateError": "Could not update plan.",

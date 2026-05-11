@@ -42,6 +42,26 @@ public class BetaTesterGoogleGroupSyncService {
     }
 
     /**
+     * Admin / manual: optionally clears sync flags so {@link #ensureGoogleTestersGroupMember} calls Google again
+     * (useful to verify credentials or recover after a transient failure).
+     */
+    @Transactional
+    public void ensureGoogleTestersGroupMemberForAdmin(UUID userId, boolean force) {
+        if (userId == null) {
+            return;
+        }
+        if (force) {
+            User u = userRepository.findById(userId).orElse(null);
+            if (u != null) {
+                u.setGoogleGroupSyncStatus(null);
+                u.setGoogleGroupSyncLastError(null);
+                userRepository.save(u);
+            }
+        }
+        ensureGoogleTestersGroupMember(userId);
+    }
+
+    /**
      * Ensures the account email is a member of {@code GOOGLE_TESTERS_GROUP_EMAIL}. Call after signup or login
      * (and when toggling beta flags in admin). Never throws; failures are recorded as {@link GoogleGroupSyncStatus#FAILED}.
      */
