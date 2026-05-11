@@ -121,6 +121,10 @@ public class GoogleGroupMemberService {
             }
             String pem = normalizePrivateKey(privateKeyPem);
             assertPrivateKeyLooksLikePkcs8Pem(pem);
+            long pemLineCount = pem.lines().count();
+            String pemFirstLine = pem.lines().findFirst().orElse("(empty)");
+            log.info("Building Google Directory client: clientEmail={} pemLines={} pemHeader={}",
+                    clientEmail.trim(), pemLineCount, pemFirstLine);
             GoogleCredentials base = GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson(pem)))
                     .createScoped(Collections.singleton(GROUP_MEMBER_SCOPE));
             GoogleCredentials delegated = base.createDelegated(impersonateEmail.trim());
@@ -150,26 +154,62 @@ public class GoogleGroupMemberService {
     /**
      * Railway / dotenv often mangle multiline PEM: outer quotes, UTF-8 BOM, or {@code \n} sent as literal two chars.
      * Google expects PKCS#8 PEM ({@code -----BEGIN PRIVATE KEY-----}) from the service-account JSON field {@code private_key}.
+     *
+     * <p>Operation order matters: {@code \n} sequences are expanded to real newlines <em>before</em> outer-quote
+     * detection, because a trailing literal {@code \n} before the closing quote (e.g. {@code "..key..\n"}) would
+     * otherwise mask the quote and leave it in the PEM, causing a 401 from Google's token endpoint.
      */
     static String normalizePrivateKey(String raw) {
         if (raw == null) {
             return "";
         }
-        String s = raw.trim();
+        String s = raw;
+
+        // Strip UTF-8 BOM
         if (s.startsWith("\uFEFF")) {
-            s = s.substring(1).trim();
+            s = s.substring(1);
         }
-        while ((s.startsWith("\"") && s.endsWith("\"")) || (s.startsWith("'") && s.endsWith("'"))) {
-            s = s.substring(1, s.length() - 1).trim();
-        }
+
+        // Collapse double-escaped sequences (\\n \u2192 \n) before converting to real newlines.
+        boolean hadDoubleEscape = false;
         while (s.contains("\\\\n")) {
             s = s.replace("\\\\n", "\\n");
+            hadDoubleEscape = true;
         }
+
+        // Convert literal \n sequences (backslash + n) to real newlines.
+        // Railway typically stores multi-line secrets as single-line values with literal \n.
+        boolean hadLiteralNewline = false;
         if (s.contains("\\n")) {
             s = s.replace("\\n", "\n");
+            hadLiteralNewline = true;
         }
+
+        // Normalize CRLF \u2192 LF
         s = s.replace("\r\n", "\n").replace("\r", "\n");
-        return s.trim();
+
+        // Trim outer whitespace including any real newlines produced by the conversion above.
+        // This must happen before quote detection so that a trailing newline cannot hide the closing quote.
+        s = s.trim();
+
+        // Strip surrounding quotes. Done AFTER \n expansion + trim so that a value like
+        // "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+        // (literal \n before the closing quote) is handled correctly.
+        boolean hadOuterQuotes = false;
+        while (s.length() >= 2
+                && ((s.startsWith("\"") && s.endsWith("\""))
+                        || (s.startsWith("'") && s.endsWith("'")))) {
+            s = s.substring(1, s.length() - 1).trim();
+            hadOuterQuotes = true;
+        }
+
+        if (hadDoubleEscape || hadLiteralNewline || hadOuterQuotes) {
+            log.warn("GOOGLE_PRIVATE_KEY normalization applied \u2014 doubleEscape={} literalNewline={} outerQuotes={}. "
+                    + "Verify the key in Railway matches the service account email set in GOOGLE_CLIENT_EMAIL.",
+                    hadDoubleEscape, hadLiteralNewline, hadOuterQuotes);
+        }
+
+        return s;
     }
 
     private static void assertPrivateKeyLooksLikePkcs8Pem(String pem) {
