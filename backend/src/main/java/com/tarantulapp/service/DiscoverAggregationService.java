@@ -109,7 +109,7 @@ public class DiscoverAggregationService {
             value = "discoverTaxonDetail",
             key = "#gbifKey",
             condition = "#gbifKey != null",
-            unless = "#result == null || !#result.isPresent()"
+            unless = "#result == null"
     )
     public Optional<DiscoverTaxonDetailDTO> buildTaxonDetail(Long gbifKey) {
         if (gbifKey == null) return Optional.empty();

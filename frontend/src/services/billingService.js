@@ -9,6 +9,7 @@ const billingService = {
   verifyGooglePlayPurchase: ({ purchaseToken, productId }) =>
     api.post('/billing/google-play/verify', { purchaseToken, productId }).then(r => r.data),
   createPortalSession: () => api.post('/billing/portal').then(r => r.data),
+  proGrantsSummary: () => api.get('/me/pro-grants/summary', { skipAuthRedirect: true }).then(r => r.data),
 }
 
 export default billingService

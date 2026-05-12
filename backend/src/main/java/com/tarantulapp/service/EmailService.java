@@ -2,11 +2,14 @@ package com.tarantulapp.service;
 
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
+import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.util.BetaMailBodies;
 import com.tarantulapp.util.LogSafe;
+import com.tarantulapp.util.SupportedLocales;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -26,6 +29,7 @@ public class EmailService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final JavaMailSender mailSender;
+    private final MessageSource messageSource;
 
     @Value("${resend.api-key:}")
     private String resendApiKey;
@@ -48,8 +52,9 @@ public class EmailService {
     @Value("${app.mail.admin-notify-to:admin@tarantulapp.com}")
     private String adminNotifyTo;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(JavaMailSender mailSender, MessageSource messageSource) {
         this.mailSender = mailSender;
+        this.messageSource = messageSource;
     }
 
     // ── Core routing ──────────────────────────────────────────────────────────
@@ -191,21 +196,71 @@ public class EmailService {
         }
     }
 
-    public void sendProActivated(String toEmail, String displayName) {
-        String greeting = (displayName != null && !displayName.isBlank()) ? displayName : "amigo arácnido";
+    public void sendProActivated(String toEmail, String displayName, String preferredLocale) {
+        Locale locale = SupportedLocales.toLocale(preferredLocale);
+        String greetingName = greetingFallback(displayName, locale);
+        String subject = messageSource.getMessage("email.proActivated.subject", null, locale);
+        StringBuilder body = new StringBuilder();
+        body.append(messageSource.getMessage("email.proActivated.greeting", new Object[]{greetingName}, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proActivated.body", null, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proActivated.help", null, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proActivated.closing", null, locale));
         try {
-            doSend(toEmail,
-                "Pro activado - Gracias por apoyar TarantulApp",
-                "Hola " + greeting + ",\n\n" +
-                "Tu plan Pro ya está activo.\n" +
-                "Gracias por apoyar TarantulApp.\n\n" +
-                "Si necesitas ayuda con tu suscripción, responde este correo.\n\n" +
-                "- TarantulApp Team"
-            );
-            log.info("Pro activation email sent to {}", LogSafe.maskEmail(toEmail));
+            doSend(toEmail, subject, body.toString());
+            log.info("Pro activation email sent to {} (locale={})", LogSafe.maskEmail(toEmail), locale.toLanguageTag());
         } catch (Exception e) {
             log.error("Failed to send pro activation email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
+    }
+
+    /**
+     * Notifies the user that their Pro entitlement was extended by {@code days}. Localized via
+     * {@code messages_{locale}.properties}; reason is required for {@link ProDayGrantSource#ADMIN}.
+     * The email also exposes how many days the user now has and how to earn more (gamification hooks).
+     */
+    public void sendProDaysAdded(
+            String toEmail,
+            String displayName,
+            String preferredLocale,
+            int days,
+            ProDayGrantSource source,
+            String reason,
+            int totalDaysRemaining,
+            LocalDateTime trialEndsAt
+    ) {
+        Locale locale = SupportedLocales.toLocale(preferredLocale);
+        String greetingName = greetingFallback(displayName, locale);
+        String subject = messageSource.getMessage("email.proDaysAdded.subject", new Object[]{days}, locale);
+        StringBuilder body = new StringBuilder();
+        body.append(messageSource.getMessage("email.proDaysAdded.greeting", new Object[]{greetingName}, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proDaysAdded.intro", new Object[]{days}, locale)).append('\n');
+        Object[] sourceArgs = (source == ProDayGrantSource.ADMIN)
+                ? new Object[]{reason == null || reason.isBlank() ? "-" : reason}
+                : new Object[0];
+        body.append(messageSource.getMessage("email.proDaysAdded.source." + source.name(), sourceArgs, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proDaysAdded.totalRemaining", new Object[]{totalDaysRemaining}, locale)).append('\n');
+        if (trialEndsAt != null) {
+            String when = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale).format(trialEndsAt.toLocalDate());
+            body.append(messageSource.getMessage("email.proDaysAdded.expiresOn", new Object[]{when}, locale)).append('\n');
+        }
+        body.append('\n');
+        body.append(messageSource.getMessage("email.proDaysAdded.howToEarnMore", null, locale)).append("\n\n");
+        body.append(messageSource.getMessage("email.proDaysAdded.closing", null, locale));
+        try {
+            doSend(toEmail, subject, body.toString());
+            log.info("Pro days added email sent to {} (days={} source={} locale={})",
+                    LogSafe.maskEmail(toEmail), days, source, locale.toLanguageTag());
+        } catch (Exception e) {
+            log.error("Failed to send pro-days-added email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    private String greetingFallback(String displayName, Locale locale) {
+        if (displayName != null && !displayName.isBlank()) return displayName.trim();
+        String tag = locale == null ? SupportedLocales.DEFAULT : locale.getLanguage();
+        if ("en".equals(tag)) return "keeper";
+        if ("fr".equals(tag)) return "keeper";
+        return "amigo arácnido";
     }
 
     public void sendTrialExpired(String toEmail, String displayName) {

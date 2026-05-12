@@ -46,7 +46,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         captchaService.verifyOrThrow(request.getCaptchaToken(), clientIp(httpRequest), "register");
-        return ResponseEntity.ok(authService.register(request));
+        return ResponseEntity.ok(authService.register(request, httpRequest.getHeader("Accept-Language")));
     }
 
     @GetMapping("/registration-policy")
@@ -56,15 +56,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(authService.login(request, httpRequest.getHeader("Accept-Language")));
     }
 
     record GoogleOAuthRequest(@NotBlank String idToken, String referralCode) {}
 
     @PostMapping("/oauth/google")
-    public ResponseEntity<AuthResponse> oauthGoogle(@Valid @RequestBody GoogleOAuthRequest request) {
-        return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.referralCode()));
+    public ResponseEntity<AuthResponse> oauthGoogle(@Valid @RequestBody GoogleOAuthRequest request, HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.referralCode(), httpRequest.getHeader("Accept-Language")));
     }
 
     record ForgotRequest(@Email @NotBlank String email, @Size(max = 4096) String captchaToken) {}

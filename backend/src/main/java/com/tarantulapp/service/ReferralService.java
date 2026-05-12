@@ -1,5 +1,6 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.entity.ReferralCode;
 import com.tarantulapp.entity.ReferralRedemption;
 import com.tarantulapp.entity.User;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +37,7 @@ public class ReferralService {
     private final ReferralCodeRepository referralCodeRepository;
     private final ReferralRedemptionRepository referralRedemptionRepository;
     private final UserRepository userRepository;
+    private final ProDayGrantService proDayGrantService;
     private final SecureRandom random = new SecureRandom();
 
     @Value("${app.referral.referee-bonus-days:3}")
@@ -47,10 +48,12 @@ public class ReferralService {
 
     public ReferralService(ReferralCodeRepository referralCodeRepository,
                            ReferralRedemptionRepository referralRedemptionRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           ProDayGrantService proDayGrantService) {
         this.referralCodeRepository = referralCodeRepository;
         this.referralRedemptionRepository = referralRedemptionRepository;
         this.userRepository = userRepository;
+        this.proDayGrantService = proDayGrantService;
     }
 
     /** Genera codigo si falta y devuelve datos para Cuenta / Comunidad. */
@@ -143,10 +146,9 @@ public class ReferralService {
         referralRedemptionRepository.save(redemption);
 
         referee.setReferredByUserId(referrerId);
-        extendTrial(referee, refereeBonusDays);
-        extendTrial(referrer, referrerBonusDays);
         userRepository.save(referee);
-        userRepository.save(referrer);
+        proDayGrantService.recordGrant(referee, refereeBonusDays, ProDayGrantSource.REFERRAL_SIGNUP, null, null);
+        proDayGrantService.recordGrant(referrer, referrerBonusDays, ProDayGrantSource.REFERRAL_SIGNUP, null, null);
         applyReferrerMilestoneBonuses(referrerId);
         log.info("Referral applied referee={} referrer={}", newUserId, referrerId);
     }
@@ -174,7 +176,7 @@ public class ReferralService {
             mask |= bit;
             int extra = MILESTONE_EXTRA_DAYS[i];
             if (extra > 0) {
-                extendTrial(referrer, extra);
+                proDayGrantService.recordGrant(referrer, extra, ProDayGrantSource.REFERRAL_MILESTONE, null, null);
             }
             if (i == MILESTONE_COUNTS.length - 1) {
                 referrer.setFounderKeeper(Boolean.TRUE);
@@ -186,14 +188,6 @@ public class ReferralService {
             userRepository.save(referrer);
             log.info("Referral milestones applied referrer={} count={} mask={}", referrerId, count, mask);
         }
-    }
-
-    private void extendTrial(User user, int days) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime base = user.getTrialEndsAt() == null || user.getTrialEndsAt().isBefore(now)
-                ? now
-                : user.getTrialEndsAt();
-        user.setTrialEndsAt(base.plusDays(days));
     }
 
     private String randomCode(int len) {

@@ -171,8 +171,15 @@ export default function AdminHomePage() {
       setError(t('admin.planUpdateError'))
       return
     }
+    const reason = window.prompt(t('admin.extendTrialReasonPrompt'), '')
+    if (reason == null) return
+    const trimmedReason = reason.trim()
+    if (!trimmedReason) {
+      setError(t('admin.extendTrialReasonRequired'))
+      return
+    }
     try {
-      const updated = await adminService.patchUserPlan(u.id, { extendTrialDays: days })
+      const updated = await adminService.patchUserPlan(u.id, { extendTrialDays: days, reason: trimmedReason })
       setRecentUsers((prev) =>
         prev.map((row) => (String(row.id) === String(u.id) ? mergePlanFields(row, updated) : row)),
       )

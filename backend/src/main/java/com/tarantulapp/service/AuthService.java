@@ -13,6 +13,7 @@ import com.tarantulapp.repository.PasswordResetTokenRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.BetaMailBodies;
 import com.tarantulapp.util.JwtUtil;
+import com.tarantulapp.util.SupportedLocales;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -119,7 +120,7 @@ public class AuthService {
         return out.length() <= max ? out : out.substring(0, max);
     }
 
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request, String acceptLanguageHeader) {
         if (!registrationMode.allowsSelfServeRegistration()) {
             throw new IllegalArgumentException("REGISTRATION_CLOSED");
         }
@@ -135,6 +136,7 @@ public class AuthService {
         user.setDisplayName(request.getDisplayName());
         user.setPlan(UserPlan.FREE);
         user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+        user.setPreferredLocale(SupportedLocales.fromAcceptLanguage(acceptLanguageHeader));
         userRepository.save(user);
         publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
         referralService.applyReferralForNewAccount(user.getId(), request.getReferralCode());
@@ -149,7 +151,7 @@ public class AuthService {
         return buildAuthResponse(token, refreshed);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, String acceptLanguageHeader) {
         User user = findByEmailWithOneRetry(request.getEmail())
                 .orElseGet(() -> {
                     appMetrics.loginFailure();
@@ -164,6 +166,7 @@ public class AuthService {
             user.setPlan(UserPlan.FREE);
             userRepository.save(user);
         }
+        refreshPreferredLocaleFromHeader(user, acceptLanguageHeader);
         if (user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
             publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
             user = userRepository.findById(user.getId()).orElse(user);
@@ -182,7 +185,7 @@ public class AuthService {
         return buildAuthResponse(token, user);
     }
 
-    public AuthResponse googleLogin(String idToken, String referralCode) {
+    public AuthResponse googleLogin(String idToken, String referralCode, String acceptLanguageHeader) {
         Map<String, Object> tokenInfo = fetchGoogleTokenInfo(idToken);
         String email = extractVerifiedEmailFromGoogleTokenInfo(tokenInfo);
 
@@ -198,6 +201,7 @@ public class AuthService {
             created.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName);
             created.setPlan(UserPlan.FREE);
             created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+            created.setPreferredLocale(SupportedLocales.fromAcceptLanguage(acceptLanguageHeader));
             User saved = userRepository.save(created);
             publicHandleService.assignInitialPublicHandleIfMissing(saved.getId());
             referralService.applyReferralForNewAccount(saved.getId(), referralCode);
@@ -220,10 +224,28 @@ public class AuthService {
             adminAccessService.promoteToAdmin(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
+        refreshPreferredLocaleFromHeader(user, acceptLanguageHeader);
 
         googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
         String token = jwtUtil.generateToken(user.getEmail());
         return buildAuthResponse(token, user);
+    }
+
+    /**
+     * Updates the user's preferred locale from the latest Accept-Language header. Skipped when the
+     * header is missing/unsupported; we only overwrite an existing value when the header gave us a
+     * concrete supported tag.
+     */
+    private void refreshPreferredLocaleFromHeader(User user, String acceptLanguageHeader) {
+        if (acceptLanguageHeader == null || acceptLanguageHeader.isBlank()) return;
+        String resolved = SupportedLocales.fromAcceptLanguage(acceptLanguageHeader);
+        if (resolved.equals(user.getPreferredLocale())) return;
+        user.setPreferredLocale(resolved);
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            log.warn("Could not persist preferredLocale for userId={}: {}", user.getId(), e.getMessage());
+        }
     }
 
     /**
