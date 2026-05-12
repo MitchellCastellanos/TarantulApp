@@ -1,8 +1,10 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.dto.*;
+import com.tarantulapp.entity.FeedingLog;
 import com.tarantulapp.entity.PhotoSpood;
 import com.tarantulapp.entity.Photo;
+import com.tarantulapp.entity.BehaviorLog;
 import com.tarantulapp.entity.TarantulaSpood;
 import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
@@ -10,12 +12,15 @@ import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.*;
 import com.tarantulapp.util.FileStorageService;
 import com.tarantulapp.util.SecurityHelper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -38,6 +43,7 @@ public class TarantulaService {
     private final UserRepository userRepository;
     private final PlanAccessService planAccessService;
     private final SecurityHelper securityHelper;
+    private final TarantulaTimelineJdbcRepository timelineJdbcRepository;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -50,7 +56,8 @@ public class TarantulaService {
                             TarantulaSpoodRepository tarantulaSpoodRepository,
                             UserRepository userRepository,
                             PlanAccessService planAccessService,
-                            SecurityHelper securityHelper) {
+                            SecurityHelper securityHelper,
+                            TarantulaTimelineJdbcRepository timelineJdbcRepository) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -63,6 +70,7 @@ public class TarantulaService {
         this.userRepository = userRepository;
         this.planAccessService = planAccessService;
         this.securityHelper = securityHelper;
+        this.timelineJdbcRepository = timelineJdbcRepository;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -82,8 +90,33 @@ public class TarantulaService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         Set<UUID> lockedIds = planAccessService.lockedTarantulaIds(user);
-        return tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream().map(t -> toResponse(t, lockedIds)).collect(Collectors.toList());
+        List<Tarantula> rows = tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        ListAgg agg = loadListAggregates(rows.stream().map(Tarantula::getId).toList());
+        return rows.stream().map(t -> toResponseWithListAggregates(t, lockedIds, agg)).collect(Collectors.toList());
+    }
+
+    /**
+     * Paginated collection for large inventories. When both {@code page} and {@code size} are omitted,
+     * {@link #findByUser(UUID)} keeps returning a full array for existing clients.
+     */
+    @Transactional(readOnly = true)
+    public TarantulaCollectionPageResponse findByUserPaged(UUID userId, int page, int pageSize) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        Set<UUID> lockedIds = planAccessService.lockedTarantulaIds(user);
+        Page<Tarantula> pg = tarantulaRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, pageSize));
+        List<Tarantula> rows = pg.getContent();
+        ListAgg agg = loadListAggregates(rows.stream().map(Tarantula::getId).toList());
+        List<TarantulaResponse> content = rows.stream()
+                .map(t -> toResponseWithListAggregates(t, lockedIds, agg))
+                .collect(Collectors.toList());
+        return new TarantulaCollectionPageResponse(
+                content,
+                pg.getTotalElements(),
+                page,
+                pageSize,
+                pg.hasNext()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -125,6 +158,16 @@ public class TarantulaService {
         getOwned(tarantulaId, userId);
         return photoRepository.findByTarantulaIdOrderByCreatedAtDesc(tarantulaId)
                 .stream().map(PhotoResponse::from).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PagedListResponse<PhotoResponse> getPhotosPaged(UUID tarantulaId, UUID userId, int page, int pageSize) {
+        getOwned(tarantulaId, userId);
+        int p = Math.max(0, page);
+        int sz = Math.min(60, Math.max(1, pageSize));
+        Page<Photo> pg = photoRepository.findByTarantulaIdOrderByCreatedAtDesc(tarantulaId, PageRequest.of(p, sz));
+        List<PhotoResponse> content = pg.getContent().stream().map(PhotoResponse::from).collect(Collectors.toList());
+        return new PagedListResponse<>(content, pg.getTotalElements(), p, sz, pg.hasNext());
     }
 
     public PhotoResponse addPhoto(UUID tarantulaId, MultipartFile file, String caption, UUID userId) throws IOException {
@@ -170,6 +213,35 @@ public class TarantulaService {
     @Transactional(readOnly = true)
     public List<TimelineEventDTO> getTimeline(UUID tarantulaId, UUID userId) {
         getOwned(tarantulaId, userId); // verify ownership
+        return buildFullTimelineInMemory(tarantulaId);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedListResponse<TimelineEventDTO> getTimelinePaged(UUID tarantulaId, UUID userId, int page, int pageSize) {
+        getOwned(tarantulaId, userId);
+        return sliceTimelineFromDb(tarantulaId, page, pageSize, null);
+    }
+
+    private PagedListResponse<TimelineEventDTO> sliceTimelineFromDb(UUID tarantulaId, int page, int pageSize, Long visibleTotalCap) {
+        int p = Math.max(0, page);
+        int sz = Math.min(60, Math.max(1, pageSize));
+        long fullCount = timelineJdbcRepository.countEvents(tarantulaId);
+        long visibleTotal = visibleTotalCap == null ? fullCount : Math.min(visibleTotalCap, fullCount);
+        long offset = (long) p * sz;
+        if (offset >= visibleTotal) {
+            return new PagedListResponse<>(List.of(), visibleTotal, p, sz, false);
+        }
+        int limit = (int) Math.min(sz, visibleTotal - offset);
+        List<Map<String, Object>> rows = timelineJdbcRepository.fetchSlice(tarantulaId, limit, (int) offset);
+        List<TimelineEventDTO> content = rows.stream()
+                .map(this::timelineDtoFromJdbcRow)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        boolean hasNext = offset + content.size() < visibleTotal;
+        return new PagedListResponse<>(content, visibleTotal, p, sz, hasNext);
+    }
+
+    private List<TimelineEventDTO> buildFullTimelineInMemory(UUID tarantulaId) {
         List<TimelineEventDTO> events = new ArrayList<>();
 
         feedingLogRepository.findByTarantulaIdOrderByFedAtDesc(tarantulaId).forEach(f -> {
@@ -205,28 +277,23 @@ public class TarantulaService {
             throw new NotFoundException("Este perfil no es público");
         }
 
-        List<TimelineEventDTO> events = new ArrayList<>();
-        feedingLogRepository.findByTarantulaIdOrderByFedAtDesc(t.getId()).forEach(f -> {
-            String title = Boolean.FALSE.equals(f.getAccepted()) ? "feeding_rejected" : "feeding";
-            String summary = buildFeedingSummary(f.getQuantity(), f.getPreyType(), f.getPreySize(), f.getNotes());
-            events.add(new TimelineEventDTO(f.getId(), "feeding", f.getFedAt(), title, summary));
-        });
-        moltLogRepository.findByTarantulaIdOrderByMoltedAtDesc(t.getId()).forEach(m -> {
-            String summary = buildMoltSummary(m.getPreSizeCm(), m.getPostSizeCm(), m.getNotes());
-            TimelineEventDTO ev = new TimelineEventDTO(m.getId(), "molt", m.getMoltedAt(), "molt", summary);
-            ev.setSuccessful(m.getSuccessful());
-            ev.setComplicationType(m.getComplicationType());
-            ev.setDurationMinutes(m.getDurationMinutes());
-            events.add(ev);
-        });
-        behaviorLogRepository.findByTarantulaIdOrderByLoggedAtDesc(t.getId()).forEach(b -> {
-            events.add(new TimelineEventDTO(b.getId(), "behavior", b.getLoggedAt(), b.getMood(), b.getNotes()));
-        });
-        events.sort(Comparator.comparing(TimelineEventDTO::getEventDate).reversed());
+        List<TimelineEventDTO> events = buildFullTimelineInMemory(t.getId());
         if (owner) {
             return events;
         }
         return events.size() > 20 ? events.subList(0, 20) : events;
+    }
+
+    @Transactional(readOnly = true)
+    public PagedListResponse<TimelineEventDTO> getPublicTimelinePaged(String shortId, int page, int pageSize) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        boolean owner = isQrProfileOwner(t);
+        if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+        Long cap = owner ? null : 20L;
+        return sliceTimelineFromDb(t.getId(), page, pageSize, cap);
     }
 
     @Transactional(readOnly = true)
@@ -256,13 +323,18 @@ public class TarantulaService {
             dto.setHabitatType(t.getSpecies().getHabitatType());
         }
 
-        dto.setStatus(computeStatus(t));
+        Optional<BehaviorLog> pubLastBeh = behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(t.getId());
+        Optional<FeedingLog> pubLastFed = feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId());
+        dto.setStatus(computeStatus(
+                t,
+                pubLastFed.map(FeedingLog::getFedAt).orElse(null),
+                pubLastBeh.map(b -> new BehaviorSnap(b.getLoggedAt(), b.getMood())).orElse(null)
+        ));
         dto.setSpoodCount(tarantulaSpoodRepository.countByTarantulaId(t.getId()));
         dto.setSpoodedByViewer(securityHelper.tryGetCurrentUserId()
                 .map(viewerId -> tarantulaSpoodRepository.existsByTarantulaIdAndUserId(t.getId(), viewerId))
                 .orElse(false));
-        feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId())
-                .ifPresent(f -> dto.setLastFedAt(f.getFedAt()));
+        pubLastFed.ifPresent(f -> dto.setLastFedAt(f.getFedAt()));
         moltLogRepository.findFirstByTarantulaIdOrderByMoltedAtDesc(t.getId())
                 .ifPresent(m -> dto.setLastMoltAt(m.getMoltedAt()));
 
@@ -277,17 +349,120 @@ public class TarantulaService {
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
         }
+        List<Photo> photos = photoRepository.findByTarantulaIdOrderByCreatedAtDesc(t.getId());
+        return enrichPublicPhotoResponses(photos);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedListResponse<PhotoResponse> getPublicPhotosPaged(String shortId, int page, int pageSize) {
+        Tarantula t = tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        boolean owner = isQrProfileOwner(t);
+        if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
+            throw new NotFoundException("Este perfil no es público");
+        }
+        int p = Math.max(0, page);
+        int sz = Math.min(60, Math.max(1, pageSize));
+        Page<Photo> pg = photoRepository.findByTarantulaIdOrderByCreatedAtDesc(t.getId(), PageRequest.of(p, sz));
+        List<PhotoResponse> content = enrichPublicPhotoResponses(pg.getContent());
+        return new PagedListResponse<>(content, pg.getTotalElements(), p, sz, pg.hasNext());
+    }
+
+    private List<PhotoResponse> enrichPublicPhotoResponses(List<Photo> photos) {
+        if (photos == null || photos.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> ids = photos.stream().map(Photo::getId).toList();
+        Map<UUID, Long> counts = new HashMap<>();
+        for (Object[] row : photoSpoodRepository.countGroupedByPhotoIds(ids)) {
+            if (row.length < 2) continue;
+            UUID pid = toUuid(row[0]);
+            if (pid == null) continue;
+            long c = row[1] instanceof Number n ? n.longValue() : 0L;
+            counts.put(pid, c);
+        }
         Optional<UUID> viewerId = securityHelper.tryGetCurrentUserId();
-        return photoRepository.findByTarantulaIdOrderByCreatedAtDesc(t.getId()).stream()
-                .map(photo -> {
-                    PhotoResponse response = PhotoResponse.from(photo);
-                    response.setSpoodCount(photoSpoodRepository.countByPhotoId(photo.getId()));
-                    response.setSpoodedByViewer(viewerId
-                            .map(v -> photoSpoodRepository.existsByPhotoIdAndUserId(photo.getId(), v))
-                            .orElse(false));
-                    return response;
-                })
-                .collect(Collectors.toList());
+        Set<UUID> spoodedIds = viewerId
+                .map(uid -> photoSpoodRepository.findPhotoIdsSpoodedByUser(ids, uid))
+                .orElse(Collections.emptySet());
+        return photos.stream().map(photo -> {
+            PhotoResponse response = PhotoResponse.from(photo);
+            response.setSpoodCount(counts.getOrDefault(photo.getId(), 0L));
+            response.setSpoodedByViewer(viewerId.isPresent() && spoodedIds.contains(photo.getId()));
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    private TimelineEventDTO timelineDtoFromJdbcRow(Map<String, Object> row) {
+        String type = strCi(row, "ev_type");
+        UUID id = toUuid(strCi(row, "ev_id"));
+        Instant at = toInstant(getCi(row, "ev_at"));
+        if (type == null || id == null || at == null) {
+            return null;
+        }
+        return switch (type) {
+            case "feeding" -> {
+                Boolean accepted = boolObj(getCi(row, "feed_accepted"));
+                String title = Boolean.FALSE.equals(accepted) ? "feeding_rejected" : "feeding";
+                Integer qty = intObj(getCi(row, "feed_qty"));
+                String preyType = strCi(row, "feed_prey_type");
+                String preySize = strCi(row, "feed_prey_size");
+                String notes = strCi(row, "feed_notes");
+                String summary = buildFeedingSummary(qty, preyType, preySize, notes);
+                yield new TimelineEventDTO(id, "feeding", at, title, summary);
+            }
+            case "molt" -> {
+                BigDecimal pre = decimalObj(getCi(row, "molt_pre"));
+                BigDecimal post = decimalObj(getCi(row, "molt_post"));
+                String notes = strCi(row, "molt_notes");
+                String summary = buildMoltSummary(pre, post, notes);
+                TimelineEventDTO ev = new TimelineEventDTO(id, "molt", at, "molt", summary);
+                ev.setSuccessful(boolObj(getCi(row, "molt_successful")));
+                ev.setComplicationType(strCi(row, "molt_comp"));
+                ev.setDurationMinutes(intObj(getCi(row, "molt_dur")));
+                yield ev;
+            }
+            case "behavior" -> new TimelineEventDTO(id, "behavior", at, strCi(row, "beh_mood"), strCi(row, "beh_notes"));
+            default -> null;
+        };
+    }
+
+    private static Object getCi(Map<String, Object> row, String key) {
+        if (row.containsKey(key)) {
+            return row.get(key);
+        }
+        for (Map.Entry<String, Object> e : row.entrySet()) {
+            if (e.getKey() != null && e.getKey().equalsIgnoreCase(key)) {
+                return e.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String strCi(Map<String, Object> row, String key) {
+        Object v = getCi(row, key);
+        return v == null ? null : v.toString().trim();
+    }
+
+    private static Boolean boolObj(Object o) {
+        if (o == null) return null;
+        if (o instanceof Boolean b) return b;
+        if (o instanceof Number n) return n.intValue() != 0;
+        return null;
+    }
+
+    private static Integer intObj(Object o) {
+        if (o == null) return null;
+        if (o instanceof Integer i) return i;
+        if (o instanceof Number n) return n.intValue();
+        return null;
+    }
+
+    private static BigDecimal decimalObj(Object o) {
+        if (o == null) return null;
+        if (o instanceof BigDecimal d) return d;
+        if (o instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
+        return null;
     }
 
     public SpoodToggleResponse togglePublicTarantulaSpood(String shortId, UUID userId) {
@@ -407,10 +582,18 @@ public class TarantulaService {
         r.setSpecies(SpeciesDTO.from(t.getSpecies()));
         r.setDeceasedAt(t.getDeceasedAt());
         r.setDeathNotes(t.getDeathNotes());
-        r.setStatus(computeStatus(t));
 
-        feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId())
-                .ifPresent(f -> r.setLastFedAt(f.getFedAt()));
+        Optional<BehaviorLog> lastBehavior =
+                behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(t.getId());
+        Optional<FeedingLog> lastFeeding =
+                feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(t.getId());
+        r.setStatus(computeStatus(
+                t,
+                lastFeeding.map(FeedingLog::getFedAt).orElse(null),
+                lastBehavior.map(b -> new BehaviorSnap(b.getLoggedAt(), b.getMood())).orElse(null)
+        ));
+
+        lastFeeding.ifPresent(f -> r.setLastFedAt(f.getFedAt()));
         moltLogRepository.findFirstByTarantulaIdOrderByMoltedAtDesc(t.getId())
                 .ifPresent(m -> r.setLastMoltAt(m.getMoltedAt()));
 
@@ -420,28 +603,143 @@ public class TarantulaService {
         return r;
     }
 
-    private String computeStatus(Tarantula t) {
-        if (t.getDeceasedAt() != null) return "deceased";
+    private TarantulaResponse toResponseWithListAggregates(Tarantula t, Set<UUID> lockedIds, ListAgg agg) {
+        TarantulaResponse r = new TarantulaResponse();
+        r.setId(t.getId());
+        r.setName(t.getName());
+        r.setCurrentSizeCm(t.getCurrentSizeCm());
+        r.setStage(t.getStage());
+        r.setSex(t.getSex());
+        r.setPurchaseDate(t.getPurchaseDate());
+        r.setProfilePhoto(t.getProfilePhoto());
+        r.setNotes(t.getNotes());
+        r.setIsPublic(t.getIsPublic());
+        r.setShortId(t.getShortId());
+        r.setCreatedAt(t.getCreatedAt());
+        r.setUpdatedAt(t.getUpdatedAt());
+        r.setSpecies(SpeciesDTO.from(t.getSpecies()));
+        r.setDeceasedAt(t.getDeceasedAt());
+        r.setDeathNotes(t.getDeathNotes());
 
-        UUID tarantulaId = t.getId();
-        Optional<com.tarantulapp.entity.BehaviorLog> lastBehavior =
-                behaviorLogRepository.findFirstByTarantulaIdOrderByLoggedAtDesc(tarantulaId);
+        UUID id = t.getId();
+        Instant lastFedAt = agg.lastFedAt.get(id);
+        BehaviorSnap lastBeh = agg.lastBehavior.get(id);
+        r.setStatus(computeStatus(t, lastFedAt, lastBeh));
+        r.setLastFedAt(lastFedAt);
+        r.setLastMoltAt(agg.lastMoltAt.get(id));
 
+        r.setLocked(lockedIds != null && lockedIds.contains(id));
+        r.setSpoodCount(agg.spoodCount.getOrDefault(id, 0L));
+
+        return r;
+    }
+
+    private ListAgg loadListAggregates(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ListAgg.empty();
+        }
+        Map<UUID, Instant> lastFed = new HashMap<>();
+        for (Object[] row : feedingLogRepository.findLatestFeedingRowsByTarantulaIds(ids)) {
+            if (row.length < 2) continue;
+            UUID tid = toUuid(row[0]);
+            if (tid == null) continue;
+            lastFed.put(tid, toInstant(row[1]));
+        }
+        Map<UUID, Instant> lastMolt = new HashMap<>();
+        for (Object[] row : moltLogRepository.findLatestMoltRowsByTarantulaIds(ids)) {
+            if (row.length < 2) continue;
+            UUID tid = toUuid(row[0]);
+            if (tid == null) continue;
+            lastMolt.put(tid, toInstant(row[1]));
+        }
+        Map<UUID, BehaviorSnap> lastBeh = new HashMap<>();
+        for (Object[] row : behaviorLogRepository.findLatestBehaviorRowsByTarantulaIds(ids)) {
+            if (row.length < 2) continue;
+            UUID tid = toUuid(row[0]);
+            if (tid == null) continue;
+            Instant loggedAt = toInstant(row[1]);
+            String mood = row.length > 2 && row[2] != null ? row[2].toString() : null;
+            lastBeh.put(tid, new BehaviorSnap(loggedAt, mood));
+        }
+        Map<UUID, Long> spood = new HashMap<>();
+        for (Object[] row : tarantulaSpoodRepository.countGroupedByTarantulaIds(ids)) {
+            if (row.length < 2) continue;
+            UUID tid = toUuid(row[0]);
+            if (tid == null) continue;
+            long c = row[1] instanceof Number n ? n.longValue() : 0L;
+            spood.put(tid, c);
+        }
+        return new ListAgg(lastFed, lastMolt, lastBeh, spood);
+    }
+
+    private static UUID toUuid(Object cell) {
+        if (cell instanceof UUID u) {
+            return u;
+        }
+        if (cell != null) {
+            try {
+                return UUID.fromString(cell.toString());
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static Instant toInstant(Object cell) {
+        if (cell == null) {
+            return null;
+        }
+        if (cell instanceof Instant i) {
+            return i;
+        }
+        if (cell instanceof java.sql.Timestamp ts) {
+            return ts.toInstant();
+        }
+        if (cell instanceof java.util.Date d) {
+            return d.toInstant();
+        }
+        return null;
+    }
+
+    private record BehaviorSnap(Instant loggedAt, String mood) {
+    }
+
+    private static final class ListAgg {
+        private final Map<UUID, Instant> lastFedAt;
+        private final Map<UUID, Instant> lastMoltAt;
+        private final Map<UUID, BehaviorSnap> lastBehavior;
+        private final Map<UUID, Long> spoodCount;
+
+        private ListAgg(Map<UUID, Instant> lastFedAt,
+                        Map<UUID, Instant> lastMoltAt,
+                        Map<UUID, BehaviorSnap> lastBehavior,
+                        Map<UUID, Long> spoodCount) {
+            this.lastFedAt = lastFedAt;
+            this.lastMoltAt = lastMoltAt;
+            this.lastBehavior = lastBehavior;
+            this.spoodCount = spoodCount;
+        }
+
+        private static ListAgg empty() {
+            return new ListAgg(Map.of(), Map.of(), Map.of(), Map.of());
+        }
+    }
+
+    private String computeStatus(Tarantula t, Instant lastFedAt, BehaviorSnap lastBehavior) {
+        if (t.getDeceasedAt() != null) {
+            return "deceased";
+        }
         Instant now = Instant.now();
-        if (lastBehavior.isPresent()
-                && "pre_molt".equals(lastBehavior.get().getMood())
-                && lastBehavior.get().getLoggedAt().isAfter(now.minus(30, ChronoUnit.DAYS))) {
+        if (lastBehavior != null
+                && lastBehavior.loggedAt() != null
+                && "pre_molt".equals(lastBehavior.mood())
+                && lastBehavior.loggedAt().isAfter(now.minus(30, ChronoUnit.DAYS))) {
             return "pre_molt";
         }
-
-        Optional<com.tarantulapp.entity.FeedingLog> lastFeeding =
-                feedingLogRepository.findFirstByTarantulaIdOrderByFedAtDesc(tarantulaId);
-
-        if (lastFeeding.isEmpty()
-                || lastFeeding.get().getFedAt().isBefore(now.minus(14, ChronoUnit.DAYS))) {
+        if (lastFedAt == null || lastFedAt.isBefore(now.minus(14, ChronoUnit.DAYS))) {
             return "pending_feeding";
         }
-
         return "active";
     }
 

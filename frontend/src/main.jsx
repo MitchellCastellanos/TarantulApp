@@ -5,6 +5,8 @@ initObservability()
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './query/queryClient.js'
 import App from './App.jsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -20,7 +22,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <button onClick={resetError}>Reintentar / Retry</button>
       </div>
     )}>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 )

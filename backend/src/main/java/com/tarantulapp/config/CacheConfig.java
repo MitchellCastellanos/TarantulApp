@@ -25,7 +25,9 @@ public class CacheConfig {
                 "usersByEmail",
                 "speciesSearch",
                 "publicKeeperProfile",
-                "gbifTaxonomy");
+                "gbifTaxonomy",
+                "discoverSearch",
+                "discoverTaxonDetail");
         mgr.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(10_000)
                 .expireAfterWrite(Duration.ofMinutes(5)));

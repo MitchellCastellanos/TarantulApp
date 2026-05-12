@@ -8,6 +8,7 @@ import com.tarantulapp.dto.GbifSearchResultDTO;
 import com.tarantulapp.dto.WscSearchResultDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -46,9 +47,24 @@ public class DiscoverAggregationService {
     }
 
     /**
+     * SpEl helper: stable cache keys for discover search (same idea as {@link SpeciesService#normalizeKey}).
+     */
+    public String normalizeDiscoverSearchKey(String q) {
+        return q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * WSC checklist hits first, then merge accepted Theraphosidae hits from GBIF backbone (dedup by key).
      * WSC wins on duplicates so the source label stays authoritative when both match.
+     * <p>
+     * Cached: Caffeine default TTL when Redis is off; {@code discoverSearch} cache in {@link RedisConfig} when Redis is on.
+     * Empty results are not cached so typos and rare strings do not fill the namespace.
      */
+    @Cacheable(
+            value = "discoverSearch",
+            key = "#root.target.normalizeDiscoverSearchKey(#q)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<DiscoverSearchHitDTO> search(String q) {
         if (q == null || (q = q.trim()).isEmpty()) {
             return List.of();
@@ -86,6 +102,15 @@ public class DiscoverAggregationService {
         return out;
     }
 
+    /**
+     * GBIF species row + vernacular + iNat/GBIF media. Cached for stable keys; misses are not cached.
+     */
+    @Cacheable(
+            value = "discoverTaxonDetail",
+            key = "#gbifKey",
+            condition = "#gbifKey != null",
+            unless = "#result == null || !#result.isPresent()"
+    )
     public Optional<DiscoverTaxonDetailDTO> buildTaxonDetail(Long gbifKey) {
         if (gbifKey == null) return Optional.empty();
         Optional<GbifSearchResultDTO> opt = gbifService.tryFetchSpecies(gbifKey);

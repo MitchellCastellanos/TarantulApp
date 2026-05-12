@@ -4,6 +4,7 @@ import com.tarantulapp.util.JwtUtil;
 import com.tarantulapp.security.AbuseRateLimitFilter;
 import com.tarantulapp.security.AuthRateLimitFilter;
 import com.tarantulapp.security.ChatMessageRateLimitFilter;
+import com.tarantulapp.security.DiscoverAggregationRateLimitFilter;
 import com.tarantulapp.security.PublicFeedRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter,
                                            AuthRateLimitFilter authRateLimitFilter,
+                                           DiscoverAggregationRateLimitFilter discoverAggregationRateLimitFilter,
                                            PublicFeedRateLimitFilter publicFeedRateLimitFilter,
                                            ChatMessageRateLimitFilter chatMessageRateLimitFilter,
                                            AbuseRateLimitFilter abuseRateLimitFilter,
@@ -166,6 +168,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gbif/search", "/api/wsc/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gbif/**", "/api/wsc/**").permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(discoverAggregationRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(publicFeedRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

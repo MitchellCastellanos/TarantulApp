@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
@@ -16,6 +17,7 @@ import {
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
 import { reminderPrimaryLabel } from '../utils/reminderLabels'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const TYPE_OPTS = [
   { value: 'feeding',  icon: '🍽️', labelKey: 'reminders.typeFeeding' },
@@ -39,15 +41,23 @@ export default function RemindersPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user } = useAuth()
-  const [reminders, setReminders] = useState([])
+  const { user, token } = useAuth()
+  const { data: reminders = [], refetch: refetchReminders } = useQuery({
+    queryKey: ['reminders', 'all'],
+    queryFn: () => reminderService.getAll(),
+    enabled: Boolean(token),
+  })
   const [form, setForm] = useState({ type: 'feeding', dueDate: '', message: '', tarantulaId: '' })
   const [showForm, setShowForm] = useState(false)
   const [prefillTip, setPrefillTip] = useState(null) // { message: string, variant: 'info'|'warning' }
   const [saving, setSaving] = useState(false)
   /** @type {'all' | 'upcoming' | 'completed'} */
   const [listTab, setListTab] = useState('upcoming')
-  const [tarantulas, setTarantulas] = useState([])
+  const { data: tarantulas = [] } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token),
+  })
   const [dismissedAuto, setDismissedAuto] = useState(() => readDismissedAutoKeys())
   const hasProFeatures = user?.hasProFeatures === true
   const overFreeLimit = user?.overFreeLimit === true
@@ -57,11 +67,7 @@ export default function RemindersPage() {
   )
   const isReminderLocked = (r) => Boolean(r.tarantulaId && lockedIds.has(r.tarantulaId))
 
-  const load = () => reminderService.getAll().then(setReminders)
-  useEffect(() => {
-    load()
-    tarantulaService.getAll().then(setTarantulas).catch(() => {})
-  }, [])
+  const load = () => refetchReminders()
 
   const qTarantulaId = searchParams.get('tarantulaId')
   const qOpen = searchParams.get('open') === '1' || searchParams.get('new') === '1'

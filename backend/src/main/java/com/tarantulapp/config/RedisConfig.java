@@ -98,6 +98,8 @@ public class RedisConfig {
         caches.put("speciesSearch", config(Duration.ofHours(1)));
         caches.put("publicKeeperProfile", config(Duration.ofMinutes(5)));
         caches.put("gbifTaxonomy", config(Duration.ofHours(24)));
+        caches.put("discoverSearch", config(Duration.ofMinutes(20)));
+        caches.put("discoverTaxonDetail", config(Duration.ofHours(6)));
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(config(Duration.ofMinutes(5)))
                 .withInitialCacheConfigurations(caches)

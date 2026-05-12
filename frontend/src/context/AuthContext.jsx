@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useCallback, useEffect, useLayoutE
 import billingService from '../services/billingService'
 import { setSessionTokenSnapshot } from '../services/authApiToken'
 import { initNativePush } from '../services/pushService'
+import { queryClient } from '../query/queryClient.js'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const AuthContext = createContext(null)
 
@@ -95,6 +97,7 @@ export function AuthProvider({ children }) {
     setSessionTokenSnapshot(token)
     setToken(token)
     setUser(payload)
+    queryClient.invalidateQueries({ queryKey: tarantulaKeys.all })
   }, [])
 
   const logout = useCallback(() => {
@@ -103,6 +106,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user')
     setToken(null)
     setUser(null)
+    queryClient.clear()
   }, [])
 
   useLayoutEffect(() => {

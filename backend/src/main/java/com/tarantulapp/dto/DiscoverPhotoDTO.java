@@ -1,9 +1,13 @@
 package com.tarantulapp.dto;
 
+import java.io.Serializable;
+
 /**
  * Reference image for discover views, with attribution for iNaturalist / GBIF.
  */
-public class DiscoverPhotoDTO {
+public class DiscoverPhotoDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String url;
     /** "inat" | "gbif" | null if none */

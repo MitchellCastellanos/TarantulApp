@@ -1,9 +1,13 @@
 package com.tarantulapp.dto;
 
+import java.io.Serializable;
+
 /**
  * Unified hit for public discover search (WSC checklist via GBIF, or GBIF backbone in Theraphosidae).
  */
-public class DiscoverSearchHitDTO {
+public class DiscoverSearchHitDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** "wsc" | "gbif" */
     private String source;

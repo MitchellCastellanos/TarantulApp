@@ -23,6 +23,7 @@
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/share": "^8.0.1",
     "@sentry/react": "^8.45.0",
+    "@tanstack/react-query": "^5.100.10",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
     "cordova-plugin-purchase": "^13.15.4",

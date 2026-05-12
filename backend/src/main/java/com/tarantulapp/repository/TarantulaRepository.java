@@ -1,6 +1,9 @@
 package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.Tarantula;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +13,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
+    @EntityGraph(attributePaths = "species")
     List<Tarantula> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    @EntityGraph(attributePaths = "species")
+    Page<Tarantula> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
     List<Tarantula> findTop24ByUserIdAndIsPublicTrueOrderByCreatedAtDesc(UUID userId);
 
     /** Orden estable: las 6 primeras son las del cupo Free cuando no hay Pro/prueba. */

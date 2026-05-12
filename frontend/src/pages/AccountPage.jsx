@@ -3,6 +3,7 @@ import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 import authService from '../services/authService'
@@ -15,6 +16,7 @@ import { appLangBase } from '../utils/appLanguage'
 import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
 import { getStoredTheme, setStoredTheme } from '../utils/themePreference'
 import ThemeToggleButton from '../components/ThemeToggleButton'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 function formatPeriodEnd(value, lang) {
   if (value == null) return null
@@ -41,10 +43,14 @@ function mapRequestError(error, t) {
 
 export default function AccountPage() {
   const { t, i18n } = useTranslation()
-  const { user, logout, setPlan, updateUserProfile } = useAuth()
+  const { user, token, logout, setPlan, updateUserProfile } = useAuth()
   const navigate = useNavigate()
   const [billing, setBilling] = useState(null)
-  const [tarantulas, setTarantulas] = useState([])
+  const { data: tarantulas = [] } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token && user),
+  })
   const [loadingBilling, setLoadingBilling] = useState(true)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError] = useState('')
@@ -107,14 +113,6 @@ export default function AccountPage() {
   useEffect(() => {
     loadBilling()
   }, [loadBilling])
-
-  useEffect(() => {
-    if (!user) return
-    tarantulaService
-      .getAll()
-      .then((list) => setTarantulas(Array.isArray(list) ? list : []))
-      .catch(() => setTarantulas([]))
-  }, [user])
 
   useLayoutEffect(() => {
     if (!googleClientId || !googleDeleteBtnRef.current) return undefined

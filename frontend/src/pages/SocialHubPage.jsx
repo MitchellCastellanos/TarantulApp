@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -17,6 +18,7 @@ import moderationService from '../services/moderationService'
 import userPublicService from '../services/userPublicService'
 import { useAuth } from '../context/AuthContext'
 import { imgUrl } from '../services/api'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const TAB_FEED = 'feed'
 const TAB_SEX_ID = 'sexId'
@@ -71,7 +73,11 @@ export default function SocialHubPage() {
   const pendingComposerScrollRef = useRef(false)
   const composerSectionRef = useRef(null)
   const composerBodyRef = useRef(null)
-  const [myTarantulas, setMyTarantulas] = useState([])
+  const { data: myTarantulas = [] } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token && user?.id),
+  })
   const [commentsByPost, setCommentsByPost] = useState({})
   const [commentDraft, setCommentDraft] = useState({})
   const [feedSection, setFeedSection] = useState(FEED_SECTION_ALL)
@@ -199,7 +205,6 @@ export default function SocialHubPage() {
     if (tab === TAB_FEED) {
       if (!user?.id) {
         setMine({ content: [], number: 0, totalPages: 0 })
-        setMyTarantulas([])
       }
     }
     if (tab === TAB_INVITE) {
@@ -217,11 +222,6 @@ export default function SocialHubPage() {
       }
     }
   }, [tab, loadMine, loadReferral, loadSexIdCases, t, user?.id, token])
-
-  useEffect(() => {
-    if (!token || !composerOpen || (myTarantulas || []).length > 0) return
-    tarantulaService.getAll().then(setMyTarantulas).catch(() => setMyTarantulas([]))
-  }, [token, composerOpen, myTarantulas])
 
   const beginnerPromptPhrases = useMemo(
     () => [

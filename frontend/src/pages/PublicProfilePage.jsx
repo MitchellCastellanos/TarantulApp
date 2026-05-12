@@ -29,6 +29,11 @@ const PREY_OPTIONS = [
   { value: 'Other', labelKey: 'logModals.preyOther' },
 ]
 
+function unwrapPagedList(data) {
+  if (!data) return []
+  return Array.isArray(data) ? data : (data.content || [])
+}
+
 const defaultSpiderStyle = {
   width: '100%',
   height: '100%',
@@ -63,11 +68,11 @@ export default function PublicProfilePage() {
     api.get(`/public/t/${shortId}`)
        .then(r => {
          setProfile(r.data)
-         api.get(`/public/t/${shortId}/timeline`)
-            .then(tr => setTimeline(tr.data))
+         api.get(`/public/t/${shortId}/timeline`, { params: { page: 0, size: 40 } })
+            .then(tr => setTimeline(unwrapPagedList(tr.data)))
             .catch(() => {})
-         api.get(`/public/t/${shortId}/photos`)
-            .then(pr => setPhotos(Array.isArray(pr.data) ? pr.data : []))
+         api.get(`/public/t/${shortId}/photos`, { params: { page: 0, size: 24 } })
+            .then(pr => setPhotos(unwrapPagedList(pr.data)))
             .catch(() => setPhotos([]))
        })
        .catch(() => setError(t('public.notFound')))

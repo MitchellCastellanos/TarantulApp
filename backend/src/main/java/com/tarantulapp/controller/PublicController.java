@@ -42,13 +42,27 @@ public class PublicController {
     }
 
     @GetMapping("/t/{shortId}/timeline")
-    public ResponseEntity<List<TimelineEventDTO>> getPublicTimeline(@PathVariable String shortId) {
-        return ResponseEntity.ok(tarantulaService.getPublicTimeline(shortId));
+    public ResponseEntity<?> getPublicTimeline(@PathVariable String shortId,
+                                               @RequestParam(required = false) Integer page,
+                                               @RequestParam(required = false) Integer size) {
+        if (page == null && size == null) {
+            return ResponseEntity.ok(tarantulaService.getPublicTimeline(shortId));
+        }
+        int p = page != null ? Math.max(0, page) : 0;
+        int sz = size != null ? Math.min(60, Math.max(1, size)) : 24;
+        return ResponseEntity.ok(tarantulaService.getPublicTimelinePaged(shortId, p, sz));
     }
 
     @GetMapping("/t/{shortId}/photos")
-    public ResponseEntity<List<PhotoResponse>> getPublicPhotos(@PathVariable String shortId) {
-        return ResponseEntity.ok(tarantulaService.getPublicPhotos(shortId));
+    public ResponseEntity<?> getPublicPhotos(@PathVariable String shortId,
+                                             @RequestParam(required = false) Integer page,
+                                             @RequestParam(required = false) Integer size) {
+        if (page == null && size == null) {
+            return ResponseEntity.ok(tarantulaService.getPublicPhotos(shortId));
+        }
+        int p = page != null ? Math.max(0, page) : 0;
+        int sz = size != null ? Math.min(60, Math.max(1, size)) : 24;
+        return ResponseEntity.ok(tarantulaService.getPublicPhotosPaged(shortId, p, sz));
     }
 
     @PostMapping("/t/{shortId}/spood")

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import QRCodeSvg from 'react-qr-code'
@@ -22,6 +23,7 @@ import {
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
 import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 /** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
 const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
@@ -58,8 +60,15 @@ export default function QrToolPage() {
   const mode = searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
 
   const [copied, setCopied] = useState(false)
-  const [collection, setCollection] = useState([])
-  const [collectionLoading, setCollectionLoading] = useState(false)
+  const { data: allTarantulas = [], isPending: collectionLoading } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token),
+  })
+  const aliveCollection = useMemo(
+    () => (Array.isArray(allTarantulas) ? allTarantulas : []).filter((r) => !r.deceasedAt),
+    [allTarantulas],
+  )
   const [pickId, setPickId] = useState('')
   const [bulkSelected, setBulkSelected] = useState(() => new Set())
   const [includeDeceased, setIncludeDeceased] = useState(false)
@@ -76,8 +85,8 @@ export default function QrToolPage() {
   }, [navigate])
 
   const selected = useMemo(
-    () => collection.find((x) => String(x.id) === pickId) ?? null,
-    [collection, pickId],
+    () => aliveCollection.find((x) => String(x.id) === pickId) ?? null,
+    [aliveCollection, pickId],
   )
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -118,51 +127,33 @@ export default function QrToolPage() {
 
   useEffect(() => {
     if (!token) {
-      setCollection([])
-      setCollectionLoading(false)
       setPickId('')
       return
-    }
-    let cancelled = false
-    setCollectionLoading(true)
-    tarantulaService
-      .getAll()
-      .then((rows) => {
-        if (!cancelled) setCollection((Array.isArray(rows) ? rows : []).filter((r) => !r.deceasedAt))
-      })
-      .catch(() => {
-        if (!cancelled) setCollection([])
-      })
-      .finally(() => {
-        if (!cancelled) setCollectionLoading(false)
-      })
-    return () => {
-      cancelled = true
     }
   }, [token])
 
   useEffect(() => {
-    if (!collection.length) {
+    if (!aliveCollection.length) {
       setPickId('')
       return
     }
     const shortId = searchParams.get('shortId')
     if (shortId) {
-      const found = collection.find((x) => x.shortId === shortId)
+      const found = aliveCollection.find((x) => x.shortId === shortId)
       if (found) {
         setPickId(String(found.id))
         return
       }
     }
     setPickId((prev) => {
-      if (prev && collection.some((x) => String(x.id) === prev)) return prev
-      return String(collection[0].id)
+      if (prev && aliveCollection.some((x) => String(x.id) === prev)) return prev
+      return String(aliveCollection[0].id)
     })
-  }, [collection, searchParams])
+  }, [aliveCollection, searchParams])
 
   useEffect(() => {
-    setBulkSelected(new Set(collection.filter((x) => !x.deceasedAt).map((x) => x.id)))
-  }, [collection])
+    setBulkSelected(new Set(aliveCollection.map((x) => x.id)))
+  }, [aliveCollection])
 
   const copyLink = async () => {
     if (!parsed.ok) return
@@ -206,9 +197,10 @@ export default function QrToolPage() {
   }
 
   const bulkList = useMemo(() => {
-    if (includeDeceased) return collection
-    return collection.filter((x) => !x.deceasedAt)
-  }, [collection, includeDeceased])
+    const rows = Array.isArray(allTarantulas) ? allTarantulas : []
+    if (includeDeceased) return rows
+    return rows.filter((x) => !x.deceasedAt)
+  }, [allTarantulas, includeDeceased])
 
   const bulkSelectedList = useMemo(
     () => bulkList.filter((x) => bulkSelected.has(x.id)),
@@ -532,11 +524,11 @@ export default function QrToolPage() {
                 <p className="small text-muted mb-4">{t('qrTool.loadingCollection')}</p>
               )}
 
-              {token && !collectionLoading && collection.length === 0 && (
+              {token && !collectionLoading && aliveCollection.length === 0 && (
                 <p className="small text-warning mb-4">{t('qrTool.emptyCollection')}</p>
               )}
 
-              {token && collection.length > 0 && mode === 'single' && (
+              {token && aliveCollection.length > 0 && mode === 'single' && (
                 <div className="mb-4">
                   <label className="form-label small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
                     {t('qrTool.pickSpecimen')}
@@ -546,7 +538,7 @@ export default function QrToolPage() {
                     value={pickId}
                     onChange={(e) => setPickId(e.target.value)}
                   >
-                    {collection.map((tar) => (
+                    {aliveCollection.map((tar) => (
                       <option key={tar.id} value={String(tar.id)}>
                         {tar.name}
                         {tar.species?.scientificName ? ` · ${tar.species.scientificName}` : ''}
@@ -640,7 +632,7 @@ export default function QrToolPage() {
                       </div>
                     </div>
                   )}
-                  {!token || collection.length === 0 ? null : (
+                  {!token || bulkList.length === 0 ? null : (
                     <>
                       <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
                         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={selectAllInView}>

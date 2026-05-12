@@ -5,18 +5,50 @@ import { imgUrl } from '../services/api'
 import { buildPhotoShareText } from '../utils/shareTemplates'
 import { detectShareChannel, shareOrCopyText } from '../utils/shareUtils'
 
+const PHOTO_PAGE_SIZE = 24
+
 export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta = null }) {
   const { t } = useTranslation()
   const [photos, setPhotos] = useState([])
+  const [photoPage, setPhotoPage] = useState(0)
+  const [photoHasNext, setPhotoHasNext] = useState(false)
+  const [photoLoadingMore, setPhotoLoadingMore] = useState(false)
   const [file, setFile] = useState(null)
   const [caption, setCaption] = useState('')
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
 
-  const load = () =>
-    tarantulaService.getPhotos(tarantulaId).then(setPhotos)
+  const applyPhotosResponse = (res, append) => {
+    const items = Array.isArray(res) ? res : (res?.content || [])
+    const hasNext = Array.isArray(res) ? false : !!res?.hasNext
+    if (append) setPhotos((prev) => [...prev, ...items])
+    else setPhotos(items)
+    setPhotoHasNext(hasNext)
+  }
 
-  useEffect(() => { load() }, [tarantulaId])
+  const loadFirstPage = () =>
+    tarantulaService.getPhotosPage(tarantulaId, 0, PHOTO_PAGE_SIZE).then((res) => {
+      applyPhotosResponse(res, false)
+      setPhotoPage(0)
+    })
+
+  useEffect(() => {
+    setPhotoPage(0)
+    loadFirstPage()
+  }, [tarantulaId])
+
+  const loadMorePhotos = () => {
+    if (!photoHasNext || photoLoadingMore) return
+    setPhotoLoadingMore(true)
+    const next = photoPage + 1
+    tarantulaService
+      .getPhotosPage(tarantulaId, next, PHOTO_PAGE_SIZE)
+      .then((res) => {
+        applyPhotosResponse(res, true)
+        setPhotoPage(next)
+      })
+      .finally(() => setPhotoLoadingMore(false))
+  }
 
   const handleUpload = async (e) => {
     e.preventDefault()
@@ -27,7 +59,7 @@ export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta 
       setFile(null)
       setCaption('')
       e.target.reset()
-      load()
+      await loadFirstPage()
     } finally {
       setUploading(false)
     }
@@ -36,7 +68,7 @@ export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta 
   const handleDelete = async (photoId) => {
     if (!confirm(t('gallery.deleteConfirm'))) return
     await tarantulaService.deletePhoto(tarantulaId, photoId)
-    load()
+    await loadFirstPage()
   }
 
   const handleShare = async (photo) => {
@@ -86,6 +118,7 @@ export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta 
         {photos.length === 0 ? (
           <p className="text-muted small mb-0">{t('gallery.empty')}</p>
         ) : (
+          <>
           <div className="row g-2">
             {photos.map(p => (
               <div key={p.id} className="col-6 col-md-4 col-lg-3">
@@ -125,6 +158,19 @@ export default function PhotoGallery({ tarantulaId, readOnly = false, shareMeta 
               </div>
             ))}
           </div>
+          {photoHasNext && (
+            <div className="text-center mt-3">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                disabled={photoLoadingMore}
+                onClick={loadMorePhotos}
+              >
+                {photoLoadingMore ? '…' : t('gallery.loadMore')}
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 

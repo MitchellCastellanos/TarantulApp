@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,4 +34,14 @@ public interface MoltLogRepository extends JpaRepository<MoltLog, UUID> {
             order by wk
             """, nativeQuery = true)
     List<Object[]> countMoltsByWeekNative(@Param("userId") UUID userId, @Param("fromTs") Instant fromTs);
+
+    @Query(value = """
+            SELECT tarantula_id, molted_at FROM (
+                SELECT m.tarantula_id AS tarantula_id, m.molted_at AS molted_at,
+                       ROW_NUMBER() OVER (PARTITION BY m.tarantula_id ORDER BY m.molted_at DESC) AS rn
+                FROM molt_logs m
+                WHERE m.tarantula_id IN (:ids)
+            ) x WHERE x.rn = 1
+            """, nativeQuery = true)
+    List<Object[]> findLatestMoltRowsByTarantulaIds(@Param("ids") Collection<UUID> ids);
 }

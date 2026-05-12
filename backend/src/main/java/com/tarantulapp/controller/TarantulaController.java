@@ -25,9 +25,20 @@ public class TarantulaController {
         this.securityHelper = securityHelper;
     }
 
+    /**
+     * Collection list. Without {@code page}/{@code size} returns the same JSON array shape as before.
+     * With pagination params returns {@link TarantulaCollectionPageResponse} (object with {@code content}).
+     */
     @GetMapping
-    public ResponseEntity<List<TarantulaResponse>> list() {
-        return ResponseEntity.ok(tarantulaService.findByUser(securityHelper.getCurrentUserId()));
+    public ResponseEntity<?> list(@RequestParam(required = false) Integer page,
+                                  @RequestParam(required = false) Integer size) {
+        UUID userId = securityHelper.getCurrentUserId();
+        if (page == null && size == null) {
+            return ResponseEntity.ok(tarantulaService.findByUser(userId));
+        }
+        int p = page != null ? Math.max(0, page) : 0;
+        int sz = size != null ? Math.min(100, Math.max(1, size)) : 24;
+        return ResponseEntity.ok(tarantulaService.findByUserPaged(userId, p, sz));
     }
 
     @PostMapping
@@ -69,14 +80,33 @@ public class TarantulaController {
         return ResponseEntity.ok(tarantulaService.markDeceased(id, securityHelper.getCurrentUserId(), req));
     }
 
+    /**
+     * Sin {@code page}/{@code size}: mismo array JSON que antes. Con paginación: objeto con {@code content}, {@code totalElements}, etc.
+     */
     @GetMapping("/{id}/timeline")
-    public ResponseEntity<List<TimelineEventDTO>> getTimeline(@PathVariable UUID id) {
-        return ResponseEntity.ok(tarantulaService.getTimeline(id, securityHelper.getCurrentUserId()));
+    public ResponseEntity<?> getTimeline(@PathVariable UUID id,
+                                         @RequestParam(required = false) Integer page,
+                                         @RequestParam(required = false) Integer size) {
+        UUID uid = securityHelper.getCurrentUserId();
+        if (page == null && size == null) {
+            return ResponseEntity.ok(tarantulaService.getTimeline(id, uid));
+        }
+        int p = page != null ? Math.max(0, page) : 0;
+        int sz = size != null ? Math.min(60, Math.max(1, size)) : 24;
+        return ResponseEntity.ok(tarantulaService.getTimelinePaged(id, uid, p, sz));
     }
 
     @GetMapping("/{id}/photos")
-    public ResponseEntity<List<PhotoResponse>> getPhotos(@PathVariable UUID id) {
-        return ResponseEntity.ok(tarantulaService.getPhotos(id, securityHelper.getCurrentUserId()));
+    public ResponseEntity<?> getPhotos(@PathVariable UUID id,
+                                       @RequestParam(required = false) Integer page,
+                                       @RequestParam(required = false) Integer size) {
+        UUID uid = securityHelper.getCurrentUserId();
+        if (page == null && size == null) {
+            return ResponseEntity.ok(tarantulaService.getPhotos(id, uid));
+        }
+        int p = page != null ? Math.max(0, page) : 0;
+        int sz = size != null ? Math.min(60, Math.max(1, size)) : 24;
+        return ResponseEntity.ok(tarantulaService.getPhotosPaged(id, uid, p, sz));
     }
 
     @PostMapping(value = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

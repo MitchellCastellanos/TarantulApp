@@ -1,9 +1,13 @@
 package com.tarantulapp.dto;
 
+import java.io.Serializable;
+
 /**
  * Read-only taxon sheet for public discover (GBIF + resolved photo).
  */
-public class DiscoverTaxonDetailDTO {
+public class DiscoverTaxonDetailDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long gbifKey;
     private String canonicalName;

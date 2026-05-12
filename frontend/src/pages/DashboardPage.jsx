@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandLogoMark from '../components/BrandLogoMark'
@@ -16,12 +17,17 @@ import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import { keeperRankName } from '../utils/keeperRank'
 import { keeperBadgeEmoji } from '../utils/keeperBadgeIcons'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { user } = useAuth()
-  const [tarantulas, setTarantulas] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { user, token } = useAuth()
+  const queryClient = useQueryClient()
+  const { data: tarantulas = [], isLoading: loading } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token),
+  })
   const [habitat, setHabitat] = useState('all')
   const [stage, setStage] = useState('')
   const [status, setStatus] = useState('')
@@ -31,12 +37,6 @@ export default function DashboardPage() {
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
   const importInputRef = useRef(null)
   const [keeperProfile, setKeeperProfile] = useState(null)
-
-  useEffect(() => {
-    tarantulaService.getAll()
-      .then(setTarantulas)
-      .finally(() => setLoading(false))
-  }, [])
 
   const DASH_SCROLL_KEY = 'ta-dash-scroll-y'
   const DASH_RESTORE_FLAG = 'ta-dash-restore'
@@ -172,8 +172,7 @@ export default function DashboardPage() {
     setJsonBusy(true)
     try {
       const result = await importCollectionJsonFile(file)
-      const list = await tarantulaService.getAll()
-      setTarantulas(Array.isArray(list) ? list : [])
+      await queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
       const msg = `JSON import: ${result.created} created, ${result.skipped} skipped.`
       window.alert(msg)
     } catch {

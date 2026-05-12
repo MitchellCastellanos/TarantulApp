@@ -6,6 +6,8 @@ backend/*.log
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+# Local release bundles / zips (CI artifacts live in Actions, not here)
+frontend/android/app/release/
 frontend/test-results/
 frontend/playwright-report/
 /package-lock.json

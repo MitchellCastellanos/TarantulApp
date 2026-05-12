@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import reminderService from '../services/reminderService'
 import tarantulaService from '../services/tarantulaService'
 import { useAuth } from '../context/AuthContext'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import ChitinCardFrame from './ChitinCardFrame'
 import {
   readDismissedAutoKeys,
@@ -45,9 +47,17 @@ function resolveReminderMessage(reminder, t) {
 
 export default function RemindersPanel() {
   const { t } = useTranslation()
-  const { user } = useAuth()
-  const [reminders, setReminders] = useState([])
-  const [tarantulas, setTarantulas] = useState([])
+  const { user, token } = useAuth()
+  const { data: reminders = [], refetch: refetchReminders } = useQuery({
+    queryKey: ['reminders', 'pending'],
+    queryFn: () => reminderService.getPending(),
+    enabled: Boolean(user && token),
+  })
+  const { data: tarantulas = [] } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(user && token),
+  })
   const [dismissedAuto, setDismissedAuto] = useState(() => readDismissedAutoKeys())
   const hasProFeatures = user?.hasProFeatures === true
   const showFreeUpsell = Boolean(user) && !hasProFeatures
@@ -56,17 +66,6 @@ export default function RemindersPanel() {
     [tarantulas],
   )
   const isReminderLocked = (r) => Boolean(r.tarantulaId && lockedIds.has(r.tarantulaId))
-
-  const load = () =>
-    Promise.all([
-      reminderService.getPending(),
-      tarantulaService.getAll(),
-    ]).then(([rems, ts]) => {
-      setReminders(rems)
-      setTarantulas(ts)
-    }).catch(() => {})
-
-  useEffect(() => { load() }, [])
 
   const activeReminders = useMemo(
     () =>
@@ -92,7 +91,7 @@ export default function RemindersPanel() {
     }
     if (!r.id) return
     await reminderService.markDone(r.id)
-    load()
+    refetchReminders()
   }
 
   if (activeReminders.length === 0 && !showFreeUpsell) return null

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,4 +37,18 @@ public interface FeedingLogRepository extends JpaRepository<FeedingLog, UUID> {
             """, nativeQuery = true)
     List<Object[]> countSuccessfulFeedingsByWeekNative(@Param("userId") UUID userId,
                                                       @Param("fromTs") Instant fromTs);
+
+    /**
+     * Latest feeding row per tarantula (same ordering as {@link #findFirstByTarantulaIdOrderByFedAtDesc}).
+     * Uses {@code ROW_NUMBER} so it runs on PostgreSQL and H2 (tests, {@code MODE=PostgreSQL}).
+     */
+    @Query(value = """
+            SELECT tarantula_id, fed_at FROM (
+                SELECT f.tarantula_id AS tarantula_id, f.fed_at AS fed_at,
+                       ROW_NUMBER() OVER (PARTITION BY f.tarantula_id ORDER BY f.fed_at DESC) AS rn
+                FROM feeding_logs f
+                WHERE f.tarantula_id IN (:ids)
+            ) x WHERE x.rn = 1
+            """, nativeQuery = true)
+    List<Object[]> findLatestFeedingRowsByTarantulaIds(@Param("ids") Collection<UUID> ids);
 }

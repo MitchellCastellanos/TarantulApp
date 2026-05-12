@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -35,11 +36,14 @@ import { reminderPrimaryLabel } from '../utils/reminderLabels'
 import { computePostMoltWindow } from '../utils/moltFeedingWindow'
 import { predictNextMolt } from '../utils/moltPrediction'
 import { detectFeedingPreMoltSignal } from '../utils/preMoltSignals'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const REMINDER_TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
 
 const CARD_CORNER_MARK = publicUrl('tarantula-card-corner-mark.png')
+/** Primer fetch del timeline (servidor); “cargar más” pide la siguiente página. */
+const TIMELINE_FETCH_SIZE = 48
 
 function reminderOverdue(iso) {
   return new Date(iso) < new Date()
@@ -85,6 +89,7 @@ function LogEventButtonRow({ mayEdit, lockedHint, onFeeding, onMolt, onBehavior,
 }
 
 export default function TarantulaDetailPage() {
+  const queryClient = useQueryClient()
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -93,6 +98,10 @@ export default function TarantulaDetailPage() {
 
   const [tarantula, setTarantula] = useState(null)
   const [timeline, setTimeline] = useState([])
+  const [timelineHasNext, setTimelineHasNext] = useState(false)
+  const [timelineTotal, setTimelineTotal] = useState(0)
+  const [timelineServerPage, setTimelineServerPage] = useState(0)
+  const [timelineLoadingMore, setTimelineLoadingMore] = useState(false)
   const [molts, setMolts] = useState([])
   const [feedings, setFeedings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -112,18 +121,25 @@ export default function TarantulaDetailPage() {
     if (showFullPageLoading) setLoading(true)
     Promise.all([
       tarantulaService.getById(id),
-      tarantulaService.getTimeline(id),
+      tarantulaService.getTimelinePage(id, 0, TIMELINE_FETCH_SIZE),
       logsService.getMolts(id),
       logsService.getFeedings(id),
-    ]).then(([t, tl, ms, fs]) => {
+    ]).then(([t, tlPaged, ms, fs]) => {
       setTarantula(t)
-      setTimeline(tl)
+      const chunk = Array.isArray(tlPaged) ? tlPaged : (tlPaged?.content || [])
+      setTimeline(chunk)
+      setTimelineHasNext(!!tlPaged?.hasNext)
+      setTimelineTotal(typeof tlPaged?.totalElements === 'number' ? tlPaged.totalElements : chunk.length)
+      setTimelineServerPage(0)
       setMolts(Array.isArray(ms) ? ms : [])
       setFeedings(Array.isArray(fs) ? fs : [])
     }).finally(() => {
       if (showFullPageLoading) setLoading(false)
+      if (!showFullPageLoading) {
+        queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+      }
     })
-  }, [id])
+  }, [id, queryClient])
 
   useEffect(() => { load(true) }, [load])
 
@@ -216,11 +232,8 @@ export default function TarantulaDetailPage() {
     setHistoryPageIndex(i => Math.min(i, Math.max(0, Math.ceil(timeline.length / PARCHMENT_HISTORY_PAGE_SIZE) - 1)))
   }, [timeline.length])
 
-  const moltEvents = useMemo(
-    () => timeline.filter((e) => e.type === 'molt'),
-    [timeline],
-  )
-  const estimatedInstar = moltEvents.length > 0 ? moltEvents.length + 1 : null
+  const moltLogCount = Array.isArray(molts) ? molts.length : 0
+  const estimatedInstar = moltLogCount > 0 ? moltLogCount + 1 : null
 
   const postMoltWindow = useMemo(
     () => computePostMoltWindow(tarantula?.lastMoltAt, tarantula?.stage),
@@ -255,11 +268,13 @@ export default function TarantulaDetailPage() {
   const handleTogglePublic = async () => {
     const updated = await tarantulaService.togglePublic(id)
     setTarantula(updated)
+    queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
   }
 
   const handleDelete = async () => {
     if (!confirm(t('tarantula.deleteConfirm', { name: tarantula.name }))) return
     await tarantulaService.delete(id)
+    queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
     navigate('/')
   }
 
@@ -270,17 +285,38 @@ export default function TarantulaDetailPage() {
     })
     setTarantula(updated)
     setModal(null)
+    queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
   }
 
-  const handleExportPdf = () => {
-    exportTarantulaPdf({
-      tarantula,
-      species,
-      timeline,
-      t,
-      language: i18n.language,
-      i18n,
-    }).catch(() => {})
+  const handleExportPdf = async () => {
+    try {
+      const fullTimeline = await tarantulaService.getTimeline(id)
+      await exportTarantulaPdf({
+        tarantula,
+        species,
+        timeline: fullTimeline,
+        t,
+        language: i18n.language,
+        i18n,
+      })
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleLoadMoreTimeline = async () => {
+    if (!id || !timelineHasNext || timelineLoadingMore) return
+    setTimelineLoadingMore(true)
+    try {
+      const next = timelineServerPage + 1
+      const raw = await tarantulaService.getTimelinePage(id, next, TIMELINE_FETCH_SIZE)
+      const chunk = Array.isArray(raw) ? raw : (raw?.content || [])
+      setTimeline((prev) => [...prev, ...chunk])
+      setTimelineServerPage(next)
+      setTimelineHasNext(!!raw?.hasNext)
+    } finally {
+      setTimelineLoadingMore(false)
+    }
   }
   const publicProfileUrl = tarantula?.shortId ? `${window.location.origin}/t/${tarantula.shortId}` : ''
 
@@ -501,7 +537,7 @@ export default function TarantulaDetailPage() {
                     {estimatedInstar != null && (
                       <div>
                         {t('molt.instarLabel')}: #{estimatedInstar} (
-                        {t('molt.instarFromLogs', { count: moltEvents.length })})
+                        {t('molt.instarFromLogs', { count: moltLogCount })})
                       </div>
                     )}
                   </div>
@@ -676,7 +712,7 @@ export default function TarantulaDetailPage() {
                   <div className="ta-section-header mb-2">
                     <span>{t('tarantula.history')}</span>
                   </div>
-                  {moltEvents.length > 0 && (
+                  {moltLogCount > 0 && (
                     <p className="small text-muted mb-3" style={{ fontSize: '0.76rem', lineHeight: 1.35 }}>
                       {t('timeline.growthMoltHint')}
                     </p>
@@ -731,6 +767,24 @@ export default function TarantulaDetailPage() {
                           >
                             {t('tarantula.historyNext')}
                           </button>
+                        </div>
+                      )}
+                      {timelineHasNext && (
+                        <div className="text-center mt-3">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
+                            disabled={timelineLoadingMore}
+                            onClick={handleLoadMoreTimeline}
+                          >
+                            {timelineLoadingMore ? '…' : t('timeline.loadMore')}
+                          </button>
+                          {timelineTotal > 0 && (
+                            <div className="small text-muted mt-1">
+                              {timeline.length}/{timelineTotal}
+                            </div>
+                          )}
                         </div>
                       )}
                     </>

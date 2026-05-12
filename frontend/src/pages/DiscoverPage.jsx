@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
@@ -18,6 +19,7 @@ import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useDiscoverSpeciesSuggestions } from '../hooks/useDiscoverSpeciesSuggestions'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const DEBOUNCE_MS = 300
 const TARANTULA_FREE_LIMIT = 6
@@ -171,8 +173,17 @@ export default function DiscoverPage() {
   const [activeGbifKey, setActiveGbifKey] = useState(null)
 
   const [specimenSizeCm, setSpecimenSizeCm] = useState('')
-  const [collectionCount, setCollectionCount] = useState(null)
-  const [collectionLoading, setCollectionLoading] = useState(false)
+
+  const {
+    data: collectionCount = null,
+    isPending: collectionListPending,
+  } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token),
+    select: (items) => (Array.isArray(items) ? items.length : null),
+  })
+  const collectionLoading = Boolean(token && collectionListPending)
 
   const {
     suggestions,
@@ -222,33 +233,6 @@ export default function DiscoverPage() {
       if (taxon.trim().length >= 2) setShowDropdown(true)
     }
   }, [searchParams])
-
-  useEffect(() => {
-    if (!token) {
-      setCollectionCount(null)
-      setCollectionLoading(false)
-      return
-    }
-    setCollectionLoading(true)
-    let cancelled = false
-    tarantulaService
-      .getAll()
-      .then((items) => {
-        if (!cancelled) {
-          setCollectionCount(Array.isArray(items) ? items.length : 0)
-          setCollectionLoading(false)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCollectionCount(null)
-          setCollectionLoading(false)
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [token])
 
   useEffect(() => {
     setDbSpeciesRefBroken(false)

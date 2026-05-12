@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -16,6 +17,7 @@ import {
 import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrBrandComposite'
 import marketplaceService from '../services/marketplaceService'
 import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 function specimenQrUrl(shortId) {
   return specimenPublicUrl(shortId)
@@ -23,11 +25,15 @@ function specimenQrUrl(shortId) {
 
 export default function QrBulkPrintPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const hasProFeatures = user?.hasProFeatures === true
+  const selectionSeeded = useRef(false)
 
-  const [tarantulas, setTarantulas] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { data: tarantulas = [], isPending: loading } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token),
+  })
   const [selected, setSelected] = useState(() => new Set())
   const [includeDeceased, setIncludeDeceased] = useState(false)
   const [sizeCm, setSizeCm] = useState(5)
@@ -35,16 +41,20 @@ export default function QrBulkPrintPage() {
   const [busyKind, setBusyKind] = useState('')
 
   useEffect(() => {
-    tarantulaService
-      .getAll()
-      .then((list) => {
-        setTarantulas(Array.isArray(list) ? list : [])
-        const alive = (Array.isArray(list) ? list : []).filter((x) => !x.deceasedAt)
-        setSelected(new Set(alive.map((x) => x.id)))
-      })
-      .catch(() => setTarantulas([]))
-      .finally(() => setLoading(false))
-  }, [])
+    if (!token) {
+      selectionSeeded.current = false
+      setSelected(new Set())
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (loading || selectionSeeded.current) return
+    const listRaw = Array.isArray(tarantulas) ? tarantulas : []
+    if (listRaw.length === 0) return
+    selectionSeeded.current = true
+    const alive = listRaw.filter((x) => !x.deceasedAt)
+    setSelected(new Set(alive.map((x) => x.id)))
+  }, [loading, tarantulas])
 
   const list = useMemo(() => {
     if (includeDeceased) return tarantulas

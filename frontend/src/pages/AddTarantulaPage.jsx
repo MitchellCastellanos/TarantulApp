@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -10,13 +11,15 @@ import { useAuth } from '../context/AuthContext'
 import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 export default function AddTarantulaPage() {
+  const queryClient = useQueryClient()
   const { t } = useTranslation()
   const { id } = useParams()  // si hay id, es edición
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const isEdit = Boolean(id)
   const discoverSpeciesId = searchParams.get('speciesId')
   const discoverGbifKey = searchParams.get('gbifKey')
@@ -38,7 +41,12 @@ export default function AddTarantulaPage() {
   const [photoPreview, setPhotoPreview] = useState(null) // URL de objeto para preview
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [collectionCount, setCollectionCount] = useState(0)
+  const { data: collectionCount = 0 } = useQuery({
+    queryKey: tarantulaKeys.list(),
+    queryFn: () => tarantulaService.getAll(),
+    enabled: Boolean(token && !isEdit),
+    select: (items) => (Array.isArray(items) ? items.length : 0),
+  })
   const [createdTarantula, setCreatedTarantula] = useState(null)
   const [postCreateMode, setPostCreateMode] = useState('')
   const [postCreateSaving, setPostCreateSaving] = useState(false)
@@ -94,11 +102,6 @@ export default function AddTarantulaPage() {
       })
     }
   }, [id, isEdit])
-
-  useEffect(() => {
-    if (isEdit) return
-    tarantulaService.getAll().then(items => setCollectionCount(items.length)).catch(() => {})
-  }, [isEdit])
 
   // Descubrir → "Agregar a colección": ?speciesId= o ?gbifKey=
   // No usar ref “dedupe” antes del async: con React.StrictMode el 1er efecto se cancela
@@ -324,11 +327,12 @@ export default function AddTarantulaPage() {
         await tarantulaService.uploadPhoto(tarantula.id, photo)
       }
       if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
         navigate(`/tarantulas/${tarantula.id}`)
         return
       }
       setCreatedTarantula(tarantula)
-      setCollectionCount(count => count + 1)
+      queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
       setPostCreateMode('choice')
       setLoading(false)
     } catch (err) {
