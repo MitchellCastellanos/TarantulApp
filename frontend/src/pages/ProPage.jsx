@@ -1,6 +1,7 @@
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import ChitinCardFrame from '../components/ChitinCardFrame'
+import ProDaysSummaryCard from '../components/ProDaysSummaryCard'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef, useMemo } from 'react'
@@ -319,6 +320,8 @@ export default function ProPage() {
               {error}
             </div>
           )}
+
+          {user && <ProDaysSummaryCard />}
 
           <div className="card border-0 shadow-sm mb-4">
             <div className="card-body">

@@ -17,9 +17,12 @@ import com.tarantulapp.service.BetaTesterGoogleGroupSyncService;
 import com.tarantulapp.service.GoogleGroupSyncAsyncInvoker;
 import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.PlanAccessService;
+import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.service.OfficialVendorService;
+import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
+import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.util.BetaMailBodies;
@@ -71,6 +74,8 @@ public class AdminController {
     private final PlanAccessService planAccessService;
     private final GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker;
     private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
+    private final ProDayGrantService proDayGrantService;
+    private final SecurityHelper securityHelper;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -99,7 +104,9 @@ public class AdminController {
                            EmailService emailService,
                            PlanAccessService planAccessService,
                            GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker,
-                           BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService) {
+                           BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService,
+                           ProDayGrantService proDayGrantService,
+                           SecurityHelper securityHelper) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -116,6 +123,8 @@ public class AdminController {
         this.planAccessService = planAccessService;
         this.googleGroupSyncAsyncInvoker = googleGroupSyncAsyncInvoker;
         this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
+        this.proDayGrantService = proDayGrantService;
+        this.securityHelper = securityHelper;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -144,8 +153,12 @@ public class AdminController {
 
     record SendBetaWelcomeEmailRequest(String locale, String plainPassword) {}
 
-    /** {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end). */
-    record AdminSetPlanRequest(String plan, Integer extendTrialDays) {}
+    /**
+     * {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end).
+     * {@code reason}: REQUIRED whenever {@code extendTrialDays > 0} so the day grant has a non-empty audit trail
+     * and the user-facing email can quote a meaningful motive (e.g. "Halloween campaign comp").
+     */
+    record AdminSetPlanRequest(String plan, Integer extendTrialDays, String reason) {}
 
     record MailTestSendRequest(@NotBlank @Email String to) {}
 
@@ -475,14 +488,19 @@ public class AdminController {
         if (req != null && req.plan() != null && !req.plan().isBlank()) {
             user.setPlan(UserPlan.valueOf(req.plan().trim().toUpperCase(Locale.ROOT)));
         }
-        if (req != null && req.extendTrialDays() != null && req.extendTrialDays() > 0) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime base = user.getTrialEndsAt() != null && user.getTrialEndsAt().isAfter(now)
-                    ? user.getTrialEndsAt()
-                    : now;
-            user.setTrialEndsAt(base.plusDays(req.extendTrialDays()));
+        boolean wantsExtension = req != null && req.extendTrialDays() != null && req.extendTrialDays() > 0;
+        if (wantsExtension) {
+            String reason = req.reason() == null ? "" : req.reason().trim();
+            if (reason.isEmpty()) {
+                throw new IllegalArgumentException("ADMIN_GRANT_REASON_REQUIRED");
+            }
+            // recordGrant persists the user (with new trial_ends_at) and sends the localized email.
+            userRepository.save(user);
+            UUID adminId = securityHelper.getCurrentUserId();
+            proDayGrantService.recordGrant(user, req.extendTrialDays(), ProDayGrantSource.ADMIN, reason, adminId);
+        } else {
+            userRepository.save(user);
         }
-        userRepository.save(user);
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         return ResponseEntity.ok(mapUser(user, counts));
     }

@@ -121,6 +121,10 @@ public class User {
     @Column(name = "beta_preferred_locale", length = 8)
     private String betaPreferredLocale;
 
+    /** Idioma preferido para correos transaccionales (Pro grants, recibos). Capturado en login/registro. */
+    @Column(name = "preferred_locale", length = 8)
+    private String preferredLocale;
+
     /** Aceptación del acuerdo de beta tester (modal primer login). */
     @Column(name = "beta_agreement_accepted_at")
     private Instant betaAgreementAcceptedAt;
@@ -269,6 +273,9 @@ public class User {
 
     public String getBetaPreferredLocale() { return betaPreferredLocale; }
     public void setBetaPreferredLocale(String betaPreferredLocale) { this.betaPreferredLocale = betaPreferredLocale; }
+
+    public String getPreferredLocale() { return preferredLocale; }
+    public void setPreferredLocale(String preferredLocale) { this.preferredLocale = preferredLocale; }
 
     public Instant getBetaAgreementAcceptedAt() { return betaAgreementAcceptedAt; }
     public void setBetaAgreementAcceptedAt(Instant betaAgreementAcceptedAt) { this.betaAgreementAcceptedAt = betaAgreementAcceptedAt; }

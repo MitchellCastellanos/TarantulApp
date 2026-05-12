@@ -1613,6 +1613,31 @@
     "reportError": "Impossible d'envoyer le signalement."
   }
   ,
+  "proGrants": {
+    "title": "Vos jours Pro",
+    "subtitle": "Combien de jours Pro gratuits il vous reste, d'o\u00f9 ils viennent et comment en gagner plus.",
+    "loading": "Chargement de vos jours Pro\u2026",
+    "daysRemaining": "Jours Pro restants",
+    "proEndsOn": "Votre Pro se termine le",
+    "daysSuffix_one": "jour",
+    "daysSuffix_other": "jours",
+    "breakdownTitle": "D'o\u00f9 ils viennent",
+    "breakdownEmpty": "Aucun jour bonus pour l'instant \u2014 invitez un keeper ou d\u00e9bloquez un palier de parrainage pour commencer.",
+    "source": {
+      "REFERRAL_SIGNUP": "Bonus parrainage \u00e0 l'inscription",
+      "REFERRAL_MILESTONE": "Bonus palier de parrainage",
+      "ADMIN": "Cadeau de l'\u00e9quipe TarantulApp",
+      "LEGACY_MIGRATION": "Ajustement initial du registre",
+      "UNKNOWN": "Jours Pro"
+    },
+    "howToEarnMoreTitle": "Comment en gagner plus",
+    "howToEarnMore": {
+      "referral": "Partagez votre code de parrainage : votre ami(e) et vous gagnez des jours d\u00e8s l'inscription.",
+      "referralCta": "Ouvrir mon hub de parrainage",
+      "milestones": "Atteignez des paliers (1 / 3 / 5 / 10 / 25 invit\u00e9s) pour des bonus uniques cumulables (7 / 14 / 30 / 90 jours).",
+      "subscribe": "Abonnez-vous \u00e0 Pro pour un acc\u00e8s continu \u2014 pratique quand vos jours bonus sont \u00e9puis\u00e9s."
+    }
+  },
   "pro": {
     "title": "Offres TarantulApp\u2122",
     "subtitle": "Abonnements centrés: Pro pour les keepers actifs et Vendor/Business pour les opérations commerciales.",
@@ -2072,6 +2097,8 @@
     "playGroupSyncResultFailed": "Groupe Play : {{status}}. {{error}}",
     "playGroupSyncRequestError": "Impossible de joindre le serveur pour la synchro Play.",
     "extendTrialPrompt": "Jours d’essai supplémentaires (ajoutés après la fin de l’essai actuel, ou à partir d’aujourd’hui) :",
+    "extendTrialReasonPrompt": "Motif du don (affiché dans l’e-mail à l’utilisateur et enregistré dans le journal d’audit). Obligatoire.",
+    "extendTrialReasonRequired": "Un motif est requis lors de l’octroi de jours Pro.",
     "planUpdated": "Plan mis à jour.",
     "planUpdateError": "Impossible de mettre à jour le plan.",
     "addTesterBlurb": "Ajouter ou promouvoir un testeur bêta. Utilisez l'e-mail, ou le @handle public pour retrouver le compte. La connexion se fait toujours avec e-mail + mot de passe. Un nouveau compte n'est créé que si l'identifiant est un e-mail et qu'aucun utilisateur n'existe.",

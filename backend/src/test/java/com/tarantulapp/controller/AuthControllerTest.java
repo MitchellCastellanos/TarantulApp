@@ -52,14 +52,16 @@ class AuthControllerTest {
     void oauthGoogleDelegatesToService() {
         AuthController.GoogleOAuthRequest request = new AuthController.GoogleOAuthRequest("token-123", "REF123");
         AuthResponse response = new AuthResponse("jwt", "test@mail.com", "Test", UUID.randomUUID(), "FREE");
-        when(authService.googleLogin("token-123", "REF123")).thenReturn(response);
+        MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+        httpRequest.addHeader("Accept-Language", "es-MX,es;q=0.9");
+        when(authService.googleLogin("token-123", "REF123", "es-MX,es;q=0.9")).thenReturn(response);
 
-        ResponseEntity<AuthResponse> result = controller.oauthGoogle(request);
+        ResponseEntity<AuthResponse> result = controller.oauthGoogle(request, httpRequest);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(result.getBody());
         assertEquals("jwt", result.getBody().getToken());
-        verify(authService).googleLogin("token-123", "REF123");
+        verify(authService).googleLogin("token-123", "REF123", "es-MX,es;q=0.9");
     }
 
     @Test

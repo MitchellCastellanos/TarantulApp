@@ -1631,6 +1631,31 @@
     "reportError": "Could not send report."
   }
   ,
+  "proGrants": {
+    "title": "Your Pro days",
+    "subtitle": "How many free Pro days you have left, where they came from, and how to earn more.",
+    "loading": "Loading your Pro days\u2026",
+    "daysRemaining": "Pro days remaining",
+    "proEndsOn": "Your Pro ends on",
+    "daysSuffix_one": "day",
+    "daysSuffix_other": "days",
+    "breakdownTitle": "Where they came from",
+    "breakdownEmpty": "No bonus days yet \u2014 invite a keeper or grab a referral milestone to start earning days.",
+    "source": {
+      "REFERRAL_SIGNUP": "Referral signup bonus",
+      "REFERRAL_MILESTONE": "Referral milestone bonus",
+      "ADMIN": "TarantulApp team grant",
+      "LEGACY_MIGRATION": "Legacy ledger backfill",
+      "UNKNOWN": "Pro days"
+    },
+    "howToEarnMoreTitle": "How to earn more",
+    "howToEarnMore": {
+      "referral": "Share your referral code: both you and your friend get bonus days when they sign up.",
+      "referralCta": "Open your referral hub",
+      "milestones": "Hit referral milestones (1 / 3 / 5 / 10 / 25 invites) for one-time stackable bonuses (7 / 14 / 30 / 90 days).",
+      "subscribe": "Subscribe to Pro for uninterrupted access \u2014 handy when you've used up your bonus days."
+    }
+  },
   "pro": {
     "title": "TarantulApp\u2122 plans",
     "subtitle": "Subscription-focused: Pro for active keepers and Vendor/Business for commercial operations.",
@@ -2090,6 +2115,8 @@
     "playGroupSyncResultFailed": "Play group: {{status}}. {{error}}",
     "playGroupSyncRequestError": "Could not reach the server for Play group sync.",
     "extendTrialPrompt": "Extra trial days (added after current trial end, or from today):",
+    "extendTrialReasonPrompt": "Reason for the grant (shown in the user-facing email and recorded in the audit ledger). Required.",
+    "extendTrialReasonRequired": "A reason is required when granting Pro days.",
     "planUpdated": "Plan updated.",
     "planUpdateError": "Could not update plan.",
     "addTesterBlurb": "Add or upgrade someone to beta tester. Use their email, or their public @handle to find an existing account. Login always uses email + password. New accounts are only created when the identifier is an email and no user exists yet.",

@@ -1613,6 +1613,31 @@
     "reportError": "No se pudo enviar el reporte."
   }
   ,
+  "proGrants": {
+    "title": "Tus d\u00edas Pro",
+    "subtitle": "Cu\u00e1ntos d\u00edas Pro gratis te quedan, de d\u00f3nde vienen y c\u00f3mo conseguir m\u00e1s.",
+    "loading": "Cargando tus d\u00edas Pro\u2026",
+    "daysRemaining": "D\u00edas Pro restantes",
+    "proEndsOn": "Tu Pro termina el",
+    "daysSuffix_one": "d\u00eda",
+    "daysSuffix_other": "d\u00edas",
+    "breakdownTitle": "De d\u00f3nde vienen",
+    "breakdownEmpty": "A\u00fan no tienes d\u00edas bonus \u2014 invita a un keeper o desbloquea un hito de referidos para empezar a sumar.",
+    "source": {
+      "REFERRAL_SIGNUP": "Bonus por c\u00f3digo de referido",
+      "REFERRAL_MILESTONE": "Bonus por hito de referidos",
+      "ADMIN": "Cortes\u00eda del equipo TarantulApp",
+      "LEGACY_MIGRATION": "Ajuste inicial al registro de d\u00edas",
+      "UNKNOWN": "D\u00edas Pro"
+    },
+    "howToEarnMoreTitle": "C\u00f3mo conseguir m\u00e1s",
+    "howToEarnMore": {
+      "referral": "Comparte tu c\u00f3digo de referido: t\u00fa y tu amig@ ganan d\u00edas al registrarse.",
+      "referralCta": "Abrir mi panel de referidos",
+      "milestones": "Alcanza hitos (1 / 3 / 5 / 10 / 25 invitados) para bonos \u00fanicos acumulables (7 / 14 / 30 / 90 d\u00edas).",
+      "subscribe": "Suscr\u00edbete a Pro para acceso continuo \u2014 ideal cuando se acaben tus d\u00edas bonus."
+    }
+  },
   "pro": {
     "title": "Planes TarantulApp\u2122",
     "subtitle": "Suscripciones enfocadas: Pro para keepers activos y Vendor/Business para operación comercial.",
@@ -2072,6 +2097,8 @@
     "playGroupSyncResultFailed": "Grupo Play: {{status}}. {{error}}",
     "playGroupSyncRequestError": "No se pudo contactar al servidor para el grupo de Play.",
     "extendTrialPrompt": "Días extra de prueba (se suman tras el fin de la prueba actual, o desde hoy):",
+    "extendTrialReasonPrompt": "Motivo del bono (aparece en el correo al usuario y queda en el registro de auditoría). Obligatorio.",
+    "extendTrialReasonRequired": "Debes indicar un motivo al regalar días Pro.",
     "planUpdated": "Plan actualizado.",
     "planUpdateError": "No se pudo actualizar el plan.",
     "addTesterBlurb": "Añade o sube a alguien a beta tester. Usa su email, o su @handle público para buscar la cuenta. El inicio de sesión siempre es con email y contraseña. Solo se crea cuenta nueva si el identificador es un email y aún no existe el usuario.",

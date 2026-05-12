@@ -501,7 +501,7 @@ public class BillingService {
         user.setPlan(UserPlan.PRO);
         userRepository.save(user);
         if (!wasPro) {
-            emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+            emailService.sendProActivated(user.getEmail(), user.getDisplayName(), user.getPreferredLocale());
         }
         long amountTotal = checkout.path("amount_total").asLong(0L);
         String currency = checkout.path("currency").asText("usd");
@@ -598,7 +598,7 @@ public class BillingService {
         if (isActiveStripeStatus(status)) {
             user.setPlan(UserPlan.PRO);
             if (!wasPro) {
-                emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+                emailService.sendProActivated(user.getEmail(), user.getDisplayName(), user.getPreferredLocale());
             }
         } else {
             user.setPlan(UserPlan.FREE);
@@ -786,7 +786,7 @@ public class BillingService {
         user.setPlan(UserPlan.PRO);
         userRepository.save(user);
         if (!wasPro) {
-            emailService.sendProActivated(user.getEmail(), user.getDisplayName());
+            emailService.sendProActivated(user.getEmail(), user.getDisplayName(), user.getPreferredLocale());
         }
 
         Map<String, Object> response = new LinkedHashMap<>();
