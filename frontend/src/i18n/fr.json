@@ -2251,6 +2251,27 @@
     "never": "Ne plus demander",
     "close": "Fermer"
   },
+  "playStoreGate": {
+    "title": "Avant d'ouvrir Google Play",
+    "intro": "TarantulApp est en test fermé sur Play. Le lien ne charge que si le navigateur est connecté avec le compte Google que nous avons invité.",
+    "invitedEmailLabel": "Vous êtes invité·e en tant que",
+    "noEmailHint": "Connectez-vous d'abord à TarantulApp pour voir ici votre e-mail invité.",
+    "copyEmail": "Copier l'e-mail",
+    "copied": "Copié !",
+    "step1": "Ouvrez un nouvel onglet et allez sur google.com. Regardez l'avatar en haut à droite — il doit afficher exactement l'e-mail ci-dessus.",
+    "step2": "Si un autre compte Google est actif, cliquez sur l'avatar et basculez vers le compte invité (ou ouvrez une fenêtre Chrome invité / privée et connectez-vous là).",
+    "step3": "Revenez et appuyez sur « Continuer vers Google Play ». La page du Store devrait charger au lieu du message « URL introuvable ».",
+    "checkAccountTitle": "Où vérifier quel compte Google est actif",
+    "checkAccountBody": "Sur n'importe quelle page Google (google.com, Gmail, Drive…) le cercle en haut à droite est votre compte actif. Cliquez pour changer d'utilisateur ou en ajouter un.",
+    "workaroundTitle": "Toujours « URL introuvable » ?",
+    "workaround1": "Acceptez d'abord l'invitation au test fermé avec le bouton « Rejoindre le programme » plus bas ; cela peut prendre quelques minutes.",
+    "workaround2": "Ouvrez le lien en navigation privée Chrome et connectez-vous uniquement avec le compte invité.",
+    "workaround3": "Sur Android, ouvrez l'app Play Store, touchez votre avatar → Changer de compte → choisissez le compte invité, puis réessayez.",
+    "dontShowAgain": "Ne plus afficher pendant 24 h",
+    "testingOptIn": "Rejoindre le programme",
+    "continue": "Continuer vers Google Play",
+    "close": "Fermer"
+  },
   "appUpdate": {
     "title": "Une nouvelle version est disponible",
     "body": "Mettez à jour quand vous voulez pour les derniers correctifs et améliorations.",

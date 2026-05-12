@@ -2264,6 +2264,27 @@
     "never": "No volver a preguntar",
     "close": "Cerrar"
   },
+  "playStoreGate": {
+    "title": "Antes de abrir Google Play",
+    "intro": "TarantulApp está en prueba cerrada en Play. El enlace solo carga si el navegador tiene iniciada la misma cuenta de Google con la que te invitamos.",
+    "invitedEmailLabel": "Te inscribiste con",
+    "noEmailHint": "Inicia sesión primero en TarantulApp para que te mostremos aquí el correo invitado.",
+    "copyEmail": "Copiar correo",
+    "copied": "¡Copiado!",
+    "step1": "Abre una pestaña nueva y entra a google.com. Mira el círculo de arriba a la derecha — debe mostrar exactamente el correo de arriba.",
+    "step2": "Si hay otra cuenta de Google activa, dale clic al círculo y cambia a la cuenta invitada (o abre una ventana de invitado o incógnito de Chrome y entra ahí).",
+    "step3": "Regresa y pulsa “Continuar a Google Play”. La página debería cargar en lugar del error “URL no encontrada”.",
+    "checkAccountTitle": "Dónde checar qué cuenta de Google está activa",
+    "checkAccountBody": "En cualquier página de Google (google.com, Gmail, Drive…) el círculo de arriba a la derecha es tu cuenta activa. Haz clic para cambiar de usuario o agregar otro.",
+    "workaroundTitle": "¿Sigue saliendo “URL no encontrada”?",
+    "workaround1": "Acepta primero la invitación a la prueba cerrada con el botón “Unirme al programa de pruebas” aquí abajo; puede tardar unos minutos en activarse.",
+    "workaround2": "Abre el enlace en una ventana de Chrome Incógnito e inicia sesión ahí solo con la cuenta invitada.",
+    "workaround3": "En tu Android, abre la app de Play Store, toca tu avatar → Cambiar cuenta → elige la cuenta invitada, y vuelve a intentar.",
+    "dontShowAgain": "No mostrar otra vez por 24 h",
+    "testingOptIn": "Unirme al programa de pruebas",
+    "continue": "Continuar a Google Play",
+    "close": "Cerrar"
+  },
   "appUpdate": {
     "title": "Hay una nueva versión",
     "body": "Actualiza cuando puedas para recibir correcciones y mejoras.",

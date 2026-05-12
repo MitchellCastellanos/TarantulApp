@@ -8,8 +8,7 @@ import {
   registerRatePromptAppOpen,
   shouldShowRatePrompt,
 } from '../utils/rateAppPrompt'
-
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tarantulapp.app'
+import { useOpenPlayStore } from '../context/PlayStoreGateContext'
 
 function isAndroidNative() {
   return Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform()
@@ -18,6 +17,7 @@ function isAndroidNative() {
 export default function RateAppPrompt() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const openPlayStore = useOpenPlayStore()
 
   useEffect(() => {
     if (!isAndroidNative()) return
@@ -39,7 +39,7 @@ export default function RateAppPrompt() {
 
   const handleRateNow = () => {
     markRatePromptRated()
-    window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer')
+    openPlayStore()
     setOpen(false)
   }
 

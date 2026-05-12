@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { PlayStoreGateProvider } from './context/PlayStoreGateContext'
 import { setUnauthorizedHandler } from './services/authSession'
 import BrandName from './components/BrandName'
 import ScrollToTop from './components/ScrollToTop'
@@ -289,24 +290,26 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <AuthSessionBridge />
-        <ScrollToTop />
-        <PlayStoreWebBanner />
-        <Suspense fallback={null}>
-          <AppRoutes />
-        </Suspense>
-        <BugReportFAB />
-        <BetaTesterAgreementModal />
-        <AndroidUpdateBanner />
-        <RateAppPrompt />
-        <Footer />
-      </BrowserRouter>
+      <PlayStoreGateProvider>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <AuthSessionBridge />
+          <ScrollToTop />
+          <PlayStoreWebBanner />
+          <Suspense fallback={null}>
+            <AppRoutes />
+          </Suspense>
+          <BugReportFAB />
+          <BetaTesterAgreementModal />
+          <AndroidUpdateBanner />
+          <RateAppPrompt />
+          <Footer />
+        </BrowserRouter>
+      </PlayStoreGateProvider>
     </AuthProvider>
   )
 }

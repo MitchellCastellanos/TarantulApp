@@ -2282,6 +2282,27 @@
     "never": "Don't ask again",
     "close": "Close"
   },
+  "playStoreGate": {
+    "title": "Before opening Google Play",
+    "intro": "TarantulApp is in closed testing on Play. The link only works if the browser is signed in with the exact Google account we invited.",
+    "invitedEmailLabel": "You're invited as",
+    "noEmailHint": "Sign in to TarantulApp first so we can show your invited email here.",
+    "copyEmail": "Copy email",
+    "copied": "Copied!",
+    "step1": "Open a new tab and go to google.com. Check the avatar at the top-right \u2014 it must show the email above.",
+    "step2": "If a different Google account is active, click the avatar and switch to the invited one (or open a Chrome guest / incognito window and sign in there).",
+    "step3": "Come back and tap \u201cContinue to Google Play\u201d. The Store page should now load instead of \u201cURL not found\u201d.",
+    "checkAccountTitle": "Where to check which Google account is active",
+    "checkAccountBody": "On any Google page (google.com, Gmail, Drive\u2026) the circle at the top-right is the active account. Click it to switch users or add a new one.",
+    "workaroundTitle": "Still seeing \u201cURL not found\u201d?",
+    "workaround1": "Make sure you've accepted the closed-testing invite (use the \u201cJoin testing\u201d button below); it can take a few minutes to take effect.",
+    "workaround2": "Open the link in Chrome Incognito and sign in there only with the invited account.",
+    "workaround3": "On your Android phone, open the Play Store app, tap your avatar \u2192 Switch accounts \u2192 pick the invited one, then retry the link.",
+    "dontShowAgain": "Don't show this again for 24h",
+    "testingOptIn": "Join testing program",
+    "continue": "Continue to Google Play",
+    "close": "Close"
+  },
   "appUpdate": {
     "title": "A new version is available",
     "body": "Update when you can to get the latest fixes and improvements.",
