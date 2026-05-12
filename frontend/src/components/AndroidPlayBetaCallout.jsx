@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
+import { useOpenPlayStore } from '../context/PlayStoreGateContext'
 
 /**
  * Short notice: Android build is on Play (closed testing). Shown on public beta home and beta login.
  */
 export default function AndroidPlayBetaCallout({ className = '' }) {
   const { t } = useTranslation()
+  const openPlayStore = useOpenPlayStore()
   return (
     <div
       className={`rounded-3 p-3 mb-0 ${className}`}
@@ -23,14 +24,13 @@ export default function AndroidPlayBetaCallout({ className = '' }) {
       <p className="small mb-2" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>
         {t('publicBetaHome.playStoreBody')}
       </p>
-      <a
-        href={ANDROID_PLAY_STORE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={() => openPlayStore()}
         className="btn btn-sm btn-outline-warning fw-semibold"
       >
         {t('publicBetaHome.playStoreCta')}
-      </a>
+      </button>
     </div>
   )
 }

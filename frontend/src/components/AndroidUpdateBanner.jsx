@@ -8,6 +8,7 @@ import {
   markDismissedForLatestVersion,
 } from '../utils/androidUpdateBannerState'
 import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
+import { useOpenPlayStore } from '../context/PlayStoreGateContext'
 
 const PLAY_STORE_FALLBACK = ANDROID_PLAY_STORE_URL
 
@@ -44,6 +45,7 @@ async function fetchUpdatePayload() {
 
 export default function AndroidUpdateBanner() {
   const { t } = useTranslation()
+  const openPlayStore = useOpenPlayStore()
   const [info, setInfo] = useState(null)
   const bannerRef = useRef(null)
   const cancelledRef = useRef(false)
@@ -114,7 +116,7 @@ export default function AndroidUpdateBanner() {
   }
 
   const handleUpdate = () => {
-    window.open(info.playStoreUrl, '_blank', 'noopener,noreferrer')
+    openPlayStore({ url: info.playStoreUrl })
   }
 
   const versionHint =

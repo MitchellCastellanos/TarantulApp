@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
+import { useOpenPlayStore } from '../context/PlayStoreGateContext'
 
 /**
  * Login column: explain Play early access + account → tester list + install.
@@ -9,6 +9,7 @@ import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
 export default function PlayStoreEarlyAccessCallout({ className = '', inviteOnly = false, onGoRegister }) {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const openPlayStore = useOpenPlayStore()
   const bodyKey = inviteOnly ? 'playStore.calloutBodyInviteOnly' : 'playStore.calloutBody'
 
   return (
@@ -35,14 +36,13 @@ export default function PlayStoreEarlyAccessCallout({ className = '', inviteOnly
         {t('playStore.playGoogleAccountTip')}
       </p>
       <div className="d-flex flex-wrap align-items-center gap-2">
-        <a
-          href={ANDROID_PLAY_STORE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => openPlayStore()}
           className="btn btn-sm btn-success fw-semibold"
         >
           {t('playStore.webBannerGetApp')}
-        </a>
+        </button>
         {!token && !inviteOnly && onGoRegister && (
           <button type="button" className="btn btn-sm btn-outline-light fw-semibold" onClick={onGoRegister}>
             {t('playStore.calloutCreateAccount')}

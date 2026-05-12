@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { ANDROID_PLAY_STORE_URL } from '../constants/playStoreUrls'
+import { useOpenPlayStore } from '../context/PlayStoreGateContext'
 import {
   dismissPlayStoreWebBanner,
   isPlayStoreWebBannerDismissed,
@@ -16,6 +16,7 @@ import {
 export default function PlayStoreWebBanner() {
   const { t } = useTranslation()
   const { token } = useAuth()
+  const openPlayStore = useOpenPlayStore()
   const [hidden, setHidden] = useState(() => isPlayStoreWebBannerDismissed())
 
   if (Capacitor.isNativePlatform() || hidden) {
@@ -23,7 +24,7 @@ export default function PlayStoreWebBanner() {
   }
 
   const onOpen = () => {
-    window.open(ANDROID_PLAY_STORE_URL, '_blank', 'noopener,noreferrer')
+    openPlayStore()
   }
 
   const onDismiss = () => {
