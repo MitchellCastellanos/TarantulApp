@@ -4,3 +4,31 @@
 [deploy]
 healthcheckPath = "/actuator/health/liveness"
 healthcheckTimeout = 300
+# Restart on JVM crash (OOM, etc.) so a one-off Metaspace exhaustion doesn't keep the
+# container in a zombie state. Combined with -XX:+ExitOnOutOfMemoryError in Procfile.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# ─── JVM memory tuning ──────────────────────────────────────────────────────
+# Defaults are baked into backend/Procfile so the deploy is safe even without
+# overrides. The most relevant flags:
+#   -XX:MaxMetaspaceSize=256m       Cap class-metadata growth (otherwise unlimited
+#                                   and the container OOMs at the cgroup limit,
+#                                   surfacing as OutOfMemoryError: Metaspace).
+#   -XX:MetaspaceSize=128m          Soft trigger for the first full GC; raising it
+#                                   above the steady-state working set avoids
+#                                   thrashing during warm-up.
+#   -XX:+HeapDumpOnOutOfMemoryError Write a hprof to /tmp so the next crash is
+#                                   diagnosable instead of guesswork.
+#   -XX:+ExitOnOutOfMemoryError     Kill the JVM on OOM instead of letting it
+#                                   limp; Railway's restartPolicy then recycles.
+#   -XX:MaxRAMPercentage=70.0       Leave headroom for off-heap (Netty buffers,
+#                                   Lettuce, Tomcat NIO, native libs) on Railway's
+#                                   capped containers.
+#   -XX:+UseG1GC                    G1 is the right default for Java 21 on a
+#                                   long-running web service.
+#   -XX:+UseStringDeduplication     Drops duplicate String backing arrays in G1.
+#
+# To raise/lower, set JAVA_TOOL_OPTIONS in Railway (it's appended after the
+# Procfile defaults, so later flags override). Example to bump Metaspace:
+#   JAVA_TOOL_OPTIONS=-XX:MaxMetaspaceSize=384m

@@ -106,6 +106,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractBearerToken(request.getHeader("Authorization"));
         String userId = null;
+        // Track whether we mutated the MDC so we always clean it up — Tomcat threads are pooled,
+        // and a stale "user_id" attached to a later request would leak PII into unrelated logs.
+        boolean mdcUserIdPlaced = false;
 
         if (token != null) {
             JwtUtil.ValidationResult jwtStatus = jwtUtil.validateToken(token);
@@ -128,6 +131,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if (userDetails instanceof AppUserDetails appUser) {
                         userId = appUser.id().toString();
                         MDC.put("user_id", userId);
+                        mdcUserIdPlaced = true;
                     }
                 } catch (UsernameNotFoundException e) {
                     log.warn("User from JWT not found in DB: {}", e.getMessage());
@@ -146,6 +150,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 } catch (Exception e) {
                     log.debug("Could not record user activity: {}", e.getMessage());
                 }
+            }
+            // Cleanup happens unconditionally on the placed-flag, not on userId presence, so a
+            // bug that leaves userId null after a put() can never strand the MDC entry.
+            if (mdcUserIdPlaced) {
                 MDC.remove("user_id");
             }
         }

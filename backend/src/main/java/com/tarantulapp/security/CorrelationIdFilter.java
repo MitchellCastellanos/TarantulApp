@@ -51,6 +51,9 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             MDC.remove(MDC_REQUEST_ID);
             MDC.remove(MDC_METHOD);
             MDC.remove(MDC_PATH);
+            // Drop the per-request Sentry scope state we attached so it never crosses requests
+            // on a pooled Tomcat thread (request_id tag + any breadcrumbs added during the request).
+            Sentry.configureScope(scope -> scope.clear());
         }
     }
 

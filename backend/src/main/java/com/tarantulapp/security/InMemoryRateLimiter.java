@@ -1,11 +1,11 @@
 package com.tarantulapp.security;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -13,15 +13,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  * map; correct for a single replica. With multiple replicas each instance has its own bucket,
  * so the effective limit is N * maxPerWindow — that's why production must enable Redis once we
  * scale horizontally (see {@code RedisRateLimiter}).
+ *
+ * <p>The bucket store is a bounded Caffeine cache: each unique key (e.g. {@code "auth|<ip>|<uri>"})
+ * is evicted after 10 minutes of inactivity, and the cache is capped at 50k live entries. Before
+ * the bound, a flood of unique IPs or rotating userIds would grow the map without ever evicting,
+ * leaking heap and adding pressure to the same container that bounds the JVM Metaspace.</p>
  */
 @Component
 public class InMemoryRateLimiter implements RateLimiter {
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    /** Eviction window: ten minutes is well past the longest rate-limit window (1 min). */
+    private static final Duration BUCKET_TTL = Duration.ofMinutes(10);
+
+    /** Hard cap so a malicious flood of unique keys cannot exhaust heap. */
+    private static final long MAX_BUCKETS = 50_000L;
+
+    private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
+            .expireAfterAccess(BUCKET_TTL)
+            .maximumSize(MAX_BUCKETS)
+            .build();
 
     @Override
     public boolean allow(String key, int maxPerWindow, Duration window) {
-        Bucket bucket = buckets.computeIfAbsent(key, ignored -> new Bucket());
+        Bucket bucket = buckets.get(key, ignored -> new Bucket());
         return bucket.allow(maxPerWindow, window);
     }
 
