@@ -29,6 +29,6 @@ restartPolicyMaxRetries = 10
 #                                   long-running web service.
 #   -XX:+UseStringDeduplication     Drops duplicate String backing arrays in G1.
 #
-# To raise/lower, set JAVA_TOOL_OPTIONS in Railway (it's appended after the
-# Procfile defaults, so later flags override). Example to bump Metaspace:
+# To raise/lower heap/metaspace, set JAVA_TOOL_OPTIONS in Railway (the JVM reads
+# it automatically; do not paste it into Procfile or you duplicate flags). Example:
 #   JAVA_TOOL_OPTIONS=-XX:MaxMetaspaceSize=384m
