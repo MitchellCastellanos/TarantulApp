@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -31,6 +32,10 @@ public class GoogleGroupMemberService {
 
     /** Admin SDK Directory API — group members (must match domain-wide delegation in Workspace). */
     public static final String GROUP_MEMBER_SCOPE = "https://www.googleapis.com/auth/admin.directory.group.member";
+
+    /** Optional: paste the full service-account JSON from GCP (same file). Avoids PEM/client_id mismatches in Railway. */
+    @Value("${GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON:}")
+    private String workspaceServiceAccountJson;
 
     @Value("${GOOGLE_CLIENT_EMAIL:}")
     private String clientEmail;
@@ -61,10 +66,29 @@ public class GoogleGroupMemberService {
     private volatile Directory directory;
 
     public boolean isConfigured() {
-        return !isBlank(clientEmail)
-                && !isBlank(privateKeyPem)
+        boolean hasJson = !isBlank(workspaceServiceAccountJson);
+        boolean hasPieces = !isBlank(clientEmail) && !isBlank(privateKeyPem);
+        return (hasJson || hasPieces)
                 && !isBlank(impersonateEmail)
                 && !isBlank(testersGroupEmail);
+    }
+
+    /**
+     * Human-readable hint when {@link #isConfigured()} is false (for logs / support).
+     */
+    public String configurationGapReason() {
+        boolean hasJson = !isBlank(workspaceServiceAccountJson);
+        boolean hasPieces = !isBlank(clientEmail) && !isBlank(privateKeyPem);
+        if (!hasJson && !hasPieces) {
+            return "set GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON (recommended) or GOOGLE_CLIENT_EMAIL plus GOOGLE_PRIVATE_KEY";
+        }
+        if (isBlank(impersonateEmail)) {
+            return "set GOOGLE_ADMIN_IMPERSONATE_EMAIL";
+        }
+        if (isBlank(testersGroupEmail)) {
+            return "set GOOGLE_TESTERS_GROUP_EMAIL";
+        }
+        return "unknown";
     }
 
     /**
@@ -115,19 +139,13 @@ public class GoogleGroupMemberService {
             if (directory != null) {
                 return directory;
             }
-            if (isBlank(serviceAccountClientId)) {
+            if (isBlank(serviceAccountClientId) && isBlank(workspaceServiceAccountJson)) {
                 log.warn("GOOGLE_SERVICE_ACCOUNT_CLIENT_ID is empty — token exchange may return 401. "
-                        + "Set it to the client_id from the same service-account JSON as GOOGLE_CLIENT_EMAIL.");
+                        + "Set it from the same JSON as GOOGLE_CLIENT_EMAIL, or use GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON.");
             }
-            String pem = normalizePrivateKey(privateKeyPem);
-            assertPrivateKeyLooksLikePkcs8Pem(pem);
-            long pemLineCount = pem.lines().count();
-            String pemFirstLine = pem.lines().findFirst().orElse("(empty)");
-            log.info("Building Google Directory client: clientEmail={} pemLines={} pemHeader={}",
-                    clientEmail.trim(), pemLineCount, pemFirstLine);
-            GoogleCredentials base = GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson(pem)))
-                    .createScoped(Collections.singleton(GROUP_MEMBER_SCOPE));
-            GoogleCredentials delegated = base.createDelegated(impersonateEmail.trim());
+            GoogleCredentials base = buildBaseGoogleCredentials();
+            GoogleCredentials scoped = base.createScoped(Collections.singleton(GROUP_MEMBER_SCOPE));
+            GoogleCredentials delegated = scoped.createDelegated(impersonateEmail.trim());
             directory = new Directory.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
                     GsonFactory.getDefaultInstance(),
@@ -136,6 +154,40 @@ public class GoogleGroupMemberService {
                     .build();
             return directory;
         }
+    }
+
+    /**
+     * Loads credentials from {@link #workspaceServiceAccountJson} when set (recommended for Railway),
+     * otherwise builds synthetic JSON from {@code GOOGLE_CLIENT_EMAIL} + {@code GOOGLE_PRIVATE_KEY} + related fields.
+     */
+    private GoogleCredentials buildBaseGoogleCredentials() throws IOException {
+        if (!isBlank(workspaceServiceAccountJson)) {
+            String raw = unwrapPossibleJsonString(workspaceServiceAccountJson.trim());
+            log.info("Google Directory API: using GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON (length={})", raw.length());
+            try {
+                return GoogleCredentials.fromStream(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                throw new IOException("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON is not valid service-account JSON: "
+                        + e.getMessage(), e);
+            }
+        }
+        String pem = normalizePrivateKey(privateKeyPem);
+        assertPrivateKeyLooksLikePkcs8Pem(pem);
+        log.info("Google Directory API: using GOOGLE_CLIENT_EMAIL + GOOGLE_PRIVATE_KEY (pem line count={})", pem.lines().count());
+        return GoogleCredentials.fromStream(new ByteArrayInputStream(buildServiceAccountJson(pem)));
+    }
+
+    /**
+     * If the whole JSON was stored as a JSON-encoded string (starts with {@code "}), decode one level.
+     */
+    private String unwrapPossibleJsonString(String raw) throws IOException {
+        if (raw.isEmpty()) {
+            return raw;
+        }
+        if (raw.charAt(0) == '"') {
+            return objectMapper.readValue(raw, String.class);
+        }
+        return raw;
     }
 
     private byte[] buildServiceAccountJson(String normalizedPem) throws IOException {

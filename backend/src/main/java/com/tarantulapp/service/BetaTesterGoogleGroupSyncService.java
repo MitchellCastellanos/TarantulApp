@@ -78,8 +78,8 @@ public class BetaTesterGoogleGroupSyncService {
             return;
         }
         if (!googleGroupMemberService.isConfigured()) {
-            log.warn("Google testers group sync skipped (configure GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, "
-                    + "GOOGLE_ADMIN_IMPERSONATE_EMAIL, GOOGLE_TESTERS_GROUP_EMAIL) userId={}", userId);
+            log.warn("Google testers group sync skipped ({}). userId={}",
+                    googleGroupMemberService.configurationGapReason(), userId);
             applyFailure(user, "GOOGLE_GROUP_NOT_CONFIGURED");
             return;
         }
