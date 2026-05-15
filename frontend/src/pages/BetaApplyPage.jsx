@@ -6,7 +6,9 @@ import betaApplicationService from '../services/betaApplicationService'
 
 function defaultBetaEmailLocale(lang) {
   const lc = (lang || 'es').toLowerCase()
-  return lc.startsWith('en') ? 'en' : 'es'
+  if (lc.startsWith('en')) return 'en'
+  if (lc.startsWith('fr')) return 'fr'
+  return 'es'
 }
 
 export default function BetaApplyPage() {
@@ -118,6 +120,13 @@ export default function BetaApplyPage() {
                         onClick={() => setForm((f) => ({ ...f, preferredLocale: 'en' }))}
                       >
                         {t('admin.welcomeLangEn')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${form.preferredLocale === 'fr' ? 'btn-primary' : 'btn-outline-primary'}`}
+                        onClick={() => setForm((f) => ({ ...f, preferredLocale: 'fr' }))}
+                      >
+                        {t('admin.welcomeLangFr')}
                       </button>
                     </div>
                   </div>

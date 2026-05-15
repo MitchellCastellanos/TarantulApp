@@ -1,5 +1,6 @@
 import {
   buildEnglishBetaWelcomeEmail,
+  buildFrenchBetaWelcomeEmail,
   buildSpanishBetaWelcomeEmail,
   DEFAULT_BETA_APP_URL,
   ANDROID_PLAY_STORE_URL,
@@ -40,11 +41,14 @@ export function renderBetaEmailBody(template, ctx) {
       ctx.sendDate ||
       (template?.locale === 'en'
         ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(new Date())
-        : new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date())),
+        : template?.locale === 'fr'
+          ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date())
+          : new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date())),
   }
   if (!template || template.kind === 'builtin') {
-    const b = template?.builtin === 'welcomeEn' ? 'welcomeEn' : 'welcomeEs'
+    const b = template?.builtin === 'welcomeEn' ? 'welcomeEn' : template?.builtin === 'welcomeFr' ? 'welcomeFr' : 'welcomeEs'
     if (b === 'welcomeEn') return buildEnglishBetaWelcomeEmail(base)
+    if (b === 'welcomeFr') return buildFrenchBetaWelcomeEmail(base)
     return buildSpanishBetaWelcomeEmail(base)
   }
   return applyBetaPlaceholders(template.body || '', base)

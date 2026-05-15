@@ -9,18 +9,14 @@ export const DEFAULT_BETA_APP_URL = 'https://tarantulapp.com'
 /** Google Play listing URL for closed-beta installs (same as in-app callout). */
 export { ANDROID_PLAY_STORE_URL }
 
-/** Legacy internal-test URL — only mentioned so testers stop using it. */
+/** Legacy internal-test URL — only mentioned so people stop using it. */
 export { ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL }
-
-/** WhatsApp community groups for beta testers. Keep in sync with backend `BetaMailBodies.java`. */
-export const WHATSAPP_GROUP_URL_ES = 'https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t'
-export const WHATSAPP_GROUP_URL_EN = 'https://chat.whatsapp.com/CIdg6rBQPo6FXeLNhpZA6a?mode=gi_t'
 
 /** Public asset for Word export and HTML signatures (`frontend/public`). */
 export const BETA_EMAIL_SIGNATURE_IMAGE_PATH = '/email-signature-tarantulapp.png'
 
 /**
- * Spanish welcome email for closed-beta batch (copy into Gmail).
+ * Spanish welcome — registro listo, bienvenida como usuario, acceso e instrucciones.
  * @param {{ name: string, email: string, password: string, appUrl?: string, sendDate?: string }} p
  */
 export function buildSpanishBetaWelcomeEmail(p) {
@@ -28,59 +24,56 @@ export function buildSpanishBetaWelcomeEmail(p) {
   const sendDate = p.sendDate || new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date())
   const name = (p.name || '').trim() || 'criador'
   const play = ANDROID_PLAY_STORE_URL
+  const legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL
   return [
     `Hola ${name},`,
     '',
     `Fecha del mensaje: ${sendDate}`,
     '',
-    'Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.',
+    'Tu registro de acceso anticipado en TarantulApp ya está listo. Te damos la bienvenida como usuario/a: con este mensaje confirmamos tu acceso y te recordamos cómo descargar la app o entrar en la web y comprobar que vas con el correo correcto.',
     '',
-    'Importante para este batch:',
-    `• Instala la app Android desde Google Play (lista de prueba cerrada). Enlace: ${play}`,
-    '• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala o actualiza TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.',
-    `• Si antes usabas el enlace antiguo de prueba interna (${ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL}), déjalo de usar: desinstala esa instalación si hace falta y vuelve a instalar desde el enlace de la tienda de arriba.`,
-    '• La web app sigue disponible en cualquier navegador si lo prefieres.',
+    'En Android la descarga hoy va por Google Play en lista de acceso anticipado; cuando pasemos al listado público, el flujo será como con cualquier otra app y tu cuenta se queda igual.',
     '',
-    'Únete a nuestro grupo de WhatsApp para testers (español):',
-    `• ${WHATSAPP_GROUP_URL_ES}`,
-    '• Es el canal más rápido para preguntas, ideas y reportar bugs en caliente. Te recomendamos entrar el primer día.',
+    'Descargar la app (Android — Google Play)',
     '',
-    'Cómo entrar (web):',
-    `1) Abre ${appUrl} y usa el acceso beta ("Beta tester login" / acceso beta) en la pantalla pública.`,
-    '2) Inicia sesión con el correo y la contraseña que aparecen abajo.',
+    `1) En tu teléfono Android, abre este enlace (mejor tocándolo desde el móvil): ${play}`,
+    '2) Asegúrate de usar la cuenta de Google con la invitación de acceso anticipado en Play. Si Play dice que no tienes acceso, cambia de cuenta en el dispositivo o en la app de Play Store y vuelve a intentar.',
+    '3) Pulsa Instalar o Actualizar, abre TarantulApp e inicia sesión con el correo y contraseña de “Tu acceso” abajo — los mismos que en la web.',
     '',
-    'Web app en el móvil (atajo):',
-    '• iPhone/iPad: Safari → Compartir → "Añadir a pantalla de inicio".',
-    '• Android (Chrome): menú ⋮ → "Instalar app" o "Añadir a la pantalla principal" si el navegador lo ofrece — o usa la app nativa desde Play arriba.',
+    `Si antes usabas el enlace de prueba interna (${legacy}), no lo uses: desinstala esa versión si hace falta y vuelve a instalar desde el enlace de la tienda de arriba.`,
     '',
-    'Esto es lo que necesitas saber:',
+    'Comprueba tu correo (importante)',
     '',
-    '1) Tu acceso',
+    `• TarantulApp: entra con exactamente ${p.email} y la contraseña de abajo. Si no entra, puede que no sea la cuenta que dimos de alta — prueba de nuevo o responde a este correo.`,
+    '• Google: solo sirve para que Play te muestre la app con acceso anticipado; no es tu contraseña de TarantulApp.',
+    '',
+    'Entrar por la web (cualquier dispositivo)',
+    '',
+    `1) Abre ${appUrl} en el navegador.`,
+    '2) En la pantalla de inicio, usa la opción de acceso para miembros con acceso anticipado (puede aparecer como “Beta tester login”).',
+    '3) Inicia sesión con el mismo correo y contraseña que arriba.',
+    '',
+    'Atajo en el móvil',
+    '',
+    '• iPhone / iPad: Safari → Compartir → “Añadir a pantalla de inicio”.',
+    '• Android (Chrome): menú ⋮ → “Instalar app” o “Añadir a la pantalla principal” si sale — o la app nativa desde Play arriba.',
+    '',
+    'Tu acceso',
+    '',
     `   • Web: ${appUrl}`,
-    `   • Android (Play — prueba cerrada): ${play}`,
-    `   • Email: ${p.email}`,
+    `   • Android (Play — acceso anticipado): ${play}`,
+    `   • Correo: ${p.email}`,
     `   • Contraseña: ${p.password}`,
     '',
-    '   Tu cuenta está marcada como beta tester: verás las funciones beta y el botón "Reportar un bug".',
+    '   Si ves “Reportar un bug” u textos de acceso anticipado, es normal mientras afinamos la experiencia.',
     '',
-    '2) El plan (6 semanas)',
-    '   • Semana 0 — Configura tu cuenta y mete tu colección.',
-    '   • Semanas 1–2 — Día a día: comidas, mudas, fotos, recordatorios.',
-    '   • Semanas 3–4 — Feed comunidad, perfil de criador, marketplace, chat.',
-    '   • Semana 5 — Prueba Pro, etiquetas QR y detalles finos.',
-    '   • Semana 6 — Encuesta final + tu testimonio.',
+    'Algunas cosas que puedes hacer en TarantulApp',
     '',
-    '3) Cómo enviar feedback',
-    '   • Bugs: toca "Reportar un bug" dentro de la app — adjunta página, dispositivo y versión.',
-    '   • Ideas / preguntas: responde a este correo.',
-    '   • La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.',
+    '• Llevar tu colección: cada tarántula con fotos, notas y estado.',
+    '• Registrar comidas, mudas y recordatorios del día a día.',
+    '• Explorar la comunidad, tu perfil de criador y el marketplace cuando lo uses.',
     '',
-    '4) Lo que te pedimos',
-    '   • Usa la app al menos unos minutos, 3+ días a la semana.',
-    '   • Envía al menos un feedback por semana (bug, idea o "todo bien").',
-    '   • Sé honesto — preferimos un "esto confunde" antes que un silencio cortés.',
-    '',
-    'Gracias por confiarnos tu colección. Construyamos juntos la mejor app de tarántulas del mundo.',
+    'Si algo no cuadra o necesitas ayuda, responde a este correo o usa “Reportar un bug” en la app (adjunta página, dispositivo y versión). ¡Gracias por estar con nosotros!',
     '',
     '— El equipo de TarantulApp',
     '',
@@ -88,70 +81,131 @@ export function buildSpanishBetaWelcomeEmail(p) {
 }
 
 /**
- * English template for future batches (same structure).
+ * English welcome — registration ready, welcome as a user, access + how to install/sign in.
  */
 export function buildEnglishBetaWelcomeEmail(p) {
   const appUrl = p.appUrl || DEFAULT_BETA_APP_URL
   const sendDate =
-    p.sendDate ||
-    new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(new Date())
+    p.sendDate || new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(new Date())
   const name = (p.name || '').trim() || 'keeper'
   const play = ANDROID_PLAY_STORE_URL
+  const legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL
   return [
     `Hi ${name},`,
     '',
     `Message date: ${sendDate}`,
     '',
-    'Congratulations — you’ve been accepted into the TarantulApp closed beta. Among everyone who applied, you’re one of the few helping us shape the platform before public launch.',
+    'Your TarantulApp early access registration is ready. Welcome — this email confirms your access and walks you through downloading the app (Android), signing in on the web, and making sure you’re on the correct email address.',
     '',
-    'Important for this batch:',
-    `• Install the Android app from Google Play (closed testing). Link: ${play}`,
-    '• Open that link on your phone while signed into the Google account that has access to the test, install or update TarantulApp, then sign in with the same email and password as the web app.',
-    `• If you previously installed via the old internal-testing link (${ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL}), stop using it — uninstall that build if needed and reinstall from the Store link above.`,
-    '• The web app still works in any browser if you prefer.',
+    'On Android, installs still use Google Play’s early-access listing for now; when we move to the public store listing, updates work like any other app and your account stays the same.',
     '',
-    'Join our WhatsApp group for testers (English):',
-    `• ${WHATSAPP_GROUP_URL_EN}`,
-    '• It’s the fastest channel for questions, ideas, and live bug reports. We recommend joining on day one.',
+    'Download the app (Android — Google Play)',
     '',
-    'How to sign in (web):',
-    `1) Open ${appUrl} and use the beta gate ("Beta tester login") on the public home screen.`,
-    '2) Sign in with the email and password below.',
+    `1) On your Android phone, open this link (tap it from the phone): ${play}`,
+    '2) Make sure you’re signed into the Google account that has the Play early-access invite. If Play says you don’t have access, switch Google accounts on the device or in the Play Store app and try again.',
+    '3) Tap Install or Update, open TarantulApp, then sign in with the email and password under “Your login” below — the same as the website.',
     '',
-    'Web app on your phone (shortcut):',
-    '• iPhone/iPad: Safari → Share → “Add to Home Screen”.',
-    '• Android (Chrome): Menu → “Install app” or “Add to Home screen” when offered — or use the native app from Play above.',
+    `If you previously used the internal-testing install URL (${legacy}), don’t use it anymore — uninstall that build if needed and reinstall from the Store link above.`,
     '',
-    'What you need to know:',
+    'Double-check your email (important)',
     '',
-    '1) Your access',
+    `• TarantulApp: sign in with exactly ${p.email} and the password below. If login fails, you may be on a different account than the one we set up — try again or reply to this email.`,
+    '• Google: only affects whether Play shows you the early-access listing; it is not your TarantulApp password.',
+    '',
+    'Sign in on the web (any device)',
+    '',
+    `1) Open ${appUrl} in your browser.`,
+    '2) On the public home screen, use the sign-in option for early access members (it may read “Beta tester login”).',
+    '3) Sign in with the same email and password as above.',
+    '',
+    'Shortcut on your phone',
+    '',
+    '• iPhone / iPad: Safari → Share → “Add to Home Screen”.',
+    '• Android (Chrome): Menu → “Install app” or “Add to Home screen” when offered — or use the native Play Store app from the link above.',
+    '',
+    'Your login',
+    '',
     `   • Web: ${appUrl}`,
-    `   • Android (Play — closed testing): ${play}`,
+    `   • Android (Play — early access): ${play}`,
     `   • Email: ${p.email}`,
     `   • Password: ${p.password}`,
     '',
-    '   Your account is flagged as a beta tester — you’ll see beta features and the “Report a bug” button.',
+    '   If you see “Report a bug” or early-access wording, that’s normal while we polish the experience.',
     '',
-    '2) The 6-week plan',
-    '   • Week 0 — Set up your account and import your collection.',
-    '   • Weeks 1–2 — Day-to-day: feeds, molts, photos, reminders.',
-    '   • Weeks 3–4 — Community feed, keeper profile, marketplace, chat.',
-    '   • Week 5 — Pro trial, QR labels, polish.',
-    '   • Week 6 — Final survey + your testimonial.',
+    'A few things you can do in TarantulApp',
     '',
-    '3) How to send feedback',
-    '   • Bugs: tap “Report a bug” in the app — it attaches page, device, and version.',
-    '   • Ideas / questions: reply to this email.',
-    '   • The Week 1 mission is already included here as your first steps; we’ll follow up with the next weeks after that.',
+    '• Build and browse your collection — each spider with photos, notes, and status.',
+    '• Log feedings and molts, set reminders for day-to-day care.',
+    '• Explore the community feed, your keeper profile, and marketplace when you use it.',
     '',
-    '4) What we ask',
-    '   • Use the app a few minutes a day, 3+ days per week.',
-    '   • Send at least one piece of feedback per week (bug, idea, or “all good”).',
-    '   • Be honest — we prefer “this is confusing” over polite silence.',
-    '',
-    'Thanks for trusting us with your collection. Let’s build the best tarantula app together.',
+    'If anything looks off or you need a hand, reply to this email or use “Report a bug” in the app (it attaches page, device, and version). Thanks for being with us!',
     '',
     '— The TarantulApp team',
+    '',
+  ].join('\n')
+}
+
+/**
+ * French welcome — inscription prête, accès confirmé, téléchargement / connexion.
+ */
+export function buildFrenchBetaWelcomeEmail(p) {
+  const appUrl = p.appUrl || DEFAULT_BETA_APP_URL
+  const sendDate =
+    p.sendDate || new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date())
+  const name = (p.name || '').trim() || 'éleveur'
+  const play = ANDROID_PLAY_STORE_URL
+  const legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL
+  return [
+    `Bonjour ${name},`,
+    '',
+    `Date du message : ${sendDate}`,
+    '',
+    'Votre inscription à l’accès anticipé TarantulApp est prête. Bienvenue : ce message confirme votre accès et rappelle comment télécharger l’app (Android), vous connecter sur le web, et vérifier que vous utilisez la bonne adresse e-mail.',
+    '',
+    'Sur Android, l’installation passe encore par une fiche Play en accès anticipé ; lorsque nous ouvrirons au grand public, les mises à jour seront comme pour n’importe quelle app et votre compte reste le même.',
+    '',
+    'Télécharger l’app (Android — Google Play)',
+    '',
+    `1) Sur votre téléphone Android, ouvrez ce lien (idéalement en le touchant depuis le téléphone) : ${play}`,
+    '2) Vérifiez que vous êtes sur le compte Google invité à l’accès anticipé sur le Play Store. Si l’accès est refusé, changez de compte sur l’appareil ou dans l’app Play Store, puis réessayez.',
+    '3) Appuyez sur Installer ou Mettre à jour, ouvrez TarantulApp, puis connectez-vous avec l’e-mail et le mot de passe de « Vos identifiants » ci-dessous — les mêmes que sur le site web.',
+    '',
+    `Si vous aviez installé via l’ancien lien de test interne (${legacy}), ne l’utilisez plus — désinstallez cette version si besoin et réinstallez depuis le lien Play ci-dessus.`,
+    '',
+    'Vérifier votre e-mail (important)',
+    '',
+    `• TarantulApp : connectez-vous avec exactement ${p.email} et le mot de passe ci-dessous. Si la connexion échoue, vous n’êtes peut‑être pas sur le bon compte — réessayez ou répondez à cet e-mail.`,
+    '• Google : sert seulement à afficher l’app en accès anticipé sur le Play Store ; ce n’est pas votre mot de passe TarantulApp.',
+    '',
+    'Connexion web (n’importe quel appareil)',
+    '',
+    `1) Ouvrez ${appUrl} dans le navigateur.`,
+    '2) Sur l’accueil public, utilisez l’option de connexion pour les membres en accès anticipé (l’intitulé peut être « Beta tester login »).',
+    '3) Connectez-vous avec le même e-mail et mot de passe qu’au-dessus.',
+    '',
+    'Raccourci sur le téléphone',
+    '',
+    '• iPhone / iPad : Safari → Partager → « Sur l’écran d’accueil ».',
+    '• Android (Chrome) : Menu → « Installer l’application » ou « Ajouter à l’écran d’accueil » si proposé — ou l’app native Play via le lien ci-dessus.',
+    '',
+    'Vos identifiants',
+    '',
+    `   • Web : ${appUrl}`,
+    `   • Android (Play — accès anticipé) : ${play}`,
+    `   • E-mail : ${p.email}`,
+    `   • Mot de passe : ${p.password}`,
+    '',
+    '   Si vous voyez « Report a bug » ou des mentions d’accès anticipé, c’est normal pendant que nous peaufinons l’expérience.',
+    '',
+    'Quelques possibilités dans TarantulApp',
+    '',
+    '• Gérer votre collection — chaque araignée avec photos, notes et état.',
+    '• Enregistrer nourrissures et mues, créer des rappels pour le quotidien.',
+    '• Explorer le fil communautaire, votre profil d’éleveur et le marketplace si vous l’utilisez.',
+    '',
+    'Pour toute question ou si quelque chose cloche, répondez à cet e-mail ou utilisez « Report a bug » dans l’app (contexte, appareil, version). Merci de faire partie de l’aventure !',
+    '',
+    '— L’équipe TarantulApp',
     '',
   ].join('\n')
 }

@@ -35,7 +35,7 @@ public class BetaApplicationController {
             String experienceLevel,
             String devices,
             String notes,
-            /** es | en — correos de bienvenida y campañas cuando uses “por tester”. */
+            /** es | en | fr — correos de bienvenida; campañas hebdo. en FR usan copia EN hasta localizar. */
             String preferredLocale
     ) {}
 

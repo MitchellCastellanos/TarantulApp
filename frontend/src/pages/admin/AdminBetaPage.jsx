@@ -121,7 +121,9 @@ export default function AdminBetaPage() {
   const defaultTemplateIdForTester = (u) => {
     const raw = String(u?.betaPreferredLocale || '').trim().toLowerCase()
     if (!raw) return betaEmailTemplates[0]?.id
-    const want = raw.startsWith('en') ? 'en' : 'es'
+    let want = 'es'
+    if (raw.startsWith('en')) want = 'en'
+    else if (raw.startsWith('fr')) want = 'fr'
     return betaEmailTemplates.find((tpl) => tpl.locale === want)?.id ?? betaEmailTemplates[0]?.id
   }
 
@@ -675,6 +677,13 @@ export default function AdminBetaPage() {
                 >
                   {t('admin.welcomeLangEn')}
                 </button>
+                <button
+                  type="button"
+                  className={`btn ${approveWelcomeLocale === 'fr' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setApproveWelcomeLocale('fr')}
+                >
+                  {t('admin.welcomeLangFr')}
+                </button>
               </div>
             </div>
             <p className="small text-muted mb-0">{t('admin.approveSendWelcomeHint')}</p>
@@ -1119,6 +1128,7 @@ export default function AdminBetaPage() {
                               <option value="">{t('admin.betaTesterPreferredLocaleUnset')}</option>
                               <option value="es">ES</option>
                               <option value="en">EN</option>
+                              <option value="fr">FR</option>
                             </select>
                           </td>
                           <td className="ta-beta-col-plan">
@@ -1309,6 +1319,14 @@ export default function AdminBetaPage() {
                   onClick={() => sendProvisionWelcome('en')}
                 >
                   {provisionWelcomeSending ? t('common.loading') : t('admin.sendWelcomeEmailEn')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  disabled={provisionWelcomeSending}
+                  onClick={() => sendProvisionWelcome('fr')}
+                >
+                  {provisionWelcomeSending ? t('common.loading') : t('admin.sendWelcomeEmailFr')}
                 </button>
                 <button
                   type="button"

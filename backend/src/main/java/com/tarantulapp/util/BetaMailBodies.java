@@ -4,8 +4,9 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Plain-text bodies for beta welcome + weekly campaign emails (including creator-partner
+ * Plain-text bodies for beta welcome + optional batch campaign emails (including creator-partner
  * follow-ups). Keep in sync with {@code frontend/src/utils/welcomeBetaEmail.js} for the welcome copy.
+ * {@code fr} locale: welcome email is localized; batch campaign bodies/subjects use English until localized.
  */
 public final class BetaMailBodies {
 
@@ -21,7 +22,7 @@ public final class BetaMailBodies {
     public static final String ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL =
             "https://play.google.com/apps/internaltest/4700991665399344151";
 
-    /** WhatsApp community groups for beta testers. Keep in sync with {@code frontend/src/utils/welcomeBetaEmail.js}. */
+    /** WhatsApp invite URLs — optional batch campaigns only; not included in the welcome email. */
     public static final String WHATSAPP_GROUP_URL_ES =
             "https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t";
     public static final String WHATSAPP_GROUP_URL_EN =
@@ -48,14 +49,20 @@ public final class BetaMailBodies {
     }
 
     public static String welcomeSubject(String locale) {
-        return "en".equalsIgnoreCase(normalizeLocale(locale))
-                ? "TarantulApp — Welcome to the closed beta"
-                : "TarantulApp — Bienvenida a la beta cerrada";
+        String loc = normalizeLocale(locale);
+        if ("en".equals(loc)) {
+            return "TarantulApp — Welcome (early access)";
+        }
+        if ("fr".equals(loc)) {
+            return "TarantulApp — Bienvenue (accès anticipé)";
+        }
+        return "TarantulApp — Bienvenida (acceso anticipado)";
     }
 
     public static String campaignSubject(String campaignKey, String locale) {
         String k = campaignKey == null ? "" : campaignKey.trim().toLowerCase(Locale.ROOT);
-        boolean en = "en".equalsIgnoreCase(normalizeLocale(locale));
+        String loc = normalizeLocale(locale);
+        boolean en = "en".equals(loc) || "fr".equals(loc); // FR: English subjects until localized
         return switch (k) {
             case "week_1" -> en
                     ? "TarantulApp beta — Week 1 mission"
@@ -96,7 +103,13 @@ public final class BetaMailBodies {
             return "es";
         }
         String t = locale.trim().toLowerCase(Locale.ROOT);
-        return t.startsWith("en") ? "en" : "es";
+        if (t.startsWith("en")) {
+            return "en";
+        }
+        if (t.startsWith("fr")) {
+            return "fr";
+        }
+        return "es";
     }
 
     public static String welcomeEs(String name, String email, String password, String appUrl, String sendDate) {
@@ -106,63 +119,63 @@ public final class BetaMailBodies {
         String p = password == null ? "" : password;
         String play = ANDROID_PLAY_STORE_URL;
         String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
-        String wa = WHATSAPP_GROUP_URL_ES;
         return "Hola " + n + ",\n"
                 + "\n"
                 + "Fecha del mensaje: " + sendDate + "\n"
                 + "\n"
-                + "Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, "
-                + "eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.\n"
+                + "Tu registro de acceso anticipado en TarantulApp ya está listo. Te damos la bienvenida como usuario/a: con este mensaje "
+                + "confirmamos tu acceso y te recordamos cómo descargar la app o entrar en la web y comprobar que vas con el correo correcto.\n"
                 + "\n"
-                + "Importante para este batch:\n"
-                + "• Instala la app Android desde Google Play (lista de prueba cerrada). Enlace: " + play + "\n"
-                + "• Abre ese enlace en el teléfono con la cuenta de Google que tenga acceso a la prueba; instala o actualiza "
-                + "TarantulApp e inicia sesión con el mismo correo y contraseña que para la web.\n"
-                + "• Si antes usabas el enlace antiguo de prueba interna (" + legacy + "), déjalo de usar: desinstala esa "
-                + "instalación si hace falta y vuelve a instalar desde el enlace de la tienda arriba.\n"
-                + "• La web app sigue disponible en cualquier navegador si lo prefieres.\n"
+                + "En Android la descarga hoy va por Google Play en lista de acceso anticipado; cuando pasemos al listado público, el "
+                + "flujo será como con cualquier otra app y tu cuenta se queda igual.\n"
                 + "\n"
-                + "Únete a nuestro grupo de WhatsApp para testers (español):\n"
-                + "• " + wa + "\n"
-                + "• Es el canal más rápido para preguntas, ideas y reportar bugs en caliente. Te recomendamos entrar el primer día.\n"
+                + "Descargar la app (Android — Google Play)\n"
                 + "\n"
-                + "Cómo entrar (web):\n"
-                + "1) Abre " + url + " y usa el acceso beta (\"Beta tester login\" / acceso beta) en la pantalla pública.\n"
-                + "2) Inicia sesión con el correo y la contraseña que aparecen abajo.\n"
+                + "1) En tu teléfono Android, abre este enlace (mejor tocándolo desde el móvil): " + play + "\n"
+                + "2) Asegúrate de usar la cuenta de Google con la invitación de acceso anticipado en Play. Si Play dice que no tienes "
+                + "acceso, cambia de cuenta en el dispositivo o en la app de Play Store y vuelve a intentar.\n"
+                + "3) Pulsa Instalar o Actualizar, abre TarantulApp e inicia sesión con el correo y contraseña de \"Tu acceso\" abajo — "
+                + "los mismos que en la web.\n"
                 + "\n"
-                + "Web app en el móvil (atajo):\n"
-                + "• iPhone/iPad: Safari → Compartir → \"Añadir a pantalla de inicio\".\n"
-                + "• En Android (Chrome): menú ⋮ → \"Instalar app\" o \"Añadir a la pantalla principal\" si el navegador lo ofrece "
-                + "— o usa la app nativa desde Play arriba.\n"
+                + "Si antes usabas el enlace de prueba interna (" + legacy + "), no lo uses: desinstala esa versión si hace falta y "
+                + "vuelve a instalar desde el enlace de la tienda de arriba.\n"
                 + "\n"
-                + "Esto es lo que necesitas saber:\n"
+                + "Comprueba tu correo (importante)\n"
                 + "\n"
-                + "1) Tu acceso\n"
+                + "• TarantulApp: entra con exactamente " + e + " y la contraseña de abajo. Si no entra, puede que no sea la cuenta que "
+                + "dimos de alta — prueba de nuevo o responde a este correo.\n"
+                + "• Google: solo sirve para que Play te muestre la app con acceso anticipado; no es tu contraseña de TarantulApp.\n"
+                + "\n"
+                + "Entrar por la web (cualquier dispositivo)\n"
+                + "\n"
+                + "1) Abre " + url + " en el navegador.\n"
+                + "2) En la pantalla de inicio, usa la opción de acceso para miembros con acceso anticipado (puede aparecer como "
+                + "\"Beta tester login\").\n"
+                + "3) Inicia sesión con el mismo correo y contraseña que arriba.\n"
+                + "\n"
+                + "Atajo en el móvil\n"
+                + "\n"
+                + "• iPhone / iPad: Safari → Compartir → \"Añadir a pantalla de inicio\".\n"
+                + "• Android (Chrome): menú → \"Instalar app\" o \"Añadir a la pantalla principal\" si sale — o la app nativa desde Play "
+                + "arriba.\n"
+                + "\n"
+                + "Tu acceso\n"
+                + "\n"
                 + "   • Web: " + url + "\n"
-                + "   • Android (Play — prueba cerrada): " + play + "\n"
-                + "   • Email: " + e + "\n"
+                + "   • Android (Play — acceso anticipado): " + play + "\n"
+                + "   • Correo: " + e + "\n"
                 + "   • Contraseña: " + p + "\n"
                 + "\n"
-                + "   Tu cuenta está marcada como beta tester: verás las funciones beta y el botón \"Reportar un bug\".\n"
+                + "   Si ves \"Reportar un bug\" u textos de acceso anticipado, es normal mientras afinamos la experiencia.\n"
                 + "\n"
-                + "2) El plan (6 semanas)\n"
-                + "   • Semana 0 — Configura tu cuenta y mete tu colección.\n"
-                + "   • Semanas 1–2 — Día a día: comidas, mudas, fotos, recordatorios.\n"
-                + "   • Semanas 3–4 — Feed comunidad, perfil de criador, marketplace, chat.\n"
-                + "   • Semana 5 — Prueba Pro, etiquetas QR y detalles finos.\n"
-                + "   • Semana 6 — Encuesta final + tu testimonio.\n"
+                + "Algunas cosas que puedes hacer en TarantulApp\n"
                 + "\n"
-                + "3) Cómo enviar feedback\n"
-                + "   • Bugs: toca \"Reportar un bug\" dentro de la app — adjunta página, dispositivo y versión.\n"
-                + "   • Ideas / preguntas: responde a este correo.\n"
-                + "   • La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.\n"
+                + "• Llevar tu colección: cada tarántula con fotos, notas y estado.\n"
+                + "• Registrar comidas, mudas y recordatorios del día a día.\n"
+                + "• Explorar la comunidad, tu perfil de criador y el marketplace cuando lo uses.\n"
                 + "\n"
-                + "4) Lo que te pedimos\n"
-                + "   • Usa la app al menos unos minutos, 3+ días a la semana.\n"
-                + "   • Envía al menos un feedback por semana (bug, idea o \"todo bien\").\n"
-                + "   • Sé honesto — preferimos un \"esto confunde\" antes que un silencio cortés.\n"
-                + "\n"
-                + "Gracias por confiarnos tu colección. Construyamos juntos la mejor app de tarántulas del mundo.\n"
+                + "Si algo no cuadra o necesitas ayuda, responde a este correo o usa \"Reportar un bug\" en la app (adjunta página, "
+                + "dispositivo y versión). ¡Gracias por estar con nosotros!\n"
                 + "\n"
                 + "— El equipo de TarantulApp\n";
     }
@@ -174,73 +187,144 @@ public final class BetaMailBodies {
         String p = password == null ? "" : password;
         String play = ANDROID_PLAY_STORE_URL;
         String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
-        String wa = WHATSAPP_GROUP_URL_EN;
         return "Hi " + n + ",\n"
                 + "\n"
                 + "Message date: " + sendDate + "\n"
                 + "\n"
-                + "Congratulations — you've been accepted into the TarantulApp closed beta. Among everyone who applied, "
-                + "you're one of the few helping us shape the platform before public launch.\n"
+                + "Your TarantulApp early access registration is ready. Welcome — this email confirms your access and walks you through "
+                + "downloading the app (Android), signing in on the web, and making sure you're on the correct email address.\n"
                 + "\n"
-                + "Important for this batch:\n"
-                + "• Install the Android app from Google Play (closed testing). Link: " + play + "\n"
-                + "• Open that link on your phone while signed into the Google account that has access to the test, install "
-                + "or update TarantulApp, then sign in with the same email and password as the web app.\n"
-                + "• If you previously installed via the old internal-testing link (" + legacy + "), stop using it — "
-                + "uninstall that build if needed and reinstall from the Store link above.\n"
-                + "• The web app still works in any browser if you prefer.\n"
+                + "On Android, installs still use Google Play's early-access listing for now; when we move to the public store listing, "
+                + "updates work like any other app and your account stays the same.\n"
                 + "\n"
-                + "Join our WhatsApp group for testers (English):\n"
-                + "• " + wa + "\n"
-                + "• It's the fastest channel for questions, ideas, and live bug reports. We recommend joining on day one.\n"
+                + "Download the app (Android — Google Play)\n"
                 + "\n"
-                + "How to sign in (web):\n"
-                + "1) Open " + url + " and use the beta gate (\"Beta tester login\") on the public home screen.\n"
-                + "2) Sign in with the email and password below.\n"
+                + "1) On your Android phone, open this link (tap it from the phone): " + play + "\n"
+                + "2) Make sure you're signed into the Google account that has the Play early-access invite. If Play says you don't have "
+                + "access, switch Google accounts on the device or in the Play Store app and try again.\n"
+                + "3) Tap Install or Update, open TarantulApp, then sign in with the email and password under \"Your login\" below — "
+                + "the same as the website.\n"
                 + "\n"
-                + "Web app on your phone (shortcut):\n"
-                + "• iPhone/iPad: Safari -> Share -> \"Add to Home Screen\".\n"
-                + "• Android (Chrome): Menu -> \"Install app\" or \"Add to Home screen\" when offered "
-                + "— or use the native app from Play above.\n"
+                + "If you previously used the internal-testing install URL (" + legacy + "), don't use it anymore — uninstall that "
+                + "build if needed and reinstall from the Store link above.\n"
                 + "\n"
-                + "What you need to know:\n"
+                + "Double-check your email (important)\n"
                 + "\n"
-                + "1) Your access\n"
+                + "• TarantulApp: sign in with exactly " + e + " and the password below. If login fails, you may be on a different account "
+                + "than the one we set up — try again or reply to this email.\n"
+                + "• Google: only affects whether Play shows you the early-access listing; it is not your TarantulApp password.\n"
+                + "\n"
+                + "Sign in on the web (any device)\n"
+                + "\n"
+                + "1) Open " + url + " in your browser.\n"
+                + "2) On the public home screen, use the sign-in option for early access members (it may read \"Beta tester login\").\n"
+                + "3) Sign in with the same email and password as above.\n"
+                + "\n"
+                + "Shortcut on your phone\n"
+                + "\n"
+                + "• iPhone / iPad: Safari -> Share -> \"Add to Home Screen\".\n"
+                + "• Android (Chrome): Menu -> \"Install app\" or \"Add to Home screen\" when offered — or use the native Play Store app "
+                + "from the link above.\n"
+                + "\n"
+                + "Your login\n"
+                + "\n"
                 + "   • Web: " + url + "\n"
-                + "   • Android (Play — closed testing): " + play + "\n"
+                + "   • Android (Play — early access): " + play + "\n"
                 + "   • Email: " + e + "\n"
                 + "   • Password: " + p + "\n"
                 + "\n"
-                + "   Your account is flagged as a beta tester — you'll see beta features and the \"Report a bug\" button.\n"
+                + "   If you see \"Report a bug\" or early-access wording, that's normal while we polish the experience.\n"
                 + "\n"
-                + "2) The 6-week plan\n"
-                + "   • Week 0 — Set up your account and import your collection.\n"
-                + "   • Weeks 1-2 — Day-to-day: feeds, molts, photos, reminders.\n"
-                + "   • Weeks 3-4 — Community feed, keeper profile, marketplace, chat.\n"
-                + "   • Week 5 — Pro trial, QR labels, polish.\n"
-                + "   • Week 6 — Final survey + your testimonial.\n"
+                + "A few things you can do in TarantulApp\n"
                 + "\n"
-                + "3) How to send feedback\n"
-                + "   • Bugs: tap \"Report a bug\" in the app — it attaches page, device, and version.\n"
-                + "   • Ideas / questions: reply to this email.\n"
-                + "   • The Week 1 mission is already included here as your first steps; we'll follow up with the next weeks after that.\n"
+                + "• Build and browse your collection — each spider with photos, notes, and status.\n"
+                + "• Log feedings and molts, set reminders for day-to-day care.\n"
+                + "• Explore the community feed, your keeper profile, and marketplace when you use it.\n"
                 + "\n"
-                + "4) What we ask\n"
-                + "   • Use the app a few minutes a day, 3+ days per week.\n"
-                + "   • Send at least one piece of feedback per week (bug, idea, or \"all good\").\n"
-                + "   • Be honest — we prefer \"this is confusing\" over polite silence.\n"
-                + "\n"
-                + "Thanks for trusting us with your collection. Let's build the best tarantula app together.\n"
+                + "If anything looks off or you need a hand, reply to this email or use \"Report a bug\" in the app (it attaches page, "
+                + "device, and version). Thanks for being with us!\n"
                 + "\n"
                 + "— The TarantulApp team\n";
     }
 
+    public static String welcomeFr(String name, String email, String password, String appUrl, String sendDate) {
+        String n = (name == null || name.isBlank()) ? "éleveur" : name.trim();
+        String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+        String e = email == null ? "" : email.trim();
+        String p = password == null ? "" : password;
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
+        return "Bonjour " + n + ",\n"
+                + "\n"
+                + "Date du message : " + sendDate + "\n"
+                + "\n"
+                + "Votre inscription à l'accès anticipé TarantulApp est prête. Bienvenue : ce message confirme votre accès et rappelle "
+                + "comment télécharger l'app (Android), vous connecter sur le web, et vérifier que vous utilisez la bonne adresse e-mail.\n"
+                + "\n"
+                + "Sur Android, l'installation passe encore par une fiche Play en accès anticipé ; lorsque nous ouvrirons au grand public, "
+                + "les mises à jour seront comme pour n'importe quelle app et votre compte reste le même.\n"
+                + "\n"
+                + "Télécharger l'app (Android — Google Play)\n"
+                + "\n"
+                + "1) Sur votre téléphone Android, ouvrez ce lien (idéalement en le touchant depuis le téléphone) : " + play + "\n"
+                + "2) Vérifiez que vous êtes sur le compte Google invité à l'accès anticipé sur le Play Store. Si l'accès est refusé, "
+                + "changez de compte sur l'appareil ou dans l'app Play Store, puis réessayez.\n"
+                + "3) Appuyez sur Installer ou Mettre à jour, ouvrez TarantulApp, puis connectez-vous avec l'e-mail et le mot de passe de "
+                + "\"Vos identifiants\" ci-dessous — les mêmes que sur le site web.\n"
+                + "\n"
+                + "Si vous aviez installé via l'ancien lien de test interne (" + legacy + "), ne l'utilisez plus — désinstallez cette "
+                + "version si besoin et réinstallez depuis le lien Play ci-dessus.\n"
+                + "\n"
+                + "Vérifier votre e-mail (important)\n"
+                + "\n"
+                + "• TarantulApp : connectez-vous avec exactement " + e + " et le mot de passe ci-dessous. Si la connexion échoue, vous "
+                + "n'êtes peut-être pas sur le bon compte — réessayez ou répondez à cet e-mail.\n"
+                + "• Google : sert seulement à afficher l'app en accès anticipé sur le Play Store ; ce n'est pas votre mot de passe "
+                + "TarantulApp.\n"
+                + "\n"
+                + "Connexion web (n'importe quel appareil)\n"
+                + "\n"
+                + "1) Ouvrez " + url + " dans le navigateur.\n"
+                + "2) Sur l'accueil public, utilisez l'option de connexion pour les membres en accès anticipé (l'intitulé peut être "
+                + "\"Beta tester login\").\n"
+                + "3) Connectez-vous avec le même e-mail et mot de passe qu'au-dessus.\n"
+                + "\n"
+                + "Raccourci sur le téléphone\n"
+                + "\n"
+                + "• iPhone / iPad : Safari -> Partager -> « Sur l'écran d'accueil ».\n"
+                + "• Android (Chrome) : Menu -> « Installer l'application » ou « Ajouter à l'écran d'accueil » si proposé — ou l'app "
+                + "native Play via le lien ci-dessus.\n"
+                + "\n"
+                + "Vos identifiants\n"
+                + "\n"
+                + "   • Web : " + url + "\n"
+                + "   • Android (Play — accès anticipé) : " + play + "\n"
+                + "   • E-mail : " + e + "\n"
+                + "   • Mot de passe : " + p + "\n"
+                + "\n"
+                + "   Si vous voyez « Report a bug » ou des mentions d'accès anticipé, c'est normal pendant que nous peaufinons "
+                + "l'expérience.\n"
+                + "\n"
+                + "Quelques possibilités dans TarantulApp\n"
+                + "\n"
+                + "• Gérer votre collection — chaque araignée avec photos, notes et état.\n"
+                + "• Enregistrer nourrissures et mues, créer des rappels pour le quotidien.\n"
+                + "• Explorer le fil communautaire, votre profil d'éleveur et le marketplace si vous l'utilisez.\n"
+                + "\n"
+                + "Pour toute question ou si quelque chose cloche, répondez à cet e-mail ou utilisez « Report a bug » dans l'app (contexte, "
+                + "appareil, version). Merci de faire partie de l'aventure !\n"
+                + "\n"
+                + "— L'équipe TarantulApp\n";
+    }
+
     public static String campaignBody(String campaignKey, String locale, String name, String appUrl, String sendDate) {
         String loc = normalizeLocale(locale);
-        String n = (name == null || name.isBlank()) ? (("en".equals(loc)) ? "keeper" : "criador") : name.trim();
+        String n = (name == null || name.isBlank())
+                ? (("en".equals(loc) || "fr".equals(loc)) ? "keeper" : "criador")
+                : name.trim();
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String k = campaignKey == null ? "" : campaignKey.trim().toLowerCase(Locale.ROOT);
-        if ("en".equals(loc)) {
+        if ("en".equals(loc) || "fr".equals(loc)) {
             return campaignBodyEn(k, n, url, sendDate);
         }
         return campaignBodyEs(k, n, url, sendDate);

@@ -1,10 +1,12 @@
-# TarantulApp — Plantilla de correo de bienvenida (beta cerrada, español)
+# TarantulApp — Plantilla de correo (acceso anticipado — registro listo)
 
 Usar con `buildSpanishBetaWelcomeEmail()` en `frontend/src/utils/welcomeBetaEmail.js`, o copiar la estructura de abajo.
 
-**Nota (mayo 2026):** La instalación en Android usa el **listado de Google Play** de la **prueba cerrada**: los testers abren el enlace de la tienda, instalan o actualizan e inician sesión con las mismas credenciales que en la web. Quienes usaban el enlace antiguo de **prueba interna** deben volver a instalar desde el enlace de la tienda.
+**Objetivo:** Dar la bienvenida como **usuario/a**. Confirmar que el **registro de acceso anticipado está listo**, **confirmar el acceso** y dejar claros los pasos para **descargar** (Android), **entrar por la web** y **comprobar el correo correcto**. Sin WhatsApp ni enlaces a grupos externos en este correo.
 
-**Variables:** `{{name}}`, `{{appUrl}}`, `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (URL del listado en Play, la misma que en la app)
+**Nota técnica:** Android usa hoy el listado de Play en **acceso anticipado**; mismas credenciales que la web. Quienes usaban **prueba interna** deben reinstalar desde el enlace de la tienda.
+
+**Variables:** `{{name}}`, `{{appUrl}}`, `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}`
 
 ---
 
@@ -12,59 +14,48 @@ Hola {{name}},
 
 Fecha del mensaje: {{date}}
 
-Felicidades: has sido aceptado en la beta cerrada de TarantulApp. De todos los criadores que se postularon, eres uno de los pocos elegidos para ayudarnos a moldear la plataforma antes de su lanzamiento público.
+Tu **registro de acceso anticipado en TarantulApp ya está listo**. Te damos la bienvenida como **usuario/a**: con este mensaje **confirmamos tu acceso** y te recordamos cómo **descargar la app**, **entrar en la web** y **comprobar que vas con el correo correcto**.
 
-Importante para este batch:
+En Android la descarga hoy va por Google Play en lista de **acceso anticipado**; cuando pasemos al listado **público**, el flujo será como con cualquier otra app y **tu cuenta se queda igual**.
 
-- Instala la **app Android** desde Google Play (**lista de prueba cerrada**). Enlace: `{{androidPlayUrl}}`
-- Abre ese enlace en el teléfono con la **cuenta de Google** que tenga acceso a la prueba; instala o actualiza TarantulApp e inicia sesión con el **mismo correo y contraseña** que para la web.
-- Si antes usabas el enlace antiguo de **prueba interna**, déjalo de usar y vuelve a instalar desde el enlace de la tienda.
-- La **web app** sigue disponible en cualquier navegador si lo prefieres.
+### Descargar la app (Android — Google Play)
 
-Únete al grupo de WhatsApp para testers (español): (enlace del grupo en la plantilla enviada)
+1. En el móvil, abre: `{{androidPlayUrl}}`
+2. Usa la **cuenta de Google** con invitación de acceso anticipado en Play. Si no te deja, cambia de cuenta en el dispositivo o en Play Store.
+3. **Instala** o **actualiza**, abre **TarantulApp** e inicia sesión con **Tu acceso** abajo — igual que en la web.
 
-Cómo entrar (web):
+Si usabas el enlace viejo de **prueba interna**, reinstala desde el enlace de arriba.
 
-1) Abre {{appUrl}} y usa el acceso beta (“Beta tester login” / acceso beta) en la pantalla pública.
+### Comprueba tu correo (importante)
 
-2) Inicia sesión con el correo y la contraseña que aparecen abajo.
+- **TarantulApp:** entra con **exactamente** `{{email}}` y la contraseña de abajo.
+- **Google:** solo afecta si Play te muestra la app; **no** es tu contraseña de TarantulApp.
 
-Web app en el móvil (atajo):
+### Entrar por la web (cualquier dispositivo)
 
-- iPhone/iPad: Safari → Compartir → “Añadir a pantalla de inicio”.
-- Android (Chrome): menú ⋮ → “Instalar app” o “Añadir a la pantalla principal” si el navegador lo ofrece — o usa la app nativa desde Play arriba.
+1) Abre `{{appUrl}}`
 
-Esto es lo que necesitas saber:
+2) Usa el acceso de **acceso anticipado** en la pantalla de inicio (puede decir **“Beta tester login”**).
 
-1) Tu acceso
+3) Mismo correo y contraseña que abajo.
 
-- Web: {{appUrl}}
-- Android (Play — prueba cerrada): {{androidPlayUrl}}
-- Email: {{email}}
-- Contraseña: {{password}}
+**Atajo móvil:** iPhone/iPad — Safari → Compartir → Añadir a pantalla de inicio. Android — Chrome instalar / añadir a inicio, o la app desde Play.
 
-Tu cuenta está marcada como beta tester: verás las funciones beta y el botón “Reportar un bug”.
+### Tu acceso
 
-2) El plan (6 semanas)
+- **Web:** `{{appUrl}}`
+- **Android (Play — acceso anticipado):** `{{androidPlayUrl}}`
+- **Correo:** `{{email}}`
+- **Contraseña:** `{{password}}`
 
-- Semana 0 — Configura tu cuenta y mete tu colección.
-- Semanas 1–2 — Día a día: comidas, mudas, fotos, recordatorios.
-- Semanas 3–4 — Feed comunidad, perfil de criador, marketplace, chat.
-- Semana 5 — Prueba Pro, etiquetas QR y detalles finos.
-- Semana 6 — Encuesta final + tu testimonio.
+Ver **“Reportar un bug”** o textos de acceso anticipado es normal mientras afinamos.
 
-3) Cómo enviar feedback
+### Algunas cosas que puedes hacer en TarantulApp
 
-- Bugs: toca “Reportar un bug” dentro de la app — adjunta página, dispositivo y versión.
-- Ideas / preguntas: responde a este correo.
-- La misión de la Semana 1 ya viene en este correo como tus primeros pasos; después te iremos enviando las siguientes semanas.
+- **Colección** — tarántulas con fotos, notas, estado.
+- **Comidas, mudas, recordatorios** del día a día.
+- **Comunidad**, **perfil de criador**, **marketplace** cuando lo uses.
 
-4) Lo que te pedimos
-
-- Usa la app al menos unos minutos, 3+ días a la semana.
-- Envía al menos un feedback por semana (bug, idea o “todo bien”).
-- Sé honesto — preferimos un “esto confunde” antes que un silencio cortés.
-
-Gracias por confiarnos tu colección. Construyamos juntos la mejor app de tarántulas del mundo.
+Si algo no cuadra, **responde a este correo** o usa **“Reportar un bug”** en la app (página, dispositivo, versión). ¡Gracias por estar con nosotros!
 
 — El equipo de TarantulApp

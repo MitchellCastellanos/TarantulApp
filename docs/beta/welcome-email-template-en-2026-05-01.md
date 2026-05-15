@@ -1,10 +1,12 @@
-# TarantulApp — English welcome email template (closed beta)
+# TarantulApp — English welcome email template (early access — registration ready)
 
 Use with `buildEnglishBetaWelcomeEmail()` in `frontend/src/utils/welcomeBetaEmail.js`, or copy the structure below.
 
-**Batch note (May 2026):** Android installs use the **Google Play Store listing** for our **closed testing** track — testers open the Play link, install or update, then sign in with the same credentials as the web app. Anyone who used the old **internal testing** link should reinstall from the Store link below.
+**Purpose:** Welcome people as **users**. Confirm that their **early access registration is ready**, confirm **access**, and give clear steps to **download** (Android), **sign in** on the web, and **verify the correct email**. No WhatsApp / external community links in this email.
 
-**Variables:** `{{name}}`, `{{appUrl}}` (e.g. `https://tarantulapp.com`), `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}` (Play Store listing URL, same as in-app)
+**Technical note:** Android uses Google Play’s **early-access** listing today; same credentials as the web. Old **internal testing** link users should reinstall from the Store link below.
+
+**Variables:** `{{name}}`, `{{appUrl}}`, `{{email}}`, `{{password}}`, `{{date}}` / `{{sendDate}}`, `{{androidPlayUrl}}`
 
 ---
 
@@ -12,60 +14,46 @@ Hi {{name}},
 
 Message date: {{date}}
 
-Congratulations — you’ve been accepted into the TarantulApp closed beta. Among everyone who applied, you’re one of the few helping us shape the platform before public launch.
+Your **TarantulApp early access registration is ready**. Welcome — this email **confirms your access** and walks you through **downloading the app (Android)**, **signing in on the web**, and **making sure you’re on the correct email address**.
 
-Important for this batch:
+On Android, installs still use Google Play’s **early-access listing** for now; when we move to the **public** store listing, updates work like any other app and **your account stays the same**.
 
-- Install the **Android app** from Google Play (**closed testing**). Link: `{{androidPlayUrl}}`
-- On your phone, open that link while signed into the **Google account** that has access to the test, install or update TarantulApp, then sign in with the **same email and password** as below.
-- If you previously used the **internal testing** install URL, stop using it — uninstall that build if needed and reinstall from the Store link above.
-- The **web app** still works everywhere — use Safari/Chrome as before if you prefer.
+### Download the app (Android — Google Play)
 
-Join our WhatsApp group for testers (English):
+1. On your **Android phone**, open: `{{androidPlayUrl}}`
+2. Use the **Google account** that has the Play **early-access** invite. If Play denies access, switch accounts on the device or in the Play Store app and try again.
+3. **Install** or **Update**, open **TarantulApp**, then sign in with **Your login** below — same as the website.
 
-- (group link from template)
+If you used the old **internal testing** URL, reinstall from the Store link above.
 
-How to sign in (web):
+### Double-check your email (important)
 
-1. Open {{appUrl}} and use the beta gate (“Beta tester login”) on the public home screen.
-2. Sign in with the email and password below (provision the password in admin if needed).
+- **TarantulApp:** sign in with **exactly** `{{email}}` and the password below.
+- **Google:** only controls visibility of the Play listing; **not** your TarantulApp password.
 
-Web app on your phone (shortcut):
+### Sign in on the web (any device)
 
-- iPhone/iPad: Safari → Share → “Add to Home Screen”.
-- Android (Chrome): Menu → “Install app” or “Add to Home screen” when offered — or use the native app from Play above.
+1. Open `{{appUrl}}`
+2. Use the early-access sign-in on the public home (may read **“Beta tester login”**).
+3. Same email and password as below.
 
-What you need to know:
+**Phone shortcut:** iPhone/iPad — Safari → Share → Add to Home Screen. Android — Chrome install / add to home, or the Play app from the link above.
 
-1) Your access
+### Your login
 
-- Web: {{appUrl}}
-- Android (Play — closed testing): {{androidPlayUrl}}
-- Email: {{email}}
-- Password: {{password}}
+- **Web:** `{{appUrl}}`
+- **Android (Play — early access):** `{{androidPlayUrl}}`
+- **Email:** `{{email}}`
+- **Password:** `{{password}}`
 
-Your account is flagged as a beta tester — you’ll see beta features and the “Report a bug” button.
+Seeing **“Report a bug”** or early-access wording is normal while we polish.
 
-2) The 6-week plan
+### A few things you can do in TarantulApp
 
-- Week 0 — Set up your account and import your collection.
-- Weeks 1–2 — Day-to-day: feeds, molts, photos, reminders.
-- Weeks 3–4 — Community feed, keeper profile, marketplace, chat.
-- Week 5 — Pro trial, QR labels, polish.
-- Week 6 — Final survey + your testimonial.
+- **Collection** — spiders with photos, notes, status.
+- **Feedings, molts, reminders** for daily care.
+- **Community**, **keeper profile**, **marketplace** when you use them.
 
-3) How to send feedback
-
-- Bugs: tap “Report a bug” in the app — it attaches page, device, and version.
-- Ideas / questions: reply to this email.
-- The Week 1 mission is already included here as your first steps; we’ll follow up with the next weeks after that.
-
-4) What we ask
-
-- Use the app a few minutes a day, 3+ days per week.
-- Send at least one piece of feedback per week (bug, idea, or “all good”).
-- Be honest — we prefer “this is confusing” over polite silence.
-
-Thanks for trusting us with your collection. Let’s build the best tarantula app together.
+If anything looks off, **reply to this email** or use **“Report a bug”** in the app (page, device, version). Thanks for being with us!
 
 — The TarantulApp team

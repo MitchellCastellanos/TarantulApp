@@ -398,9 +398,11 @@ public class EmailService {
     public void sendBetaWelcomeEmail(String toEmail, String displayName, String plainPassword, String welcomeLocale) {
         String loc = BetaMailBodies.normalizeLocale(welcomeLocale);
         String sendDate = formatBetaSendDateForLocale(loc);
-        String body = "en".equals(loc)
-                ? BetaMailBodies.welcomeEn(displayName, toEmail, plainPassword, baseUrl, sendDate)
-                : BetaMailBodies.welcomeEs(displayName, toEmail, plainPassword, baseUrl, sendDate);
+        String body = switch (loc) {
+            case "en" -> BetaMailBodies.welcomeEn(displayName, toEmail, plainPassword, baseUrl, sendDate);
+            case "fr" -> BetaMailBodies.welcomeFr(displayName, toEmail, plainPassword, baseUrl, sendDate);
+            default -> BetaMailBodies.welcomeEs(displayName, toEmail, plainPassword, baseUrl, sendDate);
+        };
         String subject = BetaMailBodies.welcomeSubject(loc);
         try {
             doSend(toEmail, subject, body);
@@ -432,6 +434,9 @@ public class EmailService {
         var date = LocalDateTime.now().toLocalDate();
         if ("en".equals(loc)) {
             return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK).format(date);
+        }
+        if ("fr".equals(loc)) {
+            return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.FRANCE).format(date);
         }
         return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.forLanguageTag("es-MX")).format(date);
     }
