@@ -30,6 +30,7 @@ export default function AdminHomePage() {
   const [recentUsersTotal, setRecentUsersTotal] = useState(0)
   const [recentUsersLoading, setRecentUsersLoading] = useState(true)
   const [playGroupBusyId, setPlayGroupBusyId] = useState(null)
+  const [outreachBusyKey, setOutreachBusyKey] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -113,6 +114,29 @@ export default function AdminHomePage() {
       setError(msg)
     } finally {
       setPlayGroupBusyId(null)
+    }
+  }
+
+  const sendPlayEarlyAccessOutreach = async (u, locale) => {
+    const busy = `${String(u.id)}:${locale}`
+    setOutreachBusyKey(busy)
+    setError('')
+    setSuccess('')
+    try {
+      const data = await adminService.sendOutreachEmail(u.id, {
+        templateKey: 'play_early_access_web',
+        locale,
+      })
+      if (data?.sent === true) {
+        setSuccess(t('admin.outreachEmailSent'))
+      } else {
+        setError(t('admin.outreachEmailFailed', { detail: data?.error || t('common.error') }))
+      }
+    } catch (err) {
+      const detail = err?.response?.data?.message || err?.message || t('common.error')
+      setError(t('admin.outreachEmailFailed', { detail }))
+    } finally {
+      setOutreachBusyKey(null)
     }
   }
 
@@ -436,6 +460,33 @@ export default function AdminHomePage() {
                             >
                               {t('admin.playGroupSyncForce')}
                             </button>
+                            <div className="small text-muted mb-1">{t('admin.outreachPlayEarlyAccessLabel')}</div>
+                            <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.outreachPlayEarlyAccessHint')}>
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                disabled={outreachBusyKey === `${String(u.id)}:es`}
+                                onClick={() => sendPlayEarlyAccessOutreach(u, 'es')}
+                              >
+                                {outreachBusyKey === `${String(u.id)}:es` ? t('common.loading') : 'ES'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                disabled={outreachBusyKey === `${String(u.id)}:en`}
+                                onClick={() => sendPlayEarlyAccessOutreach(u, 'en')}
+                              >
+                                {outreachBusyKey === `${String(u.id)}:en` ? t('common.loading') : 'EN'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                disabled={outreachBusyKey === `${String(u.id)}:fr`}
+                                onClick={() => sendPlayEarlyAccessOutreach(u, 'fr')}
+                              >
+                                {outreachBusyKey === `${String(u.id)}:fr` ? t('common.loading') : 'FR'}
+                              </button>
+                            </div>
                             {(u.googleGroupSyncStatus || u.googleGroupSyncLastError) && (
                               <span className="small text-muted" style={{ fontSize: '0.7rem' }}>
                                 {u.googleGroupSyncStatus ? `${u.googleGroupSyncStatus}` : ''}

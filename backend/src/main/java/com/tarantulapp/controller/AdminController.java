@@ -45,6 +45,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -152,6 +153,8 @@ public class AdminController {
     record AdminProvisionTesterRequest(String identifier, String newPassword, Boolean generatePassword, String displayName) {}
 
     record SendBetaWelcomeEmailRequest(String locale, String plainPassword) {}
+
+    record SendOutreachEmailRequest(@NotBlank String templateKey, String locale) {}
 
     /**
      * {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end).
@@ -349,16 +352,11 @@ public class AdminController {
         adminAccessService.assertCurrentUserIsAdmin();
         List<Map<String, Object>> rows = new ArrayList<>();
         String[][] data = {
+                {"play_early_access_web", "Usuarios web — Android en Play (acceso anticipado / prueba cerrada)",
+                        "Web users — Android on Play (early access / closed testing)"},
                 {"creator_partner_onboarding", "Creadores — brief y beneficios (post-bienvenida)", "Creators — brief & perks (after welcome)"},
                 {"creator_partner_reminder", "Creadores — recordatorio suave (video / contenido)", "Creators — gentle reminder (video)"},
-                {"whatsapp_group_invite", "Grupo de WhatsApp (invitación)", "WhatsApp group (invitation)"},
                 {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
-                {"week_1", "Semana 1 — día a día", "Week 1 — day-to-day"},
-                {"week_2", "Semana 2 — fotos y rutina", "Week 2 — photos & routine"},
-                {"week_3", "Semana 3 — comunidad", "Week 3 — community"},
-                {"week_4", "Semana 4 — marketplace y chat", "Week 4 — marketplace & chat"},
-                {"week_5", "Semana 5 — Pro y QR", "Week 5 — Pro & QR"},
-                {"week_6", "Semana 6 — cierre", "Week 6 — wrap-up"},
         };
         for (String[] r : data) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -391,7 +389,7 @@ public class AdminController {
                 results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "skipped", "reason", "USER_NOT_FOUND")));
                 continue;
             }
-            if (!Boolean.TRUE.equals(u.getIsBetaTester())) {
+            if (!Boolean.TRUE.equals(u.getIsBetaTester()) && !BetaMailBodies.allowsNonBetaRecipients(key)) {
                 results.add(new LinkedHashMap<>(Map.of("userId", uid, "status", "skipped", "reason", "NOT_BETA_TESTER")));
                 continue;
             }
@@ -575,6 +573,40 @@ public class AdminController {
         } catch (Exception e) {
             out.put("welcomeEmailSent", false);
             out.put("welcomeEmailError", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+        }
+        return ResponseEntity.ok(out);
+    }
+
+    private static final Set<String> OUTREACH_EMAIL_TEMPLATE_KEYS = Set.of("play_early_access_web");
+
+    /**
+     * Sends a program outreach template to any registered user (not gated on beta tester).
+     * {@code templateKey}: currently only {@code play_early_access_web}.
+     */
+    @PostMapping("/users/{id}/send-outreach-email")
+    public ResponseEntity<Map<String, Object>> adminSendOutreachEmail(@PathVariable UUID id,
+                                                                       @Valid @RequestBody SendOutreachEmailRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        String key = req.templateKey() == null ? "" : req.templateKey().trim().toLowerCase();
+        if (!OUTREACH_EMAIL_TEMPLATE_KEYS.contains(key) || !BetaMailBodies.isBatchCampaignKey(key)) {
+            throw new IllegalArgumentException("INVALID_OUTREACH_TEMPLATE");
+        }
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        String loc = BetaMailBodies.normalizeLocale(req.locale());
+        String greetingName = user.getDisplayName();
+        if (greetingName == null || greetingName.isBlank()) {
+            String em = user.getEmail();
+            int at = em.indexOf('@');
+            greetingName = at > 0 ? em.substring(0, at) : em;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        try {
+            emailService.sendBetaCampaignEmail(user.getEmail(), greetingName, key, loc);
+            recordBetaEmailSent(user.getId(), key, loc);
+            out.put("sent", true);
+        } catch (Exception e) {
+            out.put("sent", false);
+            out.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
         }
         return ResponseEntity.ok(out);
     }

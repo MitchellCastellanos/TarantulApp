@@ -22,12 +22,6 @@ public final class BetaMailBodies {
     public static final String ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL =
             "https://play.google.com/apps/internaltest/4700991665399344151";
 
-    /** WhatsApp invite URLs — optional batch campaigns only; not included in the welcome email. */
-    public static final String WHATSAPP_GROUP_URL_ES =
-            "https://chat.whatsapp.com/EpXkeCKZ6uh5qhqKT3d9w2?mode=gi_t";
-    public static final String WHATSAPP_GROUP_URL_EN =
-            "https://chat.whatsapp.com/CIdg6rBQPo6FXeLNhpZA6a?mode=gi_t";
-
     public static final Set<String> BATCH_CAMPAIGN_KEYS = Set.of(
             "week_1",
             "week_2",
@@ -36,7 +30,7 @@ public final class BetaMailBodies {
             "week_5",
             "week_6",
             "android_play_beta",
-            "whatsapp_group_invite",
+            "play_early_access_web",
             "creator_partner_onboarding",
             "creator_partner_reminder"
     );
@@ -46,6 +40,11 @@ public final class BetaMailBodies {
 
     public static boolean isBatchCampaignKey(String key) {
         return key != null && BATCH_CAMPAIGN_KEYS.contains(key.trim().toLowerCase(Locale.ROOT));
+    }
+
+    /** Batch key that may be sent to any registered user (e.g. already on web, not yet on Play). */
+    public static boolean allowsNonBetaRecipients(String campaignKey) {
+        return campaignKey != null && "play_early_access_web".equalsIgnoreCase(campaignKey.trim());
     }
 
     public static String welcomeSubject(String locale) {
@@ -85,9 +84,11 @@ public final class BetaMailBodies {
             case "android_play_beta" -> en
                     ? "TarantulApp beta — Android on Google Play (closed testing)"
                     : "Beta TarantulApp — Android ya en Google Play (prueba cerrada)";
-            case "whatsapp_group_invite" -> en
-                    ? "TarantulApp beta — Join our WhatsApp group for testers"
-                    : "Beta TarantulApp — Únete a nuestro grupo de WhatsApp para testers";
+            case "play_early_access_web" -> switch (loc) {
+                case "en" -> "TarantulApp — Download the Android app (Play early access)";
+                case "fr" -> "TarantulApp — Téléchargez l'app Android (Play, accès anticipé)";
+                default -> "TarantulApp — Ya puedes instalar la app Android (acceso anticipado Play)";
+            };
             case "creator_partner_onboarding" -> en
                     ? "TarantulApp — Creator partner: your content brief & perks"
                     : "TarantulApp — Alianza creadores: brief y beneficios";
@@ -319,11 +320,22 @@ public final class BetaMailBodies {
 
     public static String campaignBody(String campaignKey, String locale, String name, String appUrl, String sendDate) {
         String loc = normalizeLocale(locale);
+        String k = campaignKey == null ? "" : campaignKey.trim().toLowerCase(Locale.ROOT);
+        if ("play_early_access_web".equals(k)) {
+            String n = (name == null || name.isBlank())
+                    ? ("en".equals(loc) ? "keeper" : "fr".equals(loc) ? "éleveur" : "criador")
+                    : name.trim();
+            String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+            return switch (loc) {
+                case "en" -> playEarlyAccessWebEn(n, url, sendDate);
+                case "fr" -> playEarlyAccessWebFr(n, url, sendDate);
+                default -> playEarlyAccessWebEs(n, url, sendDate);
+            };
+        }
         String n = (name == null || name.isBlank())
                 ? (("en".equals(loc) || "fr".equals(loc)) ? "keeper" : "criador")
                 : name.trim();
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
-        String k = campaignKey == null ? "" : campaignKey.trim().toLowerCase(Locale.ROOT);
         if ("en".equals(loc) || "fr".equals(loc)) {
             return campaignBodyEn(k, n, url, sendDate);
         }
@@ -339,7 +351,6 @@ public final class BetaMailBodies {
             case "week_5" -> week5Es(n, url, sendDate);
             case "week_6" -> week6Es(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEs(n, url, sendDate);
-            case "whatsapp_group_invite" -> whatsappGroupInviteEs(n, url, sendDate);
             case "creator_partner_onboarding" -> creatorPartnerOnboardingEs(n, url, sendDate);
             case "creator_partner_reminder" -> creatorPartnerReminderEs(n, url, sendDate);
             default -> weekGenericEs(n, url, sendDate);
@@ -355,7 +366,6 @@ public final class BetaMailBodies {
             case "week_5" -> week5En(n, url, sendDate);
             case "week_6" -> week6En(n, url, sendDate);
             case "android_play_beta" -> androidPlayBetaAnnouncementEn(n, url, sendDate);
-            case "whatsapp_group_invite" -> whatsappGroupInviteEn(n, url, sendDate);
             case "creator_partner_onboarding" -> creatorPartnerOnboardingEn(n, url, sendDate);
             case "creator_partner_reminder" -> creatorPartnerReminderEn(n, url, sendDate);
             default -> weekGenericEn(n, url, sendDate);
@@ -368,7 +378,6 @@ public final class BetaMailBodies {
      */
     private static String creatorPartnerOnboardingEs(String n, String url, String sendDate) {
         String play = ANDROID_PLAY_STORE_URL;
-        String wa = WHATSAPP_GROUP_URL_ES;
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
                 + "Gracias por sumarte como aliado de contenido para TarantulApp. Este correo es el \"brief\" "
@@ -391,7 +400,7 @@ public final class BetaMailBodies {
                 + "• Menciones y espacio en highlights / canales del equipo cuando el contenido encaje.\n"
                 + "• Badge de socio de contenido en perfil cuando la función esté disponible (te avisamos).\n"
                 + "• Canal directo con el equipo para ideas y priorización.\n\n"
-                + "WhatsApp testers (español): " + wa + "\n\n"
+                + "Para coordinar o cualquier duda, responde a este correo.\n\n"
                 + "Si prefieres otro formato (carrusel, TikTok, etc.) dímelo y lo alineamos. "
                 + "¡Gracias por ayudarnos a que más criadores descubran una forma nueva de compartir su hobby.\n\n"
                 + "— El equipo de TarantulApp\n";
@@ -399,7 +408,6 @@ public final class BetaMailBodies {
 
     private static String creatorPartnerOnboardingEn(String n, String url, String sendDate) {
         String play = ANDROID_PLAY_STORE_URL;
-        String wa = WHATSAPP_GROUP_URL_EN;
         return "Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
                 + "Thanks for joining as a TarantulApp content partner. This is the short brief: what we’re looking for, "
@@ -422,7 +430,7 @@ public final class BetaMailBodies {
                 + "• Shout-outs / highlights on our channels when the content fits.\n"
                 + "• A “content partner” badge on profile once the feature ships (we’ll tell you).\n"
                 + "• Direct line to the team for ideas and prioritization.\n\n"
-                + "WhatsApp testers (English): " + wa + "\n\n"
+                + "Reply to this email to coordinate or ask anything.\n\n"
                 + "If you’d rather do a carousel, TikTok, etc., reply and we’ll align. "
                 + "Thank you for helping more keepers discover a better way to share the hobby.\n\n"
                 + "— The TarantulApp team\n";
@@ -504,44 +512,71 @@ public final class BetaMailBodies {
                 + "— The TarantulApp team\n";
     }
 
-    private static String whatsappGroupInviteEs(String n, String url, String sendDate) {
-        String wa = WHATSAPP_GROUP_URL_ES;
+    private static String playEarlyAccessWebEs(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
-                + "Hemos abierto un grupo de WhatsApp para los beta testers de TarantulApp en español. "
-                + "Es el lugar más rápido para preguntas, ideas, reportar bugs en caliente y enterarte de "
-                + "novedades antes que nadie.\n\n"
-                + "Únete aquí (toca el enlace en tu teléfono):\n"
-                + wa + "\n\n"
-                + "Qué encontrarás dentro:\n"
-                + "• Anuncios de nuevas funciones y misiones de la semana.\n"
-                + "• Soporte directo del equipo y de otros criadores.\n"
-                + "• Espacio para compartir fotos, dudas y feedback rápido.\n\n"
-                + "App: " + url + "\n\n"
-                + "Si el enlace no abre, asegúrate de tener WhatsApp instalado y de pulsarlo desde el móvil. "
-                + "Cualquier problema, responde a este correo.\n\n"
-                + "¡Te esperamos en el grupo!\n\n"
+                + "Esperamos que estés disfrutando TarantulApp en la web. Te escribimos para recordarte que ya puedes instalar la app "
+                + "Android desde Google Play en acceso anticipado (lista de prueba cerrada), con la misma cuenta que usas en el "
+                + "navegador.\n\n"
+                + "Enlace en Google Play (ábrelo en tu móvil Android):\n"
+                + play
+                + "\n\n"
+                + "Pasos rápidos:\n\n"
+                + "1. Abre el enlace con la cuenta de Google que tenga acceso a la prueba cerrada (la misma que uses en Play Store).\n"
+                + "2. Instala o actualiza TarantulApp desde Google Play.\n"
+                + "3. Abre la app e inicia sesión con el mismo correo y contraseña que en la web.\n\n"
+                + "Si antes instalaste con el enlace viejo de prueba interna (" + legacy + "), no lo uses: desinstala esa versión si "
+                + "hace falta y vuelve a instalar desde el enlace de la tienda de arriba.\n\n"
+                + "La web sigue en " + url + " . Si Play dice que no tienes acceso, revisa la cuenta de Google correcta o responde a "
+                + "este correo.\n\n"
+                + "¡Gracias por seguir con nosotros!\n\n"
                 + "— El equipo de TarantulApp\n";
     }
 
-    private static String whatsappGroupInviteEn(String n, String url, String sendDate) {
-        String wa = WHATSAPP_GROUP_URL_EN;
+    private static String playEarlyAccessWebEn(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
         return "Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
-                + "We've just opened a WhatsApp group for TarantulApp beta testers in English. "
-                + "It's the fastest place to ask questions, share ideas, report bugs as they happen, "
-                + "and hear about updates first.\n\n"
-                + "Join here (tap the link on your phone):\n"
-                + wa + "\n\n"
-                + "What you'll find inside:\n"
-                + "• Announcements about new features and weekly missions.\n"
-                + "• Direct support from the team and other keepers.\n"
-                + "• A space to share photos, questions, and quick feedback.\n\n"
-                + "App: " + url + "\n\n"
-                + "If the link doesn't open, make sure WhatsApp is installed and tap it from your phone. "
-                + "Any issues, just reply to this email.\n\n"
-                + "See you in the group!\n\n"
+                + "We hope you’re enjoying TarantulApp on the web. This is a quick reminder that you can now install the Android app "
+                + "from Google Play as an early-access (closed testing) build — same email and password you already use in the browser.\n\n"
+                + "Google Play link (open on your Android phone):\n"
+                + play
+                + "\n\n"
+                + "Quick steps:\n\n"
+                + "1. Open the link while signed into the Google account that has access to closed testing (same account you use with "
+                + "the Play Store).\n"
+                + "2. Install or update TarantulApp from Google Play.\n"
+                + "3. Open the app and sign in with the same email and password as the website.\n\n"
+                + "Important: if you previously installed via the old internal-testing link (" + legacy + "), don’t use it anymore — "
+                + "uninstall that build if needed and reinstall from the Store link above.\n\n"
+                + "The web app is still at " + url + " . If Play says you don’t have access, double-check your Google account or reply "
+                + "to this email.\n\n"
+                + "Thanks for being with us!\n\n"
                 + "— The TarantulApp team\n";
+    }
+
+    private static String playEarlyAccessWebFr(String n, String url, String sendDate) {
+        String play = ANDROID_PLAY_STORE_URL;
+        String legacy = ANDROID_PLAY_LEGACY_INTERNAL_TEST_URL;
+        return "Bonjour " + n + ",\n\n"
+                + "Date du message : " + sendDate + "\n\n"
+                + "Nous espérons que vous appréciez TarantulApp sur le web. Petit rappel : vous pouvez maintenant installer l'app "
+                + "Android depuis le Google Play en accès anticipé (test fermé), avec le même compte que sur le site.\n\n"
+                + "Lien Google Play (à ouvrir sur votre téléphone Android) :\n"
+                + play
+                + "\n\n"
+                + "Étapes rapides :\n\n"
+                + "1. Ouvrez le lien avec le compte Google qui a accès au test fermé (le même que dans le Play Store).\n"
+                + "2. Installez ou mettez à jour TarantulApp depuis Google Play.\n"
+                + "3. Ouvrez l'app et connectez-vous avec le même e-mail et mot de passe que sur le web.\n\n"
+                + "Si vous aviez installé via l'ancien lien de test interne (" + legacy + "), ne l'utilisez plus — désinstallez cette "
+                + "version si besoin et réinstallez depuis le lien Play ci-dessus.\n\n"
+                + "Le site reste sur " + url + " . Si le Play Store refuse l'accès, vérifiez le compte Google ou répondez à cet e-mail.\n\n"
+                + "Merci de votre confiance !\n\n"
+                + "— L'équipe TarantulApp\n";
     }
 
     private static String week1Es(String n, String url, String sendDate) {

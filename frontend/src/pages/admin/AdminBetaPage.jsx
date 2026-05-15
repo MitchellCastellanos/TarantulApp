@@ -62,7 +62,7 @@ export default function AdminBetaPage() {
   const [approveSendWelcome, setApproveSendWelcome] = useState(true)
   const [approveWelcomeLocale, setApproveWelcomeLocale] = useState('es')
   const [campaignCatalog, setCampaignCatalog] = useState([])
-  const [campaignKey, setCampaignKey] = useState('week_1')
+  const [campaignKey, setCampaignKey] = useState('play_early_access_web')
   const [campaignLocale, setCampaignLocale] = useState('auto')
   const [campaignSending, setCampaignSending] = useState(false)
   const [selectedTesterIds, setSelectedTesterIds] = useState(() => ({}))
@@ -415,12 +415,26 @@ export default function AdminBetaPage() {
     campaignCatalog.length > 0
       ? campaignCatalog
       : [
-          { key: 'week_1', labelEs: 'Semana 1', labelEn: 'Week 1' },
-          { key: 'week_2', labelEs: 'Semana 2', labelEn: 'Week 2' },
-          { key: 'week_3', labelEs: 'Semana 3', labelEn: 'Week 3' },
-          { key: 'week_4', labelEs: 'Semana 4', labelEn: 'Week 4' },
-          { key: 'week_5', labelEs: 'Semana 5', labelEn: 'Week 5' },
-          { key: 'week_6', labelEs: 'Semana 6', labelEn: 'Week 6' },
+          {
+            key: 'play_early_access_web',
+            labelEs: 'Usuarios web — Android en Play (acceso anticipado)',
+            labelEn: 'Web users — Android on Play (early access)',
+          },
+          {
+            key: 'creator_partner_onboarding',
+            labelEs: 'Creadores — brief y beneficios',
+            labelEn: 'Creators — brief & perks',
+          },
+          {
+            key: 'creator_partner_reminder',
+            labelEs: 'Creadores — recordatorio',
+            labelEn: 'Creators — reminder',
+          },
+          {
+            key: 'android_play_beta',
+            labelEs: 'Android — prueba cerrada',
+            labelEn: 'Android — closed testing',
+          },
         ]
 
   const submitPasswordReset = async () => {
