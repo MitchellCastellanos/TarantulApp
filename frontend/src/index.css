@@ -1630,6 +1630,45 @@ a.text-collection:hover {
   box-shadow: 0 6px 22px rgba(40, 28, 8, 0.08);
 }
 
+.ta-marketplace-category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ta-marketplace-category-nav__chip {
+  border: 1px solid var(--ta-border);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--ta-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ta-marketplace-category-nav__chip:hover {
+  border-color: var(--ta-gold-classic);
+  color: var(--ta-parchment);
+}
+
+.ta-marketplace-category-nav__chip--active {
+  border-color: var(--ta-gold-classic);
+  background: rgba(201, 168, 76, 0.16);
+  color: var(--ta-parchment);
+  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.35);
+}
+
+:root[data-theme='light'] .ta-marketplace-category-nav__chip {
+  background: rgba(80, 55, 20, 0.05);
+}
+
+:root[data-theme='light'] .ta-marketplace-category-nav__chip--active {
+  background: rgba(201, 168, 76, 0.22);
+  color: #3d2a0a;
+}
+
 /* Marketplace listing cards — warm text (not UI blue); keeper link uses classic gold */
 .ta-marketplace-listing-card .card-body h6 {
   color: #eef1f6 !important;

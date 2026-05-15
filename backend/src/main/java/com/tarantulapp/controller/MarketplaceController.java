@@ -55,6 +55,7 @@ public class MarketplaceController {
             String country,
             String imageUrl,
             String pedigreeRef,
+            String listingCategory,
             Boolean requestListingBoost,
             /** Required for publish: seller certifies local legal compliance for this listing. */
             Boolean sellerCertifiesLegalTradeCompliance,
@@ -135,6 +136,7 @@ public class MarketplaceController {
                 req.country(),
                 req.imageUrl(),
                 req.pedigreeRef(),
+                req.listingCategory(),
                 Boolean.TRUE.equals(req.requestListingBoost()),
                 Boolean.TRUE.equals(req.sellerCertifiesLegalTradeCompliance()),
                 Boolean.TRUE.equals(req.wildCaught()),

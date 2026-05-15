@@ -38,7 +38,16 @@ const EMPTY_VENDOR_LEAD_FORM = {
 }
 
 const OFFICIAL_STRIP_SCROLL_GAP_PX = 12
-const MARKETPLACE_FILTERS_STORAGE_KEY = 'tarantulapp.marketplace.savedFilters.v1'
+const MARKETPLACE_FILTERS_STORAGE_KEY = 'tarantulapp.marketplace.savedFilters.v2'
+const MARKETPLACE_CATEGORIES = [
+  'tarantulas',
+  'breeding_projects',
+  'live_food',
+  'substrates',
+  'terrariums',
+  'supplies',
+]
+const DEFAULT_MARKETPLACE_CATEGORY = 'tarantulas'
 
 function getOfficialStripScrollStep(el) {
   if (!el) return 200
@@ -52,6 +61,10 @@ export default function MarketplacePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const initialCategory = MARKETPLACE_CATEGORIES.includes(searchParams.get('category') || '')
+    ? searchParams.get('category')
+    : DEFAULT_MARKETPLACE_CATEGORY
+  const [listingCategory, setListingCategory] = useState(initialCategory)
   const [query, setQuery] = useState('')
   const [listings, setListings] = useState([])
   const [officialVendors, setOfficialVendors] = useState([])
@@ -87,13 +100,14 @@ export default function MarketplacePage() {
         JSON.stringify({
           query,
           filters,
+          listingCategory,
         }),
       )
       setMessage(t('marketplace.savedSearchSaved'))
     } catch {
       setMessage(t('marketplace.error'))
     }
-  }, [filters, query, t])
+  }, [filters, listingCategory, query, t])
 
   const restoreSavedFilters = useCallback(() => {
     try {
@@ -110,6 +124,9 @@ export default function MarketplacePage() {
             ...f,
             ...parsed.filters,
           }))
+        }
+        if (MARKETPLACE_CATEGORIES.includes(parsed.listingCategory)) {
+          setListingCategory(parsed.listingCategory)
         }
         setMessage(t('marketplace.savedSearchApplied'))
       }
@@ -190,6 +207,7 @@ export default function MarketplacePage() {
     try {
       const data = await marketplaceService.listPublic({
         q: query || undefined,
+        listingCategory,
         country: filters.country || undefined,
         state: filters.state || undefined,
         city: filters.city || undefined,
@@ -276,7 +294,30 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
-  }, [filters, query, myProfile.country, myProfile.state, myProfile.city])
+  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city])
+
+  useEffect(() => {
+    const urlCat = searchParams.get('category') || DEFAULT_MARKETPLACE_CATEGORY
+    const normalized = MARKETPLACE_CATEGORIES.includes(urlCat) ? urlCat : DEFAULT_MARKETPLACE_CATEGORY
+    if (normalized !== listingCategory) {
+      setListingCategory(normalized)
+    }
+  }, [searchParams])
+
+  const selectListingCategory = useCallback(
+    (cat) => {
+      if (!MARKETPLACE_CATEGORIES.includes(cat)) return
+      setListingCategory(cat)
+      const next = new URLSearchParams(searchParams)
+      if (cat === DEFAULT_MARKETPLACE_CATEGORY) {
+        next.delete('category')
+      } else {
+        next.set('category', cat)
+      }
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams],
+  )
 
   /** Certified partners strip: auto-advance like a carousel only on small viewports (clarity that more is off-screen). */
   useEffect(() => {
@@ -423,7 +464,27 @@ export default function MarketplacePage() {
     <div className="ta-premium-page">
       <Navbar />
       <div className="container mt-4 ta-premium-shell">
-        <h4 className="mb-3 ta-premium-title">{t('marketplace.title')}</h4>
+        <h4 className="mb-2 ta-premium-title">{t('marketplace.title')}</h4>
+        <p className="small text-muted mb-3" style={{ maxWidth: 720, lineHeight: 1.5 }}>
+          {t('marketplace.marketplaceHeroSub')}
+        </p>
+
+        <nav
+          className="ta-marketplace-category-nav mb-4"
+          aria-label={t('marketplace.categoryNavAria')}
+        >
+          {MARKETPLACE_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={`ta-marketplace-category-nav__chip${listingCategory === cat ? ' ta-marketplace-category-nav__chip--active' : ''}`}
+              aria-current={listingCategory === cat ? 'page' : undefined}
+              onClick={() => selectListingCategory(cat)}
+            >
+              {t(`marketplace.category.${cat}`)}
+            </button>
+          ))}
+        </nav>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
@@ -746,7 +807,7 @@ export default function MarketplacePage() {
         )}
 
         <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
-          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>Peer listings</h2>
+          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
           <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
         </div>
@@ -761,7 +822,11 @@ export default function MarketplacePage() {
               {loading && <p className="text-muted small">{t('common.loading')}</p>}
               {!loading && visibleListings.length === 0 && (
                 <p className="text-muted small">
-                  {t('marketplace.feedEmptyPrelaunch')}
+                  {t(
+                    ['live_food', 'substrates', 'terrariums', 'supplies'].includes(listingCategory)
+                      ? 'marketplace.feedEmptySupplyCategory'
+                      : 'marketplace.feedEmptyPrelaunch',
+                  )}
                 </p>
               )}
               {partnerListings.map((l) => (

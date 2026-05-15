@@ -88,6 +88,10 @@ public class MarketplaceListing {
     @Column(name = "seller_trade_disclosure_accepted_at")
     private Instant sellerTradeDisclosureAcceptedAt;
 
+    /** {@link com.tarantulapp.marketplace.MarketplaceListingCategories} */
+    @Column(name = "listing_category", nullable = false, length = 32)
+    private String listingCategory = "tarantulas";
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -144,4 +148,6 @@ public class MarketplaceListing {
     public void setSellerTradeDisclosureAcceptedAt(Instant sellerTradeDisclosureAcceptedAt) {
         this.sellerTradeDisclosureAcceptedAt = sellerTradeDisclosureAcceptedAt;
     }
+    public String getListingCategory() { return listingCategory; }
+    public void setListingCategory(String listingCategory) { this.listingCategory = listingCategory; }
 }

@@ -9,10 +9,13 @@ import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 
+const COMMUNITY_LISTING_CATEGORIES = ['tarantulas', 'breeding_projects']
+
 const EMPTY_LISTING_FORM = {
   title: '',
   description: '',
   speciesName: '',
+  listingCategory: 'tarantulas',
   stage: 'sling',
   sex: 'unsexed',
   priceAmount: '',
@@ -50,10 +53,12 @@ export default function MarketplaceSellerPage() {
   })
   const [sellerProgram, setSellerProgram] = useState({
     tier: 'community',
-    activeListingLimit: 3,
+    activeListingLimit: 5,
     canRequestBoost: false,
     reviewedVendor: false,
     proPlan: false,
+    tradeCertificationRequired: false,
+    allowedListingCategories: COMMUNITY_LISTING_CATEGORIES,
   })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
@@ -94,10 +99,14 @@ export default function MarketplaceSellerPage() {
     })
     setSellerProgram({
       tier: profile?.sellerProgram?.tier || 'community',
-      activeListingLimit: Number(profile?.sellerProgram?.activeListingLimit || 3),
+      activeListingLimit: Number(profile?.sellerProgram?.activeListingLimit || 5),
       canRequestBoost: !!profile?.sellerProgram?.canRequestBoost,
       reviewedVendor: !!profile?.sellerProgram?.reviewedVendor,
       proPlan: !!profile?.sellerProgram?.proPlan,
+      tradeCertificationRequired: !!profile?.sellerProgram?.tradeCertificationRequired,
+      allowedListingCategories: Array.isArray(profile?.sellerProgram?.allowedListingCategories)
+        ? profile.sellerProgram.allowedListingCategories
+        : COMMUNITY_LISTING_CATEGORIES,
     })
   }, [user])
 
@@ -141,7 +150,7 @@ export default function MarketplaceSellerPage() {
     setSavingListing(true)
     setMessage('')
     try {
-      if (!listingForm.sellerCertifiesLegalTradeCompliance) {
+      if (sellerProgram.tradeCertificationRequired && !listingForm.sellerCertifiesLegalTradeCompliance) {
         setMessage(t('marketplace.certificationRequired'))
         setSavingListing(false)
         return
@@ -466,6 +475,23 @@ export default function MarketplaceSellerPage() {
                   </ul>
                 </div>
                 <form onSubmit={submitListing} className="small">
+                  <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                    {t('marketplace.fieldListingCategory')}
+                  </label>
+                  <select
+                    className="form-select form-select-sm mb-2"
+                    value={listingForm.listingCategory}
+                    onChange={(e) => setListingForm((f) => ({ ...f, listingCategory: e.target.value }))}
+                  >
+                    {sellerProgram.allowedListingCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {t(`marketplace.category.${cat}`)}
+                      </option>
+                    ))}
+                  </select>
+                  {sellerProgram.tier === 'community' && (
+                    <p className="small text-muted mb-2">{t('marketplace.communityListingRules')}</p>
+                  )}
                   <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldTitle')}
                     required value={listingForm.title} onChange={(e) => setListingForm((f) => ({ ...f, title: e.target.value }))} />
                   <input className="form-control form-control-sm mb-2" placeholder={t('marketplace.fieldSpecies')}
@@ -513,6 +539,7 @@ export default function MarketplaceSellerPage() {
                     onChange={(e) => setListingForm((f) => ({ ...f, imageUrl: e.target.value }))}
                   />
                   {uploadingListingImage && <p className="small text-muted mb-1">{t('marketplace.uploadingImage')}</p>}
+                  {sellerProgram.tradeCertificationRequired && (
                   <div className="border rounded p-2 mb-2" style={{ background: 'rgba(0,0,0,0.04)' }}>
                     <p className="small fw-semibold mb-2">{t('marketplace.tradeDisclosureSectionTitle')}</p>
                     <div className="form-check mb-2">
@@ -573,6 +600,7 @@ export default function MarketplaceSellerPage() {
                       </label>
                     </div>
                   </div>
+                  )}
                   {listingBoostAvailable && sellerProgram.canRequestBoost && (
                     <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
                       <input

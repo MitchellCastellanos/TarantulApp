@@ -41,13 +41,14 @@ import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.util.FileStorageService;
 import com.tarantulapp.util.PublicHandleRules;
 
 @Service
 public class MarketplaceService {
     private static final Pattern ISO_COUNTRY = Pattern.compile("[A-Z]{2}");
-    private static final int FREE_ACTIVE_LISTING_LIMIT = 3;
+    private static final int FREE_ACTIVE_LISTING_LIMIT = 5;
     private static final int PRO_ACTIVE_LISTING_LIMIT = 25;
     private static final int VENDOR_ACTIVE_LISTING_LIMIT = 250;
     private static final BigDecimal COMMISSION_RATE_COMMUNITY = new BigDecimal("0.10");
@@ -172,6 +173,7 @@ public class MarketplaceService {
     public Map<String, Object> createListing(UUID userId, String title, String description, String speciesName,
                                              String stage, String sex, BigDecimal priceAmount, String currency,
                                              String city, String state, String country, String imageUrl, String pedigreeRef,
+                                             String listingCategory,
                                              boolean requestListingBoost,
                                              boolean sellerCertifiesLegalTradeCompliance,
                                              boolean wildCaught,
@@ -180,14 +182,20 @@ public class MarketplaceService {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Titulo requerido");
         }
-        if (!sellerCertifiesLegalTradeCompliance) {
+        User seller = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        Map<String, Object> sellerProgram = resolveSellerProgram(seller);
+        String tier = String.valueOf(sellerProgram.get("tier"));
+        String category = MarketplaceListingCategories.normalizeOrDefault(listingCategory);
+        if ("community".equals(tier) && !MarketplaceListingCategories.isCommunityPeerCategory(category)) {
+            throw new IllegalArgumentException("Los keepers de comunidad solo pueden publicar tarántulas o proyectos de cría (máx. 5 anuncios activos).");
+        }
+        boolean tradeCertRequired = Boolean.TRUE.equals(sellerProgram.get("tradeCertificationRequired"));
+        if (tradeCertRequired && !sellerCertifiesLegalTradeCompliance) {
             throw new IllegalArgumentException("Debes confirmar el cumplimiento legal de comercio para publicar");
         }
         String permitRefs = cleanText(regulatoryPermitRefs, 420);
         String iso = normalizeIsoCountry(captureOriginCountryIso);
         validateWildCaughtOrigin(wildCaught, iso);
-        User seller = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-        Map<String, Object> sellerProgram = resolveSellerProgram(seller);
         int activeLimit = ((Number) sellerProgram.get("activeListingLimit")).intValue();
         long activeCount = marketplaceListingRepository.countBySellerUserIdAndStatusIgnoreCase(userId, "active");
         if (activeCount >= activeLimit) {
@@ -199,6 +207,7 @@ public class MarketplaceService {
 
         MarketplaceListing listing = new MarketplaceListing();
         listing.setSellerUserId(userId);
+        listing.setListingCategory(category);
         listing.setTitle(cleanText(title, 140));
         listing.setDescription(cleanText(description, 1000));
         listing.setSpeciesName(cleanText(speciesName, 140));
@@ -214,7 +223,9 @@ public class MarketplaceService {
         listing.setWildCaught(wildCaught);
         listing.setCaptureOriginCountryIso(wildCaught ? iso : null);
         listing.setRegulatoryPermitRefs(permitRefs);
-        listing.setSellerTradeDisclosureAcceptedAt(Instant.now());
+        if (tradeCertRequired && sellerCertifiesLegalTradeCompliance) {
+            listing.setSellerTradeDisclosureAcceptedAt(Instant.now());
+        }
         listing.setStatus("active");
         listing = marketplaceListingRepository.save(listing);
         Map<String, Object> out = mapListing(listing);
@@ -254,6 +265,7 @@ public class MarketplaceService {
     public List<Map<String, Object>> publicListings(String q, String status,
                                                     String country, String state, String city,
                                                     String nearCountry, String nearState, String nearCity,
+                                                    String listingCategory,
                                                     String listingOrigin, Boolean hasRegulatoryRefs,
                                                     String sellerTier, Boolean verifiedOnly,
                                                     Boolean boostedOnly, Boolean hasImage,
@@ -264,16 +276,17 @@ public class MarketplaceService {
         final String nearCountryNorm = normalizeFilter(nearCountry);
         final String nearStateNorm = normalizeFilter(nearState);
         final String nearCityNorm = normalizeFilter(nearCity);
+        final String categoryNorm = MarketplaceListingCategories.normalizeOrDefault(listingCategory);
         final String listingOriginNorm = normalizeListingOriginFilter(listingOrigin);
         final boolean withTradeFilters = listingOriginNorm != null || hasRegulatoryRefs != null;
 
         List<Map<String, Object>> partner = withTradeFilters
                 ? List.of()
                 : partnerPublicListings(
-                q, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
+                q, categoryNorm, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
         );
         List<Map<String, Object>> peer = peerPublicListings(
-                q, status, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm,
+                q, status, categoryNorm, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm,
                 listingOriginNorm, hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
         );
         int partnerCap = dynamicPartnerCap(peer.size(), partner.size());
@@ -446,6 +459,7 @@ public class MarketplaceService {
     }
 
     private List<Map<String, Object>> peerPublicListings(String q, String status,
+                                                         String categoryNorm,
                                                          String filterCountry, String filterState, String filterCity,
                                                          String nearCountryNorm, String nearStateNorm, String nearCityNorm,
                                                          String listingOriginNorm, Boolean hasRegulatoryRefs,
@@ -472,6 +486,7 @@ public class MarketplaceService {
                 .filter(m -> filterCountry == null || normalizeFilter(m.getCountry()).equals(filterCountry))
                 .filter(m -> filterState == null || normalizeFilter(m.getState()).equals(filterState))
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
+                .filter(m -> matchesListingCategoryFilter(m, categoryNorm))
                 .filter(m -> matchesListingOriginFilter(m, listingOriginNorm))
                 .filter(m -> matchesRegulatoryRefsFilter(m, hasRegulatoryRefs))
                 .filter(m -> matchesSellerTierFilter(m, sellerTier))
@@ -563,7 +578,23 @@ public class MarketplaceService {
         return null;
     }
 
-    private List<Map<String, Object>> partnerPublicListings(String q,
+    private static boolean matchesListingCategoryFilter(MarketplaceListing m, String categoryNorm) {
+        if (categoryNorm == null) {
+            return true;
+        }
+        String rowCategory = MarketplaceListingCategories.normalizeOrDefault(m.getListingCategory());
+        return categoryNorm.equals(rowCategory);
+    }
+
+    private static boolean matchesPartnerListingCategoryFilter(PartnerListing p, String categoryNorm) {
+        if (categoryNorm == null) {
+            return true;
+        }
+        String rowCategory = MarketplaceListingCategories.normalizeOrDefault(p.getListingCategory());
+        return categoryNorm.equals(rowCategory);
+    }
+
+    private List<Map<String, Object>> partnerPublicListings(String q, String categoryNorm,
                                                             String filterCountry, String filterState, String filterCity,
                                                             String nearCountryNorm, String nearStateNorm, String nearCityNorm) {
         String queryNorm = normalizeFilter(q);
@@ -576,6 +607,7 @@ public class MarketplaceService {
         return partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE)
                 .stream()
                 .filter(p -> eligibleVendorById.containsKey(p.getOfficialVendorId()))
+                .filter(p -> matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
                 .filter(p -> filterCountry == null || filterCountry.equals(normalizeFilter(p.getCountry())))
                 .filter(p -> filterState == null || filterState.equals(normalizeFilter(p.getState())))
@@ -772,6 +804,7 @@ public class MarketplaceService {
         out.put("captureOriginCountryIso", l.getCaptureOriginCountryIso() == null ? "" : l.getCaptureOriginCountryIso());
         out.put("regulatoryPermitRefs", l.getRegulatoryPermitRefs() == null ? "" : l.getRegulatoryPermitRefs());
         out.put("sellerTradeDisclosureAcceptedAt", l.getSellerTradeDisclosureAcceptedAt());
+        out.put("listingCategory", MarketplaceListingCategories.normalizeOrDefault(l.getListingCategory()));
         out.put("source", "peer");
         out.put("isPartner", false);
         out.put("badgeLabel", null);
@@ -794,13 +827,25 @@ public class MarketplaceService {
             activeListingLimit = FREE_ACTIVE_LISTING_LIMIT;
             canRequestBoost = false;
         }
+        boolean tradeCertificationRequired = !"community".equals(tier);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("tier", tier);
         out.put("activeListingLimit", activeListingLimit);
         out.put("canRequestBoost", canRequestBoost);
         out.put("reviewedVendor", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
         out.put("proPlan", seller != null && UserPlan.PRO.equals(seller.getPlan()));
+        out.put("tradeCertificationRequired", tradeCertificationRequired);
+        out.put("allowedListingCategories", allowedListingCategoriesForTier(tier));
         return out;
+    }
+
+    private static List<String> allowedListingCategoriesForTier(String tier) {
+        if ("community".equals(tier)) {
+            return List.of(
+                    MarketplaceListingCategories.TARANTULAS,
+                    MarketplaceListingCategories.BREEDING_PROJECTS);
+        }
+        return MarketplaceListingCategories.publicBrowseOrder();
     }
 
     private BigDecimal commissionRateBySellerTier(String sellerTier) {
@@ -858,6 +903,7 @@ public class MarketplaceService {
         out.put("availability", listing.getAvailability() == null ? "unknown" : listing.getAvailability().name().toLowerCase());
         out.put("stockQuantity", listing.getStockQuantity());
         out.put("lastSyncedAt", listing.getLastSyncedAt());
+        out.put("listingCategory", MarketplaceListingCategories.normalizeOrDefault(listing.getListingCategory()));
         return out;
     }
 

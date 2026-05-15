@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import jakarta.validation.Valid;
@@ -67,6 +68,7 @@ public class PublicMarketplaceController {
                                                                     @RequestParam(required = false) String nearCountry,
                                                                     @RequestParam(required = false) String nearState,
                                                                     @RequestParam(required = false) String nearCity,
+                                                                    @RequestParam(required = false) String listingCategory,
                                                                     @RequestParam(required = false) String listingOrigin,
                                                                     @RequestParam(required = false) Boolean hasRegulatoryRefs,
                                                                     @RequestParam(required = false) String sellerTier,
@@ -76,8 +78,8 @@ public class PublicMarketplaceController {
                                                                     @RequestParam(required = false) BigDecimal minPrice,
                                                                     @RequestParam(required = false) BigDecimal maxPrice) {
         return ResponseEntity.ok(marketplaceService.publicListings(
-                q, status, country, state, city, nearCountry, nearState, nearCity, listingOrigin, hasRegulatoryRefs,
-                sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
+                q, status, country, state, city, nearCountry, nearState, nearCity, listingCategory, listingOrigin,
+                hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
         ));
     }
 
@@ -141,7 +143,13 @@ public class PublicMarketplaceController {
                 "futurePaidStorefrontEnabled", futurePaidStorefrontEnabled,
                 "futurePaidBadgesEnabled", futurePaidBadgesEnabled,
                 "strategicPartnerBootstrapMode", strategicPartnerBootstrapMode,
-                "sellerListingTradeCertificationRequired", true
+                "sellerListingTradeCertificationRequired", false,
+                "communityActiveListingLimit", 5,
+                "communityAllowedListingCategories", List.of(
+                        MarketplaceListingCategories.TARANTULAS,
+                        MarketplaceListingCategories.BREEDING_PROJECTS),
+                "browseListingCategories", MarketplaceListingCategories.publicBrowseOrder(),
+                "defaultBrowseCategory", MarketplaceListingCategories.DEFAULT
         ));
     }
 }
