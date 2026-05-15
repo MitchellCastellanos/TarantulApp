@@ -47,7 +47,7 @@ public class AdminAccessService {
         if (email == null || email.isBlank()) {
             return false;
         }
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailIgnoreCase(email)
                 .map(User::getIsAdmin)
                 .filter(Boolean.TRUE::equals)
                 .isPresent();
@@ -89,7 +89,7 @@ public class AdminAccessService {
         if (bootstrapAdminEmails.contains(norm)) {
             return true;
         }
-        return userRepository.findByEmail(norm)
+        return userRepository.findByEmailIgnoreCase(norm)
                 .map(User::getIsAdmin)
                 .filter(Boolean.TRUE::equals)
                 .isPresent();

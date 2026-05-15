@@ -27,7 +27,7 @@ public class SecurityHelper {
         if (auth.getPrincipal() instanceof AppUserDetails appUser) {
             return appUser.id();
         }
-        return userRepository.findByEmail(auth.getName())
+        return userRepository.findByEmailIgnoreCase(auth.getName())
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"))
                 .getId();
     }
@@ -54,6 +54,6 @@ public class SecurityHelper {
         if (email == null || email.isBlank()) {
             return Optional.empty();
         }
-        return userRepository.findByEmail(email).map(User::getId);
+        return userRepository.findByEmailIgnoreCase(email).map(User::getId);
     }
 }
