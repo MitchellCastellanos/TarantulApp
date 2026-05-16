@@ -49,6 +49,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,9 +71,24 @@ public class BillingService {
     private final MarketplaceOrderAuditService marketplaceOrderAuditService;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    /** One-time payment price for marketplace listing boost ($2); optional. */
+    /**
+     * Listing boost — one-time payment (~USD 2 equivalent). Optional regional Prices; legacy single id
+     * applies when a region-specific id is blank (see {@link #resolveListingBoostPriceId}).
+     */
     @Value("${stripe.price-id-listing-boost:}")
     private String listingBoostPriceId;
+
+    @Value("${stripe.price-id-listing-boost-us:}")
+    private String listingBoostPriceIdUs;
+
+    @Value("${stripe.price-id-listing-boost-ca:}")
+    private String listingBoostPriceIdCa;
+
+    @Value("${stripe.price-id-listing-boost-mx:}")
+    private String listingBoostPriceIdMx;
+
+    @Value("${stripe.price-id-listing-boost-co:}")
+    private String listingBoostPriceIdCo;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -282,7 +298,83 @@ public class BillingService {
 
     public boolean isListingBoostCheckoutAvailable() {
         return stripeSecretKey != null && !stripeSecretKey.isBlank()
-                && listingBoostPriceId != null && !listingBoostPriceId.isBlank();
+                && listingBoostPriceConfigured();
+    }
+
+    private boolean listingBoostPriceConfigured() {
+        return anyNonBlank(listingBoostPriceId, listingBoostPriceIdUs, listingBoostPriceIdCa,
+                listingBoostPriceIdMx, listingBoostPriceIdCo);
+    }
+
+    private static boolean anyNonBlank(String... s) {
+        if (s == null) {
+            return false;
+        }
+        for (String x : s) {
+            if (x != null && !x.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String firstNonBlankBoost(String... candidates) {
+        if (candidates == null) {
+            return "";
+        }
+        for (String c : candidates) {
+            if (c != null && !c.isBlank()) {
+                return c.trim();
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Picks a Stripe Price for listing boost from the listing's country hint (same regions as Pro/Vendor).
+     */
+    private String resolveListingBoostPriceId(String listingCountry) {
+        String r = mapListingCountryToBillingRegion(listingCountry);
+        return switch (r) {
+            case "CA" -> firstNonBlankBoost(listingBoostPriceIdCa, listingBoostPriceIdUs, listingBoostPriceId);
+            case "MX" -> firstNonBlankBoost(listingBoostPriceIdMx, listingBoostPriceIdUs, listingBoostPriceId);
+            case "CO" -> firstNonBlankBoost(listingBoostPriceIdCo, listingBoostPriceIdUs, listingBoostPriceId);
+            default -> firstNonBlankBoost(listingBoostPriceIdUs, listingBoostPriceId);
+        };
+    }
+
+    /**
+     * Best-effort map from free-text listing country to billing region (US, CA, MX, CO).
+     */
+    private static String mapListingCountryToBillingRegion(String country) {
+        if (country == null || country.isBlank()) {
+            return "US";
+        }
+        String t = country.trim();
+        if (t.length() == 2) {
+            String iso = t.toUpperCase(Locale.ROOT);
+            return switch (iso) {
+                case "CA" -> "CA";
+                case "MX" -> "MX";
+                case "CO" -> "CO";
+                case "US" -> "US";
+                default -> "US";
+            };
+        }
+        String u = t.toUpperCase(Locale.ROOT);
+        if (u.contains("MEX")) {
+            return "MX";
+        }
+        if (u.contains("CANAD")) {
+            return "CA";
+        }
+        if (u.contains("COLOMB")) {
+            return "CO";
+        }
+        if (u.contains("UNITED STATES") || u.contains("U.S") || u.contains("USA")) {
+            return "US";
+        }
+        return "US";
     }
 
     public String createListingBoostCheckoutSession(UUID userId, String userEmail, UUID listingId) {
@@ -294,13 +386,17 @@ public class BillingService {
         if (!listing.getSellerUserId().equals(userId)) {
             throw new AccessDeniedException("Not your listing");
         }
+        String boostPriceId = resolveListingBoostPriceId(listing.getCountry());
+        if (boostPriceId.isBlank()) {
+            throw new IllegalArgumentException("LISTING_BOOST_NOT_CONFIGURED");
+        }
         String successUrl = appBaseUrl + "/marketplace?listingBoost=success&session_id={CHECKOUT_SESSION_ID}";
         String cancelUrl = appBaseUrl + "/marketplace?listingBoost=cancel";
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("mode", "payment");
         body.add("success_url", successUrl);
         body.add("cancel_url", cancelUrl);
-        body.add("line_items[0][price]", listingBoostPriceId);
+        body.add("line_items[0][price]", boostPriceId);
         body.add("line_items[0][quantity]", "1");
         body.add("client_reference_id", userId.toString());
         if (userEmail != null && !userEmail.isBlank()) {

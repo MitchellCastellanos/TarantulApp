@@ -13,6 +13,7 @@ preguntar.
 | Configurar Sentry / Actuator / logs estructurados | [`observability.md`](./observability.md) |
 | Configurar hCaptcha y rate limits anti-abuso | [`abuse-defenses.md`](./abuse-defenses.md) |
 | Verificar Stripe webhooks o desplegar Play Billing | [`billing-hardening.md`](./billing-hardening.md) |
+| Lista de Products/Prices Stripe y SKUs Play | [`stripe-products-catalog.md`](./stripe-products-catalog.md) |
 
 ## Por dependencia externa
 
@@ -45,6 +46,8 @@ Railway/Fly.io/Vercel estan seteadas estas variables (no commitear nunca):
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | dashboard.stripe.com |
 | `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY` | Legacy fallbacks (single-currency deploys) |
 | `STRIPE_PRICE_ID_MONTHLY_US` … `STRIPE_PRICE_ID_YEARLY_CO` | One Stripe Price per region (US, CA, MX, CO) × interval — see `application.properties` |
+| `STRIPE_PRICE_ID_LISTING_BOOST` (fallback) y `STRIPE_PRICE_ID_LISTING_BOOST_US` … `_CO` | One-time listing boost (~2 USD eq.); regional opcional — see [`stripe-products-catalog.md`](./stripe-products-catalog.md) |
+| `STRIPE_PRICE_ID_VENDOR_MONTHLY_US` … `STRIPE_PRICE_ID_VENDOR_YEARLY_CO` | Vendor subscription prices por región |
 | `CAPTCHA_SECRET` | hcaptcha.com -> New Site |
 | `CLOUDINARY_*` | cloudinary.com -> Settings -> API Keys |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP provider |

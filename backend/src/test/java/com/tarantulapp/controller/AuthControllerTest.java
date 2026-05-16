@@ -6,6 +6,7 @@ import com.tarantulapp.service.AccountDeletionService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.service.TokenBlacklistService;
+import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,11 +42,15 @@ class AuthControllerTest {
 
     @Mock
     private TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    private VendorInviteService vendorInviteService;
+
     private AuthController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AuthController(authService, accountDeletionService, securityHelper, captchaService, tokenBlacklistService);
+        controller = new AuthController(authService, accountDeletionService, securityHelper, captchaService, tokenBlacklistService, vendorInviteService);
     }
 
     @Test

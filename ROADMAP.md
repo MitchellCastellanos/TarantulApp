@@ -56,7 +56,7 @@
 
 ### Sprint 3 — Monetización real (próximo)
 
-- **Stripe real en entorno**: cargar y validar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY` y (opcional) `STRIPE_PRICE_ID_LISTING_BOOST`.
+- **Stripe real en entorno**: cargar y validar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, precios Pro/Vendor por región (`STRIPE_PRICE_ID_*_US` … `_CO`), y listing boost: `STRIPE_PRICE_ID_LISTING_BOOST` (fallback) y/o regionales `STRIPE_PRICE_ID_LISTING_BOOST_US` … `_CO` (~2 USD eq.); ver `docs/ops/stripe-products-catalog.md`.
 - **Go-live de billing**: validar checkout/verify/webhook/portal en modo test end-to-end con eventos reales de Stripe.
 - **Vendor / Business (próximamente)**: mantener “coming soon” con precio de entrada más bajo y validar demanda antes de activar checkout.
 
