@@ -15,13 +15,7 @@ import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel
 import { downloadCollectionJson, importCollectionJsonFile } from '../utils/exportCollectionJson'
 import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
-import KeeperReputationStrip from '../components/KeeperReputationStrip'
-import KeeperBadgeChip from '../components/KeeperBadgeChip'
-import {
-  badgeProgressHintLine,
-  badgeProgressTitle,
-  isBadgeTrackComplete,
-} from '../utils/keeperReputationHelpers'
+import DashboardKeeperAchievementsPanel from '../components/DashboardKeeperAchievementsPanel'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import {
@@ -46,11 +40,6 @@ export default function DashboardPage() {
   const [jsonBusy, setJsonBusy] = useState(false)
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
   const importInputRef = useRef(null)
-  const [keeperProgressDetailsOpen, setKeeperProgressDetailsOpen] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia('(min-width: 992px)').matches
-  })
-
   const { data: keeperProfile = null } = useQuery({
     queryKey: keeperProfileKeys.detail(),
     queryFn: () => marketplaceService.getMyProfile(),
@@ -204,11 +193,8 @@ export default function DashboardPage() {
       <div className="container mt-4">
         <div className="card border-0 shadow-sm mb-3 ta-premium-profile-card ta-dashboard-keeper-band">
           <div className="card-body py-3">
-            <div className="d-flex flex-column flex-lg-row gap-3 align-items-stretch">
-              <div
-                className="flex-shrink-0 align-self-start ta-dashboard-keeper-identity"
-                style={{ width: '100%', maxWidth: 300 }}
-              >
+            <div className="ta-dashboard-keeper-grid">
+              <div className="ta-dashboard-keeper-grid__profile ta-dashboard-keeper-identity">
                 <div className="d-flex justify-content-between align-items-start gap-2">
                   <div className="min-w-0">
                     <h4 className="mb-1 text-truncate ta-premium-profile-name">{user?.displayName || user?.email}</h4>
@@ -230,74 +216,14 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex-grow-1 min-w-0 order-3 order-lg-2" style={{ minWidth: 0 }}>
-                {reputation && (
-                  <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-parchment)" />
-                )}
-                {(dashboardBadgeProgressEntries.length > 0 || profileBadgeRows.length > 0) && (
-                  <details
-                    className="ta-dashboard-keeper-details mt-2"
-                    open={keeperProgressDetailsOpen}
-                    onToggle={(e) => setKeeperProgressDetailsOpen(e.currentTarget.open)}
-                  >
-                    <summary className="ta-dashboard-keeper-details__summary">
-                      {dashboardBadgeProgressEntries.length > 0
-                        ? t('dashboard.badgeProgressToggle', {
-                            tracks: dashboardBadgeProgressEntries.length,
-                            badges: profileBadgeRows.length,
-                          })
-                        : t('dashboard.badgesOnlyToggle', { badges: profileBadgeRows.length })}
-                    </summary>
-                    {dashboardBadgeProgressEntries.length > 0 && (
-                      <div className="row g-2 mt-2 ta-dashboard-badge-progress-grid">
-                        {dashboardBadgeProgressEntries.map(([key, p]) => {
-                          const target = Number(p?.target || 0)
-                          const current = Number(p?.current || 0)
-                          const complete = isBadgeTrackComplete(p)
-                          const percent = complete
-                            ? 100
-                            : target > 0
-                              ? Math.min(100, Math.round((current / target) * 100))
-                              : 100
-                          const hint = badgeProgressHintLine(t, key, p)
-                          return (
-                            <div
-                              className="col-12 col-sm-6"
-                              key={key}
-                              title={hint || undefined}
-                            >
-                              <div className="small mb-0 text-truncate">{badgeProgressTitle(t, p)}</div>
-                              <div className="progress mt-1" style={{ height: 5 }}>
-                                <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
-                              </div>
-                              <div className="small text-muted ta-dashboard-progress-count">
-                                {current}/{target || current}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    {profileBadgeRows.length > 0 && (
-                      <div className="d-flex gap-1 flex-wrap mt-2">
-                        {profileBadgeRows.map((row) => (
-                          <KeeperBadgeChip
-                            key={row.key}
-                            iconKey={row.iconKey}
-                            label={row.label}
-                            tier={row.tier}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </details>
-                )}
+              <div className="ta-dashboard-keeper-grid__achievements min-w-0">
+                <DashboardKeeperAchievementsPanel
+                  reputation={reputation}
+                  badgeProgressEntries={dashboardBadgeProgressEntries}
+                  badgeRows={profileBadgeRows}
+                />
               </div>
-
-              <div
-                className="flex-shrink-0 align-self-stretch order-2 order-lg-3 ta-dashboard-reminders-slot"
-                style={{ width: '100%', maxWidth: 420 }}
-              >
+              <div className="ta-dashboard-keeper-grid__reminders ta-dashboard-reminders-slot">
                 <RemindersPanel variant="embedded" />
               </div>
             </div>

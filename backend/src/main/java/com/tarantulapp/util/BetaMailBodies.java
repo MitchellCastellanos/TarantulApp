@@ -638,74 +638,125 @@ public final class BetaMailBodies {
     public static String vendorInviteSubject(String locale) {
         String loc = normalizeLocale(locale);
         return switch (loc) {
-            case "en" -> "TarantulApp — Accept your vendor invitation";
-            case "fr" -> "TarantulApp — Acceptez votre invitation vendeur";
-            default -> "TarantulApp — Acepta tu invitación como vendor";
+            case "en" -> "TarantulApp — Vendor welcome: activate your shop";
+            case "fr" -> "TarantulApp — Bienvenue vendeur : activez votre boutique";
+            default -> "TarantulApp — Bienvenida Vendor: activa tu tienda";
         };
     }
 
     /**
-     * One-click invite for would-be vendors; acceptance happens in-app while logged in as the invited email.
+     * Full vendor onboarding kit + accept link (admin invite or self-serve from pricing). Acceptance is in-app.
      */
     public static String vendorInviteBody(String locale, String name, String appUrl, String sendDate, String inviteUrl) {
+        return vendorInviteBody(locale, name, appUrl, sendDate, inviteUrl, null);
+    }
+
+    public static String vendorInviteBody(String locale, String name, String appUrl, String sendDate,
+                                          String inviteUrl, String vendorVerificationBookingUrl) {
         String loc = normalizeLocale(locale);
         String n = (name == null || name.isBlank())
                 ? ("en".equals(loc) ? "there" : "fr".equals(loc) ? "à vous" : "a ti")
                 : name.trim();
         String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
         String link = (inviteUrl == null || inviteUrl.isBlank()) ? url + "/vendor-invite" : inviteUrl.trim();
+        String booking = vendorVerificationBookingUrl == null ? "" : vendorVerificationBookingUrl.trim();
         return switch (loc) {
-            case "en" -> vendorInviteEn(n, url, sendDate, link);
-            case "fr" -> vendorInviteFr(n, url, sendDate, link);
-            default -> vendorInviteEs(n, url, sendDate, link);
+            case "en" -> vendorInviteCombinedEn(n, url, sendDate, link, booking);
+            case "fr" -> vendorInviteCombinedFr(n, url, sendDate, link, booking);
+            default -> vendorInviteCombinedEs(n, url, sendDate, link, booking);
         };
     }
 
-    private static String vendorInviteEs(String n, String url, String sendDate, String inviteUrl) {
+    private static String vendorInviteCombinedEs(String n, String url, String sendDate, String inviteUrl, String bookingUrl) {
+        return vendorInviteAcceptHeaderEs(n, sendDate, inviteUrl, url)
+                + vendorWelcomeMxEs(n, url, sendDate, bookingUrl, true)
+                + vendorInviteAcceptFooterEs(inviteUrl);
+    }
+
+    private static String vendorInviteCombinedEn(String n, String url, String sendDate, String inviteUrl, String bookingUrl) {
+        return vendorInviteAcceptHeaderEn(n, sendDate, inviteUrl, url)
+                + vendorWelcomeMxEn(n, url, sendDate, bookingUrl, true)
+                + vendorInviteAcceptFooterEn(inviteUrl);
+    }
+
+    private static String vendorInviteCombinedFr(String n, String url, String sendDate, String inviteUrl, String bookingUrl) {
+        return vendorInviteAcceptHeaderFr(n, sendDate, inviteUrl, url)
+                + vendorWelcomeMxFr(n, url, sendDate, bookingUrl, true)
+                + vendorInviteAcceptFooterFr(inviteUrl);
+    }
+
+    private static String vendorInviteAcceptHeaderEs(String n, String sendDate, String inviteUrl, String appUrl) {
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
-                + "El equipo de TarantulApp te invitó a activar tu perfil como vendor en el marketplace. Para que "
-                + "realmente entres al flujo (storefront, checklist y la videollamada de verificación con nosotros), "
-                + "primero necesitas aceptar esta invitación con la misma cuenta de correo ya registrada en TarantulApp.\n\n"
-                + "1) Abre el enlace en tu teléfono o computadora.\n"
-                + "2) Inicia sesión (si aún no estás dentro).\n"
-                + "3) Pulsa “Aceptar invitación” en la pantalla que carga.\n\n"
+                + "Bienvenido al programa Vendor de TarantulApp. Este correo es tu kit completo (tier dinámico, "
+                + "badge \"Tienda Verificada\", videollamada). Para activar storefront y publicar, acepta la invitación "
+                + "con la misma cuenta de correo ya registrada:\n\n"
+                + "1) Abre el enlace.\n"
+                + "2) Inicia sesión si hace falta.\n"
+                + "3) Pulsa «Aceptar invitación».\n\n"
                 + "Enlace seguro:\n"
                 + inviteUrl + "\n\n"
-                + "Web: " + url + "\n\n"
-                + "Si el enlace caducó o no te deja entrar, responde a este correo y reenviamos otra invitación desde admin.\n\n"
+                + "Web: " + appUrl + "\n\n"
+                + "Abajo está todo el detalle. Puedes leer primero y aceptar cuando estés listo.\n\n"
+                + "────────\n\n";
+    }
+
+    private static String vendorInviteAcceptHeaderEn(String n, String sendDate, String inviteUrl, String appUrl) {
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "Welcome to the TarantulApp Vendor program. This email is your full kit (dynamic tier, "
+                + "\"Verified Shop\" badge, live verification call). To activate your storefront and publish, "
+                + "accept the invitation while signed in as the account email we have on file:\n\n"
+                + "1) Open the secure link.\n"
+                + "2) Log in if needed.\n"
+                + "3) Tap “Accept invitation”.\n\n"
+                + "Secure link:\n"
+                + inviteUrl + "\n\n"
+                + "Web: " + appUrl + "\n\n"
+                + "Everything below is reference — read first, accept when ready.\n\n"
+                + "────────\n\n";
+    }
+
+    private static String vendorInviteAcceptHeaderFr(String n, String sendDate, String inviteUrl, String appUrl) {
+        return "Bonjour " + n + ",\n\n"
+                + "Date du message : " + sendDate + "\n\n"
+                + "Bienvenue au programme Vendeur TarantulApp. Cet e-mail est votre kit complet (tier dynamique, "
+                + "badge « Boutique Vérifiée », visio). Pour activer la vitrine et publier, acceptez l’invitation "
+                + "avec le même compte e-mail déjà enregistré :\n\n"
+                + "1) Ouvrez le lien.\n"
+                + "2) Connectez-vous si nécessaire.\n"
+                + "3) Appuyez sur « Accepter l’invitation ».\n\n"
+                + "Lien sécurisé :\n"
+                + inviteUrl + "\n\n"
+                + "Web : " + appUrl + "\n\n"
+                + "Le détail complet suit — lisez d’abord, acceptez quand vous êtes prêt.\n\n"
+                + "────────\n\n";
+    }
+
+    private static String vendorInviteAcceptFooterEs(String inviteUrl) {
+        return "\n────────\n\n"
+                + "Activar tu perfil vendor\n\n"
+                + "Cuando termines de leer, acepta aquí (misma cuenta de correo):\n"
+                + inviteUrl + "\n\n"
+                + "Si el enlace caducó, responde a este correo y reenviamos otra invitación.\n\n"
                 + "— El equipo de TarantulApp\n";
     }
 
-    private static String vendorInviteEn(String n, String url, String sendDate, String inviteUrl) {
-        return "Hi " + n + ",\n\n"
-                + "Message date: " + sendDate + "\n\n"
-                + "The TarantulApp team invited you to activate your vendor profile on the marketplace. To get into the full "
-                + "flow (storefront, checklist, and our live verification call), please accept this invitation while signed "
-                + "in as the exact TarantulApp account email we have on file.\n\n"
-                + "1) Open the secure link.\n"
-                + "2) Log in if needed.\n"
-                + "3) Tap “Accept invitation” on the page that loads.\n\n"
-                + "Secure link:\n"
+    private static String vendorInviteAcceptFooterEn(String inviteUrl) {
+        return "\n────────\n\n"
+                + "Activate your vendor profile\n\n"
+                + "When you are ready, accept here (same account email):\n"
                 + inviteUrl + "\n\n"
-                + "Web: " + url + "\n\n"
-                + "If the link expired or login looks wrong, reply to this email and we’ll resend from admin.\n\n"
+                + "If the link expired, reply to this email and we will resend.\n\n"
                 + "— The TarantulApp team\n";
     }
 
-    private static String vendorInviteFr(String n, String url, String sendDate, String inviteUrl) {
-        return "Bonjour " + n + ",\n\n"
-                + "Date du message : " + sendDate + "\n\n"
-                + "L’équipe TarantulApp vous invite à activer votre profil vendeur sur le marketplace. Pour démarrer le parcours "
-                + "(vitrine, checklist et appel vidéo de vérification), acceptez d’abord cette invitation en vous connectant avec le même compte "
-                + "(e-mail) déjà enregistré sur TarantulApp.\n\n"
-                + "1) Ouvrez le lien.\n"
-                + "2) Connectez-vous si nécessaire.\n"
-                + "3) Appuyez sur « Accepter l’invitation » sur la page.\n\n"
-                + "Lien sécurisé :\n"
+    private static String vendorInviteAcceptFooterFr(String inviteUrl) {
+        return "\n────────\n\n"
+                + "Activer votre profil vendeur\n\n"
+                + "Quand vous êtes prêt, acceptez ici (même e-mail de compte) :\n"
                 + inviteUrl + "\n\n"
-                + "Web : " + url + "\n\n"
-                + "Si le lien a expiré ou la connexion semble incorrecte, répondez à ce message — nous renverrons depuis l’admin.\n\n"
+                + "Si le lien a expiré, répondez à ce message pour un renvoi.\n\n"
                 + "— L’équipe TarantulApp\n";
     }
 
@@ -716,12 +767,25 @@ public final class BetaMailBodies {
      * the "Tienda Verificada" badge (not granted by activation alone).
      */
     private static String vendorWelcomeMxEs(String n, String url, String sendDate, String bookingUrl) {
+        return vendorWelcomeMxEs(n, url, sendDate, bookingUrl, false);
+    }
+
+    private static String vendorWelcomeMxEs(String n, String url, String sendDate, String bookingUrl, boolean invitePhase) {
         String sell = url + "/marketplace/sell";
-        return "Hola " + n + ",\n\n"
+        String intro = invitePhase
+                ? ""
+                : ("Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
                 + "Gracias por sumar tu tienda a TarantulApp. Activamos tu cuenta de vendor en el marketplace — este "
-                + "correo te explica qué ya tienes activo, qué falta, y cómo conseguirlo.\n\n"
-                + "Beneficios ACTIVOS desde hoy (sin costo inicial)\n\n"
+                + "correo te explica qué ya tienes activo, qué falta, y cómo conseguirlo.\n\n");
+        String benefitsHead = invitePhase
+                ? "Beneficios al aceptar la invitación (sin costo inicial)\n\n"
+                : "Beneficios ACTIVOS desde hoy (sin costo inicial)\n\n";
+        String publishWhilePending = invitePhase
+                ? "Tras aceptar podrás publicar sin límite. Sin el badge, tu storefront aparece como \"Tienda nueva\".\n\n"
+                : "Mientras tanto puedes publicar sin límite. Sin el badge, tu storefront aparece como \"Tienda nueva\".\n\n";
+        return intro
+                + benefitsHead
                 + "• Storefront en la app con tu marca, políticas de envío y contacto.\n"
                 + "• Publicar en todas las categorías: tarántulas, proyectos de cría, comida viva, sustratos, "
                 + "terrarios y accesorios.\n"
@@ -758,7 +822,7 @@ public final class BetaMailBodies {
                 + "Duración típica: 15 a 20 minutos. Tras la llamada, el equipo comunica si otorgamos el badge; suele ser en 24 a 72 horas hábiles.\n\n"
                 + "¿Por qué lo hacemos así?\n\n"
                 + "El badge protege la confianza de la comunidad: compradores que arriesgan con desconocidos quieren saber que existe un espacio real y inventario propio. Tú también ganas visibilidad frente a reventas.\n\n"
-                + "Mientras tanto puedes publicar sin límite. Sin el badge, tu storefront aparece como \"Tienda nueva\".\n\n"
+                + publishWhilePending
                 + "Primeros pasos (15 a 30 min)\n\n"
                 + "1. Entra en " + url + "\n"
                 + "2. Ve a Marketplace > Vender: " + sell + "\n"
@@ -779,13 +843,26 @@ public final class BetaMailBodies {
     }
 
     private static String vendorWelcomeMxEn(String n, String url, String sendDate, String bookingUrl) {
+        return vendorWelcomeMxEn(n, url, sendDate, bookingUrl, false);
+    }
+
+    private static String vendorWelcomeMxEn(String n, String url, String sendDate, String bookingUrl, boolean invitePhase) {
         String sell = url + "/marketplace/sell";
-        return "Hi " + n + ",\n\n"
+        String intro = invitePhase
+                ? ""
+                : ("Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
                 + "Thanks for bringing your shop to TarantulApp. Your vendor account is activated in the "
                 + "marketplace — this email walks you through what is already active, what is still pending, "
-                + "and how to earn it.\n\n"
-                + "What is ACTIVE from day one (no upfront cost)\n\n"
+                + "and how to earn it.\n\n");
+        String benefitsHead = invitePhase
+                ? "Benefits when you accept the invitation (no upfront cost)\n\n"
+                : "What is ACTIVE from day one (no upfront cost)\n\n";
+        String publishWhilePending = invitePhase
+                ? "After you accept, you can publish without limits. Without the badge, your storefront shows as \"New shop\".\n\n"
+                : "You can publish without limits while pending. Without the badge, your storefront shows as \"New shop\".\n\n";
+        return intro
+                + benefitsHead
                 + "• Storefront in the app with your brand, shipping policies, and contact details.\n"
                 + "• Listings across every category: tarantulas, breeding projects, live food, substrates, "
                 + "terrariums, and accessories.\n"
@@ -822,7 +899,7 @@ public final class BetaMailBodies {
                 + "Typical duration: 15–20 minutes. After the call, we follow up on whether the badge is granted — usually within 24–72 business hours.\n\n"
                 + "Why we do it this way\n\n"
                 + "The badge protects community trust: buyers sending money to strangers want confidence there is a real operation and owned inventory. Serious shops win; resellers with stolen photos lose.\n\n"
-                + "You can publish without limits while pending. Without the badge, your storefront shows as \"New shop\".\n\n"
+                + publishWhilePending
                 + "First steps (15 to 30 min)\n\n"
                 + "1. Log in at " + url + "\n"
                 + "2. Go to Marketplace > Sell: " + sell + "\n"
@@ -843,13 +920,26 @@ public final class BetaMailBodies {
     }
 
     private static String vendorWelcomeMxFr(String n, String url, String sendDate, String bookingUrl) {
+        return vendorWelcomeMxFr(n, url, sendDate, bookingUrl, false);
+    }
+
+    private static String vendorWelcomeMxFr(String n, String url, String sendDate, String bookingUrl, boolean invitePhase) {
         String sell = url + "/marketplace/sell";
-        return "Bonjour " + n + ",\n\n"
+        String intro = invitePhase
+                ? ""
+                : ("Bonjour " + n + ",\n\n"
                 + "Date du message : " + sendDate + "\n\n"
                 + "Merci d'apporter votre boutique à TarantulApp. Votre compte vendeur est activé dans la "
                 + "marketplace — cet e-mail détaille ce qui est déjà actif, ce qui reste en attente, et "
-                + "comment l'obtenir.\n\n"
-                + "Avantages ACTIFS dès aujourd'hui (sans coût initial)\n\n"
+                + "comment l'obtenir.\n\n");
+        String benefitsHead = invitePhase
+                ? "Avantages à l’acceptation de l’invitation (sans coût initial)\n\n"
+                : "Avantages ACTIFS dès aujourd'hui (sans coût initial)\n\n";
+        String publishWhilePending = invitePhase
+                ? "Après acceptation, vous pourrez tout publier. Sans le badge, la vitrine s’affiche comme « Nouvelle boutique ».\n\n"
+                : "Vous pouvez déjà tout publier. Sans le badge, la vitrine s'affiche comme « Nouvelle boutique ».\n\n";
+        return intro
+                + benefitsHead
                 + "• Boutique dans l'app avec votre marque, politiques d'envoi et contact.\n"
                 + "• Annonces dans toutes les catégories : mygales, projets d'élevage, nourriture vive, "
                 + "substrats, terrariums et accessoires.\n"
@@ -886,7 +976,7 @@ public final class BetaMailBodies {
                 + "Durée typique : 15 à 20 minutes. Après l'appel, l'équipe confirme si le badge est attribué — en général sous 24 à 72 heures ouvrées.\n\n"
                 + "Pourquoi cette méthode\n\n"
                 + "Le badge protège la confiance : les acheteurs veulent savoir qu'une boutique réelle existe avec son propre inventaire. Les boutiques sérieuses ressortent.\n\n"
-                + "Vous pouvez déjà tout publier. Sans le badge, la vitrine s'affiche comme « Nouvelle boutique ».\n\n"
+                + publishWhilePending
                 + "Premiers pas (15 à 30 min)\n\n"
                 + "1. Connectez-vous sur " + url + "\n"
                 + "2. Allez dans Marketplace > Vendre : " + sell + "\n"

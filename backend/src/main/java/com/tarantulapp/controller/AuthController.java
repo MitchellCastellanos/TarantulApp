@@ -127,7 +127,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "INVALID_TOKEN"));
         }
         User u = vendorInviteService.accept(uid, tok);
-        vendorInviteService.sendWelcomeAfterAccept(u);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("ok", true);
         out.put("verifiedBreeder", true);

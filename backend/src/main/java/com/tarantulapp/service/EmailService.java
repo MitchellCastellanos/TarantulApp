@@ -438,7 +438,8 @@ public class EmailService {
     public void sendVendorInviteEmail(String toEmail, String displayName, String locale, String inviteAbsoluteUrl) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         String sendDate = formatBetaSendDateForLocale(loc);
-        String body = BetaMailBodies.vendorInviteBody(loc, displayName, baseUrl, sendDate, inviteAbsoluteUrl);
+        String body = BetaMailBodies.vendorInviteBody(loc, displayName, baseUrl, sendDate, inviteAbsoluteUrl,
+                vendorVerificationBookingUrl);
         String subject = BetaMailBodies.vendorInviteSubject(loc);
         try {
             doSend(toEmail, subject, body);

@@ -39,6 +39,8 @@ export default function ProPage() {
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const [androidSyncing, setAndroidSyncing] = useState(false)
   const [androidMessage, setAndroidMessage] = useState('')
+  const [vendorInviteBusy, setVendorInviteBusy] = useState(false)
+  const [vendorInviteMessage, setVendorInviteMessage] = useState('')
   const [proAudience, setProAudience] = useState(() => {
     try {
       const s = localStorage.getItem(PRO_AUDIENCE_KEY)
@@ -145,6 +147,31 @@ export default function ProPage() {
       pollingRef.current = false
     }
   }, [checkout, user?.id, sessionId])
+
+  const handleRequestVendorInvite = async () => {
+    if (!user) {
+      navigate('/login', { state: { redirectAfterAuth: '/pro' } })
+      return
+    }
+    setVendorInviteMessage('')
+    setVendorInviteBusy(true)
+    try {
+      const loc = (typeof navigator !== 'undefined' && navigator.language?.startsWith('en'))
+        ? 'en'
+        : (navigator.language?.startsWith('fr') ? 'fr' : 'es')
+      await billingService.requestVendorInvite(loc)
+      setVendorInviteMessage(t('pro.vendorInviteEmailSent'))
+    } catch (err) {
+      const code = err?.response?.data?.error
+      if (code === 'USER_ALREADY_VENDOR') {
+        setVendorInviteMessage(t('pro.vendorInviteAlreadyVendor'))
+      } else {
+        setVendorInviteMessage(t('pro.vendorInviteRequestError'))
+      }
+    } finally {
+      setVendorInviteBusy(false)
+    }
+  }
 
   const handleUpgrade = async () => {
     if (!user) {
@@ -429,9 +456,22 @@ export default function ProPage() {
                   <li>{t('pro.vendorActivationStep2')}</li>
                   <li>{t('pro.vendorActivationStep3')}</li>
                 </ol>
-                <Link to="/marketplace#vendor-activation" className="btn btn-sm btn-outline-secondary">
-                  {t('pro.vendorActivationCta')}
-                </Link>
+                <div className="d-flex flex-wrap gap-2 align-items-center">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-dark"
+                    disabled={vendorInviteBusy}
+                    onClick={handleRequestVendorInvite}
+                  >
+                    {vendorInviteBusy ? t('common.loading') : t('pro.vendorActivationCta')}
+                  </button>
+                  <Link to="/marketplace/sell" className="btn btn-sm btn-outline-secondary">
+                    {t('pro.vendorActivationSellCta')}
+                  </Link>
+                </div>
+                {vendorInviteMessage ? (
+                  <p className="small text-muted mb-0 mt-2">{vendorInviteMessage}</p>
+                ) : null}
               </div>
               {!isPro && user && !inTrial && (
                 <p className="small text-muted mb-3">{t('pro.ctaRegisterTrialReminder')}</p>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
+import billingService from '../services/billingService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
@@ -69,7 +70,24 @@ export default function MarketplaceSellerPage() {
   const [uploadingListingImage, setUploadingListingImage] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [message, setMessage] = useState('')
+  const [vendorInviteBusy, setVendorInviteBusy] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
+
+  const requestVendorInvite = async () => {
+    setVendorInviteBusy(true)
+    try {
+      const loc = typeof navigator !== 'undefined' && navigator.language?.startsWith('en')
+        ? 'en'
+        : (navigator.language?.startsWith('fr') ? 'fr' : 'es')
+      await billingService.requestVendorInvite(loc)
+      setMessage(t('marketplace.vendorInviteEmailSent'))
+    } catch (err) {
+      const code = err?.response?.data?.error
+      setMessage(code === 'USER_ALREADY_VENDOR' ? t('pro.vendorInviteAlreadyVendor') : t('pro.vendorInviteRequestError'))
+    } finally {
+      setVendorInviteBusy(false)
+    }
+  }
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
@@ -340,9 +358,14 @@ export default function MarketplaceSellerPage() {
               </div>
               {!sellerProgram.reviewedVendor && (
                 <div className="mt-2">
-                  <Link to="/marketplace#vendor-activation" className="btn btn-sm btn-outline-secondary">
-                    {t('marketplace.vendorApplyNow')}
-                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={vendorInviteBusy}
+                    onClick={requestVendorInvite}
+                  >
+                    {vendorInviteBusy ? t('common.loading') : t('marketplace.vendorApplyNow')}
+                  </button>
                 </div>
               )}
             </div>

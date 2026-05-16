@@ -2,6 +2,7 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.util.SecurityHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,11 +31,14 @@ class BillingControllerTest {
     @Mock
     private BillingService billingService;
 
+    @Mock
+    private VendorInviteService vendorInviteService;
+
     private BillingController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new BillingController(userRepository, securityHelper, billingService);
+        controller = new BillingController(userRepository, securityHelper, billingService, vendorInviteService);
     }
 
     @Test

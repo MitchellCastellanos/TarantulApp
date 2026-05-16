@@ -56,29 +56,6 @@ public class VendorInviteService {
         return userRepository.findById(targetUserId).orElse(u);
     }
 
-    /**
-     * After the user accepts in-app, sends the long-form vendor welcome (same as manual admin outreach).
-     * Swallows SMTP errors so acceptance always commits.
-     */
-    public void sendWelcomeAfterAccept(User acceptedUser) {
-        if (acceptedUser == null) {
-            return;
-        }
-        try {
-            String loc = resolveLocale(acceptedUser, null);
-            String greeting;
-            if (acceptedUser.getDisplayName() != null && !acceptedUser.getDisplayName().isBlank()) {
-                greeting = acceptedUser.getDisplayName().trim();
-            } else {
-                greeting = acceptedUser.getEmail();
-            }
-            emailService.sendBetaCampaignEmail(acceptedUser.getEmail(), greeting, "vendor_welcome_mx", loc);
-        } catch (Exception e) {
-            log.warn("Vendor welcome after accept failed for {}: {}", acceptedUser.getId(),
-                    e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
-        }
-    }
-
     private String resolveLocale(User u, String requested) {
         if (requested != null && !requested.isBlank()) {
             return BetaMailBodies.normalizeLocale(requested);

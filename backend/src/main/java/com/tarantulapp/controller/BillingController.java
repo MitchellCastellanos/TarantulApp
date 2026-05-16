@@ -8,6 +8,7 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.util.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class BillingController {
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
     private final BillingService billingService;
+    private final VendorInviteService vendorInviteService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -83,10 +85,11 @@ public class BillingController {
     private String baseUrl;
 
     public BillingController(UserRepository userRepository, SecurityHelper securityHelper,
-                             BillingService billingService) {
+                             BillingService billingService, VendorInviteService vendorInviteService) {
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
         this.billingService = billingService;
+        this.vendorInviteService = vendorInviteService;
     }
 
     @GetMapping("/me")
@@ -96,6 +99,28 @@ public class BillingController {
         payload.put("androidBillingEnabled", billingService.isGooglePlayEnabled());
         payload.put("androidBillingMode", billingService.getGooglePlayMode());
         return ResponseEntity.ok(payload);
+    }
+
+    /**
+     * Self-serve vendor onboarding from pricing / marketplace: same invite email as admin (welcome kit + accept link).
+     */
+    @PostMapping("/vendor-invite/request")
+    public ResponseEntity<Map<String, Object>> requestVendorInvite(
+            @RequestBody(required = false) Map<String, String> body) {
+        UUID userId = securityHelper.getCurrentUserId();
+        String locale = body != null ? body.get("locale") : null;
+        try {
+            User user = vendorInviteService.sendInvite(userId, locale);
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("ok", true);
+            out.put("email", user.getEmail());
+            out.put("vendorInvitePending", user.getVendorInviteToken() != null);
+            out.put("vendorInviteExpiresAt", user.getVendorInviteExpiresAt());
+            out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
+            return ResponseEntity.ok(out);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", e.getMessage()));
+        }
     }
 
     @PostMapping("/portal")
