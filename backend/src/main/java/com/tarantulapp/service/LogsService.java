@@ -75,7 +75,7 @@ public class LogsService {
         log.setNotes(req.getNotes());
         FeedingLog saved = feedingLogRepository.save(log);
         if (Boolean.TRUE.equals(req.getPublishToFeed())) {
-            publishEventPost(userId, tarantulaId, "feeding", buildFeedingBody(saved));
+            publishEventPost(userId, tarantulaId, null, buildFeedingBody(saved));
         }
         return FeedingLogResponse.from(saved);
     }
@@ -111,7 +111,7 @@ public class LogsService {
         log.setPreMoltSigns(req.getPreMoltSigns());
         MoltLog saved = moltLogRepository.save(log);
         if (Boolean.TRUE.equals(req.getPublishToFeed())) {
-            publishEventPost(userId, tarantulaId, "molt", buildMoltBody(saved));
+            publishEventPost(userId, tarantulaId, null, buildMoltBody(saved));
         }
         return MoltLogResponse.from(saved);
     }
@@ -142,7 +142,7 @@ public class LogsService {
         log.setNotes(req.getNotes());
         BehaviorLog saved = behaviorLogRepository.save(log);
         if (Boolean.TRUE.equals(req.getPublishToFeed())) {
-            publishEventPost(userId, tarantulaId, "behavior", buildBehaviorBody(saved));
+            publishEventPost(userId, tarantulaId, null, buildBehaviorBody(saved));
         }
         return BehaviorLogResponse.from(saved);
     }
