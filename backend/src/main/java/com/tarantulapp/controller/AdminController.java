@@ -357,6 +357,8 @@ public class AdminController {
                 {"creator_partner_onboarding", "Creadores — brief y beneficios (post-bienvenida)", "Creators — brief & perks (after welcome)"},
                 {"creator_partner_reminder", "Creadores — recordatorio suave (video / contenido)", "Creators — gentle reminder (video)"},
                 {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
+                {"vendor_welcome_mx", "Vendor MX — bienvenida storefront (30 días cortesía, $199 MXN/mes)",
+                        "Vendor MX — storefront welcome (30-day complimentary, $199 MXN/month)"},
         };
         for (String[] r : data) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -471,11 +473,46 @@ public class AdminController {
         user.setVerifiedBreeder(verified);
         user.setVerifiedBreederAt(verified ? Instant.now() : null);
         userRepository.save(user);
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("id", user.getId());
-        out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
-        out.put("verifiedBreederAt", user.getVerifiedBreederAt());
-        return ResponseEntity.ok(out);
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        return ResponseEntity.ok(mapUser(user, counts));
+    }
+
+    /** Admin: list users with {@code verified_breeder=true} so the Vendors page can manage active storefronts. */
+    @GetMapping("/vendor-users")
+    public ResponseEntity<Map<String, Object>> vendorUsers(@RequestParam(defaultValue = "100") int limit) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        int cap = Math.min(Math.max(limit, 1), 500);
+        List<User> users = userRepository.findVerifiedBreedersForAdmin(PageRequest.of(0, cap));
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(
+                users.stream().map(User::getId).collect(Collectors.toList()));
+        List<Map<String, Object>> rows = users.stream()
+                .map(u -> mapUser(u, counts))
+                .collect(Collectors.toList());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("users", rows);
+        body.put("totalVendors", userRepository.countByVerifiedBreederTrue());
+        body.put("limit", cap);
+        return ResponseEntity.ok(body);
+    }
+
+    /** Admin: lookup a single user by email (case-insensitive) so vendor activation works without scrolling the recent list. */
+    @GetMapping("/user-lookup")
+    public ResponseEntity<Map<String, Object>> userLookup(@RequestParam("email") String email) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        String e = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        if (e.isEmpty()) {
+            throw new IllegalArgumentException("EMAIL_REQUIRED");
+        }
+        User user = userRepository.findByEmail(e).orElse(null);
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (user == null) {
+            body.put("found", false);
+            return ResponseEntity.ok(body);
+        }
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        body.put("found", true);
+        body.put("user", mapUser(user, counts));
+        return ResponseEntity.ok(body);
     }
 
     @PatchMapping("/users/{id}/plan")
@@ -577,7 +614,10 @@ public class AdminController {
         return ResponseEntity.ok(out);
     }
 
-    private static final Set<String> OUTREACH_EMAIL_TEMPLATE_KEYS = Set.of("play_early_access_web");
+    private static final Set<String> OUTREACH_EMAIL_TEMPLATE_KEYS = Set.of(
+            "play_early_access_web",
+            "vendor_welcome_mx"
+    );
 
     /**
      * Sends a program outreach template to any registered user (not gated on beta tester).
@@ -801,8 +841,11 @@ public class AdminController {
         out.put("id", u.getId());
         out.put("email", u.getEmail());
         out.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
+        out.put("publicHandle", u.getPublicHandle() == null ? "" : u.getPublicHandle());
         putPlanAccessFields(u, out);
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
+        out.put("verifiedBreeder", Boolean.TRUE.equals(u.getVerifiedBreeder()));
+        out.put("verifiedBreederAt", u.getVerifiedBreederAt());
         out.put("tarantulasCount", spiderCounts.getOrDefault(u.getId(), 0L));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());

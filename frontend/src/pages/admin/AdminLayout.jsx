@@ -22,6 +22,14 @@ export default function AdminLayout() {
           </li>
           <li className="nav-item">
             <NavLink
+              to="/admin/vendors"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              {t('admin.navVendors')}
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink
               to="/admin/beta"
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >

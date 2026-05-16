@@ -371,7 +371,7 @@ export default function ProPage() {
                   {tierCard({
                     titleKey: 'pro.tierFreeTitle',
                     taglineKey: 'pro.tierFreeTagline',
-                    listKeys: ['pro.tierFreeLi1', 'pro.tierFreeLi2', 'pro.tierFreeLi3', 'pro.tierFreeLi4', 'pro.tierFreeLi5'],
+                    listKeys: ['pro.tierFreeLi1', 'pro.tierFreeLi2', 'pro.tierFreeLi3', 'pro.tierFreeLi4', 'pro.tierFreeLi5', 'pro.tierFreeLi6'],
                   })}
                 </div>
                 <div
@@ -385,7 +385,7 @@ export default function ProPage() {
                     titleKey: 'pro.tierProTitle',
                     priceOverride: t(`pro.regions.${billingRegion}.tierHeadline`),
                     taglineKey: 'pro.tierProTagline',
-                    listKeys: ['pro.tierProLi1', 'pro.tierProLi2', 'pro.tierProLi3', 'pro.tierProLi4', 'pro.tierProLi5', 'pro.tierProLi6'],
+                    listKeys: ['pro.tierProLi1', 'pro.tierProLi2', 'pro.tierProLi3', 'pro.tierProLi4', 'pro.tierProLi5', 'pro.tierProLi6', 'pro.tierProLi7'],
                     corner: <span className="badge bg-dark position-absolute" style={{ top: 8, right: 10 }}>PRO</span>,
                   })}
                 </div>
@@ -403,7 +403,7 @@ export default function ProPage() {
                       defaultValue: t('pro.tierVendorPrice'),
                     }),
                     taglineKey: 'pro.tierVendorTagline',
-                    listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4'],
+                    listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4', 'pro.tierVendorLi5'],
                     footer: (
                       <div className="mt-2">
                         <span className="badge bg-success">{t('pro.tierLive')}</span>
