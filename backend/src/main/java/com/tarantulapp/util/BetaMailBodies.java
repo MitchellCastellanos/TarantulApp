@@ -32,7 +32,14 @@ public final class BetaMailBodies {
             "android_play_beta",
             "play_early_access_web",
             "creator_partner_onboarding",
-            "creator_partner_reminder"
+            "creator_partner_reminder",
+            "vendor_welcome_mx"
+    );
+
+    /** Campaign keys that may target any registered user (no beta-tester gating). */
+    private static final Set<String> NON_BETA_RECIPIENT_KEYS = Set.of(
+            "play_early_access_web",
+            "vendor_welcome_mx"
     );
 
     private BetaMailBodies() {
@@ -44,7 +51,7 @@ public final class BetaMailBodies {
 
     /** Batch key that may be sent to any registered user (e.g. already on web, not yet on Play). */
     public static boolean allowsNonBetaRecipients(String campaignKey) {
-        return campaignKey != null && "play_early_access_web".equalsIgnoreCase(campaignKey.trim());
+        return campaignKey != null && NON_BETA_RECIPIENT_KEYS.contains(campaignKey.trim().toLowerCase(Locale.ROOT));
     }
 
     public static String welcomeSubject(String locale) {
@@ -95,6 +102,11 @@ public final class BetaMailBodies {
             case "creator_partner_reminder" -> en
                     ? "TarantulApp — Quick nudge: still up for a short video?"
                     : "TarantulApp — ¿Seguimos con el video corto?";
+            case "vendor_welcome_mx" -> switch (loc) {
+                case "en" -> "TarantulApp Marketplace — Your vendor storefront is live (Mexico)";
+                case "fr" -> "TarantulApp Marketplace — Votre boutique vendeur est active (Mexique)";
+                default -> "TarantulApp Marketplace — Tu tienda vendor ya está activa (México)";
+            };
             default -> en ? "TarantulApp beta — Update" : "TarantulApp beta — Actualización";
         };
     }
@@ -330,6 +342,17 @@ public final class BetaMailBodies {
                 case "en" -> playEarlyAccessWebEn(n, url, sendDate);
                 case "fr" -> playEarlyAccessWebFr(n, url, sendDate);
                 default -> playEarlyAccessWebEs(n, url, sendDate);
+            };
+        }
+        if ("vendor_welcome_mx".equals(k)) {
+            String n = (name == null || name.isBlank())
+                    ? ("en".equals(loc) ? "vendor" : "fr".equals(loc) ? "vendeur" : "tienda")
+                    : name.trim();
+            String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+            return switch (loc) {
+                case "en" -> vendorWelcomeMxEn(n, url, sendDate);
+                case "fr" -> vendorWelcomeMxFr(n, url, sendDate);
+                default -> vendorWelcomeMxEs(n, url, sendDate);
             };
         }
         String n = (name == null || name.isBlank())
@@ -576,6 +599,132 @@ public final class BetaMailBodies {
                 + "version si besoin et réinstallez depuis le lien Play ci-dessus.\n\n"
                 + "Le site reste sur " + url + " . Si le Play Store refuse l'accès, vérifiez le compte Google ou répondez à cet e-mail.\n\n"
                 + "Merci de votre confiance !\n\n"
+                + "— L'équipe TarantulApp\n";
+    }
+
+    /**
+     * Vendor / store welcome (Mexico). Sent after admin flips {@code verifiedBreeder=true}. The recipient
+     * is the storefront owner; copy explains 30-day complimentary then $199 MXN / month, listing categories
+     * (tarantulas, breeding projects, supplies, substrates, terrariums, accessories), 6% commission, badge.
+     */
+    private static String vendorWelcomeMxEs(String n, String url, String sendDate) {
+        String sell = url + "/marketplace/sell";
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Gracias por sumar tu tienda a TarantulApp. Activamos tu cuenta de vendor en el marketplace — este correo "
+                + "es tu guía para empezar a publicar hoy.\n\n"
+                + "Tu mes de cortesía (30 días)\n\n"
+                + "• Storefront en la app con tu marca, políticas de envío y contacto.\n"
+                + "• Publicar en todas las categorías: tarántulas, proyectos de cría, comida viva, sustratos, terrarios y "
+                + "accesorios.\n"
+                + "• Badge de tienda (criador verificado) visible junto a la comunidad.\n"
+                + "• Inbox de compradores dentro de la app para cerrar tratos con historial.\n\n"
+                + "Después del primer mes la membresía Vendor en México es de $199 MXN al mes. Te avisamos antes de que "
+                + "termine el periodo gratuito para agregar método de pago; mientras tanto, prioridad = publicar y llenar "
+                + "tu catálogo.\n\n"
+                + "Por qué conviene vender aquí (México)\n\n"
+                + "• Audiencia enfocada: keepers y breeders que ya usan la app para colección y recordatorios.\n"
+                + "• Storefront, ubicación y políticas visibles antes de escribirte; menos fricción que un post suelto en "
+                + "grupos.\n"
+                + "• Comisión del 6% por venta (vs 10% Community / 8% Pro), hasta 250 anuncios activos y listing boost.\n\n"
+                + "Cómo publicar (15–30 min)\n\n"
+                + "1. Entra en " + url + "\n"
+                + "2. Ve a Marketplace → Vender: " + sell + "\n"
+                + "3. Configura tu storefront: nombre, tagline, política de envío, tiempos de entrega y WhatsApp o "
+                + "Instagram de contacto.\n"
+                + "4. Publica tu primer anuncio con foto clara, precio en MXN y descripción honesta (talla, sexo, "
+                + "origen).\n"
+                + "5. Repite con tu inventario fuerte (tarántulas + insumos si manejas).\n"
+                + "6. Responde rápido el inbox del marketplace — sube tu conversión y reputación.\n\n"
+                + "Reglas rápidas\n\n"
+                + "• Cumple normativa local de fauna, envíos y permisos cuando aplique (UMA / CITES si corresponde).\n"
+                + "• TarantulApp no custodia pagos: acuerden precio, envío y garantía en el chat de la app y usen métodos "
+                + "que ya confíen (transferencia, etc.).\n"
+                + "• Fotos reales y stock actualizado; cuando se vende, marca el anuncio como vendido.\n\n"
+                + "¿Algo no carga? Usa \"Reportar un bug\" en la app o responde este correo con tu @handle deseado y "
+                + "dudas de categorías.\n\n"
+                + "¡Bienvenido al marketplace — nos encanta ver el catálogo crecer!\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String vendorWelcomeMxEn(String n, String url, String sendDate) {
+        String sell = url + "/marketplace/sell";
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "Thanks for bringing your shop to TarantulApp. Your vendor account is activated in the marketplace — "
+                + "this email is your guide to start publishing today.\n\n"
+                + "Your complimentary month (30 days)\n\n"
+                + "• Storefront in the app with your brand, shipping policies, and contact details.\n"
+                + "• Listings across every category: tarantulas, breeding projects, live food, substrates, terrariums, "
+                + "and accessories.\n"
+                + "• Verified-breeder badge visible alongside community keepers.\n"
+                + "• In-app buyer inbox so every deal has a history.\n\n"
+                + "After the first month the Vendor membership in Mexico is $199 MXN / month. We'll remind you before the "
+                + "free window ends so you can add a payment method; for now, priority = publishing and filling your "
+                + "catalog.\n\n"
+                + "Why selling here works (Mexico)\n\n"
+                + "• Focused audience: keepers and breeders already using the app for their collection.\n"
+                + "• Buyers see your storefront, location, and policies before reaching out — less friction than scattered "
+                + "Facebook posts.\n"
+                + "• 6% commission per sale (vs 10% Community / 8% Pro), up to 250 active listings, and listing boost.\n\n"
+                + "How to publish (15–30 min)\n\n"
+                + "1. Log in at " + url + "\n"
+                + "2. Go to Marketplace → Sell: " + sell + "\n"
+                + "3. Set up your storefront: name, tagline, shipping policy, delivery times, and WhatsApp/Instagram "
+                + "contact.\n"
+                + "4. Publish your first listing with a clear photo, price in MXN, and an honest description (size, sex, "
+                + "origin).\n"
+                + "5. Repeat with your strongest inventory (tarantulas + supplies if you carry them).\n"
+                + "6. Reply quickly in the marketplace inbox — it lifts conversion and reputation.\n\n"
+                + "Quick rules\n\n"
+                + "• Follow local wildlife, shipping, and permit regulations when relevant (UMA / CITES if applicable).\n"
+                + "• TarantulApp does not custody payments: agree on price, shipping, and guarantee inside the app chat "
+                + "and use payment methods you already trust.\n"
+                + "• Real photos and current stock; when something sells, mark the listing as sold.\n\n"
+                + "Anything off? Use \"Report a bug\" in the app or reply with your desired @handle and category "
+                + "questions.\n\n"
+                + "Welcome to the marketplace — we love watching the catalog grow.\n\n"
+                + "— The TarantulApp team\n";
+    }
+
+    private static String vendorWelcomeMxFr(String n, String url, String sendDate) {
+        String sell = url + "/marketplace/sell";
+        return "Bonjour " + n + ",\n\n"
+                + "Date du message : " + sendDate + "\n\n"
+                + "Merci d'apporter votre boutique à TarantulApp. Votre compte vendeur est activé dans la marketplace — "
+                + "cet e-mail est votre guide pour publier dès aujourd'hui.\n\n"
+                + "Votre mois offert (30 jours)\n\n"
+                + "• Boutique dans l'app avec votre marque, politiques d'envoi et contact.\n"
+                + "• Annonces dans toutes les catégories : mygales, projets d'élevage, nourriture vive, substrats, "
+                + "terrariums et accessoires.\n"
+                + "• Badge éleveur vérifié visible auprès de la communauté.\n"
+                + "• Boîte de réception acheteurs dans l'app avec historique.\n\n"
+                + "Après le premier mois, l'abonnement Vendor au Mexique est de 199 MXN / mois. Nous vous rappellerons "
+                + "avant la fin de la période offerte pour ajouter un moyen de paiement ; pour l'instant, priorité = "
+                + "publier et remplir votre catalogue.\n\n"
+                + "Pourquoi vendre ici (Mexique)\n\n"
+                + "• Audience ciblée : éleveurs déjà actifs sur l'app pour leur collection.\n"
+                + "• Acheteurs voient votre boutique, localisation et politiques avant de vous écrire — moins de friction "
+                + "que des posts isolés dans des groupes.\n"
+                + "• 6 % de commission par vente (vs 10 % Community / 8 % Pro), jusqu'à 250 annonces actives et listing "
+                + "boost.\n\n"
+                + "Comment publier (15–30 min)\n\n"
+                + "1. Connectez-vous sur " + url + "\n"
+                + "2. Allez dans Marketplace → Vendre : " + sell + "\n"
+                + "3. Configurez votre boutique : nom, tagline, politique d'envoi, délais et contact WhatsApp/"
+                + "Instagram.\n"
+                + "4. Publiez votre première annonce avec une photo claire, prix en MXN, description honnête (taille, "
+                + "sexe, origine).\n"
+                + "5. Répétez avec votre inventaire principal (mygales + consommables si vous en proposez).\n"
+                + "6. Répondez vite dans la messagerie marketplace — cela améliore conversion et réputation.\n\n"
+                + "Règles rapides\n\n"
+                + "• Respectez la réglementation locale faune/envois/permis (UMA / CITES si applicable).\n"
+                + "• TarantulApp ne séquestre pas les paiements : convenez prix, envoi et garantie dans le chat de l'app "
+                + "et utilisez les moyens que vous connaissez déjà.\n"
+                + "• Photos réelles et stock à jour ; quand un article est vendu, marquez l'annonce comme vendue.\n\n"
+                + "Si quelque chose cloche, utilisez « Report a bug » dans l'app ou répondez avec votre @handle souhaité "
+                + "et vos questions de catégories.\n\n"
+                + "Bienvenue dans la marketplace — nous aimons voir le catalogue grandir.\n\n"
                 + "— L'équipe TarantulApp\n";
     }
 

@@ -16,7 +16,9 @@ Checklist interno después de la llamada con el prospecto y antes/después del c
 ## 2. Mes gratis
 
 - Primer **30 días** sin cobro: comunicar en el correo (`docs/beta/vendor-welcome-email-template-es-2026-05-15.md`).
-- Después: **$99 MXN / mes** (copy en Pro/Vendor MX). Recordatorio de método de pago lo mandamos cuando implementemos cobro Vendor en Stripe; **por ahora prioridad = publicar**.
+- Después: **$199 MXN / mes** (copy en Pro/Vendor MX). Cobro Stripe Vendor: env vars listas (`STRIPE_PRICE_ID_VENDOR_MONTHLY_MX`, `..._YEARLY_MX`); falta crear los Products/Prices en Stripe y poblar Railway. Mientras tanto **prioridad = publicar**.
+
+> Activación + bienvenida desde **Admin → Vendors** (`/admin/vendors`): buscar usuario por correo, activar Vendor (flip `verified_breeder`), mandar correo ES/EN/FR en un clic.
 
 ## 3. Enviar correo
 

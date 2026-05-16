@@ -38,6 +38,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("select u from User u order by u.createdAt desc")
     List<User> findUsersForAdminOrderByCreatedDesc(Pageable pageable);
+
+    @Query("""
+            select u from User u
+            where u.verifiedBreeder = true
+            order by u.verifiedBreederAt desc nulls last, u.createdAt desc
+            """)
+    List<User> findVerifiedBreedersForAdmin(Pageable pageable);
+
+    long countByVerifiedBreederTrue();
     List<User> findByPlanAndTrialEndsAtBetween(
             UserPlan plan,
             LocalDateTime from,

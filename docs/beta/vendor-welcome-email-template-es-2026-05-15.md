@@ -4,7 +4,7 @@
 
 **Variables:** `{{name}}`, `{{businessName}}`, `{{appUrl}}`, `{{email}}`, `{{password}}` (solo si generaste contraseña temporal), `{{shopUrl}}`, `{{sellUrl}}`, `{{date}}`
 
-**Precio después del mes gratis:** **$99 MXN / mes** (Vendor México). El primer **30 días** van por cuenta de TarantulApp.
+**Precio después del mes gratis:** **$199 MXN / mes** (Vendor México). El primer **30 días** van por cuenta de TarantulApp.
 
 ---
 
@@ -21,7 +21,7 @@ Gracias por sumarte a **TarantulApp** con **{{businessName}}**. Ya activamos tu 
 - **Badge de tienda** y visibilidad en el marketplace junto a la comunidad (sin depender solo de grupos de Facebook).
 - **Inbox de compradores** dentro de la app para cerrar tratos con historial.
 
-Después del primer mes, la membresía Vendor en México es de **$99 MXN al mes**. Te avisaremos antes de que termine el periodo gratuito para que agregues método de pago si quieres seguir activo; **por ahora lo importante es que publiques y llenemos el catálogo**.
+Después del primer mes, la membresía Vendor en México es de **$199 MXN al mes**. Te avisaremos antes de que termine el periodo gratuito para que agregues método de pago si quieres seguir activo; **por ahora lo importante es que publiques y llenemos el catálogo**.
 
 ### Por qué conviene vender aquí (mercado MX)
 

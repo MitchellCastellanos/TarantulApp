@@ -61,6 +61,24 @@ public class BillingController {
     @Value("${stripe.price-id-yearly-co:}")
     private String priceIdYearlyCo;
 
+    /** Vendor / Business — regional Stripe Price IDs. Blank when the Vendor products are not yet created in Stripe. */
+    @Value("${stripe.price-id-vendor-monthly-us:}")
+    private String vendorPriceIdMonthlyUs;
+    @Value("${stripe.price-id-vendor-yearly-us:}")
+    private String vendorPriceIdYearlyUs;
+    @Value("${stripe.price-id-vendor-monthly-ca:}")
+    private String vendorPriceIdMonthlyCa;
+    @Value("${stripe.price-id-vendor-yearly-ca:}")
+    private String vendorPriceIdYearlyCa;
+    @Value("${stripe.price-id-vendor-monthly-mx:}")
+    private String vendorPriceIdMonthlyMx;
+    @Value("${stripe.price-id-vendor-yearly-mx:}")
+    private String vendorPriceIdYearlyMx;
+    @Value("${stripe.price-id-vendor-monthly-co:}")
+    private String vendorPriceIdMonthlyCo;
+    @Value("${stripe.price-id-vendor-yearly-co:}")
+    private String vendorPriceIdYearlyCo;
+
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
@@ -105,7 +123,8 @@ public class BillingController {
 
         String interval = body != null ? body.getOrDefault("interval", "month") : "month";
         String regionRaw = body != null ? body.get("region") : null;
-        String priceId = resolveStripePriceId(interval, regionRaw);
+        String tier = normalizeBillingTier(body != null ? body.get("tier") : null);
+        String priceId = resolveStripePriceId(interval, regionRaw, tier);
 
         if (priceId == null || priceId.isBlank()) {
             return ResponseEntity.ok(Map.of("checkoutEnabled", false, "url", ""));
@@ -126,6 +145,7 @@ public class BillingController {
                     .setCancelUrl(baseUrl + "/pro?checkout=cancel")
                     .putMetadata("userId", userId.toString())
                     .putMetadata("billingRegion", normalizeBillingRegion(regionRaw))
+                    .putMetadata("billingTier", tier)
                     .build();
 
             Session session = Session.create(params);
@@ -234,22 +254,43 @@ public class BillingController {
 
     /**
      * Pick Stripe Price id for checkout. {@code region}: US, CA, MX, CO (case-insensitive).
-     * Resolution order per region: region-specific → US-specific → legacy global price ids.
+     * {@code tier}: {@code pro} (default) or {@code vendor}. Vendor falls back to US Vendor only — Vendor
+     * billing is review-gated, so we do not silently downgrade to the Pro price when the Vendor product is missing.
      */
-    private String resolveStripePriceId(String interval, String region) {
+    private String resolveStripePriceId(String interval, String region, String tier) {
         boolean yearly = "year".equalsIgnoreCase(String.valueOf(interval));
+        String r = normalizeBillingRegion(region);
+        if ("vendor".equalsIgnoreCase(String.valueOf(tier))) {
+            String vUs = yearly ? vendorPriceIdYearlyUs : vendorPriceIdMonthlyUs;
+            String vCa = yearly ? vendorPriceIdYearlyCa : vendorPriceIdMonthlyCa;
+            String vMx = yearly ? vendorPriceIdYearlyMx : vendorPriceIdMonthlyMx;
+            String vCo = yearly ? vendorPriceIdYearlyCo : vendorPriceIdMonthlyCo;
+            return switch (r) {
+                case "CA" -> firstNonBlank(vCa, vUs);
+                case "MX" -> firstNonBlank(vMx, vUs);
+                case "CO" -> firstNonBlank(vCo, vUs);
+                default -> firstNonBlank(vUs);
+            };
+        }
         String def = yearly ? priceIdYearly : priceIdMonthly;
         String us = yearly ? priceIdYearlyUs : priceIdMonthlyUs;
         String ca = yearly ? priceIdYearlyCa : priceIdMonthlyCa;
         String mx = yearly ? priceIdYearlyMx : priceIdMonthlyMx;
         String co = yearly ? priceIdYearlyCo : priceIdMonthlyCo;
-        String r = normalizeBillingRegion(region);
         return switch (r) {
             case "CA" -> firstNonBlank(ca, us, def);
             case "MX" -> firstNonBlank(mx, us, def);
             case "CO" -> firstNonBlank(co, us, def);
             default -> firstNonBlank(us, def);
         };
+    }
+
+    private static String normalizeBillingTier(String tier) {
+        if (tier == null || tier.isBlank()) {
+            return "pro";
+        }
+        String u = tier.trim().toLowerCase(Locale.ROOT);
+        return "vendor".equals(u) ? "vendor" : "pro";
     }
 
     private static String normalizeBillingRegion(String region) {
