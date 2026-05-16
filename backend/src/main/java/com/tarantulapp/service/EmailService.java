@@ -49,6 +49,10 @@ public class EmailService {
     @Value("${app.play-store-listing-url:https://play.google.com/store/apps/details?id=com.tarantulapp.app}")
     private String playStoreListingUrl;
 
+    /** Public scheduling URL for vendor Verified Shop video verification (Cal.com, Calendly, etc.). Optional. */
+    @Value("${app.vendor-verification-booking-url:}")
+    private String vendorVerificationBookingUrl;
+
     @Value("${app.mail.admin-notify-to:admin@tarantulapp.com}")
     private String adminNotifyTo;
 
@@ -419,7 +423,8 @@ public class EmailService {
             throw new IllegalArgumentException("INVALID_BETA_CAMPAIGN_KEY");
         }
         String sendDate = formatBetaSendDateForLocale(loc);
-        String body = BetaMailBodies.campaignBody(campaignKey, loc, displayName, baseUrl, sendDate);
+        String body = BetaMailBodies.campaignBody(campaignKey, loc, displayName, baseUrl, sendDate,
+                vendorVerificationBookingUrl);
         String subject = BetaMailBodies.campaignSubject(campaignKey, loc);
         try {
             doSend(toEmail, subject, body);
@@ -427,6 +432,20 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed beta campaign {} to {}: {}", campaignKey, LogSafe.maskEmail(toEmail), e.getMessage(), e);
             throw new RuntimeException("Fallo al enviar correo de campaña beta: " + e.getMessage());
+        }
+    }
+
+    public void sendVendorInviteEmail(String toEmail, String displayName, String locale, String inviteAbsoluteUrl) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        String sendDate = formatBetaSendDateForLocale(loc);
+        String body = BetaMailBodies.vendorInviteBody(loc, displayName, baseUrl, sendDate, inviteAbsoluteUrl);
+        String subject = BetaMailBodies.vendorInviteSubject(loc);
+        try {
+            doSend(toEmail, subject, body);
+            log.info("Vendor invite email sent to {} (locale={})", LogSafe.maskEmail(toEmail), loc);
+        } catch (Exception e) {
+            log.error("Failed vendor invite to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar la invitación vendor: " + e.getMessage());
         }
     }
 

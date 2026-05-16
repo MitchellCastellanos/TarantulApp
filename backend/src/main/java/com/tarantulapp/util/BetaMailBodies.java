@@ -331,6 +331,14 @@ public final class BetaMailBodies {
     }
 
     public static String campaignBody(String campaignKey, String locale, String name, String appUrl, String sendDate) {
+        return campaignBody(campaignKey, locale, name, appUrl, sendDate, null);
+    }
+
+    /**
+     * @param vendorVerificationBookingUrl optional URL (Cal.com, Calendly, etc.); if blank, email tells the recipient to reply to schedule.
+     */
+    public static String campaignBody(String campaignKey, String locale, String name, String appUrl, String sendDate,
+                                      String vendorVerificationBookingUrl) {
         String loc = normalizeLocale(locale);
         String k = campaignKey == null ? "" : campaignKey.trim().toLowerCase(Locale.ROOT);
         if ("play_early_access_web".equals(k)) {
@@ -349,10 +357,11 @@ public final class BetaMailBodies {
                     ? ("en".equals(loc) ? "vendor" : "fr".equals(loc) ? "vendeur" : "tienda")
                     : name.trim();
             String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+            String booking = vendorVerificationBookingUrl == null ? "" : vendorVerificationBookingUrl.trim();
             return switch (loc) {
-                case "en" -> vendorWelcomeMxEn(n, url, sendDate);
-                case "fr" -> vendorWelcomeMxFr(n, url, sendDate);
-                default -> vendorWelcomeMxEs(n, url, sendDate);
+                case "en" -> vendorWelcomeMxEn(n, url, sendDate, booking);
+                case "fr" -> vendorWelcomeMxFr(n, url, sendDate, booking);
+                default -> vendorWelcomeMxEs(n, url, sendDate, booking);
             };
         }
         String n = (name == null || name.isBlank())
@@ -602,13 +611,111 @@ public final class BetaMailBodies {
                 + "— L'équipe TarantulApp\n";
     }
 
+    private static String vendorVerifyBookingPreambleEs(String bookingUrl) {
+        String head = "Cita de verificación por videollamada (en vivo)\n\n";
+        if (bookingUrl != null && !bookingUrl.isBlank()) {
+            return head + "Agenda aquí: " + bookingUrl.trim() + "\n\n";
+        }
+        return head + "Responde a este correo con el nombre de tu tienda, tu @handle de TarantulApp y 2 o 3 franjas horarias posibles (incluye tu zona horaria). Te enviamos el enlace de la videollamada.\n\n";
+    }
+
+    private static String vendorVerifyBookingPreambleEn(String bookingUrl) {
+        String head = "Verification appointment (live video call)\n\n";
+        if (bookingUrl != null && !bookingUrl.isBlank()) {
+            return head + "Book here: " + bookingUrl.trim() + "\n\n";
+        }
+        return head + "Reply to this email with your shop name, your TarantulApp @handle, and 2–3 time windows that work for you (include your time zone). We will send the video link.\n\n";
+    }
+
+    private static String vendorVerifyBookingPreambleFr(String bookingUrl) {
+        String head = "Rendez-vous de vérification (appel vidéo en direct)\n\n";
+        if (bookingUrl != null && !bookingUrl.isBlank()) {
+            return head + "Prenez rendez-vous ici : " + bookingUrl.trim() + "\n\n";
+        }
+        return head + "Répondez à cet e-mail avec le nom de votre boutique, votre @handle TarantulApp et 2 ou 3 créneaux possibles (indiquez votre fuseau horaire). Nous envoyons le lien de la visio.\n\n";
+    }
+
+    public static String vendorInviteSubject(String locale) {
+        String loc = normalizeLocale(locale);
+        return switch (loc) {
+            case "en" -> "TarantulApp — Accept your vendor invitation";
+            case "fr" -> "TarantulApp — Acceptez votre invitation vendeur";
+            default -> "TarantulApp — Acepta tu invitación como vendor";
+        };
+    }
+
+    /**
+     * One-click invite for would-be vendors; acceptance happens in-app while logged in as the invited email.
+     */
+    public static String vendorInviteBody(String locale, String name, String appUrl, String sendDate, String inviteUrl) {
+        String loc = normalizeLocale(locale);
+        String n = (name == null || name.isBlank())
+                ? ("en".equals(loc) ? "there" : "fr".equals(loc) ? "à vous" : "a ti")
+                : name.trim();
+        String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+        String link = (inviteUrl == null || inviteUrl.isBlank()) ? url + "/vendor-invite" : inviteUrl.trim();
+        return switch (loc) {
+            case "en" -> vendorInviteEn(n, url, sendDate, link);
+            case "fr" -> vendorInviteFr(n, url, sendDate, link);
+            default -> vendorInviteEs(n, url, sendDate, link);
+        };
+    }
+
+    private static String vendorInviteEs(String n, String url, String sendDate, String inviteUrl) {
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "El equipo de TarantulApp te invitó a activar tu perfil como vendor en el marketplace. Para que "
+                + "realmente entres al flujo (storefront, checklist y la videollamada de verificación con nosotros), "
+                + "primero necesitas aceptar esta invitación con la misma cuenta de correo ya registrada en TarantulApp.\n\n"
+                + "1) Abre el enlace en tu teléfono o computadora.\n"
+                + "2) Inicia sesión (si aún no estás dentro).\n"
+                + "3) Pulsa “Aceptar invitación” en la pantalla que carga.\n\n"
+                + "Enlace seguro:\n"
+                + inviteUrl + "\n\n"
+                + "Web: " + url + "\n\n"
+                + "Si el enlace caducó o no te deja entrar, responde a este correo y reenviamos otra invitación desde admin.\n\n"
+                + "— El equipo de TarantulApp\n";
+    }
+
+    private static String vendorInviteEn(String n, String url, String sendDate, String inviteUrl) {
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "The TarantulApp team invited you to activate your vendor profile on the marketplace. To get into the full "
+                + "flow (storefront, checklist, and our live verification call), please accept this invitation while signed "
+                + "in as the exact TarantulApp account email we have on file.\n\n"
+                + "1) Open the secure link.\n"
+                + "2) Log in if needed.\n"
+                + "3) Tap “Accept invitation” on the page that loads.\n\n"
+                + "Secure link:\n"
+                + inviteUrl + "\n\n"
+                + "Web: " + url + "\n\n"
+                + "If the link expired or login looks wrong, reply to this email and we’ll resend from admin.\n\n"
+                + "— The TarantulApp team\n";
+    }
+
+    private static String vendorInviteFr(String n, String url, String sendDate, String inviteUrl) {
+        return "Bonjour " + n + ",\n\n"
+                + "Date du message : " + sendDate + "\n\n"
+                + "L’équipe TarantulApp vous invite à activer votre profil vendeur sur le marketplace. Pour démarrer le parcours "
+                + "(vitrine, checklist et appel vidéo de vérification), acceptez d’abord cette invitation en vous connectant avec le même compte "
+                + "(e-mail) déjà enregistré sur TarantulApp.\n\n"
+                + "1) Ouvrez le lien.\n"
+                + "2) Connectez-vous si nécessaire.\n"
+                + "3) Appuyez sur « Accepter l’invitation » sur la page.\n\n"
+                + "Lien sécurisé :\n"
+                + inviteUrl + "\n\n"
+                + "Web : " + url + "\n\n"
+                + "Si le lien a expiré ou la connexion semble incorrecte, répondez à ce message — nous renverrons depuis l’admin.\n\n"
+                + "— L’équipe TarantulApp\n";
+    }
+
     /**
      * Vendor / store welcome (Mexico). Sent after admin flips {@code verifiedBreeder=true}. The recipient
      * is the storefront owner; copy explains the dynamic tier model (Starter $0 → Pro Shop $999 MXN/mo
-     * based on monthly sold count), no-custody payment policy, and the verification kit needed to earn
-     * the "Tienda Verificada" badge (which is intentionally NOT granted by activation alone).
+     * based on monthly sold count), no-custody payment policy, and a live video verification to earn
+     * the "Tienda Verificada" badge (not granted by activation alone).
      */
-    private static String vendorWelcomeMxEs(String n, String url, String sendDate) {
+    private static String vendorWelcomeMxEs(String n, String url, String sendDate, String bookingUrl) {
         String sell = url + "/marketplace/sell";
         return "Hola " + n + ",\n\n"
                 + "Fecha del mensaje: " + sendDate + "\n\n"
@@ -633,36 +740,32 @@ public final class BetaMailBodies {
                 + "Cada vez que cierras una venta marca el anuncio como vendido — ese es nuestro único contador. "
                 + "Si un mes vendes 0, no pagas nada y mantienes storefront completo. No hay penalización por "
                 + "bajar de tier.\n\n"
+                + "Insignias de actividad (además del badge verificado): según tu tier del mes, el storefront puede "
+                + "mostrar etiquetas extra (por ejemplo Tienda activa, Plus, Pro Shop). No sustituyen la verificación "
+                + "en videollamada con el equipo; premian volumen honesto.\n\n"
+                + vendorVerifyBookingPreambleEs(bookingUrl)
                 + "Lo único pendiente: tu badge \"Tienda Verificada\"\n\n"
-                + "El badge no se da por pagar — se gana. Es la señal de confianza que ven los compradores antes "
-                + "de mandarte mensaje. Para que el equipo te lo active, responde este correo con lo siguiente.\n\n"
-                + "Obligatorio:\n"
-                + "1. INE (anverso y reverso). Solo se revisa al verificar, no se almacena a largo plazo.\n"
-                + "2. 1 o 2 fotos del espacio donde mantienes los animales (rack, cuarto, terrarios actuales).\n"
-                + "3. 3 a 5 fotos de inventario actual — en cada foto incluye un papelito a mano con tu "
-                + "@handle de TarantulApp visible (prueba que las fotos son tuyas).\n"
-                + "4. WhatsApp o Instagram con al menos 2 a 3 meses de actividad ligada a tu tienda/criadero.\n"
-                + "5. Si vendes CITES (Poecilotheria metallica/regalis/ornata/rufilata/etc.): número de UMA o "
-                + "permiso CITES de origen.\n\n"
-                + "Opcional (acelera la revisión):\n"
-                + "6. RFC con actividad económica relacionada.\n"
-                + "7. 1 a 2 referencias de keepers/criadores reconocidos de la comunidad.\n"
-                + "8. Si vendes insumos: factura de proveedor mayoreo de sustrato / comida viva.\n\n"
-                + "Por qué pedimos esto\n\n"
-                + "El badge protege la confianza de la comunidad. Los compradores se la juegan comprando "
-                + "animales vivos a desconocidos por internet — el badge les dice \"este sí existe, tiene "
-                + "espacio real, tiene inventario propio, no es reventa con fotos robadas\". Te protege a ti "
-                + "también: tiendas serias destacan, reventas se filtran.\n\n"
-                + "La revisión es humana, suele tomar 24 a 72 horas tras recibir tu respuesta. Mientras llega "
-                + "el badge ya puedes publicar todo. Sin el badge, tu storefront aparece como \"Tienda nueva\" "
-                + "hasta terminar la verificación.\n\n"
+                + "El badge no se da por pagar — lo obtienes en una videollamada corta con nuestro equipo.\n\n"
+                + "Antes de la llamada prepara:\n"
+                + "• INE o identificación oficial: la mostrarás en cámara cuando te lo pidamos. No envíes fotos ni adjuntos del documento por correo.\n"
+                + "• Espacio y terrarios accesibles para un recorrido breve en video.\n"
+                + "• Inventario representativo; ten a mano un papel con tu @handle escrito por si pedimos acercarlo al animal.\n"
+                + "• WhatsApp o Instagram con actividad de tienda listo para mostrar en pantalla si lo pedimos.\n"
+                + "• Buena conexión, cámara y luz razonable.\n"
+                + "• Si vendes especies CITES: ten a la mano UMA o permiso para enseñarlo en cámara.\n"
+                + "• Opcional que acelera la revisión: RFC relacionado, referencias de la comunidad, factura de mayoreo si vendes insumos — puedes mostrarlos en la llamada.\n\n"
+                + "Por defecto NO grabamos la videollamada. Si en algún caso hiciera falta grabación para revisión interna, te avisamos y pedimos consentimiento aparte.\n\n"
+                + "Duración típica: 15 a 20 minutos. Tras la llamada, el equipo comunica si otorgamos el badge; suele ser en 24 a 72 horas hábiles.\n\n"
+                + "¿Por qué lo hacemos así?\n\n"
+                + "El badge protege la confianza de la comunidad: compradores que arriesgan con desconocidos quieren saber que existe un espacio real y inventario propio. Tú también ganas visibilidad frente a reventas.\n\n"
+                + "Mientras tanto puedes publicar sin límite. Sin el badge, tu storefront aparece como \"Tienda nueva\".\n\n"
                 + "Primeros pasos (15 a 30 min)\n\n"
                 + "1. Entra en " + url + "\n"
                 + "2. Ve a Marketplace > Vender: " + sell + "\n"
                 + "3. Configura tu storefront: nombre, tagline, política de envío, tiempos y contacto.\n"
                 + "4. Publica tu primer anuncio con foto clara, precio en MXN y descripción honesta.\n"
                 + "5. Repite con tu inventario fuerte (tarántulas + insumos si manejas).\n"
-                + "6. Responde este correo con la verificación para que llegue tu badge.\n\n"
+                + "6. Agenda la videollamada (enlace arriba) o responde a este correo con franjas horarias para coordinar.\n\n"
                 + "Reglas rápidas\n\n"
                 + "• Cumple normativa local de fauna, envíos y permisos (UMA / CITES si corresponde).\n"
                 + "• TarantulApp no custodia pagos: acuerden precio y envío en el chat de la app, y paguen "
@@ -675,7 +778,7 @@ public final class BetaMailBodies {
                 + "— El equipo de TarantulApp\n";
     }
 
-    private static String vendorWelcomeMxEn(String n, String url, String sendDate) {
+    private static String vendorWelcomeMxEn(String n, String url, String sendDate, String bookingUrl) {
         String sell = url + "/marketplace/sell";
         return "Hi " + n + ",\n\n"
                 + "Message date: " + sendDate + "\n\n"
@@ -701,38 +804,32 @@ public final class BetaMailBodies {
                 + "Every time you close a sale, mark the listing as sold — that is our only counter. If you "
                 + "sell zero in a month, you pay nothing and keep your full storefront. No penalty for "
                 + "dropping a tier.\n\n"
+                + "Activity labels (on top of verification): depending on your tier for the month, your "
+                + "storefront may show extra trust labels (e.g. Active shop, Plus, Pro Shop). They do NOT "
+                + "replace the live video verification with our team — they reward honest volume.\n\n"
+                + vendorVerifyBookingPreambleEn(bookingUrl)
                 + "One thing pending: your \"Verified Shop\" badge\n\n"
-                + "The badge is not given out for paying — it is earned. It is the trust signal buyers see "
-                + "before messaging you. For the team to activate it, reply to this email with the "
-                + "following.\n\n"
-                + "Required:\n"
-                + "1. Government-issued ID (front and back of INE or equivalent). Reviewed only, not archived "
-                + "long-term.\n"
-                + "2. 1 or 2 photos of the space where you keep the animals (rack, room, current enclosures).\n"
-                + "3. 3 to 5 inventory photos — in each photo include a handwritten note with your TarantulApp "
-                + "@handle visible (proves the photos are yours).\n"
-                + "4. WhatsApp or Instagram with at least 2 to 3 months of activity tied to your shop/breeding.\n"
-                + "5. If you sell CITES species (Poecilotheria metallica/regalis/ornata/rufilata/etc.): UMA "
-                + "number or CITES origin permit reference.\n\n"
-                + "Optional (speeds up review):\n"
-                + "6. RFC / tax ID with related business activity.\n"
-                + "7. 1 to 2 references from recognized keepers/breeders in the community.\n"
-                + "8. If you sell supplies: invoice from a wholesale substrate / live food supplier.\n\n"
-                + "Why we ask for this\n\n"
-                + "The badge protects community trust. Buyers are taking a real risk buying live animals from "
-                + "strangers online — the badge tells them \"this person exists, has real space, has their own "
-                + "inventory, is not a reseller with stolen photos\". It protects you too: serious shops stand "
-                + "out, resellers get filtered.\n\n"
-                + "Review is human, usually 24 to 72 hours after we receive your reply. While the badge is "
-                + "pending you can already publish everything. Without the badge, your storefront shows as "
-                + "\"New shop\" until verification clears.\n\n"
+                + "The badge is not given out for paying — you earn it in a short live video call with our team.\n\n"
+                + "Before the call, please prepare:\n"
+                + "• Government-issued ID (e.g. INE): you will show it on camera when asked — do not email photos or scans of the document.\n"
+                + "• Space and enclosures ready for a short on-camera walkthrough.\n"
+                + "• Representative inventory; keep a handwritten note with your @handle nearby in case we ask to show it next to an animal.\n"
+                + "• WhatsApp or Instagram with shop activity ready to show on screen if we ask.\n"
+                + "• Stable internet, camera, and reasonable lighting.\n"
+                + "• If you sell CITES-regulated species: have UMA/permit references ready to show on camera.\n"
+                + "• Optional extras that speed review: tax/business ID, community references, wholesale invoices for supplies — you can show them during the call.\n\n"
+                + "By default we do NOT record the video call. If we ever needed a recording for internal review, we would tell you first and ask separate consent.\n\n"
+                + "Typical duration: 15–20 minutes. After the call, we follow up on whether the badge is granted — usually within 24–72 business hours.\n\n"
+                + "Why we do it this way\n\n"
+                + "The badge protects community trust: buyers sending money to strangers want confidence there is a real operation and owned inventory. Serious shops win; resellers with stolen photos lose.\n\n"
+                + "You can publish without limits while pending. Without the badge, your storefront shows as \"New shop\".\n\n"
                 + "First steps (15 to 30 min)\n\n"
                 + "1. Log in at " + url + "\n"
                 + "2. Go to Marketplace > Sell: " + sell + "\n"
                 + "3. Set up your storefront: name, tagline, shipping policy, times and contact.\n"
                 + "4. Publish your first listing with a clear photo, price in MXN, honest description.\n"
                 + "5. Repeat with your strongest inventory (tarantulas + supplies if you carry them).\n"
-                + "6. Reply to this email with the verification kit so we can hand you the badge.\n\n"
+                + "6. Book the verification call (link above) or reply to this email with time windows so we can schedule.\n\n"
                 + "Quick rules\n\n"
                 + "• Follow local wildlife, shipping, and permit rules (UMA / CITES if applicable).\n"
                 + "• TarantulApp does not custody payments: agree on price and shipping in the app chat, then "
@@ -745,7 +842,7 @@ public final class BetaMailBodies {
                 + "— The TarantulApp team\n";
     }
 
-    private static String vendorWelcomeMxFr(String n, String url, String sendDate) {
+    private static String vendorWelcomeMxFr(String n, String url, String sendDate, String bookingUrl) {
         String sell = url + "/marketplace/sell";
         return "Bonjour " + n + ",\n\n"
                 + "Date du message : " + sendDate + "\n\n"
@@ -771,40 +868,32 @@ public final class BetaMailBodies {
                 + "À chaque vente conclue, marquez l'annonce comme vendue — c'est notre seul compteur. Si "
                 + "vous vendez zéro un mois, vous ne payez rien et gardez votre boutique complète. Aucune "
                 + "pénalité à descendre de tier.\n\n"
-                + "Ce qui reste en attente : votre badge \"Boutique Vérifiée\"\n\n"
-                + "Le badge n'est pas donné contre paiement — il se gagne. C'est le signal de confiance que "
-                + "voient les acheteurs avant de vous contacter. Pour que l'équipe l'active, répondez à cet "
-                + "e-mail avec ce qui suit.\n\n"
-                + "Obligatoire :\n"
-                + "1. Pièce d'identité officielle (recto/verso INE ou équivalent). Vérifiée uniquement, pas "
-                + "archivée à long terme.\n"
-                + "2. 1 ou 2 photos de l'espace où vous gardez les animaux (rack, pièce, terrariums actuels).\n"
-                + "3. 3 à 5 photos d'inventaire actuel — sur chaque photo, un papier manuscrit avec votre "
-                + "@handle TarantulApp visible (preuve que les photos sont les vôtres).\n"
-                + "4. WhatsApp ou Instagram avec au moins 2 à 3 mois d'activité liée à votre boutique/"
-                + "élevage.\n"
-                + "5. Si vous vendez CITES (Poecilotheria metallica/regalis/ornata/rufilata/etc.) : numéro "
-                + "UMA ou permis CITES d'origine.\n\n"
-                + "Optionnel (accélère la revue) :\n"
-                + "6. RFC / identifiant fiscal avec activité économique liée.\n"
-                + "7. 1 à 2 références d'éleveurs reconnus de la communauté.\n"
-                + "8. Si vous vendez des consommables : facture d'un fournisseur de gros de substrat / "
-                + "nourriture vive.\n\n"
-                + "Pourquoi on demande ça\n\n"
-                + "Le badge protège la confiance de la communauté. Les acheteurs prennent un vrai risque en "
-                + "achetant des animaux vivants à des inconnus en ligne — le badge leur dit \"cette personne "
-                + "existe, a un espace réel, son propre inventaire, et n'est pas un revendeur avec photos "
-                + "volées\". Ça vous protège aussi : les boutiques sérieuses ressortent.\n\n"
-                + "La revue est humaine, généralement 24 à 72 heures après réception de votre réponse. En "
-                + "attendant le badge, vous pouvez déjà tout publier. Sans le badge, votre boutique apparaît "
-                + "comme \"Nouvelle boutique\" jusqu'à la fin de la vérification.\n\n"
+                + "Étiquettes d'activité (en plus de la vérification) : selon votre tier du mois, la vitrine peut "
+                + "afficher des mentions supplémentaires (par ex. Boutique active, Plus, Pro Shop). Elles ne "
+                + "remplacent pas la vérification en visioconférence avec l'équipe ; elles valorisent un volume honnête.\n\n"
+                + vendorVerifyBookingPreambleFr(bookingUrl)
+                + "Ce qui reste en attente : votre badge « Boutique Vérifiée »\n\n"
+                + "Le badge n'est pas donné contre paiement — il s'obtient lors d'un court appel vidéo avec notre équipe.\n\n"
+                + "Avant l'appel, préparez :\n"
+                + "• Pièce d'identité officielle (ex. INE) : vous la montrerez à la caméra sur demande — n'envoyez pas de photos ou scans par e-mail.\n"
+                + "• Espace et terrariums accessibles pour une courte visite vidéo.\n"
+                + "• Inventaire représentatif ; gardez un papier avec votre @handle manuscrit au cas où on vous demande de le montrer près d'un animal.\n"
+                + "• WhatsApp ou Instagram avec activité boutique prêt à afficher si demandé.\n"
+                + "• Connexion stable, caméra et éclairage corrects.\n"
+                + "• Si vous vendez des espèces CITES : ayez sous la main UMA ou permis à montrer à la caméra.\n"
+                + "• Optionnel pour accélérer : identifiant fiscal, références de la communauté, factures grossiste consommables — vous pouvez les montrer pendant l'appel.\n\n"
+                + "Par défaut nous n'enregistrons PAS la visio. Si un enregistrement interne était un jour nécessaire, nous vous préviendrons et demanderons un consentement distinct.\n\n"
+                + "Durée typique : 15 à 20 minutes. Après l'appel, l'équipe confirme si le badge est attribué — en général sous 24 à 72 heures ouvrées.\n\n"
+                + "Pourquoi cette méthode\n\n"
+                + "Le badge protège la confiance : les acheteurs veulent savoir qu'une boutique réelle existe avec son propre inventaire. Les boutiques sérieuses ressortent.\n\n"
+                + "Vous pouvez déjà tout publier. Sans le badge, la vitrine s'affiche comme « Nouvelle boutique ».\n\n"
                 + "Premiers pas (15 à 30 min)\n\n"
                 + "1. Connectez-vous sur " + url + "\n"
                 + "2. Allez dans Marketplace > Vendre : " + sell + "\n"
                 + "3. Configurez votre boutique : nom, tagline, politique d'envoi, délais et contact.\n"
                 + "4. Publiez votre première annonce avec photo claire, prix en MXN, description honnête.\n"
                 + "5. Répétez avec votre inventaire principal (mygales + consommables si vous en proposez).\n"
-                + "6. Répondez à cet e-mail avec le kit de vérification pour recevoir le badge.\n\n"
+                + "6. Prenez rendez-vous (lien ci-dessus) ou répondez à cet e-mail avec des créneaux pour planifier la visio.\n\n"
                 + "Règles rapides\n\n"
                 + "• Respectez la réglementation locale faune, envois et permis (UMA / CITES si applicable).\n"
                 + "• TarantulApp ne séquestre pas les paiements : convenez prix et envoi dans le chat de "

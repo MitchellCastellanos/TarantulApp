@@ -658,6 +658,16 @@
     "resetPassword": "Cambiar contraseña",
     "passwordMismatch": "Las contraseñas no coinciden",
     "resetSuccess": "Contraseña actualizada. Ahora puedes iniciar sesión.",
+    "vendorInviteTitle": "Invitación vendor",
+    "vendorInviteSubtitle": "Entra con la cuenta invitada y acepta para desbloquear el flujo de tienda en el marketplace.",
+    "vendorInviteLoginCta": "Iniciar sesión para continuar",
+    "vendorInviteEmailHint": "Esta invitación es para:",
+    "vendorInviteAccept": "Aceptar invitación",
+    "vendorInviteSuccess": "Listo. Ya tienes herramientas de vendor — termina tu storefront y agenda la verificación del correo de bienvenida.",
+    "vendorInviteGoSell": "Abrir panel de ventas",
+    "vendorInviteInvalid": "El enlace no sirve, falta o ya caducó.",
+    "vendorInviteWrongAccount": "Cierra sesión y entra con el correo invitado, luego vuelve a abrir este enlace.",
+    "vendorInviteAlready": "Ya estaba aceptada. Puedes ir a vender.",
     "fillRequired": "Escribe tu correo y contraseña.",
     "passwordTooShort": "La contraseña debe tener al menos 6 caracteres.",
     "legalMustAccept": "Debes aceptar Términos y Privacidad para crear tu cuenta.",
@@ -758,13 +768,13 @@
     "communityIntro": "Marketplace de la comunidad tarántula en México: encuentra ejemplares, proyectos de cría e inventario curado de tiendas socias. Keepers publican gratis (con límite); tiendas y breeders tienen storefront profesional.",
     "communityDisclaimer": "TarantulApp\u2122 facilita descubrimiento y contacto; no custodiamos pagos ni actuamos como intermediario del trato. Usa lugares seguros, conserva evidencia del chat, valida normativa local (fauna/envíos/cuarentena) y reporta cualquier señal de fraude.",
     "sellerLegalNotice": "Al publicar anuncios declaras cumplimiento legal de comercio, divulgaciones correctas y aceptación de las reglas de transacción del marketplace.",
-    "orderLegalNotice": "Las órdenes del marketplace están sujetas a retención, disputa y reglas de evidencia. Las garantías del vendedor y compromisos de envío se aplican según cada storefront.",
+    "orderLegalNotice": "TarantulApp no recibe el dinero entre ustedes. Acuerden método de pago (transferencia, etc.) directo con el vendedor; esta orden documenta avances y evidencia según la política del marketplace.",
     "orderPolicyAcceptLabel": "Confirmo que revisé términos, política de marketplace, envío y garantías del vendedor para esta operación.",
     "orderPolicyMustAccept": "Debes confirmar la política antes de crear la orden.",
     "orderChecklistTitle": "No-negociables de la transacción",
     "orderChecklistRule1": "Confirma legalidad de comercio y restricciones de envío por región antes de pagar.",
     "orderChecklistRule2": "Deja términos (precio, garantías, ventana de entrega) dentro del chat en app.",
-    "orderChecklistRule3": "Marca pago solo cuando exista evidencia (comprobante/referencia y confirmación del vendedor).",
+    "orderChecklistRule3": "Cuando pagues directo al vendedor, repórtalo aquí con comprobante/referencia para que ambos compartan la línea de tiempo.",
     "orderChecklistRule4": "Usa disputa con evidencia dentro de la ventana de garantía/revisión anunciada.",
     "orderChecklistRule5": "Presión para salir de plataforma o no documentar términos = señal de alto riesgo.",
     "listingLegalNotice": "Antes de pagar, confirma con el vendedor la legalidad de comercio, política de envío y garantía de arribo con vida.",
@@ -1031,10 +1041,13 @@
     "dealQuotePayout": "Pago estimado al seller",
     "dealQuoteHold": "Retención estimada",
     "dealQuoteHoldDays": "{{days}} días tras confirmar entrega",
-    "orderPanelTitle": "Orden y retención (simulada)",
+    "orderPanelTitle": "Orden y línea de tiempo del trato",
+    "orderDirectPaymentNotice": "Paga al vendedor fuera de la app con lo que acuerden. Esta sección sirve para documentar el trato, no para mover dinero por TarantulApp.",
     "orderPanelEmpty": "Aún no hay orden creada para este trato.",
     "orderCreateCta": "Crear orden",
     "orderStatus": "Estado de orden",
+    "orderAgreedSubtotal": "Subtotal del anuncio / acordado",
+    "orderReportPaymentHint": "Deja una referencia breve (folio de transferencia, id de MercadoPago, etc.) para que el vendedor lo concilie.",
     "orderSimulatePay": "Simular pago (hold)",
     "orderStripeCheckout": "Pagar con Stripe",
     "orderSimulateRelease": "Simular liberación",
@@ -1068,8 +1081,8 @@
     "orderMarkedInTransit": "Orden marcada en tránsito.",
     "orderMarkedDelivered": "Orden marcada como entregada.",
     "orderClosed": "Orden cerrada.",
-    "orderCheckoutSuccess": "Pago completado. Orden en retención.",
-    "orderCheckoutCancel": "Checkout cancelado. La orden sigue pendiente de pago.",
+    "orderCheckoutSuccess": "Regreso de la pantalla de pago — revisa el estado abajo. Si pagaste directo al vendedor, usa “Reportar pago”.",
+    "orderCheckoutCancel": "Se cerró la pantalla de pago. La orden sigue pendiente hasta que reportes pago al vendedor.",
     "listingDetailOfficialCta": "Comprar en sitio oficial",
     "listingDetailVisitStore": "Ver tienda",
     "listingDetailNotFound": "Este anuncio no está disponible.",
@@ -1732,8 +1745,9 @@
     "tierVendorLi1": "Perfil verificado + badge visible en comunidad y marketplace.",
     "tierVendorLi2": "Listings destacados y mini storefront dentro del marketplace.",
     "tierVendorLi3": "Analytics de leads (clics, origen, anuncios que convierten).",
-    "tierVendorLi4": "Onboarding con revisión humana (no es autoverificación).",
+    "tierVendorLi4": "Badge \"Tienda verificada\" tras una videollamada en vivo con el equipo (INE en cámara, no por correo).",
     "tierVendorLi5": "Marketplace: hasta 250 anuncios activos, todas las categorías (incluye comida viva, sustratos, terrarios, accesorios). Suscripción dinámica: $0/mes en Starter, escala con tus ventas reportadas.",
+    "tierVendorLi6": "Agenda en el correo de bienvenida (enlace público si está configurado) o responde con franjas horarias. ~15–20 min; por defecto sin grabación.",
     "sellerTypesTitle": "Tipos de seller en Marketplace",
     "sellerTypesIntro": "Definimos perfiles claros: Business/Vendor para operación comercial con revisión y Community para listings abiertos entre keepers.",
     "founderSellerTitle": "Founder Seller (estratégico)",
@@ -1868,11 +1882,11 @@
           ]
         },
         {
-          "title": "3. Pagos, retenciones y disputas",
+          "title": "3. Pagos entre comprador y vendedor",
           "bullets": [
-            "Las órdenes pueden incluir comisión de plataforma y retención temporal de pago al vendedor.",
-            "Flujos de liberación/disputa pueden requerir evidencia (por ejemplo prueba de envío y prueba de llegada).",
-            "Contracargos, señales de fraude o disputas sin resolver pueden limitar la cuenta."
+            "En operaciones típicas entre pares, el pago se acuerda directamente entre comprador y vendedor (por ejemplo transferencia u otros métodos que convengan). TarantulApp no custodia esos montos de venta.",
+            "Los registros opcionales de orden y el chat ayudan a documentar el trato; no garantizan por sí solos que el dinero se haya liquidado entre las partes.",
+            "Si hay flujos opcionales de checkout o suscripción para otros productos, se rigen por los términos mostrados al pagar y por las reglas del proveedor de pagos."
           ]
         },
         {
@@ -1899,14 +1913,15 @@
           "bullets": [
             "Datos de cuenta como correo, campos de perfil y metadatos de autenticación.",
             "Contenido de marketplace y comunidad, incluyendo mensajes, detalles de anuncio y media/evidencia subida.",
-            "Metadatos de cobro y órdenes de proveedores de pago (no guardamos números completos de tarjeta)."
+            "Metadatos de cobro y órdenes de proveedores de pago (no guardamos números completos de tarjeta).",
+            "Para programas de vendedor calificados, una videollamada corta de verificación con nuestro equipo (revisión en cámara de identidad y operación). No pedimos que envíen por correo escaneos completos del INE para ese paso; podemos conservar notas internas mínimas (por ejemplo estado y fecha de aprobación), no grabación, salvo consentimiento aparte para grabar."
           ]
         },
         {
           "title": "2. Cómo usamos los datos",
           "bullets": [
             "Operar cuentas, emparejamiento de marketplace, mensajería y flujos de confianza/seguridad.",
-            "Procesar suscripciones, checkouts, retenciones y registros de disputa.",
+            "Procesar suscripciones, checkout de la plataforma cuando aplique y registros de disputa.",
             "Prevenir abuso, investigar fraude y cumplir obligaciones legales."
           ]
         },
@@ -1933,6 +1948,7 @@
           "title": "1. Obligaciones del vendedor",
           "bullets": [
             "Publicar información exacta del anuncio, divulgaciones de origen legal y términos claros de envío/garantía.",
+            "Completar la verificación de vendedor requerida (incluye agendar y asistir a una videollamada corta). El INE o identificación se muestra en cámara; no envíes escaneos completos por correo salvo excepción explícita del equipo.",
             "No publicar fauna prohibida ni ofrecer envíos que violen normativa local.",
             "Responder oportunamente a compradores cuando haya temas de pago, envío o llegada con vida."
           ]
@@ -1946,11 +1962,11 @@
           ]
         },
         {
-          "title": "3. Retención y liberación de pago",
+          "title": "3. Pagos y registro del trato en la app",
           "bullets": [
-            "Algunas órdenes permanecen en retención temporal antes de liberar pago al vendedor.",
-            "La liberación puede depender de hitos con evidencia (prueba de envío y llegada).",
-            "Las disputas pausan la liberación mientras se revisa evidencia."
+            "Por defecto el comprador paga al vendedor directamente con los métodos que acuerden. TarantulApp no custodia esos pagos entre pares.",
+            "Líneas de tiempo de orden opcionales, historial de chat y evidencias subidas documentan el trato y pueden usarse en revisiones de confianza.",
+            "Suscripciones, boosts de anuncio u otros productos de pago de la plataforma van por el flujo de checkout indicado al comprar."
           ]
         },
         {
@@ -1959,6 +1975,15 @@
             "Fraude, abuso, contracargos repetidos o violaciones de política pueden causar retiro de anuncios o restricciones de cuenta.",
             "Podemos solicitar evidencia adicional a cualquiera de las partes para resolver disputas.",
             "Incidentes graves legales o de bienestar animal pueden escalarse a autoridades cuando aplique."
+          ]
+        },
+        {
+          "title": "5. Verificación de vendedores (programa Vendor México)",
+          "bullets": [
+            "Algunas tiendas pueden ser invitadas a una videollamada corta con nuestro equipo antes de mostrar un badge de confianza ampliado.",
+            "La identificación se revisa en cámara durante la llamada; no pedimos enviar por correo fotos completas del INE para ese paso.",
+            "Por defecto no grabamos la sesión. Si alguna vez se necesitara grabación, pediríamos consentimiento aparte.",
+            "Podemos rechazar o revocar la verificación si los materiales o la conducta no cumplen el estándar del programa."
           ]
         }
       ]
@@ -1987,25 +2012,43 @@
     "titleGeneral": "General",
     "titleVendors": "Vendors / Criadores verificados",
     "titleBeta": "Programa beta",
-    "vendorsBlurb": "Administra Vendors (verified_breeder = activación de beneficios). Vendor desbloquea: 250 anuncios, todas las categorías (insumos/sustratos/terrarios), listing boost, inbox. El badge \"Tienda Verificada\" es paso aparte tras revisión humana.",
+    "vendorsBlurb": "Los vendors peer deben aceptar invitación por correo antes de activarse para que entren de verdad y abran storefront. Al aceptar en la app mandamos solos el correo largo de bienvenida. Solo fuerza activación en emergencia.",
     "vendorTermsTitle": "Modelo actual del programa Vendor",
     "vendorTermsLi1": "Sin custodia / sin escrow: TarantulApp no toca el dinero de la venta.",
     "vendorTermsLi2": "Tier dinámico MX por ventas reportadas (anuncios marcados como vendidos): Starter $0 → Activo $199 → Plus $499 → Pro Shop $999 MXN/mes.",
-    "vendorTermsLi3": "Activación (flip verified_breeder) da TODOS los beneficios funcionales (250 listings, categorías de insumos, boost, inbox).",
-    "vendorTermsLi4": "Badge \"Tienda Verificada\" se otorga tras revisión humana (INE, fotos de espacio + inventario con handle escrito a mano, IG/WhatsApp activo, CITES si aplica). Pendiente: columna storefront_verified_at en DB.",
+    "vendorTermsLi3": "Flujo normal: admin manda invitación → el usuario acepta logueado → verified_breeder desbloquea beneficios (250 listings, insumos, boost, inbox). Forzar activación solo si de verdad hace falta.",
+    "vendorTermsLi4": "Badge \"Tienda Verificada\": cita por videollamada con el equipo (mostrar INE en cámara; no mandar escaneos por correo). URL opcional de citas: app.vendor-verification-booking-url. Pendiente: columna storefront_verified_at en DB.",
     "vendorTermsLi5": "Sin verificación = storefront aparece como \"Tienda nueva\" pero el vendor puede publicar normal.",
     "vendorTermsLi6": "Pendiente código: cron mensual de conteo de ventas + swap de Stripe price ID + UI gate para badge.",
     "vendorsLookupTitle": "Activar Vendor por correo",
-    "vendorsLookupHint": "Busca al usuario por correo exacto (no necesitas la lista completa). Si existe, podrás activarlo o desactivarlo como Vendor y mandarle el correo de bienvenida.",
+    "vendorsLookupHint": "Busca por correo: envía invitación (recomendado) o fuerza activación solo en emergencia. Las invitaciones pendientes se listan abajo hasta que acepten o revoques.",
     "vendorsLookupEmail": "Correo del usuario",
     "vendorsLookupBtn": "Buscar",
     "vendorsLookupEmpty": "No encontramos a ese usuario.",
     "vendorsActiveTitle": "Vendors activos",
     "vendorsActiveCount": "Mostrando {{count}} de {{total}} verificados.",
-    "vendorsActiveEmpty": "Todavía no hay vendors verificados. Búsca a alguien por correo arriba para activar el primero.",
+    "vendorsActiveEmpty": "Aún no hay vendors. Manda la primera invitación desde arriba.",
+    "vendorsPendingTitle": "Invitaciones pendientes",
+    "vendorsPendingCount": "{{count}} en pantalla ({{total}} pendientes en total).",
+    "vendorsPendingEmpty": "Sin invitaciones vendor pendientes.",
+    "vendorsColListings": "Anuncios",
+    "vendorsColSold": "Vendidos",
+    "vendorsColPlan": "Plan",
+    "vendorsColStripe": "Stripe",
+    "vendorsColMix": "Inventario",
+    "vendorsColHints": "Pistas ops",
+    "vendorsColBilling": "Facturación",
+    "vendorsViewsNote": "Vistas por listing aún no se guardan en la app.",
+    "sendVendorInvite": "Enviar invitación vendor",
+    "resendVendorInvite": "Reenviar invitación",
+    "revokeVendorInvite": "Revocar invitación",
+    "forceActivateVendor": "Forzar activación (emergencia)",
+    "vendorInviteSent": "Invitación enviada.",
+    "vendorInviteRevoked": "Invitación revocada.",
+    "pendingBadge": "Invitación pendiente",
     "vendorsHandle": "Handle",
+    "vendorsInviteExpires": "La invitación vence",
     "vendorsVerifiedSince": "Verificado desde",
-    "vendorsStatusActive": "Vendor activo",
     "vendorsStatusInactive": "Sin Vendor",
     "vendorsNoHandle": "(sin handle público)",
     "makeVendor": "Activar como Vendor",
@@ -2013,7 +2056,7 @@
     "vendorActivated": "Vendor activado.",
     "vendorRemoved": "Vendor desactivado.",
     "sendVendorWelcomeLabel": "Enviar bienvenida Vendor (MX)",
-    "sendVendorWelcomeHint": "Envía el correo de bienvenida Vendor: tier dinámico (Starter $0 → Pro Shop $999 MXN), no custody, y la lista de verificación que debe responder para ganarse el badge.",
+    "sendVendorWelcomeHint": "Envía el correo de bienvenida Vendor: tier dinámico, sin custodia de pagos y cómo agendar la videollamada de verificación para el badge (enlace si está app.vendor-verification-booking-url).",
     "refresh": "Actualizar",
     "generalPageBlurb": "SMTP, KPIs, usuarios, moderación del marketplace y herramientas de vendors.",
     "betaPageBlurb": "Solicitudes, testers, plantillas de bienvenida, campañas y cola de bugs beta.",

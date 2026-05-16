@@ -2,9 +2,11 @@
 
 **Quand l'envoyer :** Après avoir parlé au prospect, reçu son e-mail et **activé son compte dans l'admin** (`verifiedBreeder` + storefront). Cet e-mail explique « vous pouvez publier maintenant — voici ce que vous avez et ce qu'il faut pour le badge ».
 
-**Variables :** `{{name}}`, `{{businessName}}`, `{{appUrl}}`, `{{email}}`, `{{password}}` (seulement si un mot de passe temporaire a été généré), `{{shopUrl}}`, `{{sellUrl}}`, `{{date}}`
+**Variables :** `{{name}}`, `{{businessName}}`, `{{appUrl}}`, `{{email}}`, `{{password}}` (seulement si un mot de passe temporaire a été généré), `{{shopUrl}}`, `{{sellUrl}}`, `{{date}}`, `{{verificationBookingUrl}}` (lien public de prise de rendez-vous, optionnel).
 
 **Modèle de facturation actuel :** Tier dynamique réassigné chaque mois selon les ventes signalées. Starter 0 MXN, ajustement automatique. TarantulApp **ne séquestre pas les paiements** — le vendeur encaisse directement.
+
+**Backend :** `app.vendor-verification-booking-url` / `TARANTULAPP_VENDOR_VERIFICATION_BOOKING_URL` pour l'URL dans `BetaMailBodies` (`vendor_welcome_mx`).
 
 ---
 
@@ -35,29 +37,34 @@ TarantulApp **ne touche jamais l'argent de vos ventes** — vous encaissez direc
 
 À chaque vente conclue, **marquez l'annonce comme vendue** dans l'app — c'est notre seul compteur. Si vous vendez zéro un mois, vous ne payez rien et gardez votre boutique complète. Aucune pénalité à descendre de tier.
 
+**Étiquettes d'activité (en plus de la vérification) :** selon votre tier du mois, la vitrine peut afficher des mentions de confiance supplémentaires (par ex. « Boutique active », « Boutique Plus », « Pro Shop »). **Elles ne remplacent pas** la vérification en visioconférence avec l'équipe.
+
 ### Ce qui reste en attente : votre badge **« Boutique Vérifiée »**
 
-Le badge n'est pas donné contre paiement — il se **gagne**. C'est le signal de confiance que voient les acheteurs avant de vous contacter. Pour que l'équipe l'active, **répondez à cet e-mail** avec :
+Le badge n'est pas donné contre paiement — il s'obtient lors d'un **appel vidéo en direct** avec notre équipe. **N'envoyez pas de photos de pièce d'identité par e-mail** ; la pièce est montrée **à la caméra** sur demande.
 
-**Obligatoire :**
-1. **Pièce d'identité officielle** (recto/verso INE ou équivalent). Vérifiée uniquement, pas archivée à long terme.
-2. **1–2 photos de l'espace** où vous gardez les animaux (rack, pièce, terrariums actuels).
-3. **3–5 photos d'inventaire actuel** — sur chaque photo, ajoutez un papier manuscrit avec votre `@handle` TarantulApp visible (preuve que les photos sont les vôtres, pas reprises d'un autre éleveur).
-4. **WhatsApp ou Instagram** avec au moins 2–3 mois d'activité liée à votre boutique/élevage.
-5. **Si vous vendez CITES** (Poecilotheria metallica/regalis/ornata/rufilata/etc.) : numéro UMA ou référence du permis CITES d'origine.
+**Prise de rendez-vous**
 
-**Optionnel (accélère la revue) :**
-6. RFC / identifiant fiscal avec activité économique liée.
-7. 1–2 références d'éleveurs reconnus de la communauté.
-8. Si vous vendez des consommables : facture d'un fournisseur de gros de substrat / nourriture vive.
+{{#verificationBookingUrl}}
+- Prenez rendez-vous ici : `{{verificationBookingUrl}}`
+{{/verificationBookingUrl}}
+{{^verificationBookingUrl}}
+- Répondez à cet e-mail avec le nom de la boutique, votre `@handle` TarantulApp et **2 ou 3 créneaux** possibles (indiquez votre **fuseau horaire**). Nous envoyons le lien de la visio.
+{{/verificationBookingUrl}}
 
-### Pourquoi on demande ça
+**Avant l'appel, préparez**
 
-Le badge protège la confiance de la communauté. Les acheteurs prennent un vrai risque en achetant des animaux vivants à des inconnus en ligne — le badge leur dit **« cette personne existe, a un espace réel, son propre inventaire, et n'est pas un revendeur avec photos volées »**. Ça vous protège aussi : les boutiques sérieuses ressortent, les revendeurs se filtrent.
+- Pièce d'identité à portée de main (caméra uniquement — **pas** de pièces jointes par e-mail).
+- Espace et terrariums prêts pour une courte visite vidéo.
+- Inventaire représentatif ; papier avec `@handle` manuscrit au cas où on vous demande de le montrer près d'un animal.
+- WhatsApp / Instagram boutique prêts à afficher si besoin.
+- Connexion stable, caméra et lumière correctes.
+- Si vous vendez du **CITES** : UMA ou permis à montrer à la caméra.
+- Optionnel pour accélérer : identifiant fiscal, références, factures grossiste — vous pouvez les montrer pendant l'appel.
 
-La revue est humaine (faite par nous), généralement **24–72 heures** après réception de votre réponse.
+**Enregistrement :** par défaut nous **n'enregistrons pas** la séance. Si un enregistrement était un jour nécessaire, nous demanderions un **consentement distinct** au préalable.
 
-En attendant le badge, vous pouvez déjà publier tout ce que vous voulez. Sans le badge, votre boutique apparaît comme **« Nouvelle boutique »** jusqu'à la fin de la vérification.
+**Durée :** ~15–20 minutes. Après l'appel, l'équipe confirme l'attribution du badge — en général sous **24 à 72 h ouvrées**. Vous pouvez publier entre-temps ; sans badge, la vitrine affiche **« Nouvelle boutique »**.
 
 ### Votre accès
 
@@ -74,7 +81,7 @@ En attendant le badge, vous pouvez déjà publier tout ce que vous voulez. Sans 
 3. **Configurez votre boutique :** nom commercial, tagline, politique d'envoi (national / par état), délais, et contact WhatsApp ou Instagram.
 4. **Publiez votre première annonce :** photo claire, prix en **MXN**, description honnête (taille, sexe, origine le cas échéant).
 5. Répétez avec votre inventaire principal (mygales + consommables si vous en proposez).
-6. **Répondez à cet e-mail** avec le kit de vérification pour recevoir le badge.
+6. **Prenez rendez-vous** (lien ci-dessus si configuré) **ou** répondez avec des créneaux pour planifier la visio.
 
 ### Règles rapides (Mexique)
 
@@ -84,7 +91,7 @@ En attendant le badge, vous pouvez déjà publier tout ce que vous voulez. Sans 
 
 ### Besoin d'aide ?
 
-Répondez à cet e-mail avec des questions de catégories, votre `@handle` souhaité, ou vos pièces de vérification. Si quelque chose ne charge pas dans l'app, utilisez **« Report a bug »** (écran, appareil, version).
+Répondez à cet e-mail avec des questions de catégories ou votre `@handle`. Si quelque chose ne charge pas dans l'app, utilisez **« Report a bug »** (écran, appareil, version).
 
 Bienvenue dans la marketplace — nous adorons voir le catalogue grandir.
 

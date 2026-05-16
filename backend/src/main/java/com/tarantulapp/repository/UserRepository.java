@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,27 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findVerifiedBreedersForAdmin(Pageable pageable);
 
     long countByVerifiedBreederTrue();
+
+    Optional<User> findByVendorInviteToken(UUID vendorInviteToken);
+
+    @Query("""
+            select u from User u
+            where u.vendorInviteToken is not null
+              and coalesce(u.verifiedBreeder, false) = false
+              and u.vendorInviteExpiresAt is not null
+              and u.vendorInviteExpiresAt > :now
+            order by u.vendorInviteSentAt desc nulls last, u.createdAt desc
+            """)
+    List<User> findPendingVendorInvites(@Param("now") Instant now, Pageable pageable);
+
+    @Query("""
+            select count(u) from User u
+            where u.vendorInviteToken is not null
+              and coalesce(u.verifiedBreeder, false) = false
+              and u.vendorInviteExpiresAt is not null
+              and u.vendorInviteExpiresAt > :now
+            """)
+    long countPendingVendorInvitesNonExpired(@Param("now") Instant now);
     List<User> findByPlanAndTrialEndsAtBetween(
             UserPlan plan,
             LocalDateTime from,

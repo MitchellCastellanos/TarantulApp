@@ -403,7 +403,7 @@ export default function ProPage() {
                       defaultValue: t('pro.tierVendorPrice'),
                     }),
                     taglineKey: 'pro.tierVendorTagline',
-                    listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4', 'pro.tierVendorLi5'],
+                    listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4', 'pro.tierVendorLi5', 'pro.tierVendorLi6'],
                     footer: (
                       <div className="mt-2">
                         <span className="badge bg-success">{t('pro.tierLive')}</span>

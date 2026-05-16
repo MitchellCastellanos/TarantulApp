@@ -34,38 +34,35 @@ Vendors arrancan en **Starter ($0 MXN)**. La suscripción Stripe se ajusta cada 
 
 Mientras tanto = prioridad = onboardear vendors y llenar catálogo. Starter no requiere Stripe.
 
-## 3. Badge "Tienda Verificada" — separado de la activación
+## 3. Badge "Tienda Verificada" — videollamada (separado de la activación)
 
-Activar Vendor (paso 1) **no** otorga el badge. El badge requiere revisión humana.
+Activar Vendor (paso 1) **no** otorga el badge. El badge requiere revisión humana **en videollamada en vivo**.
 
 ### Flujo
 
-1. Mandar correo de bienvenida (paso 4) — pide al vendor responder con los materiales de verificación.
-2. Vendor responde con: INE, fotos del espacio, fotos de inventario con `@handle` escrito a mano visible, link a WhatsApp/IG activo, refs CITES si aplica, opcionales (RFC / referencias / facturas).
-3. Equipo revisa (24–72 h):
-   - **INE**: ¿persona real?
-   - **Fotos espacio**: ¿es operación real, no closet/garage random?
-   - **Fotos inventario con handle a mano**: ¿coinciden con los listings publicados? Sin esto, **NO badge** — esto es la prueba clave anti-fotos-robadas.
-   - **WhatsApp/IG**: ¿hay continuidad (2–3 meses)?
-   - **CITES** (si aplica): ¿números válidos? Si vende `Poecilotheria spp.` sin UMA → rechazar hasta presentar permiso.
-4. Si todo cuadra → flipear `storefront_verified_at` (nueva columna, **pendiente de migración**). UI muestra badge "Tienda Verificada" cuando `storefront_verified_at IS NOT NULL`.
-5. Si algo falta → responder al vendor con qué le faltó, mantener cuenta activa sin badge mientras corrige.
+1. Mandar correo de bienvenida (paso 4) — incluye cómo **agendar** la cita (enlace público si está configurado, o pedir franjas por correo).
+2. **Config producción:** variable `TARANTULAPP_VENDOR_VERIFICATION_BOOKING_URL` (o `app.vendor-verification-booking-url`) = Cal.com, Calendly, etc. Si va vacío, el cuerpo del correo (`BetaMailBodies` / `vendor_welcome_mx`) pide **responder con nombre de tienda, @handle y 2–3 franjas horarias**; el equipo contesta con link de meet.
+3. Antes de la llamada el vendor prepara: INE (solo mostrar en cámara — **no** pedir fotos por correo), espacio/terrarios para recorrido, inventario + papel con `@handle` si lo pedimos, WhatsApp/IG para mostrar en pantalla, refs CITES en cámara si aplica.
+4. **Sesión (~15–20 min):** por defecto **no grabamos**. Si algún día se grabara para revisión interna → consentimiento explícito aparte.
+5. Equipo revisa en llamada (y notas internas mínimas): identidad en vivo, espacio real, consistencia inventario ↔ listings, señales de reventa.
+6. Si cuadra → `storefront_verified_at = NOW()` (columna **pendiente de migración**). UI muestra "Tienda Verificada" cuando `storefront_verified_at IS NOT NULL`.
+7. Si falta algo → correo follow-up; la cuenta sigue activa sin badge ("Tienda nueva") hasta cerrar el ciclo.
 
 ### Auditoría aleatoria
 
-1 vez por trimestre, sample random de vendors con badge. Pedir foto fresca de inventario actual con handle. Si no cuadra con los listings vivos → suspender badge + flag investigación.
+1 vez por trimestre, sample random de vendors con badge. Pedir evidencia fresca (u otra videollamada corta si hace falta). Si no cuadra → suspender badge + investigación.
 
 ## 4. Enviar correo de bienvenida
 
-**Desde Admin → Vendors:** botones ES / EN / FR mandan la plantilla actualizada (tier dinámico + lista de verificación).
+**Desde Admin → Vendors:** botones ES / EN / FR mandan la plantilla (`vendor_welcome_mx`) con tier dinámico + **cita por videollamada**.
 
-**Plantillas referencia (markdown completo, con variables Mustache):**
+**Plantillas referencia (markdown, Mustache):**
 
 - ES: `docs/beta/vendor-welcome-email-template-es-2026-05-15.md`
 - EN: `docs/beta/vendor-welcome-email-template-en-2026-05-15.md`
 - FR: `docs/beta/vendor-welcome-email-template-fr-2026-05-15.md`
 
-Variables mínimas: nombre, marca, `appUrl`, correo, enlaces `/shop/{handle}` y `/marketplace/sell`.
+Variables: nombre, marca, `appUrl`, correo, `shopUrl`, `sellUrl`, `verificationBookingUrl` (opcional; en el correo automático la URL sale de `app.vendor-verification-booking-url`).
 
 ## 5. Qué debe publicar el socio (día 0)
 

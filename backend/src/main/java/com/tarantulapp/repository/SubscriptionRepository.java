@@ -4,6 +4,7 @@ import com.tarantulapp.entity.Subscription;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +12,8 @@ import java.util.UUID;
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
 
     List<Subscription> findByUserId(UUID userId);
+
+    List<Subscription> findByUserIdIn(Collection<UUID> userIds);
 
     Optional<Subscription> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<Subscription> findByProviderSubscriptionId(String providerSubscriptionId);

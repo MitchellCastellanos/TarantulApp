@@ -4,6 +4,7 @@ import com.tarantulapp.entity.MarketplaceListing;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,23 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
     List<MarketplaceListing> findTop100BySellerUserIdOrderByCreatedAtDesc(UUID sellerUserId);
     long countBySellerUserId(UUID sellerUserId);
     long countBySellerUserIdAndStatusIgnoreCase(UUID sellerUserId, String status);
+
+    @Query("""
+            select l.sellerUserId, lower(l.status), count(l)
+            from MarketplaceListing l
+            where l.sellerUserId in :sellerIds
+            group by l.sellerUserId, lower(l.status)
+            """)
+    List<Object[]> countBySellerGroupedByStatusLower(@Param("sellerIds") List<UUID> sellerIds);
+
+    @Query("""
+            select l.sellerUserId, l.listingCategory, count(l)
+            from MarketplaceListing l
+            where l.sellerUserId in :sellerIds
+              and lower(l.status) = 'active'
+            group by l.sellerUserId, l.listingCategory
+            """)
+    List<Object[]> countActiveBySellerGroupedByCategory(@Param("sellerIds") List<UUID> sellerIds);
 
     @Modifying
     @Query(value = "delete from marketplace_listings where title like :prefix", nativeQuery = true)

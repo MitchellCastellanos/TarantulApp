@@ -2,9 +2,11 @@
 
 **Cuándo enviarlo:** Después de hablar con el prospecto, recibir su correo y **habilitarlo en admin** (`verifiedBreeder` + storefront). Este correo es el “ya puedes publicar — esto es lo que tienes y esto es lo que falta para tu badge”.
 
-**Variables:** `{{name}}`, `{{businessName}}`, `{{appUrl}}`, `{{email}}`, `{{password}}` (solo si generaste contraseña temporal), `{{shopUrl}}`, `{{sellUrl}}`, `{{date}}`
+**Variables:** `{{name}}`, `{{businessName}}`, `{{appUrl}}`, `{{email}}`, `{{password}}` (solo si generaste contraseña temporal), `{{shopUrl}}`, `{{sellUrl}}`, `{{date}}`, `{{verificationBookingUrl}}` (opcional: enlace Cal.com/Calendly u otro; si va vacío, el correo pide responder con franjas horarias).
 
 **Modelo de cobro vigente:** Tier dinámico mes a mes basado en ventas reportadas. Starter $0 MXN, escala automático. TarantulApp **no custodia pagos** — el vendor cobra directo a su cliente.
+
+**Config en backend:** `app.vendor-verification-booking-url` / env `TARANTULAPP_VENDOR_VERIFICATION_BOOKING_URL` para incrustar el enlace de citas en el cuerpo generado por `BetaMailBodies` (campo `vendor_welcome_mx`).
 
 ---
 
@@ -35,29 +37,34 @@ TarantulApp **no toca el dinero de tus ventas** — tú cobras directo a tu clie
 
 Cada vez que cierras una venta, **marca el anuncio como vendido** en la app — ese es nuestro único contador. Si un mes vendes 0, no pagas nada y mantienes storefront completo. No hay penalización por bajar de tier.
 
+**Insignias de actividad (además del badge verificado):** según el tier del mes, el storefront puede mostrar etiquetas extra de confianza (por ejemplo “Tienda activa”, “Tienda Plus”, “Pro Shop”). **No sustituyen** la verificación en videollamada con el equipo; son una capa más que premia volumen honesto.
+
 ### Lo único pendiente: tu badge **"Tienda Verificada"**
 
-El badge no se da por pagar — se **gana**. Es la señal de confianza que ven los compradores antes de mandarte mensaje. Para que el equipo te lo active, **responde este correo** con lo siguiente:
+El badge no se da por pagar — lo obtienes en una **videollamada en vivo** con nuestro equipo (no mandes fotos de tu INE por correo; la identificación se muestra **en cámara** cuando te lo pidamos).
 
-**Obligatorio:**
-1. **INE** (anverso y reverso). Solo lo revisamos al verificar, no lo guardamos a largo plazo.
-2. **1–2 fotos del espacio** donde mantienes los animales (rack, cuarto, terrarios actuales).
-3. **3–5 fotos de inventario actual** — en cada foto incluye un papelito a mano con tu `@handle` de TarantulApp visible (prueba de que las fotos son tuyas, no de otro breeder).
-4. **WhatsApp o Instagram** con al menos 2–3 meses de actividad ligada a tu tienda/criadero.
-5. **Si vendes CITES** (Poecilotheria metallica/regalis/ornata/rufilata/etc.): número de UMA o permiso CITES de origen.
+**Cita**
 
-**Opcional (acelera la revisión):**
-6. RFC con actividad económica relacionada.
-7. 1–2 referencias de keepers/criadores reconocidos de la comunidad.
-8. Si vendes insumos: factura de proveedor mayoreo de sustrato / comida viva.
+{{#verificationBookingUrl}}
+- Reserva aquí: `{{verificationBookingUrl}}`
+{{/verificationBookingUrl}}
+{{^verificationBookingUrl}}
+- Responde a este correo con el nombre de tu tienda, tu `@handle` de TarantulApp y **2–3 franjas horarias** posibles (indica tu **zona horaria**). Te enviamos el enlace de la videollamada.
+{{/verificationBookingUrl}}
 
-### ¿Por qué pedimos esto?
+**Antes de la llamada prepara**
 
-El badge protege la confianza de la comunidad. Los compradores se la juegan comprando animales vivos a desconocidos por internet — el badge les dice **"este sí existe, tiene espacio real, tiene inventario propio, no es reventa con fotos robadas"**. Te protege a ti también: tiendas serias destacan, reventas se filtran.
+- INE o identificación oficial a mano (solo en cámara; **no** adjuntos por correo).
+- Espacio y terrarios listos para un recorrido corto en video.
+- Inventario representativo; papel con tu `@handle` escrito por si lo pedimos junto al animal.
+- WhatsApp/Instagram de la tienda disponible para enseñar en pantalla si aplica.
+- Buena conexión y luz razonable.
+- Si vendes **CITES**: UMA o permiso a la mano para mostrarlo en cámara.
+- Opcional que acelera la revisión: RFC, referencias, facturas de mayoreo — puedes mostrarlos en la llamada.
 
-La revisión es humana (la hacemos nosotros), suele tomar **24–72 horas** después de recibir tu respuesta.
+**Grabación:** por defecto **no grabamos** la sesión. Si algún día necesitáramos grabación para revisión interna, te avisamos y pedimos **consentimiento aparte**.
 
-Mientras llega el badge, ya puedes publicar todo lo que quieras. Sin el badge, tu storefront aparece como **"Tienda nueva"** hasta terminar la verificación.
+**Duración:** ~15–20 min. Tras la llamada, el equipo te dice si el badge queda otorgado; suele ser en **24–72 h hábiles**. Mientras tanto puedes publicar; sin badge, el storefront aparece como **“Tienda nueva”**.
 
 ### Tu acceso
 
@@ -72,19 +79,19 @@ Mientras llega el badge, ya puedes publicar todo lo que quieras. Sin el badge, t
 1. Entra con tu correo en `{{appUrl}}` (acceso anticipado / beta si aplica).
 2. Ve a **Marketplace → Vender** (`{{sellUrl}}`).
 3. **Configura tu storefront:** nombre comercial, tagline, política de envío (nacional / por estados), tiempos de entrega y WhatsApp o Instagram de contacto.
-4. **Publica tu primer anuncio:** foto clara, precio en **MXN**, descripción honesta (talla, sexo, origen si aplica).
+4. **Publica tu primer listing:** foto clara, precio en **MXN**, descripción honesta (talla, sexo, origen si aplica).
 5. Repite con tu inventario fuerte (tarántulas + insumos si manejas).
-6. **Responde este correo** con la verificación para que llegue tu badge.
+6. **Agenda la videollamada** (enlace arriba si aplica) **o** responde con franjas horarias para coordinar.
 
 ### Reglas rápidas (México)
 
 - Cumple **normativa local** de fauna, envíos y permisos cuando vendas ejemplares (UMA / CITES según aplique).
-- TarantulApp **no custodia pagos**: cierran trato en el chat de la app, y el pago lo arreglan ustedes con el método que ya confíen (transferencia, MercadoPago, etc.).
-- Fotos reales, stock actualizado; cuando se vende, **marca el anuncio como vendido** — eso es lo único que cuenta para tu tier mensual.
+- TarantulApp **no custodia pagos**: acuerden precio, envío y garantía **en el chat de la app** y usen métodos que ya confíen (transferencia, etc.).
+- Fotos reales, stock actualizado; cuando se vende, marca el anuncio como vendido.
 
 ### ¿Necesitas ayuda?
 
-Responde este correo con dudas de categorías, tu `@handle` deseado, o los materiales de verificación. Si algo no carga en la app, usa **"Reportar un bug"** (pantalla, dispositivo, versión).
+Responde a este correo con dudas de categorías o tu `@handle`. Si algo no carga en la app, usa **“Reportar un bug”** (pantalla, dispositivo, versión).
 
 ¡Bienvenido al marketplace — nos encanta ver el catálogo crecer!
 

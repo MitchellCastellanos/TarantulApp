@@ -51,10 +51,6 @@ public class MarketplaceService {
     private static final int FREE_ACTIVE_LISTING_LIMIT = 5;
     private static final int PRO_ACTIVE_LISTING_LIMIT = 25;
     private static final int VENDOR_ACTIVE_LISTING_LIMIT = 250;
-    private static final BigDecimal COMMISSION_RATE_COMMUNITY = new BigDecimal("0.10");
-    private static final BigDecimal COMMISSION_RATE_PRO = new BigDecimal("0.08");
-    private static final BigDecimal COMMISSION_RATE_VENDOR = new BigDecimal("0.06");
-    private static final int PAYOUT_HOLD_DAYS = 3;
 
     private static final long MIN_MESSAGES_TO_ENABLE_REVIEW = 6L;
     private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
@@ -368,6 +364,11 @@ public class MarketplaceService {
         return payload;
     }
 
+    /**
+     * Quote for listing price / agreed subtotal. TarantulApp does not custody peer-to-peer payments today;
+     * platform sale fees are via vendor subscription tiers, not per-checkout commission. Values here stay
+     * aligned with that model (no deducted commission; optional Connect-style holds are roadmap-only).
+     */
     @Transactional(readOnly = true)
     public Map<String, Object> dealQuote(UUID listingId, BigDecimal overrideSubtotal) {
         MarketplaceListing listing = marketplaceListingRepository.findById(listingId)
@@ -380,18 +381,16 @@ public class MarketplaceService {
         if (subtotal.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Subtotal invalido");
         }
-        BigDecimal rate = commissionRateBySellerTier(sellerTier);
-        BigDecimal commission = subtotal.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal payout = subtotal.subtract(commission).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal normalized = subtotal.setScale(2, RoundingMode.HALF_UP);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("listingId", listing.getId());
         out.put("currency", listing.getCurrency());
-        out.put("subtotal", subtotal.setScale(2, RoundingMode.HALF_UP));
-        out.put("commissionRate", rate);
-        out.put("commissionAmount", commission);
-        out.put("sellerPayoutAmount", payout);
+        out.put("subtotal", normalized);
+        out.put("commissionRate", BigDecimal.ZERO);
+        out.put("commissionAmount", BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        out.put("sellerPayoutAmount", normalized);
         out.put("sellerTier", sellerTier);
-        out.put("payoutHoldDays", PAYOUT_HOLD_DAYS);
+        out.put("payoutHoldDays", 0);
         out.put("requiresProofOfLifeBeforeShipping", true);
         out.put("requiresArrivalProofBeforeRelease", true);
         return out;
@@ -846,12 +845,6 @@ public class MarketplaceService {
                     MarketplaceListingCategories.BREEDING_PROJECTS);
         }
         return MarketplaceListingCategories.publicBrowseOrder();
-    }
-
-    private BigDecimal commissionRateBySellerTier(String sellerTier) {
-        if ("vendor".equals(sellerTier)) return COMMISSION_RATE_VENDOR;
-        if ("pro".equals(sellerTier)) return COMMISSION_RATE_PRO;
-        return COMMISSION_RATE_COMMUNITY;
     }
 
     private String sellerProgramTierKey(User seller) {

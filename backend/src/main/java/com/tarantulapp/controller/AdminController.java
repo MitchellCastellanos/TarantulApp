@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.entity.Subscription;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.entity.BugReport;
@@ -8,7 +9,9 @@ import com.tarantulapp.entity.BetaEmailSend;
 import com.tarantulapp.repository.BetaApplicationRepository;
 import com.tarantulapp.repository.BetaEmailSendRepository;
 import com.tarantulapp.repository.BugReportRepository;
+import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.ReminderRepository;
+import com.tarantulapp.repository.SubscriptionRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.AdminAccessService;
@@ -22,6 +25,7 @@ import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
+import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -77,6 +81,9 @@ public class AdminController {
     private final BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService;
     private final ProDayGrantService proDayGrantService;
     private final SecurityHelper securityHelper;
+    private final MarketplaceListingRepository marketplaceListingRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final VendorInviteService vendorInviteService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -107,7 +114,10 @@ public class AdminController {
                            GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker,
                            BetaTesterGoogleGroupSyncService betaTesterGoogleGroupSyncService,
                            ProDayGrantService proDayGrantService,
-                           SecurityHelper securityHelper) {
+                           SecurityHelper securityHelper,
+                           MarketplaceListingRepository marketplaceListingRepository,
+                           SubscriptionRepository subscriptionRepository,
+                           VendorInviteService vendorInviteService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -126,6 +136,9 @@ public class AdminController {
         this.betaTesterGoogleGroupSyncService = betaTesterGoogleGroupSyncService;
         this.proDayGrantService = proDayGrantService;
         this.securityHelper = securityHelper;
+        this.marketplaceListingRepository = marketplaceListingRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.vendorInviteService = vendorInviteService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -155,6 +168,8 @@ public class AdminController {
     record SendBetaWelcomeEmailRequest(String locale, String plainPassword) {}
 
     record SendOutreachEmailRequest(@NotBlank String templateKey, String locale) {}
+
+    record VendorInviteSendRequest(String locale) {}
 
     /**
      * {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end).
@@ -357,8 +372,8 @@ public class AdminController {
                 {"creator_partner_onboarding", "Creadores — brief y beneficios (post-bienvenida)", "Creators — brief & perks (after welcome)"},
                 {"creator_partner_reminder", "Creadores — recordatorio suave (video / contenido)", "Creators — gentle reminder (video)"},
                 {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
-                {"vendor_welcome_mx", "Vendor MX — bienvenida storefront (30 días cortesía, $199 MXN/mes)",
-                        "Vendor MX — storefront welcome (30-day complimentary, $199 MXN/month)"},
+                {"vendor_welcome_mx", "Vendor MX — bienvenida + tier dinámico + cita videollamada verificación tienda",
+                        "Vendor MX — welcome + dynamic tier + video verification booking"},
         };
         for (String[] r : data) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -472,27 +487,70 @@ public class AdminController {
         boolean verified = req != null && Boolean.TRUE.equals(req.verifiedBreeder());
         user.setVerifiedBreeder(verified);
         user.setVerifiedBreederAt(verified ? Instant.now() : null);
+        user.setVendorInviteToken(null);
+        user.setVendorInviteSentAt(null);
+        user.setVendorInviteExpiresAt(null);
         userRepository.save(user);
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
-        return ResponseEntity.ok(mapUser(user, counts));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
     }
 
-    /** Admin: list users with {@code verified_breeder=true} so the Vendors page can manage active storefronts. */
+    /** Admin: list active vendors + optional pending invites; includes marketplace + billing hints for ops. */
     @GetMapping("/vendor-users")
-    public ResponseEntity<Map<String, Object>> vendorUsers(@RequestParam(defaultValue = "100") int limit) {
+    public ResponseEntity<Map<String, Object>> vendorUsers(
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "true") boolean includePendingInvites) {
         adminAccessService.assertCurrentUserIsAdmin();
         int cap = Math.min(Math.max(limit, 1), 500);
         List<User> users = userRepository.findVerifiedBreedersForAdmin(PageRequest.of(0, cap));
-        Map<UUID, Long> counts = loadTarantulaCountsForUsers(
-                users.stream().map(User::getId).collect(Collectors.toList()));
+        List<User> pending = includePendingInvites
+                ? userRepository.findPendingVendorInvites(Instant.now(), PageRequest.of(0, cap))
+                : List.of();
+        List<UUID> allIds = new ArrayList<>();
+        for (User u : users) {
+            allIds.add(u.getId());
+        }
+        for (User u : pending) {
+            allIds.add(u.getId());
+        }
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(allIds.stream().distinct().collect(Collectors.toList()));
+        VendorRosterStats stats = loadVendorRosterStats(allIds.stream().distinct().collect(Collectors.toList()));
         List<Map<String, Object>> rows = users.stream()
-                .map(u -> mapUser(u, counts))
+                .map(u -> mapVendorDirectoryUser(u, counts, stats))
+                .collect(Collectors.toList());
+        List<Map<String, Object>> pendingRows = pending.stream()
+                .map(u -> mapVendorDirectoryUser(u, counts, stats))
                 .collect(Collectors.toList());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("users", rows);
+        body.put("pendingInvites", pendingRows);
         body.put("totalVendors", userRepository.countByVerifiedBreederTrue());
+        body.put("totalPendingInvites", includePendingInvites
+                ? userRepository.countPendingVendorInvitesNonExpired(Instant.now())
+                : 0L);
         body.put("limit", cap);
         return ResponseEntity.ok(body);
+    }
+
+    @PostMapping("/users/{id}/vendor-invite")
+    public ResponseEntity<Map<String, Object>> sendVendorInvite(@PathVariable UUID id,
+                                                                 @RequestBody(required = false) VendorInviteSendRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = vendorInviteService.sendInvite(id, req == null ? null : req.locale());
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    @PostMapping("/users/{id}/vendor-invite/revoke")
+    public ResponseEntity<Map<String, Object>> revokeVendorInvite(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        vendorInviteService.revokeInvite(id);
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
     }
 
     /** Admin: lookup a single user by email (case-insensitive) so vendor activation works without scrolling the recent list. */
@@ -510,8 +568,9 @@ public class AdminController {
             return ResponseEntity.ok(body);
         }
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         body.put("found", true);
-        body.put("user", mapUser(user, counts));
+        body.put("user", mapVendorDirectoryUser(user, counts, stats));
         return ResponseEntity.ok(body);
     }
 
@@ -537,7 +596,8 @@ public class AdminController {
             userRepository.save(user);
         }
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
-        return ResponseEntity.ok(mapUser(user, counts));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
     }
 
     @PostMapping("/users/{id}/password")
@@ -836,6 +896,143 @@ public class AdminController {
         }
     }
 
+    private record VendorRosterStats(
+            Map<UUID, Map<String, Long>> listingCountsByStatusLower,
+            Map<UUID, Map<String, Long>> activeListingCountsByCategory,
+            Map<UUID, Subscription> latestSubscriptionByUserId
+    ) {
+        static VendorRosterStats empty() {
+            return new VendorRosterStats(Map.of(), Map.of(), Map.of());
+        }
+    }
+
+    private VendorRosterStats loadVendorRosterStats(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return VendorRosterStats.empty();
+        }
+        List<UUID> ids = userIds.stream().distinct().collect(Collectors.toList());
+        Map<UUID, Map<String, Long>> byStatus = new HashMap<>();
+        for (Object[] row : marketplaceListingRepository.countBySellerGroupedByStatusLower(ids)) {
+            UUID sid = parseUuidRow(row[0]);
+            if (sid == null) {
+                continue;
+            }
+            String st = row[1] == null ? "" : String.valueOf(row[1]).toLowerCase(Locale.ROOT);
+            long c = row[2] instanceof Number num ? num.longValue() : 0L;
+            byStatus.computeIfAbsent(sid, k -> new LinkedHashMap<>()).merge(st, c, Long::sum);
+        }
+        Map<UUID, Map<String, Long>> byCat = new HashMap<>();
+        for (Object[] row : marketplaceListingRepository.countActiveBySellerGroupedByCategory(ids)) {
+            UUID sid = parseUuidRow(row[0]);
+            if (sid == null) {
+                continue;
+            }
+            String cat = row[1] == null ? "unknown" : String.valueOf(row[1]);
+            long c = row[2] instanceof Number num ? num.longValue() : 0L;
+            byCat.computeIfAbsent(sid, k -> new LinkedHashMap<>()).merge(cat, c, Long::sum);
+        }
+        Map<UUID, Subscription> latestSub = new HashMap<>();
+        for (Subscription s : subscriptionRepository.findByUserIdIn(ids)) {
+            latestSub.merge(s.getUserId(), s, (a, b) -> {
+                LocalDateTime ac = a.getCreatedAt();
+                LocalDateTime bc = b.getCreatedAt();
+                if (ac == null) {
+                    return b;
+                }
+                if (bc == null) {
+                    return a;
+                }
+                return ac.isAfter(bc) ? a : b;
+            });
+        }
+        return new VendorRosterStats(byStatus, byCat, latestSub);
+    }
+
+    private Map<String, Object> mapVendorDirectoryUser(User u, Map<UUID, Long> spiderCounts, VendorRosterStats stats) {
+        Map<String, Object> out = mapUser(u, spiderCounts);
+        putVendorDirectoryMetrics(out, u, stats);
+        return out;
+    }
+
+    private void putVendorDirectoryMetrics(Map<String, Object> out, User u, VendorRosterStats stats) {
+        UUID uid = u.getId();
+        Map<String, Long> st = new LinkedHashMap<>(
+                stats.listingCountsByStatusLower().getOrDefault(uid, Map.of()));
+        long active = st.getOrDefault("active", 0L);
+        long sold = st.getOrDefault("sold", 0L);
+        long reserved = st.getOrDefault("reserved", 0L);
+        long hidden = st.getOrDefault("hidden", 0L);
+        long draft = st.getOrDefault("draft", 0L);
+        long allListings = st.values().stream().mapToLong(Long::longValue).sum();
+        out.put("marketplaceListingCountsByStatus", st);
+        Map<String, Object> totals = new LinkedHashMap<>();
+        totals.put("all", allListings);
+        totals.put("active", active);
+        totals.put("sold", sold);
+        totals.put("reserved", reserved);
+        totals.put("hidden", hidden);
+        totals.put("draft", draft);
+        out.put("marketplaceListingTotals", totals);
+        Map<String, Long> cats = new LinkedHashMap<>(
+                stats.activeListingCountsByCategory().getOrDefault(uid, Map.of()));
+        out.put("activeListingsByCategory", cats);
+        long distinctActiveCategories = cats.entrySet().stream()
+                .filter(e -> e.getValue() != null && e.getValue() > 0)
+                .count();
+        if (distinctActiveCategories > 1) {
+            out.put("inventoryMix", "multi_category");
+        } else if (distinctActiveCategories == 1) {
+            out.put("inventoryMix", "single_category");
+        } else {
+            out.put("inventoryMix", "empty");
+        }
+        out.put("vendorChannel", "peer");
+        out.put("listingViewsTracked", false);
+        Subscription sub = stats.latestSubscriptionByUserId().get(uid);
+        if (sub != null) {
+            Map<String, Object> sm = new LinkedHashMap<>();
+            sm.put("status", sub.getStatus() == null ? "" : sub.getStatus());
+            sm.put("currentPeriodEnd", sub.getCurrentPeriodEnd());
+            sm.put("cancelAtPeriodEnd", Boolean.TRUE.equals(sub.getCancelAtPeriodEnd()));
+            sm.put("provider", sub.getProvider() == null ? "" : sub.getProvider());
+            out.put("stripeSubscription", sm);
+        } else {
+            out.put("stripeSubscription", null);
+        }
+        List<String> hints = new ArrayList<>();
+        if (active == 0) {
+            hints.add("no_active_listings");
+        }
+        if (sold > 0 && active == 0) {
+            hints.add("sold_out_or_only_completed");
+        }
+        if (u.getPublicHandle() == null || u.getPublicHandle().isBlank()) {
+            hints.add("no_store_handle");
+        }
+        if (u.getStorefrontName() == null || u.getStorefrontName().isBlank()) {
+            hints.add("no_storefront_name");
+        }
+        if (u.getStorefrontShippingPolicy() == null || u.getStorefrontShippingPolicy().isBlank()) {
+            hints.add("no_shipping_policy");
+        }
+        if (u.getStorefrontLagPolicy() == null || u.getStorefrontLagPolicy().isBlank()) {
+            hints.add("no_handling_policy");
+        }
+        if (u.getContactWhatsapp() == null || u.getContactWhatsapp().isBlank()) {
+            hints.add("no_whatsapp");
+        }
+        if (!planAccessService.hasProFeatures(u) && u.getPlan() != UserPlan.PRO) {
+            hints.add("free_plan_or_trial_expired");
+        }
+        if (sub != null && Boolean.TRUE.equals(sub.getCancelAtPeriodEnd())) {
+            hints.add("subscription_cancel_at_period_end");
+        }
+        if (sub != null && sub.getStatus() != null && "canceled".equalsIgnoreCase(sub.getStatus())) {
+            hints.add("subscription_canceled");
+        }
+        out.put("opportunityHints", hints);
+    }
+
     private Map<String, Object> mapUser(User u, Map<UUID, Long> spiderCounts) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", u.getId());
@@ -846,6 +1043,13 @@ public class AdminController {
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
         out.put("verifiedBreeder", Boolean.TRUE.equals(u.getVerifiedBreeder()));
         out.put("verifiedBreederAt", u.getVerifiedBreederAt());
+        out.put("vendorInviteSentAt", u.getVendorInviteSentAt());
+        out.put("vendorInviteExpiresAt", u.getVendorInviteExpiresAt());
+        boolean invitePending = u.getVendorInviteToken() != null
+                && !Boolean.TRUE.equals(u.getVerifiedBreeder())
+                && u.getVendorInviteExpiresAt() != null
+                && u.getVendorInviteExpiresAt().isAfter(Instant.now());
+        out.put("vendorInvitePending", invitePending);
         out.put("tarantulasCount", spiderCounts.getOrDefault(u.getId(), 0L));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());

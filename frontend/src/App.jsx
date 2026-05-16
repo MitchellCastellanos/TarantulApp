@@ -27,6 +27,7 @@ const AccountPage = lazy(() => import('./pages/AccountPage'))
 const ProPage = lazy(() => import('./pages/ProPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const VendorInvitePage = lazy(() => import('./pages/VendorInvitePage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const AccountDeletionPage = lazy(() => import('./pages/AccountDeletionPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
@@ -119,7 +120,18 @@ function LoginGate() {
   const { token } = useAuth()
   const location = useLocation()
   if (token) {
-    const r = location.state?.redirectAfterAuth
+    let r = location.state?.redirectAfterAuth
+    if (typeof r !== 'string' || !r.startsWith('/')) {
+      try {
+        const s = sessionStorage.getItem('ta_post_login_redirect')
+        if (s && typeof s === 'string' && s.startsWith('/')) {
+          sessionStorage.removeItem('ta_post_login_redirect')
+          r = s
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    }
     if (typeof r === 'string' && r.startsWith('/')) {
       return <Navigate to={r} replace />
     }
@@ -145,6 +157,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginGate />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/vendor-invite" element={<VendorInvitePage />} />
       <Route path="/t/:shortId" element={<PublicProfilePage />} />
       <Route path="/pro" element={<ProPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />

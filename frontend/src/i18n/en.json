@@ -658,6 +658,16 @@
     "resetPassword": "Change password",
     "passwordMismatch": "Passwords don't match",
     "resetSuccess": "Password updated. You can now sign in.",
+    "vendorInviteTitle": "Vendor invitation",
+    "vendorInviteSubtitle": "Sign in with the invited account, then accept to unlock the vendor storefront tools.",
+    "vendorInviteLoginCta": "Sign in to continue",
+    "vendorInviteEmailHint": "This invitation is for:",
+    "vendorInviteAccept": "Accept invitation",
+    "vendorInviteSuccess": "Welcome aboard. Your vendor tools are active — finish your storefront and book verification from the welcome email.",
+    "vendorInviteGoSell": "Open seller dashboard",
+    "vendorInviteInvalid": "This invitation link is missing, invalid, or expired.",
+    "vendorInviteWrongAccount": "Log out and sign back in with the invited email, then open this link again.",
+    "vendorInviteAlready": "Already accepted. You can continue to seller tools.",
     "fillRequired": "Enter your email and password.",
     "passwordTooShort": "Password must be at least 6 characters.",
     "legalMustAccept": "You must accept Terms and Privacy to create your account.",
@@ -758,13 +768,13 @@
     "communityIntro": "Mexico's tarantula marketplace: specimens, breeding projects, and curated inventory from partner shops. Keepers list free (with limits); stores and breeders get a professional storefront.",
     "communityDisclaimer": "TarantulApp\u2122 powers discovery and contact; we do not custody payments or intermediate private deals. Meet safely, keep chat evidence, verify local wildlife/shipping laws, and report suspicious behavior fast.",
     "sellerLegalNotice": "By publishing listings you confirm legal trade compliance, accurate disclosures, and acceptance of marketplace transaction rules.",
-    "orderLegalNotice": "Marketplace orders are subject to hold, dispute, and evidence rules. Seller guarantees and shipping commitments are enforced by each seller profile.",
+    "orderLegalNotice": "TarantulApp does not custody money between you. Agree payment method (bank transfer, etc.) directly with the seller; this order record tracks status and evidence in line with policy.",
     "orderPolicyAcceptLabel": "I confirm I reviewed terms, marketplace policy, and the seller shipping/guarantee terms for this transaction.",
     "orderPolicyMustAccept": "You must accept the transaction policy before creating the order.",
     "orderChecklistTitle": "Transaction non-negotiables",
     "orderChecklistRule1": "Confirm legal trade eligibility and regional shipping restrictions before payment.",
     "orderChecklistRule2": "Keep all terms (price, guarantees, delivery window) in the in-app thread.",
-    "orderChecklistRule3": "Only mark paid after evidence exists (receipt/reference and seller confirmation).",
+    "orderChecklistRule3": "After you pay the seller directly, report it here with a receipt/reference so both sides share a timeline.",
     "orderChecklistRule4": "Use dispute flow with evidence within the announced guarantee/review window.",
     "orderChecklistRule5": "Off-platform pressure or refusal to document terms is a high-risk signal.",
     "listingLegalNotice": "Review trade legality, shipping policy, and live-arrival guarantees directly with the seller before paying.",
@@ -1031,10 +1041,13 @@
     "dealQuotePayout": "Estimated seller payout",
     "dealQuoteHold": "Estimated hold",
     "dealQuoteHoldDays": "{{days}} days after delivery confirmation",
-    "orderPanelTitle": "Order and hold (simulated)",
+    "orderPanelTitle": "Order & deal timeline",
+    "orderDirectPaymentNotice": "Pay the seller outside the app using whatever you agree on. Use this section to document the deal—not to move money through TarantulApp.",
     "orderPanelEmpty": "No order exists for this deal yet.",
     "orderCreateCta": "Create order",
     "orderStatus": "Order status",
+    "orderAgreedSubtotal": "Listing / agreed subtotal",
+    "orderReportPaymentHint": "Leave a short reference (transfer folio, MercadoPago id, etc.) so the seller can match it.",
     "orderSimulatePay": "Simulate payment (hold)",
     "orderStripeCheckout": "Pay with Stripe",
     "orderSimulateRelease": "Simulate release",
@@ -1068,8 +1081,8 @@
     "orderMarkedInTransit": "Order marked in transit.",
     "orderMarkedDelivered": "Order marked delivered.",
     "orderClosed": "Order closed.",
-    "orderCheckoutSuccess": "Payment completed. Order now in hold.",
-    "orderCheckoutCancel": "Checkout cancelled. Order remains pending payment.",
+    "orderCheckoutSuccess": "Returned from payment screen — check order status below. If you paid the seller directly, use “Report payment”.",
+    "orderCheckoutCancel": "Payment screen closed. The order stays pending until you report payment to the seller.",
     "listingDetailOfficialCta": "Buy on official site",
     "listingDetailVisitStore": "Visit storefront",
     "listingDetailNotFound": "This listing is not available.",
@@ -1750,8 +1763,9 @@
     "tierVendorLi1": "Verified profile + badge in community and marketplace.",
     "tierVendorLi2": "Featured listings + mini storefront inside marketplace.",
     "tierVendorLi3": "Lead analytics (clicks, origin, listings that convert).",
-    "tierVendorLi4": "Human-reviewed onboarding (not self-serve verification).",
+    "tierVendorLi4": "\"Verified Shop\" trust badge after a live video check with our team (ID shown on camera — not emailed).",
     "tierVendorLi5": "Marketplace: up to 250 active listings, all categories (live food, substrates, terrariums, accessories). Dynamic subscription: $0/month on Starter, scales with reported sales.",
+    "tierVendorLi6": "Book verification using the link in your vendor welcome email (or reply with time windows). ~15–20 min; not recorded by default.",
     "sellerTypesTitle": "Marketplace seller types",
     "sellerTypesIntro": "We define clear profiles: Business/Vendor for reviewed commercial operations and Community for open peer listings.",
     "founderSellerTitle": "Founder Seller (strategic)",
@@ -1886,11 +1900,11 @@
           ]
         },
         {
-          "title": "3. Payments, holds, and disputes",
+          "title": "3. Payments between buyers and sellers",
           "bullets": [
-            "Marketplace orders may include platform commissions and temporary payout holds.",
-            "Release and dispute flows may require evidence (for example shipping proof and arrival proof).",
-            "Chargebacks, fraud signals, or unresolved disputes may result in account restrictions."
+            "For typical peer-to-peer marketplace deals, payment is arranged directly between buyer and seller (for example bank transfer or other methods they agree on). TarantulApp does not custody those sale proceeds.",
+            "Optional in-app order records and chat evidence help document the deal; they are not a guarantee of payment clearing between the parties.",
+            "If optional platform checkout or subscription flows are offered for other products, they are governed by the billing terms shown at purchase and by payment-provider rules."
           ]
         },
         {
@@ -1917,14 +1931,15 @@
           "bullets": [
             "Account data such as email, profile fields, and authentication metadata.",
             "Marketplace and community content, including messages, listing details, and uploaded media/evidence.",
-            "Billing and order metadata from payment providers (we do not store full card numbers)."
+            "Billing and order metadata from payment providers (we do not store full card numbers).",
+            "For qualifying seller programs, a short live video verification session with our team (on-camera review of ID and operations). We do not ask you to email full ID scans for that step; we may keep minimal internal notes (for example approval status and date), not a recording, unless we obtain separate consent for recording."
           ]
         },
         {
           "title": "2. How we use data",
           "bullets": [
             "Operate accounts, marketplace matching, messaging, and trust/safety workflows.",
-            "Process subscriptions, checkout events, holds, and dispute records.",
+            "Process subscriptions, platform checkout where offered, and dispute records.",
             "Prevent abuse, investigate fraud, and comply with legal obligations."
           ]
         },
@@ -1951,6 +1966,7 @@
           "title": "1. Seller obligations",
           "bullets": [
             "Publish accurate listing information, legal origin disclosures, and clear shipping/guarantee terms.",
+            "Complete any required seller verification (including scheduling and attending a short live video call). ID is shown on camera; do not send full ID scans by email unless we explicitly request a narrow exception.",
             "Do not list prohibited wildlife or offer shipments that violate local law.",
             "Respond in a timely way to buyers when payment, shipment, or live-arrival issues occur."
           ]
@@ -1964,11 +1980,11 @@
           ]
         },
         {
-          "title": "3. Payment hold and release",
+          "title": "3. Payments and in-app deal records",
           "bullets": [
-            "Some orders remain in temporary hold before seller payout release.",
-            "Release timing and status may depend on evidence milestones (shipping and arrival proof).",
-            "Disputes pause release while evidence is reviewed."
+            "By default buyers pay sellers directly using methods the parties agree on. TarantulApp does not custody those peer-to-peer sale proceeds.",
+            "Optional order timelines, chat history, and uploaded evidence help document the deal and may be used in trust-and-safety reviews.",
+            "Subscriptions, listing boosts, or other paid platform features are separate and are billed through the checkout flow shown at purchase."
           ]
         },
         {
@@ -1977,6 +1993,15 @@
             "Fraud, abuse, repeated chargebacks, or policy violations may lead to listing removal or account restrictions.",
             "We may request additional evidence from either side to resolve disputes.",
             "Serious legal or welfare incidents may be escalated to authorities where required."
+          ]
+        },
+        {
+          "title": "5. Seller verification (Mexico vendor program)",
+          "bullets": [
+            "Some storefronts may be invited to a short live video verification with our team before displaying an enhanced trust badge.",
+            "Government ID is reviewed on camera during the call; we do not ask you to email full ID scans for that step.",
+            "Calls are not recorded by default. If a recording were ever needed, we would ask for separate consent first.",
+            "We may decline or revoke verification if materials or conduct do not meet program standards."
           ]
         }
       ]
@@ -2005,25 +2030,43 @@
     "titleGeneral": "General",
     "titleVendors": "Vendors / Verified breeders",
     "titleBeta": "Beta program",
-    "vendorsBlurb": "Manage Vendors (verified_breeder = perks activation). Vendor unlocks: 250 listings, all categories (supplies/substrates/terrariums), listing boost, buyer inbox. The \"Verified Shop\" badge is a separate step after human review.",
+    "vendorsBlurb": "Peer vendors should accept an email invitation before activation so they actually sign in and onboard. After they accept in-app, we send the long vendor welcome automatically. You can still force-activate in an emergency.",
     "vendorTermsTitle": "Current Vendor program model",
     "vendorTermsLi1": "No custody / no escrow: TarantulApp does not touch sale money.",
     "vendorTermsLi2": "MX dynamic tier by reported sales (listings marked sold): Starter $0 → Activo $199 → Plus $499 → Pro Shop $999 MXN/mo.",
-    "vendorTermsLi3": "Activation (flipping verified_breeder) grants ALL functional perks (250 listings, supplies categories, boost, inbox).",
-    "vendorTermsLi4": "\"Verified Shop\" badge is granted after human review (ID, space + inventory photos with handwritten handle, active IG/WhatsApp, CITES if applicable). Pending: storefront_verified_at column in DB.",
+    "vendorTermsLi3": "Default activation path: admin sends invite → user accepts while logged in → verified_breeder unlocks functional perks (250 listings, supplies categories, boost, inbox). Force-activate bypasses the invite only when you truly need to.",
+    "vendorTermsLi4": "\"Verified Shop\" badge: live video appointment with the team (show ID on camera — do not email ID scans). Optional public booking link: app.vendor-verification-booking-url. Pending: storefront_verified_at column in DB.",
     "vendorTermsLi5": "Without verification = storefront shows as \"New shop\" but the vendor can still publish normally.",
     "vendorTermsLi6": "Pending code: monthly sales-count cron + Stripe price ID swap + UI gate for badge.",
     "vendorsLookupTitle": "Activate Vendor by email",
-    "vendorsLookupHint": "Look the user up by exact email (no need to scroll the full recent list). If found, you can activate or remove Vendor and send the welcome email.",
+    "vendorsLookupHint": "Look the user up by email. Send an invitation email (recommended), or force-activate only in emergencies. Pending invites appear below until accepted or revoked.",
     "vendorsLookupEmail": "User email",
     "vendorsLookupBtn": "Find",
     "vendorsLookupEmpty": "No user matched that email.",
     "vendorsActiveTitle": "Active vendors",
     "vendorsActiveCount": "Showing {{count}} of {{total}} verified.",
-    "vendorsActiveEmpty": "No verified vendors yet. Look someone up by email above to activate the first one.",
+    "vendorsActiveEmpty": "No verified vendors yet. Send the first invitation from a user lookup above.",
+    "vendorsPendingTitle": "Pending invitations",
+    "vendorsPendingCount": "{{count}} pending ({{total}} total outstanding).",
+    "vendorsPendingEmpty": "No pending vendor invitations.",
+    "vendorsColListings": "Listings",
+    "vendorsColSold": "Sold",
+    "vendorsColPlan": "Plan",
+    "vendorsColStripe": "Stripe sub",
+    "vendorsColMix": "Inventory",
+    "vendorsColHints": "Ops hints",
+    "vendorsColBilling": "Billing",
+    "vendorsViewsNote": "Listing views are not tracked yet in-app.",
+    "sendVendorInvite": "Send vendor invitation",
+    "resendVendorInvite": "Resend invitation",
+    "revokeVendorInvite": "Revoke invitation",
+    "forceActivateVendor": "Force activate (emergency)",
+    "vendorInviteSent": "Invitation email sent.",
+    "vendorInviteRevoked": "Invitation revoked.",
+    "pendingBadge": "Pending invite",
     "vendorsHandle": "Handle",
+    "vendorsInviteExpires": "Invite expires",
     "vendorsVerifiedSince": "Verified since",
-    "vendorsStatusActive": "Vendor active",
     "vendorsStatusInactive": "Not a Vendor",
     "vendorsNoHandle": "(no public handle)",
     "makeVendor": "Activate as Vendor",
@@ -2031,7 +2074,7 @@
     "vendorActivated": "Vendor activated.",
     "vendorRemoved": "Vendor removed.",
     "sendVendorWelcomeLabel": "Send vendor welcome (MX)",
-    "sendVendorWelcomeHint": "Sends the vendor welcome email: dynamic tier (Starter $0 → Pro Shop $999 MXN), no-custody policy, and the verification kit they must reply with to earn the badge.",
+    "sendVendorWelcomeHint": "Sends the vendor welcome email: dynamic tier, no-custody policy, and how to book the live video verification for the Verified Shop badge (booking URL from app.vendor-verification-booking-url if set).",
     "refresh": "Refresh",
     "generalPageBlurb": "SMTP, KPIs, users, marketplace moderation, and vendor tools.",
     "betaPageBlurb": "Applications, testers, welcome templates, campaigns, and beta bug queue.",

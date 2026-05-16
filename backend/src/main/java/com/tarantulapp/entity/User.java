@@ -108,6 +108,16 @@ public class User {
     @Column(name = "verified_breeder_at")
     private Instant verifiedBreederAt;
 
+    /** Non-null when a vendor invite email is pending (user must accept before verified_breeder is set). */
+    @Column(name = "vendor_invite_token", columnDefinition = "uuid")
+    private UUID vendorInviteToken;
+
+    @Column(name = "vendor_invite_sent_at")
+    private Instant vendorInviteSentAt;
+
+    @Column(name = "vendor_invite_expires_at")
+    private Instant vendorInviteExpiresAt;
+
     @Column(name = "beta_cohort", length = 80)
     private String betaCohort;
 
@@ -261,6 +271,15 @@ public class User {
 
     public Instant getVerifiedBreederAt() { return verifiedBreederAt; }
     public void setVerifiedBreederAt(Instant verifiedBreederAt) { this.verifiedBreederAt = verifiedBreederAt; }
+
+    public UUID getVendorInviteToken() { return vendorInviteToken; }
+    public void setVendorInviteToken(UUID vendorInviteToken) { this.vendorInviteToken = vendorInviteToken; }
+
+    public Instant getVendorInviteSentAt() { return vendorInviteSentAt; }
+    public void setVendorInviteSentAt(Instant vendorInviteSentAt) { this.vendorInviteSentAt = vendorInviteSentAt; }
+
+    public Instant getVendorInviteExpiresAt() { return vendorInviteExpiresAt; }
+    public void setVendorInviteExpiresAt(Instant vendorInviteExpiresAt) { this.vendorInviteExpiresAt = vendorInviteExpiresAt; }
 
     public String getBetaCohort() { return betaCohort; }
     public void setBetaCohort(String betaCohort) { this.betaCohort = betaCohort; }

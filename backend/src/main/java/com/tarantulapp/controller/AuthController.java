@@ -5,10 +5,12 @@ import com.tarantulapp.dto.AuthRegistrationPolicyResponse;
 import com.tarantulapp.dto.ChangePasswordRequest;
 import com.tarantulapp.dto.LoginRequest;
 import com.tarantulapp.dto.RegisterRequest;
+import com.tarantulapp.entity.User;
 import com.tarantulapp.service.AccountDeletionService;
 import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.CaptchaService;
 import com.tarantulapp.service.TokenBlacklistService;
+import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,17 +33,20 @@ public class AuthController {
     private final SecurityHelper securityHelper;
     private final CaptchaService captchaService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final VendorInviteService vendorInviteService;
 
     public AuthController(AuthService authService,
                           AccountDeletionService accountDeletionService,
                           SecurityHelper securityHelper,
                           CaptchaService captchaService,
-                          TokenBlacklistService tokenBlacklistService) {
+                          TokenBlacklistService tokenBlacklistService,
+                          VendorInviteService vendorInviteService) {
         this.authService = authService;
         this.accountDeletionService = accountDeletionService;
         this.securityHelper = securityHelper;
         this.captchaService = captchaService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.vendorInviteService = vendorInviteService;
     }
 
     @PostMapping("/register")
@@ -102,6 +108,32 @@ public class AuthController {
     }
 
     record BetaAgreementBody(Boolean accepted) {}
+
+    record VendorInviteAcceptBody(@NotBlank String token) {}
+
+    @GetMapping("/vendor-invite/status")
+    public ResponseEntity<Map<String, Object>> vendorInviteStatus(
+            @RequestParam(value = "token", required = false) String token) {
+        return ResponseEntity.ok(vendorInviteService.publicTokenStatus(token));
+    }
+
+    @PostMapping("/vendor-invite/accept")
+    public ResponseEntity<Map<String, Object>> vendorInviteAccept(@Valid @RequestBody VendorInviteAcceptBody body) {
+        UUID uid = securityHelper.getCurrentUserId();
+        UUID tok;
+        try {
+            tok = UUID.fromString(body.token().trim());
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "INVALID_TOKEN"));
+        }
+        User u = vendorInviteService.accept(uid, tok);
+        vendorInviteService.sendWelcomeAfterAccept(u);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", true);
+        out.put("verifiedBreeder", true);
+        out.put("nextPath", "/marketplace/sell");
+        return ResponseEntity.ok(out);
+    }
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest httpRequest) {

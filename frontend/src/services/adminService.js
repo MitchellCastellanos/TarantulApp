@@ -65,8 +65,11 @@ const adminService = {
   betaCampaignCatalog: () => api.get('/admin/beta-emails/campaign-catalog').then((r) => r.data),
   sendBetaCampaignBatch: (payload) =>
     api.post('/admin/beta-emails/send-campaign', payload).then((r) => r.data),
-  vendorUsers: (limit = 100) =>
-    api.get('/admin/vendor-users', { params: { limit } }).then((r) => r.data),
+  vendorUsers: (limit = 100, includePendingInvites = true) =>
+    api.get('/admin/vendor-users', { params: { limit, includePendingInvites } }).then((r) => r.data),
+  sendVendorInvite: (id, locale) =>
+    api.post(`/admin/users/${id}/vendor-invite`, locale ? { locale } : {}).then((r) => r.data),
+  revokeVendorInvite: (id) => api.post(`/admin/users/${id}/vendor-invite/revoke`).then((r) => r.data),
   userLookupByEmail: (email) =>
     api.get('/admin/user-lookup', { params: { email } }).then((r) => r.data),
   setUserVerifiedBreeder: (id, verifiedBreeder) =>
