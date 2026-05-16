@@ -432,8 +432,11 @@ export default function ProPage() {
                     taglineKey: 'pro.tierVendorTagline',
                     listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4', 'pro.tierVendorLi5', 'pro.tierVendorLi6'],
                     footer: (
-                      <div className="mt-2">
+                      <div className="mt-2 d-flex flex-wrap gap-2 align-items-center">
                         <span className="badge bg-success">{t('pro.tierLive')}</span>
+                        <a href="#vendor-activation" className="btn btn-sm btn-outline-light">
+                          {t('pro.vendorActivationCta')}
+                        </a>
                       </div>
                     ),
                   })}
@@ -448,7 +451,7 @@ export default function ProPage() {
               <p className="small text-muted mb-2">
                 {isPro ? t('pro.statusPro') : t('pro.statusFree')}
               </p>
-              <div className="border rounded p-3 mb-3" style={{ borderColor: 'var(--ta-border)' }}>
+              <div id="vendor-activation" className="border rounded p-3 mb-3" style={{ borderColor: 'var(--ta-border)', scrollMarginTop: 96 }}>
                 <div className="small fw-semibold mb-2">{t('pro.vendorActivationTitle')}</div>
                 <p className="small text-muted mb-2">{t('pro.vendorActivationBody')}</p>
                 <ol className="small mb-2 ps-3" style={{ lineHeight: 1.45 }}>
