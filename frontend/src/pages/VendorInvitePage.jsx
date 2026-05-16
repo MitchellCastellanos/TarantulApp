@@ -27,7 +27,7 @@ export default function VendorInvitePage() {
       return undefined
     }
     publicApi
-      .get('auth/vendor-invite/status', { params: { token: inviteToken } })
+      .get('/auth/vendor-invite/status', { params: { token: inviteToken } })
       .then(({ data }) => {
         if (!cancelled) setStatus(data)
       })
@@ -58,7 +58,7 @@ export default function VendorInvitePage() {
     setAccepting(true)
     setError('')
     try {
-      const { data } = await api.post('auth/vendor-invite/accept', { token: inviteToken })
+      const { data } = await api.post('/auth/vendor-invite/accept', { token: inviteToken })
       const next = typeof data?.nextPath === 'string' && data.nextPath.startsWith('/') ? data.nextPath : '/marketplace/sell'
       navigate(next, { replace: true })
     } catch (err) {

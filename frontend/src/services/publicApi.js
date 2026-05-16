@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders } from 'axios'
-import { normalizeViteApiBase } from '../utils/apiBaseUrl'
+import { normalizeAxiosRelativePath, normalizeViteApiBase } from '../utils/apiBaseUrl'
 
 /**
  * API pública sin JWT (evita edge cases con tokens viejos en rutas /api/public/**).
@@ -12,6 +12,9 @@ const publicApi = axios.create({
 })
 
 publicApi.interceptors.request.use((config) => {
+  if (config.url) {
+    config.url = normalizeAxiosRelativePath(config.url)
+  }
   const headers = AxiosHeaders.from(config.headers)
   headers.delete('Authorization')
   config.headers = headers

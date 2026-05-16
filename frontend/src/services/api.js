@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders } from 'axios'
-import { normalizeViteApiBase, resolveViteApiOrigin } from '../utils/apiBaseUrl'
+import { normalizeAxiosRelativePath, normalizeViteApiBase, resolveViteApiOrigin } from '../utils/apiBaseUrl'
 import { getTokenForApiRequest } from './authApiToken'
 import { notifyUnauthorized } from './authSession'
 
@@ -59,6 +59,9 @@ function isPublicAuthEndpoint(config) {
 
 // Adjunta el JWT en cada request automáticamente (AxiosHeaders evita que se pierda en merges de POST)
 api.interceptors.request.use((config) => {
+  if (config.url) {
+    config.url = normalizeAxiosRelativePath(config.url)
+  }
   const headers = AxiosHeaders.from(config.headers)
   if (isPublicAuthEndpoint(config)) {
     headers.delete('Authorization')

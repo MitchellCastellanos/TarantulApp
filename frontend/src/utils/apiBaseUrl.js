@@ -17,6 +17,15 @@ export function resolveViteApiOrigin() {
 
 export function normalizeViteApiBase() {
   const raw = resolveViteApiOrigin()
-  if (!raw) return '/api'
-  return raw.endsWith('/api') ? raw : `${raw}/api`
+  if (!raw) return '/api/'
+  const withApi = raw.endsWith('/api') ? raw : `${raw}/api`
+  return withApi.endsWith('/') ? withApi : `${withApi}/`
+}
+
+/** Relative axios paths must not start with "/" when baseURL is absolute (…/api/). */
+export function normalizeAxiosRelativePath(url) {
+  if (url == null) return url
+  const s = String(url)
+  if (!s || /^https?:\/\//i.test(s)) return s
+  return s.replace(/^\/+/, '')
 }
