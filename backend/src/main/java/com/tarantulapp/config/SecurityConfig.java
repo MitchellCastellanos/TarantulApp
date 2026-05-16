@@ -144,6 +144,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auth/beta-agreement").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auth/delete-account").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/vendor-invite/accept").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         // AntPath explícito (POST + sin método): evita 403 si el matcher MVC no alinea con la URI.
                         .requestMatchers(

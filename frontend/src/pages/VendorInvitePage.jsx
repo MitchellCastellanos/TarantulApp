@@ -11,7 +11,7 @@ export default function VendorInvitePage() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { token } = useAuth()
+  const { token, updateUserProfile } = useAuth()
   const inviteToken = searchParams.get('token') || ''
 
   const [status, setStatus] = useState(null)
@@ -59,6 +59,9 @@ export default function VendorInvitePage() {
     setError('')
     try {
       const { data } = await api.post('/auth/vendor-invite/accept', { token: inviteToken })
+      if (data?.verifiedBreeder === true) {
+        updateUserProfile({ verifiedBreeder: true })
+      }
       const next = typeof data?.nextPath === 'string' && data.nextPath.startsWith('/') ? data.nextPath : '/marketplace/sell'
       navigate(next, { replace: true })
     } catch (err) {
