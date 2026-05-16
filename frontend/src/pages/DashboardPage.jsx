@@ -15,9 +15,15 @@ import { exportTarantulaCollectionToExcel } from '../utils/exportCollectionExcel
 import { downloadCollectionJson, importCollectionJsonFile } from '../utils/exportCollectionJson'
 import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
-import { keeperRankName } from '../utils/keeperRank'
-import { keeperBadgeEmoji } from '../utils/keeperBadgeIcons'
+import KeeperReputationStrip from '../components/KeeperReputationStrip'
+import KeeperBadgeChip from '../components/KeeperBadgeChip'
+import {
+  badgeProgressHintLine,
+  badgeProgressTitle,
+  isBadgeTrackComplete,
+} from '../utils/keeperReputationHelpers'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -36,7 +42,13 @@ export default function DashboardPage() {
   const [jsonBusy, setJsonBusy] = useState(false)
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
   const importInputRef = useRef(null)
-  const [keeperProfile, setKeeperProfile] = useState(null)
+
+  const { data: keeperProfile = null } = useQuery({
+    queryKey: keeperProfileKeys.detail(),
+    queryFn: () => marketplaceService.getMyProfile(),
+    enabled: Boolean(token),
+    staleTime: 45_000,
+  })
 
   const DASH_SCROLL_KEY = 'ta-dash-scroll-y'
   const DASH_RESTORE_FLAG = 'ta-dash-restore'
@@ -70,11 +82,6 @@ export default function DashboardPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!user) return
-    marketplaceService.getMyProfile().then(setKeeperProfile).catch(() => setKeeperProfile(null))
-  }, [user?.id])
-
   const alive    = tarantulas.filter(t => !t.deceasedAt)
   const deceased = tarantulas.filter(t =>  t.deceasedAt)
   const translateBadgeLabel = (badge) => {
@@ -82,24 +89,20 @@ export default function DashboardPage() {
     if (!key) return badge?.label || ''
     return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
   }
-  const translateProgressLabel = (progress) => {
-    const key = progress?.nextKey
-    if (!key) return progress?.nextLabel || ''
-    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
-  }
   const speciesSet = new Set(alive.map((t) => t.species?.scientificName).filter(Boolean))
   const profileBadgeRows = Array.isArray(keeperProfile?.badges)
     ? keeperProfile.badges.map((b) => ({
         key: String(b.key || b.label || ''),
         label: translateBadgeLabel(b),
         iconKey: b.key,
+        tier: b.tier || 'core',
       }))
     : [
-        alive.length >= 1 ? { key: 'fallback_start', label: 'Starter keeper', iconKey: 'starter_keeper' } : null,
-        alive.length >= 10 ? { key: 'fallback_c10', label: 'Collection 10+', iconKey: 'collection_10' } : null,
-        alive.length >= 25 ? { key: 'fallback_c25', label: 'Collection 25+', iconKey: 'collection_25' } : null,
-        speciesSet.size >= 5 ? { key: 'fallback_d5', label: 'Species diversity 5+', iconKey: 'species_diversity_5' } : null,
-        speciesSet.size >= 12 ? { key: 'fallback_d12', label: 'Species diversity 12+', iconKey: 'species_diversity_12' } : null,
+        alive.length >= 1 ? { key: 'fallback_start', label: 'Starter keeper', iconKey: 'starter_keeper', tier: 'core' } : null,
+        alive.length >= 10 ? { key: 'fallback_c10', label: 'Collection 10+', iconKey: 'collection_10', tier: 'core' } : null,
+        alive.length >= 25 ? { key: 'fallback_c25', label: 'Collection 25+', iconKey: 'collection_25', tier: 'notable' } : null,
+        speciesSet.size >= 5 ? { key: 'fallback_d5', label: 'Species diversity 5+', iconKey: 'species_diversity_5', tier: 'notable' } : null,
+        speciesSet.size >= 12 ? { key: 'fallback_d12', label: 'Species diversity 12+', iconKey: 'species_diversity_12', tier: 'notable' } : null,
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
   const badgesProgress = keeperProfile?.badgesProgress || null
@@ -205,46 +208,24 @@ export default function DashboardPage() {
                   />
                 </div>
                 {reputation && (
-                  <div className="ta-keeper-reputation-strip">
-                    <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                      {t('marketplace.reputationTitle')} ·{' '}
-                      {t('marketplace.reputationLine', {
-                        rank: keeperRankName(t, reputation.tier),
-                        score: reputation.score,
-                      })}
-                    </div>
-                    <div className="progress" style={{ height: 8 }}>
-                      <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
-                    </div>
-                    {reputation.nextTier === 'none' && reputation.tier === 'breeder' && (
-                      <div className="small text-muted mt-1">
-                        {t('marketplace.reputationNextLastRank', {
-                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
-                        })}
-                      </div>
-                    )}
-                    {reputation.nextTier !== 'Max' && reputation.nextTier !== 'none' && (
-                      <div className="small text-muted mt-1">
-                        {t('marketplace.reputationNext', {
-                          nextRank: keeperRankName(t, reputation.nextTier),
-                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
-                        })}
-                      </div>
-                    )}
-                    {reputation.nextTier === 'Max' && (
-                      <div className="small text-muted mt-1">{t('marketplace.reputationNextCap')}</div>
-                    )}
-                  </div>
+                  <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-parchment)" />
                 )}
                 {badgesProgress && (
                   <div className="row g-2 mt-1">
                     {Object.entries(badgesProgress).map(([key, p]) => {
                       const target = Number(p?.target || 0)
                       const current = Number(p?.current || 0)
-                      const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
+                      const complete = isBadgeTrackComplete(p)
+                      const percent = complete
+                        ? 100
+                        : target > 0
+                          ? Math.min(100, Math.round((current / target) * 100))
+                          : 100
+                      const hint = badgeProgressHintLine(t, key, p)
                       return (
                         <div className="col-12" key={key}>
-                          <div className="small mb-1">{translateProgressLabel(p)}</div>
+                          <div className="small mb-1">{badgeProgressTitle(t, p)}</div>
+                          {hint ? <div className="small text-muted mb-1">{hint}</div> : null}
                           <div className="progress" style={{ height: 6 }}>
                             <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                           </div>
@@ -257,10 +238,12 @@ export default function DashboardPage() {
                 {profileBadgeRows.length > 0 && (
                   <div className="d-flex gap-1 flex-wrap mt-2">
                     {profileBadgeRows.map((row) => (
-                      <span className="badge bg-light text-dark border" key={row.key}>
-                        <span className="me-1" aria-hidden="true">{keeperBadgeEmoji(row.iconKey)}</span>
-                        {row.label}
-                      </span>
+                      <KeeperBadgeChip
+                        key={row.key}
+                        iconKey={row.iconKey}
+                        label={row.label}
+                        tier={row.tier}
+                      />
                     ))}
                   </div>
                 )}

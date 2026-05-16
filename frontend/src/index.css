@@ -2304,6 +2304,206 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   border-color: rgba(120, 88, 32, 0.22);
 }
 
+/* Keeper achievement badges (marketplace / profile) */
+.ta-keeper-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem 0.22rem 0.38rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  max-width: 100%;
+  border: 1px solid transparent;
+  background: rgba(12, 14, 22, 0.78);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  vertical-align: middle;
+  letter-spacing: 0.01em;
+}
+
+.ta-keeper-badge-chip__glyph {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.ta-keeper-badge-chip__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ta-parchment, #f5ecd6);
+}
+
+.ta-keeper-badge-chip--core {
+  border-color: rgba(148, 163, 184, 0.42);
+}
+
+.ta-keeper-badge-chip--notable {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.16);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(12, 14, 22, 0.82));
+}
+
+.ta-keeper-badge-chip--elite {
+  border-color: rgba(167, 139, 250, 0.55);
+  box-shadow: 0 0 16px rgba(167, 139, 250, 0.2);
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.16), rgba(56, 189, 248, 0.08), rgba(12, 14, 22, 0.82));
+}
+
+:root[data-theme='light'] .ta-keeper-badge-chip {
+  background: rgba(255, 251, 243, 0.96);
+  box-shadow: 0 1px 2px rgba(80, 62, 32, 0.12);
+}
+
+:root[data-theme='light'] .ta-keeper-badge-chip__label {
+  color: #2c2418;
+}
+
+:root[data-theme='light'] .ta-keeper-badge-chip--core {
+  border-color: rgba(100, 116, 139, 0.35);
+}
+
+:root[data-theme='light'] .ta-keeper-badge-chip--notable {
+  border-color: rgba(180, 130, 20, 0.45);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(255, 251, 243, 0.98));
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.18);
+}
+
+:root[data-theme='light'] .ta-keeper-badge-chip--elite {
+  border-color: rgba(124, 58, 237, 0.4);
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.22), rgba(224, 242, 254, 0.55), rgba(255, 251, 243, 0.98));
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.15);
+}
+
+.ta-keeper-hover-card .ta-keeper-badge-chip {
+  font-size: 0.68rem;
+  padding: 0.18rem 0.48rem 0.18rem 0.32rem;
+}
+
+.ta-keeper-hover-card .ta-keeper-badge-chip__glyph {
+  font-size: 0.95rem;
+}
+
+.ta-keeper-celebration-stack {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 10800;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: min(19.5rem, calc(100vw - 1.5rem));
+  max-height: min(70vh, 26rem);
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.ta-keeper-celebration-stack .ta-keeper-celebration-toast {
+  pointer-events: auto;
+}
+
+.ta-keeper-celebration-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.72rem 0.65rem 0.72rem 0.72rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, rgba(22, 24, 32, 0.94), rgba(12, 14, 20, 0.92));
+  color: var(--ta-parchment, #f8fafc);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: ta-keeper-celebration-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ta-keeper-celebration-toast--strong {
+  border-color: rgba(251, 191, 36, 0.45);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(251, 191, 36, 0.22);
+}
+
+.ta-keeper-celebration-toast--epic {
+  border-color: rgba(167, 139, 250, 0.55);
+  background: linear-gradient(135deg, rgba(46, 16, 101, 0.92), rgba(22, 24, 32, 0.94));
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.55),
+    0 0 32px rgba(167, 139, 250, 0.28);
+}
+
+.ta-keeper-celebration-toast__icon {
+  flex: 0 0 auto;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.ta-keeper-celebration-toast__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ta-keeper-celebration-toast__title {
+  font-weight: 700;
+  font-size: 0.94rem;
+  letter-spacing: 0.01em;
+}
+
+.ta-keeper-celebration-toast__subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  opacity: 0.92;
+  line-height: 1.3;
+}
+
+.ta-keeper-celebration-toast__close {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0 0.1rem;
+  margin: -0.15rem 0 0 0;
+}
+
+.ta-keeper-celebration-toast__close:hover {
+  opacity: 0.95;
+}
+
+:root[data-theme='light'] .ta-keeper-celebration-toast {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(241, 245, 249, 0.97));
+  color: #0f172a;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme='light'] .ta-keeper-celebration-toast--strong {
+  border-color: rgba(217, 119, 6, 0.35);
+  box-shadow: 0 12px 32px rgba(217, 119, 6, 0.12);
+}
+
+:root[data-theme='light'] .ta-keeper-celebration-toast--epic {
+  border-color: rgba(124, 58, 237, 0.35);
+  background: linear-gradient(135deg, rgba(250, 245, 255, 0.98), rgba(255, 253, 248, 0.98));
+  box-shadow: 0 14px 40px rgba(124, 58, 237, 0.14);
+}
+
+@keyframes ta-keeper-celebration-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .ta-premium-edit-btn {
   border-radius: 999px !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;

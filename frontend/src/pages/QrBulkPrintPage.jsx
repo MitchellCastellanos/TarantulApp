@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -18,6 +18,7 @@ import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrB
 import marketplaceService from '../services/marketplaceService'
 import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 function specimenQrUrl(shortId) {
   return specimenPublicUrl(shortId)
@@ -26,6 +27,7 @@ function specimenQrUrl(shortId) {
 export default function QrBulkPrintPage() {
   const { t } = useTranslation()
   const { user, token } = useAuth()
+  const queryClient = useQueryClient()
   const hasProFeatures = user?.hasProFeatures === true
   const selectionSeeded = useRef(false)
 
@@ -105,6 +107,7 @@ export default function QrBulkPrintPage() {
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } finally {
       setBusy(false)
       setBusyKind('')
@@ -125,6 +128,7 @@ export default function QrBulkPrintPage() {
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } finally {
       setBusy(false)
       setBusyKind('')

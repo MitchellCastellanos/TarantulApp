@@ -4,7 +4,14 @@ import { useTranslation } from 'react-i18next'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
+import KeeperBadgeChip from './KeeperBadgeChip'
 import { keeperRankName } from '../utils/keeperRank'
+import {
+  badgeProgressHintLine,
+  badgeProgressTitle,
+  isBadgeTrackComplete,
+  reputationAxisLabel,
+} from '../utils/keeperReputationHelpers'
 
 const profileCache = new Map()
 const keeperCache = new Map()
@@ -101,11 +108,7 @@ export default function PublicKeeperHandle({
     if (!key) return badge?.label || 'Badge'
     return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
   }
-  const progressText = (progress) => {
-    const key = progress?.nextKey
-    if (!key) return progress?.nextLabel || ''
-    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
-  }
+  const progressText = (progress) => badgeProgressTitle(t, progress)
   const visibleLabel = showAt ? `@${normalizedHandle}` : normalizedHandle
   const visibleDisplay = publicProfile?.displayName || displayName || fallbackLabel
   const location = publicProfile?.location || keeperData?.profile?.location || ''
@@ -141,26 +144,43 @@ export default function PublicKeeperHandle({
             <div className="progress mt-1" style={{ height: 6 }}>
               <div className="progress-bar bg-warning" style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }} />
             </div>
+            {reputation.weakestAxisKey ? (
+              <div className="small text-muted mt-1">
+                {t('marketplace.reputationWeakestShort', {
+                  axis: reputationAxisLabel(t, reputation.weakestAxisKey),
+                })}
+              </div>
+            ) : null}
           </div>
         )}
         {!loading && badges.length > 0 && (
           <div className="d-flex flex-wrap gap-1 mt-1">
             {badges.map((badge, idx) => (
-              <span key={`${badge?.key || badge?.label || 'badge'}-${idx}`} className="badge ta-keeper-hover-badge">
-                {badgeText(badge)}
-              </span>
+              <KeeperBadgeChip
+                key={`${badge?.key || badge?.label || 'badge'}-${idx}`}
+                iconKey={badge?.key}
+                label={badgeText(badge)}
+                tier={badge?.tier || 'core'}
+              />
             ))}
           </div>
         )}
         {!loading && Object.keys(badgesProgress).length > 0 && (
           <div className="mt-2">
-            {Object.entries(badgesProgress).slice(0, 2).map(([key, p]) => {
+            {Object.entries(badgesProgress).slice(0, 6).map(([key, p]) => {
               const target = Number(p?.target || 0)
               const current = Number(p?.current || 0)
-              const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
+              const complete = isBadgeTrackComplete(p)
+              const percent = complete
+                ? 100
+                : target > 0
+                  ? Math.min(100, Math.round((current / target) * 100))
+                  : 100
+              const hint = badgeProgressHintLine(t, key, p)
               return (
                 <div key={key} className="small mb-1">
                   <div className="text-truncate">{progressText(p)}</div>
+                  {hint ? <div className="text-muted text-truncate">{hint}</div> : null}
                   <div className="progress" style={{ height: 4 }}>
                     <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                   </div>

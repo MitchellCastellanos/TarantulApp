@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import QRCodeSvg from 'react-qr-code'
@@ -24,6 +24,7 @@ import {
 } from '../utils/buildQrBulkDocx'
 import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 /** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
 const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
@@ -53,6 +54,7 @@ function resolveAppPathFromScan(raw) {
 export default function QrToolPage() {
   const { t, i18n } = useTranslation()
   const { token, user } = useAuth()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const svgRef = useRef(null)
@@ -246,6 +248,7 @@ export default function QrToolPage() {
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } finally {
       setBusy(false)
       setBusyKind('')
@@ -266,6 +269,7 @@ export default function QrToolPage() {
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } finally {
       setBusy(false)
       setBusyKind('')

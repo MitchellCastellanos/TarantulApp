@@ -37,6 +37,7 @@ import { computePostMoltWindow } from '../utils/moltFeedingWindow'
 import { predictNextMolt } from '../utils/moltPrediction'
 import { detectFeedingPreMoltSignal } from '../utils/preMoltSignals'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const REMINDER_TYPE_ICONS = { feeding: '🍽️', feeding_auto: '🤖', cleaning: '🧹', checkup: '🔍', custom: '📌' }
@@ -137,6 +138,7 @@ export default function TarantulaDetailPage() {
       if (showFullPageLoading) setLoading(false)
       if (!showFullPageLoading) {
         queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+        queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       }
     })
   }, [id, queryClient])
@@ -269,12 +271,14 @@ export default function TarantulaDetailPage() {
     const updated = await tarantulaService.togglePublic(id)
     setTarantula(updated)
     queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+    queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
   }
 
   const handleDelete = async () => {
     if (!confirm(t('tarantula.deleteConfirm', { name: tarantula.name }))) return
     await tarantulaService.delete(id)
     queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+    queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     navigate('/')
   }
 
@@ -286,6 +290,7 @@ export default function TarantulaDetailPage() {
     setTarantula(updated)
     setModal(null)
     queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+    queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
   }
 
   const handleExportPdf = async () => {

@@ -9,8 +9,13 @@ import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
-import { keeperRankName } from '../utils/keeperRank'
-import { keeperBadgeEmoji } from '../utils/keeperBadgeIcons'
+import KeeperReputationStrip from '../components/KeeperReputationStrip'
+import KeeperBadgeChip from '../components/KeeperBadgeChip'
+import {
+  badgeProgressHintLine,
+  badgeProgressTitle,
+  isBadgeTrackComplete,
+} from '../utils/keeperReputationHelpers'
 
 export default function PublicKeeperProfilePage() {
   const { t } = useTranslation()
@@ -73,11 +78,6 @@ export default function PublicKeeperProfilePage() {
     if (!key) return badge?.label || ''
     return t(`marketplace.badges.${key}`, { defaultValue: badge?.label || key })
   }
-  const progressText = (progress) => {
-    const key = progress?.nextKey
-    if (!key) return progress?.nextLabel || ''
-    return t(`marketplace.badges.${key}`, { defaultValue: progress?.nextLabel || key })
-  }
   const reputation = keeperData?.reputation || null
   const sexId = profile?.sexId || null
   const sameUser = user && profile?.id && String(user.id) === String(profile.id)
@@ -131,10 +131,12 @@ export default function PublicKeeperProfilePage() {
                 {badges.length > 0 && (
                   <div className="d-flex gap-1 flex-wrap mb-2">
                     {badges.map((b) => (
-                      <span className="badge bg-light text-dark border" key={b.key || b.label}>
-                        <span className="me-1" aria-hidden="true">{keeperBadgeEmoji(b.key)}</span>
-                        {badgeText(b)}
-                      </span>
+                      <KeeperBadgeChip
+                        key={b.key || b.label}
+                        iconKey={b.key}
+                        label={badgeText(b)}
+                        tier={b.tier || 'core'}
+                      />
                     ))}
                   </div>
                 )}
@@ -142,38 +144,8 @@ export default function PublicKeeperProfilePage() {
                   {t('marketplace.rating')}: {keeperData?.ratingAvg ?? 0} ({keeperData?.reviewsCount ?? 0})
                 </div>
                 {reputation && (
-                  <div className="ta-keeper-reputation-strip mb-2">
-                    <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-text)' }}>
-                      {t('marketplace.reputationTitle')} ·{' '}
-                      {t('marketplace.reputationLine', {
-                        rank: keeperRankName(t, reputation.tier),
-                        score: reputation.score,
-                      })}
-                    </div>
-                    <div className="progress mt-1" style={{ height: 8 }}>
-                      <div
-                        className="progress-bar bg-warning"
-                        style={{ width: `${Math.min(100, Number(reputation.score || 0))}%` }}
-                      />
-                    </div>
-                    {reputation.nextTier === 'none' && reputation.tier === 'breeder' && (
-                      <div className="small text-muted mt-1">
-                        {t('marketplace.reputationNextLastRank', {
-                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
-                        })}
-                      </div>
-                    )}
-                    {reputation.nextTier !== 'Max' && reputation.nextTier !== 'none' && (
-                      <div className="small text-muted mt-1">
-                        {t('marketplace.reputationNext', {
-                          nextRank: keeperRankName(t, reputation.nextTier),
-                          remaining: reputation.remainingPercent ?? Math.max(0, 100 - Number(reputation.score || 0)),
-                        })}
-                      </div>
-                    )}
-                    {reputation.nextTier === 'Max' && (
-                      <div className="small text-muted mt-1">{t('marketplace.reputationNextCap')}</div>
-                    )}
+                  <div className="mb-2">
+                    <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-text)" />
                   </div>
                 )}
                 {Object.keys(badgesProgress).length > 0 && (
@@ -181,13 +153,21 @@ export default function PublicKeeperProfilePage() {
                     {Object.entries(badgesProgress).map(([key, p]) => {
                       const target = Number(p?.target || 0)
                       const current = Number(p?.current || 0)
-                      const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 100
+                      const complete = isBadgeTrackComplete(p)
+                      const percent = complete
+                        ? 100
+                        : target > 0
+                          ? Math.min(100, Math.round((current / target) * 100))
+                          : 100
+                      const hint = badgeProgressHintLine(t, key, p)
                       return (
                         <div className="col-md-6" key={key}>
-                          <div className="small">{progressText(p)}</div>
-                          <div className="progress" style={{ height: 6 }}>
+                          <div className="small fw-semibold">{badgeProgressTitle(t, p)}</div>
+                          {hint ? <div className="small text-muted">{hint}</div> : null}
+                          <div className="progress mt-1" style={{ height: 6 }}>
                             <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
                           </div>
+                          <div className="small text-muted">{current}/{target || current}</div>
                         </div>
                       )
                     })}

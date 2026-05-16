@@ -13,6 +13,7 @@ import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.SellerReviewRepository;
+import com.tarantulapp.repository.SexIdCaseVoteRepository;
 import com.tarantulapp.repository.TarantulaSpoodRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.FeedingLogRepository;
@@ -29,13 +30,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
@@ -69,6 +76,7 @@ public class MarketplaceService {
     private final FeedingLogRepository feedingLogRepository;
     private final MoltLogRepository moltLogRepository;
     private final BehaviorLogRepository behaviorLogRepository;
+    private final SexIdCaseVoteRepository sexIdCaseVoteRepository;
     private final ChatThreadRepository chatThreadRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final FileStorageService fileStorageService;
@@ -95,6 +103,7 @@ public class MarketplaceService {
                               FeedingLogRepository feedingLogRepository,
                               MoltLogRepository moltLogRepository,
                               BehaviorLogRepository behaviorLogRepository,
+                              SexIdCaseVoteRepository sexIdCaseVoteRepository,
                               ChatThreadRepository chatThreadRepository,
                               ChatMessageRepository chatMessageRepository,
                               FileStorageService fileStorageService,
@@ -110,6 +119,7 @@ public class MarketplaceService {
         this.feedingLogRepository = feedingLogRepository;
         this.moltLogRepository = moltLogRepository;
         this.behaviorLogRepository = behaviorLogRepository;
+        this.sexIdCaseVoteRepository = sexIdCaseVoteRepository;
         this.chatThreadRepository = chatThreadRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.fileStorageService = fileStorageService;
@@ -153,8 +163,9 @@ public class MarketplaceService {
     public Map<String, Object> getMyProfile(UUID userId) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         Map<String, Object> out = mapUserProfile(profile);
-        out.put("badges", computeBadges(userId));
-        out.put("badgesProgress", computeBadgeProgress(userId));
+        CollectionFlavorStats flavor = computeCollectionFlavorStats(userId);
+        out.put("badges", computeBadges(userId, flavor));
+        out.put("badgesProgress", computeBadgeProgress(userId, flavor));
         out.put("reputation", computeReputation(userId));
         out.put("sellerProgram", resolveSellerProgram(profile));
         return out;
@@ -705,8 +716,9 @@ public class MarketplaceService {
         out.put("userId", user.getId());
         out.put("displayName", user.getDisplayName() == null || user.getDisplayName().isBlank() ? user.getEmail() : user.getDisplayName());
         out.put("profile", mapUserProfile(user));
-        out.put("badges", computeBadges(sellerUserId));
-        out.put("badgesProgress", computeBadgeProgress(sellerUserId));
+        CollectionFlavorStats flavor = computeCollectionFlavorStats(sellerUserId);
+        out.put("badges", computeBadges(sellerUserId, flavor));
+        out.put("badgesProgress", computeBadgeProgress(sellerUserId, flavor));
         out.put("reputation", computeReputation(sellerUserId));
         out.put("ratingAvg", avg);
         out.put("reviewsCount", reviewsCount);
@@ -763,8 +775,9 @@ public class MarketplaceService {
         user.setProfilePhoto(path);
         userRepository.save(user);
         Map<String, Object> out = mapUserProfile(user);
-        out.put("badges", computeBadges(userId));
-        out.put("badgesProgress", computeBadgeProgress(userId));
+        CollectionFlavorStats flavor = computeCollectionFlavorStats(userId);
+        out.put("badges", computeBadges(userId, flavor));
+        out.put("badgesProgress", computeBadgeProgress(userId, flavor));
         out.put("reputation", computeReputation(userId));
         return out;
     }
@@ -959,75 +972,288 @@ public class MarketplaceService {
         return v;
     }
 
-    private List<Map<String, Object>> computeBadges(UUID userId) {
-        long total = tarantulaRepository.countByUserId(userId);
-        long species = tarantulaRepository.countDistinctSpeciesByUserId(userId);
+    private static Map<String, Object> badgeRow(String key, String label, String tier) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("key", key);
+        m.put("label", label);
+        m.put("tier", tier);
+        return m;
+    }
+
+    private List<Map<String, Object>> computeBadges(UUID userId, CollectionFlavorStats f) {
+        long aliveTotal = tarantulaRepository.countByUserIdAndDeceasedAtIsNull(userId);
+        long totalEver = tarantulaRepository.countByUserId(userId);
+        long speciesAlive = tarantulaRepository.countDistinctSpeciesAliveByUserId(userId);
         long feeding = feedingLogRepository.countByOwnerUserId(userId);
         long molts = moltLogRepository.countByOwnerUserId(userId);
         long behavior = behaviorLogRepository.countByOwnerUserId(userId);
         long events = feeding + molts + behavior;
         int qrPrints = userRepository.findById(userId).map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
+        long listings = marketplaceListingRepository.countBySellerUserId(userId);
+        long reviews = sellerReviewRepository.countBySellerUserId(userId);
+        long sexVotes = sexIdCaseVoteRepository.countByVoterUserId(userId);
+
         List<Map<String, Object>> badges = new ArrayList<>();
-        if (total >= 1) badges.add(Map.of("key", "starter_keeper", "label", "Starter keeper"));
-        if (total >= 10) badges.add(Map.of("key", "collection_10", "label", "Collection 10+"));
-        if (total >= 25) badges.add(Map.of("key", "collection_25", "label", "Collection 25+"));
-        if (species >= 5) badges.add(Map.of("key", "species_5", "label", "Species diversity 5+"));
-        if (species >= 12) badges.add(Map.of("key", "species_12", "label", "Species diversity 12+"));
-        if (events >= 30) badges.add(Map.of("key", "logger_30", "label", "Active logbook (30+ events)"));
-        if (events >= 100) badges.add(Map.of("key", "logger_100", "label", "Logbook master (100+ events)"));
-        if (qrPrints >= 1) badges.add(Map.of("key", "qr_printed", "label", "Labeled terrarium (printed QR)"));
-        if (qrPrints >= 10) badges.add(Map.of("key", "qr_printed_10", "label", "QR labeler pro (10+ prints)"));
+        if (totalEver >= 1) {
+            badges.add(badgeRow("starter_keeper", "Starter keeper", "core"));
+        }
+        if (aliveTotal >= 5) {
+            badges.add(badgeRow("collection_5", "Growing collection (5+ living)", "core"));
+        }
+        if (aliveTotal >= 10) {
+            badges.add(badgeRow("collection_10", "Collection 10+ (living)", "core"));
+        }
+        if (aliveTotal >= 25) {
+            badges.add(badgeRow("collection_25", "Serious collection (25+ living)", "notable"));
+        }
+        if (aliveTotal >= 50) {
+            badges.add(badgeRow("collection_50", "Colossus keeper (50+ living)", "elite"));
+        }
+        if (speciesAlive >= 3) {
+            badges.add(badgeRow("species_3", "Species explorer (3+)", "core"));
+        }
+        if (speciesAlive >= 5) {
+            badges.add(badgeRow("species_5", "Species diversity 5+", "notable"));
+        }
+        if (speciesAlive >= 12) {
+            badges.add(badgeRow("species_12", "Species diversity 12+", "notable"));
+        }
+        if (speciesAlive >= 20) {
+            badges.add(badgeRow("species_20", "Taxonomy buff (20+ species)", "elite"));
+        }
+        if (events >= 30) {
+            badges.add(badgeRow("logger_30", "Active logbook (30+ events)", "core"));
+        }
+        if (events >= 100) {
+            badges.add(badgeRow("logger_100", "Dedicated logger (100+ events)", "notable"));
+        }
+        if (events >= 300) {
+            badges.add(badgeRow("logger_300", "Chronicler (300+ events)", "elite"));
+        }
+        if (molts >= 10) {
+            badges.add(badgeRow("molt_10", "Molt tracker (10+ molts logged)", "core"));
+        }
+        if (molts >= 40) {
+            badges.add(badgeRow("molt_40", "Shedding scholar (40+ molts)", "notable"));
+        }
+        if (molts >= 100) {
+            badges.add(badgeRow("molt_100", "Instar archivist (100+ molts)", "elite"));
+        }
+        if (feeding >= 25) {
+            badges.add(badgeRow("feed_25", "Feeding routine (25+ feeds)", "core"));
+        }
+        if (feeding >= 100) {
+            badges.add(badgeRow("feed_100", "Consistent feeder (100+ feeds)", "notable"));
+        }
+        if (feeding >= 300) {
+            badges.add(badgeRow("feed_300", "Power feeder (300+ feeds)", "elite"));
+        }
+        if (qrPrints >= 1) {
+            badges.add(badgeRow("qr_printed", "Labeled terrarium (printed QR)", "core"));
+        }
+        if (qrPrints >= 10) {
+            badges.add(badgeRow("qr_printed_10", "QR labeler pro (10+ prints)", "notable"));
+        }
+        if (qrPrints >= 25) {
+            badges.add(badgeRow("qr_printed_25", "QR print factory (25+ prints)", "elite"));
+        }
+        if (listings >= 1) {
+            badges.add(badgeRow("seller_listed_1", "Marketplace debut", "core"));
+        }
+        if (listings >= 5) {
+            badges.add(badgeRow("seller_listed_5", "Active seller (5+ listings)", "notable"));
+        }
+        if (listings >= 15) {
+            badges.add(badgeRow("seller_listed_15", "Marketplace regular (15+ listings)", "elite"));
+        }
+        if (reviews >= 1) {
+            badges.add(badgeRow("seller_reviewed_1", "Trusted review", "core"));
+        }
+        if (reviews >= 5) {
+            badges.add(badgeRow("seller_reviewed_5", "Community-rated seller (5+ reviews)", "notable"));
+        }
+        if (sexVotes >= 10) {
+            badges.add(badgeRow("sex_poll_10", "Sex-ID contributor", "core"));
+        }
+        if (sexVotes >= 50) {
+            badges.add(badgeRow("sex_poll_50", "Crowd wisdom (50+ votes)", "notable"));
+        }
+        if (f.maxSpeciesInOneGenus() >= 2) {
+            badges.add(badgeRow("genus_lineup_2", "Genus fan (2+ species, same genus)", "core"));
+        }
+        if (f.maxSpeciesInOneGenus() >= 4) {
+            badges.add(badgeRow("genus_lineup_4", "Genus collector (4+ species, one genus)", "notable"));
+        }
+        if (f.maxSpeciesInOneGenus() >= 6) {
+            badges.add(badgeRow("genus_lineup_6", "Genus deep cut (6+ species, one genus)", "elite"));
+        }
+        if (f.distinctGenera() >= 4) {
+            badges.add(badgeRow("genera_breadth_4", "Multi-genus roster (4+ genera)", "core"));
+        }
+        if (f.distinctGenera() >= 8) {
+            badges.add(badgeRow("genera_breadth_8", "Broad genera spread (8+ genera)", "notable"));
+        }
+        if (f.distinctGenera() >= 12) {
+            badges.add(badgeRow("genera_breadth_12", "Taxonomic wanderer (12+ genera)", "elite"));
+        }
+        if (f.oldWorldAlive() >= 1 && f.newWorldAlive() >= 1) {
+            badges.add(badgeRow("worlds_bridge", "Old World × New World mix", "notable"));
+        }
+        if (f.oldWorldAlive() >= 5) {
+            badges.add(badgeRow("old_world_line_5", "Old World line-up (5+)", "core"));
+        }
+        if (f.oldWorldAlive() >= 12) {
+            badges.add(badgeRow("old_world_line_12", "Old World heavy (12+)", "notable"));
+        }
+        if (f.newWorldAlive() >= 5) {
+            badges.add(badgeRow("new_world_line_5", "New World line-up (5+)", "core"));
+        }
+        if (f.newWorldAlive() >= 12) {
+            badges.add(badgeRow("new_world_line_12", "New World heavy (12+)", "notable"));
+        }
+        if (f.distinctHabitatTypes() >= 2) {
+            badges.add(badgeRow("habitat_duo", "Habitat mix (2 eco-types)", "core"));
+        }
+        if (f.distinctHabitatTypes() >= 3) {
+            badges.add(badgeRow("habitat_trio", "Habitat trifecta (3 eco-types)", "notable"));
+        }
+        if (f.slingAlive() >= 5) {
+            badges.add(badgeRow("sling_den_5", "Sling colony (5+ slings)", "core"));
+        }
+        if (f.slingAlive() >= 12) {
+            badges.add(badgeRow("sling_den_12", "Sling nursery (12+ slings)", "notable"));
+        }
+        if (f.slingAlive() >= 25) {
+            badges.add(badgeRow("sling_den_25", "Sling factory (25+ slings)", "elite"));
+        }
+        if (f.size12Plus() >= 2) {
+            badges.add(badgeRow("giants_row_2", "Big spiders corner (2+ at 12 cm+)", "core"));
+        }
+        if (f.size12Plus() >= 5) {
+            badges.add(badgeRow("giants_row_5", "Heavyweight row (5+ at 12 cm+)", "notable"));
+        }
+        if (f.size16Plus() >= 1) {
+            badges.add(badgeRow("heavyweight_1", "True heavyweight (16 cm+ logged)", "notable"));
+        }
+        if (f.size16Plus() >= 3) {
+            badges.add(badgeRow("heavyweight_3", "Heavyweight squad (3× 16 cm+)", "elite"));
+        }
+        if (f.tenureDays() >= 365) {
+            badges.add(badgeRow("tenure_1y", "1+ year caring for current crew", "core"));
+        }
+        if (f.tenureDays() >= 1095) {
+            badges.add(badgeRow("tenure_3y", "3+ years of keeper patience", "notable"));
+        }
+        if (f.tenureDays() >= 1825) {
+            badges.add(badgeRow("tenure_5y", "5+ years — seasoned keeper", "elite"));
+        }
         return badges;
     }
 
-    private Map<String, Object> computeBadgeProgress(UUID userId) {
-        long total = tarantulaRepository.countByUserId(userId);
-        long species = tarantulaRepository.countDistinctSpeciesByUserId(userId);
-        long events = feedingLogRepository.countByOwnerUserId(userId)
-                + moltLogRepository.countByOwnerUserId(userId)
-                + behaviorLogRepository.countByOwnerUserId(userId);
+    private Map<String, Object> computeBadgeProgress(UUID userId, CollectionFlavorStats f) {
+        long aliveTotal = tarantulaRepository.countByUserIdAndDeceasedAtIsNull(userId);
+        long speciesAlive = tarantulaRepository.countDistinctSpeciesAliveByUserId(userId);
+        long feeding = feedingLogRepository.countByOwnerUserId(userId);
+        long molts = moltLogRepository.countByOwnerUserId(userId);
+        long behavior = behaviorLogRepository.countByOwnerUserId(userId);
+        long events = feeding + molts + behavior;
         int qrPrints = userRepository.findById(userId).map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
+        long listings = marketplaceListingRepository.countBySellerUserId(userId);
+        long reviews = sellerReviewRepository.countBySellerUserId(userId);
+        long sexVotes = sexIdCaseVoteRepository.countByVoterUserId(userId);
+
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("collectionNext", progressMetric(total, 10, 25, "Collection 10+", "Collection 25+", "collection_10", "collection_25"));
-        out.put("speciesNext", progressMetric(species, 5, 12, "Species diversity 5+", "Species diversity 12+", "species_5", "species_12"));
-        out.put("eventsNext", progressMetric(events, 30, 100, "Active logbook", "Logbook master", "logger_30", "logger_100"));
-        out.put("qrNext", progressMetric(qrPrints, 1, 10, "Printed QR", "QR labeler pro", "qr_printed", "qr_printed_10"));
+        out.put("collectionNext", progressMetricTiers(aliveTotal, new int[]{5, 10, 25, 50},
+                new String[]{"Growing collection (5+ living)", "Collection 10+ (living)", "Serious collection (25+ living)", "Colossus keeper (50+ living)"},
+                new String[]{"collection_5", "collection_10", "collection_25", "collection_50"}));
+        out.put("speciesNext", progressMetricTiers(speciesAlive, new int[]{3, 5, 12, 20},
+                new String[]{"Species explorer (3+)", "Species diversity 5+", "Species diversity 12+", "Taxonomy buff (20+ species)"},
+                new String[]{"species_3", "species_5", "species_12", "species_20"}));
+        out.put("eventsNext", progressMetricTiers(events, new int[]{30, 100, 300},
+                new String[]{"Active logbook (30+ events)", "Dedicated logger (100+ events)", "Chronicler (300+ events)"},
+                new String[]{"logger_30", "logger_100", "logger_300"}));
+        out.put("moltNext", progressMetricTiers(molts, new int[]{10, 40, 100},
+                new String[]{"Molt tracker (10+ molts logged)", "Shedding scholar (40+ molts)", "Instar archivist (100+ molts)"},
+                new String[]{"molt_10", "molt_40", "molt_100"}));
+        out.put("feedNext", progressMetricTiers(feeding, new int[]{25, 100, 300},
+                new String[]{"Feeding routine (25+ feeds)", "Consistent feeder (100+ feeds)", "Power feeder (300+ feeds)"},
+                new String[]{"feed_25", "feed_100", "feed_300"}));
+        out.put("qrNext", progressMetricTiers(qrPrints, new int[]{1, 10, 25},
+                new String[]{"Labeled terrarium (printed QR)", "QR labeler pro (10+ prints)", "QR print factory (25+ prints)"},
+                new String[]{"qr_printed", "qr_printed_10", "qr_printed_25"}));
+        out.put("sellerNext", progressMetricTiers(listings, new int[]{1, 5, 15},
+                new String[]{"Marketplace debut", "Active seller (5+ listings)", "Marketplace regular (15+ listings)"},
+                new String[]{"seller_listed_1", "seller_listed_5", "seller_listed_15"}));
+        out.put("reviewNext", progressMetricTiers(reviews, new int[]{1, 5},
+                new String[]{"Trusted review", "Community-rated seller (5+ reviews)"},
+                new String[]{"seller_reviewed_1", "seller_reviewed_5"}));
+        out.put("sexPollNext", progressMetricTiers(sexVotes, new int[]{10, 50},
+                new String[]{"Sex-ID contributor", "Crowd wisdom (50+ votes)"},
+                new String[]{"sex_poll_10", "sex_poll_50"}));
+        out.put("genusDepthNext", progressMetricTiers(f.maxSpeciesInOneGenus(), new int[]{2, 4, 6},
+                new String[]{"Genus fan (2+ species, same genus)", "Genus collector (4+ species, one genus)", "Genus deep cut (6+ species, one genus)"},
+                new String[]{"genus_lineup_2", "genus_lineup_4", "genus_lineup_6"}));
+        out.put("generaBreadthNext", progressMetricTiers(f.distinctGenera(), new int[]{4, 8, 12},
+                new String[]{"Multi-genus roster (4+ genera)", "Broad genera spread (8+ genera)", "Taxonomic wanderer (12+ genera)"},
+                new String[]{"genera_breadth_4", "genera_breadth_8", "genera_breadth_12"}));
+        out.put("habitatMixNext", progressMetricTiers(f.distinctHabitatTypes(), new int[]{2, 3},
+                new String[]{"Habitat mix (2 eco-types)", "Habitat trifecta (3 eco-types)"},
+                new String[]{"habitat_duo", "habitat_trio"}));
+        out.put("slingDenNext", progressMetricTiers(f.slingAlive(), new int[]{5, 12, 25},
+                new String[]{"Sling colony (5+ slings)", "Sling nursery (12+ slings)", "Sling factory (25+ slings)"},
+                new String[]{"sling_den_5", "sling_den_12", "sling_den_25"}));
+        out.put("giantsRowNext", progressMetricTiers(f.size12Plus(), new int[]{2, 5},
+                new String[]{"Big spiders corner (2+ at 12 cm+)", "Heavyweight row (5+ at 12 cm+)"},
+                new String[]{"giants_row_2", "giants_row_5"}));
+        out.put("heavyweightNext", progressMetricTiers(f.size16Plus(), new int[]{1, 3},
+                new String[]{"True heavyweight (16 cm+ logged)", "Heavyweight squad (3× 16 cm+)"},
+                new String[]{"heavyweight_1", "heavyweight_3"}));
+        out.put("tenureNext", progressMetricTiers(f.tenureDays(), new int[]{365, 1095, 1825},
+                new String[]{"1+ year caring for current crew", "3+ years of keeper patience", "5+ years — seasoned keeper"},
+                new String[]{"tenure_1y", "tenure_3y", "tenure_5y"}));
+        out.put("oldWorldNext", progressMetricTiers(f.oldWorldAlive(), new int[]{5, 12},
+                new String[]{"Old World line-up (5+)", "Old World heavy (12+)"},
+                new String[]{"old_world_line_5", "old_world_line_12"}));
+        out.put("newWorldNext", progressMetricTiers(f.newWorldAlive(), new int[]{5, 12},
+                new String[]{"New World line-up (5+)", "New World heavy (12+)"},
+                new String[]{"new_world_line_5", "new_world_line_12"}));
         return out;
     }
 
-    private Map<String, Object> progressMetric(long value, int tier1, int tier2,
-                                               String label1, String label2,
-                                               String key1, String key2) {
+    private static Map<String, Object> progressMetricTiers(long value, int[] tiers, String[] labels, String[] keys) {
+        if (tiers.length != labels.length || tiers.length != keys.length || tiers.length == 0) {
+            throw new IllegalArgumentException("progressMetricTiers: array length mismatch");
+        }
+        for (int i = 0; i < tiers.length; i++) {
+            if (value < tiers[i]) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("current", value);
+                m.put("target", tiers[i]);
+                m.put("nextLabel", labels[i]);
+                m.put("nextKey", keys[i]);
+                return m;
+            }
+        }
         Map<String, Object> m = new LinkedHashMap<>();
-        if (value < tier1) {
-            m.put("current", value);
-            m.put("target", tier1);
-            m.put("nextLabel", label1);
-            m.put("nextKey", key1);
-            return m;
-        }
-        if (value < tier2) {
-            m.put("current", value);
-            m.put("target", tier2);
-            m.put("nextLabel", label2);
-            m.put("nextKey", key2);
-            return m;
-        }
         m.put("current", value);
         m.put("target", value);
-        m.put("nextLabel", "Max");
-        m.put("nextKey", "max");
+        m.put("nextLabel", "Badge track complete");
+        m.put("nextKey", "badge_track_complete");
         return m;
     }
 
     private Map<String, Object> computeReputation(UUID userId) {
-        KeeperRankCalculator.KeeperRankSnapshot snap = keeperRankCalculator.compute(userId);
+        KeeperRankCalculator.KeeperRankDetail detail = keeperRankCalculator.computeDetail(userId);
+        KeeperRankCalculator.KeeperRankSnapshot snap = detail.snapshot();
+        List<Map<String, Object>> axes = detail.axes();
         Map<String, Object> out = new HashMap<>();
         out.put("score", snap.progressPercent());
         out.put("tier", snap.rankKey());
         out.put("nextTier", snap.nextTierKey());
         out.put("remainingPercent", snap.remainingPercent());
         out.put("nextTierTarget", snap.remainingPercent());
+        out.put("axes", axes);
+        out.put("weakestAxisKey", KeeperRankCalculator.weakestAxisKey(axes));
         return out;
     }
 
@@ -1137,5 +1363,107 @@ public class MarketplaceService {
         String s = raw.trim().toLowerCase();
         if ("active".equals(s) || "sold".equals(s) || "hidden".equals(s)) return s;
         return null;
+    }
+
+    private record CollectionFlavorStats(
+            int maxSpeciesInOneGenus,
+            int distinctGenera,
+            int distinctHabitatTypes,
+            long oldWorldAlive,
+            long newWorldAlive,
+            long slingAlive,
+            long size12Plus,
+            long size16Plus,
+            long tenureDays) {
+    }
+
+    private CollectionFlavorStats computeCollectionFlavorStats(UUID userId) {
+        List<String> names = tarantulaRepository.findAliveScientificNamesByUserId(userId);
+        int maxGenus = maxDistinctSpeciesPerGenus(names);
+        int genera = distinctGeneraCount(names);
+        List<String> habitats = tarantulaRepository.findDistinctAliveHabitatTypesLowerByUserId(userId);
+        int habN = habitats == null ? 0 : (int) habitats.stream().filter(h -> h != null && !h.isBlank()).count();
+        long ow = 0L;
+        long nw = 0L;
+        List<Object[]> worldRows = tarantulaRepository.countAliveByHobbyWorld(userId);
+        if (worldRows != null) {
+            for (Object[] row : worldRows) {
+                if (row == null || row.length < 2 || row[0] == null) {
+                    continue;
+                }
+                String k = String.valueOf(row[0]).toLowerCase(Locale.ROOT).trim();
+                long c = ((Number) row[1]).longValue();
+                if ("old_world".equals(k)) {
+                    ow = c;
+                } else if ("new_world".equals(k)) {
+                    nw = c;
+                }
+            }
+        }
+        long slings = tarantulaRepository.countAliveSlingsByUserId(userId);
+        long g12 = tarantulaRepository.countAliveAtLeastSizeCm(userId, new BigDecimal("12"));
+        long g16 = tarantulaRepository.countAliveAtLeastSizeCm(userId, new BigDecimal("16"));
+        long tenure = tenureDaysOldestAlive(tarantulaRepository.findAlivePurchaseDateAndCreatedAt(userId));
+        return new CollectionFlavorStats(maxGenus, genera, habN, ow, nw, slings, g12, g16, tenure);
+    }
+
+    private static int maxDistinctSpeciesPerGenus(List<String> scientificNames) {
+        if (scientificNames == null || scientificNames.isEmpty()) {
+            return 0;
+        }
+        Map<String, Set<String>> byGenus = new HashMap<>();
+        for (String raw : scientificNames) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            String t = raw.trim();
+            int sp = t.indexOf(' ');
+            String genus = (sp > 0 ? t.substring(0, sp) : t).toLowerCase(Locale.ROOT);
+            byGenus.computeIfAbsent(genus, k -> new HashSet<>()).add(t.toLowerCase(Locale.ROOT));
+        }
+        return byGenus.values().stream().mapToInt(Set::size).max().orElse(0);
+    }
+
+    private static int distinctGeneraCount(List<String> scientificNames) {
+        if (scientificNames == null || scientificNames.isEmpty()) {
+            return 0;
+        }
+        Set<String> genera = new HashSet<>();
+        for (String raw : scientificNames) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            String t = raw.trim();
+            int sp = t.indexOf(' ');
+            String genus = (sp > 0 ? t.substring(0, sp) : t).toLowerCase(Locale.ROOT);
+            genera.add(genus);
+        }
+        return genera.size();
+    }
+
+    private static long tenureDaysOldestAlive(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return 0L;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate earliest = null;
+        for (Object[] row : rows) {
+            if (row == null || row.length < 2) {
+                continue;
+            }
+            LocalDate pd = (LocalDate) row[0];
+            LocalDateTime cat = (LocalDateTime) row[1];
+            LocalDate anchor = pd != null ? pd : (cat != null ? cat.toLocalDate() : null);
+            if (anchor == null) {
+                continue;
+            }
+            if (earliest == null || anchor.isBefore(earliest)) {
+                earliest = anchor;
+            }
+        }
+        if (earliest == null) {
+            return 0L;
+        }
+        return Math.max(0L, ChronoUnit.DAYS.between(earliest, today));
     }
 }

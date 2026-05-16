@@ -98,6 +98,20 @@ El backend exige `STRIPE_SECRET_KEY` y **al menos un** id de boost (legacy o cua
 
 Hasta que existan productos extra en Play, el backend sigue centrado en **`tarantulapp_pro_monthly`** para validación de compras Android.
 
+### Qué hacer cuando el usuario está en la app y quiere Vendor o Boost (hoy sin SKU Play)
+
+La app **no tiene que “esperar” a Play** para cobrar esos tiers: el backend ya expone checkout Stripe (sesión / URL). Desde Android conviene una de estas rutas, en orden de pragmatismo:
+
+| Enfoque | Qué es | Pros | Contras |
+|---------|--------|------|---------|
+| **A. WebView o Chrome Custom Tab** | Abrís la **URL de Checkout** que devuelve el API (misma que web) dentro del sistema o embebido. | Reutilizá 100 % precios, webhooks y lógica actual; sin productos nuevos en Play. | Hay que pasar bien auth (token/cookie) y cerrar el flujo con **deep link** o refresh de estado al volver a la app. |
+| **B. Navegador externo** | Botón “Completar pago” → `Intent` al mismo checkout en Chrome. | Mínimo código; menos quejas de “pago bloqueado en WebView”. | Misma necesidad de deep link / polling para refrescar plan o listing. |
+| **C. Play Billing (futuro)** | SKUs `tarantulapp_vendor_*` y consumible de boost; backend valida con Android Publisher como Pro. | Experiencia 100 % nativa y alineada con políticas cuando el bien es digital en la app. | Más implementación, dos vías de pago que mantener (Stripe + Google) y conciliación de “ya pagué en web”. |
+
+**UX mínima recomendada (A o B):** botón claro (“Pagar con tarjeta”), loading, al éxito `return_url` o App Link a `tarantulapp://...` o `https://app.../billing/return`, y en `onResume` llamar al endpoint de **estado de billing** / detalle del listing para reflejar vendor o boost sin que el usuario mate la app.
+
+**Política Play:** Google exige facturación de Play para muchos **bienes digitales usados dentro de la app**. Conviene revisar la [política vigente](https://support.google.com/googleplay/android-developer/) y, si aplica a vuestro caso, priorizar **C** a mediano plazo o documentar por qué el flujo va por web (cuando el modelo lo permita). No es asesoría legal; es el típico trade-off producto + compliance.
+
 ## Referencias en código
 
 - Variables Stripe: `application.properties` (`stripe.price-id-*`).

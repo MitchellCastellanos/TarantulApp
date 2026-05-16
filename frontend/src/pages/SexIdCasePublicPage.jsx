@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Trans, useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -10,6 +11,7 @@ import referralService from '../services/referralService'
 import { imgUrl } from '../services/api'
 import './SexIdCasePublicPage.css'
 import { resolvePublicFrontOrigin } from '../utils/publicFrontBaseUrl'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const CHOICES = ['MALE', 'FEMALE', 'UNCERTAIN']
@@ -70,6 +72,7 @@ export default function SexIdCasePublicPage() {
   const { caseId } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user, token } = useAuth()
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
@@ -164,6 +167,7 @@ export default function SexIdCasePublicPage() {
       const next = await sexIdCaseService.vote(data.id, choice)
       setData(next)
       setMsg(t('sexIdCase.voteSaved'))
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } catch (e) {
       setErr(e?.response?.data?.error || t('sexIdCase.voteError'))
     } finally {

@@ -3,7 +3,7 @@ import ChitinCardFrame from '../components/ChitinCardFrame'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import billingService from '../services/billingService'
 import authService from '../services/authService'
@@ -17,6 +17,7 @@ import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
 import { getStoredTheme, setStoredTheme } from '../utils/themePreference'
 import ThemeToggleButton from '../components/ThemeToggleButton'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 function formatPeriodEnd(value, lang) {
   if (value == null) return null
@@ -45,6 +46,7 @@ export default function AccountPage() {
   const { t, i18n } = useTranslation()
   const { user, token, logout, setPlan, updateUserProfile } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [billing, setBilling] = useState(null)
   const { data: tarantulas = [] } = useQuery({
     queryKey: tarantulaKeys.list(),
@@ -257,6 +259,7 @@ export default function AccountPage() {
         searchVisible: profileForm.searchVisible,
         communityProfileVisibility: profileForm.collectionPublic ? 'public_full' : 'preview_only',
       })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       setProfileMessage(t('common.save'))
     } catch (err) {
       setProfileMessage(err?.response?.data?.error || t('account.errors.generic'))

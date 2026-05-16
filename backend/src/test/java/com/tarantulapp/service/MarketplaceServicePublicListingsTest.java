@@ -14,6 +14,7 @@ import com.tarantulapp.repository.MoltLogRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.SellerReviewRepository;
+import com.tarantulapp.repository.SexIdCaseVoteRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.util.FileStorageService;
@@ -50,6 +51,7 @@ class MarketplaceServicePublicListingsTest {
     @Mock private FeedingLogRepository feedingLogRepository;
     @Mock private MoltLogRepository moltLogRepository;
     @Mock private BehaviorLogRepository behaviorLogRepository;
+    @Mock private SexIdCaseVoteRepository sexIdCaseVoteRepository;
     @Mock private FileStorageService fileStorageService;
     @Mock private BillingService billingService;
 

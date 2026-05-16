@@ -7,6 +7,10 @@ import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -48,6 +52,14 @@ public class KeeperRankCalculator {
     }
 
     public KeeperRankSnapshot compute(UUID userId) {
+        return computeDetail(userId).snapshot();
+    }
+
+    /**
+     * Same rank logic as {@link #compute(UUID)} plus per-axis milestones for the <em>current</em> stage
+     * (collection size, species count, log events, QR prints). Used to explain what still moves the bar.
+     */
+    public KeeperRankDetail computeDetail(UUID userId) {
         long total = tarantulaRepository.countByUserId(userId);
         long species = tarantulaRepository.countDistinctSpeciesByUserId(userId);
         long events = feedingLogRepository.countByOwnerUserId(userId)
@@ -55,7 +67,9 @@ public class KeeperRankCalculator {
                 + behaviorLogRepository.countByOwnerUserId(userId);
         int qrPrints = userRepository.findById(userId)
                 .map(u -> u.getQrPrintExports() == null ? 0 : u.getQrPrintExports()).orElse(0);
-        return computeFromStats(total, species, events, qrPrints);
+        KeeperRankSnapshot snap = computeFromStats(total, species, events, qrPrints);
+        List<Map<String, Object>> axes = buildReputationAxes(snap.rankKey(), total, species, events, qrPrints);
+        return new KeeperRankDetail(snap, axes);
     }
 
     /**
@@ -148,9 +162,64 @@ public class KeeperRankCalculator {
         return (value - low) / (double) (high - low);
     }
 
+    private static int[] axisBoundsForRank(String rankKey) {
+        return switch (rankKey) {
+            case RANK_BEGINNER -> new int[]{0, 16, 0, 4, 0, 45, 0, 1};
+            case RANK_INTERMEDIATE -> new int[]{16, 40, 4, 10, 45, 150, 1, 5};
+            case RANK_EXPERT -> new int[]{40, 72, 10, 18, 150, 420, 5, 14};
+            case RANK_BREEDER -> new int[]{72, 120, 18, 30, 420, 900, 14, 40};
+            default -> new int[]{0, 16, 0, 4, 0, 45, 0, 1};
+        };
+    }
+
+    /**
+     * Milestone window for the current rank (same numbers that feed the weighted progress for that stage).
+     */
+    public List<Map<String, Object>> buildReputationAxes(
+            String rankKey, long total, long species, long events, int qrPrints) {
+        int[] b = axisBoundsForRank(rankKey);
+        long[] vals = {total, species, events, qrPrints};
+        String[] keys = {"spiders", "species", "events", "qr_labels"};
+        List<Map<String, Object>> out = new ArrayList<>(4);
+        for (int i = 0; i < 4; i++) {
+            int lo = b[i * 2];
+            int hi = b[i * 2 + 1];
+            long v = vals[i];
+            double seg = segmentProgress(v, lo, hi);
+            int pct = (int) Math.round(Math.min(1.0, Math.max(0.0, seg)) * 100.0);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("key", keys[i]);
+            m.put("current", v);
+            m.put("rangeLow", lo);
+            m.put("rangeHigh", hi);
+            m.put("segmentPercent", pct);
+            out.add(m);
+        }
+        return out;
+    }
+
+    /** Axis key with the lowest completion within this stage, excluding axes already at 100%. */
+    public static String weakestAxisKey(List<Map<String, Object>> axes) {
+        String weakest = null;
+        int minPct = 101;
+        for (Map<String, Object> ax : axes) {
+            int seg = ((Number) ax.get("segmentPercent")).intValue();
+            if (seg >= 100) {
+                continue;
+            }
+            if (seg < minPct) {
+                minPct = seg;
+                weakest = (String) ax.get("key");
+            }
+        }
+        return weakest;
+    }
+
     public record KeeperRankSnapshot(
             String rankKey,
             int progressPercent,
             String nextTierKey,
             int remainingPercent) {}
+
+    public record KeeperRankDetail(KeeperRankSnapshot snapshot, List<Map<String, Object>> axes) {}
 }

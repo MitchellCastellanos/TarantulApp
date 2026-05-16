@@ -14,6 +14,7 @@ preguntar.
 | Configurar hCaptcha y rate limits anti-abuso | [`abuse-defenses.md`](./abuse-defenses.md) |
 | Verificar Stripe webhooks o desplegar Play Billing | [`billing-hardening.md`](./billing-hardening.md) |
 | Lista de Products/Prices Stripe y SKUs Play | [`stripe-products-catalog.md`](./stripe-products-catalog.md) |
+| Manual paso a paso Stripe + Play + pagos desde app (ES) | [`billing-setup-manual-es.md`](./billing-setup-manual-es.md) |
 
 ## Por dependencia externa
 

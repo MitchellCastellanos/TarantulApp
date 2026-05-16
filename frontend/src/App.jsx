@@ -15,6 +15,7 @@ import AndroidUpdateBanner from './components/AndroidUpdateBanner'
 import PlayStoreWebBanner from './components/PlayStoreWebBanner'
 import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
+import KeeperGamificationCelebrationHost from './components/KeeperGamificationCelebrationHost'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
 
 // Lazy-loaded routes — each becomes its own JS chunk and only downloads when visited.
@@ -313,6 +314,7 @@ export default function App() {
           }}
         >
           <AuthSessionBridge />
+          <KeeperGamificationCelebrationHost />
           <ScrollToTop />
           <PlayStoreWebBanner />
           <Suspense fallback={null}>

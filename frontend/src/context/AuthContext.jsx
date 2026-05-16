@@ -3,6 +3,7 @@ import billingService from '../services/billingService'
 import { setSessionTokenSnapshot } from '../services/authApiToken'
 import { initNativePush } from '../services/pushService'
 import { queryClient } from '../query/queryClient.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const AuthContext = createContext(null)
@@ -98,6 +99,7 @@ export function AuthProvider({ children }) {
     setToken(token)
     setUser(payload)
     queryClient.invalidateQueries({ queryKey: tarantulaKeys.all })
+    queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
   }, [])
 
   const logout = useCallback(() => {

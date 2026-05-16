@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 export default function HandleSetupPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user, updateUserProfile } = useAuth()
   const [rawHandle, setRawHandle] = useState(user?.publicHandle || '')
   const [status, setStatus] = useState({ checking: false, available: false, valid: false, normalized: '' })
@@ -62,6 +65,7 @@ export default function HandleSetupPage() {
         communityProfileVisibility: user?.communityProfileVisibility || 'preview_only',
       })
       updateUserProfile({ publicHandle: payload?.handle || status.normalized })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       navigate('/', { replace: true })
     } catch (e2) {
       setErr(e2?.response?.data?.error || 'No se pudo guardar el @keeper.')

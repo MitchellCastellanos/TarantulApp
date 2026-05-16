@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
@@ -37,6 +39,7 @@ const FILTERS = ['all', 'active', 'sold', 'hidden']
 export default function MarketplaceSellerPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [myListings, setMyListings] = useState([])
   const [myProfile, setMyProfile] = useState({
     handle: '',
@@ -174,6 +177,7 @@ export default function MarketplaceSellerPage() {
       }
       setListingForm(EMPTY_LISTING_FORM)
       await loadMine()
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       setMessage(t('marketplace.createdOk'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -187,6 +191,7 @@ export default function MarketplaceSellerPage() {
     try {
       await marketplaceService.updateListingStatus(listingId, status)
       await loadMine()
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     }

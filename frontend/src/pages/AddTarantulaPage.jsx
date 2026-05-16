@@ -12,6 +12,7 @@ import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/d
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 export default function AddTarantulaPage() {
   const queryClient = useQueryClient()
@@ -328,11 +329,13 @@ export default function AddTarantulaPage() {
       }
       if (isEdit) {
         queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+        queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
         navigate(`/tarantulas/${tarantula.id}`)
         return
       }
       setCreatedTarantula(tarantula)
       queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       setPostCreateMode('choice')
       setLoading(false)
     } catch (err) {
@@ -356,6 +359,7 @@ export default function AddTarantulaPage() {
         fedAt: datetimeLocalToOffsetISO(feedingForm.fedAt),
         quantity: Number(feedingForm.quantity) || 1,
       })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       navigate(`/tarantulas/${createdTarantula.id}`)
     } catch (err) {
       setPostCreateError(err.response?.data?.error ?? t('form.postCreateSaveError'))
@@ -374,6 +378,7 @@ export default function AddTarantulaPage() {
         postSizeCm: moltForm.postSizeCm ? Number(moltForm.postSizeCm) : null,
         notes: moltForm.notes || null,
       })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       navigate(`/tarantulas/${createdTarantula.id}`)
     } catch (err) {
       setPostCreateError(err.response?.data?.error ?? t('form.postCreateSaveError'))

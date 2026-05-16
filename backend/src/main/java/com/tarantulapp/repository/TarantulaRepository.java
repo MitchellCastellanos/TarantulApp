@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +42,9 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     long countForUserId(@Param("userId") UUID userId);
     @Query("select count(distinct t.species.id) from Tarantula t where t.userId = :userId and t.species is not null")
     long countDistinctSpeciesByUserId(UUID userId);
+
+    @Query("select count(distinct t.species.id) from Tarantula t where t.userId = :userId and t.deceasedAt is null and t.species is not null")
+    long countDistinctSpeciesAliveByUserId(@Param("userId") UUID userId);
     Optional<Tarantula> findByShortId(String shortId);
     boolean existsByShortId(String shortId);
 
@@ -58,4 +62,26 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
             limit 25
             """, nativeQuery = true)
     List<Object[]> findFeedingAttentionRows(@Param("userId") UUID userId);
+
+    @Query("select s.scientificName from Tarantula t join t.species s where t.userId = :userId and t.deceasedAt is null and s is not null")
+    List<String> findAliveScientificNamesByUserId(@Param("userId") UUID userId);
+
+    @Query("select distinct lower(trim(s.habitatType)) from Tarantula t join t.species s "
+            + "where t.userId = :userId and t.deceasedAt is null and s.habitatType is not null and trim(s.habitatType) <> ''")
+    List<String> findDistinctAliveHabitatTypesLowerByUserId(@Param("userId") UUID userId);
+
+    @Query("select lower(s.hobbyWorld), count(t) from Tarantula t join t.species s "
+            + "where t.userId = :userId and t.deceasedAt is null and s.hobbyWorld is not null and trim(s.hobbyWorld) <> '' "
+            + "group by lower(s.hobbyWorld)")
+    List<Object[]> countAliveByHobbyWorld(@Param("userId") UUID userId);
+
+    @Query("select count(t) from Tarantula t where t.userId = :userId and t.deceasedAt is null and lower(t.stage) = 'sling'")
+    long countAliveSlingsByUserId(@Param("userId") UUID userId);
+
+    @Query("select count(t) from Tarantula t where t.userId = :userId and t.deceasedAt is null "
+            + "and t.currentSizeCm is not null and t.currentSizeCm >= :minCm")
+    long countAliveAtLeastSizeCm(@Param("userId") UUID userId, @Param("minCm") BigDecimal minCm);
+
+    @Query("select t.purchaseDate, t.createdAt from Tarantula t where t.userId = :userId and t.deceasedAt is null")
+    List<Object[]> findAlivePurchaseDateAndCreatedAt(@Param("userId") UUID userId);
 }
