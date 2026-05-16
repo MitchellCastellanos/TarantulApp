@@ -45,9 +45,10 @@ function resolveReminderMessage(reminder, t) {
   return reminderPrimaryLabel(reminder?.message, reminder?.type, t)
 }
 
-export default function RemindersPanel() {
+export default function RemindersPanel({ variant = 'standalone' }) {
   const { t } = useTranslation()
   const { user, token } = useAuth()
+  const embedded = String(variant) === 'embedded'
   const { data: reminders = [], refetch: refetchReminders } = useQuery({
     queryKey: ['reminders', 'pending'],
     queryFn: () => reminderService.getPending(),
@@ -94,47 +95,54 @@ export default function RemindersPanel() {
     refetchReminders()
   }
 
-  if (activeReminders.length === 0 && !showFreeUpsell) return null
+  if (!embedded && activeReminders.length === 0 && !showFreeUpsell) return null
 
-  return (
-    <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
-      <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+  const header = (
+    <div className={`ta-section-header ${embedded ? 'mb-2' : 'mb-3'}`}>
+      <span>🔔 {t('reminders.panelTitle')}</span>
+      <Link
+        to="/reminders"
+        className="small text-decoration-underline"
+        style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}
+      >
+        {t('reminders.viewAll')}
+      </Link>
+    </div>
+  )
+
+  const inner = (
+    <>
+      {header}
+      {showFreeUpsell && (
         <div
-          className="card-body py-3 py-md-4"
-          style={{
-            paddingLeft: 'clamp(1.25rem, 4.5vw, 2.75rem)',
-            paddingRight: 'clamp(1.25rem, 4.5vw, 2.75rem)',
-          }}
+          className={`d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between ${embedded ? 'mb-2' : 'mb-3'}`}
         >
-        <div className="ta-section-header mb-3">
-          <span>🔔 {t('reminders.panelTitle')}</span>
+          <p className="small mb-0 min-w-0" style={{ color: 'var(--ta-text-muted)', overflowWrap: 'anywhere' }}>
+            {t('reminders.panelFreeUpsell')}
+          </p>
           <Link
-            to="/reminders"
-            className="small text-decoration-underline"
-            style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}
+            to="/pro"
+            className="btn btn-dark btn-sm flex-shrink-0 align-self-stretch align-self-sm-auto fw-semibold"
           >
-            {t('reminders.viewAll')}
+            {t('pro.ctaTryFree')}
           </Link>
         </div>
-        {showFreeUpsell && (
-          <div className="d-flex flex-column flex-sm-row gap-2 align-items-sm-center justify-content-between mb-3">
-            <p className="small mb-0 min-w-0" style={{ color: 'var(--ta-text-muted)', overflowWrap: 'anywhere' }}>
-              {t('reminders.panelFreeUpsell')}
-            </p>
-            <Link
-              to="/pro"
-              className="btn btn-dark btn-sm flex-shrink-0 align-self-stretch align-self-sm-auto fw-semibold"
-            >
-              {t('pro.ctaTryFree')}
-            </Link>
-          </div>
-        )}
-        {hasProFeatures && activeReminders.length > 0 && (
-          <div className="small text-muted mb-2 min-w-0" style={{ overflowWrap: 'anywhere' }}>
-            {t('reminders.panelProNotice')}
-          </div>
-        )}
-        <div className="d-flex flex-column gap-2">
+      )}
+      {embedded && activeReminders.length === 0 && !showFreeUpsell && (
+        <p className="small text-muted mb-2 mb-lg-0" style={{ overflowWrap: 'anywhere' }}>
+          {t('dashboard.remindersAllClear')}{' '}
+          <Link to="/reminders" className="text-decoration-underline" style={{ color: 'var(--ta-gold)' }}>
+            {t('reminders.viewAll')}
+          </Link>
+        </p>
+      )}
+      {hasProFeatures && activeReminders.length > 0 && !embedded && (
+        <div className="small text-muted mb-2 min-w-0" style={{ overflowWrap: 'anywhere' }}>
+          {t('reminders.panelProNotice')}
+        </div>
+      )}
+      {activeReminders.length > 0 && (
+        <div className={`d-flex flex-column ${embedded ? 'gap-1' : 'gap-2'}`}>
           {panelReminders.map((r) => {
             const { label, urgent } = formatDue(r.dueDate, t)
             const isAutomatic = r.source === 'automatic'
@@ -150,7 +158,7 @@ export default function RemindersPanel() {
                   minWidth: 0,
                 }}
               >
-                <span className="flex-shrink-0 pt-1" style={{ fontSize: '1.1rem' }}>
+                <span className="flex-shrink-0 pt-1" style={{ fontSize: embedded ? '1rem' : '1.1rem' }}>
                   {TYPE_ICONS[r.type] ?? '📌'}
                 </span>
                 <div className="flex-grow-1 min-w-0" style={{ minWidth: 0 }}>
@@ -163,6 +171,7 @@ export default function RemindersPanel() {
                         wordBreak: 'break-word',
                         color: 'var(--ta-gold-light)',
                         lineHeight: 1.35,
+                        fontSize: embedded ? '0.8125rem' : undefined,
                       }}
                     >
                       {resolveReminderMessage(r, t)}
@@ -178,7 +187,7 @@ export default function RemindersPanel() {
                   </div>
                   <div
                     className={`small min-w-0 ${urgent ? 'text-danger fw-semibold' : 'text-muted'}`}
-                    style={{ overflowWrap: 'anywhere', lineHeight: 1.35 }}
+                    style={{ overflowWrap: 'anywhere', lineHeight: 1.35, fontSize: embedded ? '0.75rem' : undefined }}
                   >
                     {label}
                     {r.tarantulaName && ` · ${r.tarantulaName}`}
@@ -213,17 +222,38 @@ export default function RemindersPanel() {
             )
           })}
         </div>
-        {hasMoreReminders && (
-          <div className="mt-3 text-center">
-            <Link
-              to="/reminders"
-              className="btn btn-outline-secondary btn-sm"
-            >
-              {t('reminders.viewMore')}
-            </Link>
-          </div>
-        )}
-      </div>
+      )}
+      {hasMoreReminders && (
+        <div className={embedded ? 'mt-2 text-center' : 'mt-3 text-center'}>
+          <Link
+            to="/reminders"
+            className="btn btn-outline-secondary btn-sm"
+          >
+            {t('reminders.viewMore')}
+          </Link>
+        </div>
+      )}
+    </>
+  )
+
+  if (embedded) {
+    return (
+      <div className="ta-dashboard-reminders-embedded h-100 d-flex flex-column">{inner}</div>
+    )
+  }
+
+  return (
+    <ChitinCardFrame showSilhouettes={false} variant="auth" className="mb-4">
+      <div className="card border-0 bg-transparent shadow-none w-100 mb-0">
+        <div
+          className="card-body py-3 py-md-4"
+          style={{
+            paddingLeft: 'clamp(1.25rem, 4.5vw, 2.75rem)',
+            paddingRight: 'clamp(1.25rem, 4.5vw, 2.75rem)',
+          }}
+        >
+          {inner}
+        </div>
       </div>
     </ChitinCardFrame>
   )

@@ -2281,6 +2281,94 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   color: var(--ta-text-muted) !important;
 }
 
+.ta-dashboard-keeper-band .ta-keeper-reputation-strip {
+  margin-top: 0.35rem;
+}
+
+.ta-dashboard-keeper-avatar {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 1px solid var(--ta-border);
+}
+
+.ta-dashboard-keeper-bio {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.ta-dashboard-keeper-details {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.35rem 0.5rem 0.5rem;
+}
+
+:root[data-theme='light'] .ta-dashboard-keeper-details {
+  border-color: rgba(120, 88, 32, 0.18);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.ta-dashboard-keeper-details__summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ta-parchment);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.ta-dashboard-keeper-details__summary::-webkit-details-marker {
+  display: none;
+}
+
+.ta-dashboard-keeper-details__summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 0.35rem;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+.ta-dashboard-keeper-details[open] .ta-dashboard-keeper-details__summary::before {
+  transform: rotate(90deg);
+}
+
+:root[data-theme='light'] .ta-dashboard-keeper-details__summary {
+  color: var(--ta-text-primary, #1a1a1e);
+}
+
+.ta-dashboard-progress-count {
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.ta-dashboard-reminders-embedded {
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.65rem 0.75rem;
+  min-height: 6.5rem;
+}
+
+.ta-dashboard-reminders-embedded .ta-section-header {
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='light'] .ta-dashboard-reminders-embedded {
+  border-color: rgba(120, 88, 32, 0.2);
+  background: rgba(255, 251, 243, 0.55);
+}
+
+.ta-dashboard-reminders-slot {
+  min-width: min(100%, 260px);
+}
+
 .ta-keeper-reputation-strip {
   margin-top: 0.5rem;
   padding: 0.65rem 0.75rem;
@@ -2389,28 +2477,41 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-keeper-celebration-stack {
   position: fixed;
-  right: max(12px, env(safe-area-inset-right));
+  left: 50%;
+  right: auto;
   bottom: max(12px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   z-index: 10800;
   display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  width: min(19.5rem, calc(100vw - 1.5rem));
-  max-height: min(70vh, 26rem);
-  overflow-y: auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  width: max-content;
+  max-width: min(calc(100vw - 1.25rem), 52rem);
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0 6px 2px;
+  scrollbar-width: thin;
   pointer-events: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ta-keeper-celebration-stack .ta-keeper-celebration-toast {
   pointer-events: auto;
+  flex: 0 0 auto;
+  max-width: min(13.75rem, 38vw);
+  min-width: 10.5rem;
+  padding: 0.48rem 0.5rem 0.48rem 0.55rem;
 }
 
 .ta-keeper-celebration-toast {
   display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
-  padding: 0.72rem 0.65rem 0.72rem 0.72rem;
-  border-radius: 12px;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 11px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: linear-gradient(135deg, rgba(22, 24, 32, 0.94), rgba(12, 14, 20, 0.92));
   color: var(--ta-parchment, #f8fafc);
@@ -2437,7 +2538,7 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-keeper-celebration-toast__icon {
   flex: 0 0 auto;
-  font-size: 1.55rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
@@ -2448,15 +2549,20 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-keeper-celebration-toast__title {
   font-weight: 700;
-  font-size: 0.94rem;
+  font-size: 0.8rem;
   letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .ta-keeper-celebration-toast__subtitle {
-  margin-top: 0.2rem;
-  font-size: 0.82rem;
-  opacity: 0.92;
-  line-height: 1.3;
+  margin-top: 0.12rem;
+  font-size: 0.7rem;
+  opacity: 0.9;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .ta-keeper-celebration-toast__close {
@@ -2496,11 +2602,11 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 @keyframes ta-keeper-celebration-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 

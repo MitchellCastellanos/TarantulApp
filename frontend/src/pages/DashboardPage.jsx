@@ -24,6 +24,10 @@ import {
 } from '../utils/keeperReputationHelpers'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
+import {
+  DASHBOARD_HIDDEN_BADGE_KEYS,
+  DASHBOARD_HIDDEN_BADGE_PROGRESS_KEYS,
+} from '../utils/keeperDashboardCollectionFilter.js'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -42,6 +46,10 @@ export default function DashboardPage() {
   const [jsonBusy, setJsonBusy] = useState(false)
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
   const importInputRef = useRef(null)
+  const [keeperProgressDetailsOpen, setKeeperProgressDetailsOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(min-width: 992px)').matches
+  })
 
   const { data: keeperProfile = null } = useQuery({
     queryKey: keeperProfileKeys.detail(),
@@ -91,12 +99,14 @@ export default function DashboardPage() {
   }
   const speciesSet = new Set(alive.map((t) => t.species?.scientificName).filter(Boolean))
   const profileBadgeRows = Array.isArray(keeperProfile?.badges)
-    ? keeperProfile.badges.map((b) => ({
-        key: String(b.key || b.label || ''),
-        label: translateBadgeLabel(b),
-        iconKey: b.key,
-        tier: b.tier || 'core',
-      }))
+    ? keeperProfile.badges
+        .map((b) => ({
+          key: String(b.key || b.label || ''),
+          label: translateBadgeLabel(b),
+          iconKey: b.key,
+          tier: b.tier || 'core',
+        }))
+        .filter((row) => row.key && !DASHBOARD_HIDDEN_BADGE_KEYS.has(row.key))
     : [
         alive.length >= 1 ? { key: 'fallback_start', label: 'Starter keeper', iconKey: 'starter_keeper', tier: 'core' } : null,
         alive.length >= 10 ? { key: 'fallback_c10', label: 'Collection 10+', iconKey: 'collection_10', tier: 'core' } : null,
@@ -106,6 +116,9 @@ export default function DashboardPage() {
       ].filter(Boolean)
   const reputation = keeperProfile?.reputation || null
   const badgesProgress = keeperProfile?.badgesProgress || null
+  const dashboardBadgeProgressEntries = badgesProgress
+    ? Object.entries(badgesProgress).filter(([key]) => !DASHBOARD_HIDDEN_BADGE_PROGRESS_KEYS.has(key))
+    : []
 
   const filtered = alive.filter(t => {
     if (habitat !== 'all' && t.species?.habitatType !== habitat) return false
@@ -189,72 +202,105 @@ export default function DashboardPage() {
     <div className="ta-premium-dashboard">
       <Navbar />
       <div className="container mt-4">
-        <div className="row g-3 mb-3">
-          <div className="col-lg-4">
-            <div className="card border-0 shadow-sm h-100 ta-premium-profile-card">
-              <div className="card-body py-3">
+        <div className="card border-0 shadow-sm mb-3 ta-premium-profile-card ta-dashboard-keeper-band">
+          <div className="card-body py-3">
+            <div className="d-flex flex-column flex-lg-row gap-3 align-items-stretch">
+              <div
+                className="flex-shrink-0 align-self-start ta-dashboard-keeper-identity"
+                style={{ width: '100%', maxWidth: 300 }}
+              >
                 <div className="d-flex justify-content-between align-items-start gap-2">
                   <div className="min-w-0">
                     <h4 className="mb-1 text-truncate ta-premium-profile-name">{user?.displayName || user?.email}</h4>
                     <div className="small text-truncate ta-premium-profile-handle">
                       @{user?.publicHandle || 'keeper'} · {[user?.profileCity, user?.profileState, user?.profileCountry].filter(Boolean).join(', ') || 'No location'}
                     </div>
-                    {user?.bio && <p className="small mb-1 mt-2">{user.bio}</p>}
+                    {user?.bio && <p className="small mb-0 mt-2 ta-dashboard-keeper-bio">{user.bio}</p>}
                   </div>
                   <img
                     src={imgUrl(user?.profilePhoto) || '/spider-default.png'}
-                    alt="keeper"
-                    style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 999, border: '1px solid var(--ta-border)' }}
+                    alt=""
+                    className="flex-shrink-0 ta-dashboard-keeper-avatar"
+                    width={48}
+                    height={48}
                   />
                 </div>
-                {reputation && (
-                  <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-parchment)" />
-                )}
-                {badgesProgress && (
-                  <div className="row g-2 mt-1">
-                    {Object.entries(badgesProgress).map(([key, p]) => {
-                      const target = Number(p?.target || 0)
-                      const current = Number(p?.current || 0)
-                      const complete = isBadgeTrackComplete(p)
-                      const percent = complete
-                        ? 100
-                        : target > 0
-                          ? Math.min(100, Math.round((current / target) * 100))
-                          : 100
-                      const hint = badgeProgressHintLine(t, key, p)
-                      return (
-                        <div className="col-12" key={key}>
-                          <div className="small mb-1">{badgeProgressTitle(t, p)}</div>
-                          {hint ? <div className="small text-muted mb-1">{hint}</div> : null}
-                          <div className="progress" style={{ height: 6 }}>
-                            <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
-                          </div>
-                          <div className="small text-muted">{current}/{target || current}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {profileBadgeRows.length > 0 && (
-                  <div className="d-flex gap-1 flex-wrap mt-2">
-                    {profileBadgeRows.map((row) => (
-                      <KeeperBadgeChip
-                        key={row.key}
-                        iconKey={row.iconKey}
-                        label={row.label}
-                        tier={row.tier}
-                      />
-                    ))}
-                  </div>
-                )}
                 <div className="mt-2">
                   <Link to="/account" className="btn btn-sm ta-premium-edit-btn">{t('dashboard.editProfile')}</Link>
                 </div>
               </div>
+
+              <div className="flex-grow-1 min-w-0 order-3 order-lg-2" style={{ minWidth: 0 }}>
+                {reputation && (
+                  <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-parchment)" />
+                )}
+                {(dashboardBadgeProgressEntries.length > 0 || profileBadgeRows.length > 0) && (
+                  <details
+                    className="ta-dashboard-keeper-details mt-2"
+                    open={keeperProgressDetailsOpen}
+                    onToggle={(e) => setKeeperProgressDetailsOpen(e.currentTarget.open)}
+                  >
+                    <summary className="ta-dashboard-keeper-details__summary">
+                      {dashboardBadgeProgressEntries.length > 0
+                        ? t('dashboard.badgeProgressToggle', {
+                            tracks: dashboardBadgeProgressEntries.length,
+                            badges: profileBadgeRows.length,
+                          })
+                        : t('dashboard.badgesOnlyToggle', { badges: profileBadgeRows.length })}
+                    </summary>
+                    {dashboardBadgeProgressEntries.length > 0 && (
+                      <div className="row g-2 mt-2 ta-dashboard-badge-progress-grid">
+                        {dashboardBadgeProgressEntries.map(([key, p]) => {
+                          const target = Number(p?.target || 0)
+                          const current = Number(p?.current || 0)
+                          const complete = isBadgeTrackComplete(p)
+                          const percent = complete
+                            ? 100
+                            : target > 0
+                              ? Math.min(100, Math.round((current / target) * 100))
+                              : 100
+                          const hint = badgeProgressHintLine(t, key, p)
+                          return (
+                            <div
+                              className="col-12 col-sm-6"
+                              key={key}
+                              title={hint || undefined}
+                            >
+                              <div className="small mb-0 text-truncate">{badgeProgressTitle(t, p)}</div>
+                              <div className="progress mt-1" style={{ height: 5 }}>
+                                <div className="progress-bar bg-info" style={{ width: `${percent}%` }} />
+                              </div>
+                              <div className="small text-muted ta-dashboard-progress-count">
+                                {current}/{target || current}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    {profileBadgeRows.length > 0 && (
+                      <div className="d-flex gap-1 flex-wrap mt-2">
+                        {profileBadgeRows.map((row) => (
+                          <KeeperBadgeChip
+                            key={row.key}
+                            iconKey={row.iconKey}
+                            label={row.label}
+                            tier={row.tier}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </details>
+                )}
+              </div>
+
+              <div
+                className="flex-shrink-0 align-self-stretch order-2 order-lg-3 ta-dashboard-reminders-slot"
+                style={{ width: '100%', maxWidth: 420 }}
+              >
+                <RemindersPanel variant="embedded" />
+              </div>
             </div>
-          </div>
-          <div className="col-lg-8">
-            <RemindersPanel />
           </div>
         </div>
         {/* Header */}
