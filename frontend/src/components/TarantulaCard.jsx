@@ -4,6 +4,8 @@ import StatusBadge from './StatusBadge'
 import FangPanel from './FangPanel'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { formatSize } from '../utils/units'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 
@@ -12,6 +14,7 @@ const CARD_CORNER_MARK = publicUrl('tarantula-card-corner-mark.png')
 
 export default function TarantulaCard({ tarantula }) {
   const { t } = useTranslation()
+  const { system } = useUnitSystem()
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
   const placeholder = publicUrl('spider-default.png')
   // Own upload first, then species reference (DB / iNat URL), then placeholder; broken URLs fall back on error.
@@ -67,7 +70,7 @@ export default function TarantulaCard({ tarantula }) {
               <div className="min-w-0 flex-grow-1">
                 <div className="ta-premium-tech-line ta-premium-tech-line--first">
                   {stage && <span>{t(`stages.${stage}`, { defaultValue: stage })}</span>}
-                  {currentSizeCm && <span>📏 {currentSizeCm} cm</span>}
+                  {currentSizeCm && <span>📏 {formatSize(currentSizeCm, system)}</span>}
                 </div>
                 <div className="ta-premium-tech-line">
                   {sex && <span>{t(`sex.${sex}`, { defaultValue: sex })}</span>}

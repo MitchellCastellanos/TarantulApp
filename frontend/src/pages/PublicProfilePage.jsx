@@ -11,6 +11,8 @@ import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone, formatEventDateTime } from '../utils/dateFormat'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { formatSize } from '../utils/units'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
 const STATUS_CFG   = {
@@ -48,6 +50,7 @@ export default function PublicProfilePage() {
   const { shortId } = useParams()
   const { user }    = useAuth()
   const { t, i18n } = useTranslation()
+  const { system }  = useUnitSystem()
 
   const [profile, setProfile]   = useState(null)
   const [timeline, setTimeline] = useState([])
@@ -373,7 +376,7 @@ export default function PublicProfilePage() {
                   className="badge border"
                   style={{ background: 'var(--ta-bg-panel)', color: 'var(--ta-text)', borderColor: 'var(--ta-border)' }}
                 >
-                  {t('tarantula.currentSize')}: {profile.currentSizeCm} cm
+                  {t('tarantula.currentSize')}: {formatSize(profile.currentSizeCm, system)}
                 </span>
               )}
             </div>

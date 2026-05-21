@@ -52,6 +52,9 @@ export default function FeedingModal({ tarantulaId, onClose, onSaved }) {
                   <label className="form-label small fw-semibold">{t('logModals.dateTime')}</label>
                   <input type="datetime-local" className="form-control form-control-sm"
                          value={form.fedAt} onChange={e => set('fedAt', e.target.value)} required />
+                  <p className="form-text small mb-0 mt-1" style={{ fontSize: '0.72rem' }}>
+                    {t('logModals.dateTimeHint')}
+                  </p>
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">{t('logModals.preyType')}</label>

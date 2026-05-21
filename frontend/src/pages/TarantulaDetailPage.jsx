@@ -25,6 +25,8 @@ import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone, formatDateTimeInUserZone } from '../utils/dateFormat'
 import { exportTarantulaPdf } from '../services/pdfExportService'
 import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { formatSize } from '../utils/units'
 import reminderService from '../services/reminderService'
 import {
   readDismissedAutoKeys,
@@ -95,6 +97,7 @@ export default function TarantulaDetailPage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { user, token } = useAuth()
+  const { system } = useUnitSystem()
   const hasProFeatures = user?.hasProFeatures === true
 
   const [tarantula, setTarantula] = useState(null)
@@ -338,13 +341,13 @@ export default function TarantulaDetailPage() {
     ? imgUrl(tarantula.profilePhoto)
     : imgUrl(species?.referencePhotoUrl) || spiderPlaceholder
   // ─── Terrarium recommendation ──────────────────────────────────────────────
-  const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species)
+  const terrariumRec = computeTerrariumRecommendation(tarantula.currentSizeCm, species, { system })
 
   return (
     <div className="ta-premium-page">
       <Navbar />
       {modal === 'feeding'  && <FeedingModal  tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
-      {modal === 'molt'     && <MoltModal     tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
+      {modal === 'molt'     && <MoltModal     tarantulaId={id} tarantula={tarantula} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'behavior' && <BehaviorModal tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'qr'       && <QRModal tarantula={tarantula}  onClose={() => setModal(null)} />}
 
@@ -504,7 +507,7 @@ export default function TarantulaDetailPage() {
                       <span className="badge bg-light text-dark border">{t(`sex.${tarantula.sex}`)}</span>
                     )}
                     {tarantula.currentSizeCm && (
-                      <span className="badge bg-light text-dark border">📏 {tarantula.currentSizeCm} cm</span>
+                      <span className="badge bg-light text-dark border">📏 {formatSize(tarantula.currentSizeCm, system)}</span>
                     )}
                     {estimatedInstar != null && (
                       <span className="badge bg-light text-dark border" title={t('molt.instarHint')}>
@@ -850,8 +853,8 @@ export default function TarantulaDetailPage() {
                       <span>🏠 {t('terrarium.title')}</span>
                     </div>
                     <p className="small mb-2 text-muted">
-                      {t('terrarium.basedOn')} <strong>{tarantula.currentSizeCm} cm</strong>
-                      {terrariumRec.adultSizeCmMax && ` · ${t('terrarium.expectedAdult')}: ${terrariumRec.adultSizeCmMax} cm`}
+                      {t('terrarium.basedOn')} <strong>{formatSize(tarantula.currentSizeCm, system)}</strong>
+                      {terrariumRec.adultSizeCmMax && ` · ${t('terrarium.expectedAdult')}: ${formatSize(terrariumRec.adultSizeCmMax, system)}`}
                     </p>
                     <div className="fw-semibold small mb-2">📐 {t(terrariumRec.enclosureI18n.key, terrariumRec.enclosureI18n.params)}</div>
                     {terrariumRec.pct !== null && (

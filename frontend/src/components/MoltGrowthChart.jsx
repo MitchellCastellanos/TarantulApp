@@ -10,27 +10,30 @@ import {
   Legend,
 } from 'recharts'
 import { useTranslation } from 'react-i18next'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { cmToDisplayNumber } from '../utils/units'
 
 /**
  * @param {{ molts: Array<{ moltedAt?: string, preSizeCm?: unknown, postSizeCm?: unknown }>, species?: { adultSizeCmMin?: unknown, adultSizeCmMax?: unknown } }} props
  */
 export default function MoltGrowthChart({ molts, species }) {
   const { t } = useTranslation()
+  const { system, unit } = useUnitSystem()
 
   const data = [...(molts || [])]
     .reverse()
     .map((m, i) => ({
       label: `#${i + 1}`,
       date: m.moltedAt,
-      pre: m.preSizeCm != null ? Number(m.preSizeCm) : undefined,
-      post: m.postSizeCm != null ? Number(m.postSizeCm) : undefined,
+      pre: m.preSizeCm != null ? cmToDisplayNumber(m.preSizeCm, system) : undefined,
+      post: m.postSizeCm != null ? cmToDisplayNumber(m.postSizeCm, system) : undefined,
     }))
     .filter((d) => d.pre != null || d.post != null)
 
   if (data.length === 0) return null
 
-  const adultMin = species?.adultSizeCmMin != null ? Number(species.adultSizeCmMin) : null
-  const adultMax = species?.adultSizeCmMax != null ? Number(species.adultSizeCmMax) : null
+  const adultMin = species?.adultSizeCmMin != null ? cmToDisplayNumber(species.adultSizeCmMin, system) : null
+  const adultMax = species?.adultSizeCmMax != null ? cmToDisplayNumber(species.adultSizeCmMax, system) : null
 
   return (
     <div
@@ -43,7 +46,7 @@ export default function MoltGrowthChart({ molts, species }) {
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--ta-text-muted)' }} />
           <YAxis
             tick={{ fontSize: 11, fill: 'var(--ta-text-muted)' }}
-            unit=" cm"
+            unit={` ${unit}`}
             domain={['auto', adultMax != null && !Number.isNaN(adultMax) ? adultMax + 1 : 'auto']}
           />
           <Tooltip
@@ -53,7 +56,7 @@ export default function MoltGrowthChart({ molts, species }) {
               fontSize: 12,
             }}
             labelStyle={{ color: 'var(--ta-parchment)' }}
-            formatter={(val, name) => [`${val} cm`, t(`molt.${name}`)]}
+            formatter={(val, name) => [`${val} ${unit}`, t(`molt.${name}`)]}
           />
           <Legend
             wrapperStyle={{ fontSize: 11, color: 'var(--ta-text-muted)' }}
