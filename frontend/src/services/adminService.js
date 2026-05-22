@@ -74,6 +74,8 @@ const adminService = {
     api.get('/admin/user-lookup', { params: { email } }).then((r) => r.data),
   setUserVerifiedBreeder: (id, verifiedBreeder) =>
     api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  tapToContactRate: () =>
+    api.get('/admin/marketing/tap-to-contact-rate').then((r) => r.data),
 }
 
 export default adminService

@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.util.SecurityHelper;
@@ -31,11 +32,14 @@ class MarketplaceControllerTest {
     @Mock
     private SecurityHelper securityHelper;
 
+    @Mock
+    private ListingEventService listingEventService;
+
     private MarketplaceController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new MarketplaceController(marketplaceService, marketplaceOrderService, securityHelper);
+        controller = new MarketplaceController(marketplaceService, marketplaceOrderService, listingEventService, securityHelper);
     }
 
     @Test

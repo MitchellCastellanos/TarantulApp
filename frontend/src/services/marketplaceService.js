@@ -40,6 +40,17 @@ const marketplaceService = {
 
   listMyOrders: (params = {}) =>
     api.get('/marketplace/orders/me', { params }).then((r) => r.data),
+
+  /** Anonymous event tracking — fire and forget, used by vendor analytics. */
+  recordListingEvent: (listingId, payload) =>
+    publicApi
+      .post(`/public/marketplace/listings/${listingId}/events`, payload)
+      .then((r) => r.data)
+      .catch(() => null),
+
+  /** Per-listing analytics for the current seller. */
+  getSellerAnalytics: () =>
+    api.get('/marketplace/seller/analytics', { skipAuthRedirect: true }).then((r) => r.data),
 }
 
 export default marketplaceService

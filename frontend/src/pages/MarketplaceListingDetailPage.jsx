@@ -12,6 +12,8 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import ListingShareKit from '../components/ListingShareKit'
+import { trackListingEvent } from '../utils/listingEventTracker'
 
 function listingGalleryUrls(listing) {
   const raw = listing?.imageUrls
@@ -40,6 +42,7 @@ export default function MarketplaceListingDetailPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [photoIdx, setPhotoIdx] = useState(0)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const locale = i18n.language?.startsWith('es') ? 'es-MX' : 'en-US'
 
@@ -53,6 +56,7 @@ export default function MarketplaceListingDetailPage() {
         if (!cancelled) {
           setPayload(data)
           setPhotoIdx(0)
+          trackListingEvent(listingId, 'view')
         }
       })
       .catch((err) => {
@@ -244,11 +248,24 @@ export default function MarketplaceListingDetailPage() {
                     </span>
                   )}
                 </h1>
-                <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
-                  {listing.priceAmount != null
-                    ? `${listing.priceAmount} ${listing.currency || ''}`.trim()
-                    : t('marketplace.priceOnRequest')}
-                </p>
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
+                    {listing.priceAmount != null
+                      ? `${listing.priceAmount} ${listing.currency || ''}`.trim()
+                      : t('marketplace.priceOnRequest')}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => {
+                      trackListingEvent(listingId, 'share_open', { force: true })
+                      setShareOpen(true)
+                    }}
+                    aria-label={t('share.listing.title')}
+                  >
+                    {t('share.listing.button')}
+                  </button>
+                </div>
               </div>
 
               <dl className="row small mb-3 g-2">
@@ -360,6 +377,7 @@ export default function MarketplaceListingDetailPage() {
                           <Link
                             className="btn btn-sm btn-outline-dark"
                             to={`/shop/${encodeURIComponent(sellerHandle)}`}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap')}
                           >
                             {t('marketplace.listingDetailVisitStore')}
                           </Link>
@@ -371,6 +389,7 @@ export default function MarketplaceListingDetailPage() {
                               ? `/u/${encodeURIComponent(sellerPreview.handle)}`
                               : `/marketplace/keeper/${sellerId}`
                           }
+                          onClick={() => trackListingEvent(listingId, 'contact_tap')}
                         >
                           {t('marketplace.viewSeller')}
                         </Link>
@@ -379,11 +398,16 @@ export default function MarketplaceListingDetailPage() {
                             className="btn btn-dark btn-sm"
                             to="/login"
                             state={{ redirectAfterAuth: chatHref }}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap')}
                           >
                             {t('marketplace.messageSeller')}
                           </Link>
                         ) : canMessage ? (
-                          <Link className="btn btn-dark btn-sm" to={chatHref}>
+                          <Link
+                            className="btn btn-dark btn-sm"
+                            to={chatHref}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap')}
+                          >
                             {t('marketplace.messageSeller')}
                           </Link>
                         ) : null}
@@ -424,6 +448,7 @@ export default function MarketplaceListingDetailPage() {
                         type="button"
                         className="btn btn-warning btn-sm w-100 mb-2"
                         onClick={() => {
+                          trackListingEvent(listingId, 'contact_tap')
                           addPartnerCartLine({
                             vendorSlug: listing.officialVendor?.slug || MONARCH_VENDOR_SLUG,
                             listingId: listing.id,
@@ -446,12 +471,19 @@ export default function MarketplaceListingDetailPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="btn btn-outline-secondary btn-sm w-100 mb-2"
+                          onClick={() => trackListingEvent(listingId, 'contact_tap')}
                         >
                           {t('marketplace.listingDetailVisitStore')}
                         </a>
                       )}
                       {listing.canonicalUrl && (
-                        <a href={listing.canonicalUrl} target="_blank" rel="noreferrer" className="btn btn-dark btn-sm w-100">
+                        <a
+                          href={listing.canonicalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-dark btn-sm w-100"
+                          onClick={() => trackListingEvent(listingId, 'contact_tap')}
+                        >
                           {t('marketplace.listingDetailOfficialCta')}
                         </a>
                       )}
@@ -503,6 +535,16 @@ export default function MarketplaceListingDetailPage() {
         )}
       </div>
       <PartnerCartBar />
+      {shareOpen && listing && (
+        <ListingShareKit
+          listing={listing}
+          sellerName={sellerPreview?.displayName || listing.sellerName}
+          sellerHandle={sellerPreview?.handle || listing.sellerHandle}
+          listingUrl={origin && listingId ? `${origin}/marketplace/listing/${listingId}` : ''}
+          imageUrl={activeImg}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </>
   )
 }

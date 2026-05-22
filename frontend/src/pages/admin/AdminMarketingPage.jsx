@@ -65,6 +65,7 @@ export default function AdminMarketingPage() {
   const [betaStats, setBetaStats] = useState(null)
   const [officialVendors, setOfficialVendors] = useState([])
   const [officialLeads, setOfficialLeads] = useState([])
+  const [tapRate, setTapRate] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(true)
@@ -85,8 +86,9 @@ export default function AdminMarketingPage() {
       adminService.betaStats().catch(() => null),
       adminService.officialVendors().catch(() => []),
       adminService.officialVendorLeads().catch(() => []),
+      adminService.tapToContactRate().catch(() => null),
     ])
-      .then(([s, vendorsPack, beta, partners, leads]) => {
+      .then(([s, vendorsPack, beta, partners, leads, rate]) => {
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -96,6 +98,7 @@ export default function AdminMarketingPage() {
         setBetaStats(beta && typeof beta === 'object' ? beta : null)
         setOfficialVendors(Array.isArray(partners) ? partners : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
+        setTapRate(rate && typeof rate === 'object' ? rate : null)
       })
       .catch((err) => {
         const code = err?.response?.status
@@ -237,6 +240,43 @@ export default function AdminMarketingPage() {
               <small className="text-muted">{t('admin.mkt.cardTarantulas')}</small>
               <div className="h5 mb-0">{summary.tarantulasTotal}</div>
               <small className="text-muted">{t('admin.mkt.cardTarantulasBlurb')}</small>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tapRate && (
+        <div className="card p-3 mb-4">
+          <h3 className="h6 mb-1">{t('admin.mkt.northMetricTitle')}</h3>
+          <p className="small text-muted mb-3">{t('admin.mkt.northMetricBlurb')}</p>
+          <div className="row g-2">
+            <div className="col-6 col-md-3">
+              <div className="border rounded p-2 small">
+                <div className="text-muted">{t('admin.mkt.northMetricViews7d')}</div>
+                <div className="h6 mb-0">{tapRate.views7d ?? 0}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="border rounded p-2 small">
+                <div className="text-muted">{t('admin.mkt.northMetricTaps7d')}</div>
+                <div className="h6 mb-0">{tapRate.contactTaps7d ?? 0}</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="border rounded p-2 small">
+                <div className="text-muted">{t('admin.mkt.northMetricRate7d')}</div>
+                <div className="h6 mb-0">
+                  {Math.round(((tapRate.contactTapRate7d ?? 0) * 100) * 10) / 10}%
+                </div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="border rounded p-2 small">
+                <div className="text-muted">{t('admin.mkt.northMetricRate30d')}</div>
+                <div className="h6 mb-0">
+                  {Math.round(((tapRate.contactTapRate30d ?? 0) * 100) * 10) / 10}%
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -437,9 +477,8 @@ export default function AdminMarketingPage() {
         <p className="small text-muted mb-2">{t('admin.mkt.upcomingBlurb')}</p>
         <ul className="small mb-0">
           <li>{t('admin.mkt.upcomingNewsletter')}</li>
-          <li>{t('admin.mkt.upcomingAssetKit')}</li>
           <li>{t('admin.mkt.upcomingTopVendor')}</li>
-          <li>{t('admin.mkt.upcomingTapRate')}</li>
+          <li>{t('admin.mkt.upcomingWishlist')}</li>
         </ul>
       </div>
     </div>
