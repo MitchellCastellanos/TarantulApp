@@ -7,6 +7,7 @@ import {
   readPartnerCart,
   updatePartnerCartQty,
 } from '../utils/partnerCart'
+import { decodeListingTitle } from '../utils/listingDisplay'
 
 export default function PartnerCartBar() {
   const { t } = useTranslation()
@@ -25,6 +26,10 @@ export default function PartnerCartBar() {
   }, [refresh])
 
   const count = partnerCartCount(cart)
+
+  useEffect(() => {
+    if (count > 0) setOpen(true)
+  }, [count])
   if (count === 0 && !open) {
     return null
   }
@@ -57,7 +62,7 @@ export default function PartnerCartBar() {
       <div className="card border-warning shadow-lg ta-premium-pane">
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
-            <button type="button" className="btn btn-sm btn-dark" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="btn btn-sm btn-warning text-dark fw-semibold" onClick={() => setOpen((v) => !v)}>
               {t('marketplace.partnerCartTitle', { count })}
             </button>
             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { clearPartnerCart(); refresh() }}>
@@ -70,7 +75,7 @@ export default function PartnerCartBar() {
                 {cart.lines.map((line) => (
                   <li key={line.externalProductId} className="d-flex justify-content-between align-items-start gap-2 mb-2 border-bottom border-secondary border-opacity-25 pb-2">
                     <div className="min-w-0">
-                      <div className="fw-semibold text-truncate">{line.title || line.externalProductId}</div>
+                      <div className="fw-semibold text-truncate">{decodeListingTitle(line.title) || line.externalProductId}</div>
                       {line.priceAmount != null && (
                         <div className="text-muted">
                           {line.priceAmount} {line.currency || ''}
@@ -92,7 +97,7 @@ export default function PartnerCartBar() {
                   </li>
                 ))}
               </ul>
-              <button type="button" className="btn btn-warning btn-sm w-100 fw-semibold" disabled={checkingOut || cart.lines.length === 0} onClick={checkout}>
+              <button type="button" className="btn btn-warning text-dark btn-sm w-100 fw-semibold ta-partner-cart-checkout" disabled={checkingOut || cart.lines.length === 0} onClick={checkout}>
                 {checkingOut ? t('common.loading') : t('marketplace.partnerCartCheckout')}
               </button>
               {message && <p className="small text-success mb-0 mt-2">{message}</p>}

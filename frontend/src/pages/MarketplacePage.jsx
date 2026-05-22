@@ -7,6 +7,7 @@ import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { imgUrl } from '../services/api'
+import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import BrandLogoMark from '../components/BrandLogoMark'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
@@ -532,6 +533,11 @@ export default function MarketplacePage() {
           {t('marketplace.marketplaceHeroSub')}
         </p>
 
+        {(monarchBrowse || listingCategory !== DEFAULT_MARKETPLACE_CATEGORY) && (
+          <p className="small fw-semibold mb-2 ta-marketplace-category-nav__label" style={{ color: 'var(--ta-gold-classic)' }}>
+            {t('marketplace.categoryNavHint')}
+          </p>
+        )}
         <nav
           className="ta-marketplace-category-nav mb-4"
           aria-label={t('marketplace.categoryNavAria')}
@@ -936,15 +942,17 @@ export default function MarketplacePage() {
                     role="presentation"
                   >
                     <img
-                      src={(imgUrl(l.imageUrl) || l.imageUrl || '/spider-default.png')}
-                      alt={l.title}
+                      src={(partnerListingImageUrl(l.imageUrl) || '/spider-default.png')}
+                      alt={decodeListingTitle(l.title)}
                       className="card-img-top"
                       style={{ maxHeight: 160, objectFit: 'cover' }}
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.src = '/spider-default.png' }}
                     />
                     <div className="card-body">
                       <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
                         <OfficialPartnerShield width={22} height={24} />
-                        <span>{l.title}</span>
+                        <span>{decodeListingTitle(l.title)}</span>
                         <span className={`badge ${l.isFoundingPartner ? 'bg-warning text-dark' : 'bg-warning text-dark'}`}>
                           {partnerBadgeFor(l)}
                         </span>

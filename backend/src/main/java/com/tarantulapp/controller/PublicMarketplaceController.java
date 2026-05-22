@@ -4,6 +4,7 @@ import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
+import com.tarantulapp.service.PartnerListingImageProxyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,7 @@ public class PublicMarketplaceController {
     private final MarketplaceService marketplaceService;
     private final OfficialVendorService officialVendorService;
     private final PartnerCartHandoffService partnerCartHandoffService;
+    private final PartnerListingImageProxyService partnerListingImageProxyService;
     private final boolean futurePaidStorefrontEnabled;
     private final boolean futurePaidBadgesEnabled;
     private final boolean strategicPartnerBootstrapMode;
@@ -46,12 +48,14 @@ public class PublicMarketplaceController {
     public PublicMarketplaceController(MarketplaceService marketplaceService,
                                        OfficialVendorService officialVendorService,
                                        PartnerCartHandoffService partnerCartHandoffService,
+                                       PartnerListingImageProxyService partnerListingImageProxyService,
                                        @Value("${app.marketplace.future-paid-storefront-enabled:false}") boolean futurePaidStorefrontEnabled,
                                        @Value("${app.marketplace.future-paid-badges-enabled:false}") boolean futurePaidBadgesEnabled,
                                        @Value("${app.marketplace.strategic-bootstrap-mode:true}") boolean strategicPartnerBootstrapMode) {
         this.marketplaceService = marketplaceService;
         this.officialVendorService = officialVendorService;
         this.partnerCartHandoffService = partnerCartHandoffService;
+        this.partnerListingImageProxyService = partnerListingImageProxyService;
         this.futurePaidStorefrontEnabled = futurePaidStorefrontEnabled;
         this.futurePaidBadgesEnabled = futurePaidBadgesEnabled;
         this.strategicPartnerBootstrapMode = strategicPartnerBootstrapMode;
@@ -159,6 +163,11 @@ public class PublicMarketplaceController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Boolean promotedOnly) {
         return ResponseEntity.ok(marketplaceService.publicPartnerCatalog(vendorSlug, listingCategory, q, promotedOnly));
+    }
+
+    @GetMapping("/partner-listing-image")
+    public ResponseEntity<byte[]> partnerListingImage(@RequestParam String url) {
+        return partnerListingImageProxyService.fetchImage(url);
     }
 
     @PostMapping("/partner-cart/handoff")

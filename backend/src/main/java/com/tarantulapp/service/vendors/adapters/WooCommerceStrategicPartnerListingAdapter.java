@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
@@ -105,7 +106,7 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         BigDecimal price = parseStorePrice(prices == null ? null : prices.get("price"));
         String currency = prices == null ? "CAD" : text(prices, "currency_code");
         Integer stock = parseStock(product);
-        String imageUrl = firstImageUrl(product.get("images"));
+        String imageUrl = firstImageUrl(product.get("images"), storeBaseUrl);
         String species = guessSpeciesFromTitle(title);
 
         return new StrategicVendorRawListing(
@@ -162,16 +163,34 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         return BigDecimal.valueOf(raw).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 
-    private String firstImageUrl(JsonNode images) {
+    private String firstImageUrl(JsonNode images, String baseUrl) {
         if (images == null || !images.isArray() || images.isEmpty()) {
             return null;
         }
         JsonNode first = images.get(0);
-        String thumb = text(first, "thumbnail");
-        if (thumb != null) {
-            return thumb;
+        String src = absolutizeImageUrl(text(first, "src"), baseUrl);
+        if (src != null) {
+            return src;
         }
-        return text(first, "src");
+        return absolutizeImageUrl(text(first, "thumbnail"), baseUrl);
+    }
+
+    private String absolutizeImageUrl(String raw, String baseUrl) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("http://") || lower.startsWith("https://")) {
+            return trimmed;
+        }
+        if (trimmed.startsWith("//")) {
+            return "https:" + trimmed;
+        }
+        if (trimmed.startsWith("/") && baseUrl != null) {
+            return baseUrl + trimmed;
+        }
+        return null;
     }
 
     private String guessSpeciesFromTitle(String title) {
@@ -203,12 +222,7 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         if (raw == null) {
             return null;
         }
-        return raw
-                .replace("&#8211;", "–")
-                .replace("&amp;", "&")
-                .replace("&quot;", "\"")
-                .replace("&#8221;", "\"")
-                .replace("&#8220;", "\"");
+        return HtmlUtils.htmlUnescape(raw).trim();
     }
 
     private String text(JsonNode node, String field) {

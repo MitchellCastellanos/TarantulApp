@@ -5,6 +5,8 @@ import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ public class PartnerCartHandoffService {
         out.put("checkoutUrl", checkoutUrl);
         out.put("lineCount", normalized.size());
         out.put("utmSource", "tarantulapp");
-        out.put("handoffMode", normalized.size() == 1 ? "single_add_to_cart" : "multi_add_to_cart");
+        out.put("handoffMode", "woocommerce_cart_add");
         return out;
     }
 
@@ -60,24 +62,15 @@ public class PartnerCartHandoffService {
     }
 
     private String buildMonarchCheckoutUrl(List<CartLine> lines) {
-        if (lines.size() == 1) {
-            CartLine one = lines.get(0);
-            return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl)
-                    .queryParam("add-to-cart", one.externalProductId())
-                    .queryParam("quantity", one.quantity())
-                    .queryParam("utm_source", "tarantulapp")
-                    .queryParam("utm_medium", "partner_cart")
-                    .build(true)
-                    .toUriString();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        for (CartLine line : lines) {
+            params.add("add-to-cart", line.externalProductId());
+            params.add("quantity", String.valueOf(line.quantity()));
         }
-        String ids = lines.stream()
-                .map(CartLine::externalProductId)
-                .reduce((a, b) -> a + "," + b)
-                .orElse("");
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl)
-                .queryParam("add-to-cart", ids)
-                .queryParam("utm_source", "tarantulapp")
-                .queryParam("utm_medium", "partner_cart")
+        params.add("utm_source", "tarantulapp");
+        params.add("utm_medium", "partner_cart");
+        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/cart/")
+                .queryParams(params)
                 .build(true)
                 .toUriString();
     }

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { imgUrl } from '../services/api'
+import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -69,12 +70,14 @@ export default function MarketplaceListingDetailPage() {
   }, [listingId])
 
   const listing = payload?.listing
+  const displayTitle = listing?.title ? decodeListingTitle(listing.title) : ''
   const related = Array.isArray(payload?.relatedListings) ? payload.relatedListings : []
   const sellerPreview = payload?.sellerPreview || null
 
   const images = useMemo(() => {
     if (!listing) return []
-    return listingGalleryUrls(listing).map((u) => imgUrl(u) || u)
+    const partner = listing.source === 'partner' || listing.isPartner
+    return listingGalleryUrls(listing).map((u) => (partner ? partnerListingImageUrl(u) : imgUrl(u)) || u)
   }, [listing])
 
   const activeImg = images.length > 0 ? images[Math.min(photoIdx, images.length - 1)] : null
@@ -221,7 +224,7 @@ export default function MarketplaceListingDetailPage() {
               <div className="mb-3">
                 <h1 className="h4 fw-bold mb-2 d-flex align-items-center gap-2 flex-wrap">
                   {isPartner && <OfficialPartnerShield width={26} height={28} />}
-                  <span>{listing.title}</span>
+                  <span>{displayTitle || listing.title}</span>
                   {listing.sellerVerifiedBreeder && (
                     <span className="badge bg-info-subtle text-dark border">{t('marketplace.verifiedBreederBadge')}</span>
                   )}

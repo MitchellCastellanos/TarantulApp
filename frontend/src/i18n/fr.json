@@ -754,6 +754,7 @@
     "pageFocusTitle": "Annonces entre keepers",
     "marketplaceHeroSub": "Tarentules, projets d’élevage, nourriture vivante, substrats et terrariums — communauté et vitrines partenaires dans l’app.",
     "categoryNavAria": "Catégories du marketplace",
+    "categoryNavHint": "Parcourir par catégorie — onglets pour mygales, nourriture vivante, terrariums, fournitures, etc.",
     "category": {
       "tarantulas": "Tarentules",
       "breeding_projects": "Projets d’élevage",

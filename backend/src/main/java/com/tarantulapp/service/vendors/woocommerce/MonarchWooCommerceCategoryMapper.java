@@ -15,11 +15,31 @@ public final class MonarchWooCommerceCategoryMapper {
 
     private static final String BRAND_TARANTULA_CRIBS = "tarantula-cribs";
 
+    private static final Set<String> NON_TARANTULA_CATEGORY_SLUGS = Set.of(
+            "jumping-spiders",
+            "jumping-spider",
+            "millipedes",
+            "millipede",
+            "scorpions",
+            "scorpion",
+            "ants",
+            "ant",
+            "other-invertebrates",
+            "isopods",
+            "roaches",
+            "centipedes",
+            "snails",
+            "beetles"
+    );
+
     private MonarchWooCommerceCategoryMapper() {
     }
 
     public static MappedProduct map(JsonNode product) {
         if (product == null || product.isNull()) {
+            return null;
+        }
+        if (isNonTarantulaProduct(product)) {
             return null;
         }
         Set<String> slugs = collectCategorySlugs(product.get("categories"));
@@ -33,6 +53,38 @@ public final class MonarchWooCommerceCategoryMapper {
             return null;
         }
         return new MappedProduct(category, promoted, brandSlugs.isEmpty() ? null : brandSlugs.iterator().next());
+    }
+
+    private static boolean isNonTarantulaProduct(JsonNode product) {
+        Set<String> slugs = collectCategorySlugs(product.get("categories"));
+        for (String slug : slugs) {
+            if (NON_TARANTULA_CATEGORY_SLUGS.contains(slug) || containsNonTarantulaFragment(slug)) {
+                return true;
+            }
+        }
+        String name = text(product, "name");
+        if (name == null) {
+            return false;
+        }
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("millipede")
+                || lower.contains("jumping spider")
+                || lower.contains("jumping-spider")
+                || lower.contains(" scorpion")
+                || lower.startsWith("scorpion ")
+                || lower.contains(" isopod")
+                || lower.contains("centipede")
+                || lower.contains("roach ")
+                || lower.contains(" beetle");
+    }
+
+    private static boolean containsNonTarantulaFragment(String slug) {
+        return slug.contains("millipede")
+                || slug.contains("jumping-spider")
+                || slug.contains("scorpion")
+                || slug.contains("/ants")
+                || slug.startsWith("ants-")
+                || slug.endsWith("-ants");
     }
 
     private static String resolveCategory(Set<String> slugs, Set<String> brandSlugs) {
@@ -56,9 +108,6 @@ public final class MonarchWooCommerceCategoryMapper {
                 "bioactive-and-accessories", "cleaning", "foods", "oh-my-ants", "jumping-spider-accessories",
                 "animals-pet-supplies")) {
             return MarketplaceListingCategories.SUPPLIES;
-        }
-        if (matchesAny(slugs, "invertebrates", "jumping-spiders", "scorpions", "ants", "other-invertebrates")) {
-            return MarketplaceListingCategories.TARANTULAS;
         }
         if (matchesAny(slugs, "bioactive", "moss-plants-leaf-litter", "springtails-isopods-worms")) {
             return MarketplaceListingCategories.SUBSTRATES;

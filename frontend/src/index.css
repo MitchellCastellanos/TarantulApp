@@ -1967,6 +1967,22 @@ a.text-collection:hover {
   border-width: 2px;
 }
 
+.ta-partner-cart-bar .ta-partner-cart-checkout,
+.ta-partner-cart-bar .btn-warning.text-dark {
+  color: #1a1208 !important;
+  background-color: var(--ta-gold-classic, #c9a84c) !important;
+  border-color: #a8872e !important;
+}
+
+.ta-partner-cart-bar .btn-outline-secondary {
+  color: var(--ta-parchment, #f5ecd8);
+  border-color: var(--ta-border, rgba(255, 255, 255, 0.2));
+}
+
+.ta-marketplace-category-nav__label {
+  letter-spacing: 0.04em;
+}
+
 .ta-marketplace-official-strip {
   position: relative;
   border-radius: 0.65rem;
