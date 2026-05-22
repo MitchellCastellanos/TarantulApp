@@ -2575,7 +2575,33 @@
     "historySubtitle": "Ultimos eventos registrados",
     "pedigreeNote": "Completa este PDF conforme registres pairings y genealogía.",
     "eventTemplate": "Registro de {{tarantula}} ({{species}}): {{event}} el {{date}}.",
-    "photoTemplate": "Foto de {{tarantula}} ({{species}}). Nota: {{caption}}."
+    "photoTemplate": "Foto de {{tarantula}} ({{species}}). Nota: {{caption}}.",
+    "priceLabel": "Precio",
+    "locationLabel": "Ubicación",
+    "sellerLabel": "Vendedor",
+    "viaBrand": "vía {{brand}}",
+    "shared": "Compartido.",
+    "copied": "Copiado al portapapeles.",
+    "copyFailed": "No se pudo copiar. Selecciona el texto a mano.",
+    "listing": {
+      "button": "Compartir",
+      "title": "Compartir este anuncio",
+      "blurb": "Elige canal, copia el texto y pégalo donde ya están tus compradores. La tarjeta cuadrada se descarga lista para Instagram o estados.",
+      "channelGroup": "Canal de compartido",
+      "channel": {
+        "default": "Genérico",
+        "whatsapp": "WhatsApp",
+        "instagram": "Instagram"
+      },
+      "previewText": "Texto",
+      "previewCard": "Tarjeta imagen (1080×1080)",
+      "copy": "Copiar texto",
+      "openWhatsapp": "Abrir WhatsApp",
+      "download": "Descargar imagen",
+      "cardHint": "Optimizada para feed de Instagram y estados de WhatsApp. Súbela tal cual desde tu galería.",
+      "cardError": "No se pudo armar la tarjeta. El texto sigue funcionando.",
+      "dialogTitle": "Compartir anuncio"
+    }
   },
   "onboarding": {
     "newKeeperMode": "Modo new keeper",

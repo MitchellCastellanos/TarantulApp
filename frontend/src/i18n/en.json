@@ -2580,7 +2580,33 @@
     "historySubtitle": "Latest recorded events",
     "pedigreeNote": "Update this PDF as you add pairings and genealogy data.",
     "eventTemplate": "Log from {{tarantula}} ({{species}}): {{event}} on {{date}}.",
-    "photoTemplate": "Photo of {{tarantula}} ({{species}}). Note: {{caption}}."
+    "photoTemplate": "Photo of {{tarantula}} ({{species}}). Note: {{caption}}.",
+    "priceLabel": "Price",
+    "locationLabel": "Location",
+    "sellerLabel": "Seller",
+    "viaBrand": "via {{brand}}",
+    "shared": "Shared.",
+    "copied": "Copied to clipboard.",
+    "copyFailed": "Could not copy. Try selecting the text manually.",
+    "listing": {
+      "button": "Share",
+      "title": "Share this listing",
+      "blurb": "Pick a channel, copy the caption, and post wherever your buyers are. The square card below downloads ready for Instagram or Stories.",
+      "channelGroup": "Share channel",
+      "channel": {
+        "default": "Generic",
+        "whatsapp": "WhatsApp",
+        "instagram": "Instagram"
+      },
+      "previewText": "Caption",
+      "previewCard": "Image card (1080×1080)",
+      "copy": "Copy caption",
+      "openWhatsapp": "Open WhatsApp",
+      "download": "Download image",
+      "cardHint": "Optimized for Instagram feed and WhatsApp status. Drop it straight from your gallery.",
+      "cardError": "Could not build the image card. Caption still works.",
+      "dialogTitle": "Share listing"
+    }
   },
   "onboarding": {
     "newKeeperMode": "New keeper mode",

@@ -2547,7 +2547,33 @@
     "historySubtitle": "Derniers événements enregistrés",
     "pedigreeNote": "Complétez ce PDF à mesure que vous ajoutez pairings et généalogie.",
     "eventTemplate": "Journal de {{tarantula}} ({{species}}) : {{event}} le {{date}}.",
-    "photoTemplate": "Photo de {{tarantula}} ({{species}}). Note : {{caption}}."
+    "photoTemplate": "Photo de {{tarantula}} ({{species}}). Note : {{caption}}.",
+    "priceLabel": "Prix",
+    "locationLabel": "Localisation",
+    "sellerLabel": "Vendeur",
+    "viaBrand": "via {{brand}}",
+    "shared": "Partagé.",
+    "copied": "Copié dans le presse-papiers.",
+    "copyFailed": "Impossible de copier. Sélectionnez le texte à la main.",
+    "listing": {
+      "button": "Partager",
+      "title": "Partager cette annonce",
+      "blurb": "Choisissez un canal, copiez la légende et publiez là où vos acheteurs sont déjà. La carte carrée se télécharge prête pour Instagram ou stories.",
+      "channelGroup": "Canal de partage",
+      "channel": {
+        "default": "Générique",
+        "whatsapp": "WhatsApp",
+        "instagram": "Instagram"
+      },
+      "previewText": "Légende",
+      "previewCard": "Carte image (1080×1080)",
+      "copy": "Copier la légende",
+      "openWhatsapp": "Ouvrir WhatsApp",
+      "download": "Télécharger l’image",
+      "cardHint": "Optimisée pour le feed Instagram et les stories WhatsApp. Déposez-la directement depuis la galerie.",
+      "cardError": "Impossible de générer la carte image. La légende reste utilisable.",
+      "dialogTitle": "Partager l’annonce"
+    }
   },
   "onboarding": {
     "newKeeperMode": "Mode nouveau keeper",

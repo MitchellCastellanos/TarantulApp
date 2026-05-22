@@ -12,6 +12,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import ListingShareKit from '../components/ListingShareKit'
 
 function listingGalleryUrls(listing) {
   const raw = listing?.imageUrls
@@ -40,6 +41,7 @@ export default function MarketplaceListingDetailPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [photoIdx, setPhotoIdx] = useState(0)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const locale = i18n.language?.startsWith('es') ? 'es-MX' : 'en-US'
 
@@ -244,11 +246,21 @@ export default function MarketplaceListingDetailPage() {
                     </span>
                   )}
                 </h1>
-                <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
-                  {listing.priceAmount != null
-                    ? `${listing.priceAmount} ${listing.currency || ''}`.trim()
-                    : t('marketplace.priceOnRequest')}
-                </p>
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
+                    {listing.priceAmount != null
+                      ? `${listing.priceAmount} ${listing.currency || ''}`.trim()
+                      : t('marketplace.priceOnRequest')}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setShareOpen(true)}
+                    aria-label={t('share.listing.title')}
+                  >
+                    {t('share.listing.button')}
+                  </button>
+                </div>
               </div>
 
               <dl className="row small mb-3 g-2">
@@ -503,6 +515,16 @@ export default function MarketplaceListingDetailPage() {
         )}
       </div>
       <PartnerCartBar />
+      {shareOpen && listing && (
+        <ListingShareKit
+          listing={listing}
+          sellerName={sellerPreview?.displayName || listing.sellerName}
+          sellerHandle={sellerPreview?.handle || listing.sellerHandle}
+          listingUrl={origin && listingId ? `${origin}/marketplace/listing/${listingId}` : ''}
+          imageUrl={activeImg}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </>
   )
 }
