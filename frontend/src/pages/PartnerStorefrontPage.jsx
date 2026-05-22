@@ -126,7 +126,9 @@ export default function PartnerStorefrontPage() {
   }
 
   return (
-    <div className={`ta-premium-page ta-partner-storefront${isFounding ? ' ta-partner-storefront--founding' : ''}`}>
+    <div
+      className={`ta-premium-page ta-partner-storefront${isFounding ? ' ta-partner-storefront--founding' : ''}${vendor?.websiteUrl ? ' ta-partner-storefront--has-website-bar' : ''}`}
+    >
       <Navbar />
       <div className="container mt-4 ta-premium-shell pb-5 mb-5">
         <Link to="/marketplace" className="btn btn-sm btn-outline-secondary mb-3">
@@ -289,8 +291,8 @@ export default function PartnerStorefrontPage() {
       </div>
 
       {vendor?.websiteUrl && (
-        <div className="ta-partner-storefront-website-bar position-fixed bottom-0 start-0 end-0 py-2 px-3">
-          <div className="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div className="ta-partner-storefront-website-bar py-2 px-3 mt-3">
+          <div className="container ta-premium-shell d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span className="small text-muted">{t('marketplace.partnerStorefrontWebsiteHint')}</span>
             <a
               href={vendor.websiteUrl}
