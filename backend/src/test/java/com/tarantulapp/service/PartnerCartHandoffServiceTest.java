@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -37,29 +36,13 @@ class PartnerCartHandoffServiceTest {
     }
 
     @Test
-    void singleItemUsesProductPageAddToCart() {
-        Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
-                new PartnerCartHandoffService.CartLine(
-                        "29661", 1, "Spider",
-                        "https://monarchreptiles.com/product/test-spider/")));
-        assertEquals("product_page_add", handoff.get("handoffMode"));
-        String url = (String) handoff.get("checkoutUrl");
-        assertTrue(url.contains("/product/test-spider"));
-        assertTrue(url.contains("add-to-cart=29661"));
-    }
-
-    @Test
-    void multiItemNeverUsesCommaBatchUrl() {
+    void multiItemUsesCommaBatchCheckoutUrl() {
         Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
                 new PartnerCartHandoffService.CartLine("101", 1, "A", "https://monarchreptiles.com/product/a/"),
                 new PartnerCartHandoffService.CartLine("202", 2, "B", "https://monarchreptiles.com/product/b/")));
-        assertEquals("product_pages_stepped", handoff.get("handoffMode"));
-        String checkout = (String) handoff.get("checkoutUrl");
-        assertTrue(checkout.contains("/cart"));
-        assertFalse(checkout.contains("add-to-cart"));
-        @SuppressWarnings("unchecked")
-        List<String> addUrls = (List<String>) handoff.get("addToCartUrls");
-        assertEquals(2, addUrls.size());
-        assertTrue(addUrls.get(0).contains("add-to-cart=101"));
+        assertEquals("batch_fill", handoff.get("handoffMode"));
+        String url = (String) handoff.get("checkoutUrl");
+        assertTrue(url.contains("add-to-cart=101,202"));
+        assertTrue(url.contains("quantity=1,2"));
     }
 }

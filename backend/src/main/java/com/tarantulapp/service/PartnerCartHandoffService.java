@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PartnerCartHandoffService {
@@ -44,15 +45,40 @@ public class PartnerCartHandoffService {
         out.put("addToCartUrls", addToCartUrls);
         out.put("lineCount", normalized.size());
         out.put("utmSource", "tarantulapp");
+
         if (normalized.size() == 1) {
             out.put("checkoutUrl", addToCartUrls.get(0));
             out.put("handoffMode", "product_page_add");
         } else {
-            // Monarch nginx returns 403 on ?add-to-cart= batch URLs — stepped product pages only.
-            out.put("checkoutUrl", cartUrl);
-            out.put("handoffMode", "product_pages_stepped");
+            out.put("checkoutUrl", buildCommaBatchUrl(normalized));
+            out.put("fallbackBatchUrl", buildColonBatchUrl(normalized));
+            out.put("handoffMode", "batch_fill");
         }
         return out;
+    }
+
+    private String buildCommaBatchUrl(List<CartLine> lines) {
+        String ids = lines.stream().map(CartLine::externalProductId).collect(Collectors.joining(","));
+        String qtys = lines.stream().map(l -> String.valueOf(l.quantity())).collect(Collectors.joining(","));
+        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/")
+                .queryParam("add-to-cart", ids)
+                .queryParam("quantity", qtys)
+                .queryParam("utm_source", "tarantulapp")
+                .queryParam("utm_medium", "partner_cart")
+                .build(true)
+                .toUriString();
+    }
+
+    private String buildColonBatchUrl(List<CartLine> lines) {
+        String packed = lines.stream()
+                .map(l -> l.externalProductId() + ":" + l.quantity())
+                .collect(Collectors.joining(","));
+        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/cart/")
+                .queryParam("add-to-cart", packed)
+                .queryParam("utm_source", "tarantulapp")
+                .queryParam("utm_medium", "partner_cart")
+                .build(true)
+                .toUriString();
     }
 
     private String productPageAddToCartUrl(CartLine line) {
