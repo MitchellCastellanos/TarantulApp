@@ -527,29 +527,34 @@ export default function MarketplaceListingDetailPage() {
               {isPartner ? t('marketplace.listingDetailRelatedPartner') : t('marketplace.listingDetailRelatedPeer')}
             </h2>
             <div className="row g-3">
-              {related.map((rel) => (
+              {related.map((rel) => {
+                const relRawImg = rel.imageUrl || rel.imageUrls?.[0]
+                const relImg = isPartner
+                  ? partnerListingImageUrl(relRawImg)
+                  : imgUrl(relRawImg) || relRawImg
+                return (
                 <div className="col-6 col-md-4 col-xl-3" key={rel.id}>
                   <Link
                     to={`/marketplace/listing/${rel.id}`}
                     className="text-decoration-none text-reset d-block h-100 card border-secondary border-opacity-25 shadow-sm ta-premium-pane ta-marketplace-detail-related-card"
                   >
-                    {(rel.imageUrl || rel.imageUrls?.[0]) && (
-                      <img
-                        src={imgUrl(rel.imageUrl || rel.imageUrls[0]) || rel.imageUrl || rel.imageUrls[0]}
-                        alt=""
-                        className="card-img-top"
-                        style={{ maxHeight: 120, objectFit: 'cover' }}
-                      />
-                    )}
+                    <img
+                      src={relImg || '/spider-default.png'}
+                      alt={decodeListingTitle(rel.title) || ''}
+                      className="card-img-top ta-marketplace-detail-related-card__thumb"
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.src = '/spider-default.png' }}
+                    />
                     <div className="card-body p-2">
-                      <div className="small fw-semibold text-truncate">{rel.title}</div>
+                      <div className="small fw-semibold text-truncate">{decodeListingTitle(rel.title) || rel.title}</div>
                       <div className="small text-muted">
                         {rel.priceAmount != null ? `${rel.priceAmount} ${rel.currency || ''}` : t('marketplace.priceOnRequest')}
                       </div>
                     </div>
                   </Link>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}

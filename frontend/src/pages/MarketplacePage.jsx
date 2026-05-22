@@ -628,7 +628,7 @@ export default function MarketplacePage() {
                         {vendorHasInAppStorefront(vendor) && partnerStorefrontPath(vendor.slug) ? (
                           <Link
                             to={partnerStorefrontPath(vendor.slug)}
-                            className={`btn btn-sm w-100 fw-semibold${vendor.isFoundingPartner ? ' btn-warning text-dark' : ' btn-dark'}`}
+                            className={`btn btn-sm w-100 fw-semibold${vendor.isFoundingPartner ? ' btn-warning' : ' btn-dark'}`}
                           >
                             {t('marketplace.partnerStorefrontOpenCta')}
                           </Link>

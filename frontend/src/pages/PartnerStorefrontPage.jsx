@@ -198,7 +198,7 @@ export default function PartnerStorefrontPage() {
                     <button
                       key={cat}
                       type="button"
-                      className={`btn btn-sm ${listingCategory === cat ? 'btn-warning text-dark fw-semibold' : 'btn-outline-secondary'}`}
+                      className={`btn btn-sm ${listingCategory === cat ? 'btn-warning fw-semibold' : 'btn-outline-secondary'}`}
                       onClick={() => setCategory(cat)}
                     >
                       {t(`marketplace.category.${cat}`)}
@@ -273,7 +273,7 @@ export default function PartnerStorefrontPage() {
                         </button>
                         <Link
                           to={`/marketplace/listing/${l.id}`}
-                          className="btn btn-sm btn-outline-dark"
+                          className="btn btn-sm btn-outline-warning"
                           onClick={(ev) => ev.stopPropagation()}
                         >
                           {t('marketplace.partnerStorefrontViewItem')}

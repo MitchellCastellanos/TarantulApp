@@ -600,9 +600,67 @@ a.btn-warning:active {
 /* ─── Text utilities ────────────────────────────────────────────────────── */
 
 .text-muted { color: var(--ta-text-muted) !important; }
-.text-dark   { color: var(--ta-parchment) !important; }
+/* Remap Bootstrap text-dark for dark UI — never on gold buttons/badges (see btn-warning + badge.bg-warning) */
+.text-dark:not(.btn-warning):not(.badge.bg-warning) {
+  color: var(--ta-parchment) !important;
+}
 .text-gold   { color: var(--ta-gold) !important; }
 .text-collection { color: var(--ta-gold) !important; font-weight: 600; }
+
+/* Re-assert after .text-dark: gold surfaces must stay legible in marketplace/partner UI */
+.btn-warning,
+.btn-warning.text-dark,
+button.btn-warning,
+a.btn.btn-warning,
+.ta-partner-storefront .btn-warning,
+.ta-partner-storefront button.btn-warning,
+.ta-marketplace-detail-page .btn-warning,
+.ta-marketplace-detail-page a.btn.btn-warning,
+.ta-marketplace-listing-card .btn-warning {
+  color: #1a1208 !important;
+}
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active,
+button.btn-warning:hover,
+a.btn.btn-warning:hover {
+  color: #1a1208 !important;
+}
+.badge.bg-warning,
+.badge.bg-warning.text-dark,
+.ta-partner-storefront-hero--founding h1 .badge.bg-warning {
+  color: #1c1208 !important;
+}
+:root[data-theme='light'] .btn-warning,
+:root[data-theme='light'] .btn-warning.text-dark,
+:root[data-theme='light'] button.btn-warning,
+:root[data-theme='light'] a.btn.btn-warning,
+:root[data-theme='light'] .ta-partner-storefront .btn-warning,
+:root[data-theme='light'] .ta-marketplace-detail-page .btn-warning,
+:root[data-theme='light'] .ta-marketplace-listing-card .btn-warning {
+  color: #fff6e0 !important;
+}
+:root[data-theme='light'] .badge.bg-warning,
+:root[data-theme='light'] .badge.bg-warning.text-dark {
+  color: #fff6e0 !important;
+}
+
+.btn-outline-dark {
+  border-color: rgba(201, 168, 76, 0.45) !important;
+  color: var(--ta-gold-light-classic, #e0c06a) !important;
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+.btn-outline-dark:hover,
+.btn-outline-dark:focus {
+  background-color: rgba(201, 168, 76, 0.14) !important;
+  color: #fff9ec !important;
+  border-color: rgba(201, 168, 76, 0.65) !important;
+}
+:root[data-theme='light'] .btn-outline-dark {
+  border-color: rgba(100, 75, 30, 0.4) !important;
+  color: #5c4210 !important;
+  background-color: rgba(255, 252, 245, 0.85) !important;
+}
 
 hr { border-color: rgba(100,60,200,0.25) !important; opacity: 0.6; }
 
@@ -1911,6 +1969,13 @@ a.text-collection:hover {
 .ta-marketplace-detail-page .ta-marketplace-detail-related-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+.ta-marketplace-detail-related-card__thumb {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  display: block;
+  background: rgba(0, 0, 0, 0.35);
 }
 
 :root[data-theme='light'] .ta-marketplace-listing-card .card-body h6 {
