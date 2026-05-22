@@ -40,6 +40,8 @@ class PartnerListingSyncServiceTest {
     @Mock
     private PartnerListingUpsertService partnerListingUpsertService;
     @Mock
+    private PartnerListingSyncRunService partnerListingSyncRunService;
+    @Mock
     private ObjectProvider<PartnerListingSyncItemProvider> itemProvider;
 
     private PartnerListingSyncService service;
@@ -48,12 +50,20 @@ class PartnerListingSyncServiceTest {
     void setUp() {
         service = new PartnerListingSyncService(
                 officialVendorRepository,
-                partnerListingRepository,
                 partnerListingSyncRunRepository,
                 partnerListingUpsertService,
+                partnerListingSyncRunService,
                 itemProvider
         );
-        when(partnerListingSyncRunRepository.save(any(PartnerListingSyncRun.class)))
+        when(partnerListingSyncRunService.startRun(any(), any()))
+                .thenAnswer(inv -> {
+                    PartnerListingSyncRun run = new PartnerListingSyncRun();
+                    run.setOfficialVendorId(inv.getArgument(0));
+                    run.setTriggerSource(inv.getArgument(1));
+                    run.setStatus(PartnerListingSyncRunStatus.RUNNING);
+                    return run;
+                });
+        when(partnerListingSyncRunService.finishRun(any(PartnerListingSyncRun.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -64,7 +74,7 @@ class PartnerListingSyncServiceTest {
         existingMissing.setOfficialVendorId(vendorId);
         existingMissing.setExternalId("missing-1");
         existingMissing.setStatus(PartnerListingStatus.ACTIVE);
-        when(partnerListingRepository.findByOfficialVendorId(vendorId)).thenReturn(List.of(existingMissing));
+        when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(1);
 
         PartnerListingUpsertRequest item = new PartnerListingUpsertRequest(
                 vendorId,
@@ -106,7 +116,7 @@ class PartnerListingSyncServiceTest {
     @Test
     void syncSkipsInvalidExternalIdAndReturnsPartial() {
         UUID vendorId = UUID.randomUUID();
-        when(partnerListingRepository.findByOfficialVendorId(vendorId)).thenReturn(List.of());
+        when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(0);
 
         PartnerListingSyncRun run = service.syncVendorListings(
                 vendorId,

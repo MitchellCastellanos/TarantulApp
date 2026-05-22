@@ -10,6 +10,7 @@ import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -29,7 +30,7 @@ public class PartnerListingUpsertService {
         this.partnerListingRepository = partnerListingRepository;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PartnerListing upsert(PartnerListingUpsertRequest request) {
         validateRequired(request);
         OfficialVendor vendor = officialVendorRepository.findById(request.officialVendorId())

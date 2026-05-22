@@ -10,14 +10,16 @@
 
 - Adapter: `WooCommerceStrategicPartnerListingAdapter`
 - Public read: `GET https://monarchreptiles.com/wp-json/wc/store/v1/products`
-- On startup (local preview): `PARTNER_SYNC_RUN_ON_STARTUP=true`
+- On startup (optional): `PARTNER_SYNC_RUN_ON_STARTUP=true` (default **false** in prod to avoid boot-time load)
 - Manual: Admin → **Run partner sync**
+
+**Production note:** Flyway **V95** must run before sync (adds `partner_listings.promoted`). Each listing upsert uses its own DB transaction so one bad row does not poison the whole Monarch import.
 
 Env vars:
 
 | Variable | Default |
 |----------|---------|
-| `PARTNER_SYNC_RUN_ON_STARTUP` | `true` |
+| `PARTNER_SYNC_RUN_ON_STARTUP` | `false` |
 | `PARTNER_SYNC_ADAPTER_WOOCOMMERCE_ENABLED` | `true` |
 | `PARTNER_SYNC_MONARCH_BASE_URL` | `https://monarchreptiles.com` |
 | `MARKETPLACE_PARTNER_FEED_HARD_CAP` | `500` |
