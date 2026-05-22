@@ -6,7 +6,13 @@ import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { imgUrl } from '../services/api'
-import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
+import {
+  decodeListingText,
+  decodeListingTitle,
+  LISTING_EMPTY_PLACEHOLDER,
+  LISTING_META_SEP,
+  partnerListingImageUrl,
+} from '../utils/listingDisplay'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -76,6 +82,7 @@ export default function MarketplaceListingDetailPage() {
 
   const listing = payload?.listing
   const displayTitle = listing?.title ? decodeListingTitle(listing.title) : ''
+  const displayDescription = listing?.description ? decodeListingText(listing.description) : ''
   const related = Array.isArray(payload?.relatedListings) ? payload.relatedListings : []
   const sellerPreview = payload?.sellerPreview || null
 
@@ -88,10 +95,10 @@ export default function MarketplaceListingDetailPage() {
   const activeImg = images.length > 0 ? images[Math.min(photoIdx, images.length - 1)] : null
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const seoTitle = listing?.title ? `${listing.title} � ${t('marketplace.nav')}` : t('marketplace.nav')
+  const seoTitle = displayTitle ? `${displayTitle}${LISTING_META_SEP}${t('marketplace.nav')}` : t('marketplace.nav')
   const seoDesc =
-    listing?.description?.trim() ||
-    [listing?.speciesName, listing?.city, listing?.country].filter(Boolean).join(' � ') ||
+    displayDescription?.trim() ||
+    [listing?.speciesName, listing?.city, listing?.country].filter(Boolean).join(LISTING_META_SEP) ||
     t('marketplace.metaDescription')
 
   usePageSeo({
@@ -149,7 +156,7 @@ export default function MarketplaceListingDetailPage() {
               </Link>
             </li>
             <li className="breadcrumb-item active text-truncate" aria-current="page">
-              {loading ? '�' : listing?.title || '�'}
+              {loading ? '' : displayTitle || listing?.title || ''}
             </li>
           </ol>
         </nav>
@@ -189,7 +196,7 @@ export default function MarketplaceListingDetailPage() {
                         aria-label={t('marketplace.listingDetailPrevPhoto')}
                         onClick={() => setPhotoIdx((i) => (i - 1 + images.length) % images.length)}
                       >
-                        ?
+                        ‹
                       </button>
                       <button
                         type="button"
@@ -197,7 +204,7 @@ export default function MarketplaceListingDetailPage() {
                         aria-label={t('marketplace.listingDetailNextPhoto')}
                         onClick={() => setPhotoIdx((i) => (i + 1) % images.length)}
                       >
-                        ?
+                        ›
                       </button>
                       <div className="position-absolute bottom-0 start-50 translate-middle-x mb-2 px-2 py-1 rounded-pill bg-dark bg-opacity-50 small text-white">
                         {photoIdx + 1} / {images.length}
@@ -271,18 +278,18 @@ export default function MarketplaceListingDetailPage() {
 
               <dl className="row small mb-3 g-2">
                 <dt className="col-sm-3 text-muted">{t('marketplace.fieldSpecies')}</dt>
-                <dd className="col-sm-9 mb-0">{listing.speciesName || '�'}</dd>
+                <dd className="col-sm-9 mb-0">{listing.speciesName || LISTING_EMPTY_PLACEHOLDER}</dd>
                 {!isPartner && (listing.stage || listing.sex) && (
                   <>
                     <dt className="col-sm-3 text-muted">{t('stages.label')} / {t('sex.label')}</dt>
                     <dd className="col-sm-9 mb-0">
-                      {[listing.stage, listing.sex].filter(Boolean).join(' � ') || '�'}
+                      {[listing.stage, listing.sex].filter(Boolean).join(LISTING_META_SEP) || LISTING_EMPTY_PLACEHOLDER}
                     </dd>
                   </>
                 )}
                 <dt className="col-sm-3 text-muted">{t('marketplace.listingDetailLocation')}</dt>
                 <dd className="col-sm-9 mb-0">
-                  {[listing.city, listing.state, listing.country].filter(Boolean).join(' � ') || '�'}
+                  {[listing.city, listing.state, listing.country].filter(Boolean).join(LISTING_META_SEP) || LISTING_EMPTY_PLACEHOLDER}
                 </dd>
                 <dt className="col-sm-3 text-muted">{t('marketplace.listingDetailListedOn')}</dt>
                 <dd className="col-sm-9 mb-0">{formatListedAt(listing.createdAt, locale)}</dd>
@@ -304,7 +311,7 @@ export default function MarketplaceListingDetailPage() {
                 {t('marketplace.listingDetailDescription')}
               </h2>
               <p className="mb-0" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {listing.description?.trim() || '�'}
+                {displayDescription?.trim() || LISTING_EMPTY_PLACEHOLDER}
               </p>
 
               {!isPartner && listing.pedigreeRef && (
@@ -369,7 +376,8 @@ export default function MarketplaceListingDetailPage() {
                       )}
                       {(sellerPreview?.ratingAvg > 0 || sellerPreview?.reviewsCount > 0) && (
                         <p className="small text-muted mb-3">
-                          {t('marketplace.rating')}: {sellerPreview.ratingAvg?.toFixed?.(1) ?? sellerPreview.ratingAvg} �{' '}
+                          {t('marketplace.rating')}: {sellerPreview.ratingAvg?.toFixed?.(1) ?? sellerPreview.ratingAvg}
+                          {LISTING_META_SEP}
                           {sellerPreview.reviewsCount} {t('marketplace.reviews').toLowerCase()}
                         </p>
                       )}

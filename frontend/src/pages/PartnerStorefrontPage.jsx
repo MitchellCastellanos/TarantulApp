@@ -218,7 +218,7 @@ export default function PartnerStorefrontPage() {
                   />
                   <button
                     type="button"
-                    className={`btn btn-sm ${promotedOnly ? 'btn-dark' : 'btn-outline-dark'}`}
+                    className={`btn btn-sm ${promotedOnly ? 'btn-warning fw-semibold' : 'btn-outline-warning'}`}
                     onClick={togglePromoted}
                   >
                     {t('marketplace.tarantulaCribsFilter')}

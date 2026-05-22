@@ -11,6 +11,18 @@ export function decodeListingTitle(title) {
   return el.value
 }
 
+/** Same entity decode for descriptions and other partner listing text fields. */
+export function decodeListingText(text) {
+  if (!text) return text
+  return decodeListingTitle(String(text).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+}
+
+/** Middle-dot separator for location / metadata rows (Quebec · Canada). */
+export const LISTING_META_SEP = ' · '
+
+/** Fallback when a listing field has no value. */
+export const LISTING_EMPTY_PLACEHOLDER = '—'
+
 /** Partner store images are proxied through our API to avoid hotlink blocks. */
 export function partnerListingImageUrl(imageUrl) {
   if (!imageUrl) return null
