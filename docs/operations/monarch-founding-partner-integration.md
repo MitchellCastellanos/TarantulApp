@@ -29,7 +29,7 @@ Env vars:
 - Banner strip: founding partner badge + **Ver catálogo completo**
 - Full browse: `/marketplace?vendor=monarch-reptiles`
 - Tarantula Cribs filter: promoted listings (`promoted=true` in DB)
-- Mini cart → `POST /api/public/marketplace/partner-cart/handoff` → opens Monarch **product pages** or `/cart/` (Monarch nginx returns **403** on `?add-to-cart=` query URLs)
+- Mini cart → `POST /api/public/marketplace/partner-cart/handoff` → stepped product-page flow until Monarch allows batch add-to-cart URLs (**403** today). Email template: [`../ops/monarch-cart-handoff-email-to-partner.md`](../ops/monarch-cart-handoff-email-to-partner.md)
 
 ## Preview checklist
 

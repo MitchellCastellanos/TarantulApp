@@ -1,4 +1,4 @@
-# Operations Docs
+      # Operations Docs
 
 Indice de la documentacion operativa de TarantulApp. Pensada para que el
 ingeniero de guardia pueda actuar en menos de 5 minutos sin tener que
@@ -15,6 +15,7 @@ preguntar.
 | Verificar Stripe webhooks o desplegar Play Billing | [`billing-hardening.md`](./billing-hardening.md) |
 | Lista de Products/Prices Stripe y SKUs Play | [`stripe-products-catalog.md`](./stripe-products-catalog.md) |
 | Manual paso a paso Stripe + Play + pagos desde app (ES) | [`billing-setup-manual-es.md`](./billing-setup-manual-es.md) |
+| Email a Monarch para desbloquear cart handoff (EN) | [`monarch-cart-handoff-email-to-partner.md`](./monarch-cart-handoff-email-to-partner.md) |
 
 ## Por dependencia externa
 
