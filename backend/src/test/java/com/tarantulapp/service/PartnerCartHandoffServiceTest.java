@@ -46,22 +46,20 @@ class PartnerCartHandoffServiceTest {
         String url = (String) handoff.get("checkoutUrl");
         assertTrue(url.contains("/product/test-spider"));
         assertTrue(url.contains("add-to-cart=29661"));
-        assertTrue(url.contains("quantity=1"));
     }
 
     @Test
-    void multiItemUsesCommaBatchAndPerProductUrls() {
+    void multiItemNeverUsesCommaBatchUrl() {
         Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
                 new PartnerCartHandoffService.CartLine("101", 1, "A", "https://monarchreptiles.com/product/a/"),
                 new PartnerCartHandoffService.CartLine("202", 2, "B", "https://monarchreptiles.com/product/b/")));
-        assertEquals("batch_fill", handoff.get("handoffMode"));
-        String batch = (String) handoff.get("checkoutUrl");
-        assertTrue(batch.contains("add-to-cart=101,202"));
-        assertTrue(batch.contains("quantity=1,2"));
+        assertEquals("product_pages_stepped", handoff.get("handoffMode"));
+        String checkout = (String) handoff.get("checkoutUrl");
+        assertTrue(checkout.contains("/cart"));
+        assertFalse(checkout.contains("add-to-cart"));
         @SuppressWarnings("unchecked")
         List<String> addUrls = (List<String>) handoff.get("addToCartUrls");
         assertEquals(2, addUrls.size());
         assertTrue(addUrls.get(0).contains("add-to-cart=101"));
-        assertFalse(batch.contains("/cart/?add-to-cart=101&add-to-cart"));
     }
 }

@@ -10,9 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class PartnerCartHandoffService {
@@ -34,66 +32,27 @@ public class PartnerCartHandoffService {
             throw new IllegalArgumentException("El carrito esta vacio");
         }
         List<CartLine> normalized = normalizeLines(lines);
-        HandoffTarget target = resolveHandoffTarget(normalized);
-
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("vendorSlug", vendor.getSlug());
-        out.put("vendorName", vendor.getName());
-        out.put("checkoutUrl", target.checkoutUrl());
-        out.put("lineCount", normalized.size());
-        out.put("utmSource", "tarantulapp");
-        out.put("handoffMode", target.mode());
-        if (target.fallbackBatchUrl() != null) {
-            out.put("fallbackBatchUrl", target.fallbackBatchUrl());
-        }
-        if (!target.addToCartUrls().isEmpty()) {
-            out.put("addToCartUrls", target.addToCartUrls());
-        }
-        out.put("cartUrl", withPartnerUtm(monarchStoreBaseUrl + "/cart/"));
-        return out;
-    }
-
-    private HandoffTarget resolveHandoffTarget(List<CartLine> lines) {
-        List<String> addToCartUrls = lines.stream()
+        List<String> addToCartUrls = normalized.stream()
                 .map(this::productPageAddToCartUrl)
                 .toList();
         String cartUrl = withPartnerUtm(monarchStoreBaseUrl + "/cart/");
 
-        if (lines.size() == 1) {
-            return new HandoffTarget(addToCartUrls.get(0), "product_page_add", null, addToCartUrls);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("vendorSlug", vendor.getSlug());
+        out.put("vendorName", vendor.getName());
+        out.put("cartUrl", cartUrl);
+        out.put("addToCartUrls", addToCartUrls);
+        out.put("lineCount", normalized.size());
+        out.put("utmSource", "tarantulapp");
+        if (normalized.size() == 1) {
+            out.put("checkoutUrl", addToCartUrls.get(0));
+            out.put("handoffMode", "product_page_add");
+        } else {
+            // Monarch nginx returns 403 on ?add-to-cart= batch URLs — stepped product pages only.
+            out.put("checkoutUrl", cartUrl);
+            out.put("handoffMode", "product_pages_stepped");
         }
-
-        return new HandoffTarget(
-                buildCommaBatchUrl(lines),
-                "batch_fill",
-                buildColonBatchUrl(lines),
-                addToCartUrls);
-    }
-
-    /** WooCommerce comma batch on store root (works when Monarch enables multi-add plugin). */
-    private String buildCommaBatchUrl(List<CartLine> lines) {
-        String ids = lines.stream().map(CartLine::externalProductId).collect(Collectors.joining(","));
-        String qtys = lines.stream().map(l -> String.valueOf(l.quantity())).collect(Collectors.joining(","));
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/")
-                .queryParam("add-to-cart", ids)
-                .queryParam("quantity", qtys)
-                .queryParam("utm_source", "tarantulapp")
-                .queryParam("utm_medium", "partner_cart")
-                .build(true)
-                .toUriString();
-    }
-
-    /** Plugin-style id:qty pairs (fallback if comma batch is blocked). */
-    private String buildColonBatchUrl(List<CartLine> lines) {
-        String packed = lines.stream()
-                .map(l -> l.externalProductId() + ":" + l.quantity())
-                .collect(Collectors.joining(","));
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/cart/")
-                .queryParam("add-to-cart", packed)
-                .queryParam("utm_source", "tarantulapp")
-                .queryParam("utm_medium", "partner_cart")
-                .build(true)
-                .toUriString();
+        return out;
     }
 
     private String productPageAddToCartUrl(CartLine line) {
@@ -151,9 +110,6 @@ public class PartnerCartHandoffService {
         }
         String trimmed = url.trim();
         return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
-    }
-
-    private record HandoffTarget(String checkoutUrl, String mode, String fallbackBatchUrl, List<String> addToCartUrls) {
     }
 
     public record CartLine(String externalProductId, Integer quantity, String title, String canonicalUrl) {
