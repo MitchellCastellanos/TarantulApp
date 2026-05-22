@@ -211,7 +211,7 @@ public class PartnerListingSyncService {
         String externalId = raw.externalId() == null ? null : raw.externalId().trim();
         if (externalId == null || externalId.isEmpty()) return null;
 
-        if (!PartnerListingTarantulaFilter.isTarantulaAnimalListing(
+        if (!PartnerListingTarantulaFilter.isAllowedMonarchListing(
                 raw.title(), raw.description(), raw.listingCategory(), vendorSlug)) {
             return null;
         }

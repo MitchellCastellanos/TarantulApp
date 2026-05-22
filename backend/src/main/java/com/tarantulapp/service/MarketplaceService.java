@@ -331,7 +331,7 @@ public class MarketplaceService {
                 .filter(p -> categoryNorm == null || matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
                 .filter(p -> promotedOnly == null || !promotedOnly || Boolean.TRUE.equals(p.getPromoted()))
-                .filter(p -> PartnerListingTarantulaFilter.isTarantulaAnimalListing(
+                .filter(p -> PartnerListingTarantulaFilter.isAllowedMonarchListing(
                         p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getSlug()))
                 .map(p -> mapPartnerListing(p, vendor))
                 .collect(Collectors.toList());
@@ -676,7 +676,7 @@ public class MarketplaceService {
                 .filter(p -> eligibleVendorById.containsKey(p.getOfficialVendorId()))
                 .filter(p -> {
                     OfficialVendor v = eligibleVendorById.get(p.getOfficialVendorId());
-                    return PartnerListingTarantulaFilter.isTarantulaAnimalListing(
+                    return PartnerListingTarantulaFilter.isAllowedMonarchListing(
                             p.getTitle(), p.getDescription(), p.getListingCategory(),
                             v == null ? null : v.getSlug());
                 })

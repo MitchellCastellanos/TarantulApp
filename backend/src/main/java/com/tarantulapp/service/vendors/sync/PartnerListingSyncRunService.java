@@ -61,7 +61,7 @@ public class PartnerListingSyncRunService {
         return partnerListingSyncRunRepository.save(run);
     }
 
-    /** Marks active Monarch rows that are not tarantula animals (stale DB from older sync rules). */
+    /** Marks active Monarch rows that are other pets or outside allowed catalog (stale from older sync). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int markNonTarantulaAsStale(UUID vendorId, String vendorSlug) {
         if (vendorSlug == null || !PartnerListingTarantulaFilter.MONARCH_VENDOR_SLUG.equalsIgnoreCase(vendorSlug.trim())) {
@@ -73,7 +73,7 @@ public class PartnerListingSyncRunService {
             if (listing.getStatus() != PartnerListingStatus.ACTIVE) {
                 continue;
             }
-            if (PartnerListingTarantulaFilter.isTarantulaAnimalListing(
+            if (PartnerListingTarantulaFilter.isAllowedMonarchListing(
                     listing.getTitle(),
                     listing.getDescription(),
                     listing.getListingCategory(),

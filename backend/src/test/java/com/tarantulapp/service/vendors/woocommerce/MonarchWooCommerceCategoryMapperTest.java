@@ -13,28 +13,30 @@ class MonarchWooCommerceCategoryMapperTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    void mapsExplicitTarantulaSlugsOnly() throws Exception {
-        var product = mapper.readTree("""
-                {
-                  "name": "Brachypelma hamorii",
-                  "categories": [{"slug": "tarantulas"}, {"slug": "new-world"}]
-                }
+    void mapsTarantulasAndHusbandrySupplies() throws Exception {
+        var tarantula = mapper.readTree("""
+                {"name": "Brachypelma hamorii", "categories": [{"slug": "tarantulas"}, {"slug": "new-world"}]}
                 """);
-        MonarchWooCommerceCategoryMapper.MappedProduct mapped = MonarchWooCommerceCategoryMapper.map(product);
-        assertNotNull(mapped);
-        assertEquals(MarketplaceListingCategories.TARANTULAS, mapped.listingCategory());
+        assertEquals(MarketplaceListingCategories.TARANTULAS, MonarchWooCommerceCategoryMapper.map(tarantula).listingCategory());
+
+        var terrarium = mapper.readTree("""
+                {"name": "Exo Terra enclosure", "categories": [{"slug": "terrariums"}]}
+                """);
+        assertEquals(MarketplaceListingCategories.TERRARIUMS, MonarchWooCommerceCategoryMapper.map(terrarium).listingCategory());
+
+        var feeders = mapper.readTree("""
+                {"name": "Dubia roaches", "categories": [{"slug": "feeder-insects"}]}
+                """);
+        assertEquals(MarketplaceListingCategories.LIVE_FOOD, MonarchWooCommerceCategoryMapper.map(feeders).listingCategory());
     }
 
     @Test
-    void skipsJumpingSpidersMillipedesAndGenericInvertebrates() throws Exception {
+    void skipsOtherLivePets() throws Exception {
         assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
                 {"name": "Phidippus audax", "categories": [{"slug": "jumping-spiders"}]}
                 """)));
         assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
                 {"name": "Narceus Americanus Millipede", "categories": [{"slug": "invertebrates"}]}
-                """)));
-        assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
-                {"name": "Exo Terra", "categories": [{"slug": "terrariums"}]}
                 """)));
     }
 }

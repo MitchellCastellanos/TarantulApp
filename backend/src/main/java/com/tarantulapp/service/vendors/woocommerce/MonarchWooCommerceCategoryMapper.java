@@ -9,20 +9,15 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Monarch sync: tarantula animals only (explicit WC tarantula categories).
+ * Maps Monarch WooCommerce into marketplace tabs. Tarantula specimens + husbandry supplies;
+ * skips other live pets (jumping spiders, millipedes, scorpions, …).
  */
 public final class MonarchWooCommerceCategoryMapper {
 
     private static final String BRAND_TARANTULA_CRIBS = "tarantula-cribs";
 
-    private static final Set<String> TARANTULA_CATEGORY_SLUGS = Set.of(
-            "tarantulas",
-            "new-world",
-            "old-world",
-            "old-world-tarantulas"
-    );
-
-    private static final Set<String> NON_TARANTULA_CATEGORY_SLUGS = Set.of(
+    /** WC categories for live animals we never import. */
+    private static final Set<String> NON_TARANTULA_ANIMAL_SLUGS = Set.of(
             "jumping-spiders",
             "jumping-spider",
             "millipedes",
@@ -32,17 +27,9 @@ public final class MonarchWooCommerceCategoryMapper {
             "ants",
             "ant",
             "other-invertebrates",
-            "invertebrates",
-            "isopods",
-            "roaches",
             "centipedes",
             "snails",
-            "beetles",
-            "feeder-insects",
-            "feeder",
-            "feeders",
-            "mice",
-            "rats"
+            "beetles"
     );
 
     private MonarchWooCommerceCategoryMapper() {
@@ -52,50 +39,71 @@ public final class MonarchWooCommerceCategoryMapper {
         if (product == null || product.isNull()) {
             return null;
         }
-        if (PartnerListingTarantulaFilter.looksLikeNonTarantulaPet(text(product, "name"), stripHtml(text(product, "short_description")))) {
+        String title = text(product, "name");
+        String description = stripHtml(text(product, "short_description"));
+        if (PartnerListingTarantulaFilter.looksLikeNonTarantulaSpecimen(title, description)) {
             return null;
         }
+
         Set<String> slugs = collectCategorySlugs(product.get("categories"));
-        if (hasBlockedCategory(slugs)) {
+        if (hasNonTarantulaAnimalCategory(slugs)) {
             return null;
         }
-        if (!hasTarantulaCategory(slugs)) {
-            return null;
-        }
+
         Set<String> brandSlugs = collectBrandSlugs(product.get("brands"));
         boolean promoted = brandSlugs.contains(BRAND_TARANTULA_CRIBS)
                 || slugs.contains("tarantula-cribs")
                 || containsSlugFragment(slugs, "tarantula-crib");
 
-        return new MappedProduct(MarketplaceListingCategories.TARANTULAS, promoted,
-                brandSlugs.isEmpty() ? null : brandSlugs.iterator().next());
+        String category = resolveCategory(slugs, brandSlugs);
+        if (category == null) {
+            return null;
+        }
+        return new MappedProduct(category, promoted, brandSlugs.isEmpty() ? null : brandSlugs.iterator().next());
     }
 
-    private static boolean hasTarantulaCategory(Set<String> slugs) {
-        for (String slug : TARANTULA_CATEGORY_SLUGS) {
-            if (slugs.contains(slug)) {
+    private static boolean hasNonTarantulaAnimalCategory(Set<String> slugs) {
+        for (String slug : slugs) {
+            if (NON_TARANTULA_ANIMAL_SLUGS.contains(slug)) {
                 return true;
             }
-        }
-        return containsSlugFragment(slugs, "tarantula");
-    }
-
-    private static boolean hasBlockedCategory(Set<String> slugs) {
-        for (String slug : slugs) {
-            if (NON_TARANTULA_CATEGORY_SLUGS.contains(slug) || containsBlockedFragment(slug)) {
+            if (slug.contains("millipede")
+                    || slug.contains("jumping-spider")
+                    || slug.contains("scorpion")
+                    || (slug.contains("ants") && !slug.contains("plants"))) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean containsBlockedFragment(String slug) {
-        return slug.contains("millipede")
-                || slug.contains("jumping-spider")
-                || slug.contains("scorpion")
-                || slug.contains("feeder")
-                || slug.contains("isopod")
-                || slug.contains("centipede");
+    private static String resolveCategory(Set<String> slugs, Set<String> brandSlugs) {
+        if (brandSlugs.contains(BRAND_TARANTULA_CRIBS) || containsSlugFragment(slugs, "tarantula-crib")) {
+            return MarketplaceListingCategories.TERRARIUMS;
+        }
+        if (matchesAny(slugs, "tarantulas", "new-world", "old-world", "old-world-tarantulas")
+                || containsSlugFragment(slugs, "tarantula")) {
+            return MarketplaceListingCategories.TARANTULAS;
+        }
+        if (matchesAny(slugs, "feeder-insects", "feeder", "feeders", "frozen-feeders", "mice", "rats", "frozen-feeder")) {
+            return MarketplaceListingCategories.LIVE_FOOD;
+        }
+        if (matchesAny(slugs, "substrate", "substrates")) {
+            return MarketplaceListingCategories.SUBSTRATES;
+        }
+        if (matchesAny(slugs, "terrariums", "terrariums-and-enclosures", "enclosures", "starter-terrarium-kits",
+                "pvc-cages", "exo-terra")) {
+            return MarketplaceListingCategories.TERRARIUMS;
+        }
+        if (matchesAny(slugs, "supplies", "decorations", "feeding-and-watering", "temperature-heating-and-humidity",
+                "bioactive-and-accessories", "cleaning", "foods", "jumping-spider-accessories",
+                "animals-pet-supplies")) {
+            return MarketplaceListingCategories.SUPPLIES;
+        }
+        if (matchesAny(slugs, "bioactive", "moss-plants-leaf-litter", "springtails-isopods-worms")) {
+            return MarketplaceListingCategories.SUBSTRATES;
+        }
+        return null;
     }
 
     private static Set<String> collectCategorySlugs(JsonNode categories) {
@@ -124,6 +132,15 @@ public final class MonarchWooCommerceCategoryMapper {
             }
         }
         return out;
+    }
+
+    private static boolean matchesAny(Set<String> slugs, String... candidates) {
+        for (String c : candidates) {
+            if (slugs.contains(c)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean containsSlugFragment(Set<String> slugs, String fragment) {
