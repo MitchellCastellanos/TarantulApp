@@ -552,20 +552,22 @@ export default function MarketplacePage() {
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
         <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
-          <div className="card-body p-3 p-md-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div>
-              <h2 className="h6 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.growthBannerTitle')}</h2>
-              <p className="small text-muted mb-0">{t('marketplace.growthBannerSub')}</p>
+          <div className="card-body p-3 p-md-4">
+            <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+              <div>
+                <h2 className="h6 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.growthBannerTitle')}</h2>
+                <p className="small text-muted mb-0">{t('marketplace.growthBannerSub')}</p>
+              </div>
+              <div className="d-flex gap-2 flex-wrap">
+                <Link to={user ? '/marketplace/sell' : '/login'} className="btn btn-sm btn-dark">
+                  {t('marketplace.growthBannerPrimaryCta')}
+                </Link>
+                <Link to={user ? '/marketplace/messages' : '/login'} className="btn btn-sm btn-outline-secondary">
+                  {t('marketplace.growthBannerSecondaryCta')}
+                </Link>
+              </div>
             </div>
-            <div className="d-flex gap-2 flex-wrap">
-              <Link to={user ? '/marketplace/sell' : '/login'} className="btn btn-sm btn-dark">
-                {t('marketplace.growthBannerPrimaryCta')}
-              </Link>
-              <Link to={user ? '/marketplace/messages' : '/login'} className="btn btn-sm btn-outline-secondary">
-                {t('marketplace.growthBannerSecondaryCta')}
-              </Link>
-            </div>
-            <div className="small text-muted">{t('marketplace.pushPlatformHint')}</div>
+            <p className="small text-muted mb-0 mt-2">{t('marketplace.pushPlatformHint')}</p>
           </div>
         </div>
 
@@ -901,7 +903,7 @@ export default function MarketplacePage() {
         )}
 
         <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
-          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h2>
+          <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.communityAboutTitle')}</h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
           <p className="small mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>{t('marketplace.communityDisclaimer')}</p>
         </div>
