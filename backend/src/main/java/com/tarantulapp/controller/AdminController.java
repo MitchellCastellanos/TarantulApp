@@ -19,6 +19,7 @@ import com.tarantulapp.service.AuthService;
 import com.tarantulapp.service.BetaTesterGoogleGroupSyncService;
 import com.tarantulapp.service.GoogleGroupSyncAsyncInvoker;
 import com.tarantulapp.service.EmailService;
+import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.service.OfficialVendorService;
@@ -84,6 +85,7 @@ public class AdminController {
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final VendorInviteService vendorInviteService;
+    private final ListingEventService listingEventService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -117,7 +119,8 @@ public class AdminController {
                            SecurityHelper securityHelper,
                            MarketplaceListingRepository marketplaceListingRepository,
                            SubscriptionRepository subscriptionRepository,
-                           VendorInviteService vendorInviteService) {
+                           VendorInviteService vendorInviteService,
+                           ListingEventService listingEventService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -139,6 +142,7 @@ public class AdminController {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.vendorInviteService = vendorInviteService;
+        this.listingEventService = listingEventService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -1269,5 +1273,11 @@ public class AdminController {
             return app.getPreferredLocale();
         }
         return adminWelcomeLocale;
+    }
+
+    @GetMapping("/marketing/tap-to-contact-rate")
+    public ResponseEntity<Map<String, Object>> tapToContactRate() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(listingEventService.getNetworkTapToContactRate());
     }
 }

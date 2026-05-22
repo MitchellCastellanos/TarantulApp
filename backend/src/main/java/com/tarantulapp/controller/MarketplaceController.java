@@ -1,5 +1,6 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.util.SecurityHelper;
@@ -32,13 +33,16 @@ public class MarketplaceController {
 
     private final MarketplaceService marketplaceService;
     private final MarketplaceOrderService marketplaceOrderService;
+    private final ListingEventService listingEventService;
     private final SecurityHelper securityHelper;
 
     public MarketplaceController(MarketplaceService marketplaceService,
                                 MarketplaceOrderService marketplaceOrderService,
+                                ListingEventService listingEventService,
                                 SecurityHelper securityHelper) {
         this.marketplaceService = marketplaceService;
         this.marketplaceOrderService = marketplaceOrderService;
+        this.listingEventService = listingEventService;
         this.securityHelper = securityHelper;
     }
 
@@ -188,5 +192,10 @@ public class MarketplaceController {
                 req.rating(),
                 req.comment()
         ));
+    }
+
+    @GetMapping("/seller/analytics")
+    public ResponseEntity<Map<String, Object>> getSellerAnalytics() {
+        return ResponseEntity.ok(listingEventService.getSellerAnalytics(securityHelper.getCurrentUserId()));
     }
 }

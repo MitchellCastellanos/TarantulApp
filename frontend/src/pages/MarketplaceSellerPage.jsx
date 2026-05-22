@@ -72,6 +72,8 @@ export default function MarketplaceSellerPage() {
   const [message, setMessage] = useState('')
   const [vendorInviteBusy, setVendorInviteBusy] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   const requestVendorInvite = async () => {
     setVendorInviteBusy(true)
@@ -97,6 +99,19 @@ export default function MarketplaceSellerPage() {
     canonicalHref: origin ? `${origin}/marketplace/sell` : undefined,
     noindex: true,
   })
+
+  const loadAnalytics = useCallback(async () => {
+    if (!user) return
+    setAnalyticsLoading(true)
+    try {
+      const data = await marketplaceService.getSellerAnalytics()
+      setAnalytics(data && typeof data === 'object' ? data : null)
+    } catch {
+      setAnalytics(null)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }, [user])
 
   const loadMine = useCallback(async () => {
     if (!user) return
@@ -133,7 +148,8 @@ export default function MarketplaceSellerPage() {
 
   useEffect(() => {
     loadMine().catch(() => {})
-  }, [loadMine])
+    loadAnalytics().catch(() => {})
+  }, [loadMine, loadAnalytics])
 
   useEffect(() => {
     marketplaceService
@@ -729,6 +745,100 @@ export default function MarketplaceSellerPage() {
             </div>
           </div>
         </div>
+
+        {user && (
+          <div className="card border-0 shadow-sm ta-premium-pane mb-4">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                <div>
+                  <h2 className="h6 mb-1">{t('marketplace.analytics.title')}</h2>
+                  <p className="small text-muted mb-0">{t('marketplace.analytics.blurb')}</p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => loadAnalytics()}
+                  disabled={analyticsLoading}
+                >
+                  {analyticsLoading ? t('common.loading') : t('marketplace.analytics.refresh')}
+                </button>
+              </div>
+
+              {analyticsLoading && !analytics && (
+                <p className="small text-muted mb-0">{t('common.loading')}</p>
+              )}
+
+              {analytics && (
+                <>
+                  <div className="row g-2 mb-3">
+                    <div className="col-6 col-md-3">
+                      <div className="border rounded p-2 small">
+                        <div className="text-muted">{t('marketplace.analytics.views7d')}</div>
+                        <div className="h6 mb-0">{analytics.totals?.views7d ?? 0}</div>
+                      </div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="border rounded p-2 small">
+                        <div className="text-muted">{t('marketplace.analytics.views30d')}</div>
+                        <div className="h6 mb-0">{analytics.totals?.views30d ?? 0}</div>
+                      </div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="border rounded p-2 small">
+                        <div className="text-muted">{t('marketplace.analytics.contactTaps30d')}</div>
+                        <div className="h6 mb-0">{analytics.totals?.contactTaps30d ?? 0}</div>
+                      </div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="border rounded p-2 small">
+                        <div className="text-muted">{t('marketplace.analytics.tapRate30d')}</div>
+                        <div className="h6 mb-0">
+                          {Math.round(((analytics.totals?.contactTapRate30d ?? 0) * 100) * 10) / 10}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {Array.isArray(analytics.perListing) && analytics.perListing.length === 0 && (
+                    <p className="small text-muted mb-0">{t('marketplace.analytics.empty')}</p>
+                  )}
+
+                  {Array.isArray(analytics.perListing) && analytics.perListing.length > 0 && (
+                    <div className="table-responsive">
+                      <table className="table table-sm align-middle mb-0 small">
+                        <thead>
+                          <tr>
+                            <th>{t('marketplace.analytics.colTitle')}</th>
+                            <th className="text-end">{t('marketplace.analytics.colViews7d')}</th>
+                            <th className="text-end">{t('marketplace.analytics.colViews30d')}</th>
+                            <th className="text-end">{t('marketplace.analytics.colTaps7d')}</th>
+                            <th className="text-end">{t('marketplace.analytics.colTaps30d')}</th>
+                            <th className="text-end">{t('marketplace.analytics.colTapRate')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.perListing.slice(0, 25).map((row) => (
+                            <tr key={row.listingId}>
+                              <td className="text-truncate" style={{ maxWidth: 240 }}>{row.title}</td>
+                              <td className="text-end">{row.views7d ?? 0}</td>
+                              <td className="text-end">{row.views30d ?? 0}</td>
+                              <td className="text-end">{row.contactTaps7d ?? 0}</td>
+                              <td className="text-end">{row.contactTaps30d ?? 0}</td>
+                              <td className="text-end">
+                                {Math.round(((row.contactTapRate30d ?? 0) * 100) * 10) / 10}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <p className="small text-muted mt-2 mb-0">{t('marketplace.analytics.footnote')}</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 text-center">
           <Link to="/marketplace/messages" className="btn btn-sm btn-outline-secondary">

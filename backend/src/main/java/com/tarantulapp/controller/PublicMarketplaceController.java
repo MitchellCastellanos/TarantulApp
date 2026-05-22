@@ -1,6 +1,7 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.marketplace.MarketplaceListingCategories;
+import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
@@ -30,6 +31,7 @@ public class PublicMarketplaceController {
     private final OfficialVendorService officialVendorService;
     private final PartnerCartHandoffService partnerCartHandoffService;
     private final PartnerListingImageProxyService partnerListingImageProxyService;
+    private final ListingEventService listingEventService;
     private final boolean futurePaidStorefrontEnabled;
     private final boolean futurePaidBadgesEnabled;
     private final boolean strategicPartnerBootstrapMode;
@@ -49,6 +51,7 @@ public class PublicMarketplaceController {
                                        OfficialVendorService officialVendorService,
                                        PartnerCartHandoffService partnerCartHandoffService,
                                        PartnerListingImageProxyService partnerListingImageProxyService,
+                                       ListingEventService listingEventService,
                                        @Value("${app.marketplace.future-paid-storefront-enabled:false}") boolean futurePaidStorefrontEnabled,
                                        @Value("${app.marketplace.future-paid-badges-enabled:false}") boolean futurePaidBadgesEnabled,
                                        @Value("${app.marketplace.strategic-bootstrap-mode:true}") boolean strategicPartnerBootstrapMode) {
@@ -56,6 +59,7 @@ public class PublicMarketplaceController {
         this.officialVendorService = officialVendorService;
         this.partnerCartHandoffService = partnerCartHandoffService;
         this.partnerListingImageProxyService = partnerListingImageProxyService;
+        this.listingEventService = listingEventService;
         this.futurePaidStorefrontEnabled = futurePaidStorefrontEnabled;
         this.futurePaidBadgesEnabled = futurePaidBadgesEnabled;
         this.strategicPartnerBootstrapMode = strategicPartnerBootstrapMode;
@@ -178,6 +182,26 @@ public class PublicMarketplaceController {
                 .map(l -> new PartnerCartHandoffService.CartLine(l.externalProductId(), l.quantity(), l.title()))
                 .toList();
         return ResponseEntity.ok(partnerCartHandoffService.buildHandoff(req.vendorSlug(), lines));
+    }
+
+    record ListingEventRequest(
+            @NotBlank String kind,
+            String anonSessionId,
+            String country,
+            String referrerHost
+    ) {}
+
+    @PostMapping("/listings/{listingId}/events")
+    public ResponseEntity<Map<String, Object>> recordListingEvent(@PathVariable UUID listingId,
+                                                                   @Valid @RequestBody ListingEventRequest req) {
+        boolean accepted = listingEventService.recordEvent(
+                listingId,
+                req.kind(),
+                req.anonSessionId(),
+                req.country(),
+                req.referrerHost()
+        );
+        return ResponseEntity.ok(Map.of("accepted", accepted));
     }
 
     @GetMapping("/program-flags")
