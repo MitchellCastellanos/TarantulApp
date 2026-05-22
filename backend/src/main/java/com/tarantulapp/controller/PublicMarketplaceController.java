@@ -100,10 +100,11 @@ public class PublicMarketplaceController {
                                                                     @RequestParam(required = false) Boolean boostedOnly,
                                                                     @RequestParam(required = false) Boolean hasImage,
                                                                     @RequestParam(required = false) BigDecimal minPrice,
-                                                                    @RequestParam(required = false) BigDecimal maxPrice) {
+                                                                    @RequestParam(required = false) BigDecimal maxPrice,
+                                                                    @RequestParam(required = false) String shipsToCountry) {
         return ResponseEntity.ok(marketplaceService.publicListings(
                 q, status, country, state, city, nearCountry, nearState, nearCity, listingCategory, listingOrigin,
-                hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
+                hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice, shipsToCountry
         ));
     }
 

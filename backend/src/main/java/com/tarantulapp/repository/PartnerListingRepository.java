@@ -20,6 +20,7 @@ public interface PartnerListingRepository extends JpaRepository<PartnerListing, 
     List<PartnerListing> findByOfficialVendorIdAndStatusInOrderByPromotedDescLastSyncedAtDesc(
             UUID officialVendorId, Collection<PartnerListingStatus> statuses);
     long countByOfficialVendorIdAndStatus(UUID officialVendorId, PartnerListingStatus status);
+    long countByStatus(PartnerListingStatus status);
 
     @Modifying
     @Query(value = "delete from partner_listings where external_id like :prefix", nativeQuery = true)

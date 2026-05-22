@@ -110,7 +110,7 @@ class MarketplaceServicePublicListingsTest {
 
         List<Map<String, Object>> out = marketplaceService.publicListings(
                 null, "active", null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         assertEquals(2, out.size());
         assertEquals("partner", out.get(0).get("source"));
@@ -155,7 +155,7 @@ class MarketplaceServicePublicListingsTest {
 
         List<Map<String, Object>> out = marketplaceService.publicListings(
                 null, "active", null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         assertEquals(1, out.size());
         assertEquals("peer", out.get(0).get("source"));
@@ -210,7 +210,7 @@ class MarketplaceServicePublicListingsTest {
 
         List<Map<String, Object>> out = marketplaceService.publicListings(
                 null, "active", null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         long partnerCount = out.stream().filter(row -> "partner".equals(row.get("source"))).count();
         long peerCount = out.stream().filter(row -> "peer".equals(row.get("source"))).count();

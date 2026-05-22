@@ -62,6 +62,10 @@ public class User {
     @Column(name = "profile_city", length = 80)
     private String profileCity;
 
+    /** CSV of ISO-3166-1 alpha-2 destinations this seller ships to (e.g. "MX,CA,US"). Null/empty = unconfigured. */
+    @Column(name = "ships_to", length = 512)
+    private String shipsTo;
+
     @Column(name = "qr_print_exports", nullable = false)
     private Integer qrPrintExports = 0;
 
@@ -229,6 +233,9 @@ public class User {
 
     public String getProfileCity() { return profileCity; }
     public void setProfileCity(String profileCity) { this.profileCity = profileCity; }
+
+    public String getShipsTo() { return shipsTo; }
+    public void setShipsTo(String shipsTo) { this.shipsTo = shipsTo; }
 
     public Integer getQrPrintExports() { return qrPrintExports; }
     public void setQrPrintExports(Integer qrPrintExports) { this.qrPrintExports = qrPrintExports; }

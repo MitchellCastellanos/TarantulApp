@@ -1,5 +1,32 @@
 export const COUNTRY_OPTIONS = ['Mexico', 'United States', 'Canada']
 
+/**
+ * ISO-3166-1 alpha-2 destinations the marketplace supports for ships-to.
+ * Keep the list short and keeper-relevant; expand as we open new regions.
+ */
+export const SHIPS_TO_OPTIONS = [
+  { code: 'MX', label: 'México' },
+  { code: 'US', label: 'United States' },
+  { code: 'CA', label: 'Canada' },
+  { code: 'CO', label: 'Colombia' },
+  { code: 'BR', label: 'Brasil' },
+  { code: 'AR', label: 'Argentina' },
+  { code: 'CL', label: 'Chile' },
+  { code: 'PE', label: 'Perú' },
+  { code: 'EC', label: 'Ecuador' },
+  { code: 'ES', label: 'España' },
+  { code: 'UY', label: 'Uruguay' },
+  { code: 'CR', label: 'Costa Rica' },
+]
+
+/** Returns the country ISO code matching the (legacy long-form) country name in COUNTRY_OPTIONS. */
+export const COUNTRY_NAME_TO_ISO = {
+  Mexico: 'MX',
+  'United States': 'US',
+  Canada: 'CA',
+  México: 'MX',
+}
+
 export const STATES_BY_COUNTRY = {
   Mexico: [
     'CDMX',

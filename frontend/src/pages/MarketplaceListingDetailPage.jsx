@@ -21,6 +21,7 @@ import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import ListingShareKit from '../components/ListingShareKit'
 import { trackListingEvent } from '../utils/listingEventTracker'
+import { formatListingPrice } from '../utils/formatPrice'
 
 function listingGalleryUrls(listing) {
   const raw = listing?.imageUrls
@@ -258,9 +259,7 @@ export default function MarketplaceListingDetailPage() {
                 </h1>
                 <div className="d-flex align-items-center gap-3 flex-wrap">
                   <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
-                    {listing.priceAmount != null
-                      ? `${listing.priceAmount} ${listing.currency || ''}`.trim()
-                      : t('marketplace.priceOnRequest')}
+                    {formatListingPrice(listing.priceAmount, listing.currency, t)}
                   </p>
                   <button
                     type="button"
@@ -548,7 +547,7 @@ export default function MarketplaceListingDetailPage() {
                     <div className="card-body p-2">
                       <div className="small fw-semibold text-truncate">{decodeListingTitle(rel.title) || rel.title}</div>
                       <div className="small text-muted">
-                        {rel.priceAmount != null ? `${rel.priceAmount} ${rel.currency || ''}` : t('marketplace.priceOnRequest')}
+                        {formatListingPrice(rel.priceAmount, rel.currency, t)}
                       </div>
                     </div>
                   </Link>

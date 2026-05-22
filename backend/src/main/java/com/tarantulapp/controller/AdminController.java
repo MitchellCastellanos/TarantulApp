@@ -86,6 +86,7 @@ public class AdminController {
     private final SubscriptionRepository subscriptionRepository;
     private final VendorInviteService vendorInviteService;
     private final ListingEventService listingEventService;
+    private final com.tarantulapp.repository.PartnerListingRepository partnerListingRepository;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -120,7 +121,8 @@ public class AdminController {
                            MarketplaceListingRepository marketplaceListingRepository,
                            SubscriptionRepository subscriptionRepository,
                            VendorInviteService vendorInviteService,
-                           ListingEventService listingEventService) {
+                           ListingEventService listingEventService,
+                           com.tarantulapp.repository.PartnerListingRepository partnerListingRepository) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -143,6 +145,7 @@ public class AdminController {
         this.subscriptionRepository = subscriptionRepository;
         this.vendorInviteService = vendorInviteService;
         this.listingEventService = listingEventService;
+        this.partnerListingRepository = partnerListingRepository;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -1279,5 +1282,18 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> tapToContactRate() {
         adminAccessService.assertCurrentUserIsAdmin();
         return ResponseEntity.ok(listingEventService.getNetworkTapToContactRate());
+    }
+
+    @GetMapping("/marketing/listing-counts")
+    public ResponseEntity<Map<String, Object>> listingCounts() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        long peerActive = marketplaceListingRepository.countByStatusIgnoreCase("active");
+        long partnerActive = partnerListingRepository.countByStatus(
+                com.tarantulapp.entity.PartnerListingStatus.ACTIVE);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("peerActive", peerActive);
+        out.put("partnerActive", partnerActive);
+        out.put("total", peerActive + partnerActive);
+        return ResponseEntity.ok(out);
     }
 }

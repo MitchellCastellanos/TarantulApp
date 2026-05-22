@@ -66,6 +66,7 @@ export default function AdminMarketingPage() {
   const [officialVendors, setOfficialVendors] = useState([])
   const [officialLeads, setOfficialLeads] = useState([])
   const [tapRate, setTapRate] = useState(null)
+  const [listingCounts, setListingCounts] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(true)
@@ -87,8 +88,9 @@ export default function AdminMarketingPage() {
       adminService.officialVendors().catch(() => []),
       adminService.officialVendorLeads().catch(() => []),
       adminService.tapToContactRate().catch(() => null),
+      adminService.listingCounts().catch(() => null),
     ])
-      .then(([s, vendorsPack, beta, partners, leads, rate]) => {
+      .then(([s, vendorsPack, beta, partners, leads, rate, counts]) => {
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -99,6 +101,7 @@ export default function AdminMarketingPage() {
         setOfficialVendors(Array.isArray(partners) ? partners : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
         setTapRate(rate && typeof rate === 'object' ? rate : null)
+        setListingCounts(counts && typeof counts === 'object' ? counts : null)
       })
       .catch((err) => {
         const code = err?.response?.status
@@ -231,8 +234,13 @@ export default function AdminMarketingPage() {
           <div className="col-6 col-md-3">
             <div className="card p-3">
               <small className="text-muted">{t('admin.mkt.cardListings')}</small>
-              <div className="h5 mb-0">{totalActiveListings}</div>
-              <small className="text-muted">{t('admin.mkt.cardListingsBlurb')}</small>
+              <div className="h5 mb-0">{listingCounts?.total ?? totalActiveListings}</div>
+              <small className="text-muted">
+                {t('admin.mkt.cardListingsBreakdown', {
+                  peer: listingCounts?.peerActive ?? totalActiveListings,
+                  partner: listingCounts?.partnerActive ?? 0,
+                })}
+              </small>
             </div>
           </div>
           <div className="col-6 col-md-3">
