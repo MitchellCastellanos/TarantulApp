@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import logsService from '../services/logsService'
 import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { cmToInput, inputToCm } from '../utils/units'
 
 const PRE_MOLT_SIGNS = [
   'dark_abdomen',
@@ -12,12 +14,13 @@ const PRE_MOLT_SIGNS = [
   'sealed_burrow',
 ]
 
-export default function MoltModal({ tarantulaId, onClose, onSaved }) {
+export default function MoltModal({ tarantulaId, tarantula, onClose, onSaved }) {
   const { t } = useTranslation()
+  const { system, unit, step } = useUnitSystem()
   const [form, setForm] = useState({
     moltedAt: nowLocalDatetimeInputValue(),
-    preSizeCm: '',
-    postSizeCm: '',
+    preSize: cmToInput(tarantula?.currentSizeCm, system),
+    postSize: '',
     notes: '',
     publishToFeed: false,
     successful: null,
@@ -45,8 +48,8 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
     try {
       await logsService.addMolt(tarantulaId, {
         moltedAt: datetimeLocalToOffsetISO(form.moltedAt),
-        preSizeCm: form.preSizeCm ? Number(form.preSizeCm) : null,
-        postSizeCm: form.postSizeCm ? Number(form.postSizeCm) : null,
+        preSizeCm: inputToCm(form.preSize, system),
+        postSizeCm: inputToCm(form.postSize, system),
         notes: form.notes || null,
         publishToFeed: form.publishToFeed,
         successful: form.successful,
@@ -87,29 +90,32 @@ export default function MoltModal({ tarantulaId, onClose, onSaved }) {
                     onChange={(e) => set('moltedAt', e.target.value)}
                     required
                   />
+                  <p className="form-text small mb-0 mt-1" style={{ fontSize: '0.72rem' }}>
+                    {t('logModals.dateTimeHint')}
+                  </p>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-semibold">{t('logModals.preMoltSize')}</label>
+                  <label className="form-label small fw-semibold">{t('logModals.preMoltSize', { unit })}</label>
                   <input
                     type="number"
-                    step="0.1"
+                    step={step}
                     min="0"
                     className="form-control form-control-sm"
-                    value={form.preSizeCm}
-                    onChange={(e) => set('preSizeCm', e.target.value)}
-                    placeholder={t('logModals.sizeExample', { n: '5.0' })}
+                    value={form.preSize}
+                    onChange={(e) => set('preSize', e.target.value)}
+                    placeholder={t('logModals.sizeExample', { n: system === 'imperial' ? '2.0' : '5.0' })}
                   />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-semibold">{t('logModals.postMoltSize')}</label>
+                  <label className="form-label small fw-semibold">{t('logModals.postMoltSize', { unit })}</label>
                   <input
                     type="number"
-                    step="0.1"
+                    step={step}
                     min="0"
                     className="form-control form-control-sm"
-                    value={form.postSizeCm}
-                    onChange={(e) => set('postSizeCm', e.target.value)}
-                    placeholder={t('logModals.sizeExample', { n: '6.0' })}
+                    value={form.postSize}
+                    onChange={(e) => set('postSize', e.target.value)}
+                    placeholder={t('logModals.sizeExample', { n: system === 'imperial' ? '2.4' : '6.0' })}
                   />
                 </div>
                 <div className="col-12">

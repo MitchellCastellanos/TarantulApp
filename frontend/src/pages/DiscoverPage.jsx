@@ -14,6 +14,8 @@ import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { computeTerrariumRecommendation } from '../utils/terrariumEstimate'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { cmToDisplayNumber, inputToCm } from '../utils/units'
 import tarantulaService from '../services/tarantulaService'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -158,6 +160,7 @@ export default function DiscoverPage() {
   const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { token, user } = useAuth()
+  const { system, unit, step } = useUnitSystem()
 
   const [speciesQuery, setSpeciesQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -172,7 +175,7 @@ export default function DiscoverPage() {
   /** GBIF usage key for links when a row was picked from WSC/GBIF */
   const [activeGbifKey, setActiveGbifKey] = useState(null)
 
-  const [specimenSizeCm, setSpecimenSizeCm] = useState('')
+  const [specimenSize, setSpecimenSize] = useState('')
 
   const {
     data: collectionCount = null,
@@ -246,7 +249,7 @@ export default function DiscoverPage() {
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
-    setSpecimenSizeCm('')
+    setSpecimenSize('')
     setPanelLoading(false)
     setSpeciesQuery('')
     setShowDropdown(false)
@@ -260,7 +263,7 @@ export default function DiscoverPage() {
     setPanelKind(null)
     setTaxonPreview(null)
     setActiveGbifKey(null)
-    setSpecimenSizeCm('')
+    setSpecimenSize('')
     setSpeciesQuery('')
     setShowDropdown(false)
   }
@@ -358,7 +361,7 @@ export default function DiscoverPage() {
         setSelectedSpecies(null)
         setSelectedFallbackPhoto(null)
         setActiveGbifKey(null)
-        setSpecimenSizeCm('')
+        setSpecimenSize('')
         setPanelLoading(true)
         try {
           const view = await speciesService.getDiscoverSpeciesView(sid)
@@ -387,7 +390,7 @@ export default function DiscoverPage() {
       if (Number.isFinite(gk)) {
         resetSuggestions()
         setShowDropdown(false)
-        setSpecimenSizeCm('')
+        setSpecimenSize('')
         try {
           await resolveFromGbifKey(gk)
         } finally {
@@ -433,36 +436,42 @@ export default function DiscoverPage() {
     return Math.round(n * 1.1 * 10) / 10
   }, [selectedSpecies])
 
+  // Bound is enforced in the user's display unit so the input behaves naturally on mobile.
+  const maxSpecimenDisplay = useMemo(
+    () => (maxSpecimenCm != null ? cmToDisplayNumber(maxSpecimenCm, system) : null),
+    [maxSpecimenCm, system],
+  )
+
   useEffect(() => {
-    if (maxSpecimenCm == null || specimenSizeCm === '') return
-    const n = Number(specimenSizeCm)
-    if (!Number.isFinite(n) || n <= maxSpecimenCm) return
-    setSpecimenSizeCm(String(maxSpecimenCm))
-  }, [selectedSpecies?.id, maxSpecimenCm])
+    if (maxSpecimenDisplay == null || specimenSize === '') return
+    const n = Number(specimenSize)
+    if (!Number.isFinite(n) || n <= maxSpecimenDisplay) return
+    setSpecimenSize(String(maxSpecimenDisplay))
+  }, [selectedSpecies?.id, maxSpecimenDisplay])
 
   const onSpecimenSizeChange = (e) => {
     const raw = e.target.value
     if (raw === '') {
-      setSpecimenSizeCm('')
+      setSpecimenSize('')
       return
     }
     const n = Number(raw)
     if (!Number.isFinite(n)) {
-      setSpecimenSizeCm(raw)
+      setSpecimenSize(raw)
       return
     }
-    if (maxSpecimenCm != null && n > maxSpecimenCm) {
-      setSpecimenSizeCm(String(maxSpecimenCm))
+    if (maxSpecimenDisplay != null && n > maxSpecimenDisplay) {
+      setSpecimenSize(String(maxSpecimenDisplay))
       return
     }
-    setSpecimenSizeCm(raw)
+    setSpecimenSize(raw)
   }
 
   const onSpecimenSizeBlur = () => {
-    if (maxSpecimenCm == null || specimenSizeCm === '') return
-    const n = Number(specimenSizeCm)
-    if (!Number.isFinite(n) || n <= maxSpecimenCm) return
-    setSpecimenSizeCm(String(maxSpecimenCm))
+    if (maxSpecimenDisplay == null || specimenSize === '') return
+    const n = Number(specimenSize)
+    if (!Number.isFinite(n) || n <= maxSpecimenDisplay) return
+    setSpecimenSize(String(maxSpecimenDisplay))
   }
 
   const taxonomyTitle =
@@ -475,7 +484,7 @@ export default function DiscoverPage() {
 
   const terrariumRec =
     panelKind === 'full' && selectedSpecies
-      ? computeTerrariumRecommendation(specimenSizeCm, selectedSpecies)
+      ? computeTerrariumRecommendation(inputToCm(specimenSize, system), selectedSpecies, { system })
       : null
 
   const taxonomyFallbackSpecies = useMemo(
@@ -569,7 +578,7 @@ export default function DiscoverPage() {
                   setPanelKind(null)
                   setTaxonPreview(null)
                   setActiveGbifKey(null)
-                  setSpecimenSizeCm('')
+                  setSpecimenSize('')
                   setShowDropdown(true)
                   if (searchParams.get('taxon')) {
                     const next = new URLSearchParams(searchParams)
@@ -768,15 +777,15 @@ export default function DiscoverPage() {
                   <div className="row g-2 align-items-end mb-3">
                     <div className="col-sm-4">
                       <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                        {t('discover.yourSpecimenCm')}
+                        {t('discover.yourSpecimenCm', { unit })}
                       </label>
                       <input
                         type="number"
                         min="0"
-                        max={maxSpecimenCm != null ? maxSpecimenCm : undefined}
-                        step="0.1"
+                        max={maxSpecimenDisplay != null ? maxSpecimenDisplay : undefined}
+                        step={step}
                         className="form-control form-control-sm"
-                        value={specimenSizeCm}
+                        value={specimenSize}
                         onChange={onSpecimenSizeChange}
                         onBlur={onSpecimenSizeBlur}
                         style={{
@@ -785,9 +794,9 @@ export default function DiscoverPage() {
                           color: 'var(--ta-parchment)',
                         }}
                       />
-                      {maxSpecimenCm != null && (
+                      {maxSpecimenDisplay != null && (
                         <p className="small mt-1 mb-0" style={{ color: 'var(--ta-text-muted)' }}>
-                          {t('discover.specimenMaxHint', { max: maxSpecimenCm })}
+                          {t('discover.specimenMaxHint', { max: maxSpecimenDisplay, unit })}
                         </p>
                       )}
                     </div>

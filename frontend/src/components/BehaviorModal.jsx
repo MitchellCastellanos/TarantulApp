@@ -50,6 +50,9 @@ export default function BehaviorModal({ tarantulaId, onClose, onSaved }) {
                   <label className="form-label small fw-semibold">{t('logModals.dateTime')}</label>
                   <input type="datetime-local" className="form-control form-control-sm"
                          value={form.loggedAt} onChange={e => set('loggedAt', e.target.value)} required />
+                  <p className="form-text small mb-0 mt-1" style={{ fontSize: '0.72rem' }}>
+                    {t('logModals.dateTimeHint')}
+                  </p>
                 </div>
                 <div className="col-12">
                   <label className="form-label small fw-semibold">{t('logModals.moodLabel')}</label>

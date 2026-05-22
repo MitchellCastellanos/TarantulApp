@@ -9,6 +9,8 @@ import PhotoCropModal from '../components/PhotoCropModal'
 import logsService from '../services/logsService'
 import { useAuth } from '../context/AuthContext'
 import { datetimeLocalToOffsetISO, nowLocalDatetimeInputValue } from '../utils/datetimeSubmit'
+import { useUnitSystem } from '../hooks/useUnitSystem'
+import { cmToInput, inputToCm } from '../utils/units'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
@@ -17,6 +19,7 @@ import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 export default function AddTarantulaPage() {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
+  const { system, unit, step } = useUnitSystem()
   const { id } = useParams()  // si hay id, es edición
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -26,7 +29,7 @@ export default function AddTarantulaPage() {
   const discoverGbifKey = searchParams.get('gbifKey')
 
   const [form, setForm] = useState({
-    name: '', speciesId: null, currentSizeCm: '', stage: '',
+    name: '', speciesId: null, currentSize: '', stage: '',
     sex: '', purchaseDate: '', notes: ''
   })
   const [speciesQuery, setSpeciesQuery] = useState('')
@@ -62,8 +65,8 @@ export default function AddTarantulaPage() {
   })
   const [moltForm, setMoltForm] = useState({
     moltedAt: nowLocalDatetimeInputValue(),
-    preSizeCm: '',
-    postSizeCm: '',
+    preSize: '',
+    postSize: '',
     notes: '',
   })
   const debounceRef = useRef(null)
@@ -90,7 +93,7 @@ export default function AddTarantulaPage() {
         setForm({
           name: t.name ?? '',
           speciesId: t.species?.id ?? null,
-          currentSizeCm: t.currentSizeCm ?? '',
+          currentSize: cmToInput(t.currentSizeCm, system),
           stage: t.stage ?? '',
           sex: t.sex ?? '',
           purchaseDate: t.purchaseDate ?? '',
@@ -218,7 +221,7 @@ export default function AddTarantulaPage() {
     items.push({
       id: 'size',
       label: t('onboarding.logSize'),
-      done: form.currentSizeCm !== '' && form.currentSizeCm !== null,
+      done: form.currentSize !== '' && form.currentSize !== null,
     })
     if (selectedSpecies?.habitatType === 'arboreal') {
       items.push({ id: 'setup', label: t('onboarding.setupArboreal'), done: true })
@@ -233,7 +236,7 @@ export default function AddTarantulaPage() {
       done: false,
     })
     return items
-  }, [selectedSpecies, form.name, form.currentSizeCm, t])
+  }, [selectedSpecies, form.name, form.currentSize, t])
 
   const selectSpecies = (sp) => {
     speciesSearchGenRef.current += 1
@@ -312,9 +315,10 @@ export default function AddTarantulaPage() {
     }
     setLoading(true)
     try {
+      const { currentSize: _currentSize, ...rest } = form
       const payload = {
-        ...form,
-        currentSizeCm: form.currentSizeCm ? Number(form.currentSizeCm) : null,
+        ...rest,
+        currentSizeCm: inputToCm(form.currentSize, system),
         purchaseDate: form.purchaseDate || null,
         speciesId: form.speciesId,
       }
@@ -334,6 +338,11 @@ export default function AddTarantulaPage() {
         return
       }
       setCreatedTarantula(tarantula)
+      // Prefill the post-create molt form's pre-size with the spider's current size.
+      setMoltForm((m) => ({
+        ...m,
+        preSize: cmToInput(tarantula?.currentSizeCm, system),
+      }))
       queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       setPostCreateMode('choice')
@@ -374,8 +383,8 @@ export default function AddTarantulaPage() {
     try {
       await logsService.addMolt(createdTarantula.id, {
         moltedAt: datetimeLocalToOffsetISO(moltForm.moltedAt),
-        preSizeCm: moltForm.preSizeCm ? Number(moltForm.preSizeCm) : null,
-        postSizeCm: moltForm.postSizeCm ? Number(moltForm.postSizeCm) : null,
+        preSizeCm: inputToCm(moltForm.preSize, system),
+        postSizeCm: inputToCm(moltForm.postSize, system),
         notes: moltForm.notes || null,
       })
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
@@ -531,9 +540,9 @@ export default function AddTarantulaPage() {
                        placeholder={t('form.namePlaceholder')} />
               </div>
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">{t('form.currentSize')}</label>
-                <input type="number" step="0.1" min="0" className="form-control"
-                       value={form.currentSizeCm} onChange={e => set('currentSizeCm', e.target.value)} />
+                <label className="form-label small fw-semibold">{t('form.currentSize', { unit })}</label>
+                <input type="number" step={step} min="0" className="form-control"
+                       value={form.currentSize} onChange={e => set('currentSize', e.target.value)} />
               </div>
               <div className="col-md-4">
                 <label className="form-label small fw-semibold">{t('form.stage')}</label>
@@ -716,23 +725,23 @@ export default function AddTarantulaPage() {
                     </div>
                     <div className="row g-2 mb-2">
                       <div className="col-6">
-                        <label className="form-label fw-semibold small">{t('quickLog.preMoltSize')}</label>
+                        <label className="form-label fw-semibold small">{t('quickLog.preMoltSize', { unit })}</label>
                         <input
                           type="number"
-                          step="0.1"
+                          step={step}
                           className="form-control"
-                          value={moltForm.preSizeCm}
-                          onChange={e => setMoltForm(m => ({ ...m, preSizeCm: e.target.value }))}
+                          value={moltForm.preSize}
+                          onChange={e => setMoltForm(m => ({ ...m, preSize: e.target.value }))}
                         />
                       </div>
                       <div className="col-6">
-                        <label className="form-label fw-semibold small">{t('quickLog.postMoltSize')}</label>
+                        <label className="form-label fw-semibold small">{t('quickLog.postMoltSize', { unit })}</label>
                         <input
                           type="number"
-                          step="0.1"
+                          step={step}
                           className="form-control"
-                          value={moltForm.postSizeCm}
-                          onChange={e => setMoltForm(m => ({ ...m, postSizeCm: e.target.value }))}
+                          value={moltForm.postSize}
+                          onChange={e => setMoltForm(m => ({ ...m, postSize: e.target.value }))}
                         />
                       </div>
                     </div>
