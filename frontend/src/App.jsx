@@ -51,6 +51,7 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminHomePage = lazy(() => import('./pages/admin/AdminHomePage'))
 const AdminBetaPage = lazy(() => import('./pages/admin/AdminBetaPage'))
 const AdminVendorsPage = lazy(() => import('./pages/admin/AdminVendorsPage'))
+const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const SocialHubPage = lazy(() => import('./pages/SocialHubPage'))
 const CommunityPostThreadPage = lazy(() => import('./pages/CommunityPostThreadPage'))
 const SexIdCasePublicPage = lazy(() => import('./pages/SexIdCasePublicPage'))
@@ -207,6 +208,7 @@ function AppRoutes() {
       <Route path="/admin" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
         <Route index element={<AdminHomePage />} />
         <Route path="vendors" element={<AdminVendorsPage />} />
+        <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="beta" element={<AdminBetaPage />} />
       </Route>
 
