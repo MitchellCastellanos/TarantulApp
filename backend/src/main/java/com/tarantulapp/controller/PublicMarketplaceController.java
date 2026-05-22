@@ -37,7 +37,8 @@ public class PublicMarketplaceController {
     record PartnerCartHandoffLine(
             @NotBlank String externalProductId,
             Integer quantity,
-            String title
+            String title,
+            String canonicalUrl
     ) {}
 
     record PartnerCartHandoffRequest(
@@ -175,7 +176,8 @@ public class PublicMarketplaceController {
         List<PartnerCartHandoffService.CartLine> lines = req.lines() == null
                 ? List.of()
                 : req.lines().stream()
-                .map(l -> new PartnerCartHandoffService.CartLine(l.externalProductId(), l.quantity(), l.title()))
+                .map(l -> new PartnerCartHandoffService.CartLine(
+                        l.externalProductId(), l.quantity(), l.title(), l.canonicalUrl()))
                 .toList();
         return ResponseEntity.ok(partnerCartHandoffService.buildHandoff(req.vendorSlug(), lines));
     }

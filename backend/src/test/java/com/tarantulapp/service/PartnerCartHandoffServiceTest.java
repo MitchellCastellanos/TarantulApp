@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -35,17 +37,29 @@ class PartnerCartHandoffServiceTest {
     }
 
     @Test
-    void checkoutUrlUsesCartPathWithRepeatedAddToCartParams() {
+    void singleItemUsesProductPageNotAddToCartQuery() {
         Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
-                new PartnerCartHandoffService.CartLine("101", 2, "Spider A"),
-                new PartnerCartHandoffService.CartLine("202", 1, "Spider B")
-        ));
+                new PartnerCartHandoffService.CartLine(
+                        "29661", 1, "Spider",
+                        "https://monarchreptiles.com/product/test-spider/")));
+        assertEquals("product_page", handoff.get("handoffMode"));
         String url = (String) handoff.get("checkoutUrl");
-        assertTrue(url.contains("monarchreptiles.com/cart"));
-        assertTrue(url.contains("add-to-cart=101"));
-        assertTrue(url.contains("add-to-cart=202"));
-        assertTrue(url.contains("quantity=2"));
-        assertTrue(url.contains("quantity=1"));
+        assertTrue(url.contains("/product/test-spider"));
+        assertFalse(url.contains("add-to-cart"));
         assertTrue(url.contains("utm_source=tarantulapp"));
+    }
+
+    @Test
+    void multiItemUsesCartPageAndProductUrlList() {
+        Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
+                new PartnerCartHandoffService.CartLine("101", 1, "A", "https://monarchreptiles.com/product/a/"),
+                new PartnerCartHandoffService.CartLine("202", 2, "B", "https://monarchreptiles.com/product/b/")));
+        assertEquals("multi_product_pages", handoff.get("handoffMode"));
+        String url = (String) handoff.get("checkoutUrl");
+        assertTrue(url.contains("/cart"));
+        assertFalse(url.contains("add-to-cart"));
+        @SuppressWarnings("unchecked")
+        List<String> productUrls = (List<String>) handoff.get("productUrls");
+        assertEquals(2, productUrls.size());
     }
 }

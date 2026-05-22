@@ -44,11 +44,17 @@ export default function PartnerCartBar() {
           externalProductId: l.externalProductId,
           quantity: l.quantity || 1,
           title: l.title,
+          canonicalUrl: l.canonicalUrl || undefined,
         })),
       })
       if (handoff?.checkoutUrl) {
         window.open(handoff.checkoutUrl, '_blank', 'noopener,noreferrer')
-        setMessage(t('marketplace.partnerCartHandoffOpened'))
+        const mode = handoff.handoffMode
+        if (mode === 'multi_product_pages' || mode === 'multi_product_pages_partial') {
+          setMessage(t('marketplace.partnerCartMultiHandoff', { count: cart.lines.length }))
+        } else {
+          setMessage(t('marketplace.partnerCartHandoffOpened'))
+        }
       }
     } catch {
       setMessage(t('marketplace.partnerCartHandoffError'))
@@ -80,6 +86,17 @@ export default function PartnerCartBar() {
                         <div className="text-muted">
                           {line.priceAmount} {line.currency || ''}
                         </div>
+                      )}
+                      {line.canonicalUrl && (
+                        <a
+                          href={line.canonicalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-link btn-sm p-0 text-warning"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {t('marketplace.partnerCartViewOnMonarch')}
+                        </a>
                       )}
                     </div>
                     <input

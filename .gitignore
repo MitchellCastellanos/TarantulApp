@@ -22,6 +22,9 @@ project-*.json
 # ─── Uploads (fotos) ────────────────────────────────────────
 uploads/
 
+# ─── Scripts: descargas locales (iNaturalist, etc.) ─────────
+scripts/output/
+
 # ─── IDEs ───────────────────────────────────────────────────
 .idea/
 *.iml
