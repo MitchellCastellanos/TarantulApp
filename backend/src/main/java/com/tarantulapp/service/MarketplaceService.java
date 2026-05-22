@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -351,10 +352,27 @@ public class MarketplaceService {
         out.put("name", vendor.getName());
         out.put("websiteUrl", vendor.getWebsiteUrl());
         out.put("country", vendor.getCountry());
+        out.put("state", vendor.getState() == null ? "" : vendor.getState());
+        out.put("city", vendor.getCity() == null ? "" : vendor.getCity());
+        out.put("note", vendor.getNote() == null ? "" : vendor.getNote());
+        out.put("badge", vendor.getBadge() == null ? "" : vendor.getBadge());
+        out.put("shipsToCountries", splitVendorCountries(vendor.getShipsToCountries()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
         out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
         out.put("nationalShipping", Boolean.TRUE.equals(vendor.getNationalShipping()));
+        out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
+        out.put("storefrontPath", vendor.getSlug() == null ? null : "/partner/" + vendor.getSlug());
         return out;
+    }
+
+    private List<String> splitVendorCountries(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -981,6 +999,9 @@ public class MarketplaceService {
             vendorMeta.put("name", vendor.getName());
             vendorMeta.put("websiteUrl", vendor.getWebsiteUrl());
             vendorMeta.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
+            vendorMeta.put("isFoundingPartner", founding);
+            vendorMeta.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
+            vendorMeta.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
             out.put("officialVendor", vendorMeta);
         }
         out.put("availability", listing.getAvailability() == null ? "unknown" : listing.getAvailability().name().toLowerCase());

@@ -12,6 +12,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import ListingShareKit from '../components/ListingShareKit'
 import { trackListingEvent } from '../utils/listingEventTracker'
 
@@ -465,6 +466,15 @@ export default function MarketplaceListingDetailPage() {
                       >
                         {t('marketplace.partnerAddToCart')}
                       </button>
+                      {listing.officialVendor && vendorHasInAppStorefront(listing.officialVendor) && partnerStorefrontPath(listing.officialVendor.slug) ? (
+                        <Link
+                          to={partnerStorefrontPath(listing.officialVendor.slug)}
+                          className="btn btn-warning btn-sm w-100 mb-2 fw-semibold"
+                          onClick={() => trackListingEvent(listingId, 'contact_tap')}
+                        >
+                          {t('marketplace.partnerStorefrontOpenCta')}
+                        </Link>
+                      ) : null}
                       {listing.officialVendor?.websiteUrl && (
                         <a
                           href={listing.officialVendor.websiteUrl}
@@ -473,7 +483,9 @@ export default function MarketplaceListingDetailPage() {
                           className="btn btn-outline-secondary btn-sm w-100 mb-2"
                           onClick={() => trackListingEvent(listingId, 'contact_tap')}
                         >
-                          {t('marketplace.listingDetailVisitStore')}
+                          {t('marketplace.partnerStorefrontVisitWebsite', {
+                            name: listing.officialVendor?.name || listing.sellerName,
+                          })}
                         </a>
                       )}
                       {listing.canonicalUrl && (

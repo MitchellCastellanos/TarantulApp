@@ -14,6 +14,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -95,10 +96,6 @@ export default function MarketplacePage() {
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
   const [officialStripEdge, setOfficialStripEdge] = useState({ atStart: true, atEnd: false })
-  const [monarchPromotedOnly, setMonarchPromotedOnly] = useState(false)
-  const [monarchCatalogTotal, setMonarchCatalogTotal] = useState(0)
-  const browseVendorSlug = searchParams.get('vendor') || ''
-  const monarchBrowse = browseVendorSlug === MONARCH_VENDOR_SLUG
 
   const saveCurrentFilters = useCallback(() => {
     try {
@@ -237,23 +234,6 @@ export default function MarketplacePage() {
     }
   }
 
-  const loadMonarchCatalog = async () => {
-    try {
-      const data = await marketplaceService.getPartnerCatalog({
-        vendorSlug: MONARCH_VENDOR_SLUG,
-        listingCategory,
-        q: query || undefined,
-        promotedOnly: monarchPromotedOnly ? true : undefined,
-      })
-      const items = Array.isArray(data?.items) ? data.items : []
-      setListings(items)
-      setMonarchCatalogTotal(data?.total ?? items.length)
-    } catch {
-      setListings([])
-      setMonarchCatalogTotal(0)
-    }
-  }
-
   const loadOfficialVendors = async () => {
     const data = await marketplaceService.listOfficialVendors({
       q: query || undefined,
@@ -287,11 +267,23 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     setLoading(true)
-    const loads = monarchBrowse
-      ? [loadMonarchCatalog(), loadOfficialVendors(), loadMine().catch(() => {})]
-      : [loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})]
-    Promise.all(loads).finally(() => setLoading(false))
-  }, [user?.id, monarchBrowse])
+    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})])
+      .finally(() => setLoading(false))
+  }, [user?.id])
+
+  /** Legacy `/marketplace?vendor=slug` → in-app partner storefront. */
+  useEffect(() => {
+    const vendorSlug = (searchParams.get('vendor') || '').trim()
+    if (!vendorSlug) return
+    const next = new URLSearchParams()
+    const cat = searchParams.get('category')
+    if (cat) next.set('category', cat)
+    if (searchParams.get('promoted') === '1') next.set('promoted', '1')
+    const qParam = searchParams.get('q')
+    if (qParam) next.set('q', qParam)
+    const suffix = next.toString() ? `?${next.toString()}` : ''
+    navigate(`/partner/${encodeURIComponent(vendorSlug)}${suffix}`, { replace: true })
+  }, [navigate, searchParams])
 
   useEffect(() => {
     const lb = searchParams.get('listingBoost')
@@ -319,12 +311,8 @@ export default function MarketplacePage() {
   }, [navigate, searchParams])
 
   useEffect(() => {
-    if (monarchBrowse) {
-      Promise.all([loadMonarchCatalog(), loadOfficialVendors()]).catch(() => {})
-      return
-    }
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
-  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city, monarchBrowse, monarchPromotedOnly])
+  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city])
 
   useEffect(() => {
     const urlCat = searchParams.get('category') || DEFAULT_MARKETPLACE_CATEGORY
@@ -533,7 +521,7 @@ export default function MarketplacePage() {
           {t('marketplace.marketplaceHeroSub')}
         </p>
 
-        {(monarchBrowse || listingCategory !== DEFAULT_MARKETPLACE_CATEGORY) && (
+        {listingCategory !== DEFAULT_MARKETPLACE_CATEGORY && (
           <p className="small fw-semibold mb-2 ta-marketplace-category-nav__label" style={{ color: 'var(--ta-gold-classic)' }}>
             {t('marketplace.categoryNavHint')}
           </p>
@@ -637,13 +625,21 @@ export default function MarketplacePage() {
                         </div>
                       </div>
                       <div className="mt-auto pt-2 w-100 d-flex flex-column gap-1">
-                        {vendor.slug === MONARCH_VENDOR_SLUG && (
-                          <Link to={`/marketplace?vendor=${MONARCH_VENDOR_SLUG}`} className="btn btn-sm btn-warning w-100 fw-semibold">
-                            {t('marketplace.monarchBrowseCta')}
+                        {vendorHasInAppStorefront(vendor) && partnerStorefrontPath(vendor.slug) ? (
+                          <Link
+                            to={partnerStorefrontPath(vendor.slug)}
+                            className={`btn btn-sm w-100 fw-semibold${vendor.isFoundingPartner ? ' btn-warning text-dark' : ' btn-dark'}`}
+                          >
+                            {t('marketplace.partnerStorefrontOpenCta')}
                           </Link>
-                        )}
+                        ) : null}
                         {vendor.websiteUrl ? (
-                          <a href={vendor.websiteUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark w-100">
+                          <a
+                            href={vendor.websiteUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`btn btn-sm w-100${vendorHasInAppStorefront(vendor) ? ' btn-outline-secondary' : ' btn-dark'}`}
+                          >
                             {t('marketplace.visitSite')}
                           </a>
                         ) : (
@@ -887,27 +883,6 @@ export default function MarketplacePage() {
           </div>
         )}
 
-        {monarchBrowse && (
-          <div className="alert alert-warning small py-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2 ta-marketplace-monarch-banner">
-            <div>
-              <div className="fw-bold">{t('marketplace.monarchBrowseTitle')}</div>
-              <div className="text-muted">{t('marketplace.monarchBrowseSub', { count: monarchCatalogTotal })}</div>
-            </div>
-            <div className="d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={`btn btn-sm ${monarchPromotedOnly ? 'btn-dark' : 'btn-outline-dark'}`}
-                onClick={() => setMonarchPromotedOnly((v) => !v)}
-              >
-                {t('marketplace.tarantulaCribsFilter')}
-              </button>
-              <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">
-                {t('marketplace.monarchBrowseExit')}
-              </Link>
-            </div>
-          </div>
-        )}
-
         <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
           <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.communityAboutTitle')}</h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
@@ -974,6 +949,15 @@ export default function MarketplacePage() {
                         {t('marketplace.partnerListingFootnote')}
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
+                        {l.officialVendor?.slug && vendorHasInAppStorefront(l.officialVendor) && partnerStorefrontPath(l.officialVendor.slug) ? (
+                          <Link
+                            to={partnerStorefrontPath(l.officialVendor.slug)}
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={(ev) => ev.stopPropagation()}
+                          >
+                            {t('marketplace.partnerStorefrontOpenCta')}
+                          </Link>
+                        ) : null}
                         <button type="button" className="btn btn-sm btn-warning" onClick={(ev) => addPartnerLineToCart(l, ev)}>
                           {t('marketplace.partnerAddToCart')}
                         </button>

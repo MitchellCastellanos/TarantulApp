@@ -26,8 +26,9 @@ Env vars:
 
 ## UI
 
-- Banner strip: founding partner badge + **Ver catálogo completo**
-- Full browse: `/marketplace?vendor=monarch-reptiles`
+- Banner strip: founding partner badge + **Abrir vitrina** → `/partner/monarch-reptiles`
+- Legacy URL `/marketplace?vendor=monarch-reptiles` redirects to the partner storefront
+- In-app catalog with gold founding styling; **Visit Monarch website** bar stays pinned at the bottom
 - Tarantula Cribs filter: promoted listings (`promoted=true` in DB)
 - Mini cart → `POST /api/public/marketplace/partner-cart/handoff` → stepped product-page flow until Monarch allows batch add-to-cart URLs (**403** today). Email template: [`../ops/monarch-cart-handoff-email-to-partner.md`](../ops/monarch-cart-handoff-email-to-partner.md)
 
