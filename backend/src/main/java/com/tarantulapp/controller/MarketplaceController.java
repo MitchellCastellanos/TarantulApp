@@ -87,7 +87,8 @@ public class MarketplaceController {
             String storefrontName,
             String storefrontTagline,
             String storefrontShippingPolicy,
-            String storefrontLagPolicy
+            String storefrontLagPolicy,
+            java.util.List<String> shipsTo
     ) {}
 
     record CreateReviewRequest(
@@ -115,7 +116,8 @@ public class MarketplaceController {
                 req.storefrontName(),
                 req.storefrontTagline(),
                 req.storefrontShippingPolicy(),
-                req.storefrontLagPolicy()
+                req.storefrontLagPolicy(),
+                req.shipsTo()
         ));
     }
 

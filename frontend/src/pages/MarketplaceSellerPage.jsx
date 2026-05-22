@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import billingService from '../services/billingService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
+import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -54,6 +54,7 @@ export default function MarketplaceSellerPage() {
     storefrontLagPolicy: '',
     contactWhatsapp: '',
     contactInstagram: '',
+    shipsTo: [],
   })
   const [sellerProgram, setSellerProgram] = useState({
     tier: 'community',
@@ -132,6 +133,7 @@ export default function MarketplaceSellerPage() {
       storefrontLagPolicy: profile?.storefrontLagPolicy || '',
       contactWhatsapp: profile?.contactWhatsapp || '',
       contactInstagram: profile?.contactInstagram || '',
+      shipsTo: Array.isArray(profile?.shipsTo) ? profile.shipsTo : [],
     })
     setSellerProgram({
       tier: profile?.sellerProgram?.tier || 'community',
@@ -301,6 +303,7 @@ export default function MarketplaceSellerPage() {
         storefrontTagline: myProfile.storefrontTagline || null,
         storefrontShippingPolicy: myProfile.storefrontShippingPolicy || null,
         storefrontLagPolicy: myProfile.storefrontLagPolicy || null,
+        shipsTo: Array.isArray(myProfile.shipsTo) ? myProfile.shipsTo : [],
       })
       await loadMine()
       setMessage(t('marketplace.profileSaved'))
@@ -472,6 +475,38 @@ export default function MarketplaceSellerPage() {
                   />
                 </div>
               </div>
+
+              <div className="row g-2 mt-1">
+                <div className="col-12">
+                  <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                    {t('marketplace.shipsToLabel')}
+                  </label>
+                  <div className="d-flex flex-wrap gap-2">
+                    {SHIPS_TO_OPTIONS.map((opt) => {
+                      const selected = Array.isArray(myProfile.shipsTo) && myProfile.shipsTo.includes(opt.code)
+                      return (
+                        <button
+                          key={opt.code}
+                          type="button"
+                          className={`btn btn-sm ${selected ? 'btn-dark' : 'btn-outline-secondary'}`}
+                          onClick={() => setMyProfile((p) => {
+                            const current = Array.isArray(p.shipsTo) ? p.shipsTo : []
+                            const next = current.includes(opt.code)
+                              ? current.filter((c) => c !== opt.code)
+                              : [...current, opt.code]
+                            return { ...p, shipsTo: next }
+                          })}
+                          aria-pressed={selected}
+                        >
+                          {opt.code} · {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="small text-muted mb-0 mt-1">{t('marketplace.shipsToHint')}</p>
+                </div>
+              </div>
+
               <div className="row g-2 mt-1">
                 <div className="col-md-6">
                   <input

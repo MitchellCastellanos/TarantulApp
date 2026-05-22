@@ -139,7 +139,8 @@ public class MarketplaceService {
                                                String contactInstagram, String country, String state, String city,
                                                Boolean searchVisible, String communityProfileVisibility,
                                                String storefrontName, String storefrontTagline,
-                                               String storefrontShippingPolicy, String storefrontLagPolicy) {
+                                               String storefrontShippingPolicy, String storefrontLagPolicy,
+                                               java.util.List<String> shipsTo) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
@@ -162,6 +163,7 @@ public class MarketplaceService {
         profile.setStorefrontTagline(cleanText(storefrontTagline, 180));
         profile.setStorefrontShippingPolicy(cleanText(storefrontShippingPolicy, 1000));
         profile.setStorefrontLagPolicy(cleanText(storefrontLagPolicy, 1000));
+        profile.setShipsTo(normalizeShipsToCsv(shipsTo));
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -282,7 +284,8 @@ public class MarketplaceService {
                                                     String listingOrigin, Boolean hasRegulatoryRefs,
                                                     String sellerTier, Boolean verifiedOnly,
                                                     Boolean boostedOnly, Boolean hasImage,
-                                                    BigDecimal minPrice, BigDecimal maxPrice) {
+                                                    BigDecimal minPrice, BigDecimal maxPrice,
+                                                    String shipsToCountry) {
         final String filterCountry = normalizeFilter(country);
         final String filterState = normalizeFilter(state);
         final String filterCity = normalizeFilter(city);
@@ -298,9 +301,13 @@ public class MarketplaceService {
                 : partnerPublicListings(
                 q, categoryNorm, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm
         );
+        final String shipsToCountryNorm = normalizeFilter(shipsToCountry) == null
+                ? null
+                : shipsToCountry.trim().toUpperCase(java.util.Locale.ROOT);
         List<Map<String, Object>> peer = peerPublicListings(
                 q, status, categoryNorm, filterCountry, filterState, filterCity, nearCountryNorm, nearStateNorm, nearCityNorm,
-                listingOriginNorm, hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice
+                listingOriginNorm, hasRegulatoryRefs, sellerTier, verifiedOnly, boostedOnly, hasImage, minPrice, maxPrice,
+                shipsToCountryNorm
         );
         int partnerCap = dynamicPartnerCap(peer.size(), partner.size());
         List<Map<String, Object>> out = new ArrayList<>(partnerCap + peer.size());
@@ -549,7 +556,8 @@ public class MarketplaceService {
                                                          String nearCountryNorm, String nearStateNorm, String nearCityNorm,
                                                          String listingOriginNorm, Boolean hasRegulatoryRefs,
                                                          String sellerTier, Boolean verifiedOnly, Boolean boostedOnly,
-                                                         Boolean hasImage, BigDecimal minPrice, BigDecimal maxPrice) {
+                                                         Boolean hasImage, BigDecimal minPrice, BigDecimal maxPrice,
+                                                         String shipsToCountryNorm) {
         String normalizedStatus = normalizeStatus(status);
         if (normalizedStatus == null || "hidden".equals(normalizedStatus)) {
             normalizedStatus = "active";
@@ -564,10 +572,21 @@ public class MarketplaceService {
             byTitle.addAll(marketplaceListingRepository
                     .findTop100ByStatusAndSpeciesNameContainingIgnoreCaseOrderByCreatedAtDesc(normalizedStatus, query));
         }
-        return byTitle.stream()
+        java.util.Collection<MarketplaceListing> deduped = byTitle.stream()
                 .collect(Collectors.toMap(MarketplaceListing::getId, m -> m, (a, b) -> a, LinkedHashMap::new))
-                .values()
-                .stream()
+                .values();
+        final java.util.Map<UUID, String> sellerShipsTo;
+        if (shipsToCountryNorm == null) {
+            sellerShipsTo = java.util.Map.of();
+        } else {
+            java.util.Set<UUID> sellerIds = deduped.stream()
+                    .map(MarketplaceListing::getSellerUserId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toSet());
+            sellerShipsTo = userRepository.findAllById(sellerIds).stream()
+                    .collect(Collectors.toMap(User::getId, u -> u.getShipsTo() == null ? "" : u.getShipsTo(), (a, b) -> a));
+        }
+        return deduped.stream()
                 .filter(m -> filterCountry == null || normalizeFilter(m.getCountry()).equals(filterCountry))
                 .filter(m -> filterState == null || normalizeFilter(m.getState()).equals(filterState))
                 .filter(m -> filterCity == null || normalizeFilter(m.getCity()).equals(filterCity))
@@ -579,6 +598,8 @@ public class MarketplaceService {
                 .filter(m -> matchesBoostedFilter(m, boostedOnly))
                 .filter(m -> matchesHasImageFilter(m, hasImage))
                 .filter(m -> matchesPriceRange(m, minPrice, maxPrice))
+                .filter(m -> shipsToCountryNorm == null
+                        || shipsToCountryAllowed(sellerShipsTo.get(m.getSellerUserId()), shipsToCountryNorm))
                 .sorted((a, b) -> {
                     boolean ab = isListingBoostedNow(a);
                     boolean bb = isListingBoostedNow(b);
@@ -1034,6 +1055,7 @@ public class MarketplaceService {
         out.put("country", p.getProfileCountry() == null ? "" : p.getProfileCountry());
         out.put("state", p.getProfileState() == null ? "" : p.getProfileState());
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
+        out.put("shipsTo", parseShipsToList(p.getShipsTo()));
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
@@ -1434,6 +1456,43 @@ public class MarketplaceService {
         String out = value.trim().replaceAll("\\s+", " ");
         if (out.isEmpty()) return null;
         return out.length() > maxLen ? out.substring(0, maxLen) : out;
+    }
+
+    /** Normalizes a ships-to list into a CSV of upper-case ISO codes (dedup, max 64 entries, max 512 chars). */
+    static String normalizeShipsToCsv(java.util.List<String> shipsTo) {
+        if (shipsTo == null || shipsTo.isEmpty()) return null;
+        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+        for (String raw : shipsTo) {
+            if (raw == null) continue;
+            String code = raw.trim().toUpperCase(java.util.Locale.ROOT);
+            if (code.isEmpty() || code.length() > 6) continue;
+            if (!code.matches("[A-Z]{2,3}")) continue;
+            seen.add(code);
+            if (seen.size() >= 64) break;
+        }
+        if (seen.isEmpty()) return null;
+        String csv = String.join(",", seen);
+        return csv.length() > 512 ? csv.substring(0, 512) : csv;
+    }
+
+    /** Parses a CSV ships-to string into a list of upper-case ISO codes; null/empty → empty list. */
+    static java.util.List<String> parseShipsToList(String csv) {
+        if (csv == null || csv.isBlank()) return java.util.List.of();
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for (String part : csv.split(",")) {
+            String code = part == null ? "" : part.trim().toUpperCase(java.util.Locale.ROOT);
+            if (!code.isEmpty()) out.add(code);
+        }
+        return out;
+    }
+
+    /** True if the seller's ships-to list is unset (treat as "shows in all queries") or includes the country. */
+    static boolean shipsToCountryAllowed(String shipsToCsv, String country) {
+        if (country == null || country.isBlank()) return true;
+        java.util.List<String> list = parseShipsToList(shipsToCsv);
+        if (list.isEmpty()) return true;
+        String want = country.trim().toUpperCase(java.util.Locale.ROOT);
+        return list.contains(want);
     }
 
     private UUID[] orderedPair(UUID a, UUID b) {

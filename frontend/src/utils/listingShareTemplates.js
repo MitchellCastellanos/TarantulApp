@@ -1,4 +1,5 @@
 import { BRAND_WITH_TM } from '../constants/brand'
+import { formatListingPrice as formatListingPriceShared } from './formatPrice'
 
 const CONTROL_CHARS_RE = /[\x00-\x1F\x7F]+/g
 
@@ -19,20 +20,7 @@ function shortText(value, maxLength) {
 }
 
 export function formatListingPrice(priceAmount, currency, t) {
-  if (priceAmount == null) {
-    return t ? t('marketplace.priceOnRequest') : 'Price on request'
-  }
-  const num = Number(priceAmount)
-  if (!Number.isFinite(num)) return String(priceAmount)
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currency || 'USD',
-      maximumFractionDigits: num >= 100 ? 0 : 2,
-    }).format(num)
-  } catch {
-    return `${num} ${currency || ''}`.trim()
-  }
+  return formatListingPriceShared(priceAmount, currency, t)
 }
 
 function locationLine(listing) {

@@ -16,6 +16,7 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
     List<MarketplaceListing> findTop100BySellerUserIdOrderByCreatedAtDesc(UUID sellerUserId);
     long countBySellerUserId(UUID sellerUserId);
     long countBySellerUserIdAndStatusIgnoreCase(UUID sellerUserId, String status);
+    long countByStatusIgnoreCase(String status);
 
     @Query("""
             select l.sellerUserId, lower(l.status), count(l)

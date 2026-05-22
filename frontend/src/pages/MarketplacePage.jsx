@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
+import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import BrandLogoMark from '../components/BrandLogoMark'
@@ -15,6 +15,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
+import { formatListingPrice } from '../utils/formatPrice'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -92,6 +93,7 @@ export default function MarketplacePage() {
     hasImage: null,
     minPrice: '',
     maxPrice: '',
+    shipsToCountry: '',
   })
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
@@ -226,6 +228,7 @@ export default function MarketplacePage() {
         hasImage: filters.hasImage === null ? undefined : filters.hasImage,
         minPrice: filters.minPrice === '' ? undefined : Number(filters.minPrice),
         maxPrice: filters.maxPrice === '' ? undefined : Number(filters.maxPrice),
+        shipsToCountry: filters.shipsToCountry || undefined,
       })
       const normalized = Array.isArray(data) ? data : []
       setListings(normalized)
@@ -718,6 +721,19 @@ export default function MarketplacePage() {
               </div>
               <select
                 className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: 140 }}
+                value={filters.shipsToCountry}
+                onChange={(e) => setFilters((f) => ({ ...f, shipsToCountry: e.target.value }))}
+                aria-label={t('marketplace.shipsToFilterLabel')}
+                title={t('marketplace.shipsToFilterLabel')}
+              >
+                <option value="">{t('marketplace.shipsToFilterAny')}</option>
+                {SHIPS_TO_OPTIONS.map((opt) => (
+                  <option key={opt.code} value={opt.code}>{t('marketplace.shipsToFilterTo', { country: opt.label })}</option>
+                ))}
+              </select>
+              <select
+                className="form-select form-select-sm"
                 style={{ width: 'auto', minWidth: 150 }}
                 value={filters.sellerTier}
                 onChange={(e) => setFilters((f) => ({ ...f, sellerTier: e.target.value }))}
@@ -943,7 +959,7 @@ export default function MarketplacePage() {
                         {[l.city, l.state, l.country].filter(Boolean).join(' · ') || '-'}
                       </div>
                       <div className="fw-semibold mb-2">
-                        {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
+                        {formatListingPrice(l.priceAmount, l.currency, t)}
                       </div>
                       <div className="small text-muted mb-2">
                         {t('marketplace.partnerListingFootnote')}
@@ -1021,7 +1037,7 @@ export default function MarketplacePage() {
                         {[l.city, l.state, l.country].filter(Boolean).join(' · ') || '-'}
                       </div>
                       <div className="fw-semibold mb-2">
-                        {l.priceAmount != null ? `${l.priceAmount} ${l.currency || ''}` : t('marketplace.priceOnRequest')}
+                        {formatListingPrice(l.priceAmount, l.currency, t)}
                       </div>
                       {l.sellerHandle && (
                         <div className="small mb-2">
