@@ -1943,6 +1943,30 @@ a.text-collection:hover {
   color: #14532d !important;
 }
 
+.official-vendor-card--founding {
+  border: 1px solid rgba(232, 200, 120, 0.65) !important;
+  box-shadow:
+    0 0 0 1px rgba(201, 168, 76, 0.25),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='light'] .official-vendor-card--founding {
+  border-color: rgba(160, 120, 40, 0.55) !important;
+  box-shadow: 0 10px 24px rgba(90, 60, 10, 0.12);
+}
+
+.ta-marketplace-monarch-banner {
+  border: 1px solid rgba(201, 168, 76, 0.45);
+  background: linear-gradient(135deg, rgba(32, 24, 8, 0.55) 0%, rgba(12, 10, 22, 0.85) 100%);
+}
+:root[data-theme='light'] .ta-marketplace-monarch-banner {
+  background: linear-gradient(135deg, #fff9eb 0%, #f5ead0 100%);
+  border-color: rgba(140, 100, 30, 0.35);
+}
+
+.ta-partner-cart-bar .card {
+  border-width: 2px;
+}
+
 .ta-marketplace-official-strip {
   position: relative;
   border-radius: 0.65rem;

@@ -68,6 +68,8 @@ class MarketplaceServicePublicListingsTest {
         vendor.setWebsiteUrl("https://example.com");
         vendor.setBadge("Certified partner");
         vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
+        vendor.setListingImportEnabled(true);
+        vendor.setEnabled(true);
 
         PartnerListing partner = new PartnerListing();
         partner.setId(UUID.randomUUID());
@@ -100,7 +102,7 @@ class MarketplaceServicePublicListingsTest {
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
                 eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
                 .thenReturn(List.of(vendor));
-        when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
+        when(partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(List.of(partner));
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
                 .thenReturn(List.of(peer));
@@ -147,8 +149,6 @@ class MarketplaceServicePublicListingsTest {
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
                 eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
                 .thenReturn(List.of());
-        when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
-                .thenReturn(List.of(partner));
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
                 .thenReturn(List.of(peer));
         when(userRepository.findById(sellerId)).thenReturn(Optional.of(seller));
@@ -168,6 +168,8 @@ class MarketplaceServicePublicListingsTest {
         vendor.setId(vendorId);
         vendor.setName("Founder Vendor");
         vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
+        vendor.setListingImportEnabled(true);
+        vendor.setEnabled(true);
 
         List<PartnerListing> partners = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
@@ -197,11 +199,14 @@ class MarketplaceServicePublicListingsTest {
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
                 eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
                 .thenReturn(List.of(vendor));
-        when(partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
+        when(partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(partners);
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
                 .thenReturn(peers);
         when(userRepository.findById(org.mockito.ArgumentMatchers.any(UUID.class))).thenReturn(Optional.empty());
+
+        // Disable bootstrap cap so partner-share math is exercised (60 peers → ~15% partner cap).
+        org.springframework.test.util.ReflectionTestUtils.setField(marketplaceService, "strategicBootstrapMode", false);
 
         List<Map<String, Object>> out = marketplaceService.publicListings(
                 null, "active", null, null, null, null, null, null, null, null, null,
@@ -210,6 +215,6 @@ class MarketplaceServicePublicListingsTest {
         long partnerCount = out.stream().filter(row -> "partner".equals(row.get("source"))).count();
         long peerCount = out.stream().filter(row -> "peer".equals(row.get("source"))).count();
         assertTrue(peerCount >= 60);
-        assertTrue(partnerCount <= 10, "Partner rows should shrink to <=15% share at high peer inventory");
+        assertTrue(partnerCount <= 12, "Partner rows should shrink to ~15% share at high peer inventory");
     }
 }

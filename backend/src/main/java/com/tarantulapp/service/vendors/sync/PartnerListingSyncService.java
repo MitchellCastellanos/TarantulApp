@@ -210,10 +210,6 @@ public class PartnerListingSyncService {
 
         if (raw.stockQuantity() != null && raw.stockQuantity() <= 0) {
             availability = PartnerListingAvailability.OUT_OF_STOCK;
-            status = PartnerListingStatus.HIDDEN;
-        }
-        if (availability == PartnerListingAvailability.OUT_OF_STOCK && status == PartnerListingStatus.ACTIVE) {
-            status = PartnerListingStatus.HIDDEN;
         }
 
         return new PartnerListingUpsertRequest(
@@ -234,7 +230,9 @@ public class PartnerListingSyncService {
                 raw.state(),
                 raw.city(),
                 raw.lastSyncedAt() == null ? Instant.now() : raw.lastSyncedAt(),
-                status
+                status,
+                raw.listingCategory(),
+                raw.promoted()
         );
     }
 

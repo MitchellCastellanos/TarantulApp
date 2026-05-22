@@ -58,7 +58,7 @@ class PartnerListingSyncServiceTest {
     }
 
     @Test
-    void syncMarksOutOfStockAsHiddenAndStalesMissingItems() {
+    void syncMarksOutOfStockAsActiveAndStalesMissingItems() {
         UUID vendorId = UUID.randomUUID();
         PartnerListing existingMissing = new PartnerListing();
         existingMissing.setOfficialVendorId(vendorId);
@@ -84,7 +84,9 @@ class PartnerListingSyncServiceTest {
                 null,
                 null,
                 null,
-                PartnerListingStatus.ACTIVE
+                PartnerListingStatus.ACTIVE,
+                "tarantulas",
+                false
         );
 
         PartnerListingSyncRun run = service.syncVendorListings(
@@ -96,7 +98,7 @@ class PartnerListingSyncServiceTest {
         ArgumentCaptor<PartnerListingUpsertRequest> upsertCaptor = ArgumentCaptor.forClass(PartnerListingUpsertRequest.class);
         verify(partnerListingUpsertService).upsert(upsertCaptor.capture());
         assertEquals(PartnerListingAvailability.OUT_OF_STOCK, upsertCaptor.getValue().availability());
-        assertEquals(PartnerListingStatus.HIDDEN, upsertCaptor.getValue().status());
+        assertEquals(PartnerListingStatus.ACTIVE, upsertCaptor.getValue().status());
         assertEquals(1, run.getStaleCount());
         assertEquals(PartnerListingSyncRunStatus.SUCCESS, run.getStatus());
     }
@@ -126,7 +128,9 @@ class PartnerListingSyncServiceTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        null,
+                        false
                 )),
                 PartnerListingSyncTriggerSource.MANUAL
         );

@@ -82,8 +82,12 @@ public class MarketplaceService {
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
     private final KeeperRankCalculator keeperRankCalculator;
-    @Value("${app.marketplace.partner-feed.hard-cap:50}")
-    private int partnerFeedHardCap = 50;
+    @Value("${app.marketplace.partner-feed.hard-cap:500}")
+    private int partnerFeedHardCap = 500;
+    @Value("${app.marketplace.strategic-bootstrap-mode:true}")
+    private boolean strategicBootstrapMode = true;
+    @Value("${app.marketplace.public-listings.max:300}")
+    private int publicListingsMax = 300;
     @Value("${app.marketplace.partner-feed.share.bootstrap-under-10:0.60}")
     private double partnerShareBootstrapUnder10 = 0.60d;
     @Value("${app.marketplace.partner-feed.share.warm-under-25:0.40}")
@@ -300,7 +304,54 @@ public class MarketplaceService {
         List<Map<String, Object>> out = new ArrayList<>(partnerCap + peer.size());
         out.addAll(partner.stream().limit(partnerCap).collect(Collectors.toList()));
         out.addAll(peer);
-        return out.stream().limit(100).collect(Collectors.toList());
+        int max = Math.max(50, publicListingsMax);
+        return out.stream().limit(max).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicPartnerCatalog(String vendorSlug,
+                                                    String listingCategory,
+                                                    String q,
+                                                    Boolean promotedOnly) {
+        OfficialVendor vendor = officialVendorRepository.findBySlug(vendorSlug)
+                .orElseThrow(() -> new NotFoundException("Partner no encontrado"));
+        if (!isVendorEligibleForPublicFeed(vendor)) {
+            throw new NotFoundException("Partner no disponible");
+        }
+        final String categoryNorm = listingCategory == null || listingCategory.isBlank()
+                ? null
+                : MarketplaceListingCategories.normalizeOrDefault(listingCategory);
+        final String queryNorm = normalizeFilter(q);
+
+        List<Map<String, Object>> items = partnerListingRepository
+                .findByOfficialVendorIdAndStatusInOrderByPromotedDescLastSyncedAtDesc(
+                        vendor.getId(), List.of(PartnerListingStatus.ACTIVE))
+                .stream()
+                .filter(p -> categoryNorm == null || matchesPartnerListingCategoryFilter(p, categoryNorm))
+                .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
+                .filter(p -> promotedOnly == null || !promotedOnly || Boolean.TRUE.equals(p.getPromoted()))
+                .map(p -> mapPartnerListing(p, vendor))
+                .collect(Collectors.toList());
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("vendor", mapOfficialVendorSummary(vendor));
+        out.put("items", items);
+        out.put("total", items.size());
+        out.put("promotedCount", items.stream().filter(i -> Boolean.TRUE.equals(i.get("promoted"))).count());
+        return out;
+    }
+
+    private Map<String, Object> mapOfficialVendorSummary(OfficialVendor vendor) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", vendor.getId());
+        out.put("slug", vendor.getSlug());
+        out.put("name", vendor.getName());
+        out.put("websiteUrl", vendor.getWebsiteUrl());
+        out.put("country", vendor.getCountry());
+        out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
+        out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
+        out.put("nationalShipping", Boolean.TRUE.equals(vendor.getNationalShipping()));
+        return out;
     }
 
     /**
@@ -312,6 +363,9 @@ public class MarketplaceService {
             return 0;
         }
         int hardCap = Math.max(1, partnerFeedHardCap);
+        if (strategicBootstrapMode && peerCount < 30) {
+            return Math.min(hardCap, partnerAvailable);
+        }
         if (peerCount <= 0) {
             return Math.min(hardCap, partnerAvailable);
         }
@@ -614,7 +668,7 @@ public class MarketplaceService {
                 .stream()
                 .collect(Collectors.toMap(OfficialVendor::getId, v -> v));
 
-        return partnerListingRepository.findTop200ByStatusOrderByLastSyncedAtDesc(PartnerListingStatus.ACTIVE)
+        return partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE)
                 .stream()
                 .filter(p -> eligibleVendorById.containsKey(p.getOfficialVendorId()))
                 .filter(p -> matchesPartnerListingCategoryFilter(p, categoryNorm))
@@ -623,12 +677,20 @@ public class MarketplaceService {
                 .filter(p -> filterState == null || filterState.equals(normalizeFilter(p.getState())))
                 .filter(p -> filterCity == null || filterCity.equals(normalizeFilter(p.getCity())))
                 .sorted(Comparator
-                        .comparingInt((PartnerListing p) -> partnerProximityScore(p, nearCountryNorm, nearStateNorm, nearCityNorm))
-                        .reversed()
+                        .comparing((PartnerListing p) -> Boolean.TRUE.equals(p.getPromoted())).reversed()
+                        .thenComparingInt((PartnerListing p) -> founderBoost(eligibleVendorById.get(p.getOfficialVendorId()))).reversed()
+                        .thenComparingInt((PartnerListing p) -> partnerProximityScore(p, nearCountryNorm, nearStateNorm, nearCityNorm)).reversed()
                         .thenComparing(PartnerListing::getLastSyncedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(Math.max(1, partnerFeedHardCap))
                 .map(p -> mapPartnerListing(p, eligibleVendorById.get(p.getOfficialVendorId())))
                 .collect(Collectors.toList());
+    }
+
+    private int founderBoost(OfficialVendor vendor) {
+        if (vendor != null && vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER) {
+            return 25;
+        }
+        return 0;
     }
 
     @Transactional
@@ -893,7 +955,13 @@ public class MarketplaceService {
         out.put("isPartner", true);
         out.put("partnerProgramTier", vendor != null && vendor.getPartnerProgramTier() != null
                 ? vendor.getPartnerProgramTier().name() : null);
-        out.put("badgeLabel", vendor == null || vendor.getBadge() == null ? "Official partner" : vendor.getBadge());
+        boolean founding = vendor != null && vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER;
+        out.put("isFoundingPartner", founding);
+        out.put("badgeLabel", vendor == null || vendor.getBadge() == null
+                ? (founding ? "Founding partner" : "Official partner")
+                : vendor.getBadge());
+        out.put("partnerExternalId", listing.getExternalId());
+        out.put("promoted", Boolean.TRUE.equals(listing.getPromoted()));
         out.put("canonicalUrl", listing.getProductCanonicalUrl());
         if (vendor == null) {
             out.put("officialVendor", null);
