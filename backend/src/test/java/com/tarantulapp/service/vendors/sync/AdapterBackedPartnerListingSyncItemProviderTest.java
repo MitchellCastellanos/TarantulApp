@@ -39,7 +39,8 @@ class AdapterBackedPartnerListingSyncItemProviderTest {
         PartnerListingUpsertRequest req = new PartnerListingUpsertRequest(
                 vendorId, "sku-1", "title", null, null, null, null, new BigDecimal("1.00"),
                 "USD", 1, PartnerListingAvailability.IN_STOCK, null,
-                "https://partner.example.com/p/1", null, null, null, Instant.now(), PartnerListingStatus.ACTIVE
+                "https://partner.example.com/p/1", null, null, null, Instant.now(), PartnerListingStatus.ACTIVE,
+                "tarantulas", false
         );
         when(adapter.supports(vendor)).thenReturn(true);
         when(adapter.fetch(vendor)).thenReturn(List.of(raw));

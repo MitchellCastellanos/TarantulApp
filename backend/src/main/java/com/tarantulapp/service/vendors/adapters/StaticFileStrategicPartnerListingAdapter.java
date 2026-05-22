@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Order(50)
 public class StaticFileStrategicPartnerListingAdapter implements StrategicPartnerListingAdapter {
     private static final Logger log = LoggerFactory.getLogger(StaticFileStrategicPartnerListingAdapter.class);
 

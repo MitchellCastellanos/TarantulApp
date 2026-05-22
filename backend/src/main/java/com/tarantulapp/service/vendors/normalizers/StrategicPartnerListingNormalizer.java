@@ -2,6 +2,7 @@ package com.tarantulapp.service.vendors.normalizers;
 
 import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
+import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.service.vendors.sources.StrategicVendorRawListing;
 import com.tarantulapp.service.vendors.sync.PartnerListingUpsertRequest;
@@ -55,7 +56,9 @@ public class StrategicPartnerListingNormalizer {
                 clean(raw.state(), 80),
                 clean(raw.city(), 80),
                 Instant.now(),
-                PartnerListingStatus.ACTIVE
+                PartnerListingStatus.ACTIVE,
+                MarketplaceListingCategories.normalizeOrDefault(raw.listingCategory()),
+                raw.promoted()
         );
     }
 

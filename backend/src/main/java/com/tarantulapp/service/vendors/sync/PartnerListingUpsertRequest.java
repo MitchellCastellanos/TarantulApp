@@ -25,6 +25,8 @@ public record PartnerListingUpsertRequest(
         String state,
         String city,
         Instant lastSyncedAt,
-        PartnerListingStatus status
+        PartnerListingStatus status,
+        String listingCategory,
+        boolean promoted
 ) {
 }

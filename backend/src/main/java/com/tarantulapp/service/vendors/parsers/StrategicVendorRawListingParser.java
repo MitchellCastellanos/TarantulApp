@@ -25,7 +25,10 @@ public class StrategicVendorRawListingParser {
                 text(node, "productCanonicalUrl"),
                 text(node, "country"),
                 text(node, "state"),
-                text(node, "city")
+                text(node, "city"),
+                text(node, "listingCategory"),
+                node.path("promoted").asBoolean(false),
+                text(node, "brandSlug")
         );
     }
 

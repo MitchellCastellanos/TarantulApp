@@ -11,6 +11,8 @@ import BrandLogoMark from '../components/BrandLogoMark'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
+import PartnerCartBar from '../components/PartnerCartBar'
+import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -92,6 +94,10 @@ export default function MarketplacePage() {
   const officialStripScrollRef = useRef(null)
   const officialStripAutoplayPauseRef = useRef(() => {})
   const [officialStripEdge, setOfficialStripEdge] = useState({ atStart: true, atEnd: false })
+  const [monarchPromotedOnly, setMonarchPromotedOnly] = useState(false)
+  const [monarchCatalogTotal, setMonarchCatalogTotal] = useState(0)
+  const browseVendorSlug = searchParams.get('vendor') || ''
+  const monarchBrowse = browseVendorSlug === MONARCH_VENDOR_SLUG
 
   const saveCurrentFilters = useCallback(() => {
     try {
@@ -230,6 +236,23 @@ export default function MarketplacePage() {
     }
   }
 
+  const loadMonarchCatalog = async () => {
+    try {
+      const data = await marketplaceService.getPartnerCatalog({
+        vendorSlug: MONARCH_VENDOR_SLUG,
+        listingCategory,
+        q: query || undefined,
+        promotedOnly: monarchPromotedOnly ? true : undefined,
+      })
+      const items = Array.isArray(data?.items) ? data.items : []
+      setListings(items)
+      setMonarchCatalogTotal(data?.total ?? items.length)
+    } catch {
+      setListings([])
+      setMonarchCatalogTotal(0)
+    }
+  }
+
   const loadOfficialVendors = async () => {
     const data = await marketplaceService.listOfficialVendors({
       q: query || undefined,
@@ -263,9 +286,11 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})])
-      .finally(() => setLoading(false))
-  }, [user?.id])
+    const loads = monarchBrowse
+      ? [loadMonarchCatalog(), loadOfficialVendors(), loadMine().catch(() => {})]
+      : [loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})]
+    Promise.all(loads).finally(() => setLoading(false))
+  }, [user?.id, monarchBrowse])
 
   useEffect(() => {
     const lb = searchParams.get('listingBoost')
@@ -293,8 +318,12 @@ export default function MarketplacePage() {
   }, [navigate, searchParams])
 
   useEffect(() => {
+    if (monarchBrowse) {
+      Promise.all([loadMonarchCatalog(), loadOfficialVendors()]).catch(() => {})
+      return
+    }
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
-  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city])
+  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city, monarchBrowse, monarchPromotedOnly])
 
   useEffect(() => {
     const urlCat = searchParams.get('category') || DEFAULT_MARKETPLACE_CATEGORY
@@ -390,6 +419,8 @@ export default function MarketplacePage() {
       if (row.sellerVerifiedBreeder) s += 40
       if (row.boosted) s += 12
       if (row.source === 'partner' || row.isPartner) s += 18
+      if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
+      if (row.promoted) s += 14
       if (row.imageUrl) s += 6
       if (row.priceAmount != null) s += 4
       const createdMs = row.createdAt ? Date.parse(row.createdAt) : 0
@@ -427,6 +458,38 @@ export default function MarketplacePage() {
     sorted.sort((a, b) => score(b) - score(a))
     return sorted
   }, [listings, sortMode])
+  const sortedOfficialVendors = useMemo(() => {
+    return [...officialVendors].sort((a, b) => {
+      if (a.isFoundingPartner && !b.isFoundingPartner) return -1
+      if (!a.isFoundingPartner && b.isFoundingPartner) return 1
+      return (b.influenceScore || 0) - (a.influenceScore || 0)
+    })
+  }, [officialVendors])
+
+  const partnerBadgeFor = (l) => {
+    if (l.isFoundingPartner || l.partnerProgramTier === 'STRATEGIC_FOUNDER') {
+      return t('marketplace.foundingPartnerBadge')
+    }
+    if (l.promoted) return t('marketplace.tarantulaCribsBadge')
+    return l.badgeLabel || t('marketplace.certifiedPartnerBadge')
+  }
+
+  const addPartnerLineToCart = (l, ev) => {
+    ev?.stopPropagation?.()
+    addPartnerCartLine({
+      vendorSlug: l.officialVendor?.slug || MONARCH_VENDOR_SLUG,
+      listingId: l.id,
+      externalProductId: l.partnerExternalId || l.externalId,
+      title: l.title,
+      priceAmount: l.priceAmount,
+      currency: l.currency,
+      imageUrl: l.imageUrl,
+      canonicalUrl: l.canonicalUrl,
+      quantity: 1,
+    })
+    setMessage(t('marketplace.partnerCartAdded'))
+  }
+
   const partnerListings = useMemo(
     () => visibleListings.filter((l) => l.source === 'partner' || l.isPartner),
     [visibleListings]
@@ -536,20 +599,25 @@ export default function MarketplacePage() {
               {officialVendors.length === 0 && (
                 <p className="small text-muted mb-0 py-1">{t('marketplace.officialEmpty')}</p>
               )}
-              {officialVendors.map((vendor) => (
+              {sortedOfficialVendors.map((vendor) => (
                 <div key={vendor.id} className="ta-marketplace-official-strip__item flex-shrink-0 d-flex">
-                  <div className="official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column">
+                  <div className={`official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column${vendor.isFoundingPartner ? ' official-vendor-card--founding' : ''}`}>
                     <div className="official-vendor-card__inner d-flex flex-column flex-grow-1">
                       <div className="flex-grow-1 min-h-0">
                         <div className="d-flex justify-content-between align-items-start gap-2">
                           <div className="min-w-0">
-                            <div className="fw-semibold small">{vendor.name}</div>
+                            <div className="fw-semibold small d-flex align-items-center gap-1">
+                              {vendor.isFoundingPartner && <OfficialPartnerShield width={18} height={20} />}
+                              <span>{vendor.name}</span>
+                            </div>
                             <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
                               {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <span className="official-vendor-card__ribbon flex-shrink-0" style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
-                            {vendor.badge || t('marketplace.officialPartnerBadge')}
+                          <span className={`official-vendor-card__ribbon flex-shrink-0${vendor.isFoundingPartner ? ' bg-warning text-dark' : ''}`} style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
+                            {vendor.isFoundingPartner
+                              ? t('marketplace.foundingPartnerBadge')
+                              : (vendor.badge || t('marketplace.officialPartnerBadge'))}
                           </span>
                         </div>
                         <p className="small mt-2 mb-2 ta-marketplace-official-strip__note">{vendor.note || '—'}</p>
@@ -560,7 +628,12 @@ export default function MarketplacePage() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-auto pt-2 w-100">
+                      <div className="mt-auto pt-2 w-100 d-flex flex-column gap-1">
+                        {vendor.slug === MONARCH_VENDOR_SLUG && (
+                          <Link to={`/marketplace?vendor=${MONARCH_VENDOR_SLUG}`} className="btn btn-sm btn-warning w-100 fw-semibold">
+                            {t('marketplace.monarchBrowseCta')}
+                          </Link>
+                        )}
                         {vendor.websiteUrl ? (
                           <a href={vendor.websiteUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark w-100">
                             {t('marketplace.visitSite')}
@@ -806,6 +879,27 @@ export default function MarketplacePage() {
           </div>
         )}
 
+        {monarchBrowse && (
+          <div className="alert alert-warning small py-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2 ta-marketplace-monarch-banner">
+            <div>
+              <div className="fw-bold">{t('marketplace.monarchBrowseTitle')}</div>
+              <div className="text-muted">{t('marketplace.monarchBrowseSub', { count: monarchCatalogTotal })}</div>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={`btn btn-sm ${monarchPromotedOnly ? 'btn-dark' : 'btn-outline-dark'}`}
+                onClick={() => setMonarchPromotedOnly((v) => !v)}
+              >
+                {t('marketplace.tarantulaCribsFilter')}
+              </button>
+              <Link to="/marketplace" className="btn btn-sm btn-outline-secondary">
+                {t('marketplace.monarchBrowseExit')}
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="ta-marketplace-community-intro mb-4 p-3 p-md-4 rounded-3">
           <h2 className="h5 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h2>
           <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>{t('marketplace.communityIntro')}</p>
@@ -849,9 +943,14 @@ export default function MarketplacePage() {
                       <h6 className="fw-bold d-flex align-items-center gap-2 flex-wrap">
                         <OfficialPartnerShield width={22} height={24} />
                         <span>{l.title}</span>
-                        <span className="badge bg-warning text-dark">
-                          {l.badgeLabel || t('marketplace.certifiedPartnerBadge')}
+                        <span className={`badge ${l.isFoundingPartner ? 'bg-warning text-dark' : 'bg-warning text-dark'}`}>
+                          {partnerBadgeFor(l)}
                         </span>
+                        {l.promoted && (
+                          <span className="badge bg-dark text-warning border border-warning">
+                            {t('marketplace.tarantulaCribsBadge')}
+                          </span>
+                        )}
                       </h6>
                       <p className="small text-muted mb-2">{l.speciesName || '-'}</p>
                       <p className="small mb-2">{l.description || '-'}</p>
@@ -865,8 +964,11 @@ export default function MarketplacePage() {
                         {t('marketplace.partnerListingFootnote')}
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
+                        <button type="button" className="btn btn-sm btn-warning" onClick={(ev) => addPartnerLineToCart(l, ev)}>
+                          {t('marketplace.partnerAddToCart')}
+                        </button>
                         {l.canonicalUrl ? (
-                          <a href={l.canonicalUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark">
+                          <a href={l.canonicalUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-dark" onClick={(ev) => ev.stopPropagation()}>
                             {t('marketplace.partnerBuyOfficialCta')}
                           </a>
                         ) : (
@@ -1072,6 +1174,7 @@ export default function MarketplacePage() {
           </div>
         </details>
       </div>
+      <PartnerCartBar />
     </div>
   )
 }

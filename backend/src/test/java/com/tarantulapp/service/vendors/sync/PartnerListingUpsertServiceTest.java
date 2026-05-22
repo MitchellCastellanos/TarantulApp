@@ -66,7 +66,9 @@ class PartnerListingUpsertServiceTest {
                 "CDMX",
                 "Ciudad de Mexico",
                 Instant.parse("2026-04-23T10:00:00Z"),
-                null
+                null,
+                "tarantulas",
+                false
         );
 
         PartnerListing saved = service.upsert(req);
@@ -108,7 +110,9 @@ class PartnerListingUpsertServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                false
         ));
 
         ArgumentCaptor<PartnerListing> captor = ArgumentCaptor.forClass(PartnerListing.class);
@@ -144,7 +148,9 @@ class PartnerListingUpsertServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                false
         )));
     }
 
@@ -174,7 +180,9 @@ class PartnerListingUpsertServiceTest {
                 "Texas",
                 "Austin",
                 Instant.parse("2026-04-23T10:00:00Z"),
-                null
+                null,
+                "tarantulas",
+                false
         ));
 
         assertEquals("SKU-SP1", saved.getExternalId());

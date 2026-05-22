@@ -84,6 +84,9 @@ public class PartnerListing {
     @Column(name = "listing_category", nullable = false, length = 32)
     private String listingCategory = "tarantulas";
 
+    @Column(nullable = false)
+    private Boolean promoted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -145,6 +148,8 @@ public class PartnerListing {
     public void setStatus(PartnerListingStatus status) { this.status = status; }
     public String getListingCategory() { return listingCategory; }
     public void setListingCategory(String listingCategory) { this.listingCategory = listingCategory; }
+    public Boolean getPromoted() { return promoted; }
+    public void setPromoted(Boolean promoted) { this.promoted = promoted; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

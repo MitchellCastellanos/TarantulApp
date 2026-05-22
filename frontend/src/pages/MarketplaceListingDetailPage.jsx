@@ -9,6 +9,8 @@ import { imgUrl } from '../services/api'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
+import PartnerCartBar from '../components/PartnerCartBar'
+import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 
 function listingGalleryUrls(listing) {
   const raw = listing?.imageUrls
@@ -228,7 +230,14 @@ export default function MarketplaceListingDetailPage() {
                   )}
                   {isPartner && (
                     <span className="badge bg-warning text-dark">
-                      {listing.badgeLabel || t('marketplace.certifiedPartnerBadge')}
+                      {listing.isFoundingPartner || listing.partnerProgramTier === 'STRATEGIC_FOUNDER'
+                        ? t('marketplace.foundingPartnerBadge')
+                        : (listing.badgeLabel || t('marketplace.certifiedPartnerBadge'))}
+                    </span>
+                  )}
+                  {isPartner && listing.promoted && (
+                    <span className="badge bg-dark text-warning border border-warning">
+                      {t('marketplace.tarantulaCribsBadge')}
                     </span>
                   )}
                 </h1>
@@ -396,7 +405,38 @@ export default function MarketplaceListingDetailPage() {
 
                   {isPartner && (
                     <>
-                      <h3 className="h6 fw-bold mb-2">{listing.officialVendor?.name || listing.sellerName}</h3>
+                      <h3 className="h6 fw-bold mb-2 d-flex align-items-center gap-2 flex-wrap">
+                        <OfficialPartnerShield width={22} height={24} />
+                        <span>{listing.officialVendor?.name || listing.sellerName}</span>
+                        {(listing.isFoundingPartner || listing.partnerProgramTier === 'STRATEGIC_FOUNDER') && (
+                          <span className="badge bg-warning text-dark">{t('marketplace.foundingPartnerBadge')}</span>
+                        )}
+                        {listing.promoted && (
+                          <span className="badge bg-dark text-warning border border-warning">
+                            {t('marketplace.tarantulaCribsBadge')}
+                          </span>
+                        )}
+                      </h3>
+                      <button
+                        type="button"
+                        className="btn btn-warning btn-sm w-100 mb-2"
+                        onClick={() => {
+                          addPartnerCartLine({
+                            vendorSlug: listing.officialVendor?.slug || MONARCH_VENDOR_SLUG,
+                            listingId: listing.id,
+                            externalProductId: listing.partnerExternalId,
+                            title: listing.title,
+                            priceAmount: listing.priceAmount,
+                            currency: listing.currency,
+                            imageUrl: listing.imageUrl,
+                            canonicalUrl: listing.canonicalUrl,
+                            quantity: 1,
+                          })
+                          setMessage(t('marketplace.partnerCartAdded'))
+                        }}
+                      >
+                        {t('marketplace.partnerAddToCart')}
+                      </button>
                       {listing.officialVendor?.websiteUrl && (
                         <a
                           href={listing.officialVendor.websiteUrl}
@@ -459,6 +499,7 @@ export default function MarketplaceListingDetailPage() {
           </section>
         )}
       </div>
+      <PartnerCartBar />
     </>
   )
 }

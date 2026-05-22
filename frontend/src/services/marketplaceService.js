@@ -8,6 +8,8 @@ const marketplaceService = {
     publicApi.get(`/public/marketplace/deal-quote/${listingId}`, { params: { subtotal } }).then((r) => r.data),
   getListingBoostOffer: () => publicApi.get('/public/marketplace/listing-boost-offer').then((r) => r.data),
   listOfficialVendors: (params = {}) => publicApi.get('/public/marketplace/official-vendors', { params }).then((r) => r.data),
+  getPartnerCatalog: (params = {}) => publicApi.get('/public/marketplace/partner-catalog', { params }).then((r) => r.data),
+  partnerCartHandoff: (payload) => publicApi.post('/public/marketplace/partner-cart/handoff', payload).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),
   // Optional on Marketplace landing: if session token is stale, keep public page usable.
   listMine: () => api.get('/marketplace/listings/me', { skipAuthRedirect: true }).then((r) => r.data),

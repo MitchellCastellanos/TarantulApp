@@ -14,6 +14,26 @@ public record StrategicVendorRawListing(
         String productCanonicalUrl,
         String country,
         String state,
-        String city
+        String city,
+        String listingCategory,
+        boolean promoted,
+        String brandSlug
 ) {
+    public StrategicVendorRawListing(
+            String externalId,
+            String title,
+            String description,
+            String speciesNameRaw,
+            BigDecimal priceAmount,
+            String currency,
+            Integer stockQuantity,
+            String imageUrl,
+            String productCanonicalUrl,
+            String country,
+            String state,
+            String city
+    ) {
+        this(externalId, title, description, speciesNameRaw, priceAmount, currency, stockQuantity,
+                imageUrl, productCanonicalUrl, country, state, city, null, false, null);
+    }
 }

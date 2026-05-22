@@ -196,6 +196,7 @@ public class OfficialVendorService {
         out.put("note", vendor.getNote() == null ? "" : vendor.getNote());
         out.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
+        out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
         out.put("isDemo", Boolean.TRUE.equals(vendor.getIsDemo()));
         out.put("createdAt", vendor.getCreatedAt());

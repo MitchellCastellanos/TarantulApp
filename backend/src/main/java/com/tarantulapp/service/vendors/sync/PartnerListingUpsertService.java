@@ -5,6 +5,7 @@ import com.tarantulapp.entity.PartnerListing;
 import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
+import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
@@ -58,6 +59,8 @@ public class PartnerListingUpsertService {
         listing.setCity(cleanText(request.city(), 80));
         listing.setLastSyncedAt(request.lastSyncedAt() == null ? Instant.now() : request.lastSyncedAt());
         listing.setStatus(request.status() == null ? PartnerListingStatus.ACTIVE : request.status());
+        listing.setListingCategory(MarketplaceListingCategories.normalizeOrDefault(request.listingCategory()));
+        listing.setPromoted(request.promoted());
         return partnerListingRepository.save(listing);
     }
 
