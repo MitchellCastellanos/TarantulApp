@@ -7,6 +7,7 @@ import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.entity.PartnerListingSyncTriggerSource;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
+import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,5 +59,32 @@ public class PartnerListingSyncRunService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PartnerListingSyncRun finishRun(PartnerListingSyncRun run) {
         return partnerListingSyncRunRepository.save(run);
+    }
+
+    /** Marks active Monarch rows that are not tarantula animals (stale DB from older sync rules). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int markNonTarantulaAsStale(UUID vendorId, String vendorSlug) {
+        if (vendorSlug == null || !PartnerListingTarantulaFilter.MONARCH_VENDOR_SLUG.equalsIgnoreCase(vendorSlug.trim())) {
+            return 0;
+        }
+        int stale = 0;
+        Instant now = Instant.now();
+        for (PartnerListing listing : partnerListingRepository.findByOfficialVendorId(vendorId)) {
+            if (listing.getStatus() != PartnerListingStatus.ACTIVE) {
+                continue;
+            }
+            if (PartnerListingTarantulaFilter.isTarantulaAnimalListing(
+                    listing.getTitle(),
+                    listing.getDescription(),
+                    listing.getListingCategory(),
+                    vendorSlug)) {
+                continue;
+            }
+            listing.setStatus(PartnerListingStatus.STALE);
+            listing.setLastSyncedAt(now);
+            partnerListingRepository.save(listing);
+            stale++;
+        }
+        return stale;
     }
 }

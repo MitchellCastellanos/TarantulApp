@@ -13,7 +13,7 @@ class MonarchWooCommerceCategoryMapperTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    void mapsTarantulaCategorySlugs() throws Exception {
+    void mapsExplicitTarantulaSlugsOnly() throws Exception {
         var product = mapper.readTree("""
                 {
                   "name": "Brachypelma hamorii",
@@ -26,15 +26,15 @@ class MonarchWooCommerceCategoryMapperTest {
     }
 
     @Test
-    void skipsJumpingSpidersAndMillipedes() throws Exception {
-        var jumping = mapper.readTree("""
+    void skipsJumpingSpidersMillipedesAndGenericInvertebrates() throws Exception {
+        assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
                 {"name": "Phidippus audax", "categories": [{"slug": "jumping-spiders"}]}
-                """);
-        assertNull(MonarchWooCommerceCategoryMapper.map(jumping));
-
-        var millipede = mapper.readTree("""
+                """)));
+        assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
                 {"name": "Narceus Americanus Millipede", "categories": [{"slug": "invertebrates"}]}
-                """);
-        assertNull(MonarchWooCommerceCategoryMapper.map(millipede));
+                """)));
+        assertNull(MonarchWooCommerceCategoryMapper.map(mapper.readTree("""
+                {"name": "Exo Terra", "categories": [{"slug": "terrariums"}]}
+                """)));
     }
 }

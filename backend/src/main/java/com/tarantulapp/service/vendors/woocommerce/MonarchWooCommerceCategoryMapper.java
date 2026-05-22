@@ -2,18 +2,25 @@ package com.tarantulapp.service.vendors.woocommerce;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tarantulapp.marketplace.MarketplaceListingCategories;
+import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
 
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
 /**
- * Maps Monarch Reptiles WooCommerce categories/brands into TarantulApp marketplace tabs.
- * Returns null when the product should be skipped (outside our browse categories).
+ * Monarch sync: tarantula animals only (explicit WC tarantula categories).
  */
 public final class MonarchWooCommerceCategoryMapper {
 
     private static final String BRAND_TARANTULA_CRIBS = "tarantula-cribs";
+
+    private static final Set<String> TARANTULA_CATEGORY_SLUGS = Set.of(
+            "tarantulas",
+            "new-world",
+            "old-world",
+            "old-world-tarantulas"
+    );
 
     private static final Set<String> NON_TARANTULA_CATEGORY_SLUGS = Set.of(
             "jumping-spiders",
@@ -25,11 +32,17 @@ public final class MonarchWooCommerceCategoryMapper {
             "ants",
             "ant",
             "other-invertebrates",
+            "invertebrates",
             "isopods",
             "roaches",
             "centipedes",
             "snails",
-            "beetles"
+            "beetles",
+            "feeder-insects",
+            "feeder",
+            "feeders",
+            "mice",
+            "rats"
     );
 
     private MonarchWooCommerceCategoryMapper() {
@@ -39,80 +52,50 @@ public final class MonarchWooCommerceCategoryMapper {
         if (product == null || product.isNull()) {
             return null;
         }
-        if (isNonTarantulaProduct(product)) {
+        if (PartnerListingTarantulaFilter.looksLikeNonTarantulaPet(text(product, "name"), stripHtml(text(product, "short_description")))) {
             return null;
         }
         Set<String> slugs = collectCategorySlugs(product.get("categories"));
+        if (hasBlockedCategory(slugs)) {
+            return null;
+        }
+        if (!hasTarantulaCategory(slugs)) {
+            return null;
+        }
         Set<String> brandSlugs = collectBrandSlugs(product.get("brands"));
         boolean promoted = brandSlugs.contains(BRAND_TARANTULA_CRIBS)
                 || slugs.contains("tarantula-cribs")
                 || containsSlugFragment(slugs, "tarantula-crib");
 
-        String category = resolveCategory(slugs, brandSlugs);
-        if (category == null) {
-            return null;
-        }
-        return new MappedProduct(category, promoted, brandSlugs.isEmpty() ? null : brandSlugs.iterator().next());
+        return new MappedProduct(MarketplaceListingCategories.TARANTULAS, promoted,
+                brandSlugs.isEmpty() ? null : brandSlugs.iterator().next());
     }
 
-    private static boolean isNonTarantulaProduct(JsonNode product) {
-        Set<String> slugs = collectCategorySlugs(product.get("categories"));
-        for (String slug : slugs) {
-            if (NON_TARANTULA_CATEGORY_SLUGS.contains(slug) || containsNonTarantulaFragment(slug)) {
+    private static boolean hasTarantulaCategory(Set<String> slugs) {
+        for (String slug : TARANTULA_CATEGORY_SLUGS) {
+            if (slugs.contains(slug)) {
                 return true;
             }
         }
-        String name = text(product, "name");
-        if (name == null) {
-            return false;
-        }
-        String lower = name.toLowerCase(Locale.ROOT);
-        return lower.contains("millipede")
-                || lower.contains("jumping spider")
-                || lower.contains("jumping-spider")
-                || lower.contains(" scorpion")
-                || lower.startsWith("scorpion ")
-                || lower.contains(" isopod")
-                || lower.contains("centipede")
-                || lower.contains("roach ")
-                || lower.contains(" beetle");
+        return containsSlugFragment(slugs, "tarantula");
     }
 
-    private static boolean containsNonTarantulaFragment(String slug) {
+    private static boolean hasBlockedCategory(Set<String> slugs) {
+        for (String slug : slugs) {
+            if (NON_TARANTULA_CATEGORY_SLUGS.contains(slug) || containsBlockedFragment(slug)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsBlockedFragment(String slug) {
         return slug.contains("millipede")
                 || slug.contains("jumping-spider")
                 || slug.contains("scorpion")
-                || slug.contains("/ants")
-                || slug.startsWith("ants-")
-                || slug.endsWith("-ants");
-    }
-
-    private static String resolveCategory(Set<String> slugs, Set<String> brandSlugs) {
-        if (brandSlugs.contains(BRAND_TARANTULA_CRIBS) || containsSlugFragment(slugs, "tarantula-crib")) {
-            return MarketplaceListingCategories.TERRARIUMS;
-        }
-        if (matchesAny(slugs, "tarantulas", "new-world", "old-world", "old-world-tarantulas")) {
-            return MarketplaceListingCategories.TARANTULAS;
-        }
-        if (matchesAny(slugs, "feeder-insects", "feeder", "feeders", "frozen-feeders", "mice", "rats", "frozen-feeder")) {
-            return MarketplaceListingCategories.LIVE_FOOD;
-        }
-        if (matchesAny(slugs, "substrate", "substrates")) {
-            return MarketplaceListingCategories.SUBSTRATES;
-        }
-        if (matchesAny(slugs, "terrariums", "terrariums-and-enclosures", "enclosures", "starter-terrarium-kits",
-                "pvc-cages", "exo-terra")) {
-            return MarketplaceListingCategories.TERRARIUMS;
-        }
-        if (matchesAny(slugs, "supplies", "decorations", "feeding-and-watering", "temperature-heating-and-humidity",
-                "bioactive-and-accessories", "cleaning", "foods", "oh-my-ants", "jumping-spider-accessories",
-                "animals-pet-supplies")) {
-            return MarketplaceListingCategories.SUPPLIES;
-        }
-        if (matchesAny(slugs, "bioactive", "moss-plants-leaf-litter", "springtails-isopods-worms")) {
-            return MarketplaceListingCategories.SUBSTRATES;
-        }
-        return null;
+                || slug.contains("feeder")
+                || slug.contains("isopod")
+                || slug.contains("centipede");
     }
 
     private static Set<String> collectCategorySlugs(JsonNode categories) {
@@ -143,15 +126,6 @@ public final class MonarchWooCommerceCategoryMapper {
         return out;
     }
 
-    private static boolean matchesAny(Set<String> slugs, String... candidates) {
-        for (String c : candidates) {
-            if (slugs.contains(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static boolean containsSlugFragment(Set<String> slugs, String fragment) {
         for (String s : slugs) {
             if (s.contains(fragment)) {
@@ -159,6 +133,13 @@ public final class MonarchWooCommerceCategoryMapper {
             }
         }
         return false;
+    }
+
+    private static String stripHtml(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        return raw.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
     }
 
     private static String text(JsonNode node, String field) {

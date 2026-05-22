@@ -8,6 +8,7 @@ import {
   updatePartnerCartQty,
 } from '../utils/partnerCart'
 import { decodeListingTitle } from '../utils/listingDisplay'
+import { openMonarchCartHandoff } from '../utils/monarchCartHandoff'
 
 export default function PartnerCartBar() {
   const { t } = useTranslation()
@@ -48,10 +49,10 @@ export default function PartnerCartBar() {
         })),
       })
       if (handoff?.checkoutUrl) {
-        window.open(handoff.checkoutUrl, '_blank', 'noopener,noreferrer')
+        openMonarchCartHandoff(handoff)
         const mode = handoff.handoffMode
-        if (mode === 'multi_product_pages' || mode === 'multi_product_pages_partial') {
-          setMessage(t('marketplace.partnerCartMultiHandoff', { count: cart.lines.length }))
+        if (mode === 'batch_fill' && cart.lines.length > 1) {
+          setMessage(t('marketplace.partnerCartBatchHandoff', { count: cart.lines.length }))
         } else {
           setMessage(t('marketplace.partnerCartHandoffOpened'))
         }
