@@ -1,9 +1,10 @@
 package com.tarantulapp.entity;
 
+import com.tarantulapp.entity.converters.PartnerListingSyncRunStatusConverter;
+import com.tarantulapp.entity.converters.PartnerListingSyncTriggerSourceConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,11 +27,11 @@ public class PartnerListingSyncRun {
     @Column(name = "official_vendor_id", nullable = false, columnDefinition = "uuid")
     private UUID officialVendorId;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PartnerListingSyncTriggerSourceConverter.class)
     @Column(name = "trigger_source", nullable = false, length = 40)
     private PartnerListingSyncTriggerSource triggerSource;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PartnerListingSyncRunStatusConverter.class)
     @Column(nullable = false, length = 20)
     private PartnerListingSyncRunStatus status = PartnerListingSyncRunStatus.RUNNING;
 
