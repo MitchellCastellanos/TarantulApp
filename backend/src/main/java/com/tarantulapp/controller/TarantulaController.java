@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -44,6 +45,14 @@ public class TarantulaController {
     @PostMapping
     public ResponseEntity<TarantulaResponse> create(@Valid @RequestBody TarantulaRequest req) {
         return ResponseEntity.ok(tarantulaService.create(req, securityHelper.getCurrentUserId()));
+    }
+
+    record BulkVisibilityRequest(boolean isPublic) {}
+
+    @PatchMapping("/bulk-visibility")
+    public ResponseEntity<Map<String, Object>> bulkSetVisibility(@RequestBody BulkVisibilityRequest req) {
+        return ResponseEntity.ok(tarantulaService.bulkSetVisibility(
+                securityHelper.getCurrentUserId(), req.isPublic()));
     }
 
     @GetMapping("/{id}")

@@ -28,8 +28,10 @@ public class FileStorageService {
     private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
 
     private static final long MIN_BYTES = 1024;             // 1 KB — drop empty/garbage uploads
-    private static final long MAX_BYTES = 10L * 1024 * 1024; // 10 MB — matches multipart limit
+    private static final long MAX_BYTES = 10L * 1024 * 1024; // 10 MB — matches multipart limit for images
+    private static final long MAX_VIDEO_BYTES = 35L * 1024 * 1024; // community post videos
     private static final Set<String> ALLOWED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
+    private static final Set<String> ALLOWED_VIDEO_MIME = Set.of("video/mp4", "video/webm");
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -81,27 +83,37 @@ public class FileStorageService {
     public String saveFile(MultipartFile file, String subfolder) throws IOException {
         DetectedImage img = validateImageOrThrow(file);
         if (isCloudinaryConfigured()) {
-            return uploadToCloudinary(file, subfolder);
+            return uploadToCloudinary(file, subfolder, "image");
         }
         return saveToLocal(file, subfolder, img.extension);
     }
 
+    /** Community post videos (mp4/webm magic-byte sniff). */
+    public String saveVideoFile(MultipartFile file, String subfolder) throws IOException {
+        DetectedVideo vid = validateVideoOrThrow(file);
+        if (isCloudinaryConfigured()) {
+            return uploadToCloudinary(file, subfolder, "video");
+        }
+        return saveToLocal(file, subfolder, vid.extension);
+    }
+
     @SuppressWarnings("unchecked")
-    private String uploadToCloudinary(MultipartFile file, String subfolder) throws IOException {
+    private String uploadToCloudinary(MultipartFile file, String subfolder, String resourceType) throws IOException {
         // NOTE: Cloudinary's Java SDK requires a Transformation object (or a pre-formatted
         // string like "q_auto,f_auto,w_1600,c_limit") here — passing a raw Map serializes to
         // Java's default `{key=value}` format and the server returns "Invalid transformation
         // component".
         Map<String, Object> params = ObjectUtils.asMap(
                 "folder", "tarantulapp/" + sanitizeSubfolder(subfolder),
-                "resource_type", "image",
-                // Cap output dimensions; protects bandwidth and downstream rendering.
-                "transformation", new Transformation()
-                        .quality("auto")
-                        .fetchFormat("auto")
-                        .width(1600)
-                        .crop("limit")
+                "resource_type", resourceType
         );
+        if ("image".equals(resourceType)) {
+            params.put("transformation", new Transformation()
+                    .quality("auto")
+                    .fetchFormat("auto")
+                    .width(1600)
+                    .crop("limit"));
+        }
         Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), params);
         return (String) result.get("secure_url");
     }
@@ -141,6 +153,8 @@ public class FileStorageService {
 
     private record DetectedImage(String mime, String extension) {}
 
+    private record DetectedVideo(String mime, String extension) {}
+
     private DetectedImage validateImageOrThrow(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("UPLOAD_EMPTY");
@@ -169,6 +183,33 @@ public class FileStorageService {
         return new DetectedImage(mime, extensionFor(mime));
     }
 
+    private DetectedVideo validateVideoOrThrow(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("UPLOAD_EMPTY");
+        }
+        long size = file.getSize();
+        if (size < MIN_BYTES) {
+            throw new IllegalArgumentException("UPLOAD_TOO_SMALL");
+        }
+        if (size > MAX_VIDEO_BYTES) {
+            throw new IllegalArgumentException("UPLOAD_TOO_LARGE");
+        }
+        byte[] head = new byte[16];
+        try (var in = file.getInputStream()) {
+            int read = in.readNBytes(head, 0, head.length);
+            if (read < 12) {
+                throw new IllegalArgumentException("UPLOAD_INVALID_FORMAT");
+            }
+        }
+        String mime = sniffVideoMime(head);
+        if (mime == null || !ALLOWED_VIDEO_MIME.contains(mime)) {
+            log.warn("Rejected video upload: unsupported magic bytes (size={}, declaredType={})",
+                    size, file.getContentType());
+            throw new IllegalArgumentException("UPLOAD_UNSUPPORTED_TYPE");
+        }
+        return new DetectedVideo(mime, extensionForVideo(mime));
+    }
+
     /** Returns canonical mime by inspecting magic bytes; null when unrecognized. */
     private static String sniffMime(byte[] h) {
         // JPEG: FF D8 FF
@@ -189,11 +230,29 @@ public class FileStorageService {
         return null;
     }
 
+    private static String sniffVideoMime(byte[] h) {
+        if ((h[0] & 0xFF) == 0x1A && h[1] == 0x45 && (h[2] & 0xFF) == 0xDF && (h[3] & 0xFF) == 0xA3) {
+            return "video/webm";
+        }
+        if (h.length >= 8 && h[4] == 'f' && h[5] == 't' && h[6] == 'y' && h[7] == 'p') {
+            return "video/mp4";
+        }
+        return null;
+    }
+
     private static String extensionFor(String mime) {
         return switch (mime) {
             case "image/jpeg" -> ".jpg";
             case "image/png" -> ".png";
             case "image/webp" -> ".webp";
+            default -> "";
+        };
+    }
+
+    private static String extensionForVideo(String mime) {
+        return switch (mime) {
+            case "video/mp4" -> ".mp4";
+            case "video/webm" -> ".webm";
             default -> "";
         };
     }

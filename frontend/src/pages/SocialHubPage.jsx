@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandLogoMark from '../components/BrandLogoMark'
 import ReferralGamificationCard from '../components/ReferralGamificationCard'
+import CommunitySpotlightCarousel from '../components/CommunitySpotlightCarousel'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import communityService from '../services/communityService'
 import tarantulaService from '../services/tarantulaService'
@@ -946,6 +947,8 @@ export default function SocialHubPage() {
 
         {tab === TAB_FEED && (
           <>
+            <CommunitySpotlightCarousel className="mb-3" limit={16} />
+
             <div className="row g-3 align-items-start mb-4">
               <div className="col-12 col-xl-4">
                 <div className="p-3 ta-premium-pane ta-social-topic-cases-shell" style={{ border: '1px solid var(--ta-border)', background: 'rgba(0,0,0,0.12)' }}>

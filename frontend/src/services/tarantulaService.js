@@ -10,6 +10,8 @@ const tarantulaService = {
   update: (id, data) => api.put(`/tarantulas/${id}`, data).then(r => r.data),
   delete: (id) => api.delete(`/tarantulas/${id}`),
   togglePublic: (id) => api.patch(`/tarantulas/${id}/visibility`).then(r => r.data),
+  bulkSetVisibility: (isPublic) =>
+    api.patch('/tarantulas/bulk-visibility', { isPublic }).then((r) => r.data),
   markDeceased: (id, data) => api.patch(`/tarantulas/${id}/deceased`, data).then(r => r.data),
   getTimeline: (id) => api.get(`/tarantulas/${id}/timeline`).then(r => r.data),
   /** Paginado: `{ content, totalElements, page, size, hasNext }` */

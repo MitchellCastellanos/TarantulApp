@@ -517,7 +517,7 @@ public class ActivityPostService {
             if (file.getSize() > MAX_VIDEO_BYTES) {
                 throw new IllegalArgumentException("El video supera el limite de 35MB.");
             }
-            String path = fileStorageService.saveFile(file, "community/posts/" + userId);
+            String path = fileStorageService.saveVideoFile(file, "community/posts/" + userId);
             return Map.of("mediaUrl", path, "mediaType", "video");
         }
         throw new IllegalArgumentException("Formato de archivo invalido. Usa imagen o video.");

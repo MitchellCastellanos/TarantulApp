@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
-import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
+
+const STEP_HANDLE = 'handle'
+const STEP_PRIVACY = 'privacy'
 
 export default function HandleSetupPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user, updateUserProfile } = useAuth()
+  const [step, setStep] = useState(STEP_HANDLE)
   const [rawHandle, setRawHandle] = useState(user?.publicHandle || '')
   const [status, setStatus] = useState({ checking: false, available: false, valid: false, normalized: '' })
+  const [privacyChoice, setPrivacyChoice] = useState('social')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -42,15 +48,23 @@ export default function HandleSetupPage() {
     return () => { cancelled = true }
   }, [normalized])
 
-  const canSave = status.valid && status.available && !status.checking && !saving
+  const canContinueHandle = status.valid && status.available && !status.checking && !saving
 
-  const submit = async (e) => {
+  const submitHandle = (e) => {
     e.preventDefault()
-    if (!canSave) return
+    if (!canContinueHandle) return
+    setErr('')
+    setStep(STEP_PRIVACY)
+  }
+
+  const submitPrivacy = async (e) => {
+    e.preventDefault()
+    if (saving) return
+    const social = privacyChoice === 'social'
     setSaving(true)
     setErr('')
     try {
-      const payload = await marketplaceService.saveMyProfile({
+      const payload =       await marketplaceService.saveMyProfile({
         displayName: user?.displayName || '',
         handle: status.normalized,
         bio: user?.bio || '',
@@ -62,13 +76,18 @@ export default function HandleSetupPage() {
         state: user?.profileState || '',
         city: user?.profileCity || '',
         searchVisible: true,
-        communityProfileVisibility: user?.communityProfileVisibility || 'preview_only',
+        communityProfileVisibility: social ? 'public_full' : 'preview_only',
       })
-      updateUserProfile({ publicHandle: payload?.handle || status.normalized })
+      updateUserProfile({
+        publicHandle: payload?.handle || status.normalized,
+        communityProfileVisibility: social ? 'public_full' : 'preview_only',
+        defaultTarantulaPublic: social,
+      })
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
+      queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
       navigate('/', { replace: true })
     } catch (e2) {
-      setErr(e2?.response?.data?.error || 'No se pudo guardar el @keeper.')
+      setErr(e2?.response?.data?.error || t('handleSetup.saveError'))
     } finally {
       setSaving(false)
     }
@@ -80,27 +99,89 @@ export default function HandleSetupPage() {
       <div className="container mt-4" style={{ maxWidth: 560 }}>
         <div className="card border-0 shadow-sm">
           <div className="card-body">
-            <h1 className="h5 mb-2">Elige tu @keeper</h1>
-            <p className="small text-muted mb-3">Necesitas un handle para participar en comunidad y aparecer en Spood.</p>
-            {err && <div className="alert alert-danger small py-2">{err}</div>}
-            <form onSubmit={submit}>
-              <input
-                className="form-control mb-2"
-                value={rawHandle}
-                onChange={(e) => setRawHandle(e.target.value)}
-                placeholder="@tu_handle"
-                autoFocus
-              />
-              <div className="small mb-3 text-muted">
-                {status.checking && 'Revisando disponibilidad...'}
-                {!status.checking && normalized && !status.valid && 'Ese handle no es valido.'}
-                {!status.checking && status.valid && !status.available && `@${status.normalized} no esta disponible.`}
-                {!status.checking && status.valid && status.available && `@${status.normalized} esta disponible.`}
-              </div>
-              <button type="submit" className="btn btn-dark btn-sm" disabled={!canSave}>
-                {saving ? 'Guardando...' : 'Continuar'}
-              </button>
-            </form>
+            {step === STEP_HANDLE ? (
+              <>
+                <h1 className="h5 mb-2">{t('handleSetup.title')}</h1>
+                <p className="small text-muted mb-3">{t('handleSetup.subtitle')}</p>
+                {err && <div className="alert alert-danger small py-2">{err}</div>}
+                <form onSubmit={submitHandle}>
+                  <input
+                    className="form-control mb-2"
+                    value={rawHandle}
+                    onChange={(e) => setRawHandle(e.target.value)}
+                    placeholder="@tu_handle"
+                    autoFocus
+                  />
+                  <div className="small mb-3 text-muted">
+                    {status.checking && t('handleSetup.checking')}
+                    {!status.checking && status.normalized && !status.valid && t('handleSetup.invalid')}
+                    {!status.checking && status.valid && !status.available && t('handleSetup.taken', { handle: status.normalized })}
+                    {!status.checking && status.valid && status.available && t('handleSetup.available', { handle: status.normalized })}
+                  </div>
+                  <button type="submit" className="btn btn-dark btn-sm" disabled={!canContinueHandle}>
+                    {t('handleSetup.continue')}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <h1 className="h5 mb-2">{t('handleSetup.privacyTitle')}</h1>
+                <p className="small text-muted mb-3">
+                  {t('handleSetup.privacySubtitle', { handle: status.normalized })}
+                </p>
+                {err && <div className="alert alert-danger small py-2">{err}</div>}
+                <form onSubmit={submitPrivacy}>
+                  <div className="d-flex flex-column gap-2 mb-3">
+                    <label
+                      htmlFor="privacy-social"
+                      className={`border rounded-3 p-3 d-flex gap-2 ${privacyChoice === 'social' ? 'border-dark bg-light' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <input
+                        id="privacy-social"
+                        type="radio"
+                        name="privacy"
+                        value="social"
+                        checked={privacyChoice === 'social'}
+                        onChange={() => setPrivacyChoice('social')}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="fw-semibold d-block">{t('handleSetup.socialTitle')}</span>
+                        <span className="small text-muted">{t('handleSetup.socialBody')}</span>
+                      </span>
+                    </label>
+                    <label
+                      htmlFor="privacy-private"
+                      className={`border rounded-3 p-3 d-flex gap-2 ${privacyChoice === 'private' ? 'border-dark bg-light' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <input
+                        id="privacy-private"
+                        type="radio"
+                        name="privacy"
+                        value="private"
+                        checked={privacyChoice === 'private'}
+                        onChange={() => setPrivacyChoice('private')}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="fw-semibold d-block">{t('handleSetup.privateTitle')}</span>
+                        <span className="small text-muted">{t('handleSetup.privateBody')}</span>
+                      </span>
+                    </label>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setStep(STEP_HANDLE)} disabled={saving}>
+                      {t('common.back')}
+                    </button>
+                    <button type="submit" className="btn btn-dark btn-sm" disabled={saving}>
+                      {saving ? t('common.saving') : t('handleSetup.finish')}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,10 +1,19 @@
 # TarantulApp — Roadmap
 
-Última revisión: 2026-05-23 (Fases A–E cerradas en código; pendiente ops: Stripe live + Play real)
+Última revisión: 2026-05-23 (Fases A–E + **F comunidad/visibilidad** en código; pendiente ops: Stripe live + Play real)
 
 ---
 
 ## Ya está (hecho)
+
+### Fase F — Comunidad y visibilidad (Manus)
+
+- **V104** `users.default_tarantula_public`: nuevas tarántulas heredan preferencia del keeper.
+- **Batch visibility**: `PATCH /api/tarantulas/bulk-visibility` + sync al guardar perfil (`communityProfileVisibility`).
+- **Onboarding**: `HandleSetupPage` — paso de rol social vs keeper privado.
+- **Spotlight**: `GET /api/public/community/spotlight` + carrusel en Dashboard y Social Hub.
+- **Cuenta**: copy claro, confirmación al volver privado, stats públicas/total.
+- **Pulido post-Manus**: carrusel tipo historias (anillos), hint en alta de araña si colección pública, video mp4/webm en posts (multipart 40MB), tests spotlight.
 
 ### Producto marketplace y confianza (Fases A–E)
 

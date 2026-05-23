@@ -76,6 +76,10 @@ export default function AddTarantulaPage() {
   const [newKeeperMode, setNewKeeperMode] = useState(true)
   const tarantulaLimit = 6
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
+  const willDefaultPublic = !isEdit && (
+    user?.defaultTarantulaPublic === true
+    || (user?.communityProfileVisibility || 'preview_only') === 'public_full'
+  )
 
   useEffect(() => {
     return () => {
@@ -406,6 +410,12 @@ export default function AddTarantulaPage() {
             {isEdit ? t('tarantula.editTitle') : t('tarantula.newTitle')}
           </h5>
         </div>
+
+        {!isEdit && willDefaultPublic && (
+          <div className="alert alert-info small py-2 mb-3">
+            {t('tarantula.defaultPublicHint')}
+          </div>
+        )}
 
         {error && <div className="alert alert-danger small py-2">{error}</div>}
         {!isEdit && isFreePlan && (

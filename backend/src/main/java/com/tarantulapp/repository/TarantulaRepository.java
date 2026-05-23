@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -84,4 +85,20 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
 
     @Query("select t.purchaseDate, t.createdAt from Tarantula t where t.userId = :userId and t.deceasedAt is null")
     List<Object[]> findAlivePurchaseDateAndCreatedAt(@Param("userId") UUID userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Tarantula t SET t.isPublic = :isPublic WHERE t.userId = :userId")
+    int setVisibilityByUserId(@Param("userId") UUID userId, @Param("isPublic") boolean isPublic);
+
+    @EntityGraph(attributePaths = "species")
+    @Query("""
+            SELECT DISTINCT t FROM Tarantula t
+            WHERE t.isPublic = true
+              AND (
+                (t.profilePhoto IS NOT NULL AND LENGTH(TRIM(t.profilePhoto)) > 0)
+                OR EXISTS (SELECT 1 FROM Photo p WHERE p.tarantulaId = t.id)
+              )
+            ORDER BY t.createdAt DESC
+            """)
+    Page<Tarantula> findCommunitySpotlightCandidates(Pageable pageable);
 }

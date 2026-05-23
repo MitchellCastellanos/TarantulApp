@@ -78,6 +78,10 @@ public class User {
     @Column(name = "community_profile_visibility", nullable = false, length = 20)
     private String communityProfileVisibility = "preview_only";
 
+    /** When true, newly created tarantulas default to is_public=true for this keeper. */
+    @Column(name = "default_tarantula_public", nullable = false)
+    private Boolean defaultTarantulaPublic = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan;
@@ -178,6 +182,9 @@ public class User {
         if (communityProfileVisibility == null || communityProfileVisibility.isBlank()) {
             communityProfileVisibility = "preview_only";
         }
+        if (defaultTarantulaPublic == null) {
+            defaultTarantulaPublic = false;
+        }
         if (isAdmin == null) {
             isAdmin = false;
         }
@@ -248,6 +255,9 @@ public class User {
 
     public String getCommunityProfileVisibility() { return communityProfileVisibility; }
     public void setCommunityProfileVisibility(String communityProfileVisibility) { this.communityProfileVisibility = communityProfileVisibility; }
+
+    public Boolean getDefaultTarantulaPublic() { return defaultTarantulaPublic; }
+    public void setDefaultTarantulaPublic(Boolean defaultTarantulaPublic) { this.defaultTarantulaPublic = defaultTarantulaPublic; }
 
     public UserPlan getPlan() { return plan; }
     public void setPlan(UserPlan plan) { this.plan = plan; }

@@ -29,6 +29,9 @@ const communityService = {
   listLikes: (postId, limit = 40) =>
     publicApi.get(`/public/community/posts/${postId}/likes`, { params: { limit } }).then((r) => r.data),
 
+  spotlight: (limit = 12) =>
+    publicApi.get('/public/community/spotlight', { params: { limit } }).then((r) => r.data),
+
   deleteComment: (commentId) =>
     api.delete(`/community/comments/${commentId}`).then((r) => r.data),
 

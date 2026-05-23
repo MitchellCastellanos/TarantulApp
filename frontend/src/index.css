@@ -4797,3 +4797,43 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
     animation: none;
   }
 }
+
+/* Community spotlight — story rings */
+.ta-community-spotlight-scroll {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ta-spotlight-story-link {
+  scroll-snap-align: start;
+}
+
+.ta-spotlight-story-ring {
+  width: 76px;
+  height: 76px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ta-gold, #c9a227), #7c5cbf, #2ec4b6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.ta-spotlight-story-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bs-body-bg, #fff);
+  padding: 2px;
+}
+
+.ta-spotlight-story-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.ta-spotlight-story-caption {
+  max-width: 76px;
+}

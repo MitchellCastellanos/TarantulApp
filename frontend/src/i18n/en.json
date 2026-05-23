@@ -261,7 +261,27 @@
     "threadShareText": "Community post on TarantulApp™ — open in app or browser.",
     "postThreadTitle": "Post thread",
     "noCommentsYet": "No comments yet.",
-    "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing."
+    "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing.",
+    "spotlightTitle": "New in the community",
+    "spotlightSubtitle": "Recently shared public spiders from keepers like you.",
+    "spotlightStoryFallback": "keeper"
+  },
+  "handleSetup": {
+    "title": "Choose your @keeper",
+    "subtitle": "You need a handle for community and your public keeper profile.",
+    "checking": "Checking availability…",
+    "invalid": "That handle is not valid.",
+    "taken": "@{{handle}} is not available.",
+    "available": "@{{handle}} is available.",
+    "continue": "Continue",
+    "privacyTitle": "How do you want to show up?",
+    "privacySubtitle": "Pick a default for @{{handle}} — you can change this anytime in Account.",
+    "socialTitle": "Social explorer",
+    "socialBody": "Share your collection and connect with other keepers. New spiders start public.",
+    "privateTitle": "Private keeper",
+    "privateBody": "Use TarantulApp for your own logs. Profile stays limited; spiders stay private.",
+    "finish": "Finish setup",
+    "saveError": "Could not save your profile."
   },
   "sexIdCase": {
     "pageTitle": "Sex ID case",
@@ -1543,6 +1563,7 @@
     "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
     "deleteEvent": "Delete this record?",
     "newTitle": "New tarantula",
+    "defaultPublicHint": "Your collection is set to public — this spider will be visible on your keeper profile and in community discovery unless you change it later.",
     "editTitle": "Edit tarantula",
     "addFeeding": "🍽️ + Feeding",
     "addMolt": "+ Molt",
@@ -2879,7 +2900,12 @@
       "cityPlaceholder": "City",
       "avatarAlt": "Profile photo",
       "searchVisibleLabel": "Appear in public keeper search results",
-      "collectionPublicLabel": "Show my public collection on my keeper profile"
+      "collectionPublicLabel": "Public keeper profile and collection",
+      "collectionPublicHint": "Turns on your full keeper profile and sets every spider in your collection to public. New spiders follow this default until you change it here.",
+      "collectionPublicStats": "{{publicCount}} of {{totalCount}} spiders are public right now.",
+      "collectionPublicConfirmOff": "This will hide your keeper collection and mark all your spiders private. Continue?",
+      "collectionPublicSavedOn": "Profile and all {{count}} spiders are now public.",
+      "collectionPublicSavedOff": "Profile limited and all {{count}} spiders are now private."
     },
     "billing": {
       "planFree": "Free plan",

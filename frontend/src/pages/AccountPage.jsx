@@ -237,6 +237,16 @@ export default function AccountPage() {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
+    const wasCollectionPublic = (user?.communityProfileVisibility || 'preview_only') === 'public_full'
+    const willBeCollectionPublic = profileForm.collectionPublic === true
+    if (
+      wasCollectionPublic
+      && !willBeCollectionPublic
+      && tarantulas.some((tar) => tar?.isPublic)
+      && !window.confirm(t('account.profile.collectionPublicConfirmOff'))
+    ) {
+      return
+    }
     setProfileSaving(true)
     setProfileMessage('')
     try {
@@ -267,9 +277,19 @@ export default function AccountPage() {
         profileCity: profileForm.profileCity,
         searchVisible: profileForm.searchVisible,
         communityProfileVisibility: profileForm.collectionPublic ? 'public_full' : 'preview_only',
+        defaultTarantulaPublic: profileForm.collectionPublic,
       })
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
-      setProfileMessage(t('common.save'))
+      queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
+      queryClient.invalidateQueries({ queryKey: ['community', 'spotlight'] })
+      const visibilityChanged = wasCollectionPublic !== willBeCollectionPublic
+      setProfileMessage(
+        visibilityChanged
+          ? (willBeCollectionPublic
+            ? t('account.profile.collectionPublicSavedOn', { count: tarantulas.length })
+            : t('account.profile.collectionPublicSavedOff', { count: tarantulas.length }))
+          : t('common.save'),
+      )
     } catch (err) {
       setProfileMessage(err?.response?.data?.error || t('account.errors.generic'))
     } finally {
@@ -309,6 +329,7 @@ export default function AccountPage() {
 
   const isPro = plan === 'PRO'
   const publicSpiders = tarantulas.filter((x) => x?.isPublic && x?.shortId)
+  const publicSpiderCount = tarantulas.filter((x) => x?.isPublic).length
 
   const handlePortal = async () => {
     setPortalError('')
@@ -487,7 +508,7 @@ export default function AccountPage() {
                   </label>
                 </div>
               </div>
-              <div className="d-flex align-items-center gap-2 mt-2">
+              <div className="mt-2">
                 <div className="form-check m-0">
                   <input
                     id="account-collection-public"
@@ -500,10 +521,23 @@ export default function AccountPage() {
                     {t('account.profile.collectionPublicLabel')}
                   </label>
                 </div>
-                <button className="btn btn-sm btn-dark px-4" disabled={profileSaving}>
+                <p className="small text-muted mb-1 ms-4 ps-1">
+                  {t('account.profile.collectionPublicHint')}
+                </p>
+                {tarantulas.length > 0 && (
+                  <p className="small text-muted mb-2 ms-4 ps-1">
+                    {t('account.profile.collectionPublicStats', {
+                      publicCount: publicSpiderCount,
+                      totalCount: tarantulas.length,
+                    })}
+                  </p>
+                )}
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                <button type="submit" className="btn btn-sm btn-dark px-4" disabled={profileSaving}>
                   {profileSaving ? t('common.saving') : t('common.save')}
                 </button>
                 {profileMessage && <span className="small text-muted">{profileMessage}</span>}
+                </div>
               </div>
             </form>
           </section>

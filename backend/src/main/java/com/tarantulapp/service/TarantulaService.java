@@ -75,13 +75,14 @@ public class TarantulaService {
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
         enforceCreationLimit(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         Tarantula t = new Tarantula();
         t.setUserId(userId);
         t.setShortId(generateShortId());
+        t.setIsPublic(Boolean.TRUE.equals(user.getDefaultTarantulaPublic()));
         applyRequest(req, t);
         Tarantula saved = tarantulaRepository.save(t);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
@@ -197,6 +198,22 @@ public class TarantulaService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         return toResponse(saved, planAccessService.lockedTarantulaIds(user));
+    }
+
+    /**
+     * Sets visibility for every tarantula owned by the keeper and persists the default for new specimens.
+     */
+    public Map<String, Object> bulkSetVisibility(UUID userId, boolean isPublic) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        user.setDefaultTarantulaPublic(isPublic);
+        userRepository.save(user);
+        int updated = tarantulaRepository.setVisibilityByUserId(userId, isPublic);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("updatedCount", updated);
+        out.put("isPublic", isPublic);
+        out.put("defaultTarantulaPublic", isPublic);
+        return out;
     }
 
     public TarantulaResponse markDeceased(UUID id, UUID userId, DeceasedRequest req) {

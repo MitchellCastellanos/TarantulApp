@@ -1,6 +1,7 @@
 package com.tarantulapp.controller;
 
 import com.tarantulapp.service.ActivityPostService;
+import com.tarantulapp.service.CommunitySpotlightService;
 import com.tarantulapp.util.SecurityHelper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,11 +20,21 @@ import java.util.UUID;
 public class PublicCommunityController {
 
     private final ActivityPostService activityPostService;
+    private final CommunitySpotlightService communitySpotlightService;
     private final SecurityHelper securityHelper;
 
-    public PublicCommunityController(ActivityPostService activityPostService, SecurityHelper securityHelper) {
+    public PublicCommunityController(ActivityPostService activityPostService,
+                                     CommunitySpotlightService communitySpotlightService,
+                                     SecurityHelper securityHelper) {
         this.activityPostService = activityPostService;
+        this.communitySpotlightService = communitySpotlightService;
         this.securityHelper = securityHelper;
+    }
+
+    @GetMapping("/spotlight")
+    public ResponseEntity<Map<String, Object>> spotlight(
+            @RequestParam(defaultValue = "12") int limit) {
+        return ResponseEntity.ok(communitySpotlightService.spotlight(limit));
     }
 
     @GetMapping("/feed")

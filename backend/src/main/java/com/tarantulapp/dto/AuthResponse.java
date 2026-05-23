@@ -28,6 +28,7 @@ public class AuthResponse {
     private Integer qrPrintExports;
     private String profilePhoto;
     private String communityProfileVisibility;
+    private boolean defaultTarantulaPublic;
     private boolean admin;
     private boolean betaTester;
     private Instant betaAgreementAcceptedAt;
@@ -87,6 +88,8 @@ public class AuthResponse {
     public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
     public String getCommunityProfileVisibility() { return communityProfileVisibility; }
     public void setCommunityProfileVisibility(String communityProfileVisibility) { this.communityProfileVisibility = communityProfileVisibility; }
+    public boolean isDefaultTarantulaPublic() { return defaultTarantulaPublic; }
+    public void setDefaultTarantulaPublic(boolean defaultTarantulaPublic) { this.defaultTarantulaPublic = defaultTarantulaPublic; }
 
     public boolean isAdmin() { return admin; }
     public void setAdmin(boolean admin) { this.admin = admin; }

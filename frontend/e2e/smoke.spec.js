@@ -30,6 +30,13 @@ test.describe('Sprint 1 public routes', () => {
   })
 })
 
+test.describe('Phase F — community visibility (public)', () => {
+  test('community hub loads without auth redirect', async ({ page }) => {
+    await page.goto('/community')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+})
+
 test.describe('Static SEO assets', () => {
   test('robots.txt responds', async ({ request }) => {
     const res = await request.get('/robots.txt')

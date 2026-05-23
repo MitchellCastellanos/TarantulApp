@@ -16,6 +16,7 @@ import { downloadCollectionJson, importCollectionJsonFile } from '../utils/expor
 import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import DashboardKeeperAchievementsPanel from '../components/DashboardKeeperAchievementsPanel'
+import CommunitySpotlightCarousel from '../components/CommunitySpotlightCarousel'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import {
@@ -229,6 +230,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        <CommunitySpotlightCarousel className="ta-dashboard-spotlight" />
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div>

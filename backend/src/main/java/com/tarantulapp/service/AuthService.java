@@ -375,6 +375,7 @@ public class AuthService {
         r.setQrPrintExports(user.getQrPrintExports());
         r.setProfilePhoto(user.getProfilePhoto());
         r.setCommunityProfileVisibility(user.getCommunityProfileVisibility());
+        r.setDefaultTarantulaPublic(Boolean.TRUE.equals(user.getDefaultTarantulaPublic()));
         r.setAdmin(Boolean.TRUE.equals(user.getIsAdmin())
                 || adminAccessService.shouldBootstrapAdmin(user));
         r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));

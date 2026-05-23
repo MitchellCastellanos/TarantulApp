@@ -262,7 +262,27 @@
     "threadShareText": "Publication communauté TarantulApp™ — ouvrir dans l’app ou le navigateur.",
     "postThreadTitle": "Fil de publication",
     "noCommentsYet": "No comments yet.",
-    "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing."
+    "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing.",
+    "spotlightTitle": "Nouveautés communauté",
+    "spotlightSubtitle": "Araignées publiques récemment partagées par d'autres keepers.",
+    "spotlightStoryFallback": "keeper"
+  },
+  "handleSetup": {
+    "title": "Choisissez votre @keeper",
+    "subtitle": "Un handle est requis pour la communauté et votre profil public.",
+    "checking": "Vérification de la disponibilité…",
+    "invalid": "Ce handle n'est pas valide.",
+    "taken": "@{{handle}} n'est pas disponible.",
+    "available": "@{{handle}} est disponible.",
+    "continue": "Continuer",
+    "privacyTitle": "Comment voulez-vous apparaître ?",
+    "privacySubtitle": "Choix par défaut pour @{{handle}} — modifiable dans Compte.",
+    "socialTitle": "Explorateur social",
+    "socialBody": "Partagez votre collection et connectez-vous. Les nouvelles araignées seront publiques.",
+    "privateTitle": "Keeper privé",
+    "privateBody": "TarantulApp pour vos registres personnels. Profil limité ; araignées privées.",
+    "finish": "Terminer",
+    "saveError": "Impossible d'enregistrer le profil."
   },
   "sexIdCase": {
     "pageTitle": "Cas Sex ID",
@@ -1531,6 +1551,7 @@
     "deleteConfirm": "Supprimer \"{{name}}\" ? Cette action est irréversible.",
     "deleteEvent": "Supprimer cet enregistrement ?",
     "newTitle": "Nouvelle tarentule",
+    "defaultPublicHint": "Votre collection est publique — cette araignée sera visible sur votre profil keeper et dans la découverte communautaire, sauf changement ultérieur.",
     "editTitle": "Modifier la tarentule",
     "addFeeding": "🍽️ + Alimentation",
     "addMolt": "+ Mue",
@@ -2828,7 +2849,12 @@
       "cityPlaceholder": "Ville",
       "avatarAlt": "Photo de profil",
       "searchVisibleLabel": "Apparaître dans les résultats publics de recherche de keepers",
-      "collectionPublicLabel": "Afficher ma collection publique sur mon profil keeper"
+      "collectionPublicLabel": "Profil keeper et collection publics",
+      "collectionPublicHint": "Active votre profil complet et rend public chaque araignée de la collection. Les nouvelles suivent ce réglage jusqu'à changement ici.",
+      "collectionPublicStats": "{{publicCount}} sur {{totalCount}} araignées sont publiques.",
+      "collectionPublicConfirmOff": "Cela limitera votre profil et rendra toutes vos araignées privées. Continuer ?",
+      "collectionPublicSavedOn": "Profil et les {{count}} araignées sont maintenant publics.",
+      "collectionPublicSavedOff": "Profil limité et les {{count}} araignées sont maintenant privées."
     },
     "billing": {
       "planFree": "Plan gratuit",

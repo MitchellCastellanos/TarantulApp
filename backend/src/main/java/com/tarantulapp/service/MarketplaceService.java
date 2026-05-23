@@ -158,6 +158,7 @@ public class MarketplaceService {
                                                String storefrontShippingPolicy, String storefrontLagPolicy,
                                                java.util.List<String> shipsTo) {
         User profile = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        String previousVisibility = normalizeCommunityProfileVisibility(profile.getCommunityProfileVisibility());
         String normalizedHandle = normalizeHandle(handle);
         if (normalizedHandle != null
                 && userRepository.existsByPublicHandleIgnoreCaseAndIdNot(normalizedHandle, userId)) {
@@ -174,7 +175,15 @@ public class MarketplaceService {
         profile.setProfileState(cleanText(state, 80));
         profile.setProfileCity(cleanText(city, 80));
         profile.setSearchVisible(searchVisible == null ? Boolean.TRUE : searchVisible);
-        profile.setCommunityProfileVisibility(normalizeCommunityProfileVisibility(communityProfileVisibility));
+        String newVisibility = communityProfileVisibility == null
+                ? previousVisibility
+                : normalizeCommunityProfileVisibility(communityProfileVisibility);
+        profile.setCommunityProfileVisibility(newVisibility);
+        boolean collectionPublic = "public_full".equals(newVisibility);
+        profile.setDefaultTarantulaPublic(collectionPublic);
+        if (communityProfileVisibility != null && !newVisibility.equals(previousVisibility)) {
+            tarantulaRepository.setVisibilityByUserId(userId, collectionPublic);
+        }
         profile.setStorefrontName(cleanText(storefrontName, 120));
         profile.setStorefrontTagline(cleanText(storefrontTagline, 180));
         profile.setStorefrontShippingPolicy(cleanText(storefrontShippingPolicy, 1000));
@@ -1300,6 +1309,7 @@ public class MarketplaceService {
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
+        out.put("defaultTarantulaPublic", Boolean.TRUE.equals(p.getDefaultTarantulaPublic()));
         Map<String, Object> responseStats = computeResponseStats(p.getId());
         out.put("avgResponseHours", responseStats.get("avgResponseHours"));
         out.put("responseBadge", responseStats.get("responseBadge"));
