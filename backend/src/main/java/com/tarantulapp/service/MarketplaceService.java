@@ -88,6 +88,7 @@ public class MarketplaceService {
     private final ChatMessageRepository chatMessageRepository;
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
+    private final VendorBoostCreditService vendorBoostCreditService;
     private final KeeperRankCalculator keeperRankCalculator;
     private final SpeciesWatchService speciesWatchService;
     private final NotificationService notificationService;
@@ -122,6 +123,7 @@ public class MarketplaceService {
                               ChatMessageRepository chatMessageRepository,
                               FileStorageService fileStorageService,
                               BillingService billingService,
+                              VendorBoostCreditService vendorBoostCreditService,
                               KeeperRankCalculator keeperRankCalculator,
                               SpeciesWatchService speciesWatchService,
                               NotificationService notificationService) {
@@ -141,6 +143,7 @@ public class MarketplaceService {
         this.chatMessageRepository = chatMessageRepository;
         this.fileStorageService = fileStorageService;
         this.billingService = billingService;
+        this.vendorBoostCreditService = vendorBoostCreditService;
         this.keeperRankCalculator = keeperRankCalculator;
         this.speciesWatchService = speciesWatchService;
         this.notificationService = notificationService;
@@ -275,12 +278,21 @@ public class MarketplaceService {
         Map<String, Object> out = mapListing(listing);
         out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
         out.put("sellerProgram", sellerProgram);
-        if (requestListingBoost && billingService.isListingBoostCheckoutAvailable()) {
-            try {
-                String url = billingService.createListingBoostCheckoutSession(userId, seller.getEmail(), listing.getId());
-                out.put("boostCheckoutUrl", url);
-            } catch (Exception ignored) {
-                // Listing is still published; boost checkout can be retried later if we add that flow.
+        if (requestListingBoost) {
+            if (vendorBoostCreditService.consumeForListing(userId, listing.getId())) {
+                out = mapListing(marketplaceListingRepository.findById(listing.getId()).orElse(listing));
+                out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
+                out.put("sellerProgram", sellerProgram);
+                out.put("boostAppliedViaCredit", true);
+            } else if (billingService.isListingBoostCheckoutAvailable()) {
+                try {
+                    String url = billingService.createListingBoostCheckoutSession(userId, seller.getEmail(), listing.getId());
+                    out.put("boostCheckoutUrl", url);
+                } catch (Exception ignored) {
+                    // Listing is still published; boost checkout can be retried later if we add that flow.
+                }
+            } else {
+                throw new IllegalArgumentException("No tienes créditos de boost disponibles y el checkout no está configurado.");
             }
         }
         return out;
@@ -1186,6 +1198,7 @@ public class MarketplaceService {
         out.put("proPlan", seller != null && UserPlan.PRO.equals(seller.getPlan()));
         out.put("tradeCertificationRequired", tradeCertificationRequired);
         out.put("allowedListingCategories", allowedListingCategoriesForTier(tier));
+        out.put("vendorBoostCreditsAvailable", vendorBoostCreditService.countAvailable(seller != null ? seller.getId() : null));
         return out;
     }
 

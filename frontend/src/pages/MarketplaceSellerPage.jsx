@@ -64,6 +64,7 @@ export default function MarketplaceSellerPage() {
     proPlan: false,
     tradeCertificationRequired: false,
     allowedListingCategories: COMMUNITY_LISTING_CATEGORIES,
+    vendorBoostCreditsAvailable: 0,
   })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
@@ -145,6 +146,7 @@ export default function MarketplaceSellerPage() {
       allowedListingCategories: Array.isArray(profile?.sellerProgram?.allowedListingCategories)
         ? profile.sellerProgram.allowedListingCategories
         : COMMUNITY_LISTING_CATEGORIES,
+      vendorBoostCreditsAvailable: Number(profile?.sellerProgram?.vendorBoostCreditsAvailable || 0),
     })
   }, [user])
 
@@ -159,6 +161,10 @@ export default function MarketplaceSellerPage() {
       .then((d) => setListingBoostAvailable(!!d?.available))
       .catch(() => setListingBoostAvailable(false))
   }, [])
+
+  const vendorBoostCredits = Number(sellerProgram.vendorBoostCreditsAvailable || 0)
+  const boostCheckoutAvailable = listingBoostAvailable
+  const boostOfferAvailable = boostCheckoutAvailable || vendorBoostCredits > 0
 
   const listingStates = STATES_BY_COUNTRY[listingForm.country || 'Mexico'] || []
   const listingCities = CITIES_BY_STATE[listingForm.state] || []
@@ -214,7 +220,9 @@ export default function MarketplaceSellerPage() {
       setListingForm(EMPTY_LISTING_FORM)
       await loadMine()
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
-      setMessage(t('marketplace.createdOk'))
+      setMessage(
+        data?.boostAppliedViaCredit ? t('marketplace.listingBoostAppliedViaCredit') : t('marketplace.createdOk')
+      )
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     } finally {
@@ -375,6 +383,11 @@ export default function MarketplaceSellerPage() {
                     ? t('marketplace.proBenefitsLive')
                     : t('marketplace.communityLimitHint')}
               </div>
+              {vendorBoostCredits > 0 && (
+                <div className="small mt-2 fw-semibold" style={{ color: 'var(--ta-purple)' }}>
+                  {t('marketplace.vendorBoostCreditsBalance', { count: vendorBoostCredits })}
+                </div>
+              )}
               {!sellerProgram.reviewedVendor && (
                 <div className="mt-2">
                   <button
@@ -680,7 +693,7 @@ export default function MarketplaceSellerPage() {
                     </div>
                   </div>
                   )}
-                  {listingBoostAvailable && sellerProgram.canRequestBoost && (
+                  {boostOfferAvailable && sellerProgram.canRequestBoost && (
                     <div className="form-check mb-2 p-2 rounded" style={{ background: 'rgba(0,0,0,0.08)' }}>
                       <input
                         className="form-check-input"
@@ -690,12 +703,18 @@ export default function MarketplaceSellerPage() {
                         onChange={(e) => setListingForm((f) => ({ ...f, requestBoost: e.target.checked }))}
                       />
                       <label className="form-check-label" htmlFor="seller-listing-request-boost" style={{ cursor: 'pointer' }}>
-                        {t('marketplace.listingBoostLabel')}
-                        <span className="d-block small text-muted mt-1">{t('marketplace.listingBoostHint')}</span>
+                        {vendorBoostCredits > 0
+                          ? t('marketplace.listingBoostLabelCredit', { count: vendorBoostCredits })
+                          : t('marketplace.listingBoostLabel')}
+                        <span className="d-block small text-muted mt-1">
+                          {vendorBoostCredits > 0
+                            ? t('marketplace.listingBoostHintCredit')
+                            : t('marketplace.listingBoostHint')}
+                        </span>
                       </label>
                     </div>
                   )}
-                  {listingBoostAvailable && !sellerProgram.canRequestBoost && (
+                  {boostOfferAvailable && !sellerProgram.canRequestBoost && (
                     <div className="small text-muted mb-2">
                       {t('marketplace.boostLockedHint')}
                     </div>

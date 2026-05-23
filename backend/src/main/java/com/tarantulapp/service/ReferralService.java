@@ -38,6 +38,7 @@ public class ReferralService {
     private final ReferralRedemptionRepository referralRedemptionRepository;
     private final UserRepository userRepository;
     private final ProDayGrantService proDayGrantService;
+    private final VendorBoostCreditService vendorBoostCreditService;
     private final SecureRandom random = new SecureRandom();
 
     @Value("${app.referral.referee-bonus-days:3}")
@@ -49,22 +50,27 @@ public class ReferralService {
     public ReferralService(ReferralCodeRepository referralCodeRepository,
                            ReferralRedemptionRepository referralRedemptionRepository,
                            UserRepository userRepository,
-                           ProDayGrantService proDayGrantService) {
+                           ProDayGrantService proDayGrantService,
+                           VendorBoostCreditService vendorBoostCreditService) {
         this.referralCodeRepository = referralCodeRepository;
         this.referralRedemptionRepository = referralRedemptionRepository;
         this.userRepository = userRepository;
         this.proDayGrantService = proDayGrantService;
+        this.vendorBoostCreditService = vendorBoostCreditService;
     }
 
     /** Genera codigo si falta y devuelve datos para Cuenta / Comunidad. */
     @Transactional
     public Map<String, Object> getOrCreateReferralSummary(UUID userId) {
         ensureReferralCodeForUser(userId);
+        syncVendorReferralCodeFlag(userId);
         ReferralCode code = referralCodeRepository.findById(userId).orElseThrow();
         long invited = referralRedemptionRepository.countByReferrerUserId(userId);
         User self = userRepository.findById(userId).orElse(null);
         int mask = self != null && self.getReferralMilestoneMask() != null ? self.getReferralMilestoneMask() : 0;
         boolean founderKeeper = self != null && Boolean.TRUE.equals(self.getFounderKeeper());
+        boolean vendorCode = Boolean.TRUE.equals(code.getVendorCode());
+        long vendorBoostCreditsAvailable = vendorBoostCreditService.countAvailable(userId);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("code", code.getCode());
@@ -74,6 +80,8 @@ public class ReferralService {
         out.put("referrerBonusDays", referrerBonusDays);
         out.put("founderKeeper", founderKeeper);
         out.put("referralMilestoneMask", mask);
+        out.put("vendorCode", vendorCode);
+        out.put("vendorBoostCreditsAvailable", vendorBoostCreditsAvailable);
 
         List<Map<String, Object>> milestones = new ArrayList<>();
         Integer nextThreshold = null;
@@ -143,14 +151,41 @@ public class ReferralService {
         redemption.setReferrerUserId(referrerId);
         redemption.setRefereeUserId(newUserId);
         redemption.setCodeSnapshot(rcOpt.get().getCode());
-        referralRedemptionRepository.save(redemption);
+        redemption = referralRedemptionRepository.save(redemption);
 
         referee.setReferredByUserId(referrerId);
         userRepository.save(referee);
         proDayGrantService.recordGrant(referee, refereeBonusDays, ProDayGrantSource.REFERRAL_SIGNUP, null, null);
-        proDayGrantService.recordGrant(referrer, referrerBonusDays, ProDayGrantSource.REFERRAL_SIGNUP, null, null);
-        applyReferrerMilestoneBonuses(referrerId);
-        log.info("Referral applied referee={} referrer={}", newUserId, referrerId);
+        boolean vendorReferral = Boolean.TRUE.equals(rcOpt.get().getVendorCode());
+        if (vendorReferral) {
+            vendorBoostCreditService.grantFromVendorReferral(referrerId, redemption.getId());
+        } else {
+            proDayGrantService.recordGrant(referrer, referrerBonusDays, ProDayGrantSource.REFERRAL_SIGNUP, null, null);
+            applyReferrerMilestoneBonuses(referrerId);
+        }
+        log.info("Referral applied referee={} referrer={} vendorReferral={}", newUserId, referrerId, vendorReferral);
+    }
+
+    /** Keeps referral_codes.vendor_code aligned with verified vendor status. */
+    @Transactional
+    public void syncVendorReferralCodeFlag(UUID userId) {
+        if (userId == null || !referralCodeRepository.existsById(userId)) {
+            return;
+        }
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return;
+        }
+        boolean shouldBeVendor = Boolean.TRUE.equals(user.getVerifiedBreeder());
+        ReferralCode code = referralCodeRepository.findById(userId).orElse(null);
+        if (code == null) {
+            return;
+        }
+        boolean current = Boolean.TRUE.equals(code.getVendorCode());
+        if (current != shouldBeVendor) {
+            code.setVendorCode(shouldBeVendor);
+            referralCodeRepository.save(code);
+        }
     }
 
     /**

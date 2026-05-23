@@ -127,10 +127,29 @@ export default function ReferralGamificationCard({ referral, inviteLink, onCopyI
         </div>
 
         <p className="small mb-2" style={{ color: 'var(--ta-text)', lineHeight: 1.55 }}>
-          {t('social.inviteBonusLine', { referee: referral.refereeBonusDays, referrer: referral.referrerBonusDays })}
+          {referral.vendorCode
+            ? t('social.vendorInviteBonusLine', { referee: referral.refereeBonusDays })
+            : t('social.inviteBonusLine', { referee: referral.refereeBonusDays, referrer: referral.referrerBonusDays })}
         </p>
-        <p className="small text-muted mb-3">{t('social.referralLadderIntroShort')}</p>
+        {referral.vendorCode && (
+          <div
+            className="rounded-3 p-3 mb-3"
+            style={{ border: '1px solid rgba(212, 175, 55, 0.45)', background: 'rgba(212, 175, 55, 0.08)' }}
+          >
+            <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-gold)' }}>
+              {t('social.vendorReferralTitle')}
+            </div>
+            <p className="small mb-2 text-muted">{t('social.vendorReferralBlurb')}</p>
+            {Number(referral.vendorBoostCreditsAvailable) > 0 && (
+              <p className="small mb-0 fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+                {t('social.vendorBoostCreditsAvailable', { count: referral.vendorBoostCreditsAvailable })}
+              </p>
+            )}
+          </div>
+        )}
+        {!referral.vendorCode && <p className="small text-muted mb-3">{t('social.referralLadderIntroShort')}</p>}
 
+        {!referral.vendorCode && (
         <div className="d-flex flex-column gap-2 mb-3">
           {milestones.map((m) => {
             const st = tierStatus(m)
@@ -171,6 +190,7 @@ export default function ReferralGamificationCard({ referral, inviteLink, onCopyI
             )
           })}
         </div>
+        )}
 
         {referral.founderKeeper && (
           <p className="mb-3">

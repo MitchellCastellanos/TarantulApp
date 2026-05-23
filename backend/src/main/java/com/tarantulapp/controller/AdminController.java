@@ -28,6 +28,7 @@ import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.NewsletterService;
+import com.tarantulapp.service.ReferralService;
 import com.tarantulapp.service.TopVendorService;
 import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
@@ -91,6 +92,7 @@ public class AdminController {
     private final com.tarantulapp.repository.PartnerListingRepository partnerListingRepository;
     private final NewsletterService newsletterService;
     private final TopVendorService topVendorService;
+    private final ReferralService referralService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -128,7 +130,8 @@ public class AdminController {
                            ListingEventService listingEventService,
                            com.tarantulapp.repository.PartnerListingRepository partnerListingRepository,
                            NewsletterService newsletterService,
-                           TopVendorService topVendorService) {
+                           TopVendorService topVendorService,
+                           ReferralService referralService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -154,6 +157,7 @@ public class AdminController {
         this.partnerListingRepository = partnerListingRepository;
         this.newsletterService = newsletterService;
         this.topVendorService = topVendorService;
+        this.referralService = referralService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -509,6 +513,8 @@ public class AdminController {
         if (verified) {
             newsletterService.ensureSubscribedOnVerified(user.getId());
         }
+        referralService.ensureReferralCodeForUser(user.getId());
+        referralService.syncVendorReferralCodeFlag(user.getId());
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));

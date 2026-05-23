@@ -23,6 +23,9 @@ public class ReferralCode {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "vendor_code", nullable = false)
+    private Boolean vendorCode = false;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
@@ -36,4 +39,7 @@ public class ReferralCode {
     public void setCode(String code) { this.code = code; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Boolean getVendorCode() { return vendorCode; }
+    public void setVendorCode(Boolean vendorCode) { this.vendorCode = vendorCode; }
 }

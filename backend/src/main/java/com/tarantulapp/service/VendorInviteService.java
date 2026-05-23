@@ -24,16 +24,19 @@ public class VendorInviteService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final NewsletterService newsletterService;
+    private final ReferralService referralService;
 
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
     public VendorInviteService(UserRepository userRepository,
                                EmailService emailService,
-                               NewsletterService newsletterService) {
+                               NewsletterService newsletterService,
+                               ReferralService referralService) {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.newsletterService = newsletterService;
+        this.referralService = referralService;
     }
 
     @Transactional
@@ -144,6 +147,8 @@ public class VendorInviteService {
         invited.setVendorInviteExpiresAt(null);
         userRepository.save(invited);
         newsletterService.ensureSubscribedOnVerified(invited.getId());
+        referralService.ensureReferralCodeForUser(invited.getId());
+        referralService.syncVendorReferralCodeFlag(invited.getId());
         return invited;
     }
 
