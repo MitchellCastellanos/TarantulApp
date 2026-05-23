@@ -770,6 +770,7 @@
     "categoryNavAria": "Catégories du marketplace",
     "categoryNavHint": "Parcourir par catégorie — onglets pour mygales, nourriture vivante, terrariums, fournitures, etc.",
     "category": {
+      "all": "Tous",
       "tarantulas": "Tarentules",
       "breeding_projects": "Projets d’élevage",
       "live_food": "Nourriture vivante",

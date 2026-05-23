@@ -449,6 +449,7 @@ public class MarketplaceService {
             throw new NotFoundException("Partner no disponible");
         }
         final String categoryNorm = listingCategory == null || listingCategory.isBlank()
+                || "all".equalsIgnoreCase(listingCategory.trim())
                 ? null
                 : MarketplaceListingCategories.normalizeOrDefault(listingCategory);
         final String queryNorm = normalizeFilter(q);

@@ -11,6 +11,7 @@ import { addPartnerCartLine } from '../utils/partnerCart'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { usePageSeo } from '../hooks/usePageSeo'
 
+const ALL_CATEGORY = 'all'
 const CATEGORIES = [
   'tarantulas',
   'breeding_projects',
@@ -19,7 +20,12 @@ const CATEGORIES = [
   'terrariums',
   'supplies',
 ]
-const DEFAULT_CATEGORY = 'tarantulas'
+const NAV_CATEGORIES = [ALL_CATEGORY, ...CATEGORIES]
+
+function resolveListingCategory(raw) {
+  if (!raw || raw === ALL_CATEGORY) return ALL_CATEGORY
+  return CATEGORIES.includes(raw) ? raw : ALL_CATEGORY
+}
 
 export default function PartnerStorefrontPage() {
   const { slug } = useParams()
@@ -32,14 +38,11 @@ export default function PartnerStorefrontPage() {
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [catalogTotal, setCatalogTotal] = useState(0)
-  const [categoryEngaged, setCategoryEngaged] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [sortMode, setSortMode] = useState('newest')
   const [message, setMessage] = useState('')
 
-  const listingCategory = CATEGORIES.includes(searchParams.get('category') || '')
-    ? searchParams.get('category')
-    : DEFAULT_CATEGORY
+  const listingCategory = resolveListingCategory(searchParams.get('category'))
   const query = searchParams.get('q') || ''
   const promotedOnly = searchParams.get('promoted') === '1'
 
@@ -65,7 +68,7 @@ export default function PartnerStorefrontPage() {
     try {
       const data = await marketplaceService.getPartnerCatalog({
         vendorSlug: slug.trim(),
-        listingCategory,
+        listingCategory: listingCategory === ALL_CATEGORY ? undefined : listingCategory,
         q: query.trim() || undefined,
         promotedOnly: promotedOnly ? true : undefined,
       })
@@ -90,10 +93,10 @@ export default function PartnerStorefrontPage() {
   }, [loadCatalog])
 
   const setCategory = (cat) => {
-    if (!CATEGORIES.includes(cat)) return
-    setCategoryEngaged(true)
+    if (!NAV_CATEGORIES.includes(cat)) return
     const next = new URLSearchParams(searchParams)
-    next.set('category', cat)
+    if (cat === ALL_CATEGORY) next.delete('category')
+    else next.set('category', cat)
     setSearchParams(next, { replace: true })
   }
 
@@ -134,7 +137,7 @@ export default function PartnerStorefrontPage() {
     return l?.badgeLabel || t('marketplace.certifiedPartnerBadge')
   }
 
-  const hasActiveFilters = categoryEngaged || Boolean(query.trim()) || promotedOnly
+  const hasActiveFilters = listingCategory !== ALL_CATEGORY || Boolean(query.trim()) || promotedOnly
   const heroCount = hasActiveFilters ? total : catalogTotal
   const heroCountKey = hasActiveFilters
     ? 'marketplace.partnerStorefrontCategoryCount'
@@ -226,7 +229,7 @@ export default function PartnerStorefrontPage() {
             <div className="card border-0 shadow-sm ta-premium-pane mb-3">
               <div className="card-body p-3">
                 <nav className="ta-marketplace-category-nav mb-3" aria-label={t('marketplace.categoryNavAria')}>
-                  {CATEGORIES.map((cat) => (
+                  {NAV_CATEGORIES.map((cat) => (
                     <button
                       key={cat}
                       type="button"

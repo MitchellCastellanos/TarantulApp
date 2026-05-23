@@ -763,6 +763,7 @@
     "categoryNavAria": "Marketplace categories",
     "categoryNavHint": "Browse by category — tap a tab for tarantulas, feeders, terrariums, supplies, and more.",
     "category": {
+      "all": "All",
       "tarantulas": "Tarantulas",
       "breeding_projects": "Breeding projects",
       "live_food": "Live food",

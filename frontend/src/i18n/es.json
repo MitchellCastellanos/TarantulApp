@@ -770,6 +770,7 @@
     "categoryNavAria": "Categorías del marketplace",
     "categoryNavHint": "Explora por categoría — usa las pestañas para tarántulas, alimento vivo, terrarios, insumos y más.",
     "category": {
+      "all": "Todos",
       "tarantulas": "Tarántulas",
       "breeding_projects": "Proyectos de cría",
       "live_food": "Comida viva",
