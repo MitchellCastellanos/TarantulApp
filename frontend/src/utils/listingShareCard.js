@@ -289,7 +289,7 @@ export async function buildListingSharePngDataUrl({
     const visitText = t('share.listing.visitStoreLine', {
       handle: `@${cleanHandle}`,
       brand: BRAND_WITH_TM,
-      defaultValue: `Visita @${cleanHandle} en ${BRAND_WITH_TM}`,
+      defaultValue: `Visit @${cleanHandle} on ${BRAND_WITH_TM}`,
     })
     const visitLines = wrapLines(ctx, visitText, contentLeftW, 2)
     for (const line of visitLines) {
