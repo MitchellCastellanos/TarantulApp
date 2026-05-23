@@ -9,5 +9,6 @@ public record SpeciesSeoSnapshotDTO(
         long activeListingCount,
         List<Map<String, Object>> recentListings,
         long communityMoltCount,
-        Instant lastCommunityMoltAt
+        Instant lastCommunityMoltAt,
+        List<Map<String, Object>> tradeNotes
 ) {}

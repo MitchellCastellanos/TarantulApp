@@ -1,0 +1,13 @@
+{
+  "marketplace": {
+    "priceMin": "Prix min (CAD)",
+    "priceMax": "Prix max (CAD)",
+    "shipsToFilterLabel": "Expédition vers",
+    "communityDisclaimer": "TarantulApp met en relation acheteurs et vendeurs; chaque transaction demeure entre les parties. Vérifiez les exigences fédérales et provinciales avant d'acheter ou de vendre."
+  },
+  "discover": {
+    "tradeNoteTitle": "Commerce et expédition (Canada)",
+    "tradeNoteTitleForCountry": "Commerce et expédition — {{country}}",
+    "tradeNoteDisclaimer": "Renseignements généraux seulement, pas un avis juridique. Confirmez CITES et les règles provinciales avant tout déplacement."
+  }
+}

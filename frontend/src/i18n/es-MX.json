@@ -1,0 +1,15 @@
+{
+  "marketplace": {
+    "nearMe": "Cerca de mí",
+    "shipsToFilterLabel": "Filtrar envíos a",
+    "shipsToFilterTo": "Envía a {{country}}",
+    "listingDetailRegulatoryRefs": "Referencias UMA / CITES",
+    "regulatoryPermitRefsPlaceholder": "UMA, permiso SEMARNAT, CITES de importación/exportación…",
+    "communityDisclaimer": "TarantulApp conecta compradores y vendedores; cada transacción es responsabilidad de las partes. Verifica permisos federales y estatales antes de comprar o vender."
+  },
+  "discover": {
+    "tradeNoteTitle": "Comercio y envíos (México)",
+    "tradeNoteTitleForCountry": "Comercio y envíos — {{country}}",
+    "tradeNoteDisclaimer": "Orientación general, no asesoría legal. Confirma UMA, SEMARNAT y CITES vigentes antes de mover ejemplares."
+  }
+}

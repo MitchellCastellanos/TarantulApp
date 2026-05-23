@@ -13,6 +13,7 @@ import SpeciesReferenceImage from '../components/SpeciesReferenceImage'
 import { hasKeeperGradeSignal } from '../utils/speciesKeeperSignal'
 import { formatListingPrice } from '../utils/listingShareTemplates'
 import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
+import SpeciesTradeNoteBlock from '../components/SpeciesTradeNoteBlock'
 
 function DiscoverSpeciesDetailSeo({ view, speciesId, seoSnapshot }) {
   const { t, i18n } = useTranslation()
@@ -239,6 +240,14 @@ export default function DiscoverSpeciesDetailPage() {
         <p className="small mt-3" style={{ color: 'var(--ta-text-muted)' }}>
           {t('discover.dataDisclaimer')}
         </p>
+
+        {(seoSnapshot?.tradeNotes?.length ?? 0) > 0 && (
+          <div className="mt-4 d-flex flex-column gap-3">
+            {seoSnapshot.tradeNotes.map((note) => (
+              <SpeciesTradeNoteBlock key={note.country} note={note} countryLabel={note.country} />
+            ))}
+          </div>
+        )}
 
         <section className="mt-4" aria-labelledby="species-listings-heading">
           <h2 id="species-listings-heading" className="h6 fw-semibold" style={{ color: 'var(--ta-parchment)' }}>

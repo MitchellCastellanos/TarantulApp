@@ -6,6 +6,7 @@ import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
 import com.tarantulapp.service.PartnerListingImageProxyService;
+import com.tarantulapp.service.SpeciesTradeNoteService;
 import com.tarantulapp.service.TopVendorService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -34,6 +35,7 @@ public class PublicMarketplaceController {
     private final PartnerListingImageProxyService partnerListingImageProxyService;
     private final ListingEventService listingEventService;
     private final TopVendorService topVendorService;
+    private final SpeciesTradeNoteService speciesTradeNoteService;
     private final boolean futurePaidStorefrontEnabled;
     private final boolean futurePaidBadgesEnabled;
     private final boolean strategicPartnerBootstrapMode;
@@ -56,6 +58,7 @@ public class PublicMarketplaceController {
                                        PartnerListingImageProxyService partnerListingImageProxyService,
                                        ListingEventService listingEventService,
                                        TopVendorService topVendorService,
+                                       SpeciesTradeNoteService speciesTradeNoteService,
                                        @Value("${app.marketplace.future-paid-storefront-enabled:false}") boolean futurePaidStorefrontEnabled,
                                        @Value("${app.marketplace.future-paid-badges-enabled:false}") boolean futurePaidBadgesEnabled,
                                        @Value("${app.marketplace.strategic-bootstrap-mode:true}") boolean strategicPartnerBootstrapMode) {
@@ -65,6 +68,7 @@ public class PublicMarketplaceController {
         this.partnerListingImageProxyService = partnerListingImageProxyService;
         this.listingEventService = listingEventService;
         this.topVendorService = topVendorService;
+        this.speciesTradeNoteService = speciesTradeNoteService;
         this.futurePaidStorefrontEnabled = futurePaidStorefrontEnabled;
         this.futurePaidBadgesEnabled = futurePaidBadgesEnabled;
         this.strategicPartnerBootstrapMode = strategicPartnerBootstrapMode;
@@ -84,7 +88,9 @@ public class PublicMarketplaceController {
 
     @GetMapping("/listings/{listingId}")
     public ResponseEntity<Map<String, Object>> publicListingDetail(@PathVariable UUID listingId) {
-        return ResponseEntity.ok(marketplaceService.publicListingDetail(listingId));
+        Map<String, Object> detail = marketplaceService.publicListingDetail(listingId);
+        speciesTradeNoteService.enrichListingDetail(detail);
+        return ResponseEntity.ok(detail);
     }
 
     @GetMapping("/listings")

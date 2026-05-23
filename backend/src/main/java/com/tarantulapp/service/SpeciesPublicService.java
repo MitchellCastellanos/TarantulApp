@@ -26,15 +26,18 @@ public class SpeciesPublicService {
     private final SpeciesRepository speciesRepository;
     private final MarketplaceService marketplaceService;
     private final MoltLogRepository moltLogRepository;
+    private final SpeciesTradeNoteService speciesTradeNoteService;
 
     public SpeciesPublicService(DiscoverCatalogService discoverCatalogService,
                                 SpeciesRepository speciesRepository,
                                 MarketplaceService marketplaceService,
-                                MoltLogRepository moltLogRepository) {
+                                MoltLogRepository moltLogRepository,
+                                SpeciesTradeNoteService speciesTradeNoteService) {
         this.discoverCatalogService = discoverCatalogService;
         this.speciesRepository = speciesRepository;
         this.marketplaceService = marketplaceService;
         this.moltLogRepository = moltLogRepository;
+        this.speciesTradeNoteService = speciesTradeNoteService;
     }
 
     @Transactional(readOnly = true)
@@ -64,7 +67,8 @@ public class SpeciesPublicService {
                 listings.activeListingCount(),
                 listings.recentListings(),
                 moltCount,
-                lastMolt
+                lastMolt,
+                speciesTradeNoteService.listForSpecies(speciesId)
         );
     }
 

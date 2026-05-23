@@ -21,6 +21,7 @@ import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import ListingShareKit from '../components/ListingShareKit'
+import SpeciesTradeNoteBlock from '../components/SpeciesTradeNoteBlock'
 import { trackListingEvent } from '../utils/listingEventTracker'
 import { formatListingPrice } from '../utils/formatPrice'
 
@@ -365,6 +366,14 @@ export default function MarketplaceListingDetailPage() {
                       <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
                         {listing.regulatoryPermitRefs}
                       </p>
+                    </div>
+                  ) : null}
+                  {listing.speciesTradeNote ? (
+                    <div className="mt-3">
+                      <SpeciesTradeNoteBlock
+                        note={listing.speciesTradeNote}
+                        countryLabel={listing.country}
+                      />
                     </div>
                   ) : null}
                 </section>

@@ -90,6 +90,9 @@ const adminService = {
     api.get('/admin/marketing/top-vendors/live', { params: { limit } }).then((r) => r.data),
   topVendorHistory: (month) =>
     api.get('/admin/marketing/top-vendors/history', month ? { params: { month } } : {}).then((r) => r.data),
+  listSpeciesTradeNotes: () => api.get('/admin/species-trade-notes').then((r) => r.data),
+  upsertSpeciesTradeNote: (payload) => api.put('/admin/species-trade-notes', payload).then((r) => r.data),
+  deleteSpeciesTradeNote: (id) => api.delete(`/admin/species-trade-notes/${id}`),
 }
 
 export default adminService

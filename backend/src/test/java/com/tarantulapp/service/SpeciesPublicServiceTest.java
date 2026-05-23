@@ -32,13 +32,16 @@ class SpeciesPublicServiceTest {
     private MarketplaceService marketplaceService;
     @Mock
     private MoltLogRepository moltLogRepository;
+    @Mock
+    private SpeciesTradeNoteService speciesTradeNoteService;
 
     private SpeciesPublicService service;
 
     @BeforeEach
     void setUp() {
         service = new SpeciesPublicService(
-                discoverCatalogService, speciesRepository, marketplaceService, moltLogRepository);
+                discoverCatalogService, speciesRepository, marketplaceService, moltLogRepository,
+                speciesTradeNoteService);
     }
 
     @Test
@@ -55,6 +58,7 @@ class SpeciesPublicServiceTest {
                 ));
         when(moltLogRepository.aggregateCommunityMoltsBySpeciesId(1))
                 .thenReturn(new Object[]{2L, Instant.parse("2025-01-15T12:00:00Z")});
+        when(speciesTradeNoteService.listForSpecies(1)).thenReturn(List.of());
 
         SpeciesSeoSnapshotDTO snap = service.getSeoSnapshot("1");
 
@@ -78,6 +82,7 @@ class SpeciesPublicServiceTest {
                 .thenReturn(new MarketplaceService.SpeciesMarketplaceSeoSection(0, List.of()));
         when(moltLogRepository.aggregateCommunityMoltsBySpeciesId(42))
                 .thenReturn(new Object[]{0L, null});
+        when(speciesTradeNoteService.listForSpecies(42)).thenReturn(List.of());
 
         SpeciesSeoSnapshotDTO snap = service.getSeoSnapshot("avicularia-avicularia");
         assertEquals(42, snap.species().getId());
