@@ -218,25 +218,32 @@ export async function buildListingSharePngDataUrl({
   ctx.fillText(BRAND_WITH_TM, chipCursorX, chipY + chipLogoSize / 2)
   ctx.textBaseline = 'top'
 
-  // Reserve space on the right for the two QR codes.
-  const qrSize = 144
-  const qrGap = 24
-  const qrPlatePad = 12
-  const qrAreaRight = W - pad
-  const qr2X = qrAreaRight - qrSize
-  const qr1X = qr2X - qrGap - qrSize
+  // Right column hosts both QRs stacked vertically — keeps the left side
+  // wide enough for a 2-line title without truncating long species names.
+  const qrSize = 116
+  const qrPlatePad = 10
+  const qrColX = W - pad - qrSize
   const qrLabelFont = 'bold 16px sans-serif'
   const qrLabelHeight = 18
-  const qrLabelGap = 10
-  // Anchor the QR strip to the panel bottom, with caption room below for the handle.
+  const qrLabelGap = 8
+  const qrIntraGap = 28
   const qrCaptionGap = 8
-  const qrCaptionHeight = 18
-  const qrBottomPad = 24
-  const qrTopY = panelY + panelH - qrBottomPad - qrCaptionHeight - qrCaptionGap - qrSize
-  const qrLabelY = qrTopY - qrLabelGap - qrLabelHeight
+  const qrCaptionHeight = 16
+  const qrStackHeight =
+    qrLabelHeight + qrLabelGap + qrSize +
+    qrIntraGap +
+    qrLabelHeight + qrLabelGap + qrSize +
+    qrCaptionGap + qrCaptionHeight
+  // Center the stack vertically inside the panel.
+  const qrStackTop = panelY + Math.max(56, Math.round((panelH - qrStackHeight) / 2))
+  const qr1LabelY = qrStackTop
+  const qr1Y = qr1LabelY + qrLabelHeight + qrLabelGap
+  const qr2LabelY = qr1Y + qrSize + qrIntraGap
+  const qr2Y = qr2LabelY + qrLabelHeight + qrLabelGap
+  const qr2CaptionY = qr2Y + qrSize + qrCaptionGap
 
-  // Left column content width stops before the QR strip.
-  const contentLeftW = qr1X - pad - 24
+  // Left column content stops well before the QR strip.
+  const contentLeftW = qrColX - pad - 28
 
   // Title (max 2 lines).
   let cursorY = panelY + 108
@@ -305,19 +312,20 @@ export async function buildListingSharePngDataUrl({
   ctx.textBaseline = 'top'
   const buyLabel = t('share.listing.scanToBuy', { defaultValue: 'Scan to buy' }).toUpperCase()
   const storeLabel = t('share.listing.visitStore', { defaultValue: 'Visit store' }).toUpperCase()
+  const qrCenterX = qrColX + qrSize / 2
   if (profileUrl) {
-    ctx.fillText(buyLabel, qr1X + qrSize / 2, qrLabelY)
+    ctx.fillText(buyLabel, qrCenterX, qr1LabelY)
   }
   if (storeUrl) {
-    ctx.fillText(storeLabel, qr2X + qrSize / 2, qrLabelY)
+    ctx.fillText(storeLabel, qrCenterX, qr2LabelY)
   }
 
   // QR codes (branded with the center logo) on white plates.
   if (profileUrl) {
     try {
       const qrImg = await buildBrandedQrImage(profileUrl, qrSize)
-      drawQrPlate(ctx, qr1X, qrTopY, qrSize, qrPlatePad)
-      ctx.drawImage(qrImg, qr1X, qrTopY, qrSize, qrSize)
+      drawQrPlate(ctx, qrColX, qr1Y, qrSize, qrPlatePad)
+      ctx.drawImage(qrImg, qrColX, qr1Y, qrSize, qrSize)
     } catch {
       /* skip QR1 if generation fails */
     }
@@ -325,8 +333,8 @@ export async function buildListingSharePngDataUrl({
   if (storeUrl) {
     try {
       const qrImg = await buildBrandedQrImage(storeUrl, qrSize)
-      drawQrPlate(ctx, qr2X, qrTopY, qrSize, qrPlatePad)
-      ctx.drawImage(qrImg, qr2X, qrTopY, qrSize, qrSize)
+      drawQrPlate(ctx, qrColX, qr2Y, qrSize, qrPlatePad)
+      ctx.drawImage(qrImg, qrColX, qr2Y, qrSize, qrSize)
     } catch {
       /* skip QR2 if generation fails */
     }
@@ -335,9 +343,9 @@ export async function buildListingSharePngDataUrl({
   // Tiny caption with the partner handle under the store QR.
   if (storeUrl && cleanHandle) {
     ctx.fillStyle = 'rgba(245, 240, 230, 0.55)'
-    ctx.font = '15px sans-serif'
+    ctx.font = '14px sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(`@${cleanHandle}`, qr2X + qrSize / 2, qrTopY + qrSize + qrCaptionGap)
+    ctx.fillText(`@${cleanHandle}`, qrCenterX, qr2CaptionY)
   }
 
   try {
