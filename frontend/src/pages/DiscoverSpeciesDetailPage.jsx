@@ -11,8 +11,10 @@ import { BRAND_WITH_TM } from '../constants/brand'
 import { discoverHeroImageAbsoluteUrl, formatDiscoverSeoMetaLine } from '../utils/discoverSeo'
 import SpeciesReferenceImage from '../components/SpeciesReferenceImage'
 import { hasKeeperGradeSignal } from '../utils/speciesKeeperSignal'
+import { formatListingPrice } from '../utils/listingShareTemplates'
+import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 
-function DiscoverSpeciesDetailSeo({ view, speciesId }) {
+function DiscoverSpeciesDetailSeo({ view, speciesId, seoSnapshot }) {
   const { t, i18n } = useTranslation()
   const sp = view.species
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -41,6 +43,13 @@ function DiscoverSpeciesDetailSeo({ view, speciesId }) {
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     const pageUrl = canonicalHref || (base ? `${base}${path}` : path)
     const gbif = sp.gbifUsageKey != null ? `https://www.gbif.org/species/${sp.gbifUsageKey}` : null
+    const listings = seoSnapshot?.recentListings ?? []
+    const listingItems = listings.map((l, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      url: base ? `${base}/marketplace/listing/${l.id}` : `/marketplace/listing/${l.id}`,
+      name: l.title || sp.scientificName,
+    }))
     return {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
@@ -59,8 +68,18 @@ function DiscoverSpeciesDetailSeo({ view, speciesId }) {
         ...(sp.commonName ? { alternateName: sp.commonName } : {}),
         ...(gbif ? { sameAs: gbif } : {}),
       },
+      ...(listingItems.length > 0
+        ? {
+            mainEntity: {
+              '@type': 'ItemList',
+              name: sp.scientificName,
+              numberOfItems: seoSnapshot?.activeListingCount ?? listingItems.length,
+              itemListElement: listingItems,
+            },
+          }
+        : {}),
     }
-  }, [title, description, canonicalHref, path, sp, i18n.language])
+  }, [title, description, canonicalHref, path, sp, i18n.language, seoSnapshot])
 
   usePageSeo({
     title,
@@ -75,11 +94,12 @@ function DiscoverSpeciesDetailSeo({ view, speciesId }) {
 
 export default function DiscoverSpeciesDetailPage() {
   const { id } = useParams()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { token, user } = useAuth()
   const hasPro = user?.hasProFeatures === true
   const [view, setView] = useState(null)
+  const [seoSnapshot, setSeoSnapshot] = useState(null)
   const [err, setErr] = useState(false)
   const [clientPhoto, setClientPhoto] = useState(null)
   const [dbReferenceBroken, setDbReferenceBroken] = useState(false)
@@ -98,10 +118,12 @@ export default function DiscoverSpeciesDetailPage() {
       setErr(true)
       return
     }
+    setSeoSnapshot(null)
     speciesService
       .getDiscoverSpeciesView(sid)
       .then(setView)
       .catch(() => setErr(true))
+    speciesService.getSeoSnapshot(sid).then(setSeoSnapshot).catch(() => setSeoSnapshot(null))
   }, [id])
 
   // Wishlist status check — only for signed-in users on catalog species.
@@ -164,7 +186,7 @@ export default function DiscoverSpeciesDetailPage() {
 
   return (
     <PublicShell>
-      <DiscoverSpeciesDetailSeo view={view} speciesId={id} />
+      <DiscoverSpeciesDetailSeo view={view} speciesId={id} seoSnapshot={seoSnapshot} />
       <div className="mx-auto" style={{ maxWidth: 720 }}>
         <button
           type="button"
@@ -217,6 +239,91 @@ export default function DiscoverSpeciesDetailPage() {
         <p className="small mt-3" style={{ color: 'var(--ta-text-muted)' }}>
           {t('discover.dataDisclaimer')}
         </p>
+
+        <section className="mt-4" aria-labelledby="species-listings-heading">
+          <h2 id="species-listings-heading" className="h6 fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+            {t('discover.activeListingsForSpecies')}
+          </h2>
+          {seoSnapshot == null ? (
+            <p className="small text-muted mb-0">{t('common.loading')}</p>
+          ) : (seoSnapshot.recentListings?.length ?? 0) === 0 ? (
+            <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+              {t('discover.activeListingsEmpty')}
+            </p>
+          ) : (
+            <>
+              <p className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
+                {seoSnapshot.activeListingCount}
+              </p>
+              <div className="row g-3">
+                {seoSnapshot.recentListings.map((l) => (
+                  <div className="col-12 col-sm-6" key={l.id}>
+                    <Link
+                      to={`/marketplace/listing/${l.id}`}
+                      className="card h-100 text-decoration-none border-0 shadow-sm ta-premium-pane"
+                      style={{ color: 'inherit' }}
+                    >
+                      {(l.imageUrl || l.isPartner) && (
+                        <img
+                          src={
+                            l.isPartner
+                              ? partnerListingImageUrl(l.imageUrl) || '/spider-default.png'
+                              : l.imageUrl || '/spider-default.png'
+                          }
+                          alt=""
+                          className="card-img-top"
+                          style={{ maxHeight: 120, objectFit: 'cover' }}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = '/spider-default.png'
+                          }}
+                        />
+                      )}
+                      <div className="card-body py-2">
+                        <div className="fw-semibold small">{decodeListingTitle(l.title)}</div>
+                        <div className="small" style={{ color: 'var(--ta-gold)' }}>
+                          {formatListingPrice(l.priceAmount, l.currency, t)}
+                        </div>
+                        <div className="small text-muted">
+                          {[l.city, l.state, l.country].filter(Boolean).join(' · ')}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+              <Link to={`/marketplace?q=${encodeURIComponent(sp.scientificName)}`} className="btn btn-sm btn-link ps-0 mt-2">
+                {t('discover.marketplaceHubCta')}
+              </Link>
+            </>
+          )}
+        </section>
+
+        <section className="mt-4" aria-labelledby="species-molts-heading">
+          <h2 id="species-molts-heading" className="h6 fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
+            {t('discover.communityMoltsForSpecies')}
+          </h2>
+          {seoSnapshot == null ? (
+            <p className="small text-muted mb-0">{t('common.loading')}</p>
+          ) : (seoSnapshot.communityMoltCount ?? 0) === 0 ? (
+            <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+              {t('discover.communityMoltsNone')}
+            </p>
+          ) : (
+            <>
+              <p className="small mb-1" style={{ color: 'var(--ta-text)' }}>
+                {t('discover.communityMoltsCount', { count: seoSnapshot.communityMoltCount })}
+              </p>
+              {seoSnapshot.lastCommunityMoltAt && (
+                <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+                  {t('discover.communityMoltsLast', {
+                    date: new Date(seoSnapshot.lastCommunityMoltAt).toLocaleDateString(i18n.language),
+                  })}
+                </p>
+              )}
+            </>
+          )}
+        </section>
 
         <div className="mt-4 d-flex flex-column gap-2">
           {token ? (

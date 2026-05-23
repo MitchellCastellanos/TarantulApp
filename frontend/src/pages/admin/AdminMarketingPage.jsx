@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
-
-const STORAGE_KEY = 'tarantulapp_admin_marketing_v1'
+import marketplaceService from '../../services/marketplaceService'
 
 function downloadCsv(filename, rows) {
   if (!Array.isArray(rows) || rows.length === 0) return
@@ -71,13 +70,14 @@ export default function AdminMarketingPage() {
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(true)
   const [busyVendorId, setBusyVendorId] = useState(null)
-  const [draftNotes, setDraftNotes] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || ''
-    } catch {
-      return ''
-    }
-  })
+  const [newsletterTitle, setNewsletterTitle] = useState('')
+  const [listingQuery, setListingQuery] = useState('')
+  const [listingOptions, setListingOptions] = useState([])
+  const [selectedListingIds, setSelectedListingIds] = useState([])
+  const [newsletterDraft, setNewsletterDraft] = useState(null)
+  const [subscriberCount, setSubscriberCount] = useState(0)
+  const [newsletterBusy, setNewsletterBusy] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   const reload = () => {
     setLoading(true)
@@ -89,8 +89,9 @@ export default function AdminMarketingPage() {
       adminService.officialVendorLeads().catch(() => []),
       adminService.tapToContactRate().catch(() => null),
       adminService.listingCounts().catch(() => null),
+      adminService.newsletterSubscriberCount().catch(() => ({ count: 0 })),
     ])
-      .then(([s, vendorsPack, beta, partners, leads, rate, counts]) => {
+      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs]) => {
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -102,6 +103,7 @@ export default function AdminMarketingPage() {
         setOfficialLeads(Array.isArray(leads) ? leads : [])
         setTapRate(rate && typeof rate === 'object' ? rate : null)
         setListingCounts(counts && typeof counts === 'object' ? counts : null)
+        setSubscriberCount(typeof subs?.count === 'number' ? subs.count : 0)
       })
       .catch((err) => {
         const code = err?.response?.status
@@ -194,12 +196,60 @@ export default function AdminMarketingPage() {
     downloadCsv(`tarantulapp-partner-leads-${new Date().toISOString().slice(0, 10)}.csv`, rows)
   }
 
-  const saveNotes = (value) => {
-    setDraftNotes(value)
+  useEffect(() => {
+    const q = listingQuery.trim()
+    if (q.length < 2) {
+      setListingOptions([])
+      return
+    }
+    let cancelled = false
+    marketplaceService.listPublic({ q, status: 'active' }).then((rows) => {
+      if (!cancelled) setListingOptions(Array.isArray(rows) ? rows.slice(0, 20) : [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [listingQuery])
+
+  const toggleListingSelection = (id) => {
+    setSelectedListingIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const createNewsletterDraft = async () => {
+    if (selectedListingIds.length === 0) {
+      setError(t('admin.mkt.newsletterNeedListings'))
+      return
+    }
+    setNewsletterBusy(true)
+    setError('')
     try {
-      localStorage.setItem(STORAGE_KEY, value)
-    } catch {
-      /* ignore */
+      const draft = await adminService.createNewsletterDraft({
+        title: newsletterTitle || t('admin.mkt.dropsTitle'),
+        listingIds: selectedListingIds,
+      })
+      setNewsletterDraft(draft)
+      setSuccess(t('admin.mkt.newsletterDraftSaved'))
+    } catch (e) {
+      setError(e?.response?.data?.message || t('admin.mkt.newsletterDraftError'))
+    } finally {
+      setNewsletterBusy(false)
+    }
+  }
+
+  const sendNewsletter = async () => {
+    if (!newsletterDraft?.id) return
+    if (!window.confirm(t('admin.mkt.newsletterSendConfirm', { count: subscriberCount }))) return
+    setNewsletterBusy(true)
+    setError('')
+    try {
+      const result = await adminService.sendNewsletterDraft(newsletterDraft.id)
+      setSuccess(t('admin.mkt.newsletterSent', { sent: result?.sent ?? 0 }))
+      setNewsletterDraft(null)
+      setSelectedListingIds([])
+    } catch (e) {
+      setError(e?.response?.data?.message || t('admin.mkt.newsletterSendError'))
+    } finally {
+      setNewsletterBusy(false)
     }
   }
 
@@ -469,22 +519,72 @@ export default function AdminMarketingPage() {
 
       <div className="card p-3 mb-4">
         <h3 className="h6 mb-1">{t('admin.mkt.dropsTitle')}</h3>
-        <p className="small text-muted mb-2">{t('admin.mkt.dropsBlurb')}</p>
-        <textarea
-          className="form-control"
-          rows={6}
-          value={draftNotes}
-          onChange={(e) => saveNotes(e.target.value)}
-          placeholder={t('admin.mkt.dropsPlaceholder')}
+        <p className="small text-muted mb-2">
+          {t('admin.mkt.newsletterSubscribers', { count: subscriberCount })}
+        </p>
+        <input
+          className="form-control form-control-sm mb-2"
+          value={newsletterTitle}
+          onChange={(e) => setNewsletterTitle(e.target.value)}
+          placeholder={t('admin.mkt.newsletterTitlePlaceholder')}
         />
-        <p className="small text-muted mb-0 mt-2">{t('admin.mkt.dropsAutosave')}</p>
+        <input
+          className="form-control form-control-sm mb-2"
+          value={listingQuery}
+          onChange={(e) => setListingQuery(e.target.value)}
+          placeholder={t('admin.mkt.newsletterSearchPlaceholder')}
+        />
+        <div className="border rounded p-2 mb-2" style={{ maxHeight: 180, overflowY: 'auto' }}>
+          {listingOptions.map((l) => (
+            <label key={l.id} className="d-flex align-items-start gap-2 small mb-1">
+              <input
+                type="checkbox"
+                checked={selectedListingIds.includes(l.id)}
+                onChange={() => toggleListingSelection(l.id)}
+              />
+              <span>{l.title} {l.speciesName ? `· ${l.speciesName}` : ''}</span>
+            </label>
+          ))}
+        </div>
+        <div className="d-flex flex-wrap gap-2">
+          <button type="button" className="btn btn-sm btn-outline-dark" disabled={newsletterBusy} onClick={createNewsletterDraft}>
+            {newsletterBusy ? t('common.saving') : t('admin.mkt.newsletterPreview')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-dark"
+            disabled={newsletterBusy || !newsletterDraft?.id}
+            onClick={() => setShowPreview(true)}
+          >
+            {t('admin.mkt.newsletterOpenPreview')}
+          </button>
+          <button type="button" className="btn btn-sm btn-warning" disabled={newsletterBusy || !newsletterDraft?.id} onClick={sendNewsletter}>
+            {t('admin.mkt.newsletterSend')}
+          </button>
+        </div>
       </div>
+
+      {showPreview && newsletterDraft?.bodyHtml && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)' }} role="dialog">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title h6">{newsletterDraft.title}</h4>
+                <button type="button" className="btn-close" onClick={() => setShowPreview(false)} aria-label="Close" />
+              </div>
+              <div className="modal-body">
+                <p className="small text-muted">{t('admin.mkt.newsletterPreviewHint')}</p>
+                <div dangerouslySetInnerHTML={{ __html: newsletterDraft.bodyHtml }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card p-3">
         <h3 className="h6 mb-1">{t('admin.mkt.upcomingTitle')}</h3>
         <p className="small text-muted mb-2">{t('admin.mkt.upcomingBlurb')}</p>
         <ul className="small mb-0">
-          <li>{t('admin.mkt.upcomingNewsletter')}</li>
           <li>{t('admin.mkt.upcomingTopVendor')}</li>
           <li>{t('admin.mkt.upcomingWishlist')}</li>
         </ul>

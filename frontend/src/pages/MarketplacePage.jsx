@@ -13,9 +13,11 @@ import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
+import MarketplaceFilterBar from '../components/MarketplaceFilterBar'
 import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import { formatListingPrice } from '../utils/formatPrice'
+import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -78,7 +80,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
-  const [sortMode, setSortMode] = useState('trust')
+  const [sortMode, setSortMode] = useState('newest')
   const [myReputation, setMyReputation] = useState(null)
   const [filters, setFilters] = useState({
     country: '',
@@ -404,52 +406,10 @@ export default function MarketplacePage() {
     }
   }, [officialVendors])
 
-  const visibleListings = useMemo(() => {
-    const base = listings.filter((l) => l.status !== 'hidden')
-    const score = (row) => {
-      let s = 0
-      if (row.sellerVerifiedBreeder) s += 40
-      if (row.boosted) s += 12
-      if (row.source === 'partner' || row.isPartner) s += 18
-      if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
-      if (row.promoted) s += 14
-      if (row.imageUrl) s += 6
-      if (row.priceAmount != null) s += 4
-      const createdMs = row.createdAt ? Date.parse(row.createdAt) : 0
-      if (!Number.isNaN(createdMs) && createdMs > 0) {
-        const hours = (Date.now() - createdMs) / (1000 * 60 * 60)
-        s += Math.max(0, 20 - Math.min(20, hours / 12))
-      }
-      return s
-    }
-    const sorted = [...base]
-    if (sortMode === 'newest') {
-      sorted.sort((a, b) => {
-        const am = a.createdAt ? Date.parse(a.createdAt) : 0
-        const bm = b.createdAt ? Date.parse(b.createdAt) : 0
-        return bm - am
-      })
-      return sorted
-    }
-    if (sortMode === 'price_asc') {
-      sorted.sort((a, b) => {
-        const ap = Number(a.priceAmount ?? Number.POSITIVE_INFINITY)
-        const bp = Number(b.priceAmount ?? Number.POSITIVE_INFINITY)
-        return ap - bp
-      })
-      return sorted
-    }
-    if (sortMode === 'price_desc') {
-      sorted.sort((a, b) => {
-        const ap = Number(a.priceAmount ?? Number.NEGATIVE_INFINITY)
-        const bp = Number(b.priceAmount ?? Number.NEGATIVE_INFINITY)
-        return bp - ap
-      })
-      return sorted
-    }
-    sorted.sort((a, b) => score(b) - score(a))
-    return sorted
-  }, [listings, sortMode])
+  const visibleListings = useMemo(
+    () => sortMarketplaceListings(listings, sortMode),
+    [listings, sortMode],
+  )
   const sortedOfficialVendors = useMemo(() => {
     return [...officialVendors].sort((a, b) => {
       if (a.isFoundingPartner && !b.isFoundingPartner) return -1
@@ -513,8 +473,7 @@ export default function MarketplacePage() {
     }
   }
 
-  const availableStates = STATES_BY_COUNTRY[filters.country || myProfile.country || 'Mexico'] || []
-  const filterCities = CITIES_BY_STATE[filters.state] || []
+
   return (
     <div className="ta-premium-page">
       <Navbar />
@@ -547,6 +506,7 @@ export default function MarketplacePage() {
         </nav>
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
+
 
         <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
           <div className="card-body p-3 p-md-4">
@@ -683,170 +643,15 @@ export default function MarketplacePage() {
           </div>
         </section>
 
-        <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
-          <div className="card-body p-3">
-            <h2 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.searchCardTitle')}</h2>
-            <div className="d-flex gap-2 flex-wrap align-items-center">
-              <input
-                className="form-control form-control-sm flex-grow-1"
-                style={{ minWidth: 140 }}
-                placeholder={t('marketplace.searchPlaceholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 120 }}
-                value={filters.country}
-                onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-                <option value="">{t('marketplace.anyCountry')}</option>
-                {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 120 }}
-                value={filters.state}
-                onChange={(e) => setFilters((f) => ({ ...f, state: e.target.value, city: '' }))}>
-                <option value="">{t('marketplace.anyState')}</option>
-                {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select className="form-select form-select-sm" style={{ width: 'auto', minWidth: 120 }}
-                value={filters.city}
-                onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}>
-                <option value="">{t('marketplace.anyCity')}</option>
-                {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <div className="form-check d-flex align-items-center mb-0">
-                <input className="form-check-input me-1" type="checkbox" id="nearMe"
-                  checked={filters.nearMe} onChange={(e) => setFilters((f) => ({ ...f, nearMe: e.target.checked }))} />
-                <label className="form-check-label small mb-0" htmlFor="nearMe">
-                  {t('marketplace.nearMe')}
-                </label>
-              </div>
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 'auto', minWidth: 140 }}
-                value={filters.shipsToCountry}
-                onChange={(e) => setFilters((f) => ({ ...f, shipsToCountry: e.target.value }))}
-                aria-label={t('marketplace.shipsToFilterLabel')}
-                title={t('marketplace.shipsToFilterLabel')}
-              >
-                <option value="">{t('marketplace.shipsToFilterAny')}</option>
-                {SHIPS_TO_OPTIONS.map((opt) => (
-                  <option key={opt.code} value={opt.code}>{t('marketplace.shipsToFilterTo', { country: opt.label })}</option>
-                ))}
-              </select>
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 'auto', minWidth: 150 }}
-                value={filters.sellerTier}
-                onChange={(e) => setFilters((f) => ({ ...f, sellerTier: e.target.value }))}
-              >
-                <option value="">{t('marketplace.anySellerTier')}</option>
-                <option value="community">{t('marketplace.sellerTierCommunity')}</option>
-                <option value="pro">{t('marketplace.sellerTierPro')}</option>
-                <option value="vendor">{t('marketplace.sellerTierVendor')}</option>
-              </select>
-              <div className="form-check d-flex align-items-center mb-0">
-                <input
-                  className="form-check-input me-1"
-                  type="checkbox"
-                  id="verifiedOnly"
-                  checked={filters.verifiedOnly}
-                  onChange={(e) => setFilters((f) => ({ ...f, verifiedOnly: e.target.checked }))}
-                />
-                <label className="form-check-label small mb-0" htmlFor="verifiedOnly">
-                  {t('marketplace.verifiedOnly')}
-                </label>
-              </div>
-              <div className="form-check d-flex align-items-center mb-0">
-                <input
-                  className="form-check-input me-1"
-                  type="checkbox"
-                  id="boostedOnly"
-                  checked={filters.boostedOnly}
-                  onChange={(e) => setFilters((f) => ({ ...f, boostedOnly: e.target.checked }))}
-                />
-                <label className="form-check-label small mb-0" htmlFor="boostedOnly">
-                  {t('marketplace.boostedOnly')}
-                </label>
-              </div>
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 'auto', minWidth: 140 }}
-                value={filters.hasImage === null ? '' : filters.hasImage ? 'with' : 'without'}
-                onChange={(e) =>
-                  setFilters((f) => ({
-                    ...f,
-                    hasImage: e.target.value === '' ? null : e.target.value === 'with',
-                  }))
-                }
-              >
-                <option value="">{t('marketplace.imageFilterAny')}</option>
-                <option value="with">{t('marketplace.imageFilterWith')}</option>
-                <option value="without">{t('marketplace.imageFilterWithout')}</option>
-              </select>
-              <input
-                className="form-control form-control-sm"
-                style={{ width: 110 }}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder={t('marketplace.priceMin')}
-                value={filters.minPrice}
-                onChange={(e) => setFilters((f) => ({ ...f, minPrice: e.target.value }))}
-              />
-              <input
-                className="form-control form-control-sm"
-                style={{ width: 110 }}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder={t('marketplace.priceMax')}
-                value={filters.maxPrice}
-                onChange={(e) => setFilters((f) => ({ ...f, maxPrice: e.target.value }))}
-              />
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 'auto', minWidth: 140 }}
-                value={filters.listingOrigin}
-                onChange={(e) => setFilters((f) => ({ ...f, listingOrigin: e.target.value }))}
-              >
-                <option value="">{t('marketplace.anyOrigin')}</option>
-                <option value="captive_bred">{t('marketplace.originCaptiveBred')}</option>
-                <option value="wild_caught">{t('marketplace.originWildCaught')}</option>
-              </select>
-              <div className="form-check d-flex align-items-center mb-0">
-                <input
-                  className="form-check-input me-1"
-                  type="checkbox"
-                  id="hasRegulatoryRefs"
-                  checked={filters.hasRegulatoryRefs}
-                  onChange={(e) => setFilters((f) => ({ ...f, hasRegulatoryRefs: e.target.checked }))}
-                />
-                <label className="form-check-label small mb-0" htmlFor="hasRegulatoryRefs">
-                  {t('marketplace.withRegulatoryRefsOnly')}
-                </label>
-              </div>
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => Promise.all([loadPublicListings(), loadOfficialVendors()])}>
-                {t('common.search')}
-              </button>
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 'auto', minWidth: 150 }}
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value)}
-              >
-                <option value="trust">{t('marketplace.sortTrust')}</option>
-                <option value="newest">{t('marketplace.sortNewest')}</option>
-                <option value="price_asc">{t('marketplace.sortPriceAsc')}</option>
-                <option value="price_desc">{t('marketplace.sortPriceDesc')}</option>
-              </select>
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={saveCurrentFilters}>
-                {t('marketplace.savedSearchSave')}
-              </button>
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={restoreSavedFilters}>
-                {t('marketplace.savedSearchLoad')}
-              </button>
-            </div>
-          </div>
-        </div>
+        
+        <MarketplaceFilterBar
+          query={query}
+          setQuery={setQuery}
+          filters={filters}
+          setFilters={setFilters}
+          onSaveFilters={saveCurrentFilters}
+          onLoadFilters={restoreSavedFilters}
+        />
 
         {!user && (
           <div className="alert alert-secondary small py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -907,9 +712,30 @@ export default function MarketplacePage() {
 
         <div className="row g-4">
           <div className="col-12">
-            <div className="mb-3 pb-2 border-bottom" style={{ borderColor: 'var(--ta-border)' }}>
-              <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h3>
-              <p className="small text-muted mb-0">{t('marketplace.feedCommunitySub')}</p>
+            <div className="mb-3 pb-2 border-bottom ta-marketplace-feed-toolbar" style={{ borderColor: 'var(--ta-border)' }}>
+              <div className="d-flex flex-wrap align-items-end justify-content-between gap-2">
+                <div>
+                  <h3 className="h5 fw-bold mb-1" style={{ color: 'var(--ta-parchment)' }}>{t('marketplace.feedCommunityHeader')}</h3>
+                  <p className="small text-muted mb-0">
+                    {t('marketplace.feedResultsCount', { count: visibleListings.length })}
+                  </p>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <label className="small text-muted mb-0" htmlFor="marketplace-sort">{t('marketplace.sortLabel')}</label>
+                  <select
+                    id="marketplace-sort"
+                    className="form-select form-select-sm ta-marketplace-sort-select"
+                    style={{ width: 'auto', minWidth: 160 }}
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value)}
+                  >
+                    <option value="newest">{t('marketplace.sortNewest')}</option>
+                    <option value="price_asc">{t('marketplace.sortPriceAsc')}</option>
+                    <option value="price_desc">{t('marketplace.sortPriceDesc')}</option>
+                    <option value="views">{t('marketplace.sortViews')}</option>
+                  </select>
+                </div>
+              </div>
             </div>
             <div className="row g-2 g-md-3">
               {loading && <p className="text-muted small">{t('common.loading')}</p>}

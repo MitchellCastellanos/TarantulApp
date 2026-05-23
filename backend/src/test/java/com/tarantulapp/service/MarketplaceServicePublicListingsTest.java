@@ -9,6 +9,9 @@ import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.repository.BehaviorLogRepository;
 import com.tarantulapp.repository.FeedingLogRepository;
+import com.tarantulapp.repository.ChatMessageRepository;
+import com.tarantulapp.repository.ChatThreadRepository;
+import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.MoltLogRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
@@ -43,6 +46,7 @@ import static org.mockito.Mockito.when;
 class MarketplaceServicePublicListingsTest {
 
     @Mock private MarketplaceListingRepository marketplaceListingRepository;
+    @Mock private ListingEventRepository listingEventRepository;
     @Mock private PartnerListingRepository partnerListingRepository;
     @Mock private OfficialVendorRepository officialVendorRepository;
     @Mock private SellerReviewRepository sellerReviewRepository;
@@ -54,6 +58,10 @@ class MarketplaceServicePublicListingsTest {
     @Mock private SexIdCaseVoteRepository sexIdCaseVoteRepository;
     @Mock private FileStorageService fileStorageService;
     @Mock private BillingService billingService;
+    @Mock private ChatThreadRepository chatThreadRepository;
+    @Mock private ChatMessageRepository chatMessageRepository;
+    @Mock private KeeperRankCalculator keeperRankCalculator;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private MarketplaceService marketplaceService;

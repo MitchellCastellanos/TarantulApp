@@ -13,6 +13,8 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
     List<MarketplaceListing> findTop100ByStatusOrderByCreatedAtDesc(String status);
     List<MarketplaceListing> findTop100ByStatusAndTitleContainingIgnoreCaseOrderByCreatedAtDesc(String status, String title);
     List<MarketplaceListing> findTop100ByStatusAndSpeciesNameContainingIgnoreCaseOrderByCreatedAtDesc(String status, String speciesName);
+    long countByStatusIgnoreCaseAndSpeciesNameIgnoreCase(String status, String speciesName);
+    List<MarketplaceListing> findTop20ByStatusIgnoreCaseAndSpeciesNameIgnoreCaseOrderByCreatedAtDesc(String status, String speciesName);
     List<MarketplaceListing> findTop100BySellerUserIdOrderByCreatedAtDesc(UUID sellerUserId);
     long countBySellerUserId(UUID sellerUserId);
     long countBySellerUserIdAndStatusIgnoreCase(UUID sellerUserId, String status);

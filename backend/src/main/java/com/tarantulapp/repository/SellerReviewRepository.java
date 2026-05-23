@@ -12,6 +12,8 @@ public interface SellerReviewRepository extends JpaRepository<SellerReview, UUID
 
     boolean existsBySellerUserIdAndReviewerUserId(UUID sellerUserId, UUID reviewerUserId);
 
+    boolean existsByChatThreadId(UUID chatThreadId);
+
     @Query("select coalesce(avg(r.rating), 0) from SellerReview r where r.sellerUserId = :sellerUserId")
     Double avgRatingBySellerUserId(UUID sellerUserId);
 

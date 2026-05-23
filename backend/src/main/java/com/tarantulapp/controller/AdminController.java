@@ -27,6 +27,7 @@ import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
+import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -87,6 +88,7 @@ public class AdminController {
     private final VendorInviteService vendorInviteService;
     private final ListingEventService listingEventService;
     private final com.tarantulapp.repository.PartnerListingRepository partnerListingRepository;
+    private final NewsletterService newsletterService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -122,7 +124,8 @@ public class AdminController {
                            SubscriptionRepository subscriptionRepository,
                            VendorInviteService vendorInviteService,
                            ListingEventService listingEventService,
-                           com.tarantulapp.repository.PartnerListingRepository partnerListingRepository) {
+                           com.tarantulapp.repository.PartnerListingRepository partnerListingRepository,
+                           NewsletterService newsletterService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -146,6 +149,7 @@ public class AdminController {
         this.vendorInviteService = vendorInviteService;
         this.listingEventService = listingEventService;
         this.partnerListingRepository = partnerListingRepository;
+        this.newsletterService = newsletterService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -498,6 +502,9 @@ public class AdminController {
         user.setVendorInviteSentAt(null);
         user.setVendorInviteExpiresAt(null);
         userRepository.save(user);
+        if (verified) {
+            newsletterService.ensureSubscribedOnVerified(user.getId());
+        }
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));

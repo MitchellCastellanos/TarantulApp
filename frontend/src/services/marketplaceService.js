@@ -8,6 +8,8 @@ const marketplaceService = {
     publicApi.get(`/public/marketplace/deal-quote/${listingId}`, { params: { subtotal } }).then((r) => r.data),
   getListingBoostOffer: () => publicApi.get('/public/marketplace/listing-boost-offer').then((r) => r.data),
   listOfficialVendors: (params = {}) => publicApi.get('/public/marketplace/official-vendors', { params }).then((r) => r.data),
+  listVerifiedVendors: (limit = 12) =>
+    publicApi.get('/public/marketplace/verified-vendors', { params: { limit } }).then((r) => r.data),
   getPartnerCatalog: (params = {}) => publicApi.get('/public/marketplace/partner-catalog', { params }).then((r) => r.data),
   partnerCartHandoff: (payload) => publicApi.post('/public/marketplace/partner-cart/handoff', payload).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),
@@ -32,6 +34,8 @@ const marketplaceService = {
     return api.post('/marketplace/listings/photo', form).then((r) => r.data)
   },
 
+  getReviewEligibility: (listingId) =>
+    api.get(`/marketplace/listings/${listingId}/review-eligibility`).then((r) => r.data),
   getKeeperPublic: (sellerUserId) => publicApi.get(`/public/marketplace/keepers/${sellerUserId}`).then((r) => r.data),
   getStorefrontByHandle: (handle) =>
     publicApi.get(`/public/marketplace/storefront/${encodeURIComponent(handle)}`).then((r) => r.data),

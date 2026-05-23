@@ -9,7 +9,8 @@ import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
-import KeeperReputationStrip from '../components/KeeperReputationStrip'
+import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
+import ResponseBadge from '../components/ResponseBadge'
 import KeeperBadgeChip from '../components/KeeperBadgeChip'
 import {
   badgeProgressHintLine,
@@ -25,6 +26,7 @@ export default function PublicKeeperProfilePage() {
   const [error, setError] = useState('')
   const [profile, setProfile] = useState(null)
   const [keeperData, setKeeperData] = useState(null)
+  const [reviews, setReviews] = useState([])
   const [notice, setNotice] = useState('')
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -49,6 +51,7 @@ export default function PublicKeeperProfilePage() {
     setNotice('')
     setProfile(null)
     setKeeperData(null)
+    setReviews([])
     userPublicService
       .byHandle(handle || '')
       .then(async (p) => {
@@ -57,6 +60,8 @@ export default function PublicKeeperProfilePage() {
         if (p?.id) {
           const k = await marketplaceService.getKeeperPublic(p.id).catch(() => null)
           if (!cancelled) setKeeperData(k)
+          const rev = await marketplaceService.getKeeperReviews(p.id).catch(() => [])
+          if (!cancelled) setReviews(Array.isArray(rev) ? rev : [])
         }
       })
       .catch(() => {
@@ -143,6 +148,15 @@ export default function PublicKeeperProfilePage() {
                 <div className="small text-muted mb-2">
                   {t('marketplace.rating')}: {keeperData?.ratingAvg ?? 0} ({keeperData?.reviewsCount ?? 0})
                 </div>
+                <div className="d-flex flex-wrap gap-2 mb-2">
+                  {kp?.verifiedBreeder ? <VerifiedVendorBadge showTooltip /> : null}
+                  <ResponseBadge
+                    badge={keeperData?.profile?.responseBadge || keeperData?.storefrontMetrics?.responseBadge}
+                    avgResponseHours={
+                      keeperData?.profile?.avgResponseHours ?? keeperData?.storefrontMetrics?.avgResponseHours
+                    }
+                  />
+                </div>
                 {reputation && (
                   <div className="mb-2">
                     <KeeperReputationStrip reputation={reputation} titleColorVar="var(--ta-text)" />
@@ -209,6 +223,32 @@ export default function PublicKeeperProfilePage() {
                   <button type="button" className="btn btn-sm btn-outline-secondary" onClick={reportKeeper}>
                     {t('marketplace.report')}
                   </button>
+                )}
+              </div>
+            </div>
+
+            <div className="card border-0 shadow-sm mb-3">
+              <div className="card-body">
+                <h2 className="h6 fw-bold mb-3">{t('marketplace.review.sectionTitle')}</h2>
+                {reviews.length === 0 ? (
+                  <p className="small text-muted mb-0">{t('marketplace.review.empty')}</p>
+                ) : (
+                  <ul className="list-unstyled mb-0">
+                    {reviews.slice(0, 10).map((r) => (
+                      <li key={r.id} className="mb-3 pb-3 border-bottom">
+                        <div className="fw-semibold small">
+                          {'★'.repeat(Number(r.rating || 0))}
+                          <span className="text-muted ms-2">{r.reviewerName}</span>
+                        </div>
+                        {r.comment ? <p className="small mb-1 mt-1">{r.comment}</p> : null}
+                        {r.createdAt ? (
+                          <div className="small text-muted">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             </div>

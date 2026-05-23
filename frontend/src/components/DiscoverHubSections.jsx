@@ -5,6 +5,7 @@ import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 import { DISCOVER_POPULAR_SCIENTIFIC_NAMES } from '../constants/discoverPopularSpecies'
+import VerifiedVendorsStrip from './VerifiedVendorsStrip'
 
 const EXPLORE_TILES = [
   { key: 'nw', to: '/discover/catalog?hobbyWorld=new_world', titleKey: 'discover.exploreNewWorld', hintKey: 'discover.exploreNewWorldHint', emoji: '🌎' },
@@ -79,6 +80,7 @@ export default function DiscoverHubSections() {
 
   return (
     <div className="mb-4">
+      <VerifiedVendorsStrip />
       <div className="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-2">
         <h2 className="h6 text-uppercase letter-spacing mb-0 ta-accent-heading">{t('discover.popularSectionTitle')}</h2>
         <Link to="/discover/catalog" className="small fw-semibold text-decoration-none" style={{ color: 'var(--ta-purple)' }}>

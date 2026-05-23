@@ -1,5 +1,6 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.entity.ChatThread;
 import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
@@ -9,6 +10,7 @@ import com.tarantulapp.entity.SellerReview;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
@@ -24,6 +26,7 @@ import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -69,6 +73,7 @@ public class MarketplaceService {
             PartnerProgramTier.STRATEGIC_FOUNDER,
             PartnerProgramTier.STRATEGIC_PARTNER);
     private final MarketplaceListingRepository marketplaceListingRepository;
+    private final ListingEventRepository listingEventRepository;
     private final PartnerListingRepository partnerListingRepository;
     private final OfficialVendorRepository officialVendorRepository;
     private final SellerReviewRepository sellerReviewRepository;
@@ -85,6 +90,7 @@ public class MarketplaceService {
     private final BillingService billingService;
     private final KeeperRankCalculator keeperRankCalculator;
     private final SpeciesWatchService speciesWatchService;
+    private final NotificationService notificationService;
     @Value("${app.marketplace.partner-feed.hard-cap:500}")
     private int partnerFeedHardCap = 500;
     @Value("${app.marketplace.strategic-bootstrap-mode:true}")
@@ -101,6 +107,7 @@ public class MarketplaceService {
     private double partnerShareSteady60Plus = 0.15d;
 
     public MarketplaceService(MarketplaceListingRepository marketplaceListingRepository,
+                              ListingEventRepository listingEventRepository,
                               PartnerListingRepository partnerListingRepository,
                               OfficialVendorRepository officialVendorRepository,
                               SellerReviewRepository sellerReviewRepository,
@@ -116,8 +123,10 @@ public class MarketplaceService {
                               FileStorageService fileStorageService,
                               BillingService billingService,
                               KeeperRankCalculator keeperRankCalculator,
-                              SpeciesWatchService speciesWatchService) {
+                              SpeciesWatchService speciesWatchService,
+                              NotificationService notificationService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
+        this.listingEventRepository = listingEventRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.officialVendorRepository = officialVendorRepository;
         this.sellerReviewRepository = sellerReviewRepository;
@@ -134,6 +143,7 @@ public class MarketplaceService {
         this.billingService = billingService;
         this.keeperRankCalculator = keeperRankCalculator;
         this.speciesWatchService = speciesWatchService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -286,7 +296,11 @@ public class MarketplaceService {
         String next = normalizeStatus(status);
         if (next == null) throw new IllegalArgumentException("Status invalido");
         listing.setStatus(next);
-        return mapListing(marketplaceListingRepository.save(listing));
+        MarketplaceListing saved = marketplaceListingRepository.save(listing);
+        if ("sold".equalsIgnoreCase(next)) {
+            notifyReviewRequestsForListing(saved);
+        }
+        return mapListing(saved);
     }
 
     @Transactional(readOnly = true)
@@ -333,7 +347,95 @@ public class MarketplaceService {
         out.addAll(partner.stream().limit(partnerCap).collect(Collectors.toList()));
         out.addAll(peer);
         int max = Math.max(50, publicListingsMax);
-        return out.stream().limit(max).collect(Collectors.toList());
+        List<Map<String, Object>> limited = out.stream().limit(max).collect(Collectors.toList());
+        enrichListingsWithViewCounts(limited);
+        return limited;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listVerifiedVendors(int limit) {
+        int cap = Math.min(Math.max(limit, 1), 24);
+        return userRepository.findVerifiedBreedersForAdmin(PageRequest.of(0, cap)).stream()
+                .map(u -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("userId", u.getId());
+                    row.put("handle", u.getPublicHandle() == null ? "" : u.getPublicHandle());
+                    row.put("storefrontName", u.getStorefrontName() == null ? "" : u.getStorefrontName());
+                    row.put("displayName", u.getDisplayName() == null ? "" : u.getDisplayName());
+                    row.put("profilePhoto", u.getProfilePhoto() == null ? "" : u.getProfilePhoto());
+                    row.put("activeListingCount",
+                            marketplaceListingRepository.countBySellerUserIdAndStatusIgnoreCase(u.getId(), "active"));
+                    return row;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public record SpeciesMarketplaceSeoSection(long activeListingCount, List<Map<String, Object>> recentListings) {}
+
+    /** Active peer + partner listings for a species SEO snapshot (read-only aggregate). */
+    @Transactional(readOnly = true)
+    public SpeciesMarketplaceSeoSection speciesListingsForSeo(String scientificName, Integer speciesId) {
+        String name = scientificName == null ? "" : scientificName.trim();
+        if (name.isEmpty()) {
+            return new SpeciesMarketplaceSeoSection(0, List.of());
+        }
+        long peerCount = marketplaceListingRepository.countByStatusIgnoreCaseAndSpeciesNameIgnoreCase("active", name);
+        long partnerCount = partnerListingRepository.countActiveForSpecies(PartnerListingStatus.ACTIVE, speciesId, name);
+        long total = peerCount + partnerCount;
+
+        Map<UUID, OfficialVendor> eligibleVendors = officialVendorRepository
+                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                        STRATEGIC_PARTNER_FEED_TIERS)
+                .stream()
+                .collect(Collectors.toMap(OfficialVendor::getId, v -> v, (a, b) -> a, LinkedHashMap::new));
+
+        List<Map<String, Object>> peerRows = marketplaceListingRepository
+                .findTop20ByStatusIgnoreCaseAndSpeciesNameIgnoreCaseOrderByCreatedAtDesc("active", name)
+                .stream()
+                .map(this::mapListing)
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> partnerRows = partnerListingRepository
+                .findRecentActiveForSpecies(PartnerListingStatus.ACTIVE, speciesId, name)
+                .stream()
+                .filter(p -> eligibleVendors.containsKey(p.getOfficialVendorId()))
+                .filter(p -> {
+                    OfficialVendor v = eligibleVendors.get(p.getOfficialVendorId());
+                    return PartnerListingTarantulaFilter.isAllowedMonarchListing(
+                            p.getTitle(), p.getDescription(), p.getListingCategory(),
+                            v == null ? null : v.getSlug());
+                })
+                .limit(20)
+                .map(p -> mapPartnerListing(p, eligibleVendors.get(p.getOfficialVendorId())))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> merged = new ArrayList<>(peerRows.size() + partnerRows.size());
+        merged.addAll(peerRows);
+        merged.addAll(partnerRows);
+        merged.sort((a, b) -> {
+            Instant ia = listingRowInstant(a);
+            Instant ib = listingRowInstant(b);
+            if (ia == null && ib == null) return 0;
+            if (ia == null) return 1;
+            if (ib == null) return -1;
+            return ib.compareTo(ia);
+        });
+        return new SpeciesMarketplaceSeoSection(total, merged.stream().limit(10).collect(Collectors.toList()));
+    }
+
+    private static Instant listingRowInstant(Map<String, Object> row) {
+        Object v = row.get("createdAt");
+        if (v instanceof Instant i) {
+            return i;
+        }
+        if (v != null) {
+            try {
+                return Instant.parse(v.toString());
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     @Transactional(readOnly = true)
@@ -351,10 +453,16 @@ public class MarketplaceService {
                 : MarketplaceListingCategories.normalizeOrDefault(listingCategory);
         final String queryNorm = normalizeFilter(q);
 
-        List<Map<String, Object>> items = partnerListingRepository
+        List<PartnerListing> allActive = partnerListingRepository
                 .findByOfficialVendorIdAndStatusInOrderByPromotedDescLastSyncedAtDesc(
-                        vendor.getId(), List.of(PartnerListingStatus.ACTIVE))
-                .stream()
+                        vendor.getId(), List.of(PartnerListingStatus.ACTIVE));
+
+        long catalogTotal = allActive.stream()
+                .filter(p -> PartnerListingTarantulaFilter.isAllowedMonarchListing(
+                        p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getSlug()))
+                .count();
+
+        List<Map<String, Object>> items = allActive.stream()
                 .filter(p -> categoryNorm == null || matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
                 .filter(p -> promotedOnly == null || !promotedOnly || Boolean.TRUE.equals(p.getPromoted()))
@@ -362,13 +470,49 @@ public class MarketplaceService {
                         p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getSlug()))
                 .map(p -> mapPartnerListing(p, vendor))
                 .collect(Collectors.toList());
+        enrichListingsWithViewCounts(items);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("vendor", mapOfficialVendorSummary(vendor));
         out.put("items", items);
         out.put("total", items.size());
+        out.put("catalogTotal", catalogTotal);
         out.put("promotedCount", items.stream().filter(i -> Boolean.TRUE.equals(i.get("promoted"))).count());
         return out;
+    }
+
+    private void enrichListingsWithViewCounts(List<Map<String, Object>> listings) {
+        if (listings == null || listings.isEmpty()) {
+            return;
+        }
+        List<UUID> ids = listings.stream()
+                .map(m -> m.get("id"))
+                .filter(UUID.class::isInstance)
+                .map(UUID.class::cast)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return;
+        }
+        Map<UUID, Long> viewCounts = new HashMap<>();
+        List<Object[]> rows = listingEventRepository.aggregateByListingAndKindSince(ids, Instant.EPOCH);
+        if (rows != null) {
+            for (Object[] row : rows) {
+                if (row == null || row.length < 3 || !(row[0] instanceof UUID listingId)) {
+                    continue;
+                }
+                if (!"view".equals(String.valueOf(row[1]))) {
+                    continue;
+                }
+                viewCounts.put(listingId, ((Number) row[2]).longValue());
+            }
+        }
+        for (Map<String, Object> listing : listings) {
+            Object idObj = listing.get("id");
+            UUID id = idObj instanceof UUID u ? u : null;
+            listing.put("viewCount", id == null ? 0L : viewCounts.getOrDefault(id, 0L));
+        }
     }
 
     private Map<String, Object> mapOfficialVendorSummary(OfficialVendor vendor) {
@@ -549,6 +693,9 @@ public class MarketplaceService {
         out.put("profilePhoto", u.getProfilePhoto() == null ? "" : u.getProfilePhoto());
         out.put("ratingAvg", avg);
         out.put("reviewsCount", reviewsCount);
+        Map<String, Object> responseStats = computeResponseStats(sellerUserId);
+        out.put("avgResponseHours", responseStats.get("avgResponseHours"));
+        out.put("responseBadge", responseStats.get("responseBadge"));
         return out;
     }
 
@@ -772,26 +919,58 @@ public class MarketplaceService {
             throw new IllegalArgumentException("Rating invalido");
         }
         userRepository.findById(sellerUserId).orElseThrow(() -> new NotFoundException("Seller no encontrado"));
-        if (sellerReviewRepository.existsBySellerUserIdAndReviewerUserId(sellerUserId, reviewerUserId)) {
-            throw new IllegalArgumentException("Ya dejaste una review a este seller");
+        UUID threadId = resolveEligibleThreadId(sellerUserId, reviewerUserId, listingId);
+        if (sellerReviewRepository.existsByChatThreadId(threadId)) {
+            throw new IllegalArgumentException("Ya dejaste una review para esta conversacion");
         }
-        assertMarketplaceReviewEligibility(sellerUserId, reviewerUserId, listingId);
         SellerReview review = new SellerReview();
         review.setSellerUserId(sellerUserId);
         review.setReviewerUserId(reviewerUserId);
         review.setListingId(listingId);
+        review.setChatThreadId(threadId);
         review.setRating(rating.shortValue());
         review.setComment(cleanText(comment, 500));
         return mapReview(sellerReviewRepository.save(review));
     }
 
-    private void assertMarketplaceReviewEligibility(UUID sellerUserId, UUID reviewerUserId, UUID listingId) {
+    @Transactional(readOnly = true)
+    public Map<String, Object> getReviewEligibility(UUID reviewerUserId, UUID listingId) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("eligible", false);
+        if (reviewerUserId == null || listingId == null) {
+            return out;
+        }
+        MarketplaceListing listing = marketplaceListingRepository.findById(listingId).orElse(null);
+        if (listing == null || listing.getSellerUserId().equals(reviewerUserId)) {
+            return out;
+        }
+        try {
+            UUID threadId = resolveEligibleThreadId(listing.getSellerUserId(), reviewerUserId, listingId);
+            if (sellerReviewRepository.existsByChatThreadId(threadId)) {
+                out.put("alreadyReviewed", true);
+                out.put("threadId", threadId);
+                return out;
+            }
+            out.put("eligible", true);
+            out.put("threadId", threadId);
+            out.put("sellerUserId", listing.getSellerUserId());
+            out.put("listingId", listingId);
+            return out;
+        } catch (IllegalArgumentException e) {
+            return out;
+        }
+    }
+
+    private UUID resolveEligibleThreadId(UUID sellerUserId, UUID reviewerUserId, UUID listingId) {
         UUID[] pair = orderedPair(sellerUserId, reviewerUserId);
-        UUID low = pair[0];
-        UUID high = pair[1];
-        UUID threadId = chatThreadRepository.findByUserLowAndUserHighAndListingId(low, high, listingId)
+        UUID threadId = chatThreadRepository.findByUserLowAndUserHighAndListingId(pair[0], pair[1], listingId)
                 .orElseThrow(() -> new IllegalArgumentException("Solo puedes reseñar después de conversar en el chat del listing"))
                 .getId();
+        assertThreadEligibleForReview(threadId, sellerUserId, reviewerUserId);
+        return threadId;
+    }
+
+    private void assertThreadEligibleForReview(UUID threadId, UUID sellerUserId, UUID reviewerUserId) {
         long totalMessages = chatMessageRepository.countByThreadId(threadId);
         long sellerMessages = chatMessageRepository.countByThreadIdAndSenderUserId(threadId, sellerUserId);
         long reviewerMessages = chatMessageRepository.countByThreadIdAndSenderUserId(threadId, reviewerUserId);
@@ -799,6 +978,35 @@ public class MarketplaceService {
                 || sellerMessages < MIN_MESSAGES_PER_PARTICIPANT
                 || reviewerMessages < MIN_MESSAGES_PER_PARTICIPANT) {
             throw new IllegalArgumentException("La reseña se habilita tras al menos 6 mensajes y participación de ambas partes");
+        }
+    }
+
+    private void notifyReviewRequestsForListing(MarketplaceListing listing) {
+        UUID sellerId = listing.getSellerUserId();
+        for (ChatThread thread : chatThreadRepository.findByListingId(listing.getId())) {
+            UUID buyerId = sellerId.equals(thread.getUserLow()) ? thread.getUserHigh() : thread.getUserLow();
+            if (buyerId.equals(sellerId)) {
+                continue;
+            }
+            try {
+                assertThreadEligibleForReview(thread.getId(), sellerId, buyerId);
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+            if (sellerReviewRepository.existsByChatThreadId(thread.getId())) {
+                continue;
+            }
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("listingId", listing.getId().toString());
+            data.put("threadId", thread.getId().toString());
+            data.put("sellerUserId", sellerId.toString());
+            notificationService.create(
+                    buyerId,
+                    sellerId,
+                    "REVIEW_REQUESTED",
+                    "Deja una reseña",
+                    "¿Cómo fue tu experiencia con este vendedor?",
+                    data);
         }
     }
 
@@ -1078,7 +1286,31 @@ public class MarketplaceService {
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
+        Map<String, Object> responseStats = computeResponseStats(p.getId());
+        out.put("avgResponseHours", responseStats.get("avgResponseHours"));
+        out.put("responseBadge", responseStats.get("responseBadge"));
         return out;
+    }
+
+    private Map<String, Object> computeResponseStats(UUID sellerUserId) {
+        Double avg = chatMessageRepository.avgSellerResponseHoursLast60d(sellerUserId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (avg == null || avg.isNaN() || avg <= 0) {
+            out.put("avgResponseHours", null);
+            out.put("responseBadge", null);
+            return out;
+        }
+        double rounded = Math.round(avg * 10.0) / 10.0;
+        out.put("avgResponseHours", rounded);
+        out.put("responseBadge", responseBadgeForHours(avg));
+        return out;
+    }
+
+    private static String responseBadgeForHours(double hours) {
+        if (hours < 2) return "under_2h";
+        if (hours < 24) return "under_24h";
+        if (hours < 72) return "under_72h";
+        return null;
     }
 
     private Map<String, Object> computeStorefrontMetrics(UUID sellerUserId, long reviewsCount) {
@@ -1097,6 +1329,9 @@ public class MarketplaceService {
         metrics.put("listingThreads", listingThreads);
         metrics.put("repliedThreads", repliedThreads);
         metrics.put("responseRatePct", Math.max(0L, Math.min(100L, responseRatePct)));
+        Map<String, Object> responseStats = computeResponseStats(sellerUserId);
+        metrics.put("avgResponseHours", responseStats.get("avgResponseHours"));
+        metrics.put("responseBadge", responseStats.get("responseBadge"));
         return metrics;
     }
 
@@ -1443,6 +1678,7 @@ public class MarketplaceService {
         out.put("reviewerUserId", r.getReviewerUserId());
         out.put("reviewerName", reviewer == null ? "Keeper" : (reviewer.getDisplayName() == null || reviewer.getDisplayName().isBlank() ? reviewer.getEmail() : reviewer.getDisplayName()));
         out.put("listingId", r.getListingId());
+        out.put("chatThreadId", r.getChatThreadId());
         out.put("rating", r.getRating());
         out.put("comment", r.getComment() == null ? "" : r.getComment());
         out.put("createdAt", r.getCreatedAt());

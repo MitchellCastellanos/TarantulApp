@@ -143,7 +143,7 @@ public class DiscoverCatalogService {
      * Same row set as {@link #findCatalogPage} without extra filters: shared taxonomy / import rows
      * plus legacy “catalog-shaped” rows when {@code data_source} was not backfilled.
      */
-    private static Specification<Species> publicCatalogBaseSpecification() {
+    public static Specification<Species> publicCatalogBaseSpecification() {
         return (root, query, cb) -> cb.or(
                 root.get("dataSource").in("seed", "gbif", "wsc"),
                 cb.and(

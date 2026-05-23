@@ -184,6 +184,11 @@ public class MarketplaceController {
         return ResponseEntity.ok(marketplaceService.updateListingStatus(id, securityHelper.getCurrentUserId(), req.status()));
     }
 
+    @GetMapping("/listings/{id}/review-eligibility")
+    public ResponseEntity<Map<String, Object>> reviewEligibility(@PathVariable UUID id) {
+        return ResponseEntity.ok(marketplaceService.getReviewEligibility(securityHelper.getCurrentUserId(), id));
+    }
+
     @PostMapping("/sellers/{sellerUserId}/reviews")
     public ResponseEntity<Map<String, Object>> addSellerReview(@PathVariable UUID sellerUserId,
                                                                @Valid @RequestBody CreateReviewRequest req) {

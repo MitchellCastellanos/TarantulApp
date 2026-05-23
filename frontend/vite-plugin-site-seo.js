@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/descubrir',
   '/descubrir/comparar',
+  '/discover',
   '/herramientas/qr',
   '/about',
   '/marketplace',
@@ -39,18 +40,57 @@ function locForRoute(base, route) {
   return route === '/' ? `${base}/` : `${base}${route}`
 }
 
-function buildSitemapXml(base) {
+function speciesDetailRoute(id) {
+  return `/discover/species/${id}`
+}
+
+async function fetchSpeciesDetailRoutes(apiBase) {
+  const backend =
+    (process.env.SITEMAP_SPECIES_API_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '')
+  const routes = []
+  let page = 0
+  const pageSize = 500
+  try {
+    for (;;) {
+      const url = `${backend}/api/public/species/sitemap-entries?page=${page}&pageSize=${pageSize}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+      if (!res.ok) break
+      const rows = await res.json()
+      if (!Array.isArray(rows) || rows.length === 0) break
+      for (const row of rows) {
+        if (row?.id != null) routes.push(speciesDetailRoute(row.id))
+      }
+      if (rows.length < pageSize) break
+      page += 1
+    }
+  } catch {
+  }
+  if (routes.length === 0 && apiBase) {
+    console.warn(
+      '[tarantulapp-site-seo] No species detail URLs fetched — is the API running at build time? Set SITEMAP_SPECIES_API_URL if needed.'
+    )
+  } else if (routes.length > 0) {
+    console.log(`[tarantulapp-site-seo] ${routes.length} species detail URLs for sitemap`)
+  }
+  return routes
+}
+
+function buildSitemapXml(base, extraRoutes = []) {
   const today = new Date().toISOString().slice(0, 10)
-  const body = PUBLIC_ROUTES.map((route) => {
+  const allRoutes = [...PUBLIC_ROUTES, ...extraRoutes]
+  const body = allRoutes.map((route) => {
     const loc = escapeXml(locForRoute(base, route))
+    const isSpecies = route.startsWith('/discover/species/')
     const priority =
       route === '/'
         ? '1.0'
-        : route === '/herramientas/qr' || route === '/descubrir' || route === '/marketplace' || route === '/about'
-          ? '0.9'
-          : '0.65'
+        : isSpecies
+          ? '0.75'
+          : route === '/herramientas/qr' || route === '/descubrir' || route === '/discover' || route === '/marketplace' || route === '/about'
+            ? '0.9'
+            : '0.65'
     const changefreq =
-      route === '/' || route === '/descubrir' || route === '/herramientas/qr' || route === '/marketplace'
+      route === '/' || route === '/descubrir' || route === '/discover' || route === '/herramientas/qr' || route === '/marketplace' || isSpecies
         ? 'weekly'
         : 'monthly'
     return `  <url>
@@ -88,7 +128,11 @@ function attachSeoDevMiddleware(server, publicSiteUrl, kind) {
     const devBase = fromEnv || fallbackBase
     if (pathname === '/sitemap.xml') {
       res.setHeader('Content-Type', 'application/xml; charset=utf-8')
-      res.end(buildSitemapXml(devBase))
+      fetchSpeciesDetailRoutes(devBase).then((speciesRoutes) => {
+        res.end(buildSitemapXml(devBase, speciesRoutes))
+      }).catch(() => {
+        res.end(buildSitemapXml(devBase, []))
+      })
       return
     }
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
@@ -108,7 +152,7 @@ export function siteSeoPlugin({ publicSiteUrl = '' } = {}) {
     configResolved(config) {
       outDir = path.resolve(config.root, config.build.outDir)
     },
-    closeBundle() {
+    async closeBundle() {
       const base = normalizeBase(publicSiteUrl)
       const robotsPath = path.join(outDir, 'robots.txt')
       if (!base) {
@@ -120,7 +164,8 @@ export function siteSeoPlugin({ publicSiteUrl = '' } = {}) {
         fs.writeFileSync(robotsPath, buildRobotsTxt(null), 'utf8')
         return
       }
-      fs.writeFileSync(path.join(outDir, 'sitemap.xml'), buildSitemapXml(base), 'utf8')
+      const speciesRoutes = await fetchSpeciesDetailRoutes(base)
+      fs.writeFileSync(path.join(outDir, 'sitemap.xml'), buildSitemapXml(base, speciesRoutes), 'utf8')
       fs.writeFileSync(robotsPath, buildRobotsTxt(base), 'utf8')
       console.log(`[tarantulapp-site-seo] sitemap.xml + robots.txt → ${base}`)
     },

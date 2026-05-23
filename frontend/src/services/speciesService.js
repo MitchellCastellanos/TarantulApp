@@ -39,6 +39,9 @@ const speciesService = {
   /** Aggregate counts: indexed Theraphosidae names vs rows with keeper-grade profile data. */
   getDiscoverCatalogStats: () =>
     publicApi.get('public/discover/catalog-stats').then((r) => r.data),
+  /** SEO snapshot: active listings + community molt stats for a species detail page. */
+  getSeoSnapshot: (speciesIdOrSlug) =>
+    publicApi.get(`/public/species/${encodeURIComponent(speciesIdOrSlug)}/seo-snapshot`).then((r) => r.data),
   discoverCatalogPage: (params = {}) =>
     publicApi
       .get('public/discover/species', {

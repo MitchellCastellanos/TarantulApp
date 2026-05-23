@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
+import ResponseBadge from '../components/ResponseBadge'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
@@ -51,6 +52,10 @@ export default function MarketplaceListingDetailPage() {
   const [message, setMessage] = useState('')
   const [photoIdx, setPhotoIdx] = useState(0)
   const [shareOpen, setShareOpen] = useState(false)
+  const [reviewEligibility, setReviewEligibility] = useState(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
 
   const locale = i18n.language?.startsWith('es') ? 'es-MX' : 'en-US'
 
@@ -80,6 +85,17 @@ export default function MarketplaceListingDetailPage() {
       cancelled = true
     }
   }, [listingId])
+
+  useEffect(() => {
+    if (!user?.id || !listingId) {
+      setReviewEligibility(null)
+      return
+    }
+    marketplaceService
+      .getReviewEligibility(listingId)
+      .then(setReviewEligibility)
+      .catch(() => setReviewEligibility(null))
+  }, [user?.id, listingId])
 
   const listing = payload?.listing
   const displayTitle = listing?.title ? decodeListingTitle(listing.title) : ''
@@ -374,12 +390,21 @@ export default function MarketplaceListingDetailPage() {
                         <p className="fw-semibold mb-2">{sellerPreview?.displayName || listing.sellerName || 'Keeper'}</p>
                       )}
                       {(sellerPreview?.ratingAvg > 0 || sellerPreview?.reviewsCount > 0) && (
-                        <p className="small text-muted mb-3">
+                        <p className="small text-muted mb-2">
                           {t('marketplace.rating')}: {sellerPreview.ratingAvg?.toFixed?.(1) ?? sellerPreview.ratingAvg}
                           {LISTING_META_SEP}
                           {sellerPreview.reviewsCount} {t('marketplace.reviews').toLowerCase()}
                         </p>
                       )}
+                      <div className="d-flex flex-wrap gap-2 mb-3">
+                        {listing.sellerVerifiedBreeder ? (
+                          <VerifiedVendorBadge showTooltip />
+                        ) : null}
+                        <ResponseBadge
+                          badge={sellerPreview?.responseBadge}
+                          avgResponseHours={sellerPreview?.avgResponseHours}
+                        />
+                      </div>
                       <div className="d-grid gap-2">
                         {sellerHandle ? (
                           <Link
@@ -421,6 +446,57 @@ export default function MarketplaceListingDetailPage() {
                         ) : null}
                         {chatHref && <p className="small text-muted mb-0">{t('marketplace.listingDetailOpenChatHint')}</p>}
                       </div>
+                      {reviewEligibility?.eligible && sellerId && (
+                        <div className="mt-3 pt-3 border-top">
+                          <h4 className="h6 fw-semibold mb-2">{t('marketplace.review.promptTitle')}</h4>
+                          <p className="small text-muted">{t('marketplace.review.promptBody')}</p>
+                          <div className="mb-2">
+                            <label className="form-label small mb-1" htmlFor="listing-review-rating">
+                              {t('marketplace.review.ratingLabel')}
+                            </label>
+                            <select
+                              id="listing-review-rating"
+                              className="form-select form-select-sm"
+                              value={reviewRating}
+                              onChange={(e) => setReviewRating(Number(e.target.value))}
+                            >
+                              {[5, 4, 3, 2, 1].map((n) => (
+                                <option key={n} value={n}>{n} ★</option>
+                              ))}
+                            </select>
+                          </div>
+                          <textarea
+                            className="form-control form-control-sm mb-2"
+                            rows={3}
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder={t('marketplace.review.commentPlaceholder')}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-dark"
+                            disabled={reviewSubmitting}
+                            onClick={async () => {
+                              setReviewSubmitting(true)
+                              try {
+                                await marketplaceService.addReview(sellerId, {
+                                  listingId,
+                                  rating: reviewRating,
+                                  comment: reviewComment.trim(),
+                                })
+                                setMessage(t('marketplace.review.submitSuccess'))
+                                setReviewEligibility({ eligible: false, alreadyReviewed: true })
+                              } catch (err) {
+                                setMessage(err?.response?.data?.message || t('marketplace.review.submitError'))
+                              } finally {
+                                setReviewSubmitting(false)
+                              }
+                            }}
+                          >
+                            {reviewSubmitting ? t('common.saving') : t('marketplace.review.submit')}
+                          </button>
+                        </div>
+                      )}
                       <p className="small text-muted mt-3 mb-0">
                         {t('marketplace.listingLegalNotice')}{' '}
                         <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>

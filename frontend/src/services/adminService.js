@@ -78,6 +78,14 @@ const adminService = {
     api.get('/admin/marketing/tap-to-contact-rate').then((r) => r.data),
   listingCounts: () =>
     api.get('/admin/marketing/listing-counts').then((r) => r.data),
+  newsletterSubscriberCount: () =>
+    api.get('/admin/marketing/newsletter/subscribers/count').then((r) => r.data),
+  createNewsletterDraft: (payload) =>
+    api.post('/admin/marketing/newsletter/drafts', payload).then((r) => r.data),
+  previewNewsletterDraft: (id) =>
+    api.get(`/admin/marketing/newsletter/drafts/${id}`).then((r) => r.data),
+  sendNewsletterDraft: (id) =>
+    api.post(`/admin/marketing/newsletter/drafts/${id}/send`).then((r) => r.data),
 }
 
 export default adminService

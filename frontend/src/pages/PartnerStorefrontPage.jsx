@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PartnerCartBar from '../components/PartnerCartBar'
+import StorefrontShareKit from '../components/StorefrontShareKit'
 import marketplaceService from '../services/marketplaceService'
 import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import { addPartnerCartLine } from '../utils/partnerCart'
+import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { usePageSeo } from '../hooks/usePageSeo'
 
 const CATEGORIES = [
@@ -29,6 +31,10 @@ export default function PartnerStorefrontPage() {
   const [vendor, setVendor] = useState(null)
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
+  const [catalogTotal, setCatalogTotal] = useState(0)
+  const [categoryEngaged, setCategoryEngaged] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [sortMode, setSortMode] = useState('newest')
   const [message, setMessage] = useState('')
 
   const listingCategory = CATEGORIES.includes(searchParams.get('category') || '')
@@ -67,10 +73,12 @@ export default function PartnerStorefrontPage() {
       const list = Array.isArray(data?.items) ? data.items : []
       setItems(list)
       setTotal(data?.total ?? list.length)
+      setCatalogTotal(data?.catalogTotal ?? data?.total ?? list.length)
     } catch (err) {
       setVendor(null)
       setItems([])
       setTotal(0)
+      setCatalogTotal(0)
       setError(err?.response?.status === 404 ? 'notfound' : 'load')
     } finally {
       setLoading(false)
@@ -83,6 +91,7 @@ export default function PartnerStorefrontPage() {
 
   const setCategory = (cat) => {
     if (!CATEGORIES.includes(cat)) return
+    setCategoryEngaged(true)
     const next = new URLSearchParams(searchParams)
     next.set('category', cat)
     setSearchParams(next, { replace: true })
@@ -124,6 +133,19 @@ export default function PartnerStorefrontPage() {
     }
     return l?.badgeLabel || t('marketplace.certifiedPartnerBadge')
   }
+
+  const hasActiveFilters = categoryEngaged || Boolean(query.trim()) || promotedOnly
+  const heroCount = hasActiveFilters ? total : catalogTotal
+  const heroCountKey = hasActiveFilters
+    ? 'marketplace.partnerStorefrontCategoryCount'
+    : 'marketplace.partnerStorefrontCatalogCount'
+
+  const sortedItems = useMemo(
+    () => sortMarketplaceListings(items, sortMode),
+    [items, sortMode],
+  )
+
+  const storefrontUrl = canonical || (origin && slug ? `${origin}/partner/${encodeURIComponent(slug)}` : '')
 
   return (
     <div
@@ -177,11 +199,19 @@ export default function PartnerStorefrontPage() {
                       )}
                     </div>
                   </div>
-                  <div className="text-end flex-shrink-0">
-                    <div className="fw-semibold" style={{ color: 'var(--ta-gold-classic)' }}>
-                      {t('marketplace.partnerStorefrontCount', { count: total })}
+                  <div className="ta-partner-storefront-hero__aside flex-shrink-0">
+                    <div className="ta-partner-storefront-hero__stat">
+                      <div className="ta-partner-storefront-hero__stat-value">{heroCount.toLocaleString()}</div>
+                      <div className="ta-partner-storefront-hero__stat-label">{t(heroCountKey, { count: heroCount })}</div>
+                      <div className="small text-muted mt-1">{t('marketplace.partnerStorefrontPoweredBy')}</div>
                     </div>
-                    <div className="small text-muted">{t('marketplace.partnerStorefrontPoweredBy')}</div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-warning ta-partner-storefront-hero__share"
+                      onClick={() => setShareOpen(true)}
+                    >
+                      {t('share.storefront.button')}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -195,18 +225,19 @@ export default function PartnerStorefrontPage() {
 
             <div className="card border-0 shadow-sm ta-premium-pane mb-3">
               <div className="card-body p-3">
-                <div className="d-flex flex-wrap gap-2 mb-3">
+                <nav className="ta-marketplace-category-nav mb-3" aria-label={t('marketplace.categoryNavAria')}>
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat}
                       type="button"
-                      className={`btn btn-sm ${listingCategory === cat ? 'btn-warning fw-semibold' : 'btn-outline-secondary'}`}
+                      className={`ta-marketplace-category-nav__chip${listingCategory === cat ? ' ta-marketplace-category-nav__chip--active' : ''}`}
+                      aria-current={listingCategory === cat ? 'page' : undefined}
                       onClick={() => setCategory(cat)}
                     >
                       {t(`marketplace.category.${cat}`)}
                     </button>
                   ))}
-                </div>
+                </nav>
                 <div className="d-flex flex-wrap gap-2 align-items-center">
                   <input
                     className="form-control form-control-sm flex-grow-1"
@@ -225,15 +256,33 @@ export default function PartnerStorefrontPage() {
                   >
                     {t('marketplace.tarantulaCribsFilter')}
                   </button>
+                  <select
+                    className="form-select form-select-sm ta-marketplace-sort-select"
+                    style={{ width: 'auto', minWidth: 150 }}
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value)}
+                    aria-label={t('marketplace.sortLabel')}
+                  >
+                    <option value="newest">{t('marketplace.sortNewest')}</option>
+                    <option value="price_asc">{t('marketplace.sortPriceAsc')}</option>
+                    <option value="price_desc">{t('marketplace.sortPriceDesc')}</option>
+                    <option value="views">{t('marketplace.sortViews')}</option>
+                  </select>
                 </div>
               </div>
             </div>
 
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+              <p className="small text-muted mb-0">
+                {t('marketplace.partnerStorefrontResults', { count: sortedItems.length })}
+              </p>
+            </div>
+
             <div className="row g-2 g-md-3">
-              {!loading && items.length === 0 && (
+              {!loading && sortedItems.length === 0 && (
                 <p className="text-muted small col-12">{t('marketplace.partnerStorefrontEmpty')}</p>
               )}
-              {items.map((l) => (
+              {sortedItems.map((l) => (
                 <div className="col-6 col-md-4 col-xl-3" key={l.id}>
                   <div
                     className="card border-warning shadow-sm h-100 ta-premium-pane ta-marketplace-listing-card ta-marketplace-listing-card-clickable"
@@ -307,6 +356,16 @@ export default function PartnerStorefrontPage() {
       )}
 
       <PartnerCartBar />
+
+      {shareOpen && vendor && storefrontUrl && (
+        <StorefrontShareKit
+          vendorName={vendor.name}
+          storefrontUrl={storefrontUrl}
+          location={location}
+          isFounding={isFounding}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   )
 }

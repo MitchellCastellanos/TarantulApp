@@ -29,6 +29,9 @@ public class SellerReview {
     @Column(name = "listing_id", columnDefinition = "uuid")
     private UUID listingId;
 
+    @Column(name = "chat_thread_id", columnDefinition = "uuid")
+    private UUID chatThreadId;
+
     @Column(nullable = false)
     private Short rating;
 
@@ -51,6 +54,8 @@ public class SellerReview {
     public void setReviewerUserId(UUID reviewerUserId) { this.reviewerUserId = reviewerUserId; }
     public UUID getListingId() { return listingId; }
     public void setListingId(UUID listingId) { this.listingId = listingId; }
+    public UUID getChatThreadId() { return chatThreadId; }
+    public void setChatThreadId(UUID chatThreadId) { this.chatThreadId = chatThreadId; }
     public Short getRating() { return rating; }
     public void setRating(Short rating) { this.rating = rating; }
     public String getComment() { return comment; }

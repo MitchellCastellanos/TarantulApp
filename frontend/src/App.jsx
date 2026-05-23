@@ -33,6 +33,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const AccountDeletionPage = lazy(() => import('./pages/AccountDeletionPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const MarketplacePolicyPage = lazy(() => import('./pages/MarketplacePolicyPage'))
+const LegalVerifiedVendorsPage = lazy(() => import('./pages/LegalVerifiedVendorsPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPage'))
@@ -168,6 +169,7 @@ function AppRoutes() {
       <Route path="/account-deletion" element={<AccountDeletionPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/marketplace-policy" element={<MarketplacePolicyPage />} />
+      <Route path="/legal/verified-vendors" element={<LegalVerifiedVendorsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/discover" element={<DiscoverPage />} />

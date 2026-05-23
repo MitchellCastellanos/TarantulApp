@@ -44,4 +44,12 @@ public interface MoltLogRepository extends JpaRepository<MoltLog, UUID> {
             ) x WHERE x.rn = 1
             """, nativeQuery = true)
     List<Object[]> findLatestMoltRowsByTarantulaIds(@Param("ids") Collection<UUID> ids);
+
+    @Query(value = """
+            select cast(count(m.id) as bigint), max(m.molted_at)
+            from molt_logs m
+            inner join tarantulas t on t.id = m.tarantula_id
+            where t.species_id = :speciesId
+            """, nativeQuery = true)
+    Object[] aggregateCommunityMoltsBySpeciesId(@Param("speciesId") int speciesId);
 }

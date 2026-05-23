@@ -464,4 +464,15 @@ public class EmailService {
     private String safe(String value) {
         return (value == null || value.isBlank()) ? "-" : value;
     }
+
+    public void sendNewsletterDrops(String toEmail, String displayName, String subject, String body) {
+        String greeting = displayName == null || displayName.isBlank() ? "Hola" : "Hola " + displayName;
+        String text = greeting + ",\n\n" + body + "\n\n— TarantulApp\n" + baseUrl + "\n";
+        try {
+            doSend(toEmail, subject, text);
+        } catch (Exception e) {
+            log.warn("Newsletter send failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+            throw new RuntimeException("Newsletter send failed", e);
+        }
+    }
 }

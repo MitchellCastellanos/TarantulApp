@@ -9,6 +9,7 @@ import billingService from '../services/billingService'
 import authService from '../services/authService'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
+import meService from '../services/meService'
 import userPublicService, { normalizePublicHandle } from '../services/userPublicService'
 import { imgUrl } from '../services/api'
 import { APP_LANGS, LOGIN_LANG_LABELS } from '../constants/languages'
@@ -63,6 +64,7 @@ export default function AccountPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [theme, setTheme] = useState(() => getStoredTheme())
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMessage, setProfileMessage] = useState('')
   const [handleAvailability, setHandleAvailability] = useState({ status: 'idle', normalized: '' })
@@ -115,6 +117,13 @@ export default function AccountPage() {
   useEffect(() => {
     loadBilling()
   }, [loadBilling])
+
+  useEffect(() => {
+    if (!user?.id) return
+    meService.getNewsletterSubscription().then((r) => {
+      setNewsletterSubscribed(Boolean(r?.subscribed))
+    }).catch(() => {})
+  }, [user?.id])
 
   useLayoutEffect(() => {
     if (!googleClientId || !googleDeleteBtnRef.current) return undefined
@@ -651,6 +660,26 @@ export default function AccountPage() {
               >
                 {theme === 'light' ? t('account.preferences.dark') : t('account.preferences.light')}
               </button>
+            </div>
+            <div className="form-check mt-2">
+              <input
+                id="account-newsletter-toggle"
+                className="form-check-input"
+                type="checkbox"
+                checked={newsletterSubscribed}
+                onChange={async (e) => {
+                  const next = e.target.checked
+                  setNewsletterSubscribed(next)
+                  try {
+                    await meService.setNewsletterSubscription(next)
+                  } catch {
+                    setNewsletterSubscribed(!next)
+                  }
+                }}
+              />
+              <label className="form-check-label small" htmlFor="account-newsletter-toggle">
+                {t('account.preferences.newsletterToggle')}
+              </label>
             </div>
           </section>
 

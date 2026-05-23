@@ -121,6 +121,12 @@ public class PublicMarketplaceController {
         ));
     }
 
+    @GetMapping("/verified-vendors")
+    public ResponseEntity<List<Map<String, Object>>> verifiedVendors(
+            @RequestParam(defaultValue = "12") int limit) {
+        return ResponseEntity.ok(marketplaceService.listVerifiedVendors(limit));
+    }
+
     @PostMapping("/official-vendors/lead")
     public ResponseEntity<Map<String, Object>> submitOfficialVendorLead(@Valid @RequestBody OfficialVendorLeadRequest req) {
         return ResponseEntity.ok(officialVendorService.submitVendorLead(
