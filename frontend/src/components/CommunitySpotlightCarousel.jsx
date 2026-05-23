@@ -32,8 +32,8 @@ export default function CommunitySpotlightCarousel({ limit = 12, className = '' 
 }
 
 function SpotlightStory({ item, placeholder, t }) {
-  const spiderHref = item.shortId ? `/p/${item.shortId}` : null
-  const keeperHref = item.keeperHandle ? `/keepers/${item.keeperHandle}` : null
+  const spiderHref = item.shortId ? `/t/${item.shortId}` : null
+  const keeperHref = item.keeperHandle ? `/u/${encodeURIComponent(item.keeperHandle)}` : null
   const photoSrc = imgUrl(item.photoUrl) || placeholder
 
   const ring = (

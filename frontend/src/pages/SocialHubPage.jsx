@@ -11,6 +11,7 @@ import CommunitySpotlightCarousel from '../components/CommunitySpotlightCarousel
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import communityService from '../services/communityService'
 import tarantulaService from '../services/tarantulaService'
+import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import referralService from '../services/referralService'
 import { resolvePublicFrontOrigin } from '../utils/publicFrontBaseUrl'
 import sexIdCaseService from '../services/sexIdCaseService'
