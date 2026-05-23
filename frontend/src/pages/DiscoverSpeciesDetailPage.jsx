@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import PublicShell from '../components/PublicShell'
 import DiscoverSpeciesProfileSnippet from '../components/DiscoverSpeciesProfileSnippet'
 import speciesService from '../services/speciesService'
+import speciesWatchService from '../services/speciesWatchService'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { BRAND_WITH_TM } from '../constants/brand'
@@ -82,6 +83,9 @@ export default function DiscoverSpeciesDetailPage() {
   const [err, setErr] = useState(false)
   const [clientPhoto, setClientPhoto] = useState(null)
   const [dbReferenceBroken, setDbReferenceBroken] = useState(false)
+  const [watched, setWatched] = useState(false)
+  const [watchBusy, setWatchBusy] = useState(false)
+  const [watchMessage, setWatchMessage] = useState('')
 
   useEffect(() => {
     setClientPhoto(null)
@@ -99,6 +103,20 @@ export default function DiscoverSpeciesDetailPage() {
       .then(setView)
       .catch(() => setErr(true))
   }, [id])
+
+  // Wishlist status check — only for signed-in users on catalog species.
+  useEffect(() => {
+    setWatched(false)
+    setWatchMessage('')
+    if (!token) return
+    const sp = view?.species
+    if (!sp?.id) return
+    let cancelled = false
+    speciesWatchService.status(sp.id)
+      .then((r) => { if (!cancelled) setWatched(!!r?.watched) })
+      .catch(() => { /* ignore */ })
+    return () => { cancelled = true }
+  }, [token, view?.species?.id])
 
   useEffect(() => {
     if (!view?.species) return
@@ -202,17 +220,57 @@ export default function DiscoverSpeciesDetailPage() {
 
         <div className="mt-4 d-flex flex-column gap-2">
           {token ? (
-            <Link
-              to={addNewHref}
-              className="btn btn-sm fw-semibold align-self-start"
-              style={{
-                background: 'linear-gradient(135deg, #3d7a4f 0%, #2d5c3c 100%)',
-                color: '#f0fff4',
-                border: '1px solid rgba(120, 200, 140, 0.5)',
-              }}
-            >
-              {t('discover.addToCollection')}
-            </Link>
+            <>
+              <div className="d-flex flex-wrap gap-2 align-items-center">
+                <Link
+                  to={addNewHref}
+                  className="btn btn-sm fw-semibold"
+                  style={{
+                    background: 'linear-gradient(135deg, #3d7a4f 0%, #2d5c3c 100%)',
+                    color: '#f0fff4',
+                    border: '1px solid rgba(120, 200, 140, 0.5)',
+                  }}
+                >
+                  {t('discover.addToCollection')}
+                </Link>
+                {Number.isFinite(Number(sp.id)) && (
+                  <button
+                    type="button"
+                    className={`btn btn-sm fw-semibold ${watched ? 'btn-warning' : 'btn-outline-warning'}`}
+                    disabled={watchBusy}
+                    onClick={async () => {
+                      setWatchBusy(true)
+                      setWatchMessage('')
+                      try {
+                        if (watched) {
+                          await speciesWatchService.unwatch(sp.id)
+                          setWatched(false)
+                          setWatchMessage(t('discover.notifyMeRemoved'))
+                        } else {
+                          await speciesWatchService.watch(sp.id)
+                          setWatched(true)
+                          setWatchMessage(t('discover.notifyMeAdded'))
+                        }
+                      } catch {
+                        setWatchMessage(t('discover.notifyMeError'))
+                      } finally {
+                        setWatchBusy(false)
+                      }
+                    }}
+                  >
+                    {watched ? `🔔 ${t('discover.notifyMeOn')}` : `🔔 ${t('discover.notifyMe')}`}
+                  </button>
+                )}
+              </div>
+              {watchMessage && (
+                <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>{watchMessage}</p>
+              )}
+              {!watchMessage && (
+                <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+                  {t('discover.notifyMeHint')}
+                </p>
+              )}
+            </>
           ) : (
             <>
               <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>

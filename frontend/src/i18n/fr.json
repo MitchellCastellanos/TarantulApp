@@ -64,6 +64,7 @@
     "markAllError": "Impossible de tout marquer comme lu.",
     "categoryCommunity": "Communauté",
     "categorySexId": "Sex ID",
+    "categoryWishlist": "Wishlist",
     "categoryGeneral": "Autre",
     "readBadge": "Lu",
     "openCta": "Ouvrir"
@@ -454,6 +455,12 @@
     "loginCtaBody": "Créez un compte pour enregistrer repas, mues et rappels. En attendant, explorez les espèces avec des données officielles (WSC/GBIF) et des photos iNaturalist — sans connexion.",
     "loginCtaButton": "Explorer sans compte",
     "addToCollection": "Ajouter à ma collection",
+    "notifyMe": "Prévenez-moi quand publiée",
+    "notifyMeOn": "On vous prévient",
+    "notifyMeHint": "Push dès qu'un keeper publie cette espèce sur la marketplace.",
+    "notifyMeAdded": "C'est noté — on vous prévient à la prochaine annonce.",
+    "notifyMeRemoved": "Alerte retirée.",
+    "notifyMeError": "Impossible d'enregistrer. Réessayer.",
     "loginToAddHint": "Connectez-vous ou créez un compte pour ajouter cette espèce à votre collection (le formulaire sera prérempli).",
     "loginOrRegisterToAdd": "Connexion ou inscription pour ajouter",
     "addGuestCtaBody": "Connectez-vous ou créez un compte pour ajouter cette espèce — le formulaire s’ouvre avec l’espèce déjà choisie. Vous pouvez aussi vous connecter uniquement pour voir votre collection.",
@@ -2762,5 +2769,19 @@
     "about": {
       "line": "TarantulApp\u2122 · Web · v{{version}}"
     }
+  },
+  "wishlist": {
+    "seoTitle": "Mes alertes wishlist | TarantulApp\u2122",
+    "seoDescription": "Esp\u00e8ces que vous suivez \u2014 on vous notifie quand un keeper ou un partenaire en publie une sur la marketplace.",
+    "title": "Mes alertes wishlist",
+    "blurb": "Esp\u00e8ces suivies. On envoie un push d\u00e8s qu\u2019une annonce correspond \u2014 peer ou partenaire \u2014 pour vous \u00e9viter de rafra\u00eechir la marketplace \u00e0 la main.",
+    "discoverCta": "Parcourir les esp\u00e8ces",
+    "empty": "Aucune esp\u00e8ce suivie. Ouvrez une fiche dans D\u00e9couvrir et touchez \u00ab\u00a0Pr\u00e9venez-moi\u00a0\u00bb.",
+    "emptyCta": "Ouvrir D\u00e9couvrir",
+    "remove": "Retirer",
+    "removed": "Retir\u00e9 de votre wishlist.",
+    "removeError": "Impossible de retirer. R\u00e9essayer.",
+    "unknownSpecies": "(esp\u00e8ce supprim\u00e9e)"
   }
+
 }
