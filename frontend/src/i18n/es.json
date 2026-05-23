@@ -1895,6 +1895,7 @@
     "keeperFeatured": "Destacado",
     "keeperSeoDescription": "Tarjeta de keeper, insignias y colección pública en {{brand}}.",
     "keeperCollectionTitle": "Colección",
+    "viewKeeperCollection": "Ver la colección de @{{handle}}",
     "keeperCollectionPrivate": "La colección de este keeper es privada. Solo aparecen aquí las fichas públicas de cada ejemplar cuando activan compartir colección.",
     "keeperCollectionEmpty": "Aún no hay ejemplares públicos. Cada tarántula puede seguir siendo privada.",
     "sexIdTitle": "Reputación en Sex ID",

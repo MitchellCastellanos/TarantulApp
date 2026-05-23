@@ -1879,6 +1879,7 @@
     "spoodsReceived": "Spoods reçus : {{count}}",
     "keeperSeoDescription": "Carte keeper, badges et collection publique sur {{brand}}.",
     "keeperCollectionTitle": "Collection",
+    "viewKeeperCollection": "Voir la collection de @{{handle}}",
     "keeperCollectionPrivate": "La collection de ce keeper est privée. Seules les fiches publiques choisies apparaissent ici lorsque le partage de collection est activé.",
     "keeperCollectionEmpty": "Aucun spécimen public pour l’instant. Chaque araignée peut rester privée.",
     "sexIdTitle": "Réputation Sex ID",

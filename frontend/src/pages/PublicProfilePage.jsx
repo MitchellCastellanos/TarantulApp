@@ -354,6 +354,18 @@ export default function PublicProfilePage() {
               </p>
             )}
 
+            {profile.keeperHandle && (
+              <p className="mb-3">
+                <Link
+                  to={`/u/${encodeURIComponent(profile.keeperHandle)}`}
+                  className="small fw-semibold text-decoration-none"
+                  style={{ color: 'var(--ta-gold)' }}
+                >
+                  {t('public.viewKeeperCollection', { handle: profile.keeperHandle })} →
+                </Link>
+              </p>
+            )}
+
             <div className="d-flex flex-wrap gap-2 mb-3">
               {profile.stage && (
                 <span

@@ -327,6 +327,10 @@ public class TarantulaService {
         dto.setTarantulaId(t.getId());
         dto.setOwnerId(t.getUserId());
         dto.setViewerIsOwner(owner);
+        userRepository.findById(t.getUserId())
+                .map(User::getPublicHandle)
+                .filter(h -> h != null && !h.isBlank())
+                .ifPresent(dto::setKeeperHandle);
         dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());

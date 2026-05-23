@@ -24,6 +24,8 @@ public class PublicProfileDTO {
     private Instant lastMoltAt;
     private long spoodCount;
     private boolean spoodedByViewer;
+    /** Public handle of the keeper, when set; enables a link to their collection. */
+    private String keeperHandle;
 
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
@@ -59,4 +61,6 @@ public class PublicProfileDTO {
     public void setSpoodCount(long spoodCount) { this.spoodCount = spoodCount; }
     public boolean isSpoodedByViewer() { return spoodedByViewer; }
     public void setSpoodedByViewer(boolean spoodedByViewer) { this.spoodedByViewer = spoodedByViewer; }
+    public String getKeeperHandle() { return keeperHandle; }
+    public void setKeeperHandle(String keeperHandle) { this.keeperHandle = keeperHandle; }
 }

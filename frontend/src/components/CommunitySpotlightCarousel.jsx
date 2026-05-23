@@ -33,7 +33,6 @@ export default function CommunitySpotlightCarousel({ limit = 12, className = '' 
 
 function SpotlightStory({ item, placeholder, t }) {
   const spiderHref = item.shortId ? `/t/${item.shortId}` : null
-  const keeperHref = item.keeperHandle ? `/u/${encodeURIComponent(item.keeperHandle)}` : null
   const photoSrc = imgUrl(item.photoUrl) || placeholder
 
   const ring = (
@@ -56,14 +55,8 @@ function SpotlightStory({ item, placeholder, t }) {
   const label = (
     <div className="ta-spotlight-story-caption text-center mt-1" style={{ width: 76 }}>
       <div className="small fw-semibold text-truncate" title={item.name}>{item.name}</div>
-      {item.keeperHandle && keeperHref ? (
-        <Link
-          to={keeperHref}
-          className="small text-muted text-decoration-none d-block text-truncate"
-          onClick={(e) => e.stopPropagation()}
-        >
-          @{item.keeperHandle}
-        </Link>
+      {item.keeperHandle ? (
+        <span className="small text-muted d-block text-truncate">@{item.keeperHandle}</span>
       ) : (
         <span className="small text-muted d-block text-truncate">{t('social.spotlightStoryFallback')}</span>
       )}

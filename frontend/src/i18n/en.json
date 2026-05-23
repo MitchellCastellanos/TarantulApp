@@ -1893,6 +1893,7 @@
     "keeperFeatured": "Highlight",
     "keeperSeoDescription": "Keeper card, badges, and public collection on {{brand}}.",
     "keeperCollectionTitle": "Collection",
+    "viewKeeperCollection": "View @{{handle}}'s collection",
     "keeperCollectionPrivate": "This keeper’s collection is private. Only public specimen cards they choose to publish appear here when collection sharing is on.",
     "keeperCollectionEmpty": "No public specimens yet. They may still be private per spider.",
     "sexIdTitle": "Sex ID reputation",
