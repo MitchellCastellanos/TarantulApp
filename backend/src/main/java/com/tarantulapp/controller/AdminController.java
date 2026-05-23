@@ -28,6 +28,7 @@ import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.NewsletterService;
+import com.tarantulapp.service.TopVendorService;
 import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -89,6 +90,7 @@ public class AdminController {
     private final ListingEventService listingEventService;
     private final com.tarantulapp.repository.PartnerListingRepository partnerListingRepository;
     private final NewsletterService newsletterService;
+    private final TopVendorService topVendorService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -125,7 +127,8 @@ public class AdminController {
                            VendorInviteService vendorInviteService,
                            ListingEventService listingEventService,
                            com.tarantulapp.repository.PartnerListingRepository partnerListingRepository,
-                           NewsletterService newsletterService) {
+                           NewsletterService newsletterService,
+                           TopVendorService topVendorService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -150,6 +153,7 @@ public class AdminController {
         this.listingEventService = listingEventService;
         this.partnerListingRepository = partnerListingRepository;
         this.newsletterService = newsletterService;
+        this.topVendorService = topVendorService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -1302,5 +1306,22 @@ public class AdminController {
         out.put("partnerActive", partnerActive);
         out.put("total", peerActive + partnerActive);
         return ResponseEntity.ok(out);
+    }
+
+    @GetMapping("/marketing/top-vendors/live")
+    public ResponseEntity<List<Map<String, Object>>> liveTopVendors(
+            @RequestParam(defaultValue = "3") int limit) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(topVendorService.getLiveTopVendors(limit));
+    }
+
+    @GetMapping("/marketing/top-vendors/history")
+    public ResponseEntity<List<Map<String, Object>>> topVendorHistory(
+            @RequestParam(required = false) String month) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (month != null && !month.isBlank()) {
+            return ResponseEntity.ok(topVendorService.getHistoryForMonth(month));
+        }
+        return ResponseEntity.ok(topVendorService.getLatestSnapshot());
     }
 }

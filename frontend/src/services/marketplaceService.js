@@ -10,6 +10,8 @@ const marketplaceService = {
   listOfficialVendors: (params = {}) => publicApi.get('/public/marketplace/official-vendors', { params }).then((r) => r.data),
   listVerifiedVendors: (limit = 12) =>
     publicApi.get('/public/marketplace/verified-vendors', { params: { limit } }).then((r) => r.data),
+  listTopVendors: (limit = 3) =>
+    publicApi.get('/public/marketplace/top-vendors', { params: { limit } }).then((r) => r.data),
   getPartnerCatalog: (params = {}) => publicApi.get('/public/marketplace/partner-catalog', { params }).then((r) => r.data),
   partnerCartHandoff: (payload) => publicApi.post('/public/marketplace/partner-cart/handoff', payload).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),

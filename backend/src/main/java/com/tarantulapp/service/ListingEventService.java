@@ -128,6 +128,8 @@ public class ListingEventService {
                         .reversed())
                 .toList();
 
+        Map<String, Object> boostRoi = computeBoostRoi(listings, agg30d);
+
         long views7d = sum(perListing, "views7d");
         long views30d = sum(perListing, "views30d");
         long contactTaps7d = sum(perListing, "contactTaps7d");
@@ -143,6 +145,7 @@ public class ListingEventService {
         totals.put("contactTapRate7d", safeRate(contactTaps7d, views7d));
         totals.put("contactTapRate30d", safeRate(contactTaps30d, views30d));
         response.put("totals", totals);
+        response.put("boostRoi", boostRoi);
         return response;
     }
 
@@ -261,7 +264,44 @@ public class ListingEventService {
         row.put("shares30d", shares30d);
         row.put("contactTapRate7d", safeRate(taps7d, views7d));
         row.put("contactTapRate30d", safeRate(taps30d, views30d));
+        row.put("boosted", isListingBoostedNow(l));
         return row;
+    }
+
+    /** C3 — Compare average 30d views for boosted vs non-boosted listings. */
+    private Map<String, Object> computeBoostRoi(List<MarketplaceListing> listings,
+                                                 Map<UUID, Map<String, KindAgg>> agg30d) {
+        long boostedViews = 0;
+        long nonBoostedViews = 0;
+        int boostedCount = 0;
+        int nonBoostedCount = 0;
+        for (MarketplaceListing l : listings) {
+            long views = getTotal(agg30d, l.getId(), "view");
+            if (isListingBoostedNow(l)) {
+                boostedViews += views;
+                boostedCount++;
+            } else {
+                nonBoostedViews += views;
+                nonBoostedCount++;
+            }
+        }
+        double avgBoosted = boostedCount > 0 ? (double) boostedViews / boostedCount : 0.0;
+        double avgNonBoosted = nonBoostedCount > 0 ? (double) nonBoostedViews / nonBoostedCount : 0.0;
+        Double upliftPct = null;
+        if (boostedCount > 0 && nonBoostedCount > 0 && avgNonBoosted > 0) {
+            upliftPct = Math.round(((avgBoosted - avgNonBoosted) / avgNonBoosted) * 1000.0) / 10.0;
+        }
+        Map<String, Object> roi = new LinkedHashMap<>();
+        roi.put("boostedListingCount", boostedCount);
+        roi.put("nonBoostedListingCount", nonBoostedCount);
+        roi.put("avgViews30dBoosted", Math.round(avgBoosted * 10.0) / 10.0);
+        roi.put("avgViews30dNonBoosted", Math.round(avgNonBoosted * 10.0) / 10.0);
+        roi.put("viewsUpliftPct", upliftPct);
+        return roi;
+    }
+
+    private static boolean isListingBoostedNow(MarketplaceListing l) {
+        return l.getBoostedUntil() != null && l.getBoostedUntil().isAfter(Instant.now());
     }
 
     private static Map<String, Object> baseAnalyticsShape() {
@@ -275,6 +315,13 @@ public class ListingEventService {
         totals.put("contactTapRate7d", 0.0);
         totals.put("contactTapRate30d", 0.0);
         response.put("totals", totals);
+        Map<String, Object> boostRoi = new LinkedHashMap<>();
+        boostRoi.put("boostedListingCount", 0);
+        boostRoi.put("nonBoostedListingCount", 0);
+        boostRoi.put("avgViews30dBoosted", 0.0);
+        boostRoi.put("avgViews30dNonBoosted", 0.0);
+        boostRoi.put("viewsUpliftPct", null);
+        response.put("boostRoi", boostRoi);
         return response;
     }
 

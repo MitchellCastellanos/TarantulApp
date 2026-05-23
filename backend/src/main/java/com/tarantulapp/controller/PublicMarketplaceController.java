@@ -6,6 +6,7 @@ import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
 import com.tarantulapp.service.PartnerListingImageProxyService;
+import com.tarantulapp.service.TopVendorService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ public class PublicMarketplaceController {
     private final PartnerCartHandoffService partnerCartHandoffService;
     private final PartnerListingImageProxyService partnerListingImageProxyService;
     private final ListingEventService listingEventService;
+    private final TopVendorService topVendorService;
     private final boolean futurePaidStorefrontEnabled;
     private final boolean futurePaidBadgesEnabled;
     private final boolean strategicPartnerBootstrapMode;
@@ -53,6 +55,7 @@ public class PublicMarketplaceController {
                                        PartnerCartHandoffService partnerCartHandoffService,
                                        PartnerListingImageProxyService partnerListingImageProxyService,
                                        ListingEventService listingEventService,
+                                       TopVendorService topVendorService,
                                        @Value("${app.marketplace.future-paid-storefront-enabled:false}") boolean futurePaidStorefrontEnabled,
                                        @Value("${app.marketplace.future-paid-badges-enabled:false}") boolean futurePaidBadgesEnabled,
                                        @Value("${app.marketplace.strategic-bootstrap-mode:true}") boolean strategicPartnerBootstrapMode) {
@@ -61,6 +64,7 @@ public class PublicMarketplaceController {
         this.partnerCartHandoffService = partnerCartHandoffService;
         this.partnerListingImageProxyService = partnerListingImageProxyService;
         this.listingEventService = listingEventService;
+        this.topVendorService = topVendorService;
         this.futurePaidStorefrontEnabled = futurePaidStorefrontEnabled;
         this.futurePaidBadgesEnabled = futurePaidBadgesEnabled;
         this.strategicPartnerBootstrapMode = strategicPartnerBootstrapMode;
@@ -125,6 +129,12 @@ public class PublicMarketplaceController {
     public ResponseEntity<List<Map<String, Object>>> verifiedVendors(
             @RequestParam(defaultValue = "12") int limit) {
         return ResponseEntity.ok(marketplaceService.listVerifiedVendors(limit));
+    }
+
+    @GetMapping("/top-vendors")
+    public ResponseEntity<List<Map<String, Object>>> topVendors(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(topVendorService.getLiveTopVendors(limit));
     }
 
     @PostMapping("/official-vendors/lead")

@@ -86,6 +86,10 @@ const adminService = {
     api.get(`/admin/marketing/newsletter/drafts/${id}`).then((r) => r.data),
   sendNewsletterDraft: (id) =>
     api.post(`/admin/marketing/newsletter/drafts/${id}/send`).then((r) => r.data),
+  liveTopVendors: (limit = 3) =>
+    api.get('/admin/marketing/top-vendors/live', { params: { limit } }).then((r) => r.data),
+  topVendorHistory: (month) =>
+    api.get('/admin/marketing/top-vendors/history', month ? { params: { month } } : {}).then((r) => r.data),
 }
 
 export default adminService

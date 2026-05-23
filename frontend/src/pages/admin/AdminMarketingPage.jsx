@@ -78,6 +78,7 @@ export default function AdminMarketingPage() {
   const [subscriberCount, setSubscriberCount] = useState(0)
   const [newsletterBusy, setNewsletterBusy] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [liveTopVendors, setLiveTopVendors] = useState([])
 
   const reload = () => {
     setLoading(true)
@@ -90,8 +91,9 @@ export default function AdminMarketingPage() {
       adminService.tapToContactRate().catch(() => null),
       adminService.listingCounts().catch(() => null),
       adminService.newsletterSubscriberCount().catch(() => ({ count: 0 })),
+      adminService.liveTopVendors(3).catch(() => []),
     ])
-      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs]) => {
+      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs, topVendors]) => {
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -104,6 +106,7 @@ export default function AdminMarketingPage() {
         setTapRate(rate && typeof rate === 'object' ? rate : null)
         setListingCounts(counts && typeof counts === 'object' ? counts : null)
         setSubscriberCount(typeof subs?.count === 'number' ? subs.count : 0)
+        setLiveTopVendors(Array.isArray(topVendors) ? topVendors : [])
       })
       .catch((err) => {
         const code = err?.response?.status
@@ -582,11 +585,26 @@ export default function AdminMarketingPage() {
       )}
 
       <div className="card p-3">
-        <h3 className="h6 mb-1">{t('admin.mkt.upcomingTitle')}</h3>
-        <p className="small text-muted mb-2">{t('admin.mkt.upcomingBlurb')}</p>
-        <ul className="small mb-0">
-          <li>{t('admin.mkt.upcomingTopVendor')}</li>
-        </ul>
+        <h3 className="h6 mb-1">{t('admin.mkt.topVendorsLiveTitle')}</h3>
+        <p className="small text-muted mb-2">{t('admin.mkt.topVendorsLiveBlurb')}</p>
+        {liveTopVendors.length === 0 ? (
+          <p className="small text-muted mb-0">{t('admin.mkt.topVendorsLiveEmpty')}</p>
+        ) : (
+          <ul className="small mb-0">
+            {liveTopVendors.map((v) => {
+              const name = v.storefrontName || v.displayName || v.handle || 'Vendor'
+              const ratePct = Math.round((v.contactTapRate ?? 0) * 1000) / 10
+              return (
+                <li key={v.userId}>
+                  {t('admin.mkt.topVendorsLiveRank', { rank: v.rank ?? '?' })}{' '}
+                  <strong>{name}</strong>
+                  {' — '}
+                  {t('admin.mkt.topVendorsLiveRate', { rate: ratePct, views: v.views30d ?? 0 })}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </div>
   )

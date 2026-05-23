@@ -834,6 +834,32 @@ export default function MarketplaceSellerPage() {
                     </div>
                   </div>
 
+                  {analytics.boostRoi && (
+                    <div className="border rounded p-3 mb-3 small">
+                      <h3 className="h6 mb-1">{t('marketplace.analytics.boostRoiTitle')}</h3>
+                      <p className="text-muted mb-2">{t('marketplace.analytics.boostRoiBlurb')}</p>
+                      {analytics.boostRoi.viewsUpliftPct != null ? (
+                        <>
+                          <p className="mb-2 fw-semibold">
+                            {t('marketplace.analytics.boostRoiUplift', { pct: analytics.boostRoi.viewsUpliftPct })}
+                          </p>
+                          <div className="row g-2">
+                            <div className="col-6">
+                              <div className="text-muted">{t('marketplace.analytics.boostRoiBoostedAvg')}</div>
+                              <div className="fw-semibold">{analytics.boostRoi.avgViews30dBoosted ?? 0}</div>
+                            </div>
+                            <div className="col-6">
+                              <div className="text-muted">{t('marketplace.analytics.boostRoiNonBoostedAvg')}</div>
+                              <div className="fw-semibold">{analytics.boostRoi.avgViews30dNonBoosted ?? 0}</div>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-muted mb-0">{t('marketplace.analytics.boostRoiNoCompare')}</p>
+                      )}
+                    </div>
+                  )}
+
                   {Array.isArray(analytics.perListing) && analytics.perListing.length === 0 && (
                     <p className="small text-muted mb-0">{t('marketplace.analytics.empty')}</p>
                   )}
