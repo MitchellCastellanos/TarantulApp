@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
+import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
 
 function FilterPill({ active, onClick, children, id }) {
   return (
@@ -34,6 +34,7 @@ export default function MarketplaceFilterBar({
     filters.country,
     filters.state,
     filters.city,
+    filters.shipsToCountry,
     filters.sellerTier,
     filters.listingOrigin,
     filters.minPrice,
@@ -117,6 +118,22 @@ export default function MarketplaceFilterBar({
                 >
                   <option value="">{t('marketplace.anyCity')}</option>
                   {filterCities.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="col-md-4">
+                <label className="small text-muted mb-1 d-block">{t('marketplace.shipsToFilterLabel')}</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={filters.shipsToCountry || ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, shipsToCountry: e.target.value }))}
+                  aria-label={t('marketplace.shipsToFilterLabel')}
+                >
+                  <option value="">{t('marketplace.shipsToFilterAny')}</option>
+                  {SHIPS_TO_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {t('marketplace.shipsToFilterTo', { country: opt.label })}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-md-3">

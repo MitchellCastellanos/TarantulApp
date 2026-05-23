@@ -586,7 +586,6 @@ export default function AdminMarketingPage() {
         <p className="small text-muted mb-2">{t('admin.mkt.upcomingBlurb')}</p>
         <ul className="small mb-0">
           <li>{t('admin.mkt.upcomingTopVendor')}</li>
-          <li>{t('admin.mkt.upcomingWishlist')}</li>
         </ul>
       </div>
     </div>

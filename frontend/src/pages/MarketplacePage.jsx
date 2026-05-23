@@ -729,6 +729,7 @@ export default function MarketplacePage() {
                     value={sortMode}
                     onChange={(e) => setSortMode(e.target.value)}
                   >
+                    <option value="trust">{t('marketplace.sortTrust')}</option>
                     <option value="newest">{t('marketplace.sortNewest')}</option>
                     <option value="price_asc">{t('marketplace.sortPriceAsc')}</option>
                     <option value="price_desc">{t('marketplace.sortPriceDesc')}</option>

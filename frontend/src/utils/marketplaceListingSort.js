@@ -1,7 +1,29 @@
 /** Client-side sort for marketplace / partner storefront listing grids. */
+function trustScore(row) {
+  let s = 0
+  if (row.sellerVerifiedBreeder) s += 40
+  if (row.boosted) s += 12
+  if (row.source === 'partner' || row.isPartner) s += 18
+  if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
+  if (row.promoted) s += 14
+  if (row.imageUrl) s += 6
+  if (row.priceAmount != null) s += 4
+  const createdMs = row.createdAt ? Date.parse(row.createdAt) : 0
+  if (!Number.isNaN(createdMs) && createdMs > 0) {
+    const hours = (Date.now() - createdMs) / (1000 * 60 * 60)
+    s += Math.max(0, 20 - Math.min(20, hours / 12))
+  }
+  return s
+}
+
 export function sortMarketplaceListings(listings, sortMode) {
   const base = Array.isArray(listings) ? listings.filter((l) => l && l.status !== 'hidden') : []
   const sorted = [...base]
+
+  if (sortMode === 'trust') {
+    sorted.sort((a, b) => trustScore(b) - trustScore(a))
+    return sorted
+  }
 
   if (sortMode === 'newest') {
     sorted.sort((a, b) => {
@@ -35,25 +57,8 @@ export function sortMarketplaceListings(listings, sortMode) {
     return sorted
   }
 
-  // trust — weighted score for mixed partner/peer feeds
-  const score = (row) => {
-    let s = 0
-    if (row.sellerVerifiedBreeder) s += 40
-    if (row.boosted) s += 12
-    if (row.source === 'partner' || row.isPartner) s += 18
-    if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
-    if (row.promoted) s += 14
-    if (row.imageUrl) s += 6
-    if (row.priceAmount != null) s += 4
-    const createdMs = row.createdAt ? Date.parse(row.createdAt) : 0
-    if (!Number.isNaN(createdMs) && createdMs > 0) {
-      const hours = (Date.now() - createdMs) / (1000 * 60 * 60)
-      s += Math.max(0, 20 - Math.min(20, hours / 12))
-    }
-    return s
-  }
-  sorted.sort((a, b) => score(b) - score(a))
+  sorted.sort((a, b) => trustScore(b) - trustScore(a))
   return sorted
 }
 
-export const MARKETPLACE_SORT_OPTIONS = ['newest', 'price_asc', 'price_desc', 'views']
+export const MARKETPLACE_SORT_OPTIONS = ['trust', 'newest', 'price_asc', 'price_desc', 'views']
