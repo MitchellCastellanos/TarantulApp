@@ -7,7 +7,7 @@ import { shareOrDownloadDataUrl, sanitizeFilename } from '../utils/shareOrDownlo
 
 const CHANNELS = ['default', 'whatsapp', 'instagram']
 
-export default function ListingShareKit({ listing, sellerName, sellerHandle, listingUrl, imageUrl, onClose }) {
+export default function ListingShareKit({ listing, sellerName, sellerHandle, listingUrl, storeUrl, imageUrl, onClose }) {
   const { t } = useTranslation()
   const [channel, setChannel] = useState('default')
   const [toast, setToast] = useState('')
@@ -35,6 +35,7 @@ export default function ListingShareKit({ listing, sellerName, sellerHandle, lis
       sellerHandle,
       sellerName,
       profileUrl: listingUrl,
+      storeUrl,
       t,
     })
       .then((dataUrl) => {
@@ -49,7 +50,7 @@ export default function ListingShareKit({ listing, sellerName, sellerHandle, lis
     return () => {
       cancelled = true
     }
-  }, [listing, imageUrl, sellerHandle, sellerName, listingUrl, t])
+  }, [listing, imageUrl, sellerHandle, sellerName, listingUrl, storeUrl, t])
 
   useEffect(() => {
     if (!toast) return

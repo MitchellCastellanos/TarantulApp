@@ -1,5 +1,10 @@
+import QRCode from 'qrcode'
 import { BRAND_WITH_TM } from '../constants/brand'
-import { BRAND_LOGO_FOR_LIGHT_BG, loadImageElement } from './qrBrandComposite'
+import {
+  BRAND_LOGO_FOR_LIGHT_BG,
+  compositeQrPngDataUrl,
+  loadImageElement,
+} from './qrBrandComposite'
 import { formatListingPrice } from './listingShareTemplates'
 
 /** Loads a (potentially cross-origin) image so that the canvas can be exported. */
@@ -85,6 +90,37 @@ function drawSpiderFallback(ctx, x, y, w, h) {
   ctx.restore()
 }
 
+/** Branded QR (logo centered) at the given pixel size, ready to draw onto another canvas. */
+async function buildBrandedQrImage(url, size) {
+  const raw = await QRCode.toDataURL(url, {
+    width: size,
+    margin: 1,
+    errorCorrectionLevel: 'H',
+    color: { dark: '#000000', light: '#FFFFFF' },
+  })
+  const composed = await compositeQrPngDataUrl(raw, size)
+  return loadImageElement(composed)
+}
+
+/** White rounded plate behind a QR so it stays scannable on the dark panel. */
+function drawQrPlate(ctx, x, y, size, padding = 12, radius = 14) {
+  const plateX = x - padding
+  const plateY = y - padding
+  const plateSize = size + padding * 2
+  ctx.save()
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  const r = Math.min(radius, plateSize / 2)
+  ctx.moveTo(plateX + r, plateY)
+  ctx.arcTo(plateX + plateSize, plateY, plateX + plateSize, plateY + plateSize, r)
+  ctx.arcTo(plateX + plateSize, plateY + plateSize, plateX, plateY + plateSize, r)
+  ctx.arcTo(plateX, plateY + plateSize, plateX, plateY, r)
+  ctx.arcTo(plateX, plateY, plateX + plateSize, plateY, r)
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
 /**
  * Generates a 1080×1080 branded share card for a marketplace listing.
  * Loads the listing image with CORS; falls back to a brand gradient if blocked.
@@ -93,7 +129,8 @@ function drawSpiderFallback(ctx, x, y, w, h) {
  * @param {string|null} [params.imageUrl]
  * @param {string} [params.sellerHandle]
  * @param {string} [params.sellerName]
- * @param {string} params.profileUrl
+ * @param {string} params.profileUrl — URL of the listing detail page (QR target).
+ * @param {string} [params.storeUrl] — URL of the partner store on TarantulApp (QR target).
  * @param {(k: string, opts?: object) => string} params.t
  * @returns {Promise<string>} data URL (PNG)
  */
@@ -103,6 +140,7 @@ export async function buildListingSharePngDataUrl({
   sellerHandle,
   sellerName,
   profileUrl,
+  storeUrl,
   t,
 }) {
   const W = 1080
@@ -116,8 +154,8 @@ export async function buildListingSharePngDataUrl({
   ctx.fillStyle = '#0c0c1e'
   ctx.fillRect(0, 0, W, H)
 
-  // Top zone (image) — 60% of height.
-  const imgZoneH = Math.round(H * 0.6)
+  // Top zone (image) — 55% of height; the rest is the info panel.
+  const imgZoneH = Math.round(H * 0.55)
   let photoLoaded = false
   if (imageUrl) {
     try {
@@ -146,84 +184,168 @@ export async function buildListingSharePngDataUrl({
   ctx.fillStyle = '#0c0c1e'
   ctx.fillRect(0, panelY, W, panelH)
 
-  const pad = 64
-  const contentW = W - pad * 2
-  let cursorY = panelY + 56
+  const pad = 56
+
+  // Brand chip (logo + wordmark) — top-left of the panel.
+  const chipLogoSize = 52
+  const chipY = panelY + 28
+  let brandLogo = null
+  try {
+    brandLogo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+  } catch {
+    /* no logo, fall through to wordmark only */
+  }
+  let chipCursorX = pad
+  if (brandLogo) {
+    ctx.save()
+    ctx.fillStyle = '#f5f0e6'
+    ctx.beginPath()
+    ctx.arc(chipCursorX + chipLogoSize / 2, chipY + chipLogoSize / 2, chipLogoSize / 2 + 5, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(chipCursorX + chipLogoSize / 2, chipY + chipLogoSize / 2, chipLogoSize / 2, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.drawImage(brandLogo, chipCursorX, chipY, chipLogoSize, chipLogoSize)
+    ctx.restore()
+    ctx.restore()
+    chipCursorX += chipLogoSize + 16
+  }
+  ctx.fillStyle = '#f5f0e6'
+  ctx.font = 'bold 30px sans-serif'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(BRAND_WITH_TM, chipCursorX, chipY + chipLogoSize / 2)
+  ctx.textBaseline = 'top'
+
+  // Right column hosts both QRs stacked vertically — keeps the left side
+  // wide enough for a 2-line title without truncating long species names.
+  const qrSize = 116
+  const qrPlatePad = 10
+  const qrColX = W - pad - qrSize
+  const qrLabelFont = 'bold 16px sans-serif'
+  const qrLabelHeight = 18
+  const qrLabelGap = 8
+  const qrIntraGap = 28
+  const qrCaptionGap = 8
+  const qrCaptionHeight = 16
+  const qrStackHeight =
+    qrLabelHeight + qrLabelGap + qrSize +
+    qrIntraGap +
+    qrLabelHeight + qrLabelGap + qrSize +
+    qrCaptionGap + qrCaptionHeight
+  // Center the stack vertically inside the panel.
+  const qrStackTop = panelY + Math.max(56, Math.round((panelH - qrStackHeight) / 2))
+  const qr1LabelY = qrStackTop
+  const qr1Y = qr1LabelY + qrLabelHeight + qrLabelGap
+  const qr2LabelY = qr1Y + qrSize + qrIntraGap
+  const qr2Y = qr2LabelY + qrLabelHeight + qrLabelGap
+  const qr2CaptionY = qr2Y + qrSize + qrCaptionGap
+
+  // Left column content stops well before the QR strip.
+  const contentLeftW = qrColX - pad - 28
 
   // Title (max 2 lines).
+  let cursorY = panelY + 108
   ctx.fillStyle = '#f5f0e6'
-  ctx.font = 'bold 56px sans-serif'
+  ctx.font = 'bold 50px sans-serif'
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-  const titleLines = wrapLines(ctx, listing?.title || '', contentW, 2)
+  const titleLines = wrapLines(ctx, listing?.title || '', contentLeftW, 2)
   for (const line of titleLines) {
     ctx.fillText(line, pad, cursorY)
-    cursorY += 64
+    cursorY += 60
   }
-  cursorY += 8
+  cursorY += 14
 
   // Species (italic, 1 line).
   if (listing?.speciesName) {
     ctx.fillStyle = 'rgba(245, 240, 230, 0.72)'
-    ctx.font = 'italic 30px sans-serif'
-    const speciesLines = wrapLines(ctx, listing.speciesName, contentW, 1)
+    ctx.font = 'italic 28px sans-serif'
+    const speciesLines = wrapLines(ctx, listing.speciesName, contentLeftW, 1)
     if (speciesLines[0]) {
       ctx.fillText(speciesLines[0], pad, cursorY)
-      cursorY += 40
+      cursorY += 44
     }
   }
+
+  cursorY += 12
 
   // Price (gold).
   const priceText = formatListingPrice(listing?.priceAmount, listing?.currency, t)
   ctx.fillStyle = '#d4af37'
-  ctx.font = 'bold 64px sans-serif'
-  ctx.fillText(priceText, pad, panelY + panelH - 220)
+  ctx.font = 'bold 62px sans-serif'
+  ctx.fillText(priceText, pad, cursorY)
+  cursorY += 80
 
-  // Seller handle / location.
-  const sellerLabel = sellerHandle
-    ? `@${String(sellerHandle).replace(/^@+/, '')}`
-    : (sellerName || '')
-  if (sellerLabel) {
-    ctx.fillStyle = 'rgba(245, 240, 230, 0.6)'
-    ctx.font = '28px sans-serif'
-    ctx.fillText(sellerLabel, pad, panelY + panelH - 140)
+  // Seller / partner store invite.
+  const cleanHandle = sellerHandle ? String(sellerHandle).replace(/^@+/, '') : ''
+  const sellerLine = sellerName || (cleanHandle ? `@${cleanHandle}` : '')
+  if (sellerLine) {
+    ctx.fillStyle = 'rgba(245, 240, 230, 0.78)'
+    ctx.font = 'bold 26px sans-serif'
+    const sellerLines = wrapLines(ctx, sellerLine, contentLeftW, 1)
+    if (sellerLines[0]) {
+      ctx.fillText(sellerLines[0], pad, cursorY)
+      cursorY += 36
+    }
   }
-
-  // Brand mark (bottom-right).
-  ctx.fillStyle = 'rgba(245, 240, 230, 0.55)'
-  ctx.font = '24px sans-serif'
-  ctx.textAlign = 'right'
-  ctx.fillText(`via ${BRAND_WITH_TM}`, W - pad, panelY + panelH - 64)
-
-  // Brand logo (above the "via TarantulApp" line, when available).
-  try {
-    const logo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
-    const logoSize = 64
-    const lx = W - pad - logoSize
-    const ly = panelY + panelH - 64 - logoSize - 16
-    ctx.save()
-    ctx.fillStyle = 'rgba(245, 240, 230, 0.95)'
-    ctx.beginPath()
-    ctx.arc(lx + logoSize / 2, ly + logoSize / 2, logoSize / 2 + 6, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(lx + logoSize / 2, ly + logoSize / 2, logoSize / 2, 0, Math.PI * 2)
-    ctx.clip()
-    ctx.drawImage(logo, lx, ly, logoSize, logoSize)
-    ctx.restore()
-    ctx.restore()
-  } catch {
-    /* no logo, oh well */
-  }
-
-  // Faint URL on the bottom-left if room.
-  if (profileUrl) {
-    ctx.fillStyle = 'rgba(245, 240, 230, 0.4)'
+  if (cleanHandle) {
+    ctx.fillStyle = 'rgba(245, 240, 230, 0.55)'
     ctx.font = '22px sans-serif'
-    ctx.textAlign = 'left'
-    const urlLine = String(profileUrl).replace(/^https?:\/\//, '')
-    ctx.fillText(urlLine, pad, panelY + panelH - 64)
+    const visitText = t('share.listing.visitStoreLine', {
+      handle: `@${cleanHandle}`,
+      brand: BRAND_WITH_TM,
+      defaultValue: `Visit @${cleanHandle} on ${BRAND_WITH_TM}`,
+    })
+    const visitLines = wrapLines(ctx, visitText, contentLeftW, 2)
+    for (const line of visitLines) {
+      ctx.fillText(line, pad, cursorY)
+      cursorY += 28
+    }
+  }
+
+  // QR labels above each code.
+  ctx.fillStyle = 'rgba(245, 240, 230, 0.85)'
+  ctx.font = qrLabelFont
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  const buyLabel = t('share.listing.scanToBuy', { defaultValue: 'Scan to buy' }).toUpperCase()
+  const storeLabel = t('share.listing.visitStore', { defaultValue: 'Visit store' }).toUpperCase()
+  const qrCenterX = qrColX + qrSize / 2
+  if (profileUrl) {
+    ctx.fillText(buyLabel, qrCenterX, qr1LabelY)
+  }
+  if (storeUrl) {
+    ctx.fillText(storeLabel, qrCenterX, qr2LabelY)
+  }
+
+  // QR codes (branded with the center logo) on white plates.
+  if (profileUrl) {
+    try {
+      const qrImg = await buildBrandedQrImage(profileUrl, qrSize)
+      drawQrPlate(ctx, qrColX, qr1Y, qrSize, qrPlatePad)
+      ctx.drawImage(qrImg, qrColX, qr1Y, qrSize, qrSize)
+    } catch {
+      /* skip QR1 if generation fails */
+    }
+  }
+  if (storeUrl) {
+    try {
+      const qrImg = await buildBrandedQrImage(storeUrl, qrSize)
+      drawQrPlate(ctx, qrColX, qr2Y, qrSize, qrPlatePad)
+      ctx.drawImage(qrImg, qrColX, qr2Y, qrSize, qrSize)
+    } catch {
+      /* skip QR2 if generation fails */
+    }
+  }
+
+  // Tiny caption with the partner handle under the store QR.
+  if (storeUrl && cleanHandle) {
+    ctx.fillStyle = 'rgba(245, 240, 230, 0.55)'
+    ctx.font = '14px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(`@${cleanHandle}`, qrCenterX, qr2CaptionY)
   }
 
   try {
@@ -237,6 +359,7 @@ export async function buildListingSharePngDataUrl({
         sellerHandle,
         sellerName,
         profileUrl,
+        storeUrl,
         t,
       })
     }

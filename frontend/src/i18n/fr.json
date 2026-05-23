@@ -2620,7 +2620,10 @@
       "download": "Télécharger l’image",
       "cardHint": "Optimisée pour le feed Instagram et les stories WhatsApp. Déposez-la directement depuis la galerie.",
       "cardError": "Impossible de générer la carte image. La légende reste utilisable.",
-      "dialogTitle": "Partager l’annonce"
+      "dialogTitle": "Partager l’annonce",
+      "scanToBuy": "Scanner pour acheter",
+      "visitStore": "Visiter la boutique",
+      "visitStoreLine": "Visitez {{handle}} sur {{brand}}"
     }
   },
   "onboarding": {
