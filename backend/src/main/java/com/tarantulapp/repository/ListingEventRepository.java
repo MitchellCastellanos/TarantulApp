@@ -51,7 +51,7 @@ public interface ListingEventRepository extends JpaRepository<ListingEvent, UUID
               AND e.occurred_at < :until
             GROUP BY l.seller_user_id
             HAVING SUM(CASE WHEN e.kind = 'view' THEN 1 ELSE 0 END) >= :minViews
-            ORDER BY (SUM(CASE WHEN e.kind = 'contact_tap' THEN 1 ELSE 0 END)::double precision
+            ORDER BY (CAST(SUM(CASE WHEN e.kind = 'contact_tap' THEN 1 ELSE 0 END) AS double precision)
                       / NULLIF(SUM(CASE WHEN e.kind = 'view' THEN 1 ELSE 0 END), 0)) DESC,
                      SUM(CASE WHEN e.kind = 'contact_tap' THEN 1 ELSE 0 END) DESC
             LIMIT :limit

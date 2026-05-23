@@ -7,6 +7,8 @@ import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import moderationService from '../services/moderationService'
 import FangPanel from '../components/FangPanel'
+import SpeciesProfileCard from '../components/SpeciesProfileCard'
+import speciesService from '../services/speciesService'
 import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone, formatEventDateTime } from '../utils/dateFormat'
@@ -53,6 +55,7 @@ export default function PublicProfilePage() {
   const { system }  = useUnitSystem()
 
   const [profile, setProfile]   = useState(null)
+  const [speciesView, setSpeciesView] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [photos, setPhotos] = useState([])
   const [error, setError]       = useState('')
@@ -71,6 +74,14 @@ export default function PublicProfilePage() {
     api.get(`/public/t/${shortId}`)
        .then(r => {
          setProfile(r.data)
+         const sid = r.data?.speciesId
+         if (sid) {
+           speciesService.getDiscoverSpeciesView(sid)
+              .then(v => setSpeciesView(v))
+              .catch(() => setSpeciesView(null))
+         } else {
+           setSpeciesView(null)
+         }
          api.get(`/public/t/${shortId}/timeline`, { params: { page: 0, size: 40 } })
             .then(tr => setTimeline(unwrapPagedList(tr.data)))
             .catch(() => {})
@@ -423,6 +434,21 @@ export default function PublicProfilePage() {
             </button>
             {reportSent && <p className="small text-muted mt-2 mb-0">{reportSent}</p>}
           </div>
+        )}
+
+        {speciesView?.species && (
+          <FangPanel className="mb-3">
+            <div className="card border-0 shadow-sm ta-premium-pane">
+              <div className="card-body">
+                <SpeciesProfileCard
+                  species={speciesView.species}
+                  tarantula={{ profilePhoto: profile.profilePhoto }}
+                  t={t}
+                  fallbackPhoto={speciesView.fallbackPhoto}
+                />
+              </div>
+            </div>
+          </FangPanel>
         )}
 
         <FangPanel className="mb-3">

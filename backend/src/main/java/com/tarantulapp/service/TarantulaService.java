@@ -339,6 +339,7 @@ public class TarantulaService {
         dto.setProfilePhoto(t.getProfilePhoto());
 
         if (t.getSpecies() != null) {
+            dto.setSpeciesId(t.getSpecies().getId());
             dto.setScientificName(t.getSpecies().getScientificName());
             dto.setCommonName(t.getSpecies().getCommonName());
             dto.setHabitatType(t.getSpecies().getHabitatType());
