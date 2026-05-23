@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 import notificationsService, { notifyNotificationsUpdated } from '../services/notificationsService'
@@ -12,6 +12,7 @@ function notificationCategoryLabel(type, t) {
   const k = String(type || '')
   if (k === 'SPOOD_RECEIVED' || k === 'POST_COMMENT') return t('notificationsScreen.categoryCommunity')
   if (k.startsWith('SEX_ID')) return t('notificationsScreen.categorySexId')
+  if (k === 'SPECIES_LISTED_WISHLIST') return t('notificationsScreen.categoryWishlist')
   return t('notificationsScreen.categoryGeneral')
 }
 
@@ -119,16 +120,23 @@ export default function NotificationsPage() {
             <h1 className="h4 mb-1">{t('notificationsScreen.pageTitle')}</h1>
             <p className="text-muted small mb-0">{t('notificationsScreen.hint')}</p>
           </div>
-          {token && rows.length > 0 && (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-light"
-              disabled={markBusy || rows.every((x) => x.readAt)}
-              onClick={() => handleMarkAll()}
-            >
-              {markBusy ? `${t('nav.markAllRead')}…` : t('nav.markAllRead')}
-            </button>
-          )}
+          <div className="d-flex flex-wrap gap-2 align-items-start">
+            {token && (
+              <Link to="/wishlist" className="btn btn-sm btn-outline-warning">
+                🔔 {t('wishlist.title')}
+              </Link>
+            )}
+            {token && rows.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-light"
+                disabled={markBusy || rows.every((x) => x.readAt)}
+                onClick={() => handleMarkAll()}
+              >
+                {markBusy ? `${t('nav.markAllRead')}…` : t('nav.markAllRead')}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

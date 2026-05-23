@@ -84,6 +84,7 @@ public class MarketplaceService {
     private final FileStorageService fileStorageService;
     private final BillingService billingService;
     private final KeeperRankCalculator keeperRankCalculator;
+    private final SpeciesWatchService speciesWatchService;
     @Value("${app.marketplace.partner-feed.hard-cap:500}")
     private int partnerFeedHardCap = 500;
     @Value("${app.marketplace.strategic-bootstrap-mode:true}")
@@ -114,7 +115,8 @@ public class MarketplaceService {
                               ChatMessageRepository chatMessageRepository,
                               FileStorageService fileStorageService,
                               BillingService billingService,
-                              KeeperRankCalculator keeperRankCalculator) {
+                              KeeperRankCalculator keeperRankCalculator,
+                              SpeciesWatchService speciesWatchService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.officialVendorRepository = officialVendorRepository;
@@ -131,6 +133,7 @@ public class MarketplaceService {
         this.fileStorageService = fileStorageService;
         this.billingService = billingService;
         this.keeperRankCalculator = keeperRankCalculator;
+        this.speciesWatchService = speciesWatchService;
     }
 
     @Transactional
@@ -243,6 +246,22 @@ public class MarketplaceService {
         }
         listing.setStatus("active");
         listing = marketplaceListingRepository.save(listing);
+
+        // Fire-and-forget wishlist alerts to species watchers (runs on pushExecutor).
+        try {
+            String priceLabel = listing.getPriceAmount() == null
+                    ? null
+                    : listing.getPriceAmount().toPlainString() + (listing.getCurrency() == null ? "" : " " + listing.getCurrency());
+            speciesWatchService.notifyWatchersAsync(
+                    listing.getSpeciesName(),
+                    listing.getId(),
+                    userId,
+                    listing.getTitle(),
+                    priceLabel);
+        } catch (RuntimeException ignored) {
+            // Wishlist alerts are best-effort; never break listing creation.
+        }
+
         Map<String, Object> out = mapListing(listing);
         out.put("listingBoostAvailable", billingService.isListingBoostCheckoutAvailable());
         out.put("sellerProgram", sellerProgram);

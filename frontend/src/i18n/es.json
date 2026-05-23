@@ -64,6 +64,7 @@
     "markAllError": "No se pudo marcar todo como leído.",
     "categoryCommunity": "Comunidad",
     "categorySexId": "Sex ID",
+    "categoryWishlist": "Wishlist",
     "categoryGeneral": "Otro",
     "readBadge": "Leída",
     "openCta": "Abrir"
@@ -454,6 +455,12 @@
     "loginCtaBody": "Crea tu cuenta y registra alimentaciones, mudas y recordatorios. Mientras tanto puedes explorar especies con datos oficiales (WSC/GBIF) y fotos de iNaturalist — sin iniciar sesión.",
     "loginCtaButton": "Explorar sin cuenta",
     "addToCollection": "Agregar a mi colección",
+    "notifyMe": "Avísame cuando alguien la liste",
+    "notifyMeOn": "Te avisamos",
+    "notifyMeHint": "Te llega un push cuando cualquier keeper publique esta especie en el marketplace.",
+    "notifyMeAdded": "Listo — te avisamos cuando aparezca.",
+    "notifyMeRemoved": "Alerta quitada.",
+    "notifyMeError": "No se pudo guardar. Intenta de nuevo.",
     "loginToAddHint": "Inicia sesión o crea una cuenta para registrar esta especie en tu colección (los datos se rellenan solos).",
     "loginOrRegisterToAdd": "Entrar o registrarse para agregar",
     "addGuestCtaBody": "Inicia sesión o crea una cuenta para añadir esta especie: el formulario abre con la especie ya elegida. También puedes entrar solo para ver tu colección.",
@@ -2788,5 +2795,19 @@
     "about": {
       "line": "TarantulApp\u2122 · Web · v{{version}}"
     }
+  },
+  "wishlist": {
+    "seoTitle": "Mis alertas de wishlist | TarantulApp\u2122",
+    "seoDescription": "Especies que sigues \u2014 te avisamos cuando un keeper o socio liste una en el marketplace.",
+    "title": "Mis alertas de wishlist",
+    "blurb": "Especies en seguimiento. Te mandamos un push cuando aparezca un anuncio \u2014 peer o socio \u2014 para que no andes refrescando el marketplace a mano.",
+    "discoverCta": "Explorar especies",
+    "empty": "A\u00fan no sigues especies. Abre una ficha en Descubrir y toca \u201cAv\u00edsame\u201d.",
+    "emptyCta": "Abrir Descubrir",
+    "remove": "Quitar",
+    "removed": "Quitado de tu wishlist.",
+    "removeError": "No se pudo quitar. Intenta de nuevo.",
+    "unknownSpecies": "(especie eliminada)"
   }
+
 }

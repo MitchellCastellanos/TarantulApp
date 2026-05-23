@@ -2795,5 +2795,19 @@
     "about": {
       "line": "TarantulApp\u2122 · Web · v{{version}}"
     }
+  },
+  "wishlist": {
+    "seoTitle": "My wishlist alerts | TarantulApp\u2122",
+    "seoDescription": "Species you\u2019re watching \u2014 we ping you when a keeper or partner lists one on the marketplace.",
+    "title": "My wishlist alerts",
+    "blurb": "Watched species. We send a push when a fresh listing matches \u2014 peer or partner \u2014 so you don\u2019t refresh the marketplace by hand.",
+    "discoverCta": "Browse species",
+    "empty": "No watched species yet. Open a species page on Discover and tap \u201cNotify me\u201d.",
+    "emptyCta": "Open Discover",
+    "remove": "Remove",
+    "removed": "Removed from your wishlist.",
+    "removeError": "Could not remove. Try again.",
+    "unknownSpecies": "(species removed)"
   }
+
 }

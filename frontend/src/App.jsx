@@ -61,6 +61,7 @@ const HandleSetupPage = lazy(() => import('./pages/HandleSetupPage'))
 const BetaApplyPage = lazy(() => import('./pages/BetaApplyPage'))
 const InsightsPage = lazy(() => import('./pages/InsightsPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const WishlistPage = lazy(() => import('./pages/WishlistPage'))
 const PublicBetaHomePage = lazy(() => import('./pages/PublicBetaHomePage'))
 const BetaPendingHomePage = lazy(() => import('./pages/BetaPendingHomePage'))
 
@@ -204,6 +205,7 @@ function AppRoutes() {
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+      <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
       <Route path="/community" element={<SocialHubPage />} />
       <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
       <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />
