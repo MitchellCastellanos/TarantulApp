@@ -18,7 +18,7 @@ import moderationService from '../services/moderationService'
 import userPublicService from '../services/userPublicService'
 import { useAuth } from '../context/AuthContext'
 import { imgUrl } from '../services/api'
-import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
+import { socialOgImageUrl } from '../constants/socialOg'
 
 const TAB_FEED = 'feed'
 const TAB_SEX_ID = 'sexId'
@@ -116,7 +116,7 @@ export default function SocialHubPage() {
   usePageSeo({
     title: t('social.seoTitle'),
     description: t('social.metaDescription'),
-    imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
+    imageUrl: socialOgImageUrl(origin),
     noindex: true,
   })
 

@@ -7,6 +7,7 @@ import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
 import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { socialOgImageUrl } from '../constants/socialOg'
 import { BRAND_WITH_TM } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
 import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
@@ -40,7 +41,9 @@ export default function PublicKeeperProfilePage() {
       ? `${profile.displayName} - @${profile.publicHandle || handle || 'keeper'} - ${BRAND_WITH_TM}`
       : `Keeper profile - ${BRAND_WITH_TM}`,
     description: profile?.bio || t('public.keeperSeoDescription', { brand: BRAND_WITH_TM }),
-    imageUrl: origin ? `${origin}/logo-neon.png` : undefined,
+    imageUrl: profile?.profilePhoto
+      ? imgUrl(profile.profilePhoto)
+      : socialOgImageUrl(origin),
     canonicalHref: profileUrl || undefined,
   })
 

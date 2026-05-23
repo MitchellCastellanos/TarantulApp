@@ -1,74 +1,61 @@
 # TarantulApp — Roadmap
 
-Última revisión: 2026-04-22 (Sprint 2 + backlog técnico principal cerrados; pendiente Stripe real)
+Última revisión: 2026-05-23 (Fases A–E cerradas en código; pendiente ops: Stripe live + Play real)
 
 ---
 
 ## Ya está (hecho)
 
-- **Marca y navegación**: Navbar unificado (`Navbar` + `PublicShell`), logo animado en barra y en Descubrir, `BrandNavbarLogo` / `BrandLogoMark`, tema claro/oscuro coherente. El logo del navbar **reinicia la animación del anillo** al cambiar de ruta (`key={pathname}`).
-- **About**: Página `/about` con copy de marca, SEO (incl. OG), enlace en footer y en manifiesto del login.
-- **Sitemap / SEO (build)**: `vite-plugin-site-seo` genera `sitemap.xml` y `robots.txt`; rutas indexables incluyen `/about` y `/marketplace`. Página **Marketplace** con meta/JSON-LD; **Comunidad** (`/comunidad`) con `noindex` (ruta autenticada). URL canónica vía `VITE_PUBLIC_SITE_URL` (build).
-- **Pruebas E2E**: Playwright, `npm run test:e2e` (build + smoke en login, descubrir, marketplace, about, redirección comunidad, robots/sitemap).
-- **Marketplace imágenes**: `POST /api/marketplace/listings/photo` (multipart) + subida en formulario; listados usan `imgUrl` para paths bajo `/uploads/…`.
-- **i18n**: Placeholders y textos (cuenta keeper, quick log público, reset token, glifos de timeline sin emoji araña, strings marketplace/discover/social).
-- **UX / accesibilidad visual**: Fondo sin emoji araña; compartir sin icono araña; badges perfil público con variables de tema; franja “keeper atmosphere” del dashboard con variantes **light/dark** (`.ta-dashboard-atmosphere-strip`).
-- **Marketplace (backend + frontend)**: Listados, keeper profile, socios oficiales, leads; intro comunidad + disclaimers; franja horizontal de partners certificados; solicitud oficial en `<details>`; cabecera del strip con logo de marca (sin animación intro para no competir con el navbar); tarjetas sin escudo; CTA “Visit site” alineado al pie de cada tarjeta.
-- **Descubrir (homepage pública)**: Columna marketplace + socios certificados y CTA; layout en dos columnas con búsqueda; **orden móvil** explícito (buscador arriba, hub marketplace abajo).
-- **Componentes**: `OfficialPartnerShield` reutilizable; logos públicos en assets si aplica.
-- **Social (inicio)**: Ruta privada `/comunidad` (`SocialHubPage`), copy de marca + teaser “spood”, hero con logo con intro y estilos **light/dark** (`.ta-social-hub-hero`). Enlace “Comunidad” en navbar solo con sesión.
-- **Notificaciones de comunidad (enriquecidas)**: Eventos `SPOOD_RECEIVED`, `POST_COMMENT`, `SEX_ID_VOTE` con payload contextual (`route`, ids, snippet), deep-link desde campana y script SQL idempotente para backfill/índices en Supabase (`scripts/supabase_notifications_hardening.sql`).
-- **Push enriquecido por evento**: `NotificationService` dispara push con `type` + `route` para navegación contextual en app nativa (Android activo; iOS preparado por token/plataforma).
-- **Share keeper profile (plantillas)**: Plantillas de compartir para perfil keeper (`default` / WhatsApp / Instagram) e integración en `/u/:handle` con botón de copiar + CTA WhatsApp.
-- **Social OG específico**: OG social usando `logo-neon.png` en comunidad y SEO específico en perfil público keeper.
-- **Paywall / gates Free vs Pro (UX)**: Mensajes de límite más claros en dashboard y detalle de tarántula bloqueada, con CTA directo a upgrade/pro trial.
-- **Export / import beyond Excel**: export/import JSON de colección en dashboard (Pro), además de export Excel/PDF ya existente.
-- **Datos y moderación (cimiento)**: Migración `V30` — `activity_posts` (visibilidad `private` | `followers` | `public`, `hidden_at` para moderación), `chat_threads` / `chat_messages` (DM 1:1 + `listing_id` opcional), `referral_codes`, `referral_redemptions`, `users.referred_by_user_id`. Entidades JPA + repos. Reporte público `POST /api/public/reports/activity-post/{id}`; admin `hide_activity_post` y `hide_keeper_profile` (quita `public_handle` del usuario reportado como keeper).
+### Producto marketplace y confianza (Fases A–E)
+
+- **Fase A/B**: analytics, share kit, wishlist, species SEO, post-chat reviews, verified vendors, response badge, newsletter, FilterBar, storefront share.
+- **Fase 0**: Flyway V99–V100 renumerado, ships-to UI, sort trust, copy admin.
+- **Fase C**: Top Vendor leaderboard (V101), Boost ROI en Seller Hub.
+- **Fase D**: species trade notes admin + público (V102), locales `es-MX` / `fr-CA`.
+- **Fase E**: vendor referral codes + `vendor_boost_credits` (V103); crédito de boost 7d sin Stripe cuando aplica.
+- **Partner storefront**: catálogo total fijo en hero; filtros de categoría/búsqueda client-side sin re-fetch.
+
+### Plataforma (Sprint 1–2)
+
+- **Marca y navegación**: Navbar unificado, tema claro/oscuro, logo animado.
+- **About / SEO / E2E**: sitemap, Playwright smoke, marketplace JSON-LD.
+- **Social**: feed, spoods, Sex ID cases, referidos, notificaciones enriquecidas, push por evento.
+- **Social OG**: asset `og-social.png` (1200×630) + `socialOgImageUrl()` en comunidad, perfil keeper y Sex ID fallback.
+- **Moderación, export JSON Pro, i18n en/es/fr + regionales**, etc. (ver commits anteriores).
 
 ---
 
-## Especificación producto (social / privacidad / referidos)
+## Lo que falta — solo ops / tu lado
 
-### Dos capas de perfil
+Todo lo siguiente está **documentado** en [`docs/ops/billing-setup-manual-es.md`](./docs/ops/billing-setup-manual-es.md) (paso a paso en español) y [`docs/ops/stripe-products-catalog.md`](./docs/ops/stripe-products-catalog.md).
 
-| Capa | Qué es | Visibilidad |
-|------|--------|-------------|
-| **Marketplace / badges** | Handle, bio, reputación, contacto para vender | El usuario lo hace público para operar en marketplace; eso es lo mínimo que “sale” hacia compradores. |
-| **Posts / social** | Fotos de arañas, mudas, hitos, texto | **Por publicación**: `private`, `followers` (reservado hasta haber grafo social), `public`. No se asume que todo el social sea público ni que coincida con el flag de marketplace. |
+### Sprint 3 — Monetización real (bloqueado por configuración)
 
-### Moderación (`moderation_reports.target_type`)
+| Tarea | Quién |
+|-------|--------|
+| Crear Products/Prices en Stripe (Pro ×8, Vendor ×8, Boost ×4) | **Tú** |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, todos los `STRIPE_PRICE_ID_*` en Railway | **Tú** |
+| Webhook → `POST /api/billing/webhook` + prueba checkout test | **Tú** |
+| Customer Portal Stripe + return URL → `APP_BASE_URL/account` | **Tú** |
+| Play: suscripción `tarantulapp_pro_monthly` + `GOOGLE_PLAY_BILLING_MODE=real` + SA JSON | **Tú** |
+| Vendor checkout “coming soon” hasta validar demanda | Producto (ya en UI) |
 
-| `target_type` | Acción admin “ocultar” |
-|---------------|-------------------------|
-| `public_tarantula` | `hide_tarantula` → `is_public = false` |
-| `marketplace_listing` | `hide_listing` → status hidden |
-| `activity_post` | `hide_activity_post` → `hidden_at` en `activity_posts` |
-| `keeper_profile` | `hide_keeper_profile` → `public_handle = null` (deja de ser hallable por handle en marketplace) |
-| (futuro) `chat_message` | definir cuando exista reporte desde hilo |
+### Infra / launch (recomendado)
 
-### Referidos (estado a revisar en app)
+| Tarea | Doc |
+|-------|-----|
+| Sentry, hCaptcha, Cloudinary, SMTP en prod | [`docs/ops/README.md`](./docs/ops/README.md) |
+| UptimeRobot / status page | README ops |
+| Smoke manual referidos vendor + boost credit en prod | — |
 
-- Flujo con código, hitos e invitación vive en **Cuenta / Comunidad**; validar en producción que bonos y anti-abuso coinciden con la especificación.
+### Backlog opcional (sin fecha)
+
+- Newsletter HTML branded (hoy plain text).
+- Play Billing nativo para Vendor/Boost (hoy Stripe Checkout desde web/Custom Tab).
+- SKUs Play extra: `tarantulapp_pro_yearly`, vendor, boost consumible.
 
 ---
 
-## Lo que falta (pendiente real)
+## Referidos
 
-### Sprint 3 — Monetización real (próximo)
-
-- **Stripe real en entorno**: cargar y validar `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, precios Pro/Vendor por región (`STRIPE_PRICE_ID_*_US` … `_CO`), y listing boost: `STRIPE_PRICE_ID_LISTING_BOOST` (fallback) y/o regionales `STRIPE_PRICE_ID_LISTING_BOOST_US` … `_CO` (~2 USD eq.); ver `docs/ops/stripe-products-catalog.md`.
-- **Go-live de billing**: validar checkout/verify/webhook/portal en modo test end-to-end con eventos reales de Stripe.
-- **Vendor / Business (próximamente)**: mantener “coming soon” con precio de entrada más bajo y validar demanda antes de activar checkout.
-
-### Sprint 2 — Diferenciación viral (estado)
-
-- **Cases / Sex ID guess (MVP)**: implementado (modelo, votos agregados, reglas, URL pública compartible y CTA de share con `?ref=`).
-- **Social/feed/referrals base**: implementado en rutas y servicios actuales; queda mantener pruebas de regresión al avanzar Sprint 3.
-
-### Cierre fase 1 (documento heredado — parte ya obsoleta)
-
-- ~~Sitemap/SEO /about, /marketplace~~, ~~fotos listing~~, ~~E2E básico~~, ~~móvil Descubrir~~ → hecho en Sprint 1.
-
-### Backlog (ideas, sin fecha)
-
-- Logo secundario solo para área social (asset + OG), si se decide crear uno distinto a `logo-neon`.
+Flujo en **Cuenta / Comunidad → Invitar**. Vendors verificados: código vendor → crédito boost por signup; keepers: hitos Pro trial. Validar en prod con un signup de prueba.

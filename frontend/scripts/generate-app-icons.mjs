@@ -154,7 +154,34 @@ async function main() {
     await sharp(buf).toFile(join(androidRes, folder, 'ic_launcher_round.png'))
   }
 
-  console.log('Icons OK: PWA, Android foreground + legacy mipmaps, logo-neon.png normalized.')
+  // Open Graph card for community / keeper social shares (1200×630).
+  const ogW = 1200
+  const ogH = 630
+  const emblemSize = 360
+  const emblem = await renderAnySquare(logo, emblemSize).png().toBuffer()
+  const ogBase = sharp({
+    create: { width: ogW, height: ogH, channels: 4, background: BG },
+  })
+  const radial = Buffer.from(
+    `<svg width="${ogW}" height="${ogH}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="g" cx="50%" cy="42%" r="55%">
+          <stop offset="0%" stop-color="#a020f0" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="#1a1a2e" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#g)"/>
+    </svg>`
+  )
+  await ogBase
+    .composite([
+      { input: radial, top: 0, left: 0 },
+      { input: emblem, top: Math.round((ogH - emblemSize) / 2) - 24, left: Math.round((ogW - emblemSize) / 2) },
+    ])
+    .png()
+    .toFile(join(publicDir, 'og-social.png'))
+
+  console.log('Icons OK: PWA, Android foreground + legacy mipmaps, logo-neon.png, og-social.png.')
 }
 
 main().catch((e) => {

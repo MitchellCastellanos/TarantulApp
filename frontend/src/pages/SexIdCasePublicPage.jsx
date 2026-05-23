@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { socialOgImageUrl } from '../constants/socialOg'
 import { useAuth } from '../context/AuthContext'
 import sexIdCaseService from '../services/sexIdCaseService'
 import referralService from '../services/referralService'
@@ -102,7 +103,7 @@ export default function SexIdCasePublicPage() {
       ? t('sexIdCase.seoTitle', { title: data.title || t('sexIdCase.defaultCaseTitle') })
       : t('sexIdCase.pageTitle'),
     description: t('sexIdCase.metaDescription'),
-    imageUrl: data?.imageUrl ? imgUrl(data.imageUrl) : origin ? `${origin}/icon-512.png` : undefined,
+    imageUrl: data?.imageUrl ? imgUrl(data.imageUrl) : socialOgImageUrl(origin),
     noindex: false,
   })
 

@@ -27,6 +27,30 @@ function resolveListingCategory(raw) {
   return CATEGORIES.includes(raw) ? raw : ALL_CATEGORY
 }
 
+function matchesPartnerListingQuery(listing, queryNorm) {
+  if (!queryNorm) return true
+  const haystack = [listing?.title, listing?.description, listing?.speciesName]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(queryNorm)
+}
+
+function filterPartnerCatalogItems(items, { listingCategory, query, promotedOnly }) {
+  let list = Array.isArray(items) ? items : []
+  if (listingCategory !== ALL_CATEGORY) {
+    list = list.filter((l) => (l.listingCategory || 'tarantulas') === listingCategory)
+  }
+  const queryNorm = (query || '').trim().toLowerCase()
+  if (queryNorm) {
+    list = list.filter((l) => matchesPartnerListingQuery(l, queryNorm))
+  }
+  if (promotedOnly) {
+    list = list.filter((l) => l.promoted)
+  }
+  return list
+}
+
 export default function PartnerStorefrontPage() {
   const { slug } = useParams()
   const { t } = useTranslation()
@@ -35,8 +59,7 @@ export default function PartnerStorefrontPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [vendor, setVendor] = useState(null)
-  const [items, setItems] = useState([])
-  const [total, setTotal] = useState(0)
+  const [allItems, setAllItems] = useState([])
   const [catalogTotal, setCatalogTotal] = useState(0)
   const [shareOpen, setShareOpen] = useState(false)
   const [sortMode, setSortMode] = useState('newest')
@@ -68,29 +91,29 @@ export default function PartnerStorefrontPage() {
     try {
       const data = await marketplaceService.getPartnerCatalog({
         vendorSlug: slug.trim(),
-        listingCategory: listingCategory === ALL_CATEGORY ? undefined : listingCategory,
-        q: query.trim() || undefined,
-        promotedOnly: promotedOnly ? true : undefined,
       })
       setVendor(data?.vendor || null)
       const list = Array.isArray(data?.items) ? data.items : []
-      setItems(list)
-      setTotal(data?.total ?? list.length)
-      setCatalogTotal(data?.catalogTotal ?? data?.total ?? list.length)
+      setAllItems(list)
+      setCatalogTotal(data?.catalogTotal ?? list.length)
     } catch (err) {
       setVendor(null)
-      setItems([])
-      setTotal(0)
+      setAllItems([])
       setCatalogTotal(0)
       setError(err?.response?.status === 404 ? 'notfound' : 'load')
     } finally {
       setLoading(false)
     }
-  }, [slug, listingCategory, query, promotedOnly])
+  }, [slug])
 
   useEffect(() => {
     loadCatalog()
   }, [loadCatalog])
+
+  const filteredItems = useMemo(
+    () => filterPartnerCatalogItems(allItems, { listingCategory, query, promotedOnly }),
+    [allItems, listingCategory, query, promotedOnly],
+  )
 
   const setCategory = (cat) => {
     if (!NAV_CATEGORIES.includes(cat)) return
@@ -137,15 +160,11 @@ export default function PartnerStorefrontPage() {
     return l?.badgeLabel || t('marketplace.certifiedPartnerBadge')
   }
 
-  const hasActiveFilters = listingCategory !== ALL_CATEGORY || Boolean(query.trim()) || promotedOnly
-  const heroCount = hasActiveFilters ? total : catalogTotal
-  const heroCountKey = hasActiveFilters
-    ? 'marketplace.partnerStorefrontCategoryCount'
-    : 'marketplace.partnerStorefrontCatalogCount'
+  const heroCount = catalogTotal
 
   const sortedItems = useMemo(
-    () => sortMarketplaceListings(items, sortMode),
-    [items, sortMode],
+    () => sortMarketplaceListings(filteredItems, sortMode),
+    [filteredItems, sortMode],
   )
 
   const storefrontUrl = canonical || (origin && slug ? `${origin}/partner/${encodeURIComponent(slug)}` : '')
@@ -205,7 +224,7 @@ export default function PartnerStorefrontPage() {
                   <div className="ta-partner-storefront-hero__aside flex-shrink-0">
                     <div className="ta-partner-storefront-hero__stat">
                       <div className="ta-partner-storefront-hero__stat-value">{heroCount.toLocaleString()}</div>
-                      <div className="ta-partner-storefront-hero__stat-label">{t(heroCountKey, { count: heroCount })}</div>
+                      <div className="ta-partner-storefront-hero__stat-label">{t('marketplace.partnerStorefrontCatalogCount', { count: heroCount })}</div>
                       <div className="small text-muted mt-1">{t('marketplace.partnerStorefrontPoweredBy')}</div>
                     </div>
                     <button
