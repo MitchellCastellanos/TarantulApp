@@ -12,6 +12,7 @@ public class PublicProfileDTO {
     /** false cuando el dueño abre su propia ficha privada por QR (sesión con JWT). */
     private Boolean isPublic;
     private String name;
+    private Integer speciesId;
     private String scientificName;
     private String commonName;
     private String stage;
@@ -37,6 +38,8 @@ public class PublicProfileDTO {
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public Integer getSpeciesId() { return speciesId; }
+    public void setSpeciesId(Integer speciesId) { this.speciesId = speciesId; }
     public String getScientificName() { return scientificName; }
     public void setScientificName(String scientificName) { this.scientificName = scientificName; }
     public String getCommonName() { return commonName; }

@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext'
 import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import ResponseBadge from '../components/ResponseBadge'
 import KeeperBadgeChip from '../components/KeeperBadgeChip'
+import KeeperReputationStrip from '../components/KeeperReputationStrip'
 import {
   badgeProgressHintLine,
   badgeProgressTitle,
