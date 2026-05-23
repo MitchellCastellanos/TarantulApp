@@ -2646,7 +2646,10 @@
       "download": "Download image",
       "cardHint": "Optimized for Instagram feed and WhatsApp status. Drop it straight from your gallery.",
       "cardError": "Could not build the image card. Caption still works.",
-      "dialogTitle": "Share listing"
+      "dialogTitle": "Share listing",
+      "scanToBuy": "Scan to buy",
+      "visitStore": "Visit the store",
+      "visitStoreLine": "Visit {{handle}} on {{brand}}"
     }
   },
   "onboarding": {

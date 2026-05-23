@@ -565,6 +565,11 @@ export default function MarketplaceListingDetailPage() {
           sellerName={sellerPreview?.displayName || listing.sellerName}
           sellerHandle={sellerPreview?.handle || listing.sellerHandle}
           listingUrl={origin && listingId ? `${origin}/marketplace/listing/${listingId}` : ''}
+          storeUrl={
+            origin && (sellerPreview?.handle || listing.sellerHandle)
+              ? `${origin}/shop/${encodeURIComponent(sellerPreview?.handle || listing.sellerHandle)}`
+              : ''
+          }
           imageUrl={activeImg}
           onClose={() => setShareOpen(false)}
         />

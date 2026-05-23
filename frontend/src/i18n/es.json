@@ -2648,7 +2648,10 @@
       "download": "Descargar imagen",
       "cardHint": "Optimizada para feed de Instagram y estados de WhatsApp. Súbela tal cual desde tu galería.",
       "cardError": "No se pudo armar la tarjeta. El texto sigue funcionando.",
-      "dialogTitle": "Compartir anuncio"
+      "dialogTitle": "Compartir anuncio",
+      "scanToBuy": "Escanea para comprar",
+      "visitStore": "Visita la tienda",
+      "visitStoreLine": "Visita {{handle}} en {{brand}}"
     }
   },
   "onboarding": {
