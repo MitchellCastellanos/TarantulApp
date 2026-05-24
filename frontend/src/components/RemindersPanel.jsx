@@ -14,6 +14,7 @@ import {
 } from '../utils/dismissedAutoReminders'
 import { remindersPrefillUrl } from '../utils/reminderDeepLink'
 import { reminderPrimaryLabel } from '../utils/reminderLabels'
+import { sortRemindersNewestFirst } from '../utils/reminderSort'
 
 const TYPE_ICONS = {
   feeding: '🍽️',
@@ -78,7 +79,7 @@ export default function RemindersPanel({ variant = 'standalone' }) {
   )
 
   const panelReminders = useMemo(
-    () => activeReminders.slice(0, DASHBOARD_REMINDER_LIMIT),
+    () => sortRemindersNewestFirst(activeReminders).slice(0, DASHBOARD_REMINDER_LIMIT),
     [activeReminders],
   )
 

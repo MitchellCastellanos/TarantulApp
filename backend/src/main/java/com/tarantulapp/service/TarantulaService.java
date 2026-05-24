@@ -44,6 +44,7 @@ public class TarantulaService {
     private final PlanAccessService planAccessService;
     private final SecurityHelper securityHelper;
     private final TarantulaTimelineJdbcRepository timelineJdbcRepository;
+    private final NotificationService notificationService;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -57,7 +58,8 @@ public class TarantulaService {
                             UserRepository userRepository,
                             PlanAccessService planAccessService,
                             SecurityHelper securityHelper,
-                            TarantulaTimelineJdbcRepository timelineJdbcRepository) {
+                            TarantulaTimelineJdbcRepository timelineJdbcRepository,
+                            NotificationService notificationService) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -71,6 +73,7 @@ public class TarantulaService {
         this.planAccessService = planAccessService;
         this.securityHelper = securityHelper;
         this.timelineJdbcRepository = timelineJdbcRepository;
+        this.notificationService = notificationService;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -512,6 +515,7 @@ public class TarantulaService {
         spood.setTarantulaId(t.getId());
         spood.setUserId(userId);
         tarantulaSpoodRepository.save(spood);
+        notifyTarantulaSpoodReceived(t, userId);
         return new SpoodToggleResponse(
                 tarantulaSpoodRepository.countByTarantulaId(t.getId()),
                 true
@@ -541,6 +545,7 @@ public class TarantulaService {
         spood.setPhotoId(photo.getId());
         spood.setUserId(userId);
         photoSpoodRepository.save(spood);
+        notifyPhotoSpoodReceived(t, photo, userId);
         return new SpoodToggleResponse(
                 photoSpoodRepository.countByPhotoId(photo.getId()),
                 true
@@ -548,6 +553,65 @@ public class TarantulaService {
     }
 
     // ─── Private helpers ────────────────────────────────────────────────────
+
+    private void notifyTarantulaSpoodReceived(Tarantula t, UUID actorUserId) {
+        if (t == null || t.getUserId() == null || t.getShortId() == null || t.getShortId().isBlank()) {
+            return;
+        }
+        String actorLabel = actorDisplayLabel(actorUserId);
+        String spiderName = t.getName() != null && !t.getName().isBlank() ? t.getName() : "tu tarántula";
+        notificationService.create(
+                t.getUserId(),
+                actorUserId,
+                "SPOOD_TARANTULA_RECEIVED",
+                actorLabel + " dio Spood a " + spiderName,
+                "Tu ficha pública recibió un Spood en TarantulApp.",
+                Map.of(
+                        "shortId", t.getShortId(),
+                        "route", "/t/" + t.getShortId()
+                )
+        );
+    }
+
+    private void notifyPhotoSpoodReceived(Tarantula t, Photo photo, UUID actorUserId) {
+        if (t == null || photo == null || t.getUserId() == null || t.getShortId() == null || t.getShortId().isBlank()) {
+            return;
+        }
+        String actorLabel = actorDisplayLabel(actorUserId);
+        String spiderName = t.getName() != null && !t.getName().isBlank() ? t.getName() : "tu tarántula";
+        String captionPreview = snippet(photo.getCaption(), 90);
+        notificationService.create(
+                t.getUserId(),
+                actorUserId,
+                "SPOOD_PHOTO_RECEIVED",
+                actorLabel + " dio Spood a una foto de " + spiderName,
+                captionPreview.isBlank() ? "Una foto de tu tarántula recibió un Spood." : captionPreview,
+                Map.of(
+                        "shortId", t.getShortId(),
+                        "photoId", String.valueOf(photo.getId()),
+                        "route", "/t/" + t.getShortId()
+                )
+        );
+    }
+
+    private String actorDisplayLabel(UUID actorUserId) {
+        User actor = userRepository.findById(actorUserId).orElse(null);
+        if (actor != null && actor.getDisplayName() != null && !actor.getDisplayName().isBlank()) {
+            return actor.getDisplayName();
+        }
+        return "Un keeper";
+    }
+
+    private static String snippet(String text, int max) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String s = text.trim();
+        if (s.length() <= max) {
+            return s;
+        }
+        return s.substring(0, Math.max(0, max - 1)) + "…";
+    }
 
     private boolean isQrProfileOwner(Tarantula t) {
         return securityHelper.tryGetCurrentUserId()

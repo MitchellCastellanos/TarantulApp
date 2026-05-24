@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react'
-import QRCodeSvg from 'react-qr-code'
 import { useTranslation } from 'react-i18next'
-import {
-  BRAND_LOGO_FOR_LIGHT_BG,
-  downloadBrandedQrPng,
-  qrCenterLogoOverlayStyles,
-} from '../utils/qrBrandComposite'
+import { buildStorefrontSharePngDataUrl } from '../utils/storefrontShareCard'
 import { shareOrCopyText } from '../utils/shareUtils'
 import { whatsappShareUrl } from '../utils/listingShareTemplates'
+import { shareOrDownloadDataUrl, sanitizeFilename } from '../utils/shareOrDownloadBlob'
 
 function buildStorefrontShareText({ vendorName, storefrontUrl, location, t }) {
   const lines = [
@@ -19,12 +15,52 @@ function buildStorefrontShareText({ vendorName, storefrontUrl, location, t }) {
   return lines.join('\n')
 }
 
-export default function StorefrontShareKit({ vendorName, storefrontUrl, location, isFounding, onClose }) {
+export default function StorefrontShareKit({
+  vendorName,
+  storefrontUrl,
+  location,
+  vendorNote,
+  catalogTotal,
+  imageUrl,
+  isFounding,
+  onClose,
+}) {
   const { t } = useTranslation()
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
+  const [cardPreview, setCardPreview] = useState(null)
+  const [cardError, setCardError] = useState(false)
+  const [cardLoading, setCardLoading] = useState(false)
 
   const text = buildStorefrontShareText({ vendorName, storefrontUrl, location, t })
+
+  useEffect(() => {
+    let cancelled = false
+    setCardLoading(true)
+    setCardError(false)
+    buildStorefrontSharePngDataUrl({
+      vendorName,
+      location,
+      vendorNote,
+      catalogTotal,
+      imageUrl,
+      storefrontUrl,
+      isFounding,
+      t,
+    })
+      .then((dataUrl) => {
+        if (!cancelled) setCardPreview(dataUrl)
+      })
+      .catch(() => {
+        if (!cancelled) setCardError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setCardLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [vendorName, location, vendorNote, catalogTotal, imageUrl, storefrontUrl, isFounding, t])
 
   useEffect(() => {
     if (!toast) return
@@ -48,18 +84,16 @@ export default function StorefrontShareKit({ vendorName, storefrontUrl, location
     window.open(whatsappShareUrl(text), '_blank', 'noopener')
   }
 
-  const downloadQr = async () => {
+  const downloadCard = async () => {
+    if (!cardPreview) return
     setBusy(true)
     try {
-      await downloadBrandedQrPng({
-        url: storefrontUrl,
-        nameLine: vendorName,
-        speciesLine: t('share.storefront.qrSubtitle'),
-        shortIdLine: t('share.storefront.qrPoweredBy'),
-        filenameBase: vendorName || 'storefront',
+      const base = sanitizeFilename(vendorName || 'tarantulapp-storefront')
+      await shareOrDownloadDataUrl(cardPreview, `${base}.png`, {
+        mimeType: 'image/png',
+        title: vendorName || 'TarantulApp',
+        dialogTitle: t('share.storefront.dialogTitle', { defaultValue: 'Share storefront' }),
       })
-    } catch {
-      setToast(t('qrTool.pngDownloadFailed'))
     } finally {
       setBusy(false)
     }
@@ -90,7 +124,7 @@ export default function StorefrontShareKit({ vendorName, storefrontUrl, location
       aria-modal="true"
       aria-labelledby="storefront-share-title"
     >
-      <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className={`modal-content ta-storefront-share-modal__content${isFounding ? ' ta-storefront-share-modal__content--founding' : ''}`}>
           <div className="modal-header border-0 pb-0">
             <div>
@@ -106,46 +140,57 @@ export default function StorefrontShareKit({ vendorName, storefrontUrl, location
           <div className="modal-body pt-3">
             <p className="small text-muted mb-3">{t('share.storefront.blurb')}</p>
 
-            <div className="ta-storefront-share-modal__card mx-auto mb-3">
-              <div className="ta-storefront-share-modal__qr-wrap">
-                <QRCodeSvg value={storefrontUrl} size={200} level="H" />
-                <img
-                  src={BRAND_LOGO_FOR_LIGHT_BG}
-                  alt=""
-                  aria-hidden="true"
-                  style={qrCenterLogoOverlayStyles(200)}
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="small fw-semibold mb-1 d-block">{t('share.storefront.previewText')}</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows={10}
+                  value={text}
+                  readOnly
+                  onFocus={(e) => e.target.select()}
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  aria-label={t('share.storefront.previewText')}
                 />
+                <div className="d-flex gap-2 mt-2 flex-wrap">
+                  <button type="button" className="btn btn-dark btn-sm" onClick={copyText} disabled={busy}>
+                    {t('share.storefront.copy')}
+                  </button>
+                  <button type="button" className="btn btn-outline-success btn-sm" onClick={openWhatsapp}>
+                    {t('share.storefront.openWhatsapp')}
+                  </button>
+                  {typeof navigator !== 'undefined' && navigator.share && (
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={nativeShare}>
+                      {t('share.storefront.nativeShare')}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="ta-storefront-share-modal__vendor-name">{vendorName}</div>
-              {location ? <div className="small text-muted">{location}</div> : null}
-              <div className="small ta-storefront-share-modal__url text-break">{storefrontUrl}</div>
-            </div>
 
-            <textarea
-              className="form-control form-control-sm mb-3"
-              rows={5}
-              value={text}
-              readOnly
-              onFocus={(e) => e.target.select()}
-              style={{ whiteSpace: 'pre-wrap' }}
-              aria-label={t('share.storefront.previewText')}
-            />
-
-            <div className="d-flex gap-2 flex-wrap justify-content-center">
-              <button type="button" className="btn btn-dark btn-sm" onClick={copyText} disabled={busy}>
-                {t('share.storefront.copy')}
-              </button>
-              <button type="button" className="btn btn-outline-success btn-sm" onClick={openWhatsapp}>
-                {t('share.storefront.openWhatsapp')}
-              </button>
-              <button type="button" className="btn btn-warning btn-sm" onClick={downloadQr} disabled={busy}>
-                {t('share.storefront.downloadQr')}
-              </button>
-              {typeof navigator !== 'undefined' && navigator.share && (
-                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={nativeShare}>
-                  {t('share.storefront.nativeShare')}
+              <div className="col-md-6">
+                <label className="small fw-semibold mb-1 d-block">{t('share.storefront.previewCard')}</label>
+                <div
+                  className="rounded-2 border d-flex align-items-center justify-content-center"
+                  style={{ aspectRatio: '1 / 1', background: 'rgba(0,0,0,0.05)', overflow: 'hidden' }}
+                >
+                  {cardLoading && <span className="small text-muted">{t('common.loading')}</span>}
+                  {!cardLoading && cardError && (
+                    <span className="small text-muted text-center px-3">{t('share.storefront.cardError')}</span>
+                  )}
+                  {!cardLoading && !cardError && cardPreview && (
+                    <img src={cardPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className={`btn btn-sm mt-2 w-100${isFounding ? ' btn-warning' : ' btn-dark'}`}
+                  onClick={downloadCard}
+                  disabled={busy || cardLoading || cardError || !cardPreview}
+                >
+                  {t('share.storefront.download')}
                 </button>
-              )}
+                <p className="small text-muted mt-2 mb-0">{t('share.storefront.cardHint')}</p>
+              </div>
             </div>
 
             {toast && <div className="alert alert-success small py-2 mt-3 mb-0">{toast}</div>}

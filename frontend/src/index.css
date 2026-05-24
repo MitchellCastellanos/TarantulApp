@@ -1402,6 +1402,46 @@ a.text-collection:hover {
   pointer-events: none;
 }
 
+/* Notifications list — compact rows without chitin frame padding */
+.ta-notifications-page .ta-notification-item {
+  border: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  background: var(--ta-sheet-bg-color, rgba(12, 12, 30, 0.92));
+  overflow: hidden;
+}
+
+.ta-notifications-page .ta-notification-item--unread {
+  border-color: rgba(232, 197, 71, 0.38);
+  box-shadow: inset 3px 0 0 var(--ta-gold, #e8c547);
+}
+
+.ta-notifications-page .ta-notification-item__btn {
+  padding: 0.7rem 0.85rem;
+  color: inherit;
+}
+
+.ta-notifications-page .ta-notification-item__btn:hover,
+.ta-notifications-page .ta-notification-item__btn:focus-visible {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ta-notifications-page .ta-notification-item__title {
+  color: var(--ta-parchment, #f5f2e9);
+}
+
+.ta-notifications-page .ta-notification-item__actor {
+  color: var(--ta-text-muted, rgba(245, 242, 233, 0.62));
+}
+
+.ta-notifications-page .ta-notification-item__cta {
+  color: var(--ta-gold, #e8c547);
+}
+
+:root[data-theme='light'] .ta-notifications-page .ta-notification-item {
+  background: rgba(255, 255, 255, 0.92);
+}
+
 .ta-chitin-col-divider {
   width: 12px;
   min-height: 100px;

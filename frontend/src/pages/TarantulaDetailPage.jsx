@@ -35,6 +35,7 @@ import {
 } from '../utils/dismissedAutoReminders'
 import { remindersPrefillUrl } from '../utils/reminderDeepLink'
 import { reminderPrimaryLabel } from '../utils/reminderLabels'
+import { sortRemindersNewestFirst } from '../utils/reminderSort'
 import { computePostMoltWindow } from '../utils/moltFeedingWindow'
 import { predictNextMolt } from '../utils/moltPrediction'
 import { detectFeedingPreMoltSignal } from '../utils/preMoltSignals'
@@ -200,15 +201,15 @@ export default function TarantulaDetailPage() {
     [spiderReminders, dismissedAuto],
   )
 
-  const spiderRemindersUpcoming = useMemo(() => {
-    const rows = spiderRemindersActive.filter((r) => !r.isDone)
-    return [...rows].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-  }, [spiderRemindersActive])
+  const spiderRemindersUpcoming = useMemo(
+    () => sortRemindersNewestFirst(spiderRemindersActive.filter((r) => !r.isDone)),
+    [spiderRemindersActive],
+  )
 
-  const spiderRemindersDone = useMemo(() => {
-    const rows = spiderRemindersActive.filter((r) => r.isDone)
-    return [...rows].sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate)).slice(0, 30)
-  }, [spiderRemindersActive])
+  const spiderRemindersDone = useMemo(
+    () => sortRemindersNewestFirst(spiderRemindersActive.filter((r) => r.isDone)).slice(0, 30),
+    [spiderRemindersActive],
+  )
 
   const handleSpiderReminderDone = async (r) => {
     if (r.source === 'automatic') {

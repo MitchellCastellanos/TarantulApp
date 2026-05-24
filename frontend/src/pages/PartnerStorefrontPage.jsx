@@ -162,6 +162,13 @@ export default function PartnerStorefrontPage() {
 
   const heroCount = catalogTotal
 
+  const shareHeroImageUrl = useMemo(() => {
+    const promoted = allItems.find((l) => l.promoted && l.imageUrl)
+    const any = allItems.find((l) => l.imageUrl)
+    const raw = promoted?.imageUrl || any?.imageUrl
+    return raw ? partnerListingImageUrl(raw) : null
+  }, [allItems])
+
   const sortedItems = useMemo(
     () => sortMarketplaceListings(filteredItems, sortMode),
     [filteredItems, sortMode],
@@ -384,6 +391,9 @@ export default function PartnerStorefrontPage() {
           vendorName={vendor.name}
           storefrontUrl={storefrontUrl}
           location={location}
+          vendorNote={vendor.note || ''}
+          catalogTotal={catalogTotal}
+          imageUrl={shareHeroImageUrl}
           isFounding={isFounding}
           onClose={() => setShareOpen(false)}
         />

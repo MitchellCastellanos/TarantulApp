@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import ChitinCardFrame from '../components/ChitinCardFrame'
 import notificationsService, { notifyNotificationsUpdated } from '../services/notificationsService'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -10,7 +9,14 @@ import { localeForI18n } from '../utils/dateFormat'
 
 function notificationCategoryLabel(type, t) {
   const k = String(type || '')
-  if (k === 'SPOOD_RECEIVED' || k === 'POST_COMMENT') return t('notificationsScreen.categoryCommunity')
+  if (
+    k === 'SPOOD_RECEIVED' ||
+    k === 'SPOOD_TARANTULA_RECEIVED' ||
+    k === 'SPOOD_PHOTO_RECEIVED' ||
+    k === 'POST_COMMENT'
+  ) {
+    return t('notificationsScreen.categoryCommunity')
+  }
   if (k.startsWith('SEX_ID')) return t('notificationsScreen.categorySexId')
   if (k === 'SPECIES_LISTED_WISHLIST') return t('notificationsScreen.categoryWishlist')
   return t('notificationsScreen.categoryGeneral')
@@ -113,107 +119,91 @@ export default function NotificationsPage() {
   return (
     <div>
       <Navbar />
-      <div className="container py-4" style={{ maxWidth: 820 }}>
-        <header className="mb-4">
-        <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
-          <div>
-            <h1 className="h4 mb-1">{t('notificationsScreen.pageTitle')}</h1>
-            <p className="text-muted small mb-0">{t('notificationsScreen.hint')}</p>
-          </div>
-          <div className="d-flex flex-wrap gap-2 align-items-start">
-            {token && (
-              <Link to="/wishlist" className="btn btn-sm btn-outline-warning">
-                🔔 {t('wishlist.title')}
-              </Link>
-            )}
-            {token && rows.length > 0 && (
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-light"
-                disabled={markBusy || rows.every((x) => x.readAt)}
-                onClick={() => handleMarkAll()}
-              >
-                {markBusy ? `${t('nav.markAllRead')}…` : t('nav.markAllRead')}
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {error ? (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      ) : null}
-
-      {loading ? (
-        <p className="text-muted small">{t('notificationsScreen.loading')}</p>
-      ) : rows.length === 0 ? (
-        <ChitinCardFrame>
-          <p className="text-muted small mb-0">{t('nav.notificationsEmpty')}</p>
-        </ChitinCardFrame>
-      ) : (
-        <div className="d-flex flex-column gap-2">
-          {rows.map((n) => {
-            const title = String(n.title || '').trim() || t('nav.notificationFallbackTitle')
-            const body = String(n.body || '').trim()
-            const unread = !n.readAt
-            const when = formatRelativePast(n.createdAt, i18n.language)
-            const category = notificationCategoryLabel(n.type, t)
-            return (
-              <ChitinCardFrame key={String(n.id)}>
+      <div className="container py-3 ta-notifications-page" style={{ maxWidth: 640 }}>
+        <header className="mb-3">
+          <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div>
+              <h1 className="h4 mb-1">{t('notificationsScreen.pageTitle')}</h1>
+              <p className="text-muted small mb-0">{t('notificationsScreen.hint')}</p>
+            </div>
+            <div className="d-flex flex-wrap gap-2 align-items-start">
+              {token && (
+                <Link to="/wishlist" className="btn btn-sm btn-outline-warning">
+                  🔔 {t('wishlist.title')}
+                </Link>
+              )}
+              {token && rows.length > 0 && (
                 <button
                   type="button"
-                  className="btn btn-link text-start text-decoration-none p-3 w-100"
-                  onClick={() => handleOpen(n)}
+                  className="btn btn-sm btn-outline-light"
+                  disabled={markBusy || rows.every((x) => x.readAt)}
+                  onClick={() => handleMarkAll()}
                 >
-                  <div className="d-flex gap-3 align-items-start">
-                    <div
-                      style={{
-                        width: '0.52rem',
-                        flexShrink: 0,
-                        minHeight: 48,
-                        borderRadius: 4,
-                        background: unread ? 'var(--ta-gold, #e8c547)' : 'transparent',
-                      }}
-                      aria-hidden
-                    />
-                    <div className="flex-grow-1 min-w-0">
-                      <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-                        <span className="badge bg-secondary">{category}</span>
-                        {when ? (
-                          <span className="text-muted small" style={{ fontSize: '0.72rem' }}>
-                            {when}
-                          </span>
-                        ) : null}
-                        {!unread ? (
-                          <span className="text-muted small">{t('notificationsScreen.readBadge')}</span>
-                        ) : null}
-                      </div>
-                      <div className="fw-semibold" style={{ color: 'var(--ta-parchment, #f5f2e9)' }}>
-                        {title}
-                      </div>
-                      {body ? (
-                        <div className="small text-muted mt-1">{body}</div>
-                      ) : null}
-                      {(n.actorDisplayName || n.actorHandle) && (
-                        <div className="small mt-1" style={{ color: 'var(--ta-text-muted)' }}>
-                          {[n.actorDisplayName, n.actorHandle ? `@${n.actorHandle}` : '']
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </div>
-                      )}
-                      <div className="small fw-semibold mt-2" style={{ color: 'var(--ta-gold, #e8c547)' }}>
-                        {t('notificationsScreen.openCta')} →
-                      </div>
-                    </div>
-                  </div>
+                  {markBusy ? `${t('nav.markAllRead')}…` : t('nav.markAllRead')}
                 </button>
-              </ChitinCardFrame>
-            )
-          })}
-        </div>
-      )}
+              )}
+            </div>
+          </div>
+        </header>
+
+        {error ? (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <p className="text-muted small">{t('notificationsScreen.loading')}</p>
+        ) : rows.length === 0 ? (
+          <p className="text-muted small mb-0">{t('nav.notificationsEmpty')}</p>
+        ) : (
+          <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
+            {rows.map((n) => {
+              const title = String(n.title || '').trim() || t('nav.notificationFallbackTitle')
+              const body = String(n.body || '').trim()
+              const unread = !n.readAt
+              const when = formatRelativePast(n.createdAt, i18n.language)
+              const category = notificationCategoryLabel(n.type, t)
+              return (
+                <li key={String(n.id)}>
+                  <div className={`ta-notification-item${unread ? ' ta-notification-item--unread' : ''}`}>
+                    <button
+                      type="button"
+                      className="btn btn-link text-start text-decoration-none w-100 ta-notification-item__btn"
+                      onClick={() => handleOpen(n)}
+                    >
+                      <div className="min-w-0">
+                        <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                          <span className="badge bg-secondary">{category}</span>
+                          {when ? (
+                            <span className="text-muted small" style={{ fontSize: '0.72rem' }}>
+                              {when}
+                            </span>
+                          ) : null}
+                          {!unread ? (
+                            <span className="text-muted small">{t('notificationsScreen.readBadge')}</span>
+                          ) : null}
+                        </div>
+                        <div className="fw-semibold ta-notification-item__title">{title}</div>
+                        {body ? <div className="small text-muted mt-1">{body}</div> : null}
+                        {(n.actorDisplayName || n.actorHandle) && (
+                          <div className="small mt-1 ta-notification-item__actor">
+                            {[n.actorDisplayName, n.actorHandle ? `@${n.actorHandle}` : '']
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
+                        )}
+                        <div className="small fw-semibold mt-2 ta-notification-item__cta">
+                          {t('notificationsScreen.openCta')} →
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </div>
   )

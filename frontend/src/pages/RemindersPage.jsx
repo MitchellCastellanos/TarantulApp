@@ -17,6 +17,7 @@ import {
   dismissedAutoReminderKey,
 } from '../utils/dismissedAutoReminders'
 import { reminderPrimaryLabel } from '../utils/reminderLabels'
+import { sortRemindersNewestFirst } from '../utils/reminderSort'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 
 const TYPE_OPTS = [
@@ -159,9 +160,10 @@ export default function RemindersPage() {
   )
 
   const visible = useMemo(() => {
-    if (listTab === 'upcoming') return remindersActive.filter((r) => !r.isDone)
-    if (listTab === 'completed') return remindersActive.filter((r) => r.isDone)
-    return remindersActive
+    let rows = remindersActive
+    if (listTab === 'upcoming') rows = remindersActive.filter((r) => !r.isDone)
+    else if (listTab === 'completed') rows = remindersActive.filter((r) => r.isDone)
+    return sortRemindersNewestFirst(rows)
   }, [remindersActive, listTab])
 
   const emptyMessageKey =
