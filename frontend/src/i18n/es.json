@@ -1540,6 +1540,29 @@
       "world": {
         "new": "NUEVO MUNDO",
         "old": "VIEJO MUNDO"
+      },
+      "worldShort": {
+        "new": "NM",
+        "old": "VM"
+      },
+      "temperamentValue": {
+        "docile": "Dócil",
+        "defensive": "Defensiva",
+        "skittish": "Asustadiza",
+        "calm": "Calmada",
+        "aggressive": "Agresiva",
+        "nervous": "Nerviosa",
+        "mellow": "Tranquila",
+        "hardy": "Resistente",
+        "fast": "Rápida",
+        "intermediate": "Intermedia",
+        "beginner": "Para principiantes",
+        "advanced": "Avanzada",
+        "docil": "Dócil",
+        "defensiva": "Defensiva",
+        "nerviosa": "Nerviosa",
+        "dócil": "Dócil",
+        "doil": "Dócil"
       }
     },
     "qrTarget": {
@@ -1554,7 +1577,13 @@
         "disabled": "Asocia una especie del catálogo para usar un QR genérico."
       }
     },
-    "previewLoading": "Actualizando vista previa…"
+    "previewLoading": "Actualizando vista previa…",
+    "label": {
+      "unnamedSpecimen": "Sin nombre",
+      "speciesUndefined": "Especie no definida",
+      "speciesFileFallback": "especie",
+      "altText": "Etiqueta QR"
+    }
   },
   "qrBulk": {
     "pageTitle": "Imprimir QRs en bloque",

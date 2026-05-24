@@ -114,6 +114,7 @@ export default function QrBulkPrintPage() {
         sizeCm,
         docTitle: t('qrBulk.docTitle'),
         footerNote: bulkFooterNote('qrBulk.docFooterNote'),
+        labelAltText: t('qr.label.altText'),
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -135,6 +136,7 @@ export default function QrBulkPrintPage() {
         sizeCm: 2.8,
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
+        labelAltText: t('qr.label.altText'),
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})

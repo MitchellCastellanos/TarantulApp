@@ -15,3 +15,13 @@ export function pickSpeciesNarrativeField(narrative, field, i18nLanguage) {
     Object.values(entry).find((x) => x != null && String(x).trim() !== '')
   return v != null && String(v).trim() !== '' ? String(v) : null
 }
+
+/** Solo el idioma pedido — sin fallback a otro locale (p. ej. etiquetas impresas). */
+export function pickSpeciesNarrativeFieldForLocale(narrative, field, i18nLanguage) {
+  if (!narrative || typeof narrative !== 'object') return null
+  const entry = narrative[field]
+  if (!entry || typeof entry !== 'object') return null
+  const base = (i18nLanguage || 'en').split('-')[0]
+  const v = entry[base]
+  return v != null && String(v).trim() !== '' ? String(v) : null
+}

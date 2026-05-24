@@ -1,4 +1,4 @@
-import { buildCareFactLines, worldBadge } from './careFacts'
+import { buildCareFactLines } from './careFacts'
 import { speciesPublicUrl, specimenPublicUrl } from './publicFrontBaseUrl'
 
 export const QR_CARE_FACTS_STORAGE_KEY = 'ta.qr.careFacts'
@@ -47,32 +47,51 @@ export function resolveQrUrl(tarantula, qrTargetMode) {
   return tarantula.shortId ? specimenPublicUrl(tarantula.shortId) : ''
 }
 
+/**
+ * Líneas de título para la etiqueta según destino del QR.
+ * Especie genérica → científico + común (sin nombre del ejemplar).
+ * @param {import('i18next').TFunction} t
+ */
+export function buildQrLabelLines(tarantula, qrTargetMode, t) {
+  const species = tarantula?.species
+  const sci = species?.scientificName?.trim() || ''
+  const common = species?.commonName?.trim() || ''
+  const undefinedSpecies = t('qr.label.speciesUndefined')
+
+  if (qrTargetMode === 'species' && species?.id != null) {
+    return {
+      titleLine1: sci || undefinedSpecies,
+      titleLine2: common,
+      filenameBase: sci || t('qr.label.speciesFileFallback'),
+    }
+  }
+
+  const name = tarantula?.name?.trim() || tarantula?.shortId || t('qr.label.unnamedSpecimen')
+  return {
+    titleLine1: name,
+    titleLine2: sci || undefinedSpecies,
+    filenameBase: name,
+  }
+}
+
 export function buildQrLabelExtras(species, t, locale, careFactsOn) {
   if (!careFactsOn || !species) {
-    return { factLines: null, worldBadge: null }
+    return { factLines: null }
   }
   return {
     factLines: buildCareFactLines(species, t, locale),
-    worldBadge: worldBadge(species, t),
   }
 }
 
 export function buildQrBulkItem(tarantula, { qrTargetMode, careFactsOn, t, locale }) {
   const url = resolveQrUrl(tarantula, qrTargetMode)
-  const name = tarantula.name?.trim() || tarantula.shortId || 'Sin nombre'
-  const sci = tarantula.species?.scientificName?.trim() || 'Especie no definida'
-  const { factLines, worldBadge: badge } = buildQrLabelExtras(
-    tarantula.species,
-    t,
-    locale,
-    careFactsOn,
-  )
+  const { titleLine1, titleLine2, filenameBase } = buildQrLabelLines(tarantula, qrTargetMode, t)
+  const { factLines } = buildQrLabelExtras(tarantula.species, t, locale, careFactsOn)
   return {
     url,
-    titleLine1: name,
-    titleLine2: sci,
-    subtitle: tarantula.shortId ? `ID: ${tarantula.shortId}` : '',
+    titleLine1,
+    titleLine2,
+    filenameBase,
     factLines,
-    worldBadge: badge,
   }
 }

@@ -5,17 +5,32 @@ import { sanitizeFilename, shareOrDownloadDataUrl } from './shareOrDownloadBlob'
 /** Logo sobre fondo claro (QR / Excel / Word en blanco). */
 export const BRAND_LOGO_FOR_LIGHT_BG = '/logo-black.png?v=2'
 
-/**
- * Fracción del lado del QR para el logo centrado (corrección H).
- * ~30–35% suele seguir escaneando bien en móvil con URLs cortas.
- */
 export const QR_CENTER_LOGO_FRACTION = 0.35
+
+/** Lado del QR en px dentro de la etiqueta impresa (escala DOCX desde aquí). */
+export const LABEL_QR_PX = 152
+
+const LAYOUT = {
+  pad: 8,
+  qrTextGap: 10,
+  textColW: 196,
+  titleSize: 14,
+  titleLineH: 17,
+  speciesSize: 11,
+  speciesLineH: 14,
+  factSize: 10,
+  factLineH: 12,
+  gapBeforeLogo: 4,
+  markSize: 22,
+  markBottomPad: 5,
+  maxTitleLines: 2,
+  maxSpeciesLines: 2,
+}
 
 export function qrCenterLogoDiameterPx(qrSizePx, fraction = QR_CENTER_LOGO_FRACTION) {
   return Math.max(8, Math.round(qrSizePx * fraction))
 }
 
-/** Estilos del `<img>` del logo superpuesto en previsualizaciones SVG/React. */
 export function qrCenterLogoOverlayStyles(qrSizePx, fraction = QR_CENTER_LOGO_FRACTION) {
   const d = qrCenterLogoDiameterPx(qrSizePx, fraction)
   const pad = Math.max(2, Math.round(d * 0.08))
@@ -44,11 +59,6 @@ export function loadImageElement(src) {
   })
 }
 
-/**
- * Pega el logo circular al centro del QR (PNG data URL o canvas).
- * El bitmap del QR debe generarse con corrección de errores H.
- * @param {number} [logoFraction] — lado del logo / lado del QR (por defecto {@link QR_CENTER_LOGO_FRACTION}).
- */
 export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction = QR_CENTER_LOGO_FRACTION) {
   const canvas = document.createElement('canvas')
   canvas.width = rasterSize
@@ -79,33 +89,14 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
   return canvas.toDataURL('image/png')
 }
 
-/**
- * Dimensiones internas de la etiqueta completa (legacy, sin care facts).
- * El lado del QR en píxeles encaja con el tamaño elegido en cm al exportar DOCX.
- */
+/** @deprecated use LABEL_QR_PX — kept for callers that import FULL_LABEL_LAYOUT */
 export const FULL_LABEL_LAYOUT = {
-  canvasW: 320,
-  canvasH: 430,
-  qrSize: 224,
-  qrTop: 5,
+  canvasW: LAYOUT.pad * 2 + LABEL_QR_PX + LAYOUT.qrTextGap + LAYOUT.textColW,
+  canvasH: LAYOUT.pad * 2 + LABEL_QR_PX + LAYOUT.gapBeforeLogo + LAYOUT.markSize + LAYOUT.markBottomPad,
+  qrSize: LABEL_QR_PX,
+  qrTop: LAYOUT.pad,
 }
 
-/** Layout tight cuando hay care facts (ancho = QR + padding lateral). */
-export const CARE_LABEL_LAYOUT = {
-  HPAD: 14,
-  qrSize: 224,
-  qrTop: 5,
-  textPad: 10,
-  gapAfterQr: 14,
-  badgeH: 22,
-  badgeGap: 8,
-  factLineH: 16,
-  gapBeforeLogo: 8,
-  markSize: 30,
-  markBottomPad: 10,
-}
-
-/** Ancho/alto en px “docx” si el QR debe medir `displayQrPx` al imprimir. */
 export function labelDocxDimensions(layoutDims, displayQrPx) {
   const { canvasW, canvasH, qrSize } = layoutDims
   const scale = displayQrPx / qrSize
@@ -115,7 +106,6 @@ export function labelDocxDimensions(layoutDims, displayQrPx) {
   }
 }
 
-/** Parte texto en líneas que caben en maxWidth (palabras; tokens largos se cortan con …). */
 export function wrapLinesToWidth(ctx, text, maxWidth) {
   const raw = String(text ?? '').trim()
   if (!raw) return []
@@ -147,27 +137,115 @@ export function wrapLinesToWidth(ctx, text, maxWidth) {
   return lines
 }
 
-function truncateLineToWidth(ctx, text, maxWidth) {
-  const raw = String(text ?? '').trim()
-  if (!raw) return ''
-  if (ctx.measureText(raw).width <= maxWidth) return raw
-  const ell = '…'
-  let w = raw
-  while (w.length > 1 && ctx.measureText(w + ell).width > maxWidth) {
-    w = w.slice(0, -1)
+function layoutTextBlock(ctx, { nameLine, speciesLine, factLines, textW }) {
+  const L = LAYOUT
+  const blocks = []
+
+  ctx.font = `bold ${L.titleSize}px sans-serif`
+  const titleLines = wrapLinesToWidth(ctx, nameLine, textW).slice(0, L.maxTitleLines)
+  if (titleLines.length) {
+    blocks.push({ lines: titleLines, lineH: L.titleLineH, color: '#111', font: `bold ${L.titleSize}px sans-serif` })
   }
-  return w + ell
+
+  ctx.font = `italic ${L.speciesSize}px sans-serif`
+  const speciesLines = wrapLinesToWidth(ctx, speciesLine, textW).slice(0, L.maxSpeciesLines)
+  if (speciesLines.length) {
+    blocks.push({
+      lines: speciesLines,
+      lineH: L.speciesLineH,
+      color: '#444',
+      font: `italic ${L.speciesSize}px sans-serif`,
+      gapBefore: titleLines.length ? 3 : 0,
+    })
+  }
+
+  ctx.font = `${L.factSize}px sans-serif`
+  const factWrapped = []
+  for (const fact of Array.isArray(factLines) ? factLines : []) {
+    const sub = wrapLinesToWidth(ctx, fact, textW)
+    factWrapped.push(...sub)
+  }
+  if (factWrapped.length) {
+    blocks.push({
+      lines: factWrapped,
+      lineH: L.factLineH,
+      color: '#222',
+      font: `${L.factSize}px sans-serif`,
+      gapBefore: blocks.length ? 4 : 0,
+    })
+  }
+
+  let h = 0
+  for (const b of blocks) {
+    h += b.gapBefore || 0
+    h += b.lines.length * b.lineH
+  }
+  return { blocks, height: h }
 }
 
-function roundRect(ctx, x, y, w, h, r) {
-  const rad = Math.min(r, w / 2, h / 2)
-  ctx.beginPath()
-  ctx.moveTo(x + rad, y)
-  ctx.arcTo(x + w, y, x + w, y + h, rad)
-  ctx.arcTo(x + w, y + h, x, y + h, rad)
-  ctx.arcTo(x, y + h, x, y, rad)
-  ctx.arcTo(x, y, x + w, y, rad)
-  ctx.closePath()
+function measureLabelSize(ctx, { nameLine, speciesLine, factLines, qrSize }) {
+  const L = LAYOUT
+  const textW = L.textColW
+  const { height: textH } = layoutTextBlock(ctx, { nameLine, speciesLine, factLines, textW })
+  const bodyH = Math.max(qrSize, textH)
+  const W = L.pad + qrSize + L.qrTextGap + textW + L.pad
+  const H = L.pad + bodyH + L.gapBeforeLogo + L.markSize + L.markBottomPad
+  return { W, H, bodyH, textW, textH }
+}
+
+function drawTextBlocks(ctx, x, y, blocks) {
+  let cy = y
+  for (const b of blocks) {
+    cy += b.gapBefore || 0
+    ctx.font = b.font
+    ctx.fillStyle = b.color
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    for (const ln of b.lines) {
+      ctx.fillText(ln, x, cy)
+      cy += b.lineH
+    }
+  }
+  return cy
+}
+
+async function drawFooterLogo(ctx, W, H) {
+  const L = LAYOUT
+  const y = H - L.markBottomPad - L.markSize
+  try {
+    const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+    ctx.drawImage(mark, W / 2 - L.markSize / 2, y, L.markSize, L.markSize)
+  } catch {
+    ctx.fillStyle = '#888'
+    ctx.font = '9px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(BRAND_WITH_TM, W / 2, y + L.markSize / 2)
+  }
+}
+
+async function drawHorizontalLabel(ctx, W, H, {
+  composed,
+  qrSize,
+  nameLine,
+  speciesLine,
+  factLines,
+}) {
+  const L = LAYOUT
+  const textX = L.pad + qrSize + L.qrTextGap
+  const { blocks, height: textH } = layoutTextBlock(ctx, {
+    nameLine,
+    speciesLine,
+    factLines,
+    textW: L.textColW,
+  })
+  const bodyH = Math.max(qrSize, textH)
+  const qrY = L.pad
+
+  const qrImg = await loadImageElement(composed)
+  ctx.drawImage(qrImg, L.pad, qrY, qrSize, qrSize)
+  drawTextBlocks(ctx, textX, qrY, blocks)
+  await drawFooterLogo(ctx, W, H)
 }
 
 function drawCutBorder(ctx, W, H) {
@@ -180,219 +258,43 @@ function drawCutBorder(ctx, W, H) {
   ctx.restore()
 }
 
-function measureCareLabelHeight(ctx, {
-  W,
-  maxTextW,
-  nameLine,
-  speciesLine,
-  shortIdLine,
-  factLines,
-  worldBadgeInfo,
-}) {
-  const L = CARE_LABEL_LAYOUT
-  let y = L.qrTop + L.qrSize + L.gapAfterQr
-
-  ctx.font = 'bold 19px sans-serif'
-  const nameLines = wrapLinesToWidth(ctx, nameLine, maxTextW).slice(0, 2)
-  y += nameLines.length * 22 + (nameLines.length ? 6 : 0)
-
-  ctx.font = 'italic 15px sans-serif'
-  const speciesLines = wrapLinesToWidth(ctx, speciesLine, maxTextW).slice(0, 3)
-  y += speciesLines.length * 18 + (speciesLines.length ? 4 : 0)
-
-  if (shortIdLine) y += 14
-
-  if (worldBadgeInfo) y += L.badgeH + L.badgeGap
-
-  ctx.font = '12px sans-serif'
-  const facts = Array.isArray(factLines) ? factLines : []
-  y += facts.length * L.factLineH
-
-  y += L.gapBeforeLogo + L.markSize + L.markBottomPad
-  return Math.ceil(y)
-}
-
-async function drawLegacyLabel(ctx, W, H, { composed, nameLine, speciesLine, shortIdLine }) {
-  const { qrSize, qrTop } = FULL_LABEL_LAYOUT
-  const qrImg = await loadImageElement(composed)
-  const ox = (W - qrSize) / 2
-  ctx.drawImage(qrImg, ox, qrTop, qrSize, qrSize)
-
-  const textPad = 10
-  const maxTextW = W - textPad * 2
-  const baseY = qrTop + qrSize
-  const nameLineH = 22
-  const speciesLineH = 18
-  const markSize = Math.round(30 * (W / 320))
-  const markBottomPad = 10
-
-  ctx.textAlign = 'center'
-  ctx.fillStyle = '#111'
-  ctx.font = 'bold 19px sans-serif'
-  const nameLines = wrapLinesToWidth(ctx, nameLine, maxTextW).slice(0, 2)
-  let y = baseY + 22
-  nameLines.forEach((ln, i) => {
-    ctx.fillText(ln, W / 2, y + i * nameLineH)
-  })
-  y += nameLines.length * nameLineH + (nameLines.length ? 6 : 0)
-
-  ctx.fillStyle = '#444'
-  ctx.font = 'italic 15px sans-serif'
-  const speciesLines = wrapLinesToWidth(ctx, speciesLine, maxTextW).slice(0, 3)
-  speciesLines.forEach((ln, i) => {
-    ctx.fillText(ln, W / 2, y + i * speciesLineH)
-  })
-  y += speciesLines.length * speciesLineH + (speciesLines.length ? 4 : 0)
-
-  if (shortIdLine) {
-    ctx.fillStyle = '#777'
-    ctx.font = '11px sans-serif'
-    ctx.fillText(String(shortIdLine).trim(), W / 2, y + 14)
-  }
-
-  try {
-    const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
-    const lw = markSize
-    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - markBottomPad, lw, lw)
-  } catch {
-    ctx.fillStyle = '#888'
-    ctx.font = '11px sans-serif'
-    ctx.fillText(BRAND_WITH_TM, W / 2, H - 12)
-  }
-}
-
-async function drawCareLabel(ctx, W, H, {
-  composed,
-  nameLine,
-  speciesLine,
-  shortIdLine,
-  factLines,
-  worldBadgeInfo,
-}) {
-  const L = CARE_LABEL_LAYOUT
-  const { qrSize, qrTop, HPAD } = L
-  const textPad = L.textPad
-  const maxTextW = W - textPad * 2
-
-  const qrImg = await loadImageElement(composed)
-  ctx.drawImage(qrImg, HPAD, qrTop, qrSize, qrSize)
-
-  ctx.textAlign = 'center'
-  let y = qrTop + qrSize + L.gapAfterQr
-
-  ctx.fillStyle = '#111'
-  ctx.font = 'bold 19px sans-serif'
-  const nameLines = wrapLinesToWidth(ctx, nameLine, maxTextW).slice(0, 2)
-  nameLines.forEach((ln, i) => {
-    ctx.fillText(ln, W / 2, y + i * 22)
-  })
-  y += nameLines.length * 22 + (nameLines.length ? 6 : 0)
-
-  ctx.fillStyle = '#444'
-  ctx.font = 'italic 15px sans-serif'
-  const speciesLines = wrapLinesToWidth(ctx, speciesLine, maxTextW).slice(0, 3)
-  speciesLines.forEach((ln, i) => {
-    ctx.fillText(ln, W / 2, y + i * 18)
-  })
-  y += speciesLines.length * 18 + (speciesLines.length ? 4 : 0)
-
-  if (shortIdLine) {
-    ctx.fillStyle = '#777'
-    ctx.font = '11px sans-serif'
-    ctx.fillText(String(shortIdLine).trim(), W / 2, y + 14)
-    y += 14
-  }
-
-  if (worldBadgeInfo?.label) {
-    ctx.font = 'bold 11px sans-serif'
-    const padX = 10
-    const tw = ctx.measureText(worldBadgeInfo.label).width
-    const bw = tw + padX * 2
-    const bx = (W - bw) / 2
-    const by = y
-    ctx.fillStyle = worldBadgeInfo.bg || '#333'
-    roundRect(ctx, bx, by, bw, L.badgeH, 4)
-    ctx.fill()
-    ctx.fillStyle = worldBadgeInfo.fg || '#fff'
-    ctx.fillText(worldBadgeInfo.label, W / 2, by + L.badgeH / 2 + 4)
-    y += L.badgeH + L.badgeGap
-  }
-
-  ctx.fillStyle = '#333'
-  ctx.font = '12px sans-serif'
-  const facts = Array.isArray(factLines) ? factLines : []
-  facts.forEach((line) => {
-    const clipped = truncateLineToWidth(ctx, line, maxTextW)
-    if (clipped) {
-      ctx.fillText(clipped, W / 2, y + 12)
-      y += L.factLineH
-    }
-  })
-
-  y += L.gapBeforeLogo
-  try {
-    const mark = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
-    const lw = L.markSize
-    ctx.drawImage(mark, W / 2 - lw / 2, H - lw - L.markBottomPad, lw, lw)
-  } catch {
-    ctx.fillStyle = '#888'
-    ctx.font = '11px sans-serif'
-    ctx.fillText(BRAND_WITH_TM, W / 2, H - 12)
-  }
-}
-
 /**
- * PNG de etiqueta: QR + nombre + especie + ID + logo + borde de recorte.
- * @returns {Promise<{ dataUrl: string, width: number, height: number, layoutDims: { canvasW: number, canvasH: number, qrSize: number } }>}
+ * PNG de etiqueta horizontal: QR izquierda, texto derecha, logo abajo.
+ * @returns {Promise<{ dataUrl: string, width: number, height: number, layoutDims: object }>}
  */
 export async function buildFullLabelPngDataUrl({
   url,
   nameLine,
   speciesLine,
-  shortIdLine,
   factLines = null,
-  worldBadgeInfo = null,
   normalizeHeight = null,
+  /** @deprecated ignored — internal ID removed from terrarium labels */
+  shortIdLine: _shortIdLine,
+  /** @deprecated NW/OW inline in care facts */
+  worldBadgeInfo: _worldBadgeInfo,
 }) {
-  const hasCareBlock =
-    (Array.isArray(factLines) && factLines.length > 0) || Boolean(worldBadgeInfo)
+  const hasFacts = Array.isArray(factLines) && factLines.length > 0
+  const qrSize = LABEL_QR_PX
 
   const raw = await QRCode.toDataURL(url, {
-    width: hasCareBlock ? CARE_LABEL_LAYOUT.qrSize : FULL_LABEL_LAYOUT.qrSize,
+    width: qrSize,
     margin: 1,
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
-  const qrSize = hasCareBlock ? CARE_LABEL_LAYOUT.qrSize : FULL_LABEL_LAYOUT.qrSize
   const composed = await compositeQrPngDataUrl(raw, qrSize)
 
-  let W
-  let H
-  let layoutDims
-
-  if (!hasCareBlock) {
-    W = FULL_LABEL_LAYOUT.canvasW
-    H = FULL_LABEL_LAYOUT.canvasH
-    layoutDims = { canvasW: W, canvasH: H, qrSize: FULL_LABEL_LAYOUT.qrSize }
-  } else {
-    const L = CARE_LABEL_LAYOUT
-    W = L.qrSize + L.HPAD * 2
-    const measureCanvas = document.createElement('canvas')
-    const mctx = measureCanvas.getContext('2d')
-    const maxTextW = W - L.textPad * 2
-    H = measureCareLabelHeight(mctx, {
-      W,
-      maxTextW,
-      nameLine,
-      speciesLine,
-      shortIdLine,
-      factLines,
-      worldBadgeInfo,
-    })
-    layoutDims = { canvasW: W, canvasH: H, qrSize: L.qrSize }
-  }
+  const measureCanvas = document.createElement('canvas')
+  const mctx = measureCanvas.getContext('2d')
+  let { W, H } = measureLabelSize(mctx, {
+    nameLine,
+    speciesLine,
+    factLines: hasFacts ? factLines : null,
+    qrSize,
+  })
 
   const targetH = normalizeHeight != null ? Math.max(H, normalizeHeight) : H
+  const layoutDims = { canvasW: W, canvasH: targetH, qrSize }
 
   const canvas = document.createElement('canvas')
   canvas.width = W
@@ -407,18 +309,13 @@ export async function buildFullLabelPngDataUrl({
     ctx.translate(0, padTop)
   }
 
-  if (!hasCareBlock) {
-    await drawLegacyLabel(ctx, W, H, { composed, nameLine, speciesLine, shortIdLine })
-  } else {
-    await drawCareLabel(ctx, W, H, {
-      composed,
-      nameLine,
-      speciesLine,
-      shortIdLine,
-      factLines,
-      worldBadgeInfo,
-    })
-  }
+  await drawHorizontalLabel(ctx, W, H, {
+    composed,
+    qrSize,
+    nameLine,
+    speciesLine,
+    factLines: hasFacts ? factLines : null,
+  })
 
   if (padTop > 0) ctx.restore()
 
@@ -428,28 +325,25 @@ export async function buildFullLabelPngDataUrl({
     dataUrl: canvas.toDataURL('image/png'),
     width: W,
     height: targetH,
-    layoutDims: { ...layoutDims, canvasH: targetH },
+    layoutDims,
   }
 }
 
-/**
- * PNG listo para descargar: QR con logo centrado + nombre + especie + logo pequeño abajo.
- */
 export async function downloadBrandedQrPng({
   url,
   nameLine,
   speciesLine,
-  shortIdLine,
   factLines = null,
-  worldBadgeInfo = null,
   filenameBase,
+  shortIdLine,
+  worldBadgeInfo,
 }) {
   const { dataUrl } = await buildFullLabelPngDataUrl({
     url,
     nameLine,
     speciesLine,
-    shortIdLine,
     factLines,
+    shortIdLine,
     worldBadgeInfo,
   })
   const safeName = sanitizeFilename(filenameBase || 'qr')

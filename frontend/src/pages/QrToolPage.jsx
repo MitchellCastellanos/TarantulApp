@@ -27,6 +27,7 @@ import {
 import {
   buildQrBulkItem,
   buildQrLabelExtras,
+  buildQrLabelLines,
   readQrCareFactsEnabled,
   readQrTargetMode,
   resolveQrUrl,
@@ -38,12 +39,6 @@ import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 /** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
 const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
-
-function getQrLabelParts(specimen) {
-  const name = specimen?.name?.trim() || specimen?.shortId || 'Sin nombre'
-  const species = specimen?.species?.scientificName?.trim() || 'Especie no definida'
-  return { name, species }
-}
 
 function resolveAppPathFromScan(raw) {
   const s = (raw || '').trim()
@@ -124,26 +119,28 @@ export default function QrToolPage() {
     return { ok: true, empty: false, href: qrHref }
   }, [qrHref])
 
+  const labelLines = useMemo(
+    () => (selected ? buildQrLabelLines(selected, qrTargetMode, t) : null),
+    [selected, qrTargetMode, t],
+  )
+
   const labelExtras = useMemo(
     () => buildQrLabelExtras(selected?.species, t, i18n.language, careFactsOn),
     [selected?.species, t, i18n.language, careFactsOn],
   )
 
   useEffect(() => {
-    if (mode !== 'single' || !parsed.ok || !selected) {
+    if (mode !== 'single' || !parsed.ok || !selected || !labelLines) {
       setLabelPreviewUrl('')
       return undefined
     }
     let cancelled = false
     setLabelPreviewBusy(true)
-    const { name, species } = getQrLabelParts(selected)
     void buildFullLabelPngDataUrl({
       url: parsed.href,
-      nameLine: name,
-      speciesLine: species,
-      shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
+      nameLine: labelLines.titleLine1,
+      speciesLine: labelLines.titleLine2,
       factLines: labelExtras.factLines,
-      worldBadgeInfo: labelExtras.worldBadge,
     })
       .then(({ dataUrl }) => {
         if (!cancelled) setLabelPreviewUrl(dataUrl)
@@ -157,7 +154,7 @@ export default function QrToolPage() {
     return () => {
       cancelled = true
     }
-  }, [mode, parsed.href, selected, labelExtras, careFactsOn, qrTargetMode])
+  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -243,17 +240,14 @@ export default function QrToolPage() {
   }
 
   const handleDownload = async () => {
-    if (!parsed.ok || !selected) return
-    const { name, species } = getQrLabelParts(selected)
+    if (!parsed.ok || !selected || !labelLines) return
     try {
       await downloadBrandedQrPng({
         url: parsed.href,
-        nameLine: name,
-        speciesLine: species,
-        shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
+        nameLine: labelLines.titleLine1,
+        speciesLine: labelLines.titleLine2,
         factLines: labelExtras.factLines,
-        worldBadgeInfo: labelExtras.worldBadge,
-        filenameBase: name,
+        filenameBase: labelLines.filenameBase,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
@@ -322,6 +316,7 @@ export default function QrToolPage() {
         sizeCm,
         docTitle: t('qrBulk.docTitle'),
         footerNote: bulkFooterNote('qrBulk.docFooterNote'),
+        labelAltText: t('qr.label.altText'),
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -343,6 +338,7 @@ export default function QrToolPage() {
         sizeCm: 2.8,
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
+        labelAltText: t('qr.label.altText'),
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -670,14 +666,16 @@ export default function QrToolPage() {
                     {labelPreviewBusy && (
                       <p className="small text-muted mt-2 mb-0">{t('qr.previewLoading')}</p>
                     )}
-                    {selected && !labelPreviewUrl && (
+                    {labelLines && !labelPreviewUrl && (
                       <div className="mt-2">
                         <p className="fw-semibold mb-0" style={{ color: 'var(--ta-parchment)' }}>
-                          {getQrLabelParts(selected).name}
+                          {labelLines.titleLine1}
                         </p>
-                        <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
-                          {getQrLabelParts(selected).species}
-                        </p>
+                        {labelLines.titleLine2 ? (
+                          <p className="small mb-0" style={{ color: 'var(--ta-text-muted)' }}>
+                            {labelLines.titleLine2}
+                          </p>
+                        ) : null}
                       </div>
                     )}
                   </>

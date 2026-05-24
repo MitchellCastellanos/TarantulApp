@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildCareFactLines, deriveTempRangeC, worldBadge } from './careFacts.js'
+import { buildCareFactLines, deriveTempRangeC } from './careFacts.js'
 
 const t = (key, opts) => {
   if (opts?.defaultValue) return opts.defaultValue
@@ -14,8 +14,8 @@ const t = (key, opts) => {
     'qr.facts.size': 'Size',
     'qr.facts.growth': 'Growth',
     'qr.facts.origin': 'Origin',
-    'qr.facts.world.new': 'NEW WORLD',
-    'qr.facts.world.old': 'OLD WORLD',
+    'qr.facts.worldShort.new': 'NW',
+    'qr.facts.worldShort.old': 'OW',
     'species.levelIntermediate': 'Intermediate',
     'habitat.arboreal': 'Arboreal',
     'species.ventModerate': 'Moderate',
@@ -46,6 +46,23 @@ describe('buildCareFactLines', () => {
     assert.match(lines[0], /Temp.*~24–26/)
   })
 
+  it('includes hobby world inline with habitat', () => {
+    const lines = buildCareFactLines(
+      {
+        hobbyWorld: 'new_world',
+        habitatType: 'arboreal',
+        humidityMin: 65,
+        humidityMax: 75,
+      },
+      t,
+      'en',
+    )
+    const habitatLine = lines.find((l) => l.includes('Habitat'))
+    assert.ok(habitatLine)
+    assert.match(habitatLine, /NW/)
+    assert.match(habitatLine, /Arboreal/)
+  })
+
   it('includes temp and humidity when present', () => {
     const lines = buildCareFactLines(
       {
@@ -54,20 +71,11 @@ describe('buildCareFactLines', () => {
         humidityMin: 65,
         humidityMax: 75,
         experienceLevel: 'intermediate',
-        habitatType: 'arboreal',
       },
       t,
       'en',
     )
     assert.ok(lines.some((l) => l.includes('Temp') && l.includes('~')))
     assert.ok(lines.some((l) => l.includes('65') && l.includes('75')))
-  })
-})
-
-describe('worldBadge', () => {
-  it('returns green badge for new world', () => {
-    const b = worldBadge({ hobbyWorld: 'new_world' }, t)
-    assert.equal(b.label, 'NEW WORLD')
-    assert.equal(b.bg, '#2e7d32')
   })
 })

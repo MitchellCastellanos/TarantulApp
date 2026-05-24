@@ -7,6 +7,7 @@ import {
   downloadBrandedQrPng,
   qrCenterLogoOverlayStyles,
 } from '../utils/qrBrandComposite'
+import { buildQrLabelLines } from '../utils/qrLabelOptions'
 import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
 
 export default function QRModal({ tarantula, onClose }) {
@@ -15,17 +16,15 @@ export default function QRModal({ tarantula, onClose }) {
   const hasProFeatures = user?.hasProFeatures === true
   const url = specimenPublicUrl(tarantula.shortId)
   const [copied, setCopied] = useState(false)
-  const qrName = tarantula?.name?.trim() || tarantula?.shortId || 'Sin nombre'
-  const qrSpecies = tarantula?.species?.scientificName?.trim() || 'Especie no definida'
+  const { titleLine1, titleLine2, filenameBase } = buildQrLabelLines(tarantula, 'specimen', t)
 
   const downloadQR = async () => {
     try {
       await downloadBrandedQrPng({
         url,
-        nameLine: qrName,
-        speciesLine: qrSpecies,
-        shortIdLine: tarantula.shortId ? `ID: ${tarantula.shortId}` : '',
-        filenameBase: qrName,
+        nameLine: titleLine1,
+        speciesLine: titleLine2,
+        filenameBase,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
@@ -76,9 +75,8 @@ export default function QRModal({ tarantula, onClose }) {
                 />
               </div>
             </div>
-            <p className="fw-bold mb-0">{qrName}</p>
-            <p className="text-muted small mb-1">{qrSpecies}</p>
-            <p className="text-muted small">ID: {tarantula.shortId}</p>
+            <p className="fw-bold mb-0">{titleLine1}</p>
+            {titleLine2 ? <p className="text-muted small mb-1">{titleLine2}</p> : null}
 
             {!tarantula.isPublic && (
               <div className="alert alert-warning small py-2 mt-2 text-start">

@@ -51,5 +51,5 @@ public interface MoltLogRepository extends JpaRepository<MoltLog, UUID> {
             inner join tarantulas t on t.id = m.tarantula_id
             where t.species_id = :speciesId
             """, nativeQuery = true)
-    Object[] aggregateCommunityMoltsBySpeciesId(@Param("speciesId") int speciesId);
+  List<Object[]> aggregateCommunityMoltsBySpeciesId(@Param("speciesId") int speciesId);
 }

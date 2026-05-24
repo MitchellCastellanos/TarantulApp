@@ -50,17 +50,10 @@ public class SpeciesPublicService {
         MarketplaceService.SpeciesMarketplaceSeoSection listings =
                 marketplaceService.speciesListingsForSeo(scientificName, speciesId);
 
-        Object[] moltRow = moltLogRepository.aggregateCommunityMoltsBySpeciesId(speciesId);
-        long moltCount = moltRow != null && moltRow.length > 0 && moltRow[0] != null
-                ? ((Number) moltRow[0]).longValue() : 0L;
-        Instant lastMolt = null;
-        if (moltRow != null && moltRow.length > 1 && moltRow[1] != null) {
-            if (moltRow[1] instanceof Instant instant) {
-                lastMolt = instant;
-            } else if (moltRow[1] instanceof java.sql.Timestamp ts) {
-                lastMolt = ts.toInstant();
-            }
-        }
+        Object[] moltRow = firstNativeAggregateRow(
+                moltLogRepository.aggregateCommunityMoltsBySpeciesId(speciesId));
+        long moltCount = longAt(moltRow, 0);
+        Instant lastMolt = instantAt(moltRow, 1);
 
         return new SpeciesSeoSnapshotDTO(
                 species,
@@ -105,5 +98,51 @@ public class SpeciesPublicService {
                 .filter(sp -> SpeciesSlugUtil.slugMatches(sp.getScientificName(), raw))
                 .findFirst()
                 .map(SpeciesDTO::from);
+    }
+
+    /**
+     * Native queries may return {@code List<Object[]>} where Hibernate nests the row
+     * (e.g. {@code [[count, max]]}) — unwrap to a flat column array.
+     */
+    static Object[] firstNativeAggregateRow(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return null;
+        }
+        Object[] row = rows.get(0);
+        if (row != null && row.length == 1 && row[0] instanceof Object[] nested) {
+            return nested;
+        }
+        return row;
+    }
+
+    static long longAt(Object[] row, int index) {
+        if (row == null || index >= row.length || row[index] == null) {
+            return 0L;
+        }
+        Object v = row[index];
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
+        if (v instanceof Object[] nested) {
+            return longAt(nested, 0);
+        }
+        return 0L;
+    }
+
+    static Instant instantAt(Object[] row, int index) {
+        if (row == null || index >= row.length || row[index] == null) {
+            return null;
+        }
+        Object v = row[index];
+        if (v instanceof Instant instant) {
+            return instant;
+        }
+        if (v instanceof java.sql.Timestamp ts) {
+            return ts.toInstant();
+        }
+        if (v instanceof java.util.Date d) {
+            return d.toInstant();
+        }
+        return null;
     }
 }

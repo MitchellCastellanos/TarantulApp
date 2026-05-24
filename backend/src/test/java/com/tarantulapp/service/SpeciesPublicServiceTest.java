@@ -57,7 +57,7 @@ class SpeciesPublicServiceTest {
                         List.of(Map.of("id", UUID.randomUUID(), "title", "Juvenile G. rosea", "source", "peer"))
                 ));
         when(moltLogRepository.aggregateCommunityMoltsBySpeciesId(1))
-                .thenReturn(new Object[]{2L, Instant.parse("2025-01-15T12:00:00Z")});
+                .thenReturn(List.<Object[]>of(new Object[]{2L, Instant.parse("2025-01-15T12:00:00Z")}));
         when(speciesTradeNoteService.listForSpecies(1)).thenReturn(List.of());
 
         SpeciesSeoSnapshotDTO snap = service.getSeoSnapshot("1");
@@ -81,10 +81,29 @@ class SpeciesPublicServiceTest {
         when(marketplaceService.speciesListingsForSeo(eq("Avicularia avicularia"), eq(42)))
                 .thenReturn(new MarketplaceService.SpeciesMarketplaceSeoSection(0, List.of()));
         when(moltLogRepository.aggregateCommunityMoltsBySpeciesId(42))
-                .thenReturn(new Object[]{0L, null});
+                .thenReturn(List.<Object[]>of(new Object[]{0L, null}));
         when(speciesTradeNoteService.listForSpecies(42)).thenReturn(List.of());
 
         SpeciesSeoSnapshotDTO snap = service.getSeoSnapshot("avicularia-avicularia");
         assertEquals(42, snap.species().getId());
+    }
+
+    @Test
+    void getSeoSnapshotHandlesNestedNativeAggregateRow() {
+        var entity = new com.tarantulapp.entity.Species();
+        entity.setId(480);
+        entity.setScientificName("Test species");
+        entity.setDataSource("gbif");
+        when(discoverCatalogService.findPublicCatalogById(480)).thenReturn(Optional.of(SpeciesDTO.from(entity)));
+        when(marketplaceService.speciesListingsForSeo("Test species", 480))
+                .thenReturn(new MarketplaceService.SpeciesMarketplaceSeoSection(0, List.of()));
+        when(moltLogRepository.aggregateCommunityMoltsBySpeciesId(480))
+                .thenReturn(List.<Object[]>of(new Object[]{new Object[]{5L, Instant.parse("2025-06-01T00:00:00Z")}}));
+        when(speciesTradeNoteService.listForSpecies(480)).thenReturn(List.of());
+
+        SpeciesSeoSnapshotDTO snap = service.getSeoSnapshot("480");
+
+        assertEquals(5, snap.communityMoltCount());
+        assertNotNull(snap.lastCommunityMoltAt());
     }
 }

@@ -45,14 +45,12 @@ async function renderLabelPng(item, normalizeHeight) {
     url: item.url,
     nameLine: item.titleLine1,
     speciesLine: item.titleLine2 || '',
-    shortIdLine: item.subtitle || '',
     factLines: item.factLines ?? null,
-    worldBadgeInfo: item.worldBadge ?? null,
     normalizeHeight,
   })
 }
 
-async function buildLabelParagraphs(items, displayQrPx, layout) {
+async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
   const rendered = []
   for (const item of items) {
     rendered.push(await renderLabelPng(item, null))
@@ -84,7 +82,7 @@ async function buildLabelParagraphs(items, displayQrPx, layout) {
             type: 'png',
             data: buf,
             transformation: { width, height },
-            altText: { name: 'Etiqueta QR', description: item.titleLine1, title: item.titleLine1 },
+            altText: { name: labelAltText, description: item.titleLine1, title: item.titleLine1 },
           }),
         ],
       }),
@@ -95,13 +93,14 @@ async function buildLabelParagraphs(items, displayQrPx, layout) {
 
 /**
  * @param {object} opts
- * @param {{ url: string, titleLine1: string, titleLine2?: string, subtitle?: string, factLines?: string[]|null, worldBadge?: object|null }[]} opts.items
+ * @param {{ url: string, titleLine1: string, titleLine2?: string, factLines?: string[]|null, filenameBase?: string }[]} opts.items
  * @param {'fixed'|'flex'} opts.layout — columnas de Word (2 o 4), sin tabla para que mover una etiqueta no arrastre celdas vacías
  * @param {number} [opts.sizeCm] — lado del **QR** en cm (el DOCX escala la etiqueta entera manteniendo proporción)
  * @param {string} [opts.docTitle]
  * @param {string} [opts.footerNote]
+ * @param {string} [opts.labelAltText] — texto accesible de la imagen (i18n)
  */
-export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote }) {
+export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote, labelAltText = 'QR label' }) {
   const displayQrPx = cmToDocxDisplayPx(sizeCm)
 
   const intro = []
@@ -140,7 +139,7 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     )
   }
 
-  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx, layout)
+  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx, layout, labelAltText)
   const columnCount = layout === 'flex' ? 4 : 2
   const columnOpts = {
     count: columnCount,

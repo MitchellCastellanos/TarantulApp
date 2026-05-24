@@ -1539,6 +1539,29 @@
       "world": {
         "new": "NEW WORLD",
         "old": "OLD WORLD"
+      },
+      "worldShort": {
+        "new": "NW",
+        "old": "OW"
+      },
+      "temperamentValue": {
+        "docile": "Docile",
+        "defensive": "Defensive",
+        "skittish": "Skittish",
+        "calm": "Calm",
+        "aggressive": "Aggressive",
+        "nervous": "Nervous",
+        "mellow": "Mellow",
+        "hardy": "Hardy",
+        "fast": "Fast",
+        "intermediate": "Intermediate",
+        "beginner": "Beginner-friendly",
+        "advanced": "Advanced",
+        "docil": "Docile",
+        "defensiva": "Defensive",
+        "nerviosa": "Nervous",
+        "dócil": "Docile",
+        "doil": "Docile"
       }
     },
     "qrTarget": {
@@ -1553,7 +1576,13 @@
         "disabled": "Link a species from the catalog to use a generic QR."
       }
     },
-    "previewLoading": "Updating label preview…"
+    "previewLoading": "Updating label preview…",
+    "label": {
+      "unnamedSpecimen": "Unnamed",
+      "speciesUndefined": "Species not set",
+      "speciesFileFallback": "species",
+      "altText": "QR label"
+    }
   },
   "qrBulk": {
     "pageTitle": "Bulk QR printing",
