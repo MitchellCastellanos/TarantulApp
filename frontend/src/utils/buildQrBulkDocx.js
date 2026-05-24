@@ -40,17 +40,41 @@ async function tryBrandLogoBytes() {
   }
 }
 
-async function buildLabelParagraphs(items, displayQrPx) {
-  const out = []
+async function renderLabelPng(item, normalizeHeight) {
+  return buildFullLabelPngDataUrl({
+    url: item.url,
+    nameLine: item.titleLine1,
+    speciesLine: item.titleLine2 || '',
+    shortIdLine: item.subtitle || '',
+    factLines: item.factLines ?? null,
+    worldBadgeInfo: item.worldBadge ?? null,
+    normalizeHeight,
+  })
+}
+
+async function buildLabelParagraphs(items, displayQrPx, layout) {
+  const rendered = []
   for (const item of items) {
-    const dataUrl = await buildFullLabelPngDataUrl({
-      url: item.url,
-      nameLine: item.titleLine1,
-      speciesLine: item.titleLine2 || '',
-      shortIdLine: item.subtitle || '',
-    })
+    rendered.push(await renderLabelPng(item, null))
+  }
+
+  let normalizeHeight = null
+  if (layout === 'fixed' && rendered.length > 0) {
+    normalizeHeight = Math.max(...rendered.map((r) => r.height))
+    const needsNormalize = rendered.some((r) => r.height < normalizeHeight)
+    if (needsNormalize) {
+      for (let i = 0; i < items.length; i++) {
+        rendered[i] = await renderLabelPng(items[i], normalizeHeight)
+      }
+    }
+  }
+
+  const out = []
+  for (let i = 0; i < items.length; i++) {
+    const { dataUrl, layoutDims } = rendered[i]
     const buf = dataUrlToUint8Array(dataUrl)
-    const { width, height } = labelDocxDimensions(displayQrPx)
+    const { width, height } = labelDocxDimensions(layoutDims, displayQrPx)
+    const item = items[i]
     out.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
@@ -71,7 +95,7 @@ async function buildLabelParagraphs(items, displayQrPx) {
 
 /**
  * @param {object} opts
- * @param {{ url: string, titleLine1: string, titleLine2?: string, subtitle?: string }[]} opts.items
+ * @param {{ url: string, titleLine1: string, titleLine2?: string, subtitle?: string, factLines?: string[]|null, worldBadge?: object|null }[]} opts.items
  * @param {'fixed'|'flex'} opts.layout — columnas de Word (2 o 4), sin tabla para que mover una etiqueta no arrastre celdas vacías
  * @param {number} [opts.sizeCm] — lado del **QR** en cm (el DOCX escala la etiqueta entera manteniendo proporción)
  * @param {string} [opts.docTitle]
@@ -116,7 +140,7 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     )
   }
 
-  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx)
+  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx, layout)
   const columnCount = layout === 'flex' ? 4 : 2
   const columnOpts = {
     count: columnCount,

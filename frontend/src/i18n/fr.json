@@ -1511,6 +1511,38 @@
       "readOnlyLocked": "Lecture seule (verrou plan gratuit)"
     }
   },
+  "qr": {
+    "facts": {
+      "toggle": "Infos de maintenance sur l’étiquette",
+      "disclaimer": "Données de maintenance approximatives ; la température est indicative.",
+      "temperament": "Tempérament",
+      "level": "Niveau",
+      "habitat": "Habitat",
+      "ventilation": "Ventilation",
+      "temp": "Temp",
+      "humidity": "Humidité",
+      "size": "Taille",
+      "growth": "Croissance",
+      "origin": "Origine",
+      "world": {
+        "new": "NOUVEAU MONDE",
+        "old": "ANCIEN MONDE"
+      }
+    },
+    "qrTarget": {
+      "heading": "Le QR mène à",
+      "specimen": {
+        "label": "Cet exemplaire",
+        "help": "Ouvre la fiche de cette araignée (historique, mues, etc.). Idéal pour votre collection."
+      },
+      "species": {
+        "label": "Espèce (générique)",
+        "help": "Ouvre la fiche publique de l’espèce avec ses soins. Idéal à la vente ou en cadeau : l’acheteur scanne et découvre TarantulApp.",
+        "disabled": "Associez une espèce du catalogue pour un QR générique."
+      }
+    },
+    "previewLoading": "Mise à jour de l’aperçu…"
+  },
   "qrBulk": {
     "pageTitle": "Impression groupée de QR",
     "pageSubtitle": "Choisis des exemplaires et télécharge un Word prêt pour étiquettes ou salons.",

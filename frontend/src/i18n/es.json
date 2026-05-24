@@ -1524,6 +1524,38 @@
       "readOnlyLocked": "Solo lectura (bloqueo plan gratis)"
     }
   },
+  "qr": {
+    "facts": {
+      "toggle": "Datos de cuidado en la etiqueta",
+      "disclaimer": "Datos de cuidado aproximados; la temperatura es orientativa.",
+      "temperament": "Temperamento",
+      "level": "Nivel",
+      "habitat": "Hábitat",
+      "ventilation": "Ventilación",
+      "temp": "Temp",
+      "humidity": "Humedad",
+      "size": "Tamaño",
+      "growth": "Crecimiento",
+      "origin": "Origen",
+      "world": {
+        "new": "NUEVO MUNDO",
+        "old": "VIEJO MUNDO"
+      }
+    },
+    "qrTarget": {
+      "heading": "El QR enlaza a",
+      "specimen": {
+        "label": "Este ejemplar",
+        "help": "Abre la ficha de este bicho (historial, mudas, etc.). Ideal para tu colección."
+      },
+      "species": {
+        "label": "Especie (genérico)",
+        "help": "Abre la ficha pública de la especie con sus cuidados. Ideal para vender o regalar: quien compra escanea y aprende en TarantulApp.",
+        "disabled": "Asocia una especie del catálogo para usar un QR genérico."
+      }
+    },
+    "previewLoading": "Actualizando vista previa…"
+  },
   "qrBulk": {
     "pageTitle": "Imprimir QRs en bloque",
     "pageSubtitle": "Elige ejemplares y descarga un Word listo para imprimir etiquetas o ferias.",

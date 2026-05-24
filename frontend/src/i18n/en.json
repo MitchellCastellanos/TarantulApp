@@ -1523,6 +1523,38 @@
       "readOnlyLocked": "Read-only (free plan lock)"
     }
   },
+  "qr": {
+    "facts": {
+      "toggle": "Care facts on label",
+      "disclaimer": "Care data are approximate; temperature is indicative only.",
+      "temperament": "Temperament",
+      "level": "Level",
+      "habitat": "Habitat",
+      "ventilation": "Ventilation",
+      "temp": "Temp",
+      "humidity": "Humidity",
+      "size": "Size",
+      "growth": "Growth",
+      "origin": "Origin",
+      "world": {
+        "new": "NEW WORLD",
+        "old": "OLD WORLD"
+      }
+    },
+    "qrTarget": {
+      "heading": "QR links to",
+      "specimen": {
+        "label": "This specimen",
+        "help": "Opens this spider’s profile (history, molts, etc.). Best for your own collection."
+      },
+      "species": {
+        "label": "Species (generic)",
+        "help": "Opens the public species care sheet. Best when selling or gifting: the buyer scans and learns on TarantulApp.",
+        "disabled": "Link a species from the catalog to use a generic QR."
+      }
+    },
+    "previewLoading": "Updating label preview…"
+  },
   "qrBulk": {
     "pageTitle": "Bulk QR printing",
     "pageSubtitle": "Pick specimens and download a Word file ready for labels or shows.",

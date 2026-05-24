@@ -11,8 +11,10 @@ import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
+import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import {
   BRAND_LOGO_FOR_LIGHT_BG,
+  buildFullLabelPngDataUrl,
   downloadBrandedQrPng,
   qrCenterLogoOverlayStyles,
 } from '../utils/qrBrandComposite'
@@ -22,7 +24,15 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
-import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
+import {
+  buildQrBulkItem,
+  buildQrLabelExtras,
+  readQrCareFactsEnabled,
+  readQrTargetMode,
+  resolveQrUrl,
+  writeQrCareFactsEnabled,
+  writeQrTargetMode,
+} from '../utils/qrLabelOptions'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
@@ -77,6 +87,10 @@ export default function QrToolPage() {
   const [sizeCm, setSizeCm] = useState(5)
   const [busy, setBusy] = useState(false)
   const [busyKind, setBusyKind] = useState('')
+  const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
+  const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
+  const [labelPreviewUrl, setLabelPreviewUrl] = useState('')
+  const [labelPreviewBusy, setLabelPreviewBusy] = useState(false)
   const [scanHint, setScanHint] = useState('')
   const [androidScanOpen, setAndroidScanOpen] = useState(false)
   const androidHtml5Ref = useRef(null)
@@ -92,11 +106,58 @@ export default function QrToolPage() {
   )
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const qrHref = selected?.shortId ? specimenPublicUrl(selected.shortId) : ''
+  const speciesLinked = Boolean(selected?.species?.id != null)
+
+  useEffect(() => {
+    if (qrTargetMode === 'species' && selected && !speciesLinked) {
+      setQrTargetMode('specimen')
+      writeQrTargetMode('specimen')
+    }
+  }, [qrTargetMode, selected, speciesLinked])
+
+  const qrHref = useMemo(
+    () => (selected ? resolveQrUrl(selected, qrTargetMode) : ''),
+    [selected, qrTargetMode],
+  )
   const parsed = useMemo(() => {
     if (!qrHref) return { ok: false, empty: true, href: '' }
     return { ok: true, empty: false, href: qrHref }
   }, [qrHref])
+
+  const labelExtras = useMemo(
+    () => buildQrLabelExtras(selected?.species, t, i18n.language, careFactsOn),
+    [selected?.species, t, i18n.language, careFactsOn],
+  )
+
+  useEffect(() => {
+    if (mode !== 'single' || !parsed.ok || !selected) {
+      setLabelPreviewUrl('')
+      return undefined
+    }
+    let cancelled = false
+    setLabelPreviewBusy(true)
+    const { name, species } = getQrLabelParts(selected)
+    void buildFullLabelPngDataUrl({
+      url: parsed.href,
+      nameLine: name,
+      speciesLine: species,
+      shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
+      factLines: labelExtras.factLines,
+      worldBadgeInfo: labelExtras.worldBadge,
+    })
+      .then(({ dataUrl }) => {
+        if (!cancelled) setLabelPreviewUrl(dataUrl)
+      })
+      .catch(() => {
+        if (!cancelled) setLabelPreviewUrl('')
+      })
+      .finally(() => {
+        if (!cancelled) setLabelPreviewBusy(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [mode, parsed.href, selected, labelExtras, careFactsOn, qrTargetMode])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -190,12 +251,29 @@ export default function QrToolPage() {
         nameLine: name,
         speciesLine: species,
         shortIdLine: selected.shortId ? `ID: ${selected.shortId}` : '',
+        factLines: labelExtras.factLines,
+        worldBadgeInfo: labelExtras.worldBadge,
         filenameBase: name,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
       window.alert(t('qrTool.pngDownloadFailed'))
     }
+  }
+
+  const onCareFactsChange = (on) => {
+    setCareFactsOn(on)
+    writeQrCareFactsEnabled(on)
+  }
+
+  const onQrTargetChange = (mode) => {
+    setQrTargetMode(mode)
+    writeQrTargetMode(mode)
+  }
+
+  const bulkFooterNote = (baseKey) => {
+    const base = t(baseKey)
+    return careFactsOn ? `${base} ${t('qr.facts.disclaimer')}` : base
   }
 
   const bulkList = useMemo(() => {
@@ -222,17 +300,16 @@ export default function QrToolPage() {
   const clearBulkSelection = () => setBulkSelected(new Set())
 
   const buildBulkItems = () =>
-    bulkSelectedList.slice(0, QR_BULK_MAX).map((ta) => {
-      const url = ta.shortId ? `${origin}/t/${ta.shortId}` : ''
-      const name = ta.name?.trim() || ta.shortId || 'Sin nombre'
-      const sci = ta.species?.scientificName?.trim() || 'Especie no definida'
-      return {
-        url,
-        titleLine1: name,
-        titleLine2: sci,
-        subtitle: ta.shortId ? `ID: ${ta.shortId}` : '',
-      }
-    })
+    bulkSelectedList
+      .slice(0, QR_BULK_MAX)
+      .map((ta) =>
+        buildQrBulkItem(ta, {
+          qrTargetMode,
+          careFactsOn,
+          t,
+          locale: i18n.language,
+        }),
+      )
 
   const downloadBulkFixed = async () => {
     if (!bulkSelectedList.length || busy) return
@@ -244,7 +321,7 @@ export default function QrToolPage() {
         layout: 'fixed',
         sizeCm,
         docTitle: t('qrBulk.docTitle'),
-        footerNote: t('qrBulk.docFooterNote'),
+        footerNote: bulkFooterNote('qrBulk.docFooterNote'),
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -265,7 +342,7 @@ export default function QrToolPage() {
         layout: 'flex',
         sizeCm: 2.8,
         docTitle: t('qrBulk.docTitleFlex'),
-        footerNote: t('qrBulk.docFooterNoteFlex'),
+        footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -532,6 +609,20 @@ export default function QrToolPage() {
                 <p className="small text-warning mb-4">{t('qrTool.emptyCollection')}</p>
               )}
 
+              {token && aliveCollection.length > 0 && (
+                <QrLabelOptionsPanel
+                  careFactsOn={careFactsOn}
+                  onCareFactsChange={onCareFactsChange}
+                  qrTargetMode={qrTargetMode}
+                  onQrTargetChange={onQrTargetChange}
+                  speciesLinked={
+                    mode === 'single'
+                      ? speciesLinked
+                      : bulkList.some((ta) => ta.species?.id != null)
+                  }
+                />
+              )}
+
               {token && aliveCollection.length > 0 && mode === 'single' && (
                 <div className="mb-4">
                   <label className="form-label small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
@@ -558,17 +649,28 @@ export default function QrToolPage() {
                 {parsed.ok ? (
                   <>
                     <div ref={svgRef} className="d-inline-block p-3 border rounded" style={{ borderColor: 'rgba(200,170,100,0.35)', background: '#fff' }}>
-                      <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-                        <QRCodeSvg value={parsed.href} size={220} level="H" />
+                      {labelPreviewUrl ? (
                         <img
-                          src={BRAND_LOGO_FOR_LIGHT_BG}
+                          src={labelPreviewUrl}
                           alt=""
-                          aria-hidden="true"
-                          style={qrCenterLogoOverlayStyles(220)}
+                          style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                         />
-                      </div>
+                      ) : (
+                        <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                          <QRCodeSvg value={parsed.href} size={220} level="H" />
+                          <img
+                            src={BRAND_LOGO_FOR_LIGHT_BG}
+                            alt=""
+                            aria-hidden="true"
+                            style={qrCenterLogoOverlayStyles(220)}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {selected && (
+                    {labelPreviewBusy && (
+                      <p className="small text-muted mt-2 mb-0">{t('qr.previewLoading')}</p>
+                    )}
+                    {selected && !labelPreviewUrl && (
                       <div className="mt-2">
                         <p className="fw-semibold mb-0" style={{ color: 'var(--ta-parchment)' }}>
                           {getQrLabelParts(selected).name}
@@ -664,7 +766,7 @@ export default function QrToolPage() {
 
                       <div className="list-group list-group-flush border rounded mb-4" style={{ maxHeight: 360, overflowY: 'auto' }}>
                         {bulkList.map((ta) => {
-                          const url = ta.shortId ? `${origin}/t/${ta.shortId}` : ''
+                          const url = resolveQrUrl(ta, qrTargetMode) || ' '
                           const on = bulkSelected.has(ta.id)
                           return (
                             <label
@@ -729,7 +831,7 @@ export default function QrToolPage() {
                               {bulkSelectedList[0] ? (
                                 <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
                                   <QRCodeSvg
-                                    value={bulkSelectedList[0].shortId ? `${origin}/t/${bulkSelectedList[0].shortId}` : ' '}
+                                    value={resolveQrUrl(bulkSelectedList[0], qrTargetMode) || ' '}
                                     size={bulkPreviewPx}
                                     level="H"
                                   />

@@ -14,18 +14,22 @@ import {
   cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx.js'
+import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrBrandComposite'
 import marketplaceService from '../services/marketplaceService'
-import { specimenPublicUrl } from '../utils/publicFrontBaseUrl'
+import {
+  buildQrBulkItem,
+  readQrCareFactsEnabled,
+  readQrTargetMode,
+  resolveQrUrl,
+  writeQrCareFactsEnabled,
+  writeQrTargetMode,
+} from '../utils/qrLabelOptions'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
-function specimenQrUrl(shortId) {
-  return specimenPublicUrl(shortId)
-}
-
 export default function QrBulkPrintPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, token } = useAuth()
   const queryClient = useQueryClient()
   const hasProFeatures = user?.hasProFeatures === true
@@ -41,6 +45,8 @@ export default function QrBulkPrintPage() {
   const [sizeCm, setSizeCm] = useState(5)
   const [busy, setBusy] = useState(false)
   const [busyKind, setBusyKind] = useState('')
+  const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
+  const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
 
   useEffect(() => {
     if (!token) {
@@ -80,18 +86,22 @@ export default function QrBulkPrintPage() {
   const selectAllInView = () => setSelected(new Set(list.map((x) => x.id)))
   const clearSelection = () => setSelected(new Set())
 
+  const bulkFooterNote = (baseKey) => {
+    const base = t(baseKey)
+    return careFactsOn ? `${base} ${t('qr.facts.disclaimer')}` : base
+  }
+
   const buildItems = () =>
-    selectedList.slice(0, QR_BULK_MAX).map((ta) => {
-      const url = specimenQrUrl(ta.shortId)
-      const name = ta.name?.trim() || ta.shortId || 'Sin nombre'
-      const sci = ta.species?.scientificName?.trim() || 'Especie no definida'
-      return {
-        url,
-        titleLine1: name,
-        titleLine2: sci,
-        subtitle: ta.shortId ? `ID: ${ta.shortId}` : '',
-      }
-    })
+    selectedList
+      .slice(0, QR_BULK_MAX)
+      .map((ta) =>
+        buildQrBulkItem(ta, {
+          qrTargetMode,
+          careFactsOn,
+          t,
+          locale: i18n.language,
+        }),
+      )
 
   const downloadFixed = async () => {
     if (!selectedList.length || busy) return
@@ -103,7 +113,7 @@ export default function QrBulkPrintPage() {
         layout: 'fixed',
         sizeCm,
         docTitle: t('qrBulk.docTitle'),
-        footerNote: t('qrBulk.docFooterNote'),
+        footerNote: bulkFooterNote('qrBulk.docFooterNote'),
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -124,7 +134,7 @@ export default function QrBulkPrintPage() {
         layout: 'flex',
         sizeCm: 2.8,
         docTitle: t('qrBulk.docTitleFlex'),
-        footerNote: t('qrBulk.docFooterNoteFlex'),
+        footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -182,6 +192,19 @@ export default function QrBulkPrintPage() {
             <p className="text-muted">{t('qrBulk.empty')}</p>
           ) : (
             <>
+              <QrLabelOptionsPanel
+                careFactsOn={careFactsOn}
+                onCareFactsChange={(on) => {
+                  setCareFactsOn(on)
+                  writeQrCareFactsEnabled(on)
+                }}
+                qrTargetMode={qrTargetMode}
+                onQrTargetChange={(mode) => {
+                  setQrTargetMode(mode)
+                  writeQrTargetMode(mode)
+                }}
+                speciesLinked={list.some((ta) => ta.species?.id != null)}
+              />
               <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={selectAllInView}>
                   {t('qrBulk.selectAll')}
@@ -208,7 +231,7 @@ export default function QrBulkPrintPage() {
 
               <div className="list-group list-group-flush border rounded mb-4" style={{ maxHeight: 360, overflowY: 'auto' }}>
                 {list.map((ta) => {
-                  const url = specimenQrUrl(ta.shortId)
+                  const url = resolveQrUrl(ta, qrTargetMode) || ' '
                   const on = selected.has(ta.id)
                   return (
                     <label
@@ -273,7 +296,7 @@ export default function QrBulkPrintPage() {
                       {selectedList[0] ? (
                         <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
                           <QRCode
-                            value={specimenQrUrl(selectedList[0].shortId) || ' '}
+                            value={resolveQrUrl(selectedList[0], qrTargetMode) || ' '}
                             size={previewPx}
                             level="H"
                           />

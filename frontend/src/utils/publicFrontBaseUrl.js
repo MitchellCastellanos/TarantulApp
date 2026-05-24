@@ -26,6 +26,13 @@ export function specimenPublicUrl(shortId) {
   return `${resolvePublicFrontOrigin()}/t/${encodeURIComponent(id)}`
 }
 
+/** Full URL for a public species care sheet (generic terrarium QR for buyers). */
+export function speciesPublicUrl(speciesId) {
+  const id = speciesId != null ? String(speciesId).trim() : ''
+  if (!id) return ''
+  return `${resolvePublicFrontOrigin()}/discover/species/${encodeURIComponent(id)}`
+}
+
 /** @returns {string} e.g. https://tarantulapp.com */
 export function resolvePublicFrontOrigin() {
   const env = normalizeOrigin(import.meta.env?.VITE_PUBLIC_SITE_URL || '')
