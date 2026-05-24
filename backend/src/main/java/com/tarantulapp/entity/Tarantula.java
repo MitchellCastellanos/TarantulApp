@@ -44,7 +44,11 @@ public class Tarantula {
     private String notes;
 
     @Column(name = "is_public", nullable = false)
-    private Boolean isPublic = false;
+    private Boolean isPublic = true;
+
+    /** Bumped when a photo is uploaded so the specimen surfaces in the community spotlight carousel. */
+    @Column(name = "spotlight_at")
+    private LocalDateTime spotlightAt;
 
     @Column(name = "short_id", unique = true, nullable = false, length = 10)
     private String shortId;
@@ -102,4 +106,6 @@ public class Tarantula {
     public void setDeathNotes(String deathNotes) { this.deathNotes = deathNotes; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getSpotlightAt() { return spotlightAt; }
+    public void setSpotlightAt(LocalDateTime spotlightAt) { this.spotlightAt = spotlightAt; }
 }

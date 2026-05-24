@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface BetaEmailSendRepository extends JpaRepository<BetaEmailSend, UUID> {
 
     List<BetaEmailSend> findByUserIdIn(Collection<UUID> userIds);
+
+    boolean existsByUserIdAndCampaignKey(UUID userId, String campaignKey);
 }

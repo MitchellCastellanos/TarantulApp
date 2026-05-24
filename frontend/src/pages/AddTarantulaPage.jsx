@@ -76,10 +76,7 @@ export default function AddTarantulaPage() {
   const [newKeeperMode, setNewKeeperMode] = useState(true)
   const tarantulaLimit = 6
   const atLimit = !isEdit && isFreePlan && collectionCount >= tarantulaLimit
-  const willDefaultPublic = !isEdit && (
-    user?.defaultTarantulaPublic === true
-    || (user?.communityProfileVisibility || 'preview_only') === 'public_full'
-  )
+  const willDefaultPublic = !isEdit
 
   useEffect(() => {
     return () => {

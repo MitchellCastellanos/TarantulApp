@@ -1,0 +1,72 @@
+[
+  {
+    "id": "avicularia-aviculara",
+    "scientificNames": ["Avicularia avicularia"],
+    "commonName": "Guyana pinktoe",
+    "world": "new"
+  },
+  {
+    "id": "amazonius-germanicus",
+    "scientificNames": ["Amazonius germanicus"],
+    "commonName": "Orange treespider",
+    "world": "new",
+    "notes": "Taxón nuevo; en iNaturalist aún no hay observaciones CC comerciales — foto manual."
+  },
+  {
+    "id": "cyriocosmus-perezmilesi",
+    "scientificNames": ["Cyriocosmus perezmilesi"],
+    "commonName": "Bolivian dwarf beauty",
+    "world": "new"
+  },
+  {
+    "id": "grammostola-rosea",
+    "scientificNames": ["Grammostola rosea", "Grammostola porteri"],
+    "commonName": "Chilean pink hair",
+    "world": "new"
+  },
+  {
+    "id": "hapalotremus-major",
+    "scientificNames": ["Hapalotremus major"],
+    "commonName": "Peruvian white banded",
+    "world": "new"
+  },
+  {
+    "id": "lasiodorides-polycuspulatus",
+    "scientificNames": ["Lasiodorides polycuspulatus"],
+    "commonName": "Peruvian giant blonde",
+    "world": "new"
+  },
+  {
+    "id": "psalmopoeus-irminia",
+    "scientificNames": ["Psalmopoeus irminia"],
+    "commonName": "Venezuelan suntiger",
+    "world": "new"
+  },
+  {
+    "id": "theraphosinae-pederseni",
+    "scientificNames": [
+      "Neischnocolus pederseni",
+      "Theraphosinae pederseni",
+      "Ami sp. pederseni"
+    ],
+    "commonName": "Pederseni (Ecuador)",
+    "world": "new"
+  },
+  {
+    "id": "phlogiellus-moniqueverdezae",
+    "scientificNames": ["Phlogiellus moniqueverdezae", "Phlogiellus sp. Moniqueverdezae"],
+    "commonName": "Phlogiellus sp. Moniqueverdezae",
+    "world": "old"
+  },
+  {
+    "id": "haploscomia-black-femur",
+    "scientificNames": [
+      "Haploclastus validus",
+      "Chilobrachys nanglaensis",
+      "Haploscomia himalayana"
+    ],
+    "commonName": "Nepalese black femur",
+    "world": "old",
+    "notes": "Nombre hobby; revisar que la foto coincida con la especie."
+  }
+]

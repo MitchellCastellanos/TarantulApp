@@ -30,6 +30,7 @@ import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.service.ReferralService;
 import com.tarantulapp.service.TopVendorService;
+import com.tarantulapp.service.TarantulaPublicDefaultAnnouncementService;
 import com.tarantulapp.util.SecurityHelper;
 import com.tarantulapp.service.vendors.sync.PartnerListingSyncService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -93,6 +94,7 @@ public class AdminController {
     private final NewsletterService newsletterService;
     private final TopVendorService topVendorService;
     private final ReferralService referralService;
+    private final TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -131,7 +133,8 @@ public class AdminController {
                            com.tarantulapp.repository.PartnerListingRepository partnerListingRepository,
                            NewsletterService newsletterService,
                            TopVendorService topVendorService,
-                           ReferralService referralService) {
+                           ReferralService referralService,
+                           TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -158,6 +161,7 @@ public class AdminController {
         this.newsletterService = newsletterService;
         this.topVendorService = topVendorService;
         this.referralService = referralService;
+        this.tarantulaPublicDefaultAnnouncementService = tarantulaPublicDefaultAnnouncementService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -393,6 +397,8 @@ public class AdminController {
                 {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
                 {"vendor_welcome_mx", "Vendor MX — bienvenida + tier dinámico + cita videollamada verificación tienda",
                         "Vendor MX — welcome + dynamic tier + video verification booking"},
+                {"tarantula_public_default", "Colección — arañas públicas por defecto (keepers con tarántulas)",
+                        "Collection — spiders public by default (keepers with tarantulas)"},
         };
         for (String[] r : data) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -430,7 +436,7 @@ public class AdminController {
                 continue;
             }
             String loc = perTesterLocale
-                    ? BetaMailBodies.normalizeLocale(u.getBetaPreferredLocale())
+                    ? resolveCampaignLocale(u, key)
                     : defaultLoc;
             try {
                 emailService.sendBetaCampaignEmail(u.getEmail(), u.getDisplayName(), key, loc);
@@ -451,6 +457,19 @@ public class AdminController {
         out.put("sent", sent);
         out.put("results", results);
         return ResponseEntity.ok(out);
+    }
+
+    @PostMapping("/tarantula-visibility/send-public-default-announcement")
+    public ResponseEntity<Map<String, Object>> sendTarantulaPublicDefaultAnnouncement() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(tarantulaPublicDefaultAnnouncementService.sendToKeepersWithCollection());
+    }
+
+    private static String resolveCampaignLocale(User u, String campaignKey) {
+        if (BetaMailBodies.usesPreferredLocale(campaignKey)) {
+            return TarantulaPublicDefaultAnnouncementService.resolveEmailLocale(u);
+        }
+        return BetaMailBodies.normalizeLocale(u.getBetaPreferredLocale());
     }
 
     @PatchMapping("/users/{id}/beta")

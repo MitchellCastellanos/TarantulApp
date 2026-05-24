@@ -80,7 +80,7 @@ public class User {
 
     /** When true, newly created tarantulas default to is_public=true for this keeper. */
     @Column(name = "default_tarantula_public", nullable = false)
-    private Boolean defaultTarantulaPublic = false;
+    private Boolean defaultTarantulaPublic = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -183,7 +183,7 @@ public class User {
             communityProfileVisibility = "preview_only";
         }
         if (defaultTarantulaPublic == null) {
-            defaultTarantulaPublic = false;
+            defaultTarantulaPublic = true;
         }
         if (isAdmin == null) {
             isAdmin = false;

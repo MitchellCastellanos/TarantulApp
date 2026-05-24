@@ -33,13 +33,20 @@ public final class BetaMailBodies {
             "play_early_access_web",
             "creator_partner_onboarding",
             "creator_partner_reminder",
-            "vendor_welcome_mx"
+            "vendor_welcome_mx",
+            "tarantula_public_default"
     );
 
     /** Campaign keys that may target any registered user (no beta-tester gating). */
     private static final Set<String> NON_BETA_RECIPIENT_KEYS = Set.of(
             "play_early_access_web",
-            "vendor_welcome_mx"
+            "vendor_welcome_mx",
+            "tarantula_public_default"
+    );
+
+    /** Batch campaigns that resolve locale from {@code User.preferredLocale} when sending with locale=auto. */
+    public static final Set<String> PREFERRED_LOCALE_CAMPAIGN_KEYS = Set.of(
+            "tarantula_public_default"
     );
 
     private BetaMailBodies() {
@@ -52,6 +59,10 @@ public final class BetaMailBodies {
     /** Batch key that may be sent to any registered user (e.g. already on web, not yet on Play). */
     public static boolean allowsNonBetaRecipients(String campaignKey) {
         return campaignKey != null && NON_BETA_RECIPIENT_KEYS.contains(campaignKey.trim().toLowerCase(Locale.ROOT));
+    }
+
+    public static boolean usesPreferredLocale(String campaignKey) {
+        return campaignKey != null && PREFERRED_LOCALE_CAMPAIGN_KEYS.contains(campaignKey.trim().toLowerCase(Locale.ROOT));
     }
 
     public static String welcomeSubject(String locale) {
@@ -106,6 +117,11 @@ public final class BetaMailBodies {
                 case "en" -> "TarantulApp Marketplace — Your vendor storefront is live (Mexico)";
                 case "fr" -> "TarantulApp Marketplace — Votre boutique vendeur est active (Mexique)";
                 default -> "TarantulApp Marketplace — Tu tienda vendor ya está activa (México)";
+            };
+            case "tarantula_public_default" -> switch (loc) {
+                case "en" -> "TarantulApp — Your spiders are now public by default";
+                case "fr" -> "TarantulApp — Vos araignées sont maintenant publiques par défaut";
+                default -> "TarantulApp — Tus arañas ahora son públicas por defecto";
             };
             default -> en ? "TarantulApp beta — Update" : "TarantulApp beta — Actualización";
         };
@@ -362,6 +378,17 @@ public final class BetaMailBodies {
                 case "en" -> vendorWelcomeMxEn(n, url, sendDate, booking);
                 case "fr" -> vendorWelcomeMxFr(n, url, sendDate, booking);
                 default -> vendorWelcomeMxEs(n, url, sendDate, booking);
+            };
+        }
+        if ("tarantula_public_default".equals(k)) {
+            String n = (name == null || name.isBlank())
+                    ? ("en".equals(loc) ? "keeper" : "fr".equals(loc) ? "éleveur" : "criador")
+                    : name.trim();
+            String url = (appUrl == null || appUrl.isBlank()) ? DEFAULT_APP_URL : appUrl.trim();
+            return switch (loc) {
+                case "en" -> tarantulaPublicDefaultEn(n, url, sendDate);
+                case "fr" -> tarantulaPublicDefaultFr(n, url, sendDate);
+                default -> tarantulaPublicDefaultEs(n, url, sendDate);
             };
         }
         String n = (name == null || name.isBlank())
@@ -1120,6 +1147,54 @@ public final class BetaMailBodies {
                 + "Message date: " + sendDate + "\n\n"
                 + "TarantulApp beta update.\n\n"
                 + "App: " + url + "\n\n"
+                + "— TarantulApp\n";
+    }
+
+    private static String tarantulaPublicDefaultEs(String n, String url, String sendDate) {
+        String accountUrl = url + "/account";
+        return "Hola " + n + ",\n\n"
+                + "Fecha del mensaje: " + sendDate + "\n\n"
+                + "Actualizamos la visibilidad de las tarántulas en TarantulApp:\n\n"
+                + "• Las arañas que ya tienes en tu colección ahora son públicas.\n"
+                + "• A partir de ahora, cada araña nueva también será pública por defecto.\n"
+                + "• Si una araña tiene foto, puede aparecer en el carrusel de destacados de la comunidad.\n\n"
+                + "¿Prefieres mantener tu colección privada? Puedes cambiarlo cuando quieras:\n\n"
+                + "1) Cuenta → Perfil → desactiva «Perfil keeper y colección públicos» para marcar toda la colección como privada.\n"
+                + "   " + accountUrl + "\n\n"
+                + "2) En la ficha de cada araña, usa el botón de visibilidad (🌐 pública / 🔒 privada) para cambiar solo esa.\n\n"
+                + "App: " + url + "\n\n"
+                + "— TarantulApp\n";
+    }
+
+    private static String tarantulaPublicDefaultEn(String n, String url, String sendDate) {
+        String accountUrl = url + "/account";
+        return "Hi " + n + ",\n\n"
+                + "Message date: " + sendDate + "\n\n"
+                + "We updated spider visibility in TarantulApp:\n\n"
+                + "• The spiders already in your collection are now public.\n"
+                + "• From now on, every new spider will also be public by default.\n"
+                + "• Spiders with a photo may appear in the community spotlight carousel.\n\n"
+                + "Prefer to keep your collection private? You can change this anytime:\n\n"
+                + "1) Account → Profile → turn off “Public keeper profile and collection” to make the whole collection private.\n"
+                + "   " + accountUrl + "\n\n"
+                + "2) On each spider’s detail page, use the visibility toggle (🌐 public / 🔒 private) for individual control.\n\n"
+                + "App: " + url + "\n\n"
+                + "— TarantulApp\n";
+    }
+
+    private static String tarantulaPublicDefaultFr(String n, String url, String sendDate) {
+        String accountUrl = url + "/account";
+        return "Bonjour " + n + ",\n\n"
+                + "Date du message : " + sendDate + "\n\n"
+                + "Nous avons mis à jour la visibilité des araignées dans TarantulApp :\n\n"
+                + "• Les araignées déjà présentes dans votre collection sont maintenant publiques.\n"
+                + "• Désormais, chaque nouvelle araignée sera aussi publique par défaut.\n"
+                + "• Une araignée avec photo peut apparaître dans le carrousel « à la une » de la communauté.\n\n"
+                + "Vous préférez garder votre collection privée ? Vous pouvez changer cela à tout moment :\n\n"
+                + "1) Compte → Profil → désactivez « Profil keeper et collection publics » pour rendre toute la collection privée.\n"
+                + "   " + accountUrl + "\n\n"
+                + "2) Sur la fiche de chaque araignée, utilisez le bouton de visibilité (🌐 publique / 🔒 privée).\n\n"
+                + "App : " + url + "\n\n"
                 + "— TarantulApp\n";
     }
 }

@@ -80,7 +80,7 @@ public class TarantulaService {
         Tarantula t = new Tarantula();
         t.setUserId(userId);
         t.setShortId(generateShortId());
-        t.setIsPublic(Boolean.TRUE.equals(user.getDefaultTarantulaPublic()));
+        t.setIsPublic(true);
         applyRequest(req, t);
         Tarantula saved = tarantulaRepository.save(t);
         return toResponse(saved, planAccessService.lockedTarantulaIds(user));
@@ -148,6 +148,7 @@ public class TarantulaService {
         Tarantula t = getOwned(id, userId);
         String path = fileStorageService.saveFile(file, "tarantulas/" + id);
         t.setProfilePhoto(path);
+        markSpotlightEligible(t);
         Tarantula saved = tarantulaRepository.save(t);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
@@ -173,13 +174,16 @@ public class TarantulaService {
 
     public PhotoResponse addPhoto(UUID tarantulaId, MultipartFile file, String caption, UUID userId) throws IOException {
         planAccessService.enforceTarantulaWrite(userId, tarantulaId);
-        getOwned(tarantulaId, userId);
+        Tarantula t = getOwned(tarantulaId, userId);
         String path = fileStorageService.saveFile(file, "gallery/" + tarantulaId);
         Photo photo = new Photo();
         photo.setTarantulaId(tarantulaId);
         photo.setFilePath(path);
         photo.setCaption(caption);
-        return PhotoResponse.from(photoRepository.save(photo));
+        Photo saved = photoRepository.save(photo);
+        markSpotlightEligible(t);
+        tarantulaRepository.save(t);
+        return PhotoResponse.from(saved);
     }
 
     public void deletePhoto(UUID tarantulaId, UUID photoId, UUID userId) {
@@ -556,6 +560,12 @@ public class TarantulaService {
                 .orElseThrow(() -> new NotFoundException("Tarántula no encontrada"));
         if (!t.getUserId().equals(userId)) throw new AccessDeniedException("Acceso denegado");
         return t;
+    }
+
+    /** Public specimens with photos surface in the community spotlight carousel. */
+    private void markSpotlightEligible(Tarantula t) {
+        t.setIsPublic(true);
+        t.setSpotlightAt(LocalDateTime.now());
     }
 
     private void enforceCreationLimit(UUID userId) {

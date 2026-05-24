@@ -98,7 +98,10 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
                 (t.profilePhoto IS NOT NULL AND LENGTH(TRIM(t.profilePhoto)) > 0)
                 OR EXISTS (SELECT 1 FROM Photo p WHERE p.tarantulaId = t.id)
               )
-            ORDER BY t.createdAt DESC
+            ORDER BY COALESCE(t.spotlightAt, t.createdAt) DESC
             """)
     Page<Tarantula> findCommunitySpotlightCandidates(Pageable pageable);
+
+    @Query("SELECT DISTINCT t.userId FROM Tarantula t")
+    List<UUID> findDistinctUserIds();
 }
