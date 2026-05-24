@@ -28,13 +28,14 @@ const SIMPLE = {
 const CARE = {
   pad: 8,
   qrTextGap: 10,
-  textColW: 196,
-  titleSize: 14,
-  titleLineH: 17,
-  speciesSize: 11,
-  speciesLineH: 14,
-  factSize: 10,
-  factLineH: 12,
+  textColW: 204,
+  titleSize: 16,
+  titleLineH: 19,
+  speciesSize: 12,
+  speciesLineH: 15,
+  factSize: 12,
+  factLineH: 14,
+  factGapBefore: 5,
   maxTitleLines: 2,
   maxSpeciesLines: 2,
 }
@@ -198,7 +199,7 @@ function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, qrSize }
   let textH = 0
   if (titleLines.length) textH += titleLines.length * C.titleLineH + 3
   if (speciesLines.length) textH += speciesLines.length * C.speciesLineH
-  if (factLineCount) textH += 4 + factLineCount * C.factLineH
+  if (factLineCount) textH += C.factGapBefore + factLineCount * C.factLineH
 
   const bodyH = Math.max(qrSize, textH)
   const W = C.pad + qrSize + C.qrTextGap + textW + C.pad
@@ -276,15 +277,18 @@ async function drawCareHorizontalLabel(ctx, W, H, {
   speciesLines,
   factLines,
   textW,
+  textH,
 }) {
   const C = CARE
   const textX = C.pad + qrSize + C.qrTextGap
   const qrY = C.pad
+  const bodyH = Math.max(qrSize, textH)
+  const textYOffset = textH < qrSize ? Math.floor((bodyH - textH) / 2) : 0
 
   const qrImg = await loadImageElement(composed)
   ctx.drawImage(qrImg, C.pad, qrY, qrSize, qrSize)
 
-  let y = qrY
+  let y = qrY + textYOffset
   if (titleLines.length) {
     y = drawLeftLines(ctx, textX, y, titleLines, C.titleLineH, `bold ${C.titleSize}px sans-serif`, '#111')
     y += 3
@@ -304,7 +308,7 @@ async function drawCareHorizontalLabel(ctx, W, H, {
   for (const fact of factLines) {
     const sub = wrapLinesToWidth(ctx, fact, textW)
     if (sub.length) {
-      if (y === qrY && (titleLines.length || speciesLines.length)) y += 4
+      if (y === qrY + textYOffset && (titleLines.length || speciesLines.length)) y += C.factGapBefore
       y = drawLeftLines(ctx, textX, y, sub, C.factLineH, `${C.factSize}px sans-serif`, '#222')
     }
   }
@@ -374,6 +378,7 @@ export async function buildFullLabelPngDataUrl({
       speciesLines: m.speciesLines,
       factLines: m.factLines,
       textW: m.textW,
+      textH: m.textH,
     }
   }
 
@@ -403,6 +408,7 @@ export async function buildFullLabelPngDataUrl({
         speciesLines: drawPayload.speciesLines,
         factLines: drawPayload.factLines,
         textW: drawPayload.textW,
+        textH: drawPayload.textH,
       })
     }
   }

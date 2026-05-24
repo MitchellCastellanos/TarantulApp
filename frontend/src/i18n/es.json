@@ -1536,6 +1536,7 @@
       "humidity": "Humedad",
       "size": "Tamaño",
       "growth": "Crecimiento",
+      "substrate": "Sustrato",
       "origin": "Origen",
       "world": {
         "new": "NUEVO MUNDO",

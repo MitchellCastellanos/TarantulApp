@@ -14,6 +14,7 @@ const t = (key, opts) => {
     'qr.facts.size': 'Size',
     'qr.facts.growth': 'Growth',
     'qr.facts.origin': 'Origin',
+    'qr.facts.substrate': 'Substrate',
     'qr.facts.worldShort.new': 'NW',
     'qr.facts.worldShort.old': 'OW',
     'species.levelIntermediate': 'Intermediate',
@@ -61,6 +62,18 @@ describe('buildCareFactLines', () => {
     assert.ok(habitatLine)
     assert.match(habitatLine, /NW/)
     assert.match(habitatLine, /Arboreal/)
+  })
+
+  it('includes substrate when present', () => {
+    const lines = buildCareFactLines(
+      {
+        narrativeI18n: { substrate: { en: 'Dry coco, coarse sand' } },
+        originRegion: 'Venezuela',
+      },
+      t,
+      'en',
+    )
+    assert.ok(lines.some((l) => l.startsWith('Substrate:') && l.includes('coco')))
   })
 
   it('includes temp and humidity when present', () => {

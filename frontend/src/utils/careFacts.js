@@ -43,6 +43,26 @@ function isCatalogProse(text) {
   return s.length > 36 || /[,;]/.test(s)
 }
 
+function compactLabelSnippet(text, maxLen = 50) {
+  const s = stripEmoji(String(text ?? '').trim())
+  if (!s) return null
+  return s.length > maxLen ? `${s.slice(0, maxLen - 1)}…` : s
+}
+
+function substrateLabel(species, locale) {
+  const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'substrate', locale)
+  if (narrative) return compactLabelSnippet(narrative)
+
+  const raw = species?.substrateType?.trim()
+  if (!raw) return null
+  if (isCatalogProse(raw)) {
+    const base = (locale || 'en').split('-')[0]
+    if (base !== 'es') return null
+    return compactLabelSnippet(raw)
+  }
+  return stripEmoji(raw)
+}
+
 function temperamentLabel(species, t, locale) {
   const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'temperament', locale)
   if (narrative) return narrative
@@ -164,10 +184,15 @@ export function buildCareFactLines(species, t, locale) {
   const line4 = joinParts([sizePart, growthPart])
   if (line4) lines.push(line4)
 
+  const substrate = substrateLabel(species, locale)
+  if (substrate) {
+    lines.push(`${t('qr.facts.substrate')}: ${substrate}`)
+  }
+
   const origin = species?.originRegion?.trim()
   if (origin) {
     lines.push(`${t('qr.facts.origin')}: ${origin}`)
   }
 
-  return lines.slice(0, 5)
+  return lines.slice(0, 6)
 }

@@ -1535,6 +1535,7 @@
       "humidity": "Humidity",
       "size": "Size",
       "growth": "Growth",
+      "substrate": "Substrate",
       "origin": "Origin",
       "world": {
         "new": "NEW WORLD",
