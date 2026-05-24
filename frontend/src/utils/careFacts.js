@@ -43,18 +43,25 @@ function isCatalogProse(text) {
   return s.length > 36 || /[,;]/.test(s)
 }
 
+const SUBSTRATE_PLACEHOLDER = /^(species|unknown|n\/a|na|—|-|\?)$/i
+
+function isUsableSubstrateValue(value) {
+  const s = String(value ?? '').trim()
+  return Boolean(s) && !SUBSTRATE_PLACEHOLDER.test(s)
+}
+
 function compactLabelSnippet(text, maxLen = 50) {
   const s = stripEmoji(String(text ?? '').trim())
-  if (!s) return null
+  if (!s || SUBSTRATE_PLACEHOLDER.test(s)) return null
   return s.length > maxLen ? `${s.slice(0, maxLen - 1)}…` : s
 }
 
 function substrateLabel(species, locale) {
   const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'substrate', locale)
-  if (narrative) return compactLabelSnippet(narrative)
+  if (narrative && isUsableSubstrateValue(narrative)) return compactLabelSnippet(narrative)
 
   const raw = species?.substrateType?.trim()
-  if (!raw) return null
+  if (!isUsableSubstrateValue(raw)) return null
   if (isCatalogProse(raw)) {
     const base = (locale || 'en').split('-')[0]
     if (base !== 'es') return null
@@ -152,25 +159,23 @@ export function buildCareFactLines(species, t, locale) {
     habitatLabel(species, t)
       ? `${t('qr.facts.habitat')}: ${habitatLabel(species, t)}`
       : null,
-    ventilationLabel(species, t)
-      ? `${t('qr.facts.ventilation')}: ${ventilationLabel(species, t)}`
-      : null,
   ])
   if (line2) lines.push(line2)
+
+  const vent = ventilationLabel(species, t)
+  if (vent) {
+    lines.push(`${t('qr.facts.ventilation')}: ${vent}`)
+  }
 
   const temp = deriveTempRangeC(species)
   const humMin = species?.humidityMin
   const humMax = species?.humidityMax
-  const tempPart =
-    temp?.min != null && temp?.max != null
-      ? `${t('qr.facts.temp')}: ~${temp.min}–${temp.max} °C`
-      : null
-  const humPart =
-    humMin != null && humMax != null
-      ? `${t('qr.facts.humidity')}: ${humMin}–${humMax} %`
-      : null
-  const line3 = joinParts([tempPart, humPart])
-  if (line3) lines.push(line3)
+  if (temp?.min != null && temp?.max != null) {
+    lines.push(`${t('qr.facts.temp')}: ~${temp.min}–${temp.max} °C`)
+  }
+  if (humMin != null && humMax != null) {
+    lines.push(`${t('qr.facts.humidity')}: ${humMin}–${humMax}%`)
+  }
 
   const sizeMin = species?.adultSizeCmMin
   const sizeMax = species?.adultSizeCmMax
@@ -194,5 +199,5 @@ export function buildCareFactLines(species, t, locale) {
     lines.push(`${t('qr.facts.origin')}: ${origin}`)
   }
 
-  return lines.slice(0, 6)
+  return lines.slice(0, 8)
 }

@@ -64,6 +64,11 @@ describe('buildCareFactLines', () => {
     assert.match(habitatLine, /Arboreal/)
   })
 
+  it('omits substrate placeholder SPECIES', () => {
+    const lines = buildCareFactLines({ substrateType: 'SPECIES' }, t, 'en')
+    assert.ok(!lines.some((l) => /substrate/i.test(l)))
+  })
+
   it('includes substrate when present', () => {
     const lines = buildCareFactLines(
       {

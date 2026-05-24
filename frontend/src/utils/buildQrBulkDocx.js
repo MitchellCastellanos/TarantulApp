@@ -15,9 +15,56 @@ import {
 /** Máximo de QRs por archivo (rendimiento del navegador). */
 export const QR_BULK_MAX = 60
 
+/** US Letter width in twips (8.5"). */
+const PAGE_WIDTH_TWIPS = 12240
+
+/** Márgenes estrechos para hojas de etiquetas (~0.3"). */
+const LABEL_MARGIN_TWIPS = 432
+
+/** Separación entre columnas en twips. */
+const LABEL_COLUMN_SPACE_TWIPS = 180
+
 /** Píxeles lógicos (96 dpi) que docx usa en ImageRun.transformation — equivale visualmente a ~cm al imprimir. */
 export function cmToDocxDisplayPx(cm) {
   return Math.max(48, Math.round((cm * 96) / 2.54))
+}
+
+/** Ancho máximo de imagen por columna según página y número de columnas. */
+export function docxColumnMaxWidthPx(columnCount) {
+  const cols = Math.max(1, columnCount)
+  const content = PAGE_WIDTH_TWIPS - LABEL_MARGIN_TWIPS * 2
+  const colTwips = (content - (cols - 1) * LABEL_COLUMN_SPACE_TWIPS) / cols
+  return Math.floor((colTwips * 96) / 1440)
+}
+
+export function labelDocxDimensionsFit(layoutDims, displayQrPx, maxWidthPx) {
+  const natural = labelDocxDimensions(layoutDims, displayQrPx)
+  if (natural.width <= maxWidthPx) return natural
+  const ratio = maxWidthPx / natural.width
+  return {
+    width: maxWidthPx,
+    height: Math.round(natural.height * ratio),
+  }
+}
+
+function labelSectionPage() {
+  return {
+    margin: {
+      top: LABEL_MARGIN_TWIPS,
+      right: LABEL_MARGIN_TWIPS,
+      bottom: LABEL_MARGIN_TWIPS,
+      left: LABEL_MARGIN_TWIPS,
+      header: 0,
+      footer: 0,
+      gutter: 0,
+    },
+  }
+}
+
+function resolveColumnCount(layout, items) {
+  const hasCareLabels = items.some((item) => Array.isArray(item.factLines) && item.factLines.length > 0)
+  if (layout === 'flex') return hasCareLabels ? 2 : 4
+  return 2
 }
 
 function dataUrlToUint8Array(dataUrl) {
@@ -51,6 +98,9 @@ async function renderLabelPng(item, normalizeHeight) {
 }
 
 async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
+  const columnCount = resolveColumnCount(layout, items)
+  const maxWidthPx = docxColumnMaxWidthPx(columnCount)
+
   const rendered = []
   for (const item of items) {
     rendered.push(await renderLabelPng(item, null))
@@ -71,12 +121,12 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
   for (let i = 0; i < items.length; i++) {
     const { dataUrl, layoutDims } = rendered[i]
     const buf = dataUrlToUint8Array(dataUrl)
-    const { width, height } = labelDocxDimensions(layoutDims, displayQrPx)
+    const { width, height } = labelDocxDimensionsFit(layoutDims, displayQrPx, maxWidthPx)
     const item = items[i]
     out.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 72 },
+        spacing: { before: 40, after: 40, line: 240 },
         children: [
           new ImageRun({
             type: 'png',
@@ -88,7 +138,7 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
       }),
     )
   }
-  return out
+  return { paragraphs: out, columnCount }
 }
 
 /**
@@ -139,33 +189,31 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     )
   }
 
-  const labelParagraphs = await buildLabelParagraphs(items, displayQrPx, layout, labelAltText)
-  const columnCount = layout === 'flex' ? 4 : 2
+  const { paragraphs: labelParagraphs, columnCount } = await buildLabelParagraphs(
+    items,
+    displayQrPx,
+    layout,
+    labelAltText,
+  )
   const columnOpts = {
     count: columnCount,
-    space: 280,
+    space: LABEL_COLUMN_SPACE_TWIPS,
+    equalWidth: true,
+  }
+
+  const labelSection = {
+    properties: {
+      type: intro.length > 0 ? SectionType.CONTINUOUS : undefined,
+      page: labelSectionPage(),
+      column: columnOpts,
+    },
+    children: labelParagraphs,
   }
 
   const sections =
     intro.length > 0
-      ? [
-          { children: intro },
-          {
-            properties: {
-              type: SectionType.CONTINUOUS,
-              column: columnOpts,
-            },
-            children: labelParagraphs,
-          },
-        ]
-      : [
-          {
-            properties: {
-              column: columnOpts,
-            },
-            children: labelParagraphs,
-          },
-        ]
+      ? [{ properties: { page: labelSectionPage() }, children: intro }, labelSection]
+      : [labelSection]
 
   return Packer.toBlob(
     new Document({

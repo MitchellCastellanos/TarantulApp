@@ -12,6 +12,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
+import QrLabelPreview from '../components/QrLabelPreview'
 import {
   BRAND_LOGO_FOR_LIGHT_BG,
   buildFullLabelPngDataUrl,
@@ -21,7 +22,6 @@ import {
 import {
   QR_BULK_MAX,
   buildQrBulkDocxBlob,
-  cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
 import {
@@ -348,8 +348,6 @@ export default function QrToolPage() {
       setBusyKind('')
     }
   }
-
-  const bulkPreviewPx = cmToDocxDisplayPx(Math.min(sizeCm, 4))
 
   const stopAndroidHtml5Scanner = useCallback(async () => {
     const inst = androidHtml5Ref.current
@@ -825,24 +823,14 @@ export default function QrToolPage() {
                           </div>
                           <div className="col-md-6 d-flex flex-column align-items-center justify-content-center">
                             <span className="small text-muted mb-1">{t('qrBulk.previewApprox')}</span>
-                            <div className="bg-white p-2 rounded border" style={{ lineHeight: 0 }}>
-                              {bulkSelectedList[0] ? (
-                                <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-                                  <QRCodeSvg
-                                    value={resolveQrUrl(bulkSelectedList[0], qrTargetMode) || ' '}
-                                    size={bulkPreviewPx}
-                                    level="H"
-                                  />
-                                  <img
-                                    src={BRAND_LOGO_FOR_LIGHT_BG}
-                                    alt=""
-                                    aria-hidden="true"
-                                    style={qrCenterLogoOverlayStyles(bulkPreviewPx)}
-                                  />
-                                </div>
-                              ) : (
-                                <div style={{ width: bulkPreviewPx, height: bulkPreviewPx }} className="bg-light" />
-                              )}
+                            <div className="bg-white p-2 rounded border" style={{ lineHeight: 0, maxWidth: '100%' }}>
+                              <QrLabelPreview
+                                tarantula={bulkSelectedList[0] ?? null}
+                                qrTargetMode={qrTargetMode}
+                                careFactsOn={careFactsOn}
+                                t={t}
+                                locale={i18n.language}
+                              />
                             </div>
                           </div>
                         </div>

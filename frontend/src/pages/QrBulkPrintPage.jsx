@@ -11,10 +11,10 @@ import QRCode from 'react-qr-code'
 import {
   QR_BULK_MAX,
   buildQrBulkDocxBlob,
-  cmToDocxDisplayPx,
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx.js'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
+import QrLabelPreview from '../components/QrLabelPreview'
 import { BRAND_LOGO_FOR_LIGHT_BG, qrCenterLogoOverlayStyles } from '../utils/qrBrandComposite'
 import marketplaceService from '../services/marketplaceService'
 import {
@@ -146,8 +146,6 @@ export default function QrBulkPrintPage() {
       setBusyKind('')
     }
   }
-
-  const previewPx = cmToDocxDisplayPx(Math.min(sizeCm, 4))
 
   return (
     <div>
@@ -294,24 +292,14 @@ export default function QrBulkPrintPage() {
                   </div>
                   <div className="col-md-6 d-flex flex-column align-items-center justify-content-center">
                     <span className="small text-muted mb-1">{t('qrBulk.previewApprox')}</span>
-                    <div className="bg-white p-2 rounded border" style={{ lineHeight: 0 }}>
-                      {selectedList[0] ? (
-                        <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-                          <QRCode
-                            value={resolveQrUrl(selectedList[0], qrTargetMode) || ' '}
-                            size={previewPx}
-                            level="H"
-                          />
-                          <img
-                            src={BRAND_LOGO_FOR_LIGHT_BG}
-                            alt=""
-                            aria-hidden="true"
-                            style={qrCenterLogoOverlayStyles(previewPx)}
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ width: previewPx, height: previewPx }} className="bg-light" />
-                      )}
+                    <div className="bg-white p-2 rounded border" style={{ lineHeight: 0, maxWidth: '100%' }}>
+                      <QrLabelPreview
+                        tarantula={selectedList[0] ?? null}
+                        qrTargetMode={qrTargetMode}
+                        careFactsOn={careFactsOn}
+                        t={t}
+                        locale={i18n.language}
+                      />
                     </div>
                   </div>
                 </div>
