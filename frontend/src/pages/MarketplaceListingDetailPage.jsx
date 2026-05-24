@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import Navbar from '../components/Navbar'
 import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import ResponseBadge from '../components/ResponseBadge'
 import { useAuth } from '../context/AuthContext'

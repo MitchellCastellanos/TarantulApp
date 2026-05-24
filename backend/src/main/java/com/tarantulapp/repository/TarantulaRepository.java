@@ -92,13 +92,13 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
 
     @EntityGraph(attributePaths = "species")
     @Query("""
-            SELECT DISTINCT t FROM Tarantula t
+            SELECT t FROM Tarantula t
             WHERE t.isPublic = true
               AND (
                 (t.profilePhoto IS NOT NULL AND LENGTH(TRIM(t.profilePhoto)) > 0)
                 OR EXISTS (SELECT 1 FROM Photo p WHERE p.tarantulaId = t.id)
               )
-            ORDER BY COALESCE(t.spotlightAt, t.createdAt) DESC
+            ORDER BY t.spotlightAt DESC NULLS LAST, t.createdAt DESC
             """)
     Page<Tarantula> findCommunitySpotlightCandidates(Pageable pageable);
 
