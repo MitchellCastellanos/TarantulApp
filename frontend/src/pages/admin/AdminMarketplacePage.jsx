@@ -34,6 +34,7 @@ export default function AdminMarketplacePage() {
   const [verificationBusyId, setVerificationBusyId] = useState(null)
   const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
   const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
+  const [partnerSyncVendorBusyId, setPartnerSyncVendorBusyId] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -341,10 +342,35 @@ export default function AdminMarketplacePage() {
       const n = Array.isArray(runs) ? runs.length : 0
       setPartnerSyncMessage(t('admin.partnerSyncDone', { count: n }))
       await loadSyncRuns()
+      const vendors = await adminService.officialVendors()
+      setOfficialVendors(Array.isArray(vendors) ? vendors : [])
     } catch {
       setError(t('admin.partnerSyncError'))
     } finally {
       setPartnerSyncLoading(false)
+    }
+  }
+
+  const runPartnerSyncForVendor = async (vendor) => {
+    if (!vendor?.id || !vendor.listingImportEnabled) return
+    setPartnerSyncVendorBusyId(vendor.id)
+    setError('')
+    try {
+      const run = await adminService.runPartnerSyncForVendor(vendor.id)
+      setPartnerSyncMessage(
+        t('admin.partnerSyncVendorDone', {
+          defaultValue: 'Sync finished for {{name}}: {{status}}',
+          name: vendor.name,
+          status: run?.status || '—',
+        }),
+      )
+      const vendors = await adminService.officialVendors()
+      setOfficialVendors(Array.isArray(vendors) ? vendors : [])
+      await loadSyncRuns()
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.partnerSyncError'))
+    } finally {
+      setPartnerSyncVendorBusyId(null)
     }
   }
 
@@ -743,6 +769,18 @@ export default function AdminMarketplacePage() {
                         >
                           {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
                         </button>
+                        {v.listingImportEnabled ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-warning"
+                            disabled={partnerSyncVendorBusyId === v.id}
+                            onClick={() => runPartnerSyncForVendor(v)}
+                          >
+                            {partnerSyncVendorBusyId === v.id
+                              ? t('common.loading')
+                              : t('admin.partnerTestSync', { defaultValue: 'Test sync' })}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-dark"

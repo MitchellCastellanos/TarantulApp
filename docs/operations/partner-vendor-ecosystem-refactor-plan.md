@@ -1,89 +1,51 @@
 # Partner / Vendor Ecosystem Refactor Plan
 
-This plan turns the Monarch proof point into a config-driven partner ecosystem while keeping community sellers as the marketplace core.
+Config-driven official/founding partners on top of community sellers and verified vendors. Monarch remains the first founding-partner template (data in `feed_config`, not hardcoded sync paths).
 
 ## Product Model
 
 | Layer | Data owner | Sync | Monetization | Notes |
 | --- | --- | --- | --- | --- |
 | Community Seller | `users` + peer `marketplace_listings` | No | Free or low-cost Vendor | Manual listings, community-first marketplace supply. |
-| Verified Vendor | `users.verified_breeder` + verification submissions | No | Vendor subscription | Trust badge and manual listings. Verification already uses uploaded proof. |
+| Verified Vendor | `users.verified_breeder` + `vendor_verification_submissions` | No | Vendor subscription | Trust badge (`storefront_verified_at`) after admin review of uploaded proof. |
 | Official Partner | `official_vendors` + `partner_listings` | Approved only | Initially free/invite | External storefront, synced catalog, checkout handoff. |
-| Founding Partner | `official_vendors` + `partner_listings` | Approved only | Custom strategic relationship | Limited slots, premium placement, co-marketing. Monarch is the first template. |
+| Founding Partner | `official_vendors` + `partner_listings` | Approved only | Custom strategic relationship | Limited slots, premium placement, co-marketing. |
 
-Automatic sync is not a Vendor subscription feature. It is gated by `official_vendors.listing_import_enabled` plus an official/founding partner tier.
+Automatic sync is gated by `official_vendors.listing_import_enabled` plus official/founding tier (`OFFICIAL_PARTNER` / `FOUNDING_PARTNER`). Legacy `STRATEGIC_*` tiers still read during migration.
 
-## Phase 1: Ecosystem Contract
+## Implementation Status (2026-05)
 
-Status: implementation phase.
+| Track | Status | Notes |
+| --- | --- | --- |
+| Ecosystem contract (V110, tiers, `feed_config`) | Done | PR #50 |
+| Admin outreach / lead promote | Done | PR #51 |
+| Generic WooCommerce sync | Done | PR #52 — `GenericWooCommerceCategoryMapper`, `PartnerListingCatalogRules` |
+| Generic handoff + share cards | Done | PR #53 |
+| Verification emails + admin queue | Done | PR #54 |
+| Partner ops summary (handoffs + sync) | Done | PR #55 |
+| Per-vendor test sync (admin) | Done | `POST /admin/partner-sync/run/{vendorId}` |
+| Monarch parity runbook | Ops | See checklist below |
 
-- Add canonical partner tiers: `OFFICIAL_PARTNER` and `FOUNDING_PARTNER`.
-- Keep legacy `STRATEGIC_PARTNER` and `STRATEGIC_FOUNDER` readable during migration.
-- Add `official_vendors.feed_config JSONB` for per-partner rules.
-- Store Monarch's current behavior as config: tier, boost level, allowed categories, blocked Woo category slugs, category mapping, and handoff mode.
-- Expand admin APIs so lead promotion and vendor updates can receive `partnerProgramTier`, `feedType`, `feedBaseUrl`, and `feedConfig`.
-- Keep existing community seller and verified vendor paths untouched.
+## Admin Ops Quick Reference
 
-Exit criteria:
+- **All partners sync:** Admin → Marketplace → Run partner sync
+- **One partner:** Official vendors table → **Test sync** (requires import enabled + Woo `feedType` + `feedBaseUrl`)
+- **Verified vendor queue:** Admin → Marketplace → Vendor verification queue
+- **Partner config:** Edit badge/feed on vendor row; Monarch template in migration `V110__partner_vendor_ecosystem_contract.sql`
 
-- Monarch still appears as a founding partner.
-- Existing strategic partner rows migrate to canonical tiers.
-- Admin responses expose `partnerTier` and `feedConfig`.
-- Sync eligibility still requires official/founding tier plus import enabled.
+## Monarch Parity Checklist (ops)
 
-## Phase 2: Parallel Implementation
+Run after deploy or feed config change:
 
-These tracks can run in parallel after Phase 1.
-
-### Track A: Generic Sync Rules
-
-- Replace `MonarchWooCommerceCategoryMapper` with `GenericCategoryMapper`.
-- Move category mapping, blocked category slugs, allowed marketplace categories, and boost level into `feedConfig`.
-- Remove `LEGACY_WOO_SLUGS`.
-- Keep Monarch tests as parity fixtures.
-- Add vendor-specific stale cleanup based on config, not vendor slug.
-
-### Track B: Admin Partner Onboarding
-
-- Add admin fields for partner tier, feed type, feed base URL, allowed categories, blocked categories, category mapping, and boost level.
-- Add per-vendor "test sync" action.
-- Let admin activate storefront only after config and sync test pass.
-- Keep lead conversion manual and curated.
-
-### Track C: Generic Cart Handoff
-
-- Rename frontend cart flow from Monarch-specific to partner-generic.
-- Build labels from `vendorName` and backend handoff response.
-- Use `feedBaseUrl`/`feedConfig.cartHandoffMode` for WooCommerce handoff strategy.
-- Preserve Monarch fallback behavior through config.
-
-### Track D: Marketplace Terminology And Feed Balance
-
-- Use Seller, Verified Vendor, Official Partner, and Founding Partner consistently.
-- Keep peer listings visually and algorithmically central.
-- Use existing dynamic partner cap, with config-backed founding boost instead of slug-specific logic.
-- Keep Monarch as proof/social proof, not as a special code path.
-
-### Track E: Partner Operations And Analytics
-
-- Extend existing handoff analytics to per-vendor admin summaries.
-- Add sync health to admin partner rows: latest run, status, processed/upserted/skipped/stale.
-- Keep public partner analytics minimal until there are enough partners to make a dashboard valuable.
-
-## Phase 3: Rollout And Cleanup
-
-- Run Monarch before/after parity: listing count, categories, promoted rows, cart handoff URLs, storefront rendering.
-- Add one non-Monarch WooCommerce partner in disabled mode and run test sync.
-- Remove remaining Monarch-specific code once parity passes.
-- Update runbooks and outreach copy to reflect the new ecosystem language.
-- Keep marketplace launch messaging anchored on community first, partners as density and proof.
+1. `GET /api/public/marketplace/partners` — Monarch slug present, founding tier
+2. `/partner/monarch-reptiles` — storefront renders, categories populated
+3. Marketplace partner strip — Monarch listed, not dominating peer listings
+4. Add 2+ items to partner cart → handoff URL opens monarchreptiles.com (403 on batch add may still need partner Woo fix — see [`../ops/monarch-cart-handoff-email-to-partner.md`](../ops/monarch-cart-handoff-email-to-partner.md))
+5. Admin → Ops column: handoffs 30d + latest sync `success` with reasonable upserted/processed counts
 
 ## Deferred Until Needed
 
-These are intentionally deferred because they depend on partner volume, traffic, or non-WooCommerce demand.
-
-- Shopify adapter.
-- HTML scraper adapter.
-- Full dynamic rule engine.
-- Paid partner analytics dashboards.
-- Ads, affiliate tools, sponsored products, and premium storefront monetization.
+- Shopify / HTML scraper adapters
+- Full dynamic rule engine UI for `feed_config`
+- Paid partner analytics dashboards
+- Ads, affiliate tools, sponsored products, premium storefront monetization

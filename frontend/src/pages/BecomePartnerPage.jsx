@@ -189,10 +189,10 @@ export default function BecomePartnerPage() {
           <div className="col-lg-5">
             <div className="card border-warning border-opacity-50 shadow-sm mb-3">
               <div className="card-body p-4">
-                <h2 className="h6 fw-bold mb-2">{t('partners.monarchTitle')}</h2>
-                <p className="small text-muted mb-3">{t('partners.monarchBlurb')}</p>
+                <h2 className="h6 fw-bold mb-2">{t('partners.foundingExampleTitle')}</h2>
+                <p className="small text-muted mb-3">{t('partners.foundingExampleBlurb')}</p>
                 <Link to="/partner/monarch-reptiles" className="btn btn-sm btn-warning fw-semibold">
-                  {t('partners.monarchCta')}
+                  {t('partners.foundingExampleCta')}
                 </Link>
               </div>
             </div>
