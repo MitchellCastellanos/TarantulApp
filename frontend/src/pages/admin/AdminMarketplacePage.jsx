@@ -667,6 +667,7 @@ export default function AdminMarketplacePage() {
                   <th>{t('admin.officialVendorsColBrand')}</th>
                   <th>{t('admin.officialVendorsColLocation')}</th>
                   <th>{t('admin.officialVendorsColScore')}</th>
+                  <th>{t('admin.partnerOpsCol', { defaultValue: 'Ops (30d)' })}</th>
                   <th>{t('admin.officialVendorsColStatus')}</th>
                   <th className="text-center">{t('admin.officialVendorsColFounder')}</th>
                   <th className="text-center">{t('admin.officialVendorsColImport')}</th>
@@ -687,6 +688,35 @@ export default function AdminMarketplacePage() {
                     </td>
                     <td>{[v.city, v.state, v.country].filter(Boolean).join(' · ') || '-'}</td>
                     <td>{v.influenceScore ?? 0}</td>
+                    <td className="small">
+                      {v.opsSummary ? (
+                        <>
+                          <div>
+                            {t('admin.partnerOpsHandoffs', {
+                              defaultValue: 'Handoffs: {{count}}',
+                              count: v.opsSummary.handoffs30d ?? 0,
+                            })}
+                          </div>
+                          {v.opsSummary.latestSync ? (
+                            <div className="text-muted">
+                              {t('admin.partnerOpsSync', {
+                                defaultValue: 'Sync: {{status}} · {{upserted}}/{{processed}}',
+                                status: v.opsSummary.latestSync.status || '—',
+                                upserted: v.opsSummary.latestSync.upsertedCount ?? 0,
+                                processed: v.opsSummary.latestSync.processedCount ?? 0,
+                              })}
+                              {(v.opsSummary.latestSync.staleCount ?? 0) > 0
+                                ? ` · stale ${v.opsSummary.latestSync.staleCount}`
+                                : ''}
+                            </div>
+                          ) : (
+                            <div className="text-muted">{t('admin.partnerOpsNoSync', { defaultValue: 'No sync runs yet' })}</div>
+                          )}
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>{v.enabled ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
                     <td className="text-center">
                       <input
