@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
+import { inferBillingRegion } from '../utils/inferBillingRegion'
 import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
 
 const LOGIN_AUDIENCE_KEY = 'ta-login-audience'
@@ -293,6 +294,11 @@ export default function LoginPage() {
     return order.map((k) => blocks[k])
   }, [t, loginAudience])
 
+  const billingRegion = useMemo(() => inferBillingRegion(), [])
+  const regionalProPrice = t(`pro.regions.${billingRegion}.priceMonthly`, {
+    defaultValue: t('pro.regions.US.priceMonthly'),
+  })
+
   const heroTagline = loginAudience === 'seller'
     ? t('auth.loginPage.heroTaglineSeller')
     : t('auth.loginPage.heroTaglineCollector')
@@ -462,7 +468,7 @@ export default function LoginPage() {
                       color: 'var(--ta-parchment)',
                     }}
                   >
-                    {t('auth.trialRegisterPromo')}
+                    {t('auth.trialRegisterPromo', { price: regionalProPrice })}
                   </div>
                 )}
 

@@ -722,10 +722,10 @@
     "legalTerms": "Términos del servicio",
     "legalPrivacy": "Aviso de privacidad",
     "legalAnd": "y",
-    "trialRegisterPromo": "Las cuentas nuevas incluyen 7 días de prueba con todo lo de Pro. Después: Free (Cases, Comunidad, Discover, IA básica) o Pro ($4.99/mes) con bitácora completa, exportaciones y QR masivo. Los referidos suman días cortos de prueba y hitos — invita a otros keepers y mejora tus resultados.",
+    "trialRegisterPromo": "Las cuentas nuevas incluyen 7 días de prueba con todo lo de Pro. Después: Free (Cases, Comunidad, Discover, IA básica) o Pro a {{price}} con bitácora completa, exportaciones y QR masivo. Los referidos suman días cortos de prueba y hitos — invita a otros keepers y mejora tus resultados.",
     "proTeaserTitle": "Pro en resumen",
     "proTeaserExcelLead": "Exportar a Excel:",
-    "proTeaserBody": "Pro ($4.99/mes): colección sin tope, exportaciones (Excel, PDF), QR masivo, IA más detallada y análisis completo de Cases. Pro+ y Vendor llegan después; Free sigue siendo la puerta de entrada con Cases, Comunidad y Discover.",
+    "proTeaserBody": "Pro (precio mensual regional en la página Pro): colección sin tope, exportaciones (Excel, PDF), QR masivo, IA más detallada y análisis completo de Cases. Vendor ya está en EE.UU., Canadá, México y Colombia; Free sigue siendo la puerta de entrada con Cases, Comunidad y Discover.",
     "orContinueWith": "o continúa con",
     "googleLoginError": "No se pudo iniciar sesión con Google.",
     "GOOGLE_TOKEN_INVALID": "No se pudo verificar Google. Intenta de nuevo.",
@@ -2065,7 +2065,7 @@
         "priceYearly": "$149.000 COP / año",
         "saveLabel": "~2 meses gratis vs mensual",
         "taxNote": "Impuestos incluidos",
-        "vendorTierHeadline": "Vendedor (Colombia) — suscripción cuando esté activa"
+        "vendorTierHeadline": "$39.900 COP / mes · Vendedor (Colombia)"
       },
       "INT": {
         "countryName": "Internacional",
@@ -2074,7 +2074,7 @@
         "priceYearly": "US$49.99 / año (USD)",
         "saveLabel": "~2 meses gratis vs mensual",
         "taxNote": "Cobro en USD; impuestos locales pueden aplicar",
-        "vendorTierHeadline": "Vendor — próximamente fuera de EE.UU./Canadá"
+        "vendorTierHeadline": "Vendor — solo EE.UU., Canadá, México y Colombia"
       }
     },
     "vendorTierComingSoon": "Vendor disponible en EE.UU., Canadá, México (tier dinámico) y Colombia. Fuera de esas regiones, explora el marketplace o contáctanos.",

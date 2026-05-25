@@ -8,6 +8,7 @@ import com.tarantulapp.repository.NewsletterDraftRepository;
 import com.tarantulapp.repository.NewsletterSubscriptionRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +32,7 @@ public class NewsletterService {
     public NewsletterService(NewsletterDraftRepository draftRepository,
                              NewsletterSubscriptionRepository subscriptionRepository,
                              UserRepository userRepository,
-                             MarketplaceService marketplaceService,
+                             @Lazy MarketplaceService marketplaceService,
                              EmailService emailService,
                              @Value("${app.base-url:http://localhost:5173}") String baseUrl) {
         this.draftRepository = draftRepository;

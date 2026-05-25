@@ -715,10 +715,10 @@
     "legalTerms": "Terms of Service",
     "legalPrivacy": "Privacy Policy",
     "legalAnd": "and",
-    "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After that: stay on Free (Cases, Community, Discover, basic AI) or move to Pro at the regional price on the Pro page (US, CA, MX, CO) for full logs, exports, and bulk QR. Referrals add short trial days and milestones — invite other keepers and improve your results.",
+    "trialRegisterPromo": "New accounts get a 7-day free trial with full Pro access. After that: stay on Free (Cases, Community, Discover, basic AI) or move to Pro at {{price}} for full logs, exports, and bulk QR. Referrals add short trial days and milestones — invite other keepers and improve your results.",
     "proTeaserTitle": "Pro at a glance",
     "proTeaserExcelLead": "Excel export:",
-    "proTeaserBody": "Pro (regional monthly pricing on the Pro page): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Pro+ and Vendor roll out next; Free stays the wide funnel with Cases, Community, and Discover.",
+    "proTeaserBody": "Pro (regional monthly pricing on the Pro page): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Vendor is live in the US, Canada, Mexico, and Colombia; Free stays the wide funnel with Cases, Community, and Discover.",
     "orContinueWith": "or continue with",
     "googleLoginError": "Could not sign in with Google.",
     "GOOGLE_TOKEN_INVALID": "Google sign-in could not be verified. Try again.",
@@ -2063,7 +2063,7 @@
         "priceYearly": "$149,000 COP / year",
         "saveLabel": "~2 months free vs monthly",
         "taxNote": "Tax included",
-        "vendorTierHeadline": "Seller storefront (Colombia) — subscribe when live"
+        "vendorTierHeadline": "$39,900 COP / mo · Seller storefront (Colombia)"
       },
       "INT": {
         "countryName": "International",
@@ -2072,7 +2072,7 @@
         "priceYearly": "US$49.99 / year (USD)",
         "saveLabel": "~2 months free vs monthly",
         "taxNote": "Billed in USD; local taxes may apply",
-        "vendorTierHeadline": "Vendor — coming soon outside US/Canada"
+        "vendorTierHeadline": "Vendor — US, Canada, Mexico & Colombia only"
       }
     },
     "vendorTierComingSoon": "Vendor self-serve is available in the US, Canada, Mexico (dynamic tier), and Colombia. Elsewhere, browse the marketplace or contact us.",
