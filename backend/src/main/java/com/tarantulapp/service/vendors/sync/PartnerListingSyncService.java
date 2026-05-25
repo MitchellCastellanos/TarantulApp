@@ -10,7 +10,7 @@ import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
-import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
+import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +131,7 @@ public class PartnerListingSyncService {
             for (PartnerListingUpsertRequest raw : incomingItems == null ? List.<PartnerListingUpsertRequest>of() : incomingItems) {
                 processed++;
                 try {
-                    PartnerListingUpsertRequest normalized = normalizeSyncRules(raw, officialVendorId, vendor.getSlug());
+                    PartnerListingUpsertRequest normalized = normalizeSyncRules(raw, officialVendorId, vendor);
                     if (normalized == null) {
                         skipped++;
                         continue;
@@ -158,7 +158,7 @@ public class PartnerListingSyncService {
             }
 
             stale = partnerListingSyncRunService.markMissingAsStale(officialVendorId, seenExternalIds);
-            stale += partnerListingSyncRunService.markNonTarantulaAsStale(officialVendorId, vendor.getSlug());
+            stale += partnerListingSyncRunService.markDisallowedAsStale(officialVendorId, vendor);
             return completeRun(run, processed, upserted, failed, skipped, stale);
         } catch (Exception ex) {
             run.setStatus(PartnerListingSyncRunStatus.FAILED);
@@ -211,13 +211,13 @@ public class PartnerListingSyncService {
         return PartnerListingSyncRunStatus.SUCCESS;
     }
 
-    private PartnerListingUpsertRequest normalizeSyncRules(PartnerListingUpsertRequest raw, UUID vendorId, String vendorSlug) {
+    private PartnerListingUpsertRequest normalizeSyncRules(PartnerListingUpsertRequest raw, UUID vendorId, OfficialVendor vendor) {
         if (raw == null) return null;
         String externalId = raw.externalId() == null ? null : raw.externalId().trim();
         if (externalId == null || externalId.isEmpty()) return null;
 
-        if (!PartnerListingTarantulaFilter.isAllowedMonarchListing(
-                raw.title(), raw.description(), raw.listingCategory(), vendorSlug)) {
+        if (!PartnerListingCatalogRules.isAllowedListing(
+                raw.title(), raw.description(), raw.listingCategory(), vendor.getFeedConfig())) {
             return null;
         }
 

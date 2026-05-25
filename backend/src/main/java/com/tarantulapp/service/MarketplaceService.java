@@ -24,7 +24,7 @@ import com.tarantulapp.repository.BehaviorLogRepository;
 import com.tarantulapp.repository.ChatMessageRepository;
 import com.tarantulapp.repository.ChatThreadRepository;
 import com.tarantulapp.repository.UserRepository;
-import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
+import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
@@ -424,9 +424,9 @@ public class MarketplaceService {
                 .filter(p -> eligibleVendors.containsKey(p.getOfficialVendorId()))
                 .filter(p -> {
                     OfficialVendor v = eligibleVendors.get(p.getOfficialVendorId());
-                    return PartnerListingTarantulaFilter.isAllowedMonarchListing(
+                    return PartnerListingCatalogRules.isAllowedListing(
                             p.getTitle(), p.getDescription(), p.getListingCategory(),
-                            v == null ? null : v.getSlug());
+                            v == null ? null : v.getFeedConfig());
                 })
                 .limit(20)
                 .map(p -> mapPartnerListing(p, eligibleVendors.get(p.getOfficialVendorId())))
@@ -482,16 +482,16 @@ public class MarketplaceService {
                         vendor.getId(), List.of(PartnerListingStatus.ACTIVE));
 
         long catalogTotal = allActive.stream()
-                .filter(p -> PartnerListingTarantulaFilter.isAllowedMonarchListing(
-                        p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getSlug()))
+                .filter(p -> PartnerListingCatalogRules.isAllowedListing(
+                        p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getFeedConfig()))
                 .count();
 
         List<Map<String, Object>> items = allActive.stream()
                 .filter(p -> categoryNorm == null || matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
                 .filter(p -> promotedOnly == null || !promotedOnly || Boolean.TRUE.equals(p.getPromoted()))
-                .filter(p -> PartnerListingTarantulaFilter.isAllowedMonarchListing(
-                        p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getSlug()))
+                .filter(p -> PartnerListingCatalogRules.isAllowedListing(
+                        p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getFeedConfig()))
                 .map(p -> mapPartnerListing(p, vendor))
                 .collect(Collectors.toList());
         enrichListingsWithViewCounts(items);
@@ -906,9 +906,9 @@ public class MarketplaceService {
                 .filter(p -> eligibleVendorById.containsKey(p.getOfficialVendorId()))
                 .filter(p -> {
                     OfficialVendor v = eligibleVendorById.get(p.getOfficialVendorId());
-                    return PartnerListingTarantulaFilter.isAllowedMonarchListing(
+                    return PartnerListingCatalogRules.isAllowedListing(
                             p.getTitle(), p.getDescription(), p.getListingCategory(),
-                            v == null ? null : v.getSlug());
+                            v == null ? null : v.getFeedConfig());
                 })
                 .filter(p -> matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))

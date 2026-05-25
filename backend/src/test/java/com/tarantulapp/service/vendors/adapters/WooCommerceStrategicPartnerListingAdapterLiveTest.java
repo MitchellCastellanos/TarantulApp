@@ -24,7 +24,6 @@ class WooCommerceStrategicPartnerListingAdapterLiveTest {
         WooCommerceStrategicPartnerListingAdapter adapter = new WooCommerceStrategicPartnerListingAdapter(
                 new ObjectMapper(),
                 true,
-                "https://monarchreptiles.com",
                 100,
                 80
         );
@@ -32,6 +31,8 @@ class WooCommerceStrategicPartnerListingAdapterLiveTest {
         vendor.setSlug("monarch-reptiles");
         vendor.setCountry("Canada");
         vendor.setState("Quebec");
+        vendor.setFeedType("woocommerce");
+        vendor.setFeedBaseUrl("https://monarchreptiles.com");
 
         List<StrategicVendorRawListing> items = adapter.fetch(vendor);
         assertFalse(items.isEmpty(), "Expected mapped Monarch listings");

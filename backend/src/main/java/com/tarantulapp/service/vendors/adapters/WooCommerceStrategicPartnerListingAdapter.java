@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.service.vendors.sources.StrategicVendorRawListing;
-import com.tarantulapp.service.vendors.woocommerce.MonarchWooCommerceCategoryMapper;
+import com.tarantulapp.service.vendors.woocommerce.GenericWooCommerceCategoryMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,31 +20,26 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 @Component
 @Order(1)
 public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartnerListingAdapter {
     private static final Logger log = LoggerFactory.getLogger(WooCommerceStrategicPartnerListingAdapter.class);
-    private static final Set<String> LEGACY_WOO_SLUGS = Set.of("monarch-reptiles");
 
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final boolean enabled;
-    private final String defaultStoreBaseUrl;
     private final int pageSize;
     private final int maxPages;
 
     public WooCommerceStrategicPartnerListingAdapter(
             ObjectMapper objectMapper,
             @Value("${app.partner-sync.adapters.woocommerce.enabled:true}") boolean enabled,
-            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String defaultStoreBaseUrl,
             @Value("${app.partner-sync.adapters.woocommerce.page-size:100}") int pageSize,
             @Value("${app.partner-sync.adapters.woocommerce.max-pages:80}") int maxPages) {
         this.objectMapper = objectMapper;
         this.restTemplate = new RestTemplate();
         this.enabled = enabled;
-        this.defaultStoreBaseUrl = trimTrailingSlash(defaultStoreBaseUrl);
         this.pageSize = Math.max(10, Math.min(pageSize, 100));
         this.maxPages = Math.max(1, Math.min(maxPages, 200));
     }
@@ -58,7 +53,7 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         if (feedType != null && "woocommerce".equalsIgnoreCase(feedType.trim())) {
             return resolveStoreBaseUrl(vendor) != null;
         }
-        return LEGACY_WOO_SLUGS.contains(vendor.getSlug().toLowerCase(Locale.ROOT));
+        return false;
     }
 
     @Override
@@ -100,7 +95,8 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
     }
 
     private StrategicVendorRawListing mapProduct(JsonNode product, OfficialVendor vendor) {
-        MonarchWooCommerceCategoryMapper.MappedProduct mapped = MonarchWooCommerceCategoryMapper.map(product);
+        GenericWooCommerceCategoryMapper.MappedProduct mapped =
+                GenericWooCommerceCategoryMapper.map(product, vendor.getFeedConfig());
         if (mapped == null) {
             return null;
         }
@@ -256,10 +252,6 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         String fromSite = trimTrailingSlash(vendor.getWebsiteUrl());
         if (fromSite != null && !fromSite.isBlank()) {
             return fromSite;
-        }
-        if (vendor.getSlug() != null
-                && LEGACY_WOO_SLUGS.contains(vendor.getSlug().toLowerCase(Locale.ROOT))) {
-            return defaultStoreBaseUrl;
         }
         return null;
     }
