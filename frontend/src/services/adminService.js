@@ -34,6 +34,8 @@ const adminService = {
   updateOfficialVendorStrategicProgram: (id, payload) =>
     api.patch(`/admin/official-vendors/${id}/strategic-program`, payload).then((r) => r.data),
   runPartnerSync: () => api.post('/admin/partner-sync/run').then((r) => r.data),
+  runPartnerSyncForVendor: (vendorId) =>
+    api.post(`/admin/partner-sync/run/${vendorId}`).then((r) => r.data),
   partnerSyncRuns: (vendorId) =>
     api.get('/admin/partner-sync/runs', { params: vendorId ? { vendorId } : {} }).then((r) => r.data),
   bugReports: (status = '') =>

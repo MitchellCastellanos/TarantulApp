@@ -1,5 +1,7 @@
 # Monarch Reptiles — cart handoff email (single forward)
 
+> **Template:** Generic partner version: [`partner-cart-handoff-email-template.md`](partner-cart-handoff-email-template.md). Monarch is the first live founding partner using this flow.
+
 Copy everything between the lines into one email. Monarch can forward the whole thing to whoever runs their WooCommerce site.
 
 ---
@@ -63,4 +65,4 @@ TarantulApp
 
 Note the URL format they chose. Update `PartnerCartHandoffService` if it differs from comma batch or `id:qty` on `/cart/`.
 
-See: [`../operations/monarch-founding-partner-integration.md`](../operations/monarch-founding-partner-integration.md)
+See: [`../operations/monarch-founding-partner-integration.md`](../operations/monarch-founding-partner-integration.md) · [`../operations/partner-vendor-ecosystem-refactor-plan.md`](../operations/partner-vendor-ecosystem-refactor-plan.md)

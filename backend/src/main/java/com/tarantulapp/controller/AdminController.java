@@ -428,6 +428,16 @@ public class AdminController {
         );
     }
 
+    @PostMapping("/partner-sync/run/{vendorId}")
+    public ResponseEntity<Map<String, Object>> runPartnerSyncForVendor(@PathVariable UUID vendorId) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(mapPartnerSyncRun(partnerListingSyncService.runManualSyncForVendor(vendorId)));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/taxonomy-sync/run")
     public ResponseEntity<Map<String, Object>> runTaxonomySyncNow() {
         adminAccessService.assertCurrentUserIsAdmin();

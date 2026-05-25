@@ -92,13 +92,30 @@ public class PartnerListingSyncService {
         List<PartnerListingSyncRun> runs = new ArrayList<>();
         for (OfficialVendor vendor : strategicVendors) {
             try {
-                List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
-                runs.add(syncVendorListings(vendor.getId(), items, PartnerListingSyncTriggerSource.MANUAL));
+                runs.add(runManualSyncForVendor(vendor.getId()));
             } catch (Exception ex) {
                 log.warn("Manual partner sync failed for vendor {}: {}", vendor.getId(), ex.getMessage());
             }
         }
         return runs;
+    }
+
+    public PartnerListingSyncRun runManualSyncForVendor(UUID vendorId) {
+        PartnerListingSyncItemProvider provider = itemProvider.getIfAvailable();
+        if (provider == null) {
+            throw new IllegalStateException("PARTNER_SYNC_PROVIDER_UNAVAILABLE");
+        }
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new IllegalArgumentException("VENDOR_NOT_FOUND"));
+        if (!Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
+            throw new IllegalArgumentException("LISTING_IMPORT_DISABLED");
+        }
+        PartnerProgramTier tier = vendor.getPartnerProgramTier();
+        if (tier == null || !SYNC_PARTNER_TIERS.contains(tier)) {
+            throw new IllegalArgumentException("PARTNER_TIER_NOT_ELIGIBLE");
+        }
+        List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
+        return syncVendorListings(vendor.getId(), items, PartnerListingSyncTriggerSource.MANUAL);
     }
 
     @Transactional(readOnly = true)
