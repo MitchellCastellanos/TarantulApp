@@ -537,9 +537,24 @@ export default function AdminMarketplacePage() {
                   <tr key={row.id}>
                     <td className="small">
                       <div>{row.userEmail}</div>
-                      <a href={row.selfieMediaUrl} target="_blank" rel="noreferrer" className="small">
-                        {t('admin.vendorVerificationMedia', { defaultValue: 'Media' })}
-                      </a>
+                      <div className="text-muted">{row.userDisplayName || '—'}</div>
+                      <div className="d-flex flex-wrap gap-2 mt-1">
+                        {row.selfieMediaUrl ? (
+                          <a href={row.selfieMediaUrl} target="_blank" rel="noreferrer" className="small">
+                            {t('admin.vendorVerificationSelfie', { defaultValue: 'Selfie' })}
+                          </a>
+                        ) : null}
+                        {row.inventoryMediaUrl ? (
+                          <a href={row.inventoryMediaUrl} target="_blank" rel="noreferrer" className="small">
+                            {t('admin.vendorVerificationInventory', { defaultValue: 'Inventory' })}
+                          </a>
+                        ) : null}
+                        {row.paperMediaUrl ? (
+                          <a href={row.paperMediaUrl} target="_blank" rel="noreferrer" className="small">
+                            {t('admin.vendorVerificationPaper', { defaultValue: 'Paper' })}
+                          </a>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="small">{row.createdAt ? new Date(row.createdAt).toLocaleString() : '—'}</td>
                     <td className="d-flex gap-1">
@@ -567,10 +582,21 @@ export default function AdminMarketplacePage() {
                         className="btn btn-sm btn-outline-danger"
                         disabled={verificationBusyId === row.id}
                         onClick={async () => {
+                          const note = window.prompt(
+                            t('admin.vendorVerificationRejectPrompt', {
+                              defaultValue: 'Optional note for the vendor (why rejected):',
+                            }),
+                            '',
+                          )
+                          if (note === null) return
                           setVerificationBusyId(row.id)
                           try {
-                            await adminService.reviewVendorVerification(row.id, { status: 'rejected' })
+                            await adminService.reviewVendorVerification(row.id, {
+                              status: 'rejected',
+                              reviewerNote: note.trim() || undefined,
+                            })
                             setVendorVerifications((prev) => prev.filter((v) => v.id !== row.id))
+                            setSuccess(t('admin.vendorVerificationRejected', { defaultValue: 'Submission rejected.' }))
                           } catch {
                             setError(t('admin.loadError'))
                           } finally {

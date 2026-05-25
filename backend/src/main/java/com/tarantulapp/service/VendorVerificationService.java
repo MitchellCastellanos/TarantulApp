@@ -5,6 +5,7 @@ import com.tarantulapp.entity.VendorVerificationSubmission;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.repository.VendorVerificationSubmissionRepository;
+import com.tarantulapp.util.BetaMailBodies;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +21,14 @@ public class VendorVerificationService {
 
     private final VendorVerificationSubmissionRepository submissionRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public VendorVerificationService(VendorVerificationSubmissionRepository submissionRepository,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   EmailService emailService) {
         this.submissionRepository = submissionRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -54,7 +58,11 @@ public class VendorVerificationService {
         sub.setSelfieMediaUrl(trimUrl(selfieUrl));
         sub.setInventoryMediaUrl(trimUrl(inventoryUrl));
         sub.setPaperMediaUrl(trimUrl(paperUrl));
-        return mapSubmission(submissionRepository.save(sub), user);
+        VendorVerificationSubmission saved = submissionRepository.save(sub);
+        String locale = resolveUserLocale(user);
+        emailService.sendVendorVerificationSubmitted(user.getEmail(), user.getDisplayName(), locale);
+        emailService.sendAdminVendorVerificationSubmitted(saved.getId(), user.getEmail(), user.getDisplayName());
+        return mapSubmission(saved, user);
     }
 
     @Transactional(readOnly = true)
@@ -95,14 +103,21 @@ public class VendorVerificationService {
         submissionRepository.save(sub);
 
         User user = userRepository.findById(sub.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
+        String locale = resolveUserLocale(user);
         if ("approved".equals(st)) {
             if (!Boolean.TRUE.equals(user.getVerifiedBreeder())) {
                 throw new IllegalArgumentException("VENDOR_ACTIVATION_REQUIRED");
             }
             user.setStorefrontVerifiedAt(Instant.now());
             userRepository.save(user);
-        } else if ("rejected".equals(st) && user.getStorefrontVerifiedAt() != null) {
-            // Keep existing badge unless ops explicitly revokes via admin storefront-verified endpoint.
+            emailService.sendVendorVerificationApproved(user.getEmail(), user.getDisplayName(), locale);
+        } else if ("rejected".equals(st)) {
+            if (user.getStorefrontVerifiedAt() != null) {
+                // Keep existing badge unless ops explicitly revokes via admin storefront-verified endpoint.
+            } else {
+                emailService.sendVendorVerificationRejected(
+                        user.getEmail(), user.getDisplayName(), locale, sub.getReviewerNote());
+            }
         }
         return mapSubmission(sub, user);
     }
@@ -134,5 +149,18 @@ public class VendorVerificationService {
         }
         String t = raw.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    private static String resolveUserLocale(User user) {
+        if (user == null) {
+            return "es";
+        }
+        if (user.getPreferredLocale() != null && !user.getPreferredLocale().isBlank()) {
+            return BetaMailBodies.normalizeLocale(user.getPreferredLocale());
+        }
+        if (user.getBetaPreferredLocale() != null && !user.getBetaPreferredLocale().isBlank()) {
+            return BetaMailBodies.normalizeLocale(user.getBetaPreferredLocale());
+        }
+        return "es";
     }
 }

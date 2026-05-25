@@ -451,6 +451,60 @@ public class EmailService {
         }
     }
 
+    public void sendVendorVerificationSubmitted(String toEmail, String displayName, String locale) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        String hub = baseUrl + "/marketplace/sell";
+        try {
+            doSend(toEmail,
+                    BetaMailBodies.vendorVerificationSubmittedSubject(loc),
+                    BetaMailBodies.vendorVerificationSubmittedBody(loc, displayName, hub));
+            log.info("Vendor verification submitted email sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.warn("Vendor verification submitted email failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    public void sendVendorVerificationApproved(String toEmail, String displayName, String locale) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        try {
+            doSend(toEmail,
+                    BetaMailBodies.vendorVerificationApprovedSubject(loc),
+                    BetaMailBodies.vendorVerificationApprovedBody(loc, displayName, baseUrl + "/marketplace"));
+            log.info("Vendor verification approved email sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.warn("Vendor verification approved email failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    public void sendVendorVerificationRejected(String toEmail, String displayName, String locale, String reviewerNote) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        try {
+            doSend(toEmail,
+                    BetaMailBodies.vendorVerificationRejectedSubject(loc),
+                    BetaMailBodies.vendorVerificationRejectedBody(loc, displayName, reviewerNote, baseUrl + "/marketplace/sell"));
+            log.info("Vendor verification rejected email sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.warn("Vendor verification rejected email failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    public void sendAdminVendorVerificationSubmitted(UUID submissionId, String userEmail, String displayName) {
+        if (adminNotifyTo == null || adminNotifyTo.isBlank()) {
+            return;
+        }
+        try {
+            doSend(adminNotifyTo,
+                    "[TarantulApp] Vendor verification pending",
+                    "New Verified Shop submission.\n\n"
+                            + "Submission ID: " + submissionId + "\n"
+                            + "User: " + safe(displayName) + " <" + safe(userEmail) + ">\n\n"
+                            + "Review in Admin > Marketplace > Vendor verification queue.");
+            log.info("Admin vendor verification notification sent for submission {}", submissionId);
+        } catch (Exception e) {
+            log.warn("Admin vendor verification notification failed for {}: {}", submissionId, e.getMessage());
+        }
+    }
+
     public void sendVendorInviteEmail(String toEmail, String displayName, String locale, String inviteAbsoluteUrl) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         String sendDate = formatBetaSendDateForLocale(loc);

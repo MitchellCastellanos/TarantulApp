@@ -2383,7 +2383,7 @@
     "vendorTermsLi1": "Sans séquestre : TarantulApp ne touche pas l'argent des ventes.",
     "vendorTermsLi2": "Tier dynamique MX selon ventes signalées (annonces marquées vendues) : Starter 0 → Activo 199 → Plus 499 → Pro Shop 999 MXN/mois.",
     "vendorTermsLi3": "Par défaut : l’utilisateur s’abonne ou active Starter MX sur Pro → verified_breeder débloque les avantages (250 annonces, consommables, boost, inbox). Invitation admin ou forçage seulement si besoin.",
-    "vendorTermsLi4": "Badge « Boutique Vérifiée » : rendez-vous visio avec l'équipe (montrer la pièce à la caméra ; pas d'envoi de scans par e-mail). URL publique optionnelle : app.vendor-verification-booking-url. En attente : colonne storefront_verified_at dans la DB.",
+    "vendorTermsLi4": "Badge « Boutique Vérifiée » : téléversez selfie + inventaire dans le hub vendeur, ou prenez rendez-vous visio (app.vendor-verification-booking-url). Pas de scans d'identité par e-mail.",
     "vendorTermsLi5": "Sans vérification = boutique affichée comme « Nouvelle boutique » mais le vendeur peut publier normalement.",
     "vendorTermsLi6": "Code à venir : cron mensuel de comptage de ventes + swap du Stripe price ID + porte d'accès UI pour le badge.",
     "vendorsLookupTitle": "Activer Vendor par e-mail",
@@ -2533,6 +2533,11 @@
     "vendorVerificationMedia": "Médias",
     "vendorVerificationApprove": "Approuver",
     "vendorVerificationReject": "Refuser",
+    "vendorVerificationRejectPrompt": "Note optionnelle pour le vendeur (motif du refus) :",
+    "vendorVerificationRejected": "Demande refusée.",
+    "vendorVerificationSelfie": "Selfie",
+    "vendorVerificationInventory": "Inventaire",
+    "vendorVerificationPaper": "Papier",
     "vendorVerificationApproved": "Approuvé.",
     "promoteLeadToVendor": "Créer brouillon vendeur",
     "promoteLeadConverted": "Converti",
@@ -3086,7 +3091,10 @@
     "submitCta": "Soumettre pour examen",
     "submitted": "Soumis — examen sous peu.",
     "submitError": "Impossible de soumettre.",
-    "pending": "Vérification en attente — nous vous écrirons par e-mail."
+    "pending": "Vérification en attente — nous vous écrirons par e-mail.",
+    "activationRequired": "Activez d’abord votre plan Vendor (paiement ou invitation) avant de demander le badge Boutique vérifiée.",
+    "storefrontVerified": "Votre boutique a déjà le badge Boutique vérifiée.",
+    "rejected": "Votre demande a été refusée. Vous pouvez téléverser de nouveaux éléments ci-dessous."
   }
 
 }

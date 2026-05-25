@@ -1292,4 +1292,79 @@ public final class BetaMailBodies {
                 + "Changement d’URL de flux ou pause ? Répondez à ce courriel.\n\n"
                 + "— Équipe TarantulApp\n";
     }
+
+    public static String vendorVerificationSubmittedSubject(String locale) {
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "TarantulApp — Verified Shop review received";
+            case "fr" -> "TarantulApp — Demande Boutique vérifiée reçue";
+            default -> "TarantulApp — Recibimos tu solicitud Tienda verificada";
+        };
+    }
+
+    public static String vendorVerificationSubmittedBody(String locale, String displayName, String sellerHubUrl) {
+        String n = displayName == null || displayName.isBlank() ? "" : (" " + displayName.trim());
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "Hi" + n + ",\n\n"
+                    + "We received your Verified Shop verification materials. Our team usually reviews within 1–2 business days.\n"
+                    + "You will get another email when approved or if we need changes.\n\n"
+                    + "Seller hub: " + sellerHubUrl + "\n\n— TarantulApp\n";
+            case "fr" -> "Bonjour" + n + ",\n\n"
+                    + "Nous avons bien reçu vos éléments pour le badge Boutique vérifiée. Révision sous 1–2 jours ouvrés.\n"
+                    + "Un autre courriel suivra (approbation ou corrections).\n\n"
+                    + "Hub vendeur : " + sellerHubUrl + "\n\n— TarantulApp\n";
+            default -> "Hola" + n + ",\n\n"
+                    + "Recibimos tus materiales para el badge Tienda verificada. Revisamos en 1–2 días hábiles.\n"
+                    + "Te avisamos por correo si se aprueba o si hace falta reenviar algo.\n\n"
+                    + "Hub vendedor: " + sellerHubUrl + "\n\n— TarantulApp\n";
+        };
+    }
+
+    public static String vendorVerificationApprovedSubject(String locale) {
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "TarantulApp — Verified Shop badge approved";
+            case "fr" -> "TarantulApp — Badge Boutique vérifiée approuvé";
+            default -> "TarantulApp — Badge Tienda verificada aprobado";
+        };
+    }
+
+    public static String vendorVerificationApprovedBody(String locale, String displayName, String marketplaceUrl) {
+        String n = displayName == null || displayName.isBlank() ? "" : (" " + displayName.trim());
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "Hi" + n + ",\n\n"
+                    + "Your Verified Shop badge is now active on your listings and storefront.\n"
+                    + "Browse the marketplace: " + marketplaceUrl + "\n\n— TarantulApp\n";
+            case "fr" -> "Bonjour" + n + ",\n\n"
+                    + "Votre badge Boutique vérifiée est actif sur vos annonces et votre vitrine.\n"
+                    + "Marketplace : " + marketplaceUrl + "\n\n— TarantulApp\n";
+            default -> "Hola" + n + ",\n\n"
+                    + "Tu badge Tienda verificada ya está activo en tus anuncios y vitrina.\n"
+                    + "Marketplace: " + marketplaceUrl + "\n\n— TarantulApp\n";
+        };
+    }
+
+    public static String vendorVerificationRejectedSubject(String locale) {
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "TarantulApp — Verified Shop review update";
+            case "fr" -> "TarantulApp — Mise à jour vérification Boutique";
+            default -> "TarantulApp — Actualización verificación Tienda";
+        };
+    }
+
+    public static String vendorVerificationRejectedBody(String locale, String displayName, String reviewerNote, String sellerHubUrl) {
+        String n = displayName == null || displayName.isBlank() ? "" : (" " + displayName.trim());
+        String note = reviewerNote == null || reviewerNote.isBlank()
+                ? ""
+                : ("\n\nNote from the team:\n" + reviewerNote.trim() + "\n");
+        return switch (normalizeLocale(locale)) {
+            case "en" -> "Hi" + n + ",\n\n"
+                    + "We could not approve your Verified Shop submission yet. You can upload new materials from the seller hub."
+                    + note + "\n\nSeller hub: " + sellerHubUrl + "\n\n— TarantulApp\n";
+            case "fr" -> "Bonjour" + n + ",\n\n"
+                    + "Nous n'avons pas pu approuver votre demande pour l'instant. Vous pouvez renvoyer des éléments depuis le hub vendeur."
+                    + note + "\n\nHub vendeur : " + sellerHubUrl + "\n\n— TarantulApp\n";
+            default -> "Hola" + n + ",\n\n"
+                    + "No pudimos aprobar tu solicitud todavía. Puedes subir nuevos materiales desde el hub vendedor."
+                    + note + "\n\nHub vendedor: " + sellerHubUrl + "\n\n— TarantulApp\n";
+        };
+    }
 }

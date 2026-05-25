@@ -58,6 +58,15 @@ export default function VendorVerificationCard({ user }) {
   if (latest?.status === 'approved') {
     return null
   }
+  const rejectedNotice =
+    latest?.status === 'rejected' ? (
+      <div className="alert alert-danger small py-2 mb-3">
+        <div>{t('vendorVerification.rejected')}</div>
+        {latest.reviewerNote ? (
+          <div className="mt-1 text-muted">{latest.reviewerNote}</div>
+        ) : null}
+      </div>
+    ) : null
 
   const uploadMedia = async (file) => {
     const res = await marketplaceService.uploadListingImage(file)
@@ -100,7 +109,9 @@ export default function VendorVerificationCard({ user }) {
   }
 
   return (
-    <div className="card border-0 shadow-sm mb-3">
+    <>
+      {rejectedNotice}
+      <div className="card border-0 shadow-sm mb-3">
       <div className="card-body p-3">
         <h2 className="h6 fw-bold mb-2">{t('vendorVerification.title')}</h2>
         <p className="small text-muted mb-3">{t('vendorVerification.blurb')}</p>
@@ -155,5 +166,6 @@ export default function VendorVerificationCard({ user }) {
         {message ? <p className="small text-muted mt-2 mb-0">{message}</p> : null}
       </div>
     </div>
+    </>
   )
 }
