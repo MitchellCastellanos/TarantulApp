@@ -63,8 +63,9 @@ class CommunitySpotlightServiceTest {
         keeper.setPublicHandle("mitch");
         keeper.setDisplayName("Mitch");
 
-        when(tarantulaRepository.findCommunitySpotlightCandidates(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(t)));
+        when(tarantulaRepository.findCommunitySpotlightCandidateIds(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(t.getId())));
+        when(tarantulaRepository.findByIdInWithSpecies(any())).thenReturn(List.of(t));
         when(photoRepository.findByTarantulaIdInOrderByCreatedAtDesc(any())).thenReturn(List.of());
         when(userRepository.findAllById(eq(List.of(userId)))).thenReturn(List.of(keeper));
 
@@ -93,8 +94,9 @@ class CommunitySpotlightServiceTest {
         p.setTarantulaId(tarantulaId);
         p.setFilePath("gallery/first.jpg");
 
-        when(tarantulaRepository.findCommunitySpotlightCandidates(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(t)));
+        when(tarantulaRepository.findCommunitySpotlightCandidateIds(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(t.getId())));
+        when(tarantulaRepository.findByIdInWithSpecies(any())).thenReturn(List.of(t));
         when(photoRepository.findByTarantulaIdInOrderByCreatedAtDesc(any()))
                 .thenReturn(List.of(p));
         when(userRepository.findAllById(any())).thenReturn(List.of());
@@ -109,7 +111,7 @@ class CommunitySpotlightServiceTest {
 
     @Test
     void spotlightEmptyWhenNoCandidates() {
-        when(tarantulaRepository.findCommunitySpotlightCandidates(any(Pageable.class)))
+        when(tarantulaRepository.findCommunitySpotlightCandidateIds(any(Pageable.class)))
                 .thenReturn(Page.empty());
 
         Map<String, Object> out = service.spotlight(12);

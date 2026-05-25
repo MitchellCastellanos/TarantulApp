@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-export default function VerifiedVendorBadge({ className = '', showTooltip = false }) {
+export default function VerifiedVendorBadge({ className = '', showTooltip = false, verified = true }) {
+  if (!verified) return null
   const { t } = useTranslation()
   const badge = (
     <span
       className={`badge bg-success text-white ${className}`.trim()}
       title={showTooltip ? t('marketplace.verifiedVendorTooltip') : undefined}
     >
-      {t('marketplace.verifiedBreederBadge')}
+      {t('marketplace.verifiedShopBadge')}
     </span>
   )
   if (showTooltip) {

@@ -10,6 +10,7 @@ import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
+import VendorVerificationCard from '../components/VendorVerificationCard'
 import { usePageSeo } from '../hooks/usePageSeo'
 
 const COMMUNITY_LISTING_CATEGORIES = ['tarantulas', 'breeding_projects']
@@ -355,6 +356,8 @@ export default function MarketplaceSellerPage() {
             </div>
           )}
         </div>
+
+        <VendorVerificationCard user={user} />
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 

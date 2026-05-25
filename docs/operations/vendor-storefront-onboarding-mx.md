@@ -26,13 +26,19 @@ Vendors arrancan en **Starter ($0 MXN)**. La suscripción Stripe se ajusta cada 
 | Plus | 13–30 | $499 MXN | `STRIPE_PRICE_ID_VENDOR_MONTHLY_MX_TIER2` |
 | Pro Shop | 31+ | $999 MXN | `STRIPE_PRICE_ID_VENDOR_MONTHLY_MX_TIER3` |
 
-**Pendiente de implementar** (próxima pasada de código):
+**Implementado en código (2026-05-24):**
 
-- Tabla `vendor_monthly_sales_count` (cron mensual cuenta `marketplace_listings.status='sold'` por seller en últimos 30 días).
-- Cron que ejecuta el swap de price ID en Stripe (`subscription.update(items=[{price: NEW_TIER_PRICE_ID}])`) para el mes siguiente.
-- 3 Stripe Products MX (Activo / Plus / Pro Shop) + sus env vars en Railway.
+- Cuenta ventas: `marketplace_listings` con `status=sold` y `updated_at` en últimos 30 días (`VendorMxTierService`).
+- API `GET /api/billing/vendor-mx-tier` + checkout Vendor en región MX usa el price del tier (Activo/Plus/Pro Shop).
+- Starter ($0) no abre checkout Stripe — onboarding por invitación / Admin.
 
-Mientras tanto = prioridad = onboardear vendors y llenar catálogo. Starter no requiere Stripe.
+**Pendiente (siguiente pasada):**
+
+- Cron mensual que hace `subscription.update` en Stripe cuando el tier baja o sube automáticamente.
+
+Precios live MXN en `scripts/output/stripe-price-ids-live.env` (`STRIPE_PRICE_ID_VENDOR_MONTHLY_MX_TIER1` … `TIER3`).
+
+Mientras tanto = onboardear vendors y llenar catálogo. Starter no requiere Stripe.
 
 ## 3. Badge "Tienda Verificada" — videollamada (separado de la activación)
 
@@ -45,7 +51,7 @@ Activar Vendor (paso 1) **no** otorga el badge. El badge requiere revisión huma
 3. Antes de la llamada el vendor prepara: INE (solo mostrar en cámara — **no** pedir fotos por correo), espacio/terrarios para recorrido, inventario + papel con `@handle` si lo pedimos, WhatsApp/IG para mostrar en pantalla, refs CITES en cámara si aplica.
 4. **Sesión (~15–20 min):** por defecto **no grabamos**. Si algún día se grabara para revisión interna → consentimiento explícito aparte.
 5. Equipo revisa en llamada (y notas internas mínimas): identidad en vivo, espacio real, consistencia inventario ↔ listings, señales de reventa.
-6. Si cuadra → `storefront_verified_at = NOW()` (columna **pendiente de migración**). UI muestra "Tienda Verificada" cuando `storefront_verified_at IS NOT NULL`.
+6. Si cuadra → Admin: `PATCH /api/admin/users/{id}/storefront-verified` con `{ "storefrontVerified": true }`, o aprobar self-verification en cola Marketplace. UI muestra "Tienda verificada" cuando `storefront_verified_at IS NOT NULL`.
 7. Si falta algo → correo follow-up; la cuenta sigue activa sin badge ("Tienda nueva") hasta cerrar el ciclo.
 
 ### Auditoría aleatoria
@@ -86,8 +92,7 @@ SET verified_breeder = true,
     verified_breeder_at = NOW()
 WHERE LOWER(email) = LOWER('correo@tienda.mx');
 
--- Otorgar badge "Tienda Verificada" después de revisión
--- (columna pendiente de migración: storefront_verified_at)
+-- Otorgar badge "Tienda Verificada" después de revisión (V107)
 -- UPDATE users SET storefront_verified_at = NOW() WHERE LOWER(email) = LOWER('correo@tienda.mx');
 
 -- Quitar badge tras auditoría fallida

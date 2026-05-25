@@ -106,6 +106,27 @@ public class BillingService {
     @Value("${stripe.price-id-yearly:}")
     private String priceIdYearly;
 
+    @Value("${stripe.price-id-monthly-us:}")
+    private String priceIdMonthlyUs;
+    @Value("${stripe.price-id-yearly-us:}")
+    private String priceIdYearlyUs;
+    @Value("${stripe.price-id-monthly-ca:}")
+    private String priceIdMonthlyCa;
+    @Value("${stripe.price-id-yearly-ca:}")
+    private String priceIdYearlyCa;
+    @Value("${stripe.price-id-monthly-mx:}")
+    private String priceIdMonthlyMx;
+    @Value("${stripe.price-id-yearly-mx:}")
+    private String priceIdYearlyMx;
+    @Value("${stripe.price-id-monthly-co:}")
+    private String priceIdMonthlyCo;
+    @Value("${stripe.price-id-yearly-co:}")
+    private String priceIdYearlyCo;
+    @Value("${stripe.price-id-monthly-int:}")
+    private String priceIdMonthlyInt;
+    @Value("${stripe.price-id-yearly-int:}")
+    private String priceIdYearlyInt;
+
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
@@ -136,6 +157,7 @@ public class BillingService {
     private boolean googlePlayRejectTestPurchasesInProduction;
 
     private final GooglePlayBillingClient googlePlayBillingClient;
+    private final VendorActivationService vendorActivationService;
 
     /** Falls back to {@code spring.profiles.active} so existing deployments keep working. */
     @Value("${app.environment:${spring.profiles.active:development}}")
@@ -152,7 +174,8 @@ public class BillingService {
                           ProcessedWebhookEventRepository processedWebhookEventRepository,
                           MarketplaceOrderRepository marketplaceOrderRepository,
                           MarketplaceOrderAuditService marketplaceOrderAuditService,
-                          GooglePlayBillingClient googlePlayBillingClient) {
+                          GooglePlayBillingClient googlePlayBillingClient,
+                          VendorActivationService vendorActivationService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -165,6 +188,7 @@ public class BillingService {
         this.marketplaceOrderRepository = marketplaceOrderRepository;
         this.marketplaceOrderAuditService = marketplaceOrderAuditService;
         this.googlePlayBillingClient = googlePlayBillingClient;
+        this.vendorActivationService = vendorActivationService;
     }
 
     @Transactional(readOnly = true)
@@ -594,9 +618,12 @@ public class BillingService {
         sub.setCancelAtPeriodEnd(false);
         subscriptionRepository.save(sub);
 
+        String billingTier = checkout.path("metadata").path("billingTier").asText("pro");
         user.setPlan(UserPlan.PRO);
         userRepository.save(user);
-        if (!wasPro) {
+        if ("vendor".equalsIgnoreCase(billingTier)) {
+            activateVendorAfterPaidSubscription(user);
+        } else if (!wasPro) {
             emailService.sendProActivated(user.getEmail(), user.getDisplayName(), user.getPreferredLocale());
         }
         long amountTotal = checkout.path("amount_total").asLong(0L);
@@ -610,6 +637,17 @@ public class BillingService {
                     currency,
                     ""
             );
+        }
+    }
+
+    private void activateVendorAfterPaidSubscription(User user) {
+        if (user == null) {
+            return;
+        }
+        try {
+            vendorActivationService.activateVendor(user.getId(), true);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Vendor activation after subscription failed for user {}: {}", user.getId(), ex.getMessage());
         }
     }
 
@@ -764,9 +802,26 @@ public class BillingService {
         if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
             return false;
         }
-        return (stripePriceId != null && !stripePriceId.isBlank())
-                || (priceIdMonthly != null && !priceIdMonthly.isBlank())
-                || (priceIdYearly != null && !priceIdYearly.isBlank());
+        return !effectivePriceId().isBlank()
+                || anyPriceIdConfigured(
+                stripePriceId, priceIdMonthly, priceIdYearly,
+                priceIdMonthlyUs, priceIdYearlyUs,
+                priceIdMonthlyCa, priceIdYearlyCa,
+                priceIdMonthlyMx, priceIdYearlyMx,
+                priceIdMonthlyCo, priceIdYearlyCo,
+                priceIdMonthlyInt, priceIdYearlyInt);
+    }
+
+    private static boolean anyPriceIdConfigured(String... ids) {
+        if (ids == null) {
+            return false;
+        }
+        for (String id : ids) {
+            if (id != null && !id.isBlank()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** First non-blank legacy or monthly/yearly price id (webhook / legacy REST checkout). */

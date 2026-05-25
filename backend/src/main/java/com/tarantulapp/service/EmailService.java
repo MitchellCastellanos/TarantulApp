@@ -435,6 +435,22 @@ public class EmailService {
         }
     }
 
+    public void sendPartnerCatalogLiveEmail(String toEmail, String partnerName, long listingCount,
+                                            String storefrontUrl, String websiteUrl, String locale) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        String sendDate = formatBetaSendDateForLocale(loc);
+        String body = BetaMailBodies.partnerCatalogLiveBody(
+                loc, partnerName, listingCount, storefrontUrl, websiteUrl, sendDate);
+        String subject = BetaMailBodies.campaignSubject("partner_catalog_live", loc);
+        try {
+            doSend(toEmail, subject, body);
+            log.info("Partner catalog live email sent to {} (locale={})", LogSafe.maskEmail(toEmail), loc);
+        } catch (Exception e) {
+            log.error("Failed partner catalog email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar correo partner catalog: " + e.getMessage());
+        }
+    }
+
     public void sendVendorInviteEmail(String toEmail, String displayName, String locale, String inviteAbsoluteUrl) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         String sendDate = formatBetaSendDateForLocale(loc);

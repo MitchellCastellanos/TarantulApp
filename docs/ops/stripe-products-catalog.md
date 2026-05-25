@@ -10,6 +10,7 @@ Referencia única para crear **Products / Prices** en Stripe y **suscripciones /
 | CA | CAD | `_CA` |
 | MX | MXN | `_MX` |
 | CO | COP | `_CO` |
+| INT (resto del mundo) | USD | `_INT` (fallback a `_US` si falta) |
 
 El **listing boost** usa el país del anuncio (`MarketplaceListing.country`) para elegir el `price` de Stripe; si falta el id regional, se hace fallback a US y luego al id legacy `STRIPE_PRICE_ID_LISTING_BOOST`.
 
@@ -29,6 +30,8 @@ Crea **8 Prices** (recurring), tipo subscription:
 | Pro yearly MX | `STRIPE_PRICE_ID_YEARLY_MX` | yearly |
 | Pro monthly CO | `STRIPE_PRICE_ID_MONTHLY_CO` | monthly |
 | Pro yearly CO | `STRIPE_PRICE_ID_YEARLY_CO` | yearly |
+| Pro monthly INT | `STRIPE_PRICE_ID_MONTHLY_INT` | monthly |
+| Pro yearly INT | `STRIPE_PRICE_ID_YEARLY_INT` | yearly |
 
 **Fallback legacy (opcional, un solo mercado):**
 

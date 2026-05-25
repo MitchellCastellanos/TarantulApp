@@ -1154,6 +1154,7 @@ public class MarketplaceService {
         out.put("sellerProfilePhoto", seller == null || seller.getProfilePhoto() == null ? "" : seller.getProfilePhoto());
         out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("sellerVerifiedBreeder", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
+        out.put("sellerStorefrontVerified", seller != null && seller.getStorefrontVerifiedAt() != null);
         out.put("sellerProgramTier", sellerProgramTierKey(seller));
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
@@ -1298,6 +1299,8 @@ public class MarketplaceService {
         out.put("contactInstagram", p.getContactInstagram() == null ? "" : p.getContactInstagram());
         out.put("verifiedBreeder", Boolean.TRUE.equals(p.getVerifiedBreeder()));
         out.put("verifiedBreederAt", p.getVerifiedBreederAt());
+        out.put("storefrontVerified", p.getStorefrontVerifiedAt() != null);
+        out.put("storefrontVerifiedAt", p.getStorefrontVerifiedAt());
         out.put("storefrontName", p.getStorefrontName() == null ? "" : p.getStorefrontName());
         out.put("storefrontTagline", p.getStorefrontTagline() == null ? "" : p.getStorefrontTagline());
         out.put("storefrontShippingPolicy", p.getStorefrontShippingPolicy() == null ? "" : p.getStorefrontShippingPolicy());
@@ -1901,5 +1904,24 @@ public class MarketplaceService {
             return 0L;
         }
         return Math.max(0L, ChronoUnit.DAYS.between(earliest, today));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> publicMarketplaceStats() {
+        long peerActive = marketplaceListingRepository.countByStatusIgnoreCase("active");
+        long partnerActive = partnerListingRepository.countByStatus(PartnerListingStatus.ACTIVE);
+        long strategicVendors = officialVendorRepository.findByEnabledTrueOrderByInfluenceScoreDescNameAsc().stream()
+                .filter(v -> v.getPartnerProgramTier() != null
+                        && STRATEGIC_PARTNER_FEED_TIERS.contains(v.getPartnerProgramTier()))
+                .count();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("peerActiveListings", peerActive);
+        out.put("partnerActiveListings", partnerActive);
+        out.put("totalActiveListings", peerActive + partnerActive);
+        out.put("strategicPartnerVendorCount", strategicVendors);
+        long displayPartner = partnerActive >= 400 ? 400 : partnerActive;
+        out.put("partnerListingsDisplayCount", displayPartner);
+        out.put("partnerListingsDisplayPlus", partnerActive >= 400);
+        return out;
     }
 }

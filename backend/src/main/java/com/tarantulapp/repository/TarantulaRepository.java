@@ -90,9 +90,12 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
     @Query("UPDATE Tarantula t SET t.isPublic = :isPublic WHERE t.userId = :userId")
     int setVisibilityByUserId(@Param("userId") UUID userId, @Param("isPublic") boolean isPublic);
 
-    @EntityGraph(attributePaths = "species")
+    /**
+     * Paginated IDs only — avoids Hibernate emitting SELECT DISTINCT with ORDER BY COALESCE,
+     * which PostgreSQL rejects (see TARANTULAPP-BACKEND-PROD-1S).
+     */
     @Query("""
-            SELECT t FROM Tarantula t
+            SELECT t.id FROM Tarantula t
             WHERE t.isPublic = true
               AND (
                 (t.profilePhoto IS NOT NULL AND LENGTH(TRIM(t.profilePhoto)) > 0)
@@ -100,7 +103,10 @@ public interface TarantulaRepository extends JpaRepository<Tarantula, UUID> {
               )
             ORDER BY t.spotlightAt DESC NULLS LAST, t.createdAt DESC
             """)
-    Page<Tarantula> findCommunitySpotlightCandidates(Pageable pageable);
+    Page<UUID> findCommunitySpotlightCandidateIds(Pageable pageable);
+
+    @Query("SELECT t FROM Tarantula t LEFT JOIN FETCH t.species WHERE t.id IN :ids")
+    List<Tarantula> findByIdInWithSpecies(@Param("ids") List<UUID> ids);
 
     @Query("SELECT DISTINCT t.userId FROM Tarantula t")
     List<UUID> findDistinctUserIds();

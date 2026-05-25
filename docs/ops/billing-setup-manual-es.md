@@ -2,7 +2,7 @@
 
 Guía única para crear productos, precios, variables de entorno, webhooks y comportamiento **desde Android** (Vendor / Boost vía Stripe sin esperar SKUs de Play). Precios orientativos **medios** (ni regalo ni premium); ajustá ±10 % según redondeos y tipo de cambio.
 
-**Regiones backend:** US, CA, MX, CO.
+**Regiones backend:** US, CA, MX, CO, INT (resto del mundo, USD).
 
 ---
 
@@ -32,14 +32,16 @@ Para boost: **One time**.
 
 | Billing | Moneda | Importe | Nombre interno sugerido (Stripe) |
 |---------|--------|---------|----------------------------------|
-| Monthly | USD | **6.99** | Pro — US mensual |
-| Yearly | USD | **59.99** | Pro — US anual |
-| Monthly | CAD | **9.49** | Pro — CA mensual |
-| Yearly | CAD | **79.99** | Pro — CA anual |
-| Monthly | MXN | **119.00** | Pro — MX mensual |
-| Yearly | MXN | **999.00** | Pro — MX anual |
-| Monthly | COP | **19 900** | Pro — CO mensual |
-| Yearly | COP | **179 000** | Pro — CO anual |
+| Monthly | USD | **4.99** | Pro — US mensual |
+| Yearly | USD | **49.99** | Pro — US anual |
+| Monthly | CAD | **6.99** | Pro — CA mensual |
+| Yearly | CAD | **69.99** | Pro — CA anual |
+| Monthly | MXN | **79.00** | Pro — MX mensual |
+| Yearly | MXN | **790.00** | Pro — MX anual |
+| Monthly | COP | **14 900** | Pro — CO mensual |
+| Yearly | COP | **149 000** | Pro — CO anual |
+| Monthly | USD | **4.99** | Pro — INT / resto del mundo |
+| Yearly | USD | **49.99** | Pro — INT anual |
 
 *(Si COP debe ser múltiplo de 100 en tu cuenta, redondeá manteniendo proporción.)*
 
@@ -54,10 +56,10 @@ Para boost: **One time**.
 
 | Billing | Moneda | Importe | Nombre sugerido |
 |---------|--------|---------|-----------------|
-| Monthly | USD | **14.99** | Vendor — US mensual |
-| Yearly | USD | **149.00** | Vendor — US anual |
-| Monthly | CAD | **19.99** | Vendor — CA mensual |
-| Yearly | CAD | **199.00** | Vendor — CA anual |
+| Monthly | USD | **9.99** | Vendor — US mensual |
+| Yearly | USD | **99.99** | Vendor — US anual |
+| Monthly | CAD | **15.99** | Vendor — CA mensual |
+| Yearly | CAD | **159.99** | Vendor — CA anual |
 | Monthly | MXN | **249.00** | Vendor — MX mensual |
 | Yearly | MXN | **2 399.00** | Vendor — MX anual |
 | Monthly | COP | **39 900** | Vendor — CO mensual |
@@ -101,6 +103,8 @@ STRIPE_PRICE_ID_MONTHLY_MX=price_...
 STRIPE_PRICE_ID_YEARLY_MX=price_...
 STRIPE_PRICE_ID_MONTHLY_CO=price_...
 STRIPE_PRICE_ID_YEARLY_CO=price_...
+STRIPE_PRICE_ID_MONTHLY_INT=price_...
+STRIPE_PRICE_ID_YEARLY_INT=price_...
 
 # ─── Vendor (8) ───
 STRIPE_PRICE_ID_VENDOR_MONTHLY_US=price_...

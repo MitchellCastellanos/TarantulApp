@@ -34,6 +34,7 @@ public final class BetaMailBodies {
             "creator_partner_onboarding",
             "creator_partner_reminder",
             "vendor_welcome_mx",
+            "partner_catalog_live",
             "tarantula_public_default"
     );
 
@@ -41,6 +42,7 @@ public final class BetaMailBodies {
     private static final Set<String> NON_BETA_RECIPIENT_KEYS = Set.of(
             "play_early_access_web",
             "vendor_welcome_mx",
+            "partner_catalog_live",
             "tarantula_public_default"
     );
 
@@ -117,6 +119,11 @@ public final class BetaMailBodies {
                 case "en" -> "TarantulApp Marketplace — Your vendor storefront is live (Mexico)";
                 case "fr" -> "TarantulApp Marketplace — Votre boutique vendeur est active (Mexique)";
                 default -> "TarantulApp Marketplace — Tu tienda vendor ya está activa (México)";
+            };
+            case "partner_catalog_live" -> switch (loc) {
+                case "en" -> "TarantulApp — Your storefront is live (no setup needed on your side)";
+                case "fr" -> "TarantulApp — Votre vitrine est en ligne (rien à configurer de votre côté)";
+                default -> "TarantulApp — Tu vitrina ya está en la app (no necesitas subir nada)";
             };
             case "tarantula_public_default" -> switch (loc) {
                 case "en" -> "TarantulApp — Your spiders are now public by default";
@@ -1196,5 +1203,93 @@ public final class BetaMailBodies {
                 + "2) Sur la fiche de chaque araignée, utilisez le bouton de visibilité (🌐 publique / 🔒 privée).\n\n"
                 + "App : " + url + "\n\n"
                 + "— TarantulApp\n";
+    }
+
+    /** Strategic partner outreach after catalog sync (no user account required). */
+    public static String partnerCatalogLiveBody(String locale, String partnerName, long listingCount,
+                                                String storefrontUrl, String websiteUrl, String sendDate) {
+        String loc = normalizeLocale(locale);
+        String name = partnerName == null || partnerName.isBlank() ? "partner" : partnerName.trim();
+        String store = storefrontUrl == null || storefrontUrl.isBlank() ? DEFAULT_APP_URL + "/marketplace" : storefrontUrl.trim();
+        String site = websiteUrl == null || websiteUrl.isBlank() ? "" : websiteUrl.trim();
+        return switch (loc) {
+            case "en" -> partnerCatalogLiveEn(name, listingCount, store, site, sendDate);
+            case "fr" -> partnerCatalogLiveFr(name, listingCount, store, site, sendDate);
+            default -> partnerCatalogLiveEs(name, listingCount, store, site, sendDate);
+        };
+    }
+
+    private static final String PARTNER_EXAMPLE_STOREFRONT =
+            DEFAULT_APP_URL + "/partner/monarch-reptiles";
+
+    private static String partnerCatalogLiveEs(String name, long count, String store, String site, String sendDate) {
+        return "Hola equipo " + name + ",\n\n"
+                + "Fecha: " + sendDate + "\n\n"
+                + "Te escribimos porque ya estás en el programa de socios estratégicos de TarantulApp: "
+                + "tu vitrina y tus artículos en el marketplace salen de tu tienda en línea (WooCommerce u otro feed), "
+                + "sin que tengas que crear cuentas, subir fotos ni duplicar inventario en nuestra app.\n\n"
+                + "En la práctica:\n"
+                + "• No necesitamos nada de ustedes para que la vitrina y el catálogo estén visibles.\n"
+                + "• Lo que publicas y actualizas en tu web se refleja en la app en el siguiente sync automático.\n"
+                + "• Los keepers exploran en TarantulApp; el checkout sigue en tu sitio (tráfico calificado, sin comisión "
+                + "ni custodia de pagos en este track fundador).\n\n"
+                + "Tu vitrina en la app:\n" + store + "\n"
+                + (count > 0 ? "Productos visibles ahora: " + count + "\n" : "Primer sync en curso — en breve verás artículos.\n")
+                + (site.isBlank() ? "" : "Tu tienda: " + site + "\n")
+                + "\nReferencia (ya en vivo): Monarch Reptiles — "
+                + PARTNER_EXAMPLE_STOREFRONT + "\n"
+                + "Mismo modelo: catálogo espejo + carrito que lleva a su WooCommerce cuando el keeper compra.\n\n"
+                + "Opcional (solo si quieren afinar conversión):\n"
+                + "• Probar una compra desde la app: añadir al carrito → checkout en su sitio.\n"
+                + "• Si el handoff de carrito devuelve error en su Woo, avísennos — suele ser permisos del tema/plugin, "
+                + "no algo que tengan que “configurar” en TarantulApp.\n\n"
+                + "¿Cambio de URL del feed o pausa? Responde este correo.\n\n"
+                + "— Equipo TarantulApp\n";
+    }
+
+    private static String partnerCatalogLiveEn(String name, long count, String store, String site, String sendDate) {
+        return "Hi " + name + " team,\n\n"
+                + "Date: " + sendDate + "\n\n"
+                + "You’re on TarantulApp’s strategic partner track: your in-app storefront and marketplace listings "
+                + "mirror your existing online store (WooCommerce or another feed). You do not need to create accounts, "
+                + "upload photos, or maintain a second catalog in our app.\n\n"
+                + "In practice:\n"
+                + "• We do not need anything from you for the storefront and products to go live.\n"
+                + "• Updates on your website flow into the app on the next automatic sync.\n"
+                + "• Keepers browse in TarantulApp; checkout stays on your site (qualified traffic — no platform fee "
+                + "or payment custody on this founding track).\n\n"
+                + "Your in-app storefront:\n" + store + "\n"
+                + (count > 0 ? "Live products now: " + count + "\n" : "First sync in progress — listings will appear shortly.\n")
+                + (site.isBlank() ? "" : "Your store: " + site + "\n")
+                + "\nLive reference: Monarch Reptiles — " + PARTNER_EXAMPLE_STOREFRONT + "\n"
+                + "Same model: mirrored catalog + cart handoff to their WooCommerce at purchase time.\n\n"
+                + "Optional (only if you want to tune conversion):\n"
+                + "• Run a test purchase from the app: add to cart → checkout on your site.\n"
+                + "• If cart handoff errors on your Woo side, tell us — it’s usually theme/plugin permissions, "
+                + "not something you configure inside TarantulApp.\n\n"
+                + "Feed URL change or pause? Reply to this email.\n\n"
+                + "— TarantulApp team\n";
+    }
+
+    private static String partnerCatalogLiveFr(String name, long count, String store, String site, String sendDate) {
+        return "Bonjour équipe " + name + ",\n\n"
+                + "Date : " + sendDate + "\n\n"
+                + "Vous êtes sur le programme partenaires stratégiques TarantulApp : votre vitrine et vos annonces "
+                + "reflètent votre boutique en ligne (WooCommerce ou autre flux). Aucun compte à créer, aucune photo "
+                + "à téléverser, aucun inventaire en double dans l’app.\n\n"
+                + "En pratique :\n"
+                + "• Rien n’est requis de votre côté pour que la vitrine et le catalogue soient visibles.\n"
+                + "• Les mises à jour sur votre site arrivent dans l’app au prochain sync automatique.\n"
+                + "• Les keepers parcourent TarantulApp ; le paiement reste sur votre site (trafic qualifié — pas de "
+                + "commission ni de détention de paiement sur ce track fondateur).\n\n"
+                + "Vitrine dans l’app :\n" + store + "\n"
+                + (count > 0 ? "Produits visibles : " + count + "\n" : "Première sync en cours.\n")
+                + (site.isBlank() ? "" : "Boutique : " + site + "\n")
+                + "\nRéférence en ligne : Monarch Reptiles — " + PARTNER_EXAMPLE_STOREFRONT + "\n"
+                + "Même modèle : catalogue miroir + panier vers leur WooCommerce à l’achat.\n\n"
+                + "Optionnel : un achat test depuis l’app ; en cas d’erreur de handoff panier, nous le signaler — "
+                + "souvent lié aux permissions Woo/thème, pas à un réglage dans TarantulApp.\n\n"
+                + "Changement d’URL de flux ou pause ? Répondez à ce courriel.\n\n"
+                + "— Équipe TarantulApp\n";
     }
 }

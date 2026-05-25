@@ -7,6 +7,7 @@ const marketplaceService = {
   getDealQuote: (listingId, subtotal) =>
     publicApi.get(`/public/marketplace/deal-quote/${listingId}`, { params: { subtotal } }).then((r) => r.data),
   getListingBoostOffer: () => publicApi.get('/public/marketplace/listing-boost-offer').then((r) => r.data),
+  publicStats: () => publicApi.get('/public/marketplace/stats').then((r) => r.data),
   listOfficialVendors: (params = {}) => publicApi.get('/public/marketplace/official-vendors', { params }).then((r) => r.data),
   listVerifiedVendors: (limit = 12) =>
     publicApi.get('/public/marketplace/verified-vendors', { params: { limit } }).then((r) => r.data),
@@ -57,6 +58,9 @@ const marketplaceService = {
   /** Per-listing analytics for the current seller. */
   getSellerAnalytics: () =>
     api.get('/marketplace/seller/analytics', { skipAuthRedirect: true }).then((r) => r.data),
+  vendorVerificationMe: () => api.get('/marketplace/vendor-verification/me').then((r) => r.data),
+  submitVendorVerification: (payload) =>
+    api.post('/marketplace/vendor-verification', payload).then((r) => r.data),
 }
 
 export default marketplaceService

@@ -29,6 +29,10 @@ export default function AdminMarketplacePage() {
   const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
   const [syncRuns, setSyncRuns] = useState([])
   const [syncRunsLoading, setSyncRunsLoading] = useState(false)
+  const [leadPromoteBusyId, setLeadPromoteBusyId] = useState(null)
+  const [vendorVerifications, setVendorVerifications] = useState([])
+  const [verificationBusyId, setVerificationBusyId] = useState(null)
+  const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -53,12 +57,14 @@ export default function AdminMarketplacePage() {
       adminService.reports('open'),
       adminService.officialVendors(),
       adminService.officialVendorLeads(),
+      adminService.vendorVerifications('pending').catch(() => []),
     ])
-      .then(([openReports, vendors, leads]) => {
+      .then(([openReports, vendors, leads, verifications]) => {
         if (cancelled) return
         setReports(Array.isArray(openReports) ? openReports : [])
         setOfficialVendors(Array.isArray(vendors) ? vendors : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
+        setVendorVerifications(Array.isArray(verifications) ? verifications : [])
       })
       .catch(() => {
         if (!cancelled) setError(t('admin.loadError'))
@@ -72,6 +78,61 @@ export default function AdminMarketplacePage() {
     const id = window.setTimeout(() => loadSellers(), 280)
     return () => window.clearTimeout(id)
   }, [loadSellers])
+
+  const sendPartnerCatalogToVendor = async (vendor, locale = 'es') => {
+    setPartnerCatalogBusyKey(`${vendor.id}:${locale}`)
+    setError('')
+    try {
+      const data = await adminService.sendOfficialVendorPartnerCatalogEmail(vendor.id, { locale })
+      setSuccess(t('admin.partnerCatalogEmailSent', { email: data?.email, count: data?.listingCount ?? 0 }))
+    } catch {
+      setError(t('admin.loadError'))
+    } finally {
+      setPartnerCatalogBusyKey(null)
+    }
+  }
+
+  const sendPartnerCatalogToLead = async (lead, locale = 'es') => {
+    setPartnerCatalogBusyKey(`lead:${lead.id}:${locale}`)
+    setError('')
+    try {
+      const data = await adminService.sendOfficialVendorLeadPartnerCatalogEmail(lead.id, { locale })
+      setSuccess(t('admin.partnerCatalogEmailSent', { email: data?.email, count: 0 }))
+    } catch {
+      setError(t('admin.loadError'))
+    } finally {
+      setPartnerCatalogBusyKey(null)
+    }
+  }
+
+  const promoteLead = async (lead) => {
+    if (!lead?.id || lead.status === 'converted') return
+    if (!lead.websiteUrl?.trim()) {
+      setError(t('admin.promoteLeadNeedsWebsite'))
+      return
+    }
+    setLeadPromoteBusyId(lead.id)
+    setError('')
+    setSuccess('')
+    try {
+      const result = await adminService.promoteOfficialVendorLead(lead.id, {
+        enableImport: false,
+        strategicFounder: false,
+      })
+      const vendor = result?.vendor
+      setOfficialLeads((prev) =>
+        prev.map((l) => (l.id === lead.id ? { ...l, status: 'converted' } : l)),
+      )
+      if (vendor) {
+        setOfficialVendors((prev) => [vendor, ...prev])
+      }
+      setSuccess(t('admin.promoteLeadSuccess', { slug: vendor?.slug || '' }))
+    } catch {
+      setError(t('admin.promoteLeadError'))
+    } finally {
+      setLeadPromoteBusyId(null)
+    }
+  }
 
   const loadSyncRuns = async () => {
     setSyncRunsLoading(true)
@@ -379,6 +440,77 @@ export default function AdminMarketplacePage() {
         </p>
       </section>
 
+      <section className="card p-3 mb-4">
+        <h3 className="h6 mb-3">{t('admin.vendorVerificationTitle', { defaultValue: 'Vendor verification queue' })}</h3>
+        {vendorVerifications.length === 0 ? (
+          <p className="small text-muted mb-0">{t('admin.vendorVerificationEmpty', { defaultValue: 'No pending submissions.' })}</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>{t('admin.vendorVerificationColUser', { defaultValue: 'User' })}</th>
+                  <th>{t('admin.created', { defaultValue: 'Created' })}</th>
+                  <th>{t('admin.officialLeadsColActions', { defaultValue: 'Actions' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendorVerifications.map((row) => (
+                  <tr key={row.id}>
+                    <td className="small">
+                      <div>{row.userEmail}</div>
+                      <a href={row.selfieMediaUrl} target="_blank" rel="noreferrer" className="small">
+                        {t('admin.vendorVerificationMedia', { defaultValue: 'Media' })}
+                      </a>
+                    </td>
+                    <td className="small">{row.createdAt ? new Date(row.createdAt).toLocaleString() : '—'}</td>
+                    <td className="d-flex gap-1">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-success"
+                        disabled={verificationBusyId === row.id}
+                        onClick={async () => {
+                          setVerificationBusyId(row.id)
+                          try {
+                            await adminService.reviewVendorVerification(row.id, { status: 'approved' })
+                            setVendorVerifications((prev) => prev.filter((v) => v.id !== row.id))
+                            setSuccess(t('admin.vendorVerificationStorefrontApproved', { defaultValue: 'Verified Shop badge granted (not vendor activation).' }))
+                          } catch {
+                            setError(t('admin.loadError'))
+                          } finally {
+                            setVerificationBusyId(null)
+                          }
+                        }}
+                      >
+                        {t('admin.vendorVerificationApprove', { defaultValue: 'Approve' })}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        disabled={verificationBusyId === row.id}
+                        onClick={async () => {
+                          setVerificationBusyId(row.id)
+                          try {
+                            await adminService.reviewVendorVerification(row.id, { status: 'rejected' })
+                            setVendorVerifications((prev) => prev.filter((v) => v.id !== row.id))
+                          } catch {
+                            setError(t('admin.loadError'))
+                          } finally {
+                            setVerificationBusyId(null)
+                          }
+                        }}
+                      >
+                        {t('admin.vendorVerificationReject', { defaultValue: 'Reject' })}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section className="card p-3 mb-4 border-warning">
         <h3 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h3>
         <p className="small text-muted mb-2">{t('admin.strategicPartnerSectionBlurb')}</p>
@@ -464,13 +596,28 @@ export default function AdminMarketplacePage() {
                       />
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${v.enabled ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                        onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
-                      >
-                        {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
-                      </button>
+                      <div className="d-flex flex-column gap-1">
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${v.enabled ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                          onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
+                        >
+                          {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
+                        </button>
+                        <div className="btn-group btn-group-sm">
+                          {['es', 'en'].map((loc) => (
+                            <button
+                              key={loc}
+                              type="button"
+                              className="btn btn-outline-primary"
+                              disabled={partnerCatalogBusyKey === `${v.id}:${loc}`}
+                              onClick={() => sendPartnerCatalogToVendor(v, loc)}
+                            >
+                              {partnerCatalogBusyKey === `${v.id}:${loc}` ? '…' : `📧 ${loc}`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -494,6 +641,7 @@ export default function AdminMarketplacePage() {
                   <th>{t('admin.officialLeadsColCoverage')}</th>
                   <th>{t('admin.officialLeadsColNotes')}</th>
                   <th>{t('admin.created')}</th>
+                  <th>{t('admin.officialLeadsColActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -510,6 +658,36 @@ export default function AdminMarketplacePage() {
                     <td>{[lead.city, lead.state, lead.country].filter(Boolean).join(' · ') || '-'}</td>
                     <td>{lead.note || '-'}</td>
                     <td>{lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
+                    <td>
+                      {lead.status === 'converted' ? (
+                        <span className="badge bg-secondary">{t('admin.promoteLeadConverted')}</span>
+                      ) : (
+                        <div className="d-flex flex-column gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-dark"
+                            disabled={leadPromoteBusyId === lead.id}
+                            onClick={() => promoteLead(lead)}
+                          >
+                            {leadPromoteBusyId === lead.id ? t('common.loading') : t('admin.promoteLeadToVendor')}
+                          </button>
+                          <div className="btn-group btn-group-sm">
+                            {['es', 'en'].map((loc) => (
+                              <button
+                                key={loc}
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                disabled={partnerCatalogBusyKey === `lead:${lead.id}:${loc}`}
+                                onClick={() => sendPartnerCatalogToLead(lead, loc)}
+                                title={t('admin.sendPartnerCatalogHint')}
+                              >
+                                {partnerCatalogBusyKey === `lead:${lead.id}:${loc}` ? '…' : `📧 ${loc}`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

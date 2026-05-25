@@ -26,25 +26,25 @@ import java.util.Set;
 @Order(1)
 public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartnerListingAdapter {
     private static final Logger log = LoggerFactory.getLogger(WooCommerceStrategicPartnerListingAdapter.class);
-    private static final Set<String> SUPPORTED_SLUGS = Set.of("monarch-reptiles");
+    private static final Set<String> LEGACY_WOO_SLUGS = Set.of("monarch-reptiles");
 
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final boolean enabled;
-    private final String storeBaseUrl;
+    private final String defaultStoreBaseUrl;
     private final int pageSize;
     private final int maxPages;
 
     public WooCommerceStrategicPartnerListingAdapter(
             ObjectMapper objectMapper,
             @Value("${app.partner-sync.adapters.woocommerce.enabled:true}") boolean enabled,
-            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String storeBaseUrl,
+            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String defaultStoreBaseUrl,
             @Value("${app.partner-sync.adapters.woocommerce.page-size:100}") int pageSize,
             @Value("${app.partner-sync.adapters.woocommerce.max-pages:80}") int maxPages) {
         this.objectMapper = objectMapper;
         this.restTemplate = new RestTemplate();
         this.enabled = enabled;
-        this.storeBaseUrl = trimTrailingSlash(storeBaseUrl);
+        this.defaultStoreBaseUrl = trimTrailingSlash(defaultStoreBaseUrl);
         this.pageSize = Math.max(10, Math.min(pageSize, 100));
         this.maxPages = Math.max(1, Math.min(maxPages, 200));
     }
@@ -54,11 +54,19 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         if (!enabled || vendor == null || vendor.getSlug() == null) {
             return false;
         }
-        return SUPPORTED_SLUGS.contains(vendor.getSlug().toLowerCase(Locale.ROOT));
+        String feedType = vendor.getFeedType();
+        if (feedType != null && "woocommerce".equalsIgnoreCase(feedType.trim())) {
+            return resolveStoreBaseUrl(vendor) != null;
+        }
+        return LEGACY_WOO_SLUGS.contains(vendor.getSlug().toLowerCase(Locale.ROOT));
     }
 
     @Override
     public List<StrategicVendorRawListing> fetch(OfficialVendor vendor) {
+        String storeBaseUrl = resolveStoreBaseUrl(vendor);
+        if (storeBaseUrl == null) {
+            return List.of();
+        }
         List<StrategicVendorRawListing> out = new ArrayList<>();
         for (int page = 1; page <= maxPages; page++) {
             String url = UriComponentsBuilder
@@ -106,7 +114,7 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         BigDecimal price = parseStorePrice(prices == null ? null : prices.get("price"));
         String currency = prices == null ? "CAD" : text(prices, "currency_code");
         Integer stock = parseStock(product);
-        String imageUrl = firstImageUrl(product.get("images"), storeBaseUrl);
+        String imageUrl = firstImageUrl(product.get("images"), resolveStoreBaseUrl(vendor));
         String species = guessSpeciesFromTitle(title);
 
         return new StrategicVendorRawListing(
@@ -237,11 +245,31 @@ public class WooCommerceStrategicPartnerListingAdapter implements StrategicPartn
         return s.isEmpty() ? null : s;
     }
 
-    private String trimTrailingSlash(String url) {
-        if (url == null) {
-            return "https://monarchreptiles.com";
+    private String resolveStoreBaseUrl(OfficialVendor vendor) {
+        if (vendor == null) {
+            return null;
         }
-        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+        String fromFeed = trimTrailingSlash(vendor.getFeedBaseUrl());
+        if (fromFeed != null && !fromFeed.isBlank()) {
+            return fromFeed;
+        }
+        String fromSite = trimTrailingSlash(vendor.getWebsiteUrl());
+        if (fromSite != null && !fromSite.isBlank()) {
+            return fromSite;
+        }
+        if (vendor.getSlug() != null
+                && LEGACY_WOO_SLUGS.contains(vendor.getSlug().toLowerCase(Locale.ROOT))) {
+            return defaultStoreBaseUrl;
+        }
+        return null;
+    }
+
+    private String trimTrailingSlash(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String trimmed = url.trim();
+        return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
     }
 
     @Override

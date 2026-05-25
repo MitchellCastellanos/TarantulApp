@@ -153,7 +153,7 @@ export default function PublicKeeperProfilePage() {
                   {t('marketplace.rating')}: {keeperData?.ratingAvg ?? 0} ({keeperData?.reviewsCount ?? 0})
                 </div>
                 <div className="d-flex flex-wrap gap-2 mb-2">
-                  {kp?.verifiedBreeder ? <VerifiedVendorBadge showTooltip /> : null}
+                  {kp?.storefrontVerified ? <VerifiedVendorBadge showTooltip verified /> : null}
                   <ResponseBadge
                     badge={keeperData?.profile?.responseBadge || keeperData?.storefrontMetrics?.responseBadge}
                     avgResponseHours={

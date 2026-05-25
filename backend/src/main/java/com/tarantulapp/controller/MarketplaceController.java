@@ -3,6 +3,7 @@ package com.tarantulapp.controller;
 import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
+import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -34,17 +35,22 @@ public class MarketplaceController {
     private final MarketplaceService marketplaceService;
     private final MarketplaceOrderService marketplaceOrderService;
     private final ListingEventService listingEventService;
+    private final VendorVerificationService vendorVerificationService;
     private final SecurityHelper securityHelper;
 
     public MarketplaceController(MarketplaceService marketplaceService,
                                 MarketplaceOrderService marketplaceOrderService,
                                 ListingEventService listingEventService,
+                                VendorVerificationService vendorVerificationService,
                                 SecurityHelper securityHelper) {
         this.marketplaceService = marketplaceService;
         this.marketplaceOrderService = marketplaceOrderService;
         this.listingEventService = listingEventService;
+        this.vendorVerificationService = vendorVerificationService;
         this.securityHelper = securityHelper;
     }
+
+    record VendorVerificationSubmitRequest(String selfieMediaUrl, String inventoryMediaUrl, String paperMediaUrl) {}
 
     record CreateListingRequest(
             @NotBlank String title,
@@ -204,5 +210,24 @@ public class MarketplaceController {
     @GetMapping("/seller/analytics")
     public ResponseEntity<Map<String, Object>> getSellerAnalytics() {
         return ResponseEntity.ok(listingEventService.getSellerAnalytics(securityHelper.getCurrentUserId()));
+    }
+
+    @GetMapping("/vendor-verification/me")
+    public ResponseEntity<Map<String, Object>> vendorVerificationStatus() {
+        return ResponseEntity.ok(vendorVerificationService.myStatus(securityHelper.getCurrentUserId()));
+    }
+
+    @PostMapping("/vendor-verification")
+    public ResponseEntity<Map<String, Object>> submitVendorVerification(
+            @RequestBody VendorVerificationSubmitRequest req) {
+        try {
+            return ResponseEntity.ok(vendorVerificationService.submit(
+                    securityHelper.getCurrentUserId(),
+                    req == null ? null : req.selfieMediaUrl(),
+                    req == null ? null : req.inventoryMediaUrl(),
+                    req == null ? null : req.paperMediaUrl()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

@@ -17,13 +17,16 @@ import java.util.stream.Collectors;
 public class PartnerCartHandoffService {
 
     private final OfficialVendorRepository officialVendorRepository;
-    private final String monarchStoreBaseUrl;
+    private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
+    private final String defaultStoreBaseUrl;
 
     public PartnerCartHandoffService(
             OfficialVendorRepository officialVendorRepository,
-            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String monarchStoreBaseUrl) {
+            PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
+            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String defaultStoreBaseUrl) {
         this.officialVendorRepository = officialVendorRepository;
-        this.monarchStoreBaseUrl = trimTrailingSlash(monarchStoreBaseUrl);
+        this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
+        this.defaultStoreBaseUrl = trimTrailingSlash(defaultStoreBaseUrl);
     }
 
     public Map<String, Object> buildHandoff(String vendorSlug, List<CartLine> lines) {
@@ -33,10 +36,11 @@ public class PartnerCartHandoffService {
             throw new IllegalArgumentException("El carrito esta vacio");
         }
         List<CartLine> normalized = normalizeLines(lines);
+        String storeBase = resolveStoreBaseUrl(vendor);
         List<String> addToCartUrls = normalized.stream()
-                .map(this::productPageAddToCartUrl)
+                .map(line -> productPageAddToCartUrl(storeBase, line))
                 .toList();
-        String cartUrl = withPartnerUtm(monarchStoreBaseUrl + "/cart/");
+        String cartUrl = withPartnerUtm(storeBase + "/cart/");
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("vendorSlug", vendor.getSlug());
@@ -50,17 +54,23 @@ public class PartnerCartHandoffService {
             out.put("checkoutUrl", addToCartUrls.get(0));
             out.put("handoffMode", "product_page_add");
         } else {
-            out.put("checkoutUrl", buildCommaBatchUrl(normalized));
-            out.put("fallbackBatchUrl", buildColonBatchUrl(normalized));
+            out.put("checkoutUrl", buildCommaBatchUrl(storeBase, normalized));
+            out.put("fallbackBatchUrl", buildColonBatchUrl(storeBase, normalized));
             out.put("handoffMode", "batch_fill");
         }
+        int totalQty = normalized.stream().mapToInt(CartLine::quantity).sum();
+        partnerHandoffAnalyticsService.recordHandoff(
+                vendor,
+                normalized.size(),
+                totalQty,
+                (String) out.get("handoffMode"));
         return out;
     }
 
-    private String buildCommaBatchUrl(List<CartLine> lines) {
+    private String buildCommaBatchUrl(String storeBase, List<CartLine> lines) {
         String ids = lines.stream().map(CartLine::externalProductId).collect(Collectors.joining(","));
         String qtys = lines.stream().map(l -> String.valueOf(l.quantity())).collect(Collectors.joining(","));
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/")
+        return UriComponentsBuilder.fromHttpUrl(storeBase + "/")
                 .queryParam("add-to-cart", ids)
                 .queryParam("quantity", qtys)
                 .queryParam("utm_source", "tarantulapp")
@@ -69,11 +79,11 @@ public class PartnerCartHandoffService {
                 .toUriString();
     }
 
-    private String buildColonBatchUrl(List<CartLine> lines) {
+    private String buildColonBatchUrl(String storeBase, List<CartLine> lines) {
         String packed = lines.stream()
                 .map(l -> l.externalProductId() + ":" + l.quantity())
                 .collect(Collectors.joining(","));
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/cart/")
+        return UriComponentsBuilder.fromHttpUrl(storeBase + "/cart/")
                 .queryParam("add-to-cart", packed)
                 .queryParam("utm_source", "tarantulapp")
                 .queryParam("utm_medium", "partner_cart")
@@ -81,7 +91,7 @@ public class PartnerCartHandoffService {
                 .toUriString();
     }
 
-    private String productPageAddToCartUrl(CartLine line) {
+    private String productPageAddToCartUrl(String storeBase, CartLine line) {
         if (line.canonicalUrl() != null && !line.canonicalUrl().isBlank()) {
             return UriComponentsBuilder.fromHttpUrl(line.canonicalUrl().trim())
                     .queryParam("add-to-cart", line.externalProductId())
@@ -91,7 +101,7 @@ public class PartnerCartHandoffService {
                     .build(true)
                     .toUriString();
         }
-        return UriComponentsBuilder.fromHttpUrl(monarchStoreBaseUrl + "/")
+        return UriComponentsBuilder.fromHttpUrl(storeBase + "/")
                 .queryParam("add-to-cart", line.externalProductId())
                 .queryParam("quantity", line.quantity())
                 .queryParam("utm_source", "tarantulapp")
@@ -100,9 +110,24 @@ public class PartnerCartHandoffService {
                 .toUriString();
     }
 
+    private String resolveStoreBaseUrl(OfficialVendor vendor) {
+        if (vendor == null) {
+            return defaultStoreBaseUrl;
+        }
+        String fromFeed = trimTrailingSlash(vendor.getFeedBaseUrl());
+        if (fromFeed != null && !fromFeed.isBlank()) {
+            return fromFeed;
+        }
+        String fromSite = trimTrailingSlash(vendor.getWebsiteUrl());
+        if (fromSite != null && !fromSite.isBlank()) {
+            return fromSite;
+        }
+        return defaultStoreBaseUrl;
+    }
+
     private String withPartnerUtm(String url) {
         if (url == null || url.isBlank()) {
-            return monarchStoreBaseUrl + "/cart/";
+            return defaultStoreBaseUrl + "/cart/";
         }
         return UriComponentsBuilder.fromHttpUrl(url.trim())
                 .queryParam("utm_source", "tarantulapp")

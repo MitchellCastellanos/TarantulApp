@@ -27,6 +27,7 @@ import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
+import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.service.ReferralService;
 import com.tarantulapp.service.TopVendorService;
@@ -95,6 +96,7 @@ public class AdminController {
     private final TopVendorService topVendorService;
     private final ReferralService referralService;
     private final TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService;
+    private final VendorVerificationService vendorVerificationService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -134,7 +136,8 @@ public class AdminController {
                            NewsletterService newsletterService,
                            TopVendorService topVendorService,
                            ReferralService referralService,
-                           TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService) {
+                           TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService,
+                           VendorVerificationService vendorVerificationService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -162,15 +165,19 @@ public class AdminController {
         this.topVendorService = topVendorService;
         this.referralService = referralService;
         this.tarantulaPublicDefaultAnnouncementService = tarantulaPublicDefaultAnnouncementService;
+        this.vendorVerificationService = vendorVerificationService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
 
     record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
+    record PromoteOfficialVendorLeadRequest(Boolean enableImport, Boolean strategicFounder) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
     record SetVerifiedBreederRequest(Boolean verifiedBreeder) {}
+
+    record SetStorefrontVerifiedRequest(Boolean storefrontVerified) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
      * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
@@ -281,6 +288,70 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> officialVendorLeads() {
         adminAccessService.assertCurrentUserIsAdmin();
         return ResponseEntity.ok(officialVendorService.adminListLeads());
+    }
+
+    @GetMapping("/vendor-verifications")
+    public ResponseEntity<List<Map<String, Object>>> vendorVerifications(
+            @RequestParam(required = false) String status) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(vendorVerificationService.adminList(status));
+    }
+
+    @PatchMapping("/vendor-verifications/{id}")
+    public ResponseEntity<Map<String, Object>> reviewVendorVerification(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        String status = body != null ? body.get("status") : null;
+        String note = body != null ? body.get("reviewerNote") : null;
+        try {
+            return ResponseEntity.ok(vendorVerificationService.adminReview(id, status, note));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    record SendPartnerCatalogEmailRequest(String email, String locale) {}
+
+    @PostMapping("/official-vendors/{id}/send-partner-catalog-email")
+    public ResponseEntity<Map<String, Object>> sendOfficialVendorPartnerCatalogEmail(
+            @PathVariable UUID id,
+            @RequestBody(required = false) SendPartnerCatalogEmailRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            String loc = req != null && req.locale() != null ? req.locale() : "es";
+            return ResponseEntity.ok(officialVendorService.sendPartnerCatalogLiveEmail(
+                    id, req != null ? req.email() : null, loc));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("sent", false, "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/official-vendor-leads/{id}/send-partner-catalog-email")
+    public ResponseEntity<Map<String, Object>> sendOfficialVendorLeadPartnerCatalogEmail(
+            @PathVariable UUID id,
+            @RequestBody(required = false) SendPartnerCatalogEmailRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            String loc = req != null && req.locale() != null ? req.locale() : "es";
+            return ResponseEntity.ok(officialVendorService.sendPartnerCatalogLiveEmailForLead(id, loc));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("sent", false, "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/official-vendor-leads/{id}/promote")
+    public ResponseEntity<Map<String, Object>> promoteOfficialVendorLead(
+            @PathVariable UUID id,
+            @RequestBody(required = false) PromoteOfficialVendorLeadRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        boolean enableImport = req != null && Boolean.TRUE.equals(req.enableImport());
+        boolean strategicFounder = req != null && Boolean.TRUE.equals(req.strategicFounder());
+        try {
+            return ResponseEntity.ok(officialVendorService.adminPromoteLeadToVendor(id, enableImport, strategicFounder));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PatchMapping("/official-vendors/{id}/status")
@@ -397,6 +468,8 @@ public class AdminController {
                 {"android_play_beta", "Android — anuncio prueba cerrada (enlace tienda)", "Android — closed testing announcement (Store link)"},
                 {"vendor_welcome_mx", "Vendor MX — bienvenida + tier dinámico + cita videollamada verificación tienda",
                         "Vendor MX — welcome + dynamic tier + video verification booking"},
+                {"partner_catalog_live", "Socio estratégico — vitrina en app (sin setup; opcional handoff)",
+                        "Strategic partner — storefront live (zero setup; optional cart handoff test)"},
                 {"tarantula_public_default", "Colección — arañas públicas por defecto (keepers con tarántulas)",
                         "Collection — spiders public by default (keepers with tarantulas)"},
         };
@@ -534,6 +607,23 @@ public class AdminController {
         }
         referralService.ensureReferralCodeForUser(user.getId());
         referralService.syncVendorReferralCodeFlag(user.getId());
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    /** Admin: grant or revoke "Tienda verificada" trust badge (after live call or approved self-verification). */
+    @PatchMapping("/users/{id}/storefront-verified")
+    public ResponseEntity<Map<String, Object>> setUserStorefrontVerified(@PathVariable UUID id,
+                                                                          @RequestBody(required = false) SetStorefrontVerifiedRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean verified = req != null && Boolean.TRUE.equals(req.storefrontVerified());
+        if (verified && !Boolean.TRUE.equals(user.getVerifiedBreeder())) {
+            throw new IllegalArgumentException("VENDOR_ACTIVATION_REQUIRED");
+        }
+        user.setStorefrontVerifiedAt(verified ? Instant.now() : null);
+        userRepository.save(user);
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
@@ -1086,6 +1176,8 @@ public class AdminController {
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
         out.put("verifiedBreeder", Boolean.TRUE.equals(u.getVerifiedBreeder()));
         out.put("verifiedBreederAt", u.getVerifiedBreederAt());
+        out.put("storefrontVerified", u.getStorefrontVerifiedAt() != null);
+        out.put("storefrontVerifiedAt", u.getStorefrontVerifiedAt());
         out.put("vendorInviteSentAt", u.getVendorInviteSentAt());
         out.put("vendorInviteExpiresAt", u.getVendorInviteExpiresAt());
         boolean invitePending = u.getVendorInviteToken() != null
@@ -1209,6 +1301,8 @@ public class AdminController {
         out.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
         out.put("verifiedBreederAt", user.getVerifiedBreederAt());
+        out.put("storefrontVerified", user.getStorefrontVerifiedAt() != null);
+        out.put("storefrontVerifiedAt", user.getStorefrontVerifiedAt());
         out.put("createdAt", user.getCreatedAt());
         out.put("lastActivityAt", user.getLastActivityAt());
         long spiders = spiderCounts != null

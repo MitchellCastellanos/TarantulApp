@@ -23,6 +23,12 @@ const adminService = {
     api.patch(`/admin/reports/${id}/resolve`, { action, note }).then((r) => r.data),
   officialVendors: () => api.get('/admin/official-vendors').then((r) => r.data),
   officialVendorLeads: () => api.get('/admin/official-vendor-leads').then((r) => r.data),
+  promoteOfficialVendorLead: (leadId, payload = {}) =>
+    api.post(`/admin/official-vendor-leads/${leadId}/promote`, payload).then((r) => r.data),
+  vendorVerifications: (status) =>
+    api.get('/admin/vendor-verifications', { params: status ? { status } : {} }).then((r) => r.data),
+  reviewVendorVerification: (id, payload) =>
+    api.patch(`/admin/vendor-verifications/${id}`, payload).then((r) => r.data),
   setOfficialVendorStatus: (id, enabled) =>
     api.patch(`/admin/official-vendors/${id}/status`, { enabled }).then((r) => r.data),
   updateOfficialVendorStrategicProgram: (id, payload) =>
@@ -74,6 +80,12 @@ const adminService = {
     api.get('/admin/user-lookup', { params: { email } }).then((r) => r.data),
   setUserVerifiedBreeder: (id, verifiedBreeder) =>
     api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  setUserStorefrontVerified: (id, storefrontVerified) =>
+    api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified }).then((r) => r.data),
+  sendOfficialVendorPartnerCatalogEmail: (vendorId, payload) =>
+    api.post(`/admin/official-vendors/${vendorId}/send-partner-catalog-email`, payload || {}).then((r) => r.data),
+  sendOfficialVendorLeadPartnerCatalogEmail: (leadId, payload) =>
+    api.post(`/admin/official-vendor-leads/${leadId}/send-partner-catalog-email`, payload || {}).then((r) => r.data),
   tapToContactRate: () =>
     api.get('/admin/marketing/tap-to-contact-rate').then((r) => r.data),
   listingCounts: () =>

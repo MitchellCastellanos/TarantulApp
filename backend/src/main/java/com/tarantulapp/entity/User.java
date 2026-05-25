@@ -116,6 +116,10 @@ public class User {
     @Column(name = "verified_breeder_at")
     private Instant verifiedBreederAt;
 
+    /** Trust badge after live review or approved self-verification submission. */
+    @Column(name = "storefront_verified_at")
+    private Instant storefrontVerifiedAt;
+
     /** Non-null when a vendor invite email is pending (user must accept before verified_breeder is set). */
     @Column(name = "vendor_invite_token", columnDefinition = "uuid")
     private UUID vendorInviteToken;
@@ -288,6 +292,9 @@ public class User {
 
     public Instant getVerifiedBreederAt() { return verifiedBreederAt; }
     public void setVerifiedBreederAt(Instant verifiedBreederAt) { this.verifiedBreederAt = verifiedBreederAt; }
+
+    public Instant getStorefrontVerifiedAt() { return storefrontVerifiedAt; }
+    public void setStorefrontVerifiedAt(Instant storefrontVerifiedAt) { this.storefrontVerifiedAt = storefrontVerifiedAt; }
 
     public UUID getVendorInviteToken() { return vendorInviteToken; }
     public void setVendorInviteToken(UUID vendorInviteToken) { this.vendorInviteToken = vendorInviteToken; }

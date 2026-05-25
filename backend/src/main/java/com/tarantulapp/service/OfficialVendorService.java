@@ -2,10 +2,12 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.OfficialVendorLead;
+import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
+import com.tarantulapp.repository.PartnerListingRepository;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,13 +30,22 @@ public class OfficialVendorService {
 
     private final OfficialVendorRepository officialVendorRepository;
     private final OfficialVendorLeadRepository officialVendorLeadRepository;
+    private final PartnerListingRepository partnerListingRepository;
+    private final EmailService emailService;
+    private final String appBaseUrl;
     private final boolean seedOnStartup;
 
     public OfficialVendorService(OfficialVendorRepository officialVendorRepository,
                                  OfficialVendorLeadRepository officialVendorLeadRepository,
+                                 PartnerListingRepository partnerListingRepository,
+                                 EmailService emailService,
+                                 @Value("${app.base-url:http://localhost:5173}") String appBaseUrl,
                                  @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
         this.officialVendorRepository = officialVendorRepository;
         this.officialVendorLeadRepository = officialVendorLeadRepository;
+        this.partnerListingRepository = partnerListingRepository;
+        this.emailService = emailService;
+        this.appBaseUrl = trimTrailingSlash(appBaseUrl);
         this.seedOnStartup = seedOnStartup;
     }
 
@@ -199,8 +211,168 @@ public class OfficialVendorService {
         out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
         out.put("isDemo", Boolean.TRUE.equals(vendor.getIsDemo()));
+        out.put("feedBaseUrl", vendor.getFeedBaseUrl() == null ? "" : vendor.getFeedBaseUrl());
+        out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
         out.put("createdAt", vendor.getCreatedAt());
         return out;
+    }
+
+    /**
+     * Creates an {@link OfficialVendor} from a submitted lead and marks the lead converted.
+     * Defaults: STRATEGIC_PARTNER, import off, vendor disabled until ops review.
+     */
+    @Transactional
+    public Map<String, Object> adminPromoteLeadToVendor(UUID leadId, Boolean enableImport, Boolean strategicFounder) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        if ("converted".equalsIgnoreCase(lead.getStatus())) {
+            throw new IllegalArgumentException("LEAD_ALREADY_CONVERTED");
+        }
+        String slug = uniqueSlugFromBusinessName(lead.getBusinessName());
+        String website = lead.getWebsiteUrl() == null ? "" : lead.getWebsiteUrl().trim();
+        if (website.isBlank()) {
+            throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+        }
+
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setSlug(slug);
+        vendor.setName(lead.getBusinessName());
+        vendor.setCountry(lead.getCountry() == null || lead.getCountry().isBlank() ? "International" : lead.getCountry().trim());
+        vendor.setState(lead.getState());
+        vendor.setCity(lead.getCity());
+        vendor.setWebsiteUrl(website);
+        vendor.setNationalShipping(true);
+        vendor.setShipsToCountries(lead.getShippingScope() == null ? lead.getCountry() : lead.getShippingScope());
+        vendor.setInfluenceScore(50);
+        vendor.setNote(lead.getNote());
+        vendor.setBadge("Official partner");
+        vendor.setEnabled(false);
+        vendor.setPartnerProgramTier(Boolean.TRUE.equals(strategicFounder)
+                ? PartnerProgramTier.STRATEGIC_FOUNDER
+                : PartnerProgramTier.STRATEGIC_PARTNER);
+        vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
+        vendor.setIsDemo(false);
+        vendor.setFeedBaseUrl(trimTrailingSlash(website));
+        vendor.setFeedType(guessFeedType(website));
+
+        officialVendorRepository.save(vendor);
+        lead.setStatus("converted");
+        officialVendorLeadRepository.save(lead);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("vendor", mapVendor(vendor));
+        out.put("lead", mapLead(lead));
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> sendPartnerCatalogLiveEmail(UUID vendorId, String toEmail, String locale) {
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new NotFoundException("Vendor no encontrado"));
+        String email = resolvePartnerContactEmail(vendor, toEmail);
+        if (email.isBlank()) {
+            throw new IllegalArgumentException("CONTACT_EMAIL_REQUIRED");
+        }
+        long listingCount = partnerListingRepository.countByOfficialVendorIdAndStatus(
+                vendor.getId(), PartnerListingStatus.ACTIVE);
+        String storefrontUrl = appBaseUrl + "/partner/" + vendor.getSlug();
+        emailService.sendPartnerCatalogLiveEmail(
+                email,
+                vendor.getName(),
+                listingCount,
+                storefrontUrl,
+                vendor.getWebsiteUrl(),
+                locale);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("sent", true);
+        out.put("email", email);
+        out.put("listingCount", listingCount);
+        out.put("storefrontUrl", storefrontUrl);
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> sendPartnerCatalogLiveEmailForLead(UUID leadId, String locale) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        String email = lead.getContactEmail() == null ? "" : lead.getContactEmail().trim();
+        if (email.isBlank()) {
+            throw new IllegalArgumentException("CONTACT_EMAIL_REQUIRED");
+        }
+        String storefrontHint = appBaseUrl + "/partners";
+        emailService.sendPartnerCatalogLiveEmail(
+                email,
+                lead.getBusinessName(),
+                0L,
+                storefrontHint,
+                lead.getWebsiteUrl(),
+                locale);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("sent", true);
+        out.put("email", email);
+        return out;
+    }
+
+    private String resolvePartnerContactEmail(OfficialVendor vendor, String overrideEmail) {
+        if (overrideEmail != null && !overrideEmail.isBlank()) {
+            return overrideEmail.trim();
+        }
+        String vendorSite = vendor.getWebsiteUrl() == null ? "" : vendor.getWebsiteUrl().trim().toLowerCase(Locale.ROOT);
+        return officialVendorLeadRepository.findTop100ByOrderByCreatedAtDesc().stream()
+                .filter(l -> l.getContactEmail() != null && !l.getContactEmail().isBlank())
+                .filter(l -> {
+                    if (l.getBusinessName() != null && vendor.getName() != null
+                            && l.getBusinessName().equalsIgnoreCase(vendor.getName().trim())) {
+                        return true;
+                    }
+                    String leadSite = l.getWebsiteUrl() == null ? "" : l.getWebsiteUrl().trim().toLowerCase(Locale.ROOT);
+                    return !vendorSite.isBlank() && vendorSite.equals(leadSite);
+                })
+                .map(OfficialVendorLead::getContactEmail)
+                .findFirst()
+                .orElse("");
+    }
+
+    private static String guessFeedType(String websiteUrl) {
+        if (websiteUrl == null) {
+            return "";
+        }
+        String u = websiteUrl.toLowerCase(Locale.ROOT);
+        if (u.contains("woocommerce") || u.contains("/product") || u.contains("wp-json")) {
+            return "woocommerce";
+        }
+        return "woocommerce";
+    }
+
+    private String uniqueSlugFromBusinessName(String businessName) {
+        String base = slugify(businessName);
+        if (base.isBlank()) {
+            base = "partner";
+        }
+        String candidate = base;
+        int n = 2;
+        while (officialVendorRepository.findBySlug(candidate).isPresent()) {
+            candidate = base + "-" + n;
+            n++;
+        }
+        return candidate;
+    }
+
+    private static String slugify(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        return raw.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+    }
+
+    private static String trimTrailingSlash(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String t = url.trim();
+        return t.endsWith("/") ? t.substring(0, t.length() - 1) : t;
     }
 
     private Map<String, Object> mapLead(OfficialVendorLead lead) {

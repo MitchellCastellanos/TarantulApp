@@ -69,6 +69,14 @@ public class OfficialVendor {
     @Column(name = "is_demo", nullable = false)
     private Boolean isDemo = false;
 
+    /** Store origin for WooCommerce sync and cart handoff (e.g. https://example.com). */
+    @Column(name = "feed_base_url", length = 350)
+    private String feedBaseUrl;
+
+    /** Adapter key: woocommerce, static, mock. */
+    @Column(name = "feed_type", length = 40)
+    private String feedType;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -119,6 +127,10 @@ public class OfficialVendor {
     public void setListingImportEnabled(Boolean listingImportEnabled) { this.listingImportEnabled = listingImportEnabled; }
     public Boolean getIsDemo() { return isDemo; }
     public void setIsDemo(Boolean isDemo) { this.isDemo = isDemo; }
+    public String getFeedBaseUrl() { return feedBaseUrl; }
+    public void setFeedBaseUrl(String feedBaseUrl) { this.feedBaseUrl = feedBaseUrl; }
+    public String getFeedType() { return feedType; }
+    public void setFeedType(String feedType) { this.feedType = feedType; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

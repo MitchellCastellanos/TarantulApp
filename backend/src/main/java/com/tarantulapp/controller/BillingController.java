@@ -9,6 +9,8 @@ import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
 import com.tarantulapp.service.VendorInviteService;
+import com.tarantulapp.service.VendorMxTier;
+import com.tarantulapp.service.VendorMxTierService;
 import com.tarantulapp.util.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,7 @@ public class BillingController {
     private final SecurityHelper securityHelper;
     private final BillingService billingService;
     private final VendorInviteService vendorInviteService;
+    private final VendorMxTierService vendorMxTierService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -62,6 +65,10 @@ public class BillingController {
     private String priceIdMonthlyCo;
     @Value("${stripe.price-id-yearly-co:}")
     private String priceIdYearlyCo;
+    @Value("${stripe.price-id-monthly-int:}")
+    private String priceIdMonthlyInt;
+    @Value("${stripe.price-id-yearly-int:}")
+    private String priceIdYearlyInt;
 
     /** Vendor / Business — regional Stripe Price IDs. Blank when the Vendor products are not yet created in Stripe. */
     @Value("${stripe.price-id-vendor-monthly-us:}")
@@ -81,15 +88,25 @@ public class BillingController {
     @Value("${stripe.price-id-vendor-yearly-co:}")
     private String vendorPriceIdYearlyCo;
 
+    /** México dynamic vendor tiers (monthly MXN). Starter = $0 — no Stripe price. */
+    @Value("${stripe.price-id-vendor-monthly-mx-tier1:}")
+    private String vendorPriceIdMonthlyMxTier1;
+    @Value("${stripe.price-id-vendor-monthly-mx-tier2:}")
+    private String vendorPriceIdMonthlyMxTier2;
+    @Value("${stripe.price-id-vendor-monthly-mx-tier3:}")
+    private String vendorPriceIdMonthlyMxTier3;
+
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
     public BillingController(UserRepository userRepository, SecurityHelper securityHelper,
-                             BillingService billingService, VendorInviteService vendorInviteService) {
+                             BillingService billingService, VendorInviteService vendorInviteService,
+                             VendorMxTierService vendorMxTierService) {
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
         this.billingService = billingService;
         this.vendorInviteService = vendorInviteService;
+        this.vendorMxTierService = vendorMxTierService;
     }
 
     @GetMapping("/me")
@@ -123,6 +140,20 @@ public class BillingController {
         }
     }
 
+    /**
+     * México vendor dynamic tier (sales reported via listings marked sold in the last 30 days).
+     */
+    @GetMapping("/vendor-mx-tier")
+    public ResponseEntity<Map<String, Object>> getVendorMxTier() {
+        UUID userId = securityHelper.getCurrentUserId();
+        Map<String, Object> payload = new LinkedHashMap<>(vendorMxTierService.tierPayload(userId));
+        VendorMxTier tier = VendorMxTier.fromSoldCount(
+                ((Number) payload.get("soldLast30Days")).longValue());
+        payload.put("stripeCheckoutAvailable", isMxTierStripeConfigured(tier));
+        payload.put("billingRegion", "MX");
+        return ResponseEntity.ok(payload);
+    }
+
     @PostMapping("/portal")
     public ResponseEntity<Map<String, Object>> createPortalSession() {
         UUID userId = securityHelper.getCurrentUserId();
@@ -149,7 +180,31 @@ public class BillingController {
         String interval = body != null ? body.getOrDefault("interval", "month") : "month";
         String regionRaw = body != null ? body.get("region") : null;
         String tier = normalizeBillingTier(body != null ? body.get("tier") : null);
-        String priceId = resolveStripePriceId(interval, regionRaw, tier);
+        String billingRegion = normalizeBillingRegion(regionRaw);
+        if ("vendor".equals(tier) && !isVendorProgramRegion(billingRegion)) {
+            return ResponseEntity.ok(Map.of(
+                    "checkoutEnabled", false,
+                    "url", "",
+                    "error", "VENDOR_CHECKOUT_NOT_AVAILABLE_IN_REGION"));
+        }
+        if ("vendor".equals(tier) && "MX".equals(billingRegion)) {
+            VendorMxTier mxTier = vendorMxTierService.currentTier(userId);
+            if (!mxTier.requiresPaidSubscription()) {
+                return ResponseEntity.ok(Map.of(
+                        "checkoutEnabled", false,
+                        "url", "",
+                        "error", "VENDOR_MX_STARTER_NO_CHECKOUT",
+                        "vendorMxTier", mxTier.getKey(),
+                        "soldLast30Days", vendorMxTierService.countSoldLast30Days(userId)));
+            }
+            if ("year".equalsIgnoreCase(interval)) {
+                return ResponseEntity.ok(Map.of(
+                        "checkoutEnabled", false,
+                        "url", "",
+                        "error", "VENDOR_MX_MONTHLY_ONLY"));
+            }
+        }
+        String priceId = resolveStripePriceId(interval, regionRaw, tier, userId);
 
         if (priceId == null || priceId.isBlank()) {
             return ResponseEntity.ok(Map.of("checkoutEnabled", false, "url", ""));
@@ -169,8 +224,12 @@ public class BillingController {
                     .setSuccessUrl(baseUrl + "/pro?checkout=success&session_id={CHECKOUT_SESSION_ID}")
                     .setCancelUrl(baseUrl + "/pro?checkout=cancel")
                     .putMetadata("userId", userId.toString())
-                    .putMetadata("billingRegion", normalizeBillingRegion(regionRaw))
+                    .putMetadata("billingRegion", billingRegion)
                     .putMetadata("billingTier", tier)
+                    .putMetadata("vendorMxTier",
+                            "vendor".equals(tier) && "MX".equals(billingRegion)
+                                    ? vendorMxTierService.currentTier(userId).getKey()
+                                    : "")
                     .build();
 
             Session session = Session.create(params);
@@ -282,10 +341,14 @@ public class BillingController {
      * {@code tier}: {@code pro} (default) or {@code vendor}. Vendor falls back to US Vendor only — Vendor
      * billing is review-gated, so we do not silently downgrade to the Pro price when the Vendor product is missing.
      */
-    private String resolveStripePriceId(String interval, String region, String tier) {
+    private String resolveStripePriceId(String interval, String region, String tier, UUID userId) {
         boolean yearly = "year".equalsIgnoreCase(String.valueOf(interval));
         String r = normalizeBillingRegion(region);
         if ("vendor".equalsIgnoreCase(String.valueOf(tier))) {
+            if ("MX".equals(r) && userId != null) {
+                VendorMxTier mxTier = vendorMxTierService.currentTier(userId);
+                return stripePriceIdForMxTier(mxTier);
+            }
             String vUs = yearly ? vendorPriceIdYearlyUs : vendorPriceIdMonthlyUs;
             String vCa = yearly ? vendorPriceIdYearlyCa : vendorPriceIdMonthlyCa;
             String vMx = yearly ? vendorPriceIdYearlyMx : vendorPriceIdMonthlyMx;
@@ -302,12 +365,36 @@ public class BillingController {
         String ca = yearly ? priceIdYearlyCa : priceIdMonthlyCa;
         String mx = yearly ? priceIdYearlyMx : priceIdMonthlyMx;
         String co = yearly ? priceIdYearlyCo : priceIdMonthlyCo;
+        String intl = yearly ? priceIdYearlyInt : priceIdMonthlyInt;
         return switch (r) {
             case "CA" -> firstNonBlank(ca, us, def);
             case "MX" -> firstNonBlank(mx, us, def);
             case "CO" -> firstNonBlank(co, us, def);
+            case "INT" -> firstNonBlank(intl, us, def);
             default -> firstNonBlank(us, def);
         };
+    }
+
+    /** Vendor program: US/CA flat subscription; MX dynamic tier; CO flat when prices exist. */
+    private static boolean isVendorProgramRegion(String billingRegion) {
+        return "US".equals(billingRegion)
+                || "CA".equals(billingRegion)
+                || "MX".equals(billingRegion)
+                || "CO".equals(billingRegion);
+    }
+
+    private String stripePriceIdForMxTier(VendorMxTier tier) {
+        return switch (tier) {
+            case ACTIVO -> firstNonBlank(vendorPriceIdMonthlyMxTier1, vendorPriceIdMonthlyMx);
+            case PLUS -> firstNonBlank(vendorPriceIdMonthlyMxTier2, vendorPriceIdMonthlyMx);
+            case PRO_SHOP -> firstNonBlank(vendorPriceIdMonthlyMxTier3, vendorPriceIdMonthlyMx);
+            default -> "";
+        };
+    }
+
+    private boolean isMxTierStripeConfigured(VendorMxTier tier) {
+        String id = stripePriceIdForMxTier(tier);
+        return id != null && !id.isBlank();
     }
 
     private static String normalizeBillingTier(String tier) {
@@ -320,14 +407,15 @@ public class BillingController {
 
     private static String normalizeBillingRegion(String region) {
         if (region == null || region.isBlank()) {
-            return "US";
+            return "INT";
         }
         String u = region.trim().toUpperCase(Locale.ROOT);
         return switch (u) {
             case "CA", "CAN", "CANADA" -> "CA";
             case "MX", "MEX", "MEXICO" -> "MX";
             case "CO", "COL", "COLOMBIA" -> "CO";
-            default -> "US";
+            case "INT", "ROW", "INTERNATIONAL", "GLOBAL" -> "INT";
+            default -> "INT";
         };
     }
 }

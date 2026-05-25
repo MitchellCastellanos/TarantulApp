@@ -10,6 +10,7 @@ import { imgUrl } from '../services/api'
 import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import BrandLogoMark from '../components/BrandLogoMark'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
@@ -77,6 +78,7 @@ export default function MarketplacePage() {
   const [officialVendors, setOfficialVendors] = useState([])
   const [myProfile, setMyProfile] = useState(EMPTY_PROFILE_FORM)
   const [vendorLeadForm, setVendorLeadForm] = useState(EMPTY_VENDOR_LEAD_FORM)
+  const [publicStats, setPublicStats] = useState(null)
   const [loading, setLoading] = useState(false)
   const [savingVendorLead, setSavingVendorLead] = useState(false)
   const [message, setMessage] = useState('')
@@ -272,7 +274,12 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([loadPublicListings(), loadOfficialVendors(), loadMine().catch(() => {})])
+    Promise.all([
+      loadPublicListings(),
+      loadOfficialVendors(),
+      loadMine().catch(() => {}),
+      marketplaceService.publicStats().then(setPublicStats).catch(() => setPublicStats(null)),
+    ])
       .finally(() => setLoading(false))
   }, [user?.id])
 
@@ -507,6 +514,31 @@ export default function MarketplacePage() {
 
         {message && <div className="alert alert-info small py-2">{message}</div>}
 
+        {publicStats && (publicStats.partnerActiveListings > 0 || publicStats.partnerListingsDisplayPlus) && (
+          <div className="alert alert-light border mb-3 py-3 ta-premium-pane" style={{ borderColor: 'var(--ta-gold-classic)' }}>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <div>
+                <div className="fw-semibold small">
+                  {publicStats.partnerListingsDisplayPlus
+                    ? t('marketplace.densityBannerTitle', { count: publicStats.partnerListingsDisplayCount })
+                    : t('marketplace.densityBannerTitleExact', { count: publicStats.partnerActiveListings })}
+                </div>
+                <div className="small text-muted">{t('marketplace.densityBannerSub')}</div>
+                {publicStats.handoffs30d > 0 && (
+                  <div className="small text-muted mt-1">
+                    {t('marketplace.densityBannerHandoffs', {
+                      handoffs: publicStats.handoffs30d,
+                      items: publicStats.itemsSent30d ?? 0,
+                    })}
+                  </div>
+                )}
+              </div>
+              <Link to="/partners" className="btn btn-sm btn-outline-dark">
+                {t('marketplace.densityBannerCta')}
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="card border-0 shadow-sm mb-3 ta-premium-pane">
           <div className="card-body p-3 p-md-4">
@@ -851,8 +883,8 @@ export default function MarketplacePage() {
                         }`}
                       >
                         <span>{l.title}</span>
-                        {l.sellerVerifiedBreeder && (
-                          <span className="badge bg-info-subtle text-dark border">{t('marketplace.verifiedBreederBadge')}</span>
+                        {l.sellerStorefrontVerified && (
+                          <VerifiedVendorBadge />
                         )}
                         {l.boosted && (
                           <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>

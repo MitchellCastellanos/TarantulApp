@@ -1,7 +1,7 @@
 /** Client-side sort for marketplace / partner storefront listing grids. */
 function trustScore(row) {
   let s = 0
-  if (row.sellerVerifiedBreeder) s += 40
+  if (row.sellerStorefrontVerified) s += 40
   if (row.boosted) s += 12
   if (row.source === 'partner' || row.isPartner) s += 18
   if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22

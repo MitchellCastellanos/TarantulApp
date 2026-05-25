@@ -3,6 +3,7 @@ package com.tarantulapp.controller;
 import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceOrderService;
 import com.tarantulapp.service.MarketplaceService;
+import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.util.SecurityHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,11 +36,15 @@ class MarketplaceControllerTest {
     @Mock
     private ListingEventService listingEventService;
 
+    @Mock
+    private VendorVerificationService vendorVerificationService;
+
     private MarketplaceController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new MarketplaceController(marketplaceService, marketplaceOrderService, listingEventService, securityHelper);
+        controller = new MarketplaceController(
+                marketplaceService, marketplaceOrderService, listingEventService, vendorVerificationService, securityHelper);
     }
 
     @Test

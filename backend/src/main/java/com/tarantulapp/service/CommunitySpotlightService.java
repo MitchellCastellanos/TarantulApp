@@ -6,7 +6,6 @@ import com.tarantulapp.entity.User;
 import com.tarantulapp.repository.PhotoRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +15,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class CommunitySpotlightService {
@@ -36,8 +38,20 @@ public class CommunitySpotlightService {
     @Transactional(readOnly = true)
     public Map<String, Object> spotlight(int limit) {
         int lim = Math.min(24, Math.max(1, limit));
-        Page<Tarantula> page = tarantulaRepository.findCommunitySpotlightCandidates(PageRequest.of(0, lim));
-        List<Tarantula> rows = page.getContent();
+        List<UUID> ids = tarantulaRepository
+                .findCommunitySpotlightCandidateIds(PageRequest.of(0, lim))
+                .getContent();
+        if (ids.isEmpty()) {
+            Map<String, Object> empty = new LinkedHashMap<>();
+            empty.put("items", List.of());
+            return empty;
+        }
+        Map<UUID, Tarantula> byId = tarantulaRepository.findByIdInWithSpecies(ids).stream()
+                .collect(Collectors.toMap(Tarantula::getId, Function.identity()));
+        List<Tarantula> rows = ids.stream()
+                .map(byId::get)
+                .filter(Objects::nonNull)
+                .toList();
         if (rows.isEmpty()) {
             Map<String, Object> empty = new LinkedHashMap<>();
             empty.put("items", List.of());

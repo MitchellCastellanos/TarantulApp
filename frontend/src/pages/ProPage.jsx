@@ -9,7 +9,13 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
-import { BILLING_REGION_CODES, inferBillingRegion } from '../utils/inferBillingRegion'
+import {
+  BILLING_REGION_CODES,
+  inferBillingRegion,
+  isVendorDynamicTierRegion,
+  isVendorFlatCheckoutRegion,
+  isVendorProgramRegion,
+} from '../utils/inferBillingRegion'
 
 const REGION_OVERRIDE_KEY = 'tarantulapp-billing-region-override'
 const PRO_AUDIENCE_KEY = 'tarantulapp-pro-audience'
@@ -34,6 +40,10 @@ export default function ProPage() {
     return null
   })
   const billingRegion = regionOverride ?? detectedRegion
+  const vendorProgramAvailable = isVendorProgramRegion(billingRegion)
+  const vendorDynamicTier = isVendorDynamicTierRegion(billingRegion)
+  const vendorFlatCheckout = isVendorFlatCheckoutRegion(billingRegion)
+  const [vendorMxTier, setVendorMxTier] = useState(null)
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
@@ -77,13 +87,30 @@ export default function ProPage() {
       .catch(() => null)
   }
 
+  const loadVendorMxTier = () => {
+    if (!user || billingRegion !== 'MX') {
+      setVendorMxTier(null)
+      return Promise.resolve(null)
+    }
+    return billingService.vendorMxTier()
+      .then((data) => {
+        setVendorMxTier(data)
+        return data
+      })
+      .catch(() => {
+        setVendorMxTier(null)
+        return null
+      })
+  }
+
   useEffect(() => {
     if (user) {
       loadBilling().finally(() => {
         setLoadingCheckout(false)
       })
+      loadVendorMxTier()
     }
-  }, [user?.id])
+  }, [user?.id, billingRegion])
 
   useEffect(() => {
     try {
@@ -170,6 +197,40 @@ export default function ProPage() {
       }
     } finally {
       setVendorInviteBusy(false)
+    }
+  }
+
+  const handleVendorCheckout = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    if (!vendorProgramAvailable) return
+    if (vendorDynamicTier && vendorMxTier && !vendorMxTier.requiresPaidSubscription) {
+      setError(t('pro.vendorMxStarterHint'))
+      return
+    }
+    setError('')
+    setLoadingCheckout(true)
+    try {
+      const checkoutInterval = vendorDynamicTier ? 'month' : interval
+      const session = await billingService.createCheckoutSession(checkoutInterval, billingRegion, 'vendor')
+      if (!session?.url) {
+        if (session?.error === 'VENDOR_CHECKOUT_NOT_AVAILABLE_IN_REGION') {
+          setError(t('pro.vendorCheckoutNotInRegion'))
+        } else if (session?.error === 'VENDOR_MX_STARTER_NO_CHECKOUT') {
+          setError(t('pro.vendorMxStarterHint'))
+        } else if (session?.error === 'VENDOR_MX_MONTHLY_ONLY') {
+          setError(t('pro.vendorMxMonthlyOnly'))
+        } else {
+          throw new Error('checkout-url-missing')
+        }
+        return
+      }
+      window.location.href = session.url
+    } catch (e) {
+      setError(t('pro.checkoutError'))
+      setLoadingCheckout(false)
     }
   }
 
@@ -432,11 +493,65 @@ export default function ProPage() {
                     taglineKey: 'pro.tierVendorTagline',
                     listKeys: ['pro.tierVendorLi1', 'pro.tierVendorLi2', 'pro.tierVendorLi3', 'pro.tierVendorLi4', 'pro.tierVendorLi5', 'pro.tierVendorLi6'],
                     footer: (
-                      <div className="mt-2 d-flex flex-wrap gap-2 align-items-center">
-                        <span className="badge bg-success">{t('pro.tierLive')}</span>
-                        <a href="#vendor-activation" className="btn btn-sm btn-outline-light">
-                          {t('pro.vendorActivationCta')}
-                        </a>
+                      <div className="mt-2 d-flex flex-column gap-2">
+                        {vendorProgramAvailable ? (
+                          <>
+                            <span className="badge bg-success align-self-start">{t('pro.tierLive')}</span>
+                            {vendorDynamicTier ? (
+                              <>
+                                <p className="small text-muted mb-1">{t('pro.vendorMxTierBlurb')}</p>
+                                {vendorMxTier ? (
+                                  <p className="small mb-1">
+                                    <strong>{t(`pro.vendorMxTier.${vendorMxTier.tier}`, { defaultValue: vendorMxTier.tier })}</strong>
+                                    {' · '}
+                                    {t('pro.vendorMxSoldCount', { count: vendorMxTier.soldLast30Days ?? 0 })}
+                                    {vendorMxTier.monthlyMxn > 0
+                                      ? ` · ${t('pro.vendorMxMonthlyDue', { amount: vendorMxTier.monthlyMxn })}`
+                                      : ` · ${t('pro.vendorMxStarterFree')}`}
+                                  </p>
+                                ) : null}
+                                <ul className="small text-muted mb-1 ps-3" style={{ lineHeight: 1.4 }}>
+                                  <li>{t('pro.vendorMxTierRowStarter')}</li>
+                                  <li>{t('pro.vendorMxTierRowActivo')}</li>
+                                  <li>{t('pro.vendorMxTierRowPlus')}</li>
+                                  <li>{t('pro.vendorMxTierRowProShop')}</li>
+                                </ul>
+                              </>
+                            ) : null}
+                            {user && !isAndroidNative && vendorFlatCheckout ? (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-warning align-self-start"
+                                disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                                onClick={handleVendorCheckout}
+                              >
+                                {loadingCheckout ? t('common.loading') : t('pro.vendorSubscribeCta')}
+                              </button>
+                            ) : null}
+                            {user && !isAndroidNative && vendorDynamicTier
+                              && vendorMxTier?.requiresPaidSubscription
+                              && vendorMxTier?.stripeCheckoutAvailable !== false ? (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-warning align-self-start"
+                                disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                                onClick={handleVendorCheckout}
+                              >
+                                {loadingCheckout
+                                  ? t('common.loading')
+                                  : t('pro.vendorMxSubscribeCta', { amount: vendorMxTier.monthlyMxn })}
+                              </button>
+                            ) : null}
+                            <a href="#vendor-activation" className="btn btn-sm btn-outline-light align-self-start">
+                              {t('pro.vendorActivationCta')}
+                            </a>
+                          </>
+                        ) : (
+                          <>
+                            <span className="badge bg-secondary align-self-start">{t('pro.tierSoon')}</span>
+                            <p className="small text-muted mb-0">{t('pro.vendorTierComingSoon')}</p>
+                          </>
+                        )}
                       </div>
                     ),
                   })}

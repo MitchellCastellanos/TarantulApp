@@ -109,6 +109,24 @@ export default function AdminVendorsPage() {
     }
   }
 
+  const setStorefrontVerified = async (user, nextValue) => {
+    setBusyVendorId(user.id)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.setUserStorefrontVerified(user.id, nextValue)
+      setSuccess(nextValue ? t('admin.storefrontVerifiedOn') : t('admin.storefrontVerifiedOff'))
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(updated.id)) {
+        setLookupResult(updated)
+      }
+    } catch {
+      setError(t('admin.loadError'))
+    } finally {
+      setBusyVendorId(null)
+    }
+  }
+
   const setVendor = async (user, nextValue) => {
     setBusyVendorId(user.id)
     setError('')
@@ -302,6 +320,9 @@ export default function AdminVendorsPage() {
                   <span className="badge text-bg-light text-dark border">
                     {t('admin.vendorsColPlan')}: {lookupSummary.plan || '—'}
                   </span>
+                  {lookupSummary.storefrontVerified ? (
+                    <span className="badge text-bg-success">{t('admin.storefrontVerifiedBadge')}</span>
+                  ) : null}
                   <span className="badge text-bg-light text-dark border">{listingsCell(lookupSummary)} listings</span>
                 </div>
                 {Array.isArray(lookupSummary.opportunityHints) && lookupSummary.opportunityHints.length > 0 && (
@@ -363,6 +384,19 @@ export default function AdminVendorsPage() {
                   </button>
                 )}
                 {lookupSummary.verifiedBreeder && (
+                  <>
+                  <button
+                    type="button"
+                    className={`btn btn-sm w-100 ${lookupSummary.storefrontVerified ? 'btn-outline-warning' : 'btn-success'}`}
+                    disabled={busyVendorId === lookupSummary.id}
+                    onClick={() => setStorefrontVerified(lookupSummary, !lookupSummary.storefrontVerified)}
+                  >
+                    {busyVendorId === lookupSummary.id
+                      ? t('common.loading')
+                      : lookupSummary.storefrontVerified
+                        ? t('admin.revokeStorefrontVerified')
+                        : t('admin.grantStorefrontVerified')}
+                  </button>
                   <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.sendVendorWelcomeHint')}>
                     {WELCOME_LOCALES.map((loc) => (
                       <button
@@ -378,6 +412,7 @@ export default function AdminVendorsPage() {
                       </button>
                     ))}
                   </div>
+                  </>
                 )}
               </div>
             </div>
@@ -525,6 +560,18 @@ export default function AdminVendorsPage() {
                           onClick={() => setVendor(u, false)}
                         >
                           {busyVendorId === u.id ? t('common.loading') : t('admin.removeVendor')}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${u.storefrontVerified ? 'btn-outline-warning' : 'btn-success'}`}
+                          disabled={busyVendorId === u.id}
+                          onClick={() => setStorefrontVerified(u, !u.storefrontVerified)}
+                        >
+                          {busyVendorId === u.id
+                            ? t('common.loading')
+                            : u.storefrontVerified
+                              ? t('admin.revokeStorefrontVerified')
+                              : t('admin.grantStorefrontVerified')}
                         </button>
                         <div className="small text-muted">{t('admin.sendVendorWelcomeLabel')}</div>
                         <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.sendVendorWelcomeHint')}>

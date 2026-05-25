@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,15 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
     List<MarketplaceListing> findTop100BySellerUserIdOrderByCreatedAtDesc(UUID sellerUserId);
     long countBySellerUserId(UUID sellerUserId);
     long countBySellerUserIdAndStatusIgnoreCase(UUID sellerUserId, String status);
+
+    @Query("""
+            select count(l) from MarketplaceListing l
+            where l.sellerUserId = :sellerId
+              and lower(l.status) = 'sold'
+              and l.updatedAt >= :since
+            """)
+    long countSoldBySellerSince(@Param("sellerId") UUID sellerId, @Param("since") Instant since);
+
     long countByStatusIgnoreCase(String status);
 
     @Query("""

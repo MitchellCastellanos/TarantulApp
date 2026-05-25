@@ -23,11 +23,15 @@ class PartnerCartHandoffServiceTest {
     @Mock
     private OfficialVendorRepository officialVendorRepository;
 
+    @Mock
+    private PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
+
     private PartnerCartHandoffService service;
 
     @BeforeEach
     void setUp() {
-        service = new PartnerCartHandoffService(officialVendorRepository, "https://monarchreptiles.com");
+        service = new PartnerCartHandoffService(
+                officialVendorRepository, partnerHandoffAnalyticsService, "https://monarchreptiles.com");
         OfficialVendor vendor = new OfficialVendor();
         vendor.setId(UUID.randomUUID());
         vendor.setSlug("monarch-reptiles");

@@ -5,6 +5,7 @@ import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
+import com.tarantulapp.service.PartnerHandoffAnalyticsService;
 import com.tarantulapp.service.PartnerListingImageProxyService;
 import com.tarantulapp.service.SpeciesTradeNoteService;
 import com.tarantulapp.service.TopVendorService;
@@ -32,6 +33,7 @@ public class PublicMarketplaceController {
     private final MarketplaceService marketplaceService;
     private final OfficialVendorService officialVendorService;
     private final PartnerCartHandoffService partnerCartHandoffService;
+    private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final PartnerListingImageProxyService partnerListingImageProxyService;
     private final ListingEventService listingEventService;
     private final TopVendorService topVendorService;
@@ -55,6 +57,7 @@ public class PublicMarketplaceController {
     public PublicMarketplaceController(MarketplaceService marketplaceService,
                                        OfficialVendorService officialVendorService,
                                        PartnerCartHandoffService partnerCartHandoffService,
+                                       PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                        PartnerListingImageProxyService partnerListingImageProxyService,
                                        ListingEventService listingEventService,
                                        TopVendorService topVendorService,
@@ -65,6 +68,7 @@ public class PublicMarketplaceController {
         this.marketplaceService = marketplaceService;
         this.officialVendorService = officialVendorService;
         this.partnerCartHandoffService = partnerCartHandoffService;
+        this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.partnerListingImageProxyService = partnerListingImageProxyService;
         this.listingEventService = listingEventService;
         this.topVendorService = topVendorService;
@@ -227,6 +231,13 @@ public class PublicMarketplaceController {
                 req.referrerHost()
         );
         return ResponseEntity.ok(Map.of("accepted", accepted));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> marketplaceStats() {
+        Map<String, Object> out = new java.util.LinkedHashMap<>(marketplaceService.publicMarketplaceStats());
+        out.putAll(partnerHandoffAnalyticsService.publicHandoffStats());
+        return ResponseEntity.ok(out);
     }
 
     @GetMapping("/program-flags")
