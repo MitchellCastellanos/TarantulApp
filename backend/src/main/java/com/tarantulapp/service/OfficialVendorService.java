@@ -5,9 +5,11 @@ import com.tarantulapp.entity.OfficialVendorLead;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
+import com.tarantulapp.repository.PartnerListingSyncRunRepository;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,6 +35,8 @@ public class OfficialVendorService {
     private final OfficialVendorRepository officialVendorRepository;
     private final OfficialVendorLeadRepository officialVendorLeadRepository;
     private final PartnerListingRepository partnerListingRepository;
+    private final PartnerListingSyncRunRepository partnerListingSyncRunRepository;
+    private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final EmailService emailService;
     private final String appBaseUrl;
     private final boolean seedOnStartup;
@@ -38,12 +44,16 @@ public class OfficialVendorService {
     public OfficialVendorService(OfficialVendorRepository officialVendorRepository,
                                  OfficialVendorLeadRepository officialVendorLeadRepository,
                                  PartnerListingRepository partnerListingRepository,
+                                 PartnerListingSyncRunRepository partnerListingSyncRunRepository,
+                                 PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                  EmailService emailService,
                                  @Value("${app.base-url:http://localhost:5173}") String appBaseUrl,
                                  @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
         this.officialVendorRepository = officialVendorRepository;
         this.officialVendorLeadRepository = officialVendorLeadRepository;
         this.partnerListingRepository = partnerListingRepository;
+        this.partnerListingSyncRunRepository = partnerListingSyncRunRepository;
+        this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.emailService = emailService;
         this.appBaseUrl = trimTrailingSlash(appBaseUrl);
         this.seedOnStartup = seedOnStartup;
@@ -113,6 +123,8 @@ public class OfficialVendorService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> adminListVendors() {
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        Map<UUID, Map<String, Object>> handoffs30d = partnerHandoffAnalyticsService.adminHandoffByVendorSince(since30d);
         return officialVendorRepository.findAll().stream()
                 .sorted((a, b) -> {
                     int scoreCompare = Integer.compare(
@@ -122,7 +134,7 @@ public class OfficialVendorService {
                     return (a.getName() == null ? "" : a.getName())
                             .compareToIgnoreCase(b.getName() == null ? "" : b.getName());
                 })
-                .map(this::mapVendor)
+                .map(v -> mapVendorAdmin(v, handoffs30d))
                 .collect(Collectors.toList());
     }
 
@@ -225,6 +237,39 @@ public class OfficialVendorService {
         Number influenceScore = (Number) vendor.getOrDefault("influenceScore", 0);
         score += influenceScore.intValue();
         return score;
+    }
+
+    private Map<String, Object> mapVendorAdmin(OfficialVendor vendor, Map<UUID, Map<String, Object>> handoffs30d) {
+        Map<String, Object> out = mapVendor(vendor);
+        out.put("opsSummary", buildOpsSummary(vendor.getId(), handoffs30d));
+        return out;
+    }
+
+    private Map<String, Object> buildOpsSummary(UUID vendorId, Map<UUID, Map<String, Object>> handoffs30d) {
+        Map<String, Object> ops = new LinkedHashMap<>();
+        Map<String, Object> handoff = handoffs30d.getOrDefault(vendorId, Map.of());
+        ops.put("handoffs30d", handoff.getOrDefault("handoffs", 0L));
+        ops.put("linesSent30d", handoff.getOrDefault("linesSent", 0L));
+        ops.put("itemsSent30d", handoff.getOrDefault("itemsSent", 0L));
+        List<PartnerListingSyncRun> runs = partnerListingSyncRunRepository
+                .findTop50ByOfficialVendorIdOrderByStartedAtDesc(vendorId);
+        if (!runs.isEmpty()) {
+            PartnerListingSyncRun run = runs.get(0);
+            Map<String, Object> sync = new LinkedHashMap<>();
+            sync.put("status", run.getStatus() == null ? "" : run.getStatus().name().toLowerCase(Locale.ROOT));
+            sync.put("startedAt", run.getStartedAt());
+            sync.put("finishedAt", run.getFinishedAt());
+            sync.put("processedCount", run.getProcessedCount());
+            sync.put("upsertedCount", run.getUpsertedCount());
+            sync.put("staleCount", run.getStaleCount());
+            sync.put("skippedCount", run.getSkippedCount());
+            sync.put("failedCount", run.getFailedCount());
+            sync.put("errorMessage", run.getErrorMessage() == null ? "" : run.getErrorMessage());
+            ops.put("latestSync", sync);
+        } else {
+            ops.put("latestSync", null);
+        }
+        return ops;
     }
 
     private Map<String, Object> mapVendor(OfficialVendor vendor) {

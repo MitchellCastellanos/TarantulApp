@@ -42,6 +42,21 @@ public class PartnerHandoffAnalyticsService {
     }
 
     @Transactional(readOnly = true)
+    public Map<UUID, Map<String, Object>> adminHandoffByVendorSince(Instant since) {
+        Map<UUID, Map<String, Object>> out = new LinkedHashMap<>();
+        for (Object[] row : handoffEventRepository.aggregateByVendorSince(since)) {
+            UUID vendorId = (UUID) row[0];
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("vendorSlug", row[1] == null ? "" : row[1]);
+            m.put("handoffs", ((Number) row[2]).longValue());
+            m.put("linesSent", ((Number) row[3]).longValue());
+            m.put("itemsSent", ((Number) row[4]).longValue());
+            out.put(vendorId, m);
+        }
+        return out;
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> publicHandoffStats() {
         Instant since7d = Instant.now().minus(7, ChronoUnit.DAYS);
         Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
