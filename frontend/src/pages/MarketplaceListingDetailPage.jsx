@@ -19,7 +19,7 @@ import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
-import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import { addPartnerCartLine } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import ListingShareKit from '../components/ListingShareKit'
 import SpeciesTradeNoteBlock from '../components/SpeciesTradeNoteBlock'
@@ -544,7 +544,7 @@ export default function MarketplaceListingDetailPage() {
                         onClick={() => {
                           trackListingEvent(listingId, 'contact_tap')
                           addPartnerCartLine({
-                            vendorSlug: listing.officialVendor?.slug || MONARCH_VENDOR_SLUG,
+                            vendorSlug: listing.officialVendor?.slug,
                             listingId: listing.id,
                             externalProductId: listing.partnerExternalId,
                             title: listing.title,

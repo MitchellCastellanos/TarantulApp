@@ -6,6 +6,9 @@ import {
   loadImageElement,
 } from './qrBrandComposite'
 
+const BRAND_TEXTURE = '/bg-texture.png'
+const CORNER_MARK = '/tarantula-card-corner-mark.png'
+
 function loadCorsImage(src) {
   return new Promise((resolve, reject) => {
     if (!src) {
@@ -117,6 +120,34 @@ function drawQrPlate(ctx, x, y, size, padding = 12, radius = 14) {
   ctx.restore()
 }
 
+function drawCardVignette(ctx, w, h) {
+  const vignette = ctx.createRadialGradient(w / 2, h * 0.42, 120, w / 2, h * 0.46, w * 0.72)
+  vignette.addColorStop(0, 'rgba(0,0,0,0)')
+  vignette.addColorStop(1, 'rgba(0,0,0,0.48)')
+  ctx.fillStyle = vignette
+  ctx.fillRect(0, 0, w, h)
+}
+
+function drawGoldRule(ctx, x, y, w, h) {
+  const grad = ctx.createLinearGradient(x, y, x + w, y)
+  grad.addColorStop(0, '#8c6b24')
+  grad.addColorStop(0.35, '#f1d06a')
+  grad.addColorStop(1, '#6f4e12')
+  ctx.fillStyle = grad
+  ctx.fillRect(x, y, w, h)
+}
+
+function drawRoundRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
+}
+
 function drawFoundingBadge(ctx, text, x, y) {
   ctx.save()
   ctx.font = 'bold 18px sans-serif'
@@ -175,6 +206,14 @@ export async function buildStorefrontSharePngDataUrl({
 
   ctx.fillStyle = '#0c0c1e'
   ctx.fillRect(0, 0, W, H)
+  try {
+    const texture = await loadImageElement(BRAND_TEXTURE)
+    ctx.globalAlpha = 0.18
+    drawCoverImage(ctx, texture, 0, 0, W, H)
+    ctx.globalAlpha = 1
+  } catch {
+    /* texture is optional */
+  }
 
   const imgZoneH = Math.round(H * 0.55)
   let photoLoaded = false
@@ -190,6 +229,8 @@ export async function buildStorefrontSharePngDataUrl({
   if (!photoLoaded) {
     drawSpiderFallback(ctx, 0, 0, W, imgZoneH)
   }
+  drawCardVignette(ctx, W, imgZoneH)
+  drawGoldRule(ctx, 0, 0, W, 10)
 
   const fadeH = 120
   const fade = ctx.createLinearGradient(0, imgZoneH - fadeH, 0, imgZoneH)
@@ -200,8 +241,21 @@ export async function buildStorefrontSharePngDataUrl({
 
   const panelY = imgZoneH
   const panelH = H - imgZoneH
-  ctx.fillStyle = '#0c0c1e'
+  const panelGrad = ctx.createLinearGradient(0, panelY, W, H)
+  panelGrad.addColorStop(0, '#11112a')
+  panelGrad.addColorStop(0.58, '#0c0c1e')
+  panelGrad.addColorStop(1, '#070711')
+  ctx.fillStyle = panelGrad
   ctx.fillRect(0, panelY, W, panelH)
+  drawGoldRule(ctx, 0, panelY, W, 4)
+  try {
+    const corner = await loadImageElement(CORNER_MARK)
+    ctx.globalAlpha = 0.18
+    ctx.drawImage(corner, W - 330, panelY + 18, 280, 280)
+    ctx.globalAlpha = 1
+  } catch {
+    /* ornamental mark is optional */
+  }
 
   const pad = 56
 
@@ -236,6 +290,21 @@ export async function buildStorefrontSharePngDataUrl({
   ctx.fillText(BRAND_WITH_TM, chipCursorX, chipY + chipLogoSize / 2)
   ctx.textBaseline = 'top'
 
+  const pillText = t('share.storefront.cardEyebrow', { defaultValue: 'OFFICIAL PARTNER' }).toUpperCase()
+  ctx.font = 'bold 17px sans-serif'
+  const pillW = ctx.measureText(pillText).width + 30
+  ctx.fillStyle = 'rgba(212, 175, 55, 0.18)'
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.7)'
+  ctx.lineWidth = 1
+  drawRoundRect(ctx, W - pad - pillW, chipY + 5, pillW, 36, 18)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#f1d06a'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(pillText, W - pad - pillW / 2, chipY + 23)
+  ctx.textBaseline = 'top'
+
   const qrSize = 150
   const qrPlatePad = 10
   const qrColX = W - pad - qrSize
@@ -250,6 +319,14 @@ export async function buildStorefrontSharePngDataUrl({
   const qrY = qrLabelY + qrLabelHeight + qrLabelGap
   const qrCaptionY = qrY + qrSize + qrCaptionGap
   const qrCenterX = qrColX + qrSize / 2
+  ctx.save()
+  ctx.fillStyle = 'rgba(255,255,255,0.055)'
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.22)'
+  ctx.lineWidth = 1
+  drawRoundRect(ctx, qrColX - 24, qrStackTop - 20, qrSize + 48, qrStackHeight + 36, 22)
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
 
   const contentLeftW = qrColX - pad - 28
 

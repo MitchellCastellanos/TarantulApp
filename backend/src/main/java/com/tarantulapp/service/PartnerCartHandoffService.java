@@ -3,7 +3,6 @@ package com.tarantulapp.service;
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -18,15 +17,12 @@ public class PartnerCartHandoffService {
 
     private final OfficialVendorRepository officialVendorRepository;
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
-    private final String defaultStoreBaseUrl;
 
     public PartnerCartHandoffService(
             OfficialVendorRepository officialVendorRepository,
-            PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
-            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String defaultStoreBaseUrl) {
+            PartnerHandoffAnalyticsService partnerHandoffAnalyticsService) {
         this.officialVendorRepository = officialVendorRepository;
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
-        this.defaultStoreBaseUrl = trimTrailingSlash(defaultStoreBaseUrl);
     }
 
     public Map<String, Object> buildHandoff(String vendorSlug, List<CartLine> lines) {
@@ -49,6 +45,9 @@ public class PartnerCartHandoffService {
         out.put("addToCartUrls", addToCartUrls);
         out.put("lineCount", normalized.size());
         out.put("utmSource", "tarantulapp");
+        out.put("storeBaseUrl", storeBase);
+        out.put("websiteUrl", vendor.getWebsiteUrl());
+        out.put("feedType", vendor.getFeedType());
 
         if (normalized.size() == 1) {
             out.put("checkoutUrl", addToCartUrls.get(0));
@@ -112,7 +111,7 @@ public class PartnerCartHandoffService {
 
     private String resolveStoreBaseUrl(OfficialVendor vendor) {
         if (vendor == null) {
-            return defaultStoreBaseUrl;
+            throw new IllegalArgumentException("Partner sin website configurado");
         }
         String fromFeed = trimTrailingSlash(vendor.getFeedBaseUrl());
         if (fromFeed != null && !fromFeed.isBlank()) {
@@ -122,12 +121,12 @@ public class PartnerCartHandoffService {
         if (fromSite != null && !fromSite.isBlank()) {
             return fromSite;
         }
-        return defaultStoreBaseUrl;
+        throw new IllegalArgumentException("Partner sin website configurado");
     }
 
     private String withPartnerUtm(String url) {
         if (url == null || url.isBlank()) {
-            return defaultStoreBaseUrl + "/cart/";
+            throw new IllegalArgumentException("Partner sin website configurado");
         }
         return UriComponentsBuilder.fromHttpUrl(url.trim())
                 .queryParam("utm_source", "tarantulapp")
@@ -157,7 +156,7 @@ public class PartnerCartHandoffService {
 
     private String trimTrailingSlash(String url) {
         if (url == null || url.isBlank()) {
-            return "https://monarchreptiles.com";
+            return null;
         }
         String trimmed = url.trim();
         return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;

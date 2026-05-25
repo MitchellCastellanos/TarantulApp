@@ -1,20 +1,19 @@
 const CART_KEY = 'tarantulapp.partnerCart.v1'
-export const MONARCH_VENDOR_SLUG = 'monarch-reptiles'
 
 export function readPartnerCart() {
   try {
     const raw = localStorage.getItem(CART_KEY)
-    if (!raw) return { vendorSlug: MONARCH_VENDOR_SLUG, lines: [] }
+    if (!raw) return { vendorSlug: '', lines: [] }
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.lines)) {
-      return { vendorSlug: MONARCH_VENDOR_SLUG, lines: [] }
+      return { vendorSlug: '', lines: [] }
     }
     return {
-      vendorSlug: parsed.vendorSlug || MONARCH_VENDOR_SLUG,
+      vendorSlug: parsed.vendorSlug || '',
       lines: parsed.lines.filter((l) => l && l.externalProductId),
     }
   } catch {
-    return { vendorSlug: MONARCH_VENDOR_SLUG, lines: [] }
+    return { vendorSlug: '', lines: [] }
   }
 }
 
@@ -25,9 +24,12 @@ export function writePartnerCart(cart) {
 
 export function addPartnerCartLine(line) {
   const cart = readPartnerCart()
-  const vendorSlug = line.vendorSlug || MONARCH_VENDOR_SLUG
+  const vendorSlug = line.vendorSlug || cart.vendorSlug || ''
   const externalProductId = String(line.externalProductId || '').trim()
-  if (!externalProductId) return cart
+  if (!externalProductId || !vendorSlug) return cart
+  if (cart.vendorSlug && cart.vendorSlug !== vendorSlug) {
+    cart.lines = []
+  }
   const existing = cart.lines.find((l) => l.externalProductId === externalProductId)
   const qty = Math.max(1, Math.min(99, Number(line.quantity) || 1))
   if (existing) {
@@ -63,7 +65,7 @@ export function updatePartnerCartQty(externalProductId, quantity) {
 }
 
 export function clearPartnerCart() {
-  writePartnerCart({ vendorSlug: MONARCH_VENDOR_SLUG, lines: [] })
+  writePartnerCart({ vendorSlug: '', lines: [] })
 }
 
 export function partnerCartCount(cart = readPartnerCart()) {
