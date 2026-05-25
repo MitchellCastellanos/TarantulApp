@@ -557,8 +557,8 @@ export default function AdminHomePage() {
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        title="STRATEGIC_FOUNDER"
-                        checked={v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
+                        title="FOUNDING_PARTNER"
+                        checked={v.isFoundingPartner || v.partnerProgramTier === 'FOUNDING_PARTNER' || v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
                         onChange={(e) => patchVendorStrategic(v.id, { strategicFounder: e.target.checked })}
                       />
                     </td>

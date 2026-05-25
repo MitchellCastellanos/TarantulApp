@@ -154,7 +154,7 @@ export default function PartnerStorefrontPage() {
   }
 
   const partnerBadge = (l) => {
-    if (l?.isFoundingPartner || l?.partnerProgramTier === 'STRATEGIC_FOUNDER') {
+    if (l?.isFoundingPartner || l?.partnerProgramTier === 'FOUNDING_PARTNER' || l?.partnerProgramTier === 'STRATEGIC_FOUNDER') {
       return t('marketplace.foundingPartnerBadge')
     }
     return l?.badgeLabel || t('marketplace.certifiedPartnerBadge')

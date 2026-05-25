@@ -264,7 +264,7 @@ export default function MarketplaceListingDetailPage() {
                   )}
                   {isPartner && (
                     <span className="badge bg-warning text-dark">
-                      {listing.isFoundingPartner || listing.partnerProgramTier === 'STRATEGIC_FOUNDER'
+                      {listing.isFoundingPartner || listing.partnerProgramTier === 'FOUNDING_PARTNER' || listing.partnerProgramTier === 'STRATEGIC_FOUNDER'
                         ? t('marketplace.foundingPartnerBadge')
                         : (listing.badgeLabel || t('marketplace.certifiedPartnerBadge'))}
                     </span>
@@ -529,7 +529,7 @@ export default function MarketplaceListingDetailPage() {
                       <h3 className="h6 fw-bold mb-2 d-flex align-items-center gap-2 flex-wrap">
                         <OfficialPartnerShield width={22} height={24} />
                         <span>{listing.officialVendor?.name || listing.sellerName}</span>
-                        {(listing.isFoundingPartner || listing.partnerProgramTier === 'STRATEGIC_FOUNDER') && (
+                        {(listing.isFoundingPartner || listing.partnerProgramTier === 'FOUNDING_PARTNER' || listing.partnerProgramTier === 'STRATEGIC_FOUNDER') && (
                           <span className="badge bg-warning text-dark">{t('marketplace.foundingPartnerBadge')}</span>
                         )}
                         {listing.promoted && (

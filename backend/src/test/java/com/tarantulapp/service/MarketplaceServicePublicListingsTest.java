@@ -44,6 +44,11 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MarketplaceServicePublicListingsTest {
+    private static final List<PartnerProgramTier> SYNC_PARTNER_TIERS = List.of(
+            PartnerProgramTier.FOUNDING_PARTNER,
+            PartnerProgramTier.OFFICIAL_PARTNER,
+            PartnerProgramTier.STRATEGIC_FOUNDER,
+            PartnerProgramTier.STRATEGIC_PARTNER);
 
     @Mock private MarketplaceListingRepository marketplaceListingRepository;
     @Mock private ListingEventRepository listingEventRepository;
@@ -108,7 +113,7 @@ class MarketplaceServicePublicListingsTest {
         seller.setDisplayName("Keeper");
 
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                eq(SYNC_PARTNER_TIERS)))
                 .thenReturn(List.of(vendor));
         when(partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(List.of(partner));
@@ -155,7 +160,7 @@ class MarketplaceServicePublicListingsTest {
         seller.setEmail("k2@example.com");
 
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                eq(SYNC_PARTNER_TIERS)))
                 .thenReturn(List.of());
         when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
                 .thenReturn(List.of(peer));
@@ -175,7 +180,7 @@ class MarketplaceServicePublicListingsTest {
         OfficialVendor vendor = new OfficialVendor();
         vendor.setId(vendorId);
         vendor.setName("Founder Vendor");
-        vendor.setPartnerProgramTier(PartnerProgramTier.STRATEGIC_FOUNDER);
+        vendor.setPartnerProgramTier(PartnerProgramTier.FOUNDING_PARTNER);
         vendor.setListingImportEnabled(true);
         vendor.setEnabled(true);
 
@@ -205,7 +210,7 @@ class MarketplaceServicePublicListingsTest {
         }
 
         when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                eq(List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER))))
+                eq(SYNC_PARTNER_TIERS)))
                 .thenReturn(List.of(vendor));
         when(partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
                 .thenReturn(partners);

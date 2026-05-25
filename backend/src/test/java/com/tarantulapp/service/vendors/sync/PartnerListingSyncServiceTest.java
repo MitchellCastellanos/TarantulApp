@@ -1,11 +1,13 @@
 package com.tarantulapp.service.vendors.sync;
 
+import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
 import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.entity.PartnerListingSyncTriggerSource;
+import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
@@ -70,6 +72,7 @@ class PartnerListingSyncServiceTest {
     @Test
     void syncMarksOutOfStockAsActiveAndStalesMissingItems() {
         UUID vendorId = UUID.randomUUID();
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(syncVendor(vendorId)));
         PartnerListing existingMissing = new PartnerListing();
         existingMissing.setOfficialVendorId(vendorId);
         existingMissing.setExternalId("missing-1");
@@ -116,6 +119,7 @@ class PartnerListingSyncServiceTest {
     @Test
     void syncSkipsInvalidExternalIdAndReturnsPartial() {
         UUID vendorId = UUID.randomUUID();
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(syncVendor(vendorId)));
         when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(0);
 
         PartnerListingSyncRun run = service.syncVendorListings(
@@ -148,5 +152,15 @@ class PartnerListingSyncServiceTest {
         verify(partnerListingUpsertService, never()).upsert(any());
         assertEquals(1, run.getSkippedCount());
         assertEquals(PartnerListingSyncRunStatus.PARTIAL, run.getStatus());
+    }
+
+    private OfficialVendor syncVendor(UUID vendorId) {
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setId(vendorId);
+        vendor.setSlug("partner-test");
+        vendor.setPartnerProgramTier(PartnerProgramTier.OFFICIAL_PARTNER);
+        vendor.setListingImportEnabled(true);
+        vendor.setEnabled(true);
+        return vendor;
     }
 }

@@ -70,6 +70,8 @@ public class MarketplaceService {
 
     /** Official vendors whose partner listings appear in the public marketplace feed. */
     private static final List<PartnerProgramTier> STRATEGIC_PARTNER_FEED_TIERS = List.of(
+            PartnerProgramTier.FOUNDING_PARTNER,
+            PartnerProgramTier.OFFICIAL_PARTNER,
             PartnerProgramTier.STRATEGIC_FOUNDER,
             PartnerProgramTier.STRATEGIC_PARTNER);
     private final MarketplaceListingRepository marketplaceListingRepository;
@@ -550,7 +552,8 @@ public class MarketplaceService {
         out.put("badge", vendor.getBadge() == null ? "" : vendor.getBadge());
         out.put("shipsToCountries", splitVendorCountries(vendor.getShipsToCountries()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
-        out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
+        out.put("isFoundingPartner", vendor.getPartnerProgramTier() != null && vendor.getPartnerProgramTier().isFoundingPartner());
+        out.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
         out.put("nationalShipping", Boolean.TRUE.equals(vendor.getNationalShipping()));
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
         out.put("storefrontPath", vendor.getSlug() == null ? null : "/partner/" + vendor.getSlug());
@@ -680,7 +683,7 @@ public class MarketplaceService {
             return false;
         }
         PartnerProgramTier tier = vendor.getPartnerProgramTier();
-        return tier != null && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
+        return tier != null && tier.isOfficialPartner() && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
     }
 
     private List<Map<String, Object>> relatedPeerListings(UUID sellerUserId, UUID excludeId) {
@@ -923,7 +926,7 @@ public class MarketplaceService {
     }
 
     private int founderBoost(OfficialVendor vendor) {
-        if (vendor != null && vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER) {
+        if (vendor != null && vendor.getPartnerProgramTier() != null && vendor.getPartnerProgramTier().isFoundingPartner()) {
             return 25;
         }
         return 0;
@@ -1228,6 +1231,11 @@ public class MarketplaceService {
         return "community";
     }
 
+    private static String partnerTierKey(PartnerProgramTier tier) {
+        if (tier == null) return null;
+        return tier.isFoundingPartner() ? "founding" : "official";
+    }
+
     private Map<String, Object> mapPartnerListing(PartnerListing listing, OfficialVendor vendor) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", listing.getId());
@@ -1254,8 +1262,9 @@ public class MarketplaceService {
         out.put("isPartner", true);
         out.put("partnerProgramTier", vendor != null && vendor.getPartnerProgramTier() != null
                 ? vendor.getPartnerProgramTier().name() : null);
-        boolean founding = vendor != null && vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER;
+        boolean founding = vendor != null && vendor.getPartnerProgramTier() != null && vendor.getPartnerProgramTier().isFoundingPartner();
         out.put("isFoundingPartner", founding);
+        out.put("partnerTier", partnerTierKey(vendor == null ? null : vendor.getPartnerProgramTier()));
         out.put("badgeLabel", vendor == null || vendor.getBadge() == null
                 ? (founding ? "Founding partner" : "Official partner")
                 : vendor.getBadge());
@@ -1271,6 +1280,7 @@ public class MarketplaceService {
             vendorMeta.put("name", vendor.getName());
             vendorMeta.put("websiteUrl", vendor.getWebsiteUrl());
             vendorMeta.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
+            vendorMeta.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
             vendorMeta.put("isFoundingPartner", founding);
             vendorMeta.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
             vendorMeta.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));

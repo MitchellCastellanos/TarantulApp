@@ -10,8 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -77,6 +81,10 @@ public class OfficialVendor {
     @Column(name = "feed_type", length = 40)
     private String feedType;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "feed_config", columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> feedConfig = new LinkedHashMap<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -88,11 +96,17 @@ public class OfficialVendor {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
+        if (feedConfig == null) {
+            feedConfig = new LinkedHashMap<>();
+        }
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = Instant.now();
+        if (feedConfig == null) {
+            feedConfig = new LinkedHashMap<>();
+        }
     }
 
     public UUID getId() { return id; }
@@ -131,6 +145,8 @@ public class OfficialVendor {
     public void setFeedBaseUrl(String feedBaseUrl) { this.feedBaseUrl = feedBaseUrl; }
     public String getFeedType() { return feedType; }
     public void setFeedType(String feedType) { this.feedType = feedType; }
+    public Map<String, Object> getFeedConfig() { return feedConfig; }
+    public void setFeedConfig(Map<String, Object> feedConfig) { this.feedConfig = feedConfig; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

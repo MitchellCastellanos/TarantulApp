@@ -583,7 +583,7 @@ export default function AdminMarketplacePage() {
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        checked={v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
+                        checked={v.isFoundingPartner || v.partnerProgramTier === 'FOUNDING_PARTNER' || v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
                         onChange={(e) => patchVendorStrategic(v.id, { strategicFounder: e.target.checked })}
                       />
                     </td>

@@ -170,8 +170,18 @@ public class AdminController {
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
 
-    record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder, Boolean listingImportEnabled) {}
-    record PromoteOfficialVendorLeadRequest(Boolean enableImport, Boolean strategicFounder) {}
+    record UpdateOfficialVendorStrategicRequest(Boolean strategicFounder,
+                                                Boolean listingImportEnabled,
+                                                String partnerProgramTier,
+                                                String feedType,
+                                                String feedBaseUrl,
+                                                Map<String, Object> feedConfig) {}
+    record PromoteOfficialVendorLeadRequest(Boolean enableImport,
+                                            Boolean strategicFounder,
+                                            String partnerProgramTier,
+                                            String feedType,
+                                            String feedBaseUrl,
+                                            Map<String, Object> feedConfig) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
@@ -348,7 +358,14 @@ public class AdminController {
         boolean enableImport = req != null && Boolean.TRUE.equals(req.enableImport());
         boolean strategicFounder = req != null && Boolean.TRUE.equals(req.strategicFounder());
         try {
-            return ResponseEntity.ok(officialVendorService.adminPromoteLeadToVendor(id, enableImport, strategicFounder));
+            return ResponseEntity.ok(officialVendorService.adminPromoteLeadToVendor(
+                    id,
+                    enableImport,
+                    strategicFounder,
+                    req == null ? null : req.partnerProgramTier(),
+                    req == null ? null : req.feedType(),
+                    req == null ? null : req.feedBaseUrl(),
+                    req == null ? null : req.feedConfig()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -366,11 +383,22 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> updateOfficialVendorStrategicProgram(@PathVariable UUID id,
                                                                                    @Valid @RequestBody UpdateOfficialVendorStrategicRequest req) {
         adminAccessService.assertCurrentUserIsAdmin();
-        if (req.strategicFounder() == null && req.listingImportEnabled() == null) {
-            throw new IllegalArgumentException("strategicFounder o listingImportEnabled requerido");
+        if (req.strategicFounder() == null
+                && req.listingImportEnabled() == null
+                && req.partnerProgramTier() == null
+                && req.feedType() == null
+                && req.feedBaseUrl() == null
+                && req.feedConfig() == null) {
+            throw new IllegalArgumentException("partner config update requerido");
         }
         return ResponseEntity.ok(officialVendorService.adminUpdateStrategicProgram(
-                id, req.strategicFounder(), req.listingImportEnabled()));
+                id,
+                req.strategicFounder(),
+                req.listingImportEnabled(),
+                req.partnerProgramTier(),
+                req.feedType(),
+                req.feedBaseUrl(),
+                req.feedConfig()));
     }
 
     @PostMapping("/partner-sync/run")

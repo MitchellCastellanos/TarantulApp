@@ -426,7 +426,7 @@ export default function MarketplacePage() {
   }, [officialVendors])
 
   const partnerBadgeFor = (l) => {
-    if (l.isFoundingPartner || l.partnerProgramTier === 'STRATEGIC_FOUNDER') {
+    if (l.isFoundingPartner || l.partnerProgramTier === 'FOUNDING_PARTNER' || l.partnerProgramTier === 'STRATEGIC_FOUNDER') {
       return t('marketplace.foundingPartnerBadge')
     }
     if (l.promoted) return t('marketplace.tarantulaCribsBadge')
