@@ -1,5 +1,6 @@
 package com.tarantulapp.service.vendors.sync;
 
+import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerListingSyncRun;
@@ -7,7 +8,7 @@ import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.entity.PartnerListingSyncTriggerSource;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
-import com.tarantulapp.service.vendors.PartnerListingTarantulaFilter;
+import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,10 +62,10 @@ public class PartnerListingSyncRunService {
         return partnerListingSyncRunRepository.save(run);
     }
 
-    /** Marks active Monarch rows that are other pets or outside allowed catalog (stale from older sync). */
+    /** Marks active partner rows outside the current configured catalog as stale. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public int markNonTarantulaAsStale(UUID vendorId, String vendorSlug) {
-        if (vendorSlug == null || !PartnerListingTarantulaFilter.MONARCH_VENDOR_SLUG.equalsIgnoreCase(vendorSlug.trim())) {
+    public int markDisallowedAsStale(UUID vendorId, OfficialVendor vendor) {
+        if (vendor == null) {
             return 0;
         }
         int stale = 0;
@@ -73,11 +74,11 @@ public class PartnerListingSyncRunService {
             if (listing.getStatus() != PartnerListingStatus.ACTIVE) {
                 continue;
             }
-            if (PartnerListingTarantulaFilter.isAllowedMonarchListing(
+            if (PartnerListingCatalogRules.isAllowedListing(
                     listing.getTitle(),
                     listing.getDescription(),
                     listing.getListingCategory(),
-                    vendorSlug)) {
+                    vendor.getFeedConfig())) {
                 continue;
             }
             listing.setStatus(PartnerListingStatus.STALE);
