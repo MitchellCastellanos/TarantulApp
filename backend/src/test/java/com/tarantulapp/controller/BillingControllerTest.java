@@ -2,6 +2,7 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.VendorActivationService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.VendorMxTierService;
 import com.tarantulapp.util.SecurityHelper;
@@ -38,12 +39,16 @@ class BillingControllerTest {
     @Mock
     private VendorMxTierService vendorMxTierService;
 
+    @Mock
+    private VendorActivationService vendorActivationService;
+
     private BillingController controller;
 
     @BeforeEach
     void setUp() {
         controller = new BillingController(
-                userRepository, securityHelper, billingService, vendorInviteService, vendorMxTierService);
+                userRepository, securityHelper, billingService, vendorInviteService, vendorMxTierService,
+                vendorActivationService);
     }
 
     @Test

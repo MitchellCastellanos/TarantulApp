@@ -49,8 +49,8 @@ export default function ProPage() {
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
   const [androidSyncing, setAndroidSyncing] = useState(false)
   const [androidMessage, setAndroidMessage] = useState('')
-  const [vendorInviteBusy, setVendorInviteBusy] = useState(false)
-  const [vendorInviteMessage, setVendorInviteMessage] = useState('')
+  const [vendorActivateBusy, setVendorActivateBusy] = useState(false)
+  const [vendorActivateMessage, setVendorActivateMessage] = useState('')
   const [proAudience, setProAudience] = useState(() => {
     try {
       const s = localStorage.getItem(PRO_AUDIENCE_KEY)
@@ -68,6 +68,13 @@ export default function ProPage() {
       /* ignore */
     }
   }, [proAudience])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.hash === '#vendor-activation') {
+      setProAudience('seller')
+    }
+  }, [])
 
   const plan = billing?.plan || user?.plan || 'FREE'
   const isPro = plan === 'PRO'
@@ -175,28 +182,35 @@ export default function ProPage() {
     }
   }, [checkout, user?.id, sessionId])
 
-  const handleRequestVendorInvite = async () => {
+  const isVendor = billing?.verifiedBreeder === true
+  const mxStarterEligible = vendorDynamicTier
+    && vendorMxTier
+    && !vendorMxTier.requiresPaidSubscription
+
+  const handleActivateMxStarter = async () => {
     if (!user) {
       navigate('/login', { state: { redirectAfterAuth: '/pro' } })
       return
     }
-    setVendorInviteMessage('')
-    setVendorInviteBusy(true)
+    setVendorActivateMessage('')
+    setVendorActivateBusy(true)
     try {
-      const loc = (typeof navigator !== 'undefined' && navigator.language?.startsWith('en'))
-        ? 'en'
-        : (navigator.language?.startsWith('fr') ? 'fr' : 'es')
-      await billingService.requestVendorInvite(loc)
-      setVendorInviteMessage(t('pro.vendorInviteEmailSent'))
+      await billingService.activateVendorMxStarter(billingRegion)
+      await loadBilling()
+      setVendorActivateMessage(t('pro.vendorMxStarterActivated'))
     } catch (err) {
       const code = err?.response?.data?.error
       if (code === 'USER_ALREADY_VENDOR') {
-        setVendorInviteMessage(t('pro.vendorInviteAlreadyVendor'))
+        setVendorActivateMessage(t('pro.vendorInviteAlreadyVendor'))
+      } else if (code === 'VENDOR_PAID_TIER_CHECKOUT_REQUIRED') {
+        setError(t('pro.vendorMxStarterHint'))
+      } else if (code === 'VENDOR_MX_STARTER_ONLY') {
+        setVendorActivateMessage(t('pro.vendorMxStarterRegionOnly'))
       } else {
-        setVendorInviteMessage(t('pro.vendorInviteRequestError'))
+        setVendorActivateMessage(t('pro.vendorActivateError'))
       }
     } finally {
-      setVendorInviteBusy(false)
+      setVendorActivateBusy(false)
     }
   }
 
@@ -543,7 +557,7 @@ export default function ProPage() {
                               </button>
                             ) : null}
                             <a href="#vendor-activation" className="btn btn-sm btn-outline-light align-self-start">
-                              {t('pro.vendorActivationCta')}
+                              {t('pro.vendorActivationSellCta')}
                             </a>
                           </>
                         ) : (
@@ -568,27 +582,70 @@ export default function ProPage() {
               </p>
               <div id="vendor-activation" className="border rounded p-3 mb-3" style={{ borderColor: 'var(--ta-border)', scrollMarginTop: 96 }}>
                 <div className="small fw-semibold mb-2">{t('pro.vendorActivationTitle')}</div>
-                <p className="small text-muted mb-2">{t('pro.vendorActivationBody')}</p>
-                <ol className="small mb-2 ps-3" style={{ lineHeight: 1.45 }}>
-                  <li>{t('pro.vendorActivationStep1')}</li>
-                  <li>{t('pro.vendorActivationStep2')}</li>
-                  <li>{t('pro.vendorActivationStep3')}</li>
-                </ol>
-                <div className="d-flex flex-wrap gap-2 align-items-center">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-dark"
-                    disabled={vendorInviteBusy}
-                    onClick={handleRequestVendorInvite}
-                  >
-                    {vendorInviteBusy ? t('common.loading') : t('pro.vendorActivationCta')}
-                  </button>
-                  <Link to="/marketplace/sell" className="btn btn-sm btn-outline-secondary">
-                    {t('pro.vendorActivationSellCta')}
-                  </Link>
-                </div>
-                {vendorInviteMessage ? (
-                  <p className="small text-muted mb-0 mt-2">{vendorInviteMessage}</p>
+                {isVendor ? (
+                  <>
+                    <p className="small text-muted mb-2">{t('pro.vendorActiveBody')}</p>
+                    <div className="d-flex flex-wrap gap-2">
+                      <Link to="/marketplace/sell" className="btn btn-sm btn-dark">
+                        {t('pro.vendorActivationSellCta')}
+                      </Link>
+                    </div>
+                  </>
+                ) : vendorProgramAvailable ? (
+                  <>
+                    <p className="small text-muted mb-2">{t('pro.vendorActivationBody')}</p>
+                    <ol className="small mb-2 ps-3" style={{ lineHeight: 1.45 }}>
+                      <li>
+                        {mxStarterEligible
+                          ? t('pro.vendorActivationStep1MxStarter')
+                          : t('pro.vendorActivationStep1Subscribe')}
+                      </li>
+                      <li>{t('pro.vendorActivationStep2Storefront')}</li>
+                      <li>{t('pro.vendorActivationStep3Verification')}</li>
+                    </ol>
+                    <div className="d-flex flex-wrap gap-2 align-items-center">
+                      {mxStarterEligible ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-warning"
+                          disabled={vendorActivateBusy}
+                          onClick={handleActivateMxStarter}
+                        >
+                          {vendorActivateBusy ? t('common.loading') : t('pro.vendorMxStarterActivateCta')}
+                        </button>
+                      ) : (
+                        user && !isAndroidNative && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-warning"
+                            disabled={loadingCheckout || billing?.checkoutEnabled === false}
+                            onClick={handleVendorCheckout}
+                          >
+                            {loadingCheckout ? t('common.loading') : t('pro.vendorSubscribeCta')}
+                          </button>
+                        )
+                      )}
+                      <Link to="/marketplace/sell" className="btn btn-sm btn-outline-secondary">
+                        {t('pro.vendorActivationSellCta')}
+                      </Link>
+                    </div>
+                    {billing?.vendorInvitePending ? (
+                      <p className="small text-muted mb-0 mt-2">{t('pro.vendorTeamInvitePending')}</p>
+                    ) : null}
+                    <details className="small mt-2">
+                      <summary className="text-muted" style={{ cursor: 'pointer' }}>
+                        {t('pro.vendorTeamInviteHintTitle')}
+                      </summary>
+                      <p className="text-muted mb-0 mt-1" style={{ lineHeight: 1.5 }}>
+                        {t('pro.vendorTeamInviteHintBody')}
+                      </p>
+                    </details>
+                  </>
+                ) : (
+                  <p className="small text-muted mb-0">{t('pro.vendorCheckoutNotInRegion')}</p>
+                )}
+                {vendorActivateMessage ? (
+                  <p className="small text-muted mb-0 mt-2">{vendorActivateMessage}</p>
                 ) : null}
               </div>
               {!isPro && user && !inTrial && (

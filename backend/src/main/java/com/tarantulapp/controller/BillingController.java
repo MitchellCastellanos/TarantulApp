@@ -8,6 +8,7 @@ import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.BillingService;
+import com.tarantulapp.service.VendorActivationService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.VendorMxTier;
 import com.tarantulapp.service.VendorMxTierService;
@@ -35,6 +36,7 @@ public class BillingController {
     private final BillingService billingService;
     private final VendorInviteService vendorInviteService;
     private final VendorMxTierService vendorMxTierService;
+    private final VendorActivationService vendorActivationService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -101,12 +103,14 @@ public class BillingController {
 
     public BillingController(UserRepository userRepository, SecurityHelper securityHelper,
                              BillingService billingService, VendorInviteService vendorInviteService,
-                             VendorMxTierService vendorMxTierService) {
+                             VendorMxTierService vendorMxTierService,
+                             VendorActivationService vendorActivationService) {
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
         this.billingService = billingService;
         this.vendorInviteService = vendorInviteService;
         this.vendorMxTierService = vendorMxTierService;
+        this.vendorActivationService = vendorActivationService;
     }
 
     @GetMapping("/me")
@@ -119,7 +123,46 @@ public class BillingController {
     }
 
     /**
-     * Self-serve vendor onboarding from pricing / marketplace: same invite email as admin (welcome kit + accept link).
+     * México Vendor Starter ($0/mo): activate commercial vendor tier without Stripe when sales tier is Starter.
+     */
+    @PostMapping("/vendor/activate-starter")
+    public ResponseEntity<Map<String, Object>> activateVendorMxStarter(
+            @RequestBody(required = false) Map<String, String> body) {
+        UUID userId = securityHelper.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        if (Boolean.TRUE.equals(user.getVerifiedBreeder())) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "USER_ALREADY_VENDOR"));
+        }
+        String region = body != null ? body.get("region") : null;
+        if (!isMexicoVendorRegion(region, user)) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "VENDOR_MX_STARTER_ONLY"));
+        }
+        VendorMxTier tier = vendorMxTierService.currentTier(userId);
+        if (tier.requiresPaidSubscription()) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "VENDOR_PAID_TIER_CHECKOUT_REQUIRED"));
+        }
+        user = vendorActivationService.activateVendor(userId, true);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", true);
+        out.put("verifiedBreeder", true);
+        out.put("tier", tier.getKey());
+        return ResponseEntity.ok(out);
+    }
+
+    private static boolean isMexicoVendorRegion(String regionHint, User user) {
+        if (regionHint != null && !regionHint.isBlank()) {
+            return "MX".equalsIgnoreCase(regionHint.trim());
+        }
+        String country = user.getProfileCountry();
+        if (country == null || country.isBlank()) {
+            return false;
+        }
+        String u = country.trim().toUpperCase(Locale.ROOT);
+        return "MX".equals(u) || u.contains("MEXICO") || u.contains("MÉXICO");
+    }
+
+    /**
+     * Legacy / admin-parity: email kit with accept link. Prefer {@link #activateVendorMxStarter} or Stripe checkout.
      */
     @PostMapping("/vendor-invite/request")
     public ResponseEntity<Map<String, Object>> requestVendorInvite(

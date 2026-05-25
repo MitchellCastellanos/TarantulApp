@@ -229,6 +229,12 @@ public class BillingService {
         body.put("betaAgreementAcceptedAt", user.getBetaAgreementAcceptedAt() != null
                 ? user.getBetaAgreementAcceptedAt().toString()
                 : null);
+        body.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
+        body.put("verifiedBreederAt", user.getVerifiedBreederAt());
+        body.put("vendorInvitePending", user.getVendorInviteToken() != null
+                && !Boolean.TRUE.equals(user.getVerifiedBreeder())
+                && user.getVendorInviteExpiresAt() != null
+                && user.getVendorInviteExpiresAt().isAfter(java.time.Instant.now()));
 
         Optional<Subscription> optSub = subscriptionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
         if (optSub.isPresent()) {

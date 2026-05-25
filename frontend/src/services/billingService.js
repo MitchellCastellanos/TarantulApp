@@ -11,6 +11,8 @@ const billingService = {
   createPortalSession: () => api.post('/billing/portal').then(r => r.data),
   requestVendorInvite: (locale) =>
     api.post('/billing/vendor-invite/request', locale ? { locale } : {}).then((r) => r.data),
+  activateVendorMxStarter: (region) =>
+    api.post('/billing/vendor/activate-starter', region ? { region } : {}).then((r) => r.data),
   vendorMxTier: () => api.get('/billing/vendor-mx-tier').then((r) => r.data),
   proGrantsSummary: () => api.get('/me/pro-grants/summary', { skipAuthRedirect: true }).then(r => r.data),
 }
