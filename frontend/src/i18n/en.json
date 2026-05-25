@@ -2409,7 +2409,7 @@
     "vendorTermsLi1": "No custody / no escrow: TarantulApp does not touch sale money.",
     "vendorTermsLi2": "MX dynamic tier by reported sales (listings marked sold): Starter $0 → Activo $199 → Plus $499 → Pro Shop $999 MXN/mo.",
     "vendorTermsLi3": "Default activation: user subscribes or activates México Starter on Pro → verified_breeder unlocks perks (250 listings, supplies categories, boost, inbox). Admin invite or force-activate only when needed.",
-    "vendorTermsLi4": "\"Verified Shop\" badge: live video appointment with the team (show ID on camera — do not email ID scans). Optional public booking link: app.vendor-verification-booking-url. Pending: storefront_verified_at column in DB.",
+    "vendorTermsLi4": "\"Verified Shop\" badge: upload selfie + inventory proof in the seller hub, or book a live video call (app.vendor-verification-booking-url). Do not email ID scans.",
     "vendorTermsLi5": "Without verification = storefront shows as \"New shop\" but the vendor can still publish normally.",
     "vendorTermsLi6": "Pending code: monthly sales-count cron + Stripe price ID swap + UI gate for badge.",
     "vendorsLookupTitle": "Activate Vendor by email",
@@ -2455,6 +2455,16 @@
     "partnerCatalogEmailSent": "Partner catalog email sent to {{email}} ({{count}} listings).",
     "sendPartnerCatalogHint": "Strategic partner outreach — storefront live, zero setup; optional cart handoff test",
     "vendorVerificationStorefrontApproved": "Verified Shop badge granted (vendor activation unchanged).",
+    "vendorVerificationTitle": "Vendor verification queue",
+    "vendorVerificationEmpty": "No pending submissions.",
+    "vendorVerificationColUser": "User",
+    "vendorVerificationSelfie": "Selfie",
+    "vendorVerificationInventory": "Inventory",
+    "vendorVerificationPaper": "Paper",
+    "vendorVerificationApprove": "Approve",
+    "vendorVerificationReject": "Reject",
+    "vendorVerificationRejectPrompt": "Optional note for the vendor (why rejected):",
+    "vendorVerificationRejected": "Submission rejected.",
     "sendVendorWelcomeLabel": "Send vendor welcome (MX)",
     "sendVendorWelcomeHint": "Sends the vendor welcome email: dynamic tier, no-custody policy, and how to book the live video verification for the Verified Shop badge (booking URL from app.vendor-verification-booking-url if set).",
     "refresh": "Refresh",
@@ -3133,7 +3143,8 @@
     "submitError": "Could not submit.",
     "pending": "Verification pending — we’ll email you when reviewed.",
     "activationRequired": "Subscribe as Vendor (or complete payment) before applying for the Verified Shop badge.",
-    "storefrontVerified": "Your shop has the Verified Shop badge."
+    "storefrontVerified": "Your shop has the Verified Shop badge.",
+    "rejected": "Your submission was rejected. You can upload new materials below."
   }
 
 }

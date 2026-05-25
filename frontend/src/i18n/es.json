@@ -2400,7 +2400,7 @@
     "vendorTermsLi1": "Sin custodia / sin escrow: TarantulApp no toca el dinero de la venta.",
     "vendorTermsLi2": "Tier dinámico MX por ventas reportadas (anuncios marcados como vendidos): Starter $0 → Activo $199 → Plus $499 → Pro Shop $999 MXN/mes.",
     "vendorTermsLi3": "Flujo normal: el usuario se suscribe o activa Starter MX en Pro → verified_breeder desbloquea beneficios (250 listings, insumos, boost, inbox). Invitación admin o forzar solo si hace falta.",
-    "vendorTermsLi4": "Badge \"Tienda Verificada\": cita por videollamada con el equipo (mostrar INE en cámara; no mandar escaneos por correo). URL opcional de citas: app.vendor-verification-booking-url. Pendiente: columna storefront_verified_at en DB.",
+    "vendorTermsLi4": "Badge \"Tienda Verificada\": sube video selfie + inventario en el hub vendedor, o agenda videollamada (app.vendor-verification-booking-url). No mandes escaneos de INE por correo.",
     "vendorTermsLi5": "Sin verificación = storefront aparece como \"Tienda nueva\" pero el vendor puede publicar normal.",
     "vendorTermsLi6": "Pendiente código: cron mensual de conteo de ventas + swap de Stripe price ID + UI gate para badge.",
     "vendorsLookupTitle": "Activar Vendor por correo",
@@ -2549,6 +2549,11 @@
     "vendorVerificationMedia": "Medios",
     "vendorVerificationApprove": "Aprobar",
     "vendorVerificationReject": "Rechazar",
+    "vendorVerificationRejectPrompt": "Nota opcional para el vendedor (motivo del rechazo):",
+    "vendorVerificationRejected": "Solicitud rechazada.",
+    "vendorVerificationSelfie": "Selfie",
+    "vendorVerificationInventory": "Inventario",
+    "vendorVerificationPaper": "Papel",
     "vendorVerificationApproved": "Aprobado.",
     "promoteLeadToVendor": "Crear borrador de vendor",
     "promoteLeadConverted": "Convertido",
@@ -3117,7 +3122,8 @@
     "submitError": "No se pudo enviar.",
     "pending": "Verificación pendiente — te avisamos por correo.",
     "activationRequired": "Primero activa tu plan Vendor (pago o invitación) antes de solicitar el badge Tienda verificada.",
-    "storefrontVerified": "Tu tienda ya tiene el badge Tienda verificada."
+    "storefrontVerified": "Tu tienda ya tiene el badge Tienda verificada.",
+    "rejected": "Tu solicitud fue rechazada. Puedes enviar nuevos materiales abajo."
   }
 
 }
