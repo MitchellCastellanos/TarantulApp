@@ -152,7 +152,11 @@ public class OfficialVendorService {
                                                            String partnerProgramTier,
                                                            String feedType,
                                                            String feedBaseUrl,
-                                                           Map<String, Object> feedConfig) {
+                                                           Map<String, Object> feedConfig,
+                                                           String badge,
+                                                           String websiteUrl,
+                                                           Integer influenceScore,
+                                                           String note) {
         OfficialVendor vendor = officialVendorRepository.findById(vendorId)
                 .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
         PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, strategicFounder, vendor.getPartnerProgramTier());
@@ -170,6 +174,22 @@ public class OfficialVendorService {
         }
         if (feedConfig != null) {
             vendor.setFeedConfig(sanitizeFeedConfig(feedConfig, vendor.getPartnerProgramTier()));
+        }
+        if (badge != null) {
+            vendor.setBadge(cleanText(badge, 80));
+        }
+        if (websiteUrl != null) {
+            String cleanedWebsite = trimTrailingSlash(websiteUrl);
+            if (cleanedWebsite == null || cleanedWebsite.isBlank()) {
+                throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+            }
+            vendor.setWebsiteUrl(cleanedWebsite);
+        }
+        if (influenceScore != null) {
+            vendor.setInfluenceScore(Math.max(0, Math.min(1000, influenceScore)));
+        }
+        if (note != null) {
+            vendor.setNote(cleanText(note, 200));
         }
         return mapVendor(officialVendorRepository.save(vendor));
     }
@@ -245,7 +265,9 @@ public class OfficialVendorService {
                                                         String partnerProgramTier,
                                                         String feedType,
                                                         String feedBaseUrl,
-                                                        Map<String, Object> feedConfig) {
+                                                        Map<String, Object> feedConfig,
+                                                        String badge,
+                                                        Integer influenceScore) {
         OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
                 .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
         if ("converted".equalsIgnoreCase(lead.getStatus())) {
@@ -266,9 +288,9 @@ public class OfficialVendorService {
         vendor.setWebsiteUrl(website);
         vendor.setNationalShipping(true);
         vendor.setShipsToCountries(lead.getShippingScope() == null ? lead.getCountry() : lead.getShippingScope());
-        vendor.setInfluenceScore(50);
+        vendor.setInfluenceScore(influenceScore == null ? 50 : Math.max(0, Math.min(1000, influenceScore)));
         vendor.setNote(lead.getNote());
-        vendor.setBadge("Official partner");
+        vendor.setBadge(cleanText(badge, 80) == null ? "Official partner" : cleanText(badge, 80));
         vendor.setEnabled(false);
         PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, strategicFounder, PartnerProgramTier.OFFICIAL_PARTNER);
         vendor.setPartnerProgramTier(tier == null ? PartnerProgramTier.OFFICIAL_PARTNER : tier);

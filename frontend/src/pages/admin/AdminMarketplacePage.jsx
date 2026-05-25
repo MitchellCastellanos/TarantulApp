@@ -33,6 +33,7 @@ export default function AdminMarketplacePage() {
   const [vendorVerifications, setVendorVerifications] = useState([])
   const [verificationBusyId, setVerificationBusyId] = useState(null)
   const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
+  const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -111,13 +112,35 @@ export default function AdminMarketplacePage() {
       setError(t('admin.promoteLeadNeedsWebsite'))
       return
     }
+    const tierRaw = window.prompt(
+      t('admin.partnerPromoteTierPrompt', { defaultValue: 'Partner tier: official or founding' }),
+      'official',
+    )
+    if (tierRaw == null) return
+    const tier = String(tierRaw).trim().toLowerCase()
+    const isFounding = tier === 'founding' || tier === 'founder'
+    const enableImport = window.confirm(t('admin.partnerPromoteImportConfirm', { defaultValue: 'Enable approved catalog sync now?' }))
+    const feedBaseUrl = window.prompt(
+      t('admin.partnerFeedBaseUrlPrompt', { defaultValue: 'Feed/store base URL' }),
+      lead.websiteUrl || '',
+    )
+    if (feedBaseUrl == null) return
+    const badge = window.prompt(
+      t('admin.partnerBadgePrompt', { defaultValue: 'Public partner badge' }),
+      isFounding ? 'Founding partner' : 'Official partner',
+    )
+    if (badge == null) return
     setLeadPromoteBusyId(lead.id)
     setError('')
     setSuccess('')
     try {
       const result = await adminService.promoteOfficialVendorLead(lead.id, {
-        enableImport: false,
-        strategicFounder: false,
+        enableImport,
+        strategicFounder: isFounding,
+        partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
+        feedType: 'woocommerce',
+        feedBaseUrl,
+        badge,
       })
       const vendor = result?.vendor
       setOfficialLeads((prev) =>
@@ -131,6 +154,61 @@ export default function AdminMarketplacePage() {
       setError(t('admin.promoteLeadError'))
     } finally {
       setLeadPromoteBusyId(null)
+    }
+  }
+
+  const editOfficialVendorConfig = async (vendor) => {
+    if (!vendor?.id) return
+    const tierRaw = window.prompt(
+      t('admin.partnerPromoteTierPrompt', { defaultValue: 'Partner tier: official or founding' }),
+      vendor.isFoundingPartner ? 'founding' : 'official',
+    )
+    if (tierRaw == null) return
+    const tier = String(tierRaw).trim().toLowerCase()
+    const isFounding = tier === 'founding' || tier === 'founder'
+    const badge = window.prompt(
+      t('admin.partnerBadgePrompt', { defaultValue: 'Public partner badge' }),
+      vendor.badge || (isFounding ? 'Founding partner' : 'Official partner'),
+    )
+    if (badge == null) return
+    const websiteUrl = window.prompt(
+      t('admin.partnerWebsitePrompt', { defaultValue: 'Partner website URL' }),
+      vendor.websiteUrl || '',
+    )
+    if (websiteUrl == null) return
+    const feedBaseUrl = window.prompt(
+      t('admin.partnerFeedBaseUrlPrompt', { defaultValue: 'Feed/store base URL' }),
+      vendor.feedBaseUrl || websiteUrl || '',
+    )
+    if (feedBaseUrl == null) return
+    const feedType = window.prompt(
+      t('admin.partnerFeedTypePrompt', { defaultValue: 'Feed type' }),
+      vendor.feedType || 'woocommerce',
+    )
+    if (feedType == null) return
+    setPartnerConfigBusyId(vendor.id)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.updateOfficialVendorStrategicProgram(vendor.id, {
+        partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
+        strategicFounder: isFounding,
+        badge,
+        websiteUrl,
+        feedBaseUrl,
+        feedType,
+        feedConfig: {
+          ...(vendor.feedConfig || {}),
+          partnerTier: isFounding ? 'founding' : 'official',
+          boostLevel: isFounding ? 2 : 1,
+        },
+      })
+      setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendor.id) ? updated : v)))
+      setSuccess(t('admin.partnerConfigSaved', { defaultValue: 'Partner config saved.' }))
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setPartnerConfigBusyId(null)
     }
   }
 
@@ -575,6 +653,11 @@ export default function AdminMarketplacePage() {
                     <td>
                       <div className="fw-semibold">{v.name}</div>
                       <div className="small text-muted">{v.websiteUrl}</div>
+                      <div className="small d-flex flex-wrap gap-1 mt-1">
+                        <span className="badge text-bg-warning text-dark">{v.badge || (v.isFoundingPartner ? 'Founding partner' : 'Official partner')}</span>
+                        {v.feedType && <span className="badge text-bg-secondary">{v.feedType}</span>}
+                        {v.feedBaseUrl && <span className="text-muted">{v.feedBaseUrl}</span>}
+                      </div>
                     </td>
                     <td>{[v.city, v.state, v.country].filter(Boolean).join(' · ') || '-'}</td>
                     <td>{v.influenceScore ?? 0}</td>
@@ -603,6 +686,14 @@ export default function AdminMarketplacePage() {
                           onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
                         >
                           {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark"
+                          disabled={partnerConfigBusyId === v.id}
+                          onClick={() => editOfficialVendorConfig(v)}
+                        >
+                          {partnerConfigBusyId === v.id ? t('common.loading') : t('admin.partnerEditConfig', { defaultValue: 'Edit badge/feed' })}
                         </button>
                         <div className="btn-group btn-group-sm">
                           {['es', 'en'].map((loc) => (
