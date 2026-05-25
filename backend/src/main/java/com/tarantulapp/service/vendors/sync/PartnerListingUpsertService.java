@@ -4,7 +4,6 @@ import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
 import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
-import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.OfficialVendorRepository;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.util.Objects;
 
 @Service
 public class PartnerListingUpsertService {
@@ -77,8 +75,7 @@ public class PartnerListingUpsertService {
 
     private void assertStrategicPartnerImportEnabled(OfficialVendor vendor) {
         boolean importEnabled = Boolean.TRUE.equals(vendor.getListingImportEnabled());
-        boolean tierOk = Objects.equals(vendor.getPartnerProgramTier(), PartnerProgramTier.STRATEGIC_FOUNDER)
-                || Objects.equals(vendor.getPartnerProgramTier(), PartnerProgramTier.STRATEGIC_PARTNER);
+        boolean tierOk = vendor.getPartnerProgramTier() != null && vendor.getPartnerProgramTier().isOfficialPartner();
         if (!importEnabled || !tierOk) {
             throw new IllegalArgumentException("El vendor no esta habilitado para import estrategico");
         }

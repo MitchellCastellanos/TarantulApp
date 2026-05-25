@@ -36,6 +36,11 @@ public class PartnerListingSyncService {
     private final PartnerListingUpsertService partnerListingUpsertService;
     private final PartnerListingSyncRunService partnerListingSyncRunService;
     private final ObjectProvider<PartnerListingSyncItemProvider> itemProvider;
+    private static final List<PartnerProgramTier> SYNC_PARTNER_TIERS = List.of(
+            PartnerProgramTier.FOUNDING_PARTNER,
+            PartnerProgramTier.OFFICIAL_PARTNER,
+            PartnerProgramTier.STRATEGIC_FOUNDER,
+            PartnerProgramTier.STRATEGIC_PARTNER);
 
     @Value("${app.partner-sync.enabled:false}")
     private boolean schedulerEnabled;
@@ -65,7 +70,7 @@ public class PartnerListingSyncService {
         }
         List<OfficialVendor> strategicVendors = officialVendorRepository
                 .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER));
+                        SYNC_PARTNER_TIERS);
         for (OfficialVendor vendor : strategicVendors) {
             try {
                 List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
@@ -83,7 +88,7 @@ public class PartnerListingSyncService {
         }
         List<OfficialVendor> strategicVendors = officialVendorRepository
                 .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        List.of(PartnerProgramTier.STRATEGIC_FOUNDER, PartnerProgramTier.STRATEGIC_PARTNER));
+                        SYNC_PARTNER_TIERS);
         List<PartnerListingSyncRun> runs = new ArrayList<>();
         for (OfficialVendor vendor : strategicVendors) {
             try {

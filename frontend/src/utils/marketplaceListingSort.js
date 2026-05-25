@@ -4,7 +4,7 @@ function trustScore(row) {
   if (row.sellerStorefrontVerified) s += 40
   if (row.boosted) s += 12
   if (row.source === 'partner' || row.isPartner) s += 18
-  if (row.isFoundingPartner || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
+  if (row.isFoundingPartner || row.partnerProgramTier === 'FOUNDING_PARTNER' || row.partnerProgramTier === 'STRATEGIC_FOUNDER') s += 22
   if (row.promoted) s += 14
   if (row.imageUrl) s += 6
   if (row.priceAmount != null) s += 4

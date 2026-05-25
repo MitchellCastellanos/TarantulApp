@@ -142,19 +142,34 @@ public class OfficialVendorService {
     }
 
     /**
-     * Updates strategic partner program flags for an official vendor.
-     * {@code strategicFounder} true sets {@link PartnerProgramTier#STRATEGIC_FOUNDER}; false clears tier.
-     * {@code listingImportEnabled} toggles ingest eligibility (still requires tier for successful upserts).
+     * Updates partner ecosystem flags and feed config for an official vendor.
+     * {@code listingImportEnabled} toggles approved ingest eligibility; vendor subscriptions do not imply sync.
      */
     @Transactional
-    public Map<String, Object> adminUpdateStrategicProgram(UUID vendorId, Boolean strategicFounder, Boolean listingImportEnabled) {
+    public Map<String, Object> adminUpdateStrategicProgram(UUID vendorId,
+                                                           Boolean strategicFounder,
+                                                           Boolean listingImportEnabled,
+                                                           String partnerProgramTier,
+                                                           String feedType,
+                                                           String feedBaseUrl,
+                                                           Map<String, Object> feedConfig) {
         OfficialVendor vendor = officialVendorRepository.findById(vendorId)
                 .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
-        if (strategicFounder != null) {
-            vendor.setPartnerProgramTier(Boolean.TRUE.equals(strategicFounder) ? PartnerProgramTier.STRATEGIC_FOUNDER : null);
+        PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, strategicFounder, vendor.getPartnerProgramTier());
+        if (tier != null || partnerProgramTier != null || strategicFounder != null) {
+            vendor.setPartnerProgramTier(tier);
         }
         if (listingImportEnabled != null) {
             vendor.setListingImportEnabled(listingImportEnabled);
+        }
+        if (feedType != null) {
+            vendor.setFeedType(cleanFeedType(feedType));
+        }
+        if (feedBaseUrl != null) {
+            vendor.setFeedBaseUrl(trimTrailingSlash(feedBaseUrl));
+        }
+        if (feedConfig != null) {
+            vendor.setFeedConfig(sanitizeFeedConfig(feedConfig, vendor.getPartnerProgramTier()));
         }
         return mapVendor(officialVendorRepository.save(vendor));
     }
@@ -208,21 +223,29 @@ public class OfficialVendorService {
         out.put("note", vendor.getNote() == null ? "" : vendor.getNote());
         out.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
-        out.put("isFoundingPartner", vendor.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER);
+        out.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
+        out.put("isFoundingPartner", vendor.getPartnerProgramTier() != null && vendor.getPartnerProgramTier().isFoundingPartner());
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
         out.put("isDemo", Boolean.TRUE.equals(vendor.getIsDemo()));
         out.put("feedBaseUrl", vendor.getFeedBaseUrl() == null ? "" : vendor.getFeedBaseUrl());
         out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
+        out.put("feedConfig", vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig());
         out.put("createdAt", vendor.getCreatedAt());
         return out;
     }
 
     /**
      * Creates an {@link OfficialVendor} from a submitted lead and marks the lead converted.
-     * Defaults: STRATEGIC_PARTNER, import off, vendor disabled until ops review.
+     * Defaults: OFFICIAL_PARTNER, import off, vendor disabled until ops review.
      */
     @Transactional
-    public Map<String, Object> adminPromoteLeadToVendor(UUID leadId, Boolean enableImport, Boolean strategicFounder) {
+    public Map<String, Object> adminPromoteLeadToVendor(UUID leadId,
+                                                        Boolean enableImport,
+                                                        Boolean strategicFounder,
+                                                        String partnerProgramTier,
+                                                        String feedType,
+                                                        String feedBaseUrl,
+                                                        Map<String, Object> feedConfig) {
         OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
                 .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
         if ("converted".equalsIgnoreCase(lead.getStatus())) {
@@ -247,13 +270,13 @@ public class OfficialVendorService {
         vendor.setNote(lead.getNote());
         vendor.setBadge("Official partner");
         vendor.setEnabled(false);
-        vendor.setPartnerProgramTier(Boolean.TRUE.equals(strategicFounder)
-                ? PartnerProgramTier.STRATEGIC_FOUNDER
-                : PartnerProgramTier.STRATEGIC_PARTNER);
+        PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, strategicFounder, PartnerProgramTier.OFFICIAL_PARTNER);
+        vendor.setPartnerProgramTier(tier == null ? PartnerProgramTier.OFFICIAL_PARTNER : tier);
         vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
         vendor.setIsDemo(false);
-        vendor.setFeedBaseUrl(trimTrailingSlash(website));
-        vendor.setFeedType(guessFeedType(website));
+        vendor.setFeedBaseUrl(trimTrailingSlash(feedBaseUrl == null || feedBaseUrl.isBlank() ? website : feedBaseUrl));
+        vendor.setFeedType(cleanFeedType(feedType == null || feedType.isBlank() ? guessFeedType(website) : feedType));
+        vendor.setFeedConfig(sanitizeFeedConfig(feedConfig, vendor.getPartnerProgramTier()));
 
         officialVendorRepository.save(vendor);
         lead.setStatus("converted");
@@ -342,6 +365,67 @@ public class OfficialVendorService {
             return "woocommerce";
         }
         return "woocommerce";
+    }
+
+    private static PartnerProgramTier resolvePartnerProgramTier(String raw,
+                                                                Boolean strategicFounder,
+                                                                PartnerProgramTier fallback) {
+        if (raw != null) {
+            String t = raw.trim().toUpperCase(Locale.ROOT)
+                    .replace('-', '_')
+                    .replace(' ', '_');
+            if (t.isBlank() || "NONE".equals(t) || "COMMUNITY_SELLER".equals(t) || "VERIFIED_VENDOR".equals(t)) {
+                return null;
+            }
+            if ("FOUNDING".equals(t) || "FOUNDING_PARTNER".equals(t) || "FOUNDER".equals(t)
+                    || "STRATEGIC_FOUNDER".equals(t)) {
+                return PartnerProgramTier.FOUNDING_PARTNER;
+            }
+            if ("OFFICIAL".equals(t) || "OFFICIAL_PARTNER".equals(t) || "STRATEGIC_PARTNER".equals(t)) {
+                return PartnerProgramTier.OFFICIAL_PARTNER;
+            }
+            throw new IllegalArgumentException("INVALID_PARTNER_PROGRAM_TIER");
+        }
+        if (strategicFounder != null) {
+            return Boolean.TRUE.equals(strategicFounder) ? PartnerProgramTier.FOUNDING_PARTNER : PartnerProgramTier.OFFICIAL_PARTNER;
+        }
+        return fallback;
+    }
+
+    private static String partnerTierKey(PartnerProgramTier tier) {
+        if (tier == null) return null;
+        return tier.isFoundingPartner() ? "founding" : "official";
+    }
+
+    private static String cleanFeedType(String raw) {
+        if (raw == null) return null;
+        String t = raw.trim().toLowerCase(Locale.ROOT);
+        if (t.isBlank()) return null;
+        if (!List.of("woocommerce", "static", "mock", "shopify", "html_scraper").contains(t)) {
+            throw new IllegalArgumentException("INVALID_FEED_TYPE");
+        }
+        return t;
+    }
+
+    private static Map<String, Object> sanitizeFeedConfig(Map<String, Object> raw, PartnerProgramTier tier) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (raw != null) {
+            raw.forEach((key, value) -> {
+                if (key != null && value != null) {
+                    out.put(key.trim(), value);
+                }
+            });
+        }
+        String tierKey = partnerTierKey(tier);
+        if (tierKey != null) {
+            out.putIfAbsent("partnerTier", tierKey);
+        }
+        out.putIfAbsent("boostLevel", tier != null && tier.isFoundingPartner() ? 2 : 1);
+        out.putIfAbsent("allowedCategories", List.of());
+        out.putIfAbsent("blockedCategories", List.of());
+        out.putIfAbsent("blockedCategorySlugs", List.of());
+        out.putIfAbsent("categoryMapping", Map.of());
+        return out;
     }
 
     private String uniqueSlugFromBusinessName(String businessName) {
