@@ -49,8 +49,12 @@ const chatService = {
   simulateOrderRelease: (threadId) =>
     api.post(`/chat/threads/${threadId}/order/simulate-release`).then((r) => r.data),
 
+  reportOrderIssue: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/report-issue`).then((r) => r.data),
+
+  /** @deprecated Use reportOrderIssue */
   disputeOrder: (threadId) =>
-    api.post(`/chat/threads/${threadId}/order/dispute`).then((r) => r.data),
+    api.post(`/chat/threads/${threadId}/order/report-issue`).then((r) => r.data),
 
   reportOrderPayment: (threadId, paymentReference = '') =>
     api.post(`/chat/threads/${threadId}/order/report-payment`, { paymentReference }).then((r) => r.data),

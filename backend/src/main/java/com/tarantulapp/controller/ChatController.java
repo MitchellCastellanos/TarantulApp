@@ -160,10 +160,17 @@ public class ChatController {
         return ResponseEntity.ok(marketplaceOrderService.simulateRelease(uid, threadId));
     }
 
+    @PostMapping("/threads/{threadId}/order/report-issue")
+    public ResponseEntity<Map<String, Object>> reportOrderIssue(@PathVariable UUID threadId) {
+        UUID uid = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(marketplaceOrderService.reportIssue(uid, threadId));
+    }
+
+    /** @deprecated Prefer {@code /order/report-issue}. */
     @PostMapping("/threads/{threadId}/order/dispute")
     public ResponseEntity<Map<String, Object>> disputeOrder(@PathVariable UUID threadId) {
         UUID uid = securityHelper.getCurrentUserId();
-        return ResponseEntity.ok(marketplaceOrderService.markDisputed(uid, threadId));
+        return ResponseEntity.ok(marketplaceOrderService.reportIssue(uid, threadId));
     }
 
     record ReportOrderPaymentRequest(String paymentReference) {}

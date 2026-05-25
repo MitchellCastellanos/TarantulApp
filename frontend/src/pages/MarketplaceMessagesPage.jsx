@@ -245,13 +245,13 @@ export default function MarketplaceMessagesPage() {
     }
   }
 
-  const disputeThreadOrder = async () => {
+  const reportThreadOrderIssue = async () => {
     if (!activeThread?.id) return
     try {
-      const order = await chatService.disputeOrder(activeThread.id)
+      const order = await chatService.reportOrderIssue(activeThread.id)
       setThreadOrder(order)
       await refreshThreadOrderAuditOnly(activeThread.id)
-      setMessage(t('marketplace.orderDisputed'))
+      setMessage(t('marketplace.orderIssueReported'))
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
     }
@@ -642,13 +642,14 @@ export default function MarketplaceMessagesPage() {
                                   {t('marketplace.orderCloseCta')}
                                 </button>
                               )}
-                              {(threadOrder.status === 'paid_in_hold'
-                                || threadOrder.status === 'payment_reported'
-                                || threadOrder.status === 'in_transit'
-                                || threadOrder.status === 'delivered'
-                                || threadOrder.status === 'released') && (
-                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={disputeThreadOrder}>
-                                  {t('marketplace.orderDisputeCta')}
+                              {threadOrder.status !== 'disputed'
+                                && threadOrder.status !== 'closed'
+                                && (threadOrder.status === 'payment_pending'
+                                  || threadOrder.status === 'payment_reported'
+                                  || threadOrder.status === 'in_transit'
+                                  || threadOrder.status === 'delivered') && (
+                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={reportThreadOrderIssue}>
+                                  {t('marketplace.orderReportIssueCta')}
                                 </button>
                               )}
                             </div>

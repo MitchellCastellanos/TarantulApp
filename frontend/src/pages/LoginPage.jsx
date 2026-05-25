@@ -16,8 +16,6 @@ import { inferBillingRegion } from '../utils/inferBillingRegion'
 import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
 
 const LOGIN_AUDIENCE_KEY = 'ta-login-audience'
-// Local FE preview toggle: set to false to instantly revert.
-const LOGIN_ESCROW_PREVIEW = true
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -305,12 +303,6 @@ export default function LoginPage() {
   const heroLead = loginAudience === 'seller'
     ? t('auth.loginPage.heroLeadSeller')
     : t('auth.loginPage.heroLeadCollector')
-  const trustHeadline = loginAudience === 'seller'
-    ? t('auth.loginPage.trustHeadlineSeller')
-    : t('auth.loginPage.trustHeadlineBuyer')
-  const trustBody = loginAudience === 'seller'
-    ? t('auth.loginPage.trustBodySeller')
-    : t('auth.loginPage.trustBodyBuyer')
 
   return (
     <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
@@ -365,30 +357,6 @@ export default function LoginPage() {
                   <p className="small mb-3 flex-grow-1" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.65 }}>
                     {heroLead}
                   </p>
-                  {LOGIN_ESCROW_PREVIEW && (
-                    <div
-                      className="rounded-3 p-3 mb-3"
-                      style={{
-                        border: '1px solid rgba(212,175,55,0.35)',
-                        background: isLight ? 'rgba(255,252,242,0.7)' : 'rgba(41,33,20,0.5)',
-                      }}
-                    >
-                      <p className="small fw-semibold mb-1" style={{ color: 'var(--ta-gold)' }}>
-                        {t('auth.loginPage.trustEyebrow')}
-                      </p>
-                      <p className="small mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                        {trustHeadline}
-                      </p>
-                      <p className="small mb-2" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.55 }}>
-                        {trustBody}
-                      </p>
-                      <ul className="small mb-0 ps-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
-                        <li>{t('auth.loginPage.trustPill1')}</li>
-                        <li>{t('auth.loginPage.trustPill2')}</li>
-                        <li>{t('auth.loginPage.trustPill3')}</li>
-                      </ul>
-                    </div>
-                  )}
                   {!inviteOnly && (
                     <div className="d-flex flex-wrap gap-2 mt-auto pt-1">
                       {loginAudience === 'seller' ? (

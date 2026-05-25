@@ -11,6 +11,7 @@ import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import VendorVerificationCard from '../components/VendorVerificationCard'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { inferBillingRegion, isVendorDynamicTierRegion } from '../utils/inferBillingRegion'
 
 const COMMUNITY_LISTING_CATEGORIES = ['tarantulas', 'breeding_projects']
 
@@ -77,6 +78,8 @@ export default function MarketplaceSellerPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const billingRegion = useMemo(() => inferBillingRegion(), [])
+  const showMxVendorTierHint = isVendorDynamicTierRegion(billingRegion)
   usePageSeo({
     title: t('marketplace.sellerHubTitle'),
     description: t('marketplace.sellerHubSubtitle'),
@@ -378,13 +381,6 @@ export default function MarketplaceSellerPage() {
                   <Link
                     to="/pro#vendor-activation"
                     className="btn btn-sm btn-warning"
-                    onClick={() => {
-                      try {
-                        localStorage.setItem('tarantulapp-pro-audience', 'seller')
-                      } catch (_) {
-                        /* ignore */
-                      }
-                    }}
                   >
                     {t('marketplace.vendorApplyNow')}
                   </Link>
@@ -721,6 +717,11 @@ export default function MarketplaceSellerPage() {
             <div className="card border-0 shadow-sm ta-premium-pane h-100">
               <div className="card-body">
                 <h2 className="h6 mb-3">{t('marketplace.myListings')}</h2>
+                {showMxVendorTierHint && (
+                  <p className="small text-muted mb-3" style={{ lineHeight: 1.5 }}>
+                    {t('marketplace.vendorMxMarkSoldHint')}
+                  </p>
+                )}
                 <div className="btn-group btn-group-sm flex-wrap mb-3" role="group">
                   {FILTERS.map((f) => (
                     <button

@@ -279,21 +279,32 @@ public class MarketplaceOrderService {
         return toDto(order);
     }
 
+    /** Report a deal issue to TarantulApp (trust & safety). Does not escrow or adjudicate payment. */
     @Transactional
-    public Map<String, Object> markDisputed(UUID actorUserId, UUID threadId) {
+    public Map<String, Object> reportIssue(UUID actorUserId, UUID threadId) {
         MarketplaceOrder order = requireOrderForParticipant(actorUserId, threadId);
-        if (!"paid_in_hold".equals(order.getStatus())
-                && !"released".equals(order.getStatus())
+        if ("disputed".equals(order.getStatus()) || "closed".equals(order.getStatus())) {
+            throw new IllegalArgumentException("La orden ya está cerrada o reportada");
+        }
+        if (!"payment_pending".equals(order.getStatus())
                 && !"payment_reported".equals(order.getStatus())
+                && !"paid_in_hold".equals(order.getStatus())
+                && !"released".equals(order.getStatus())
                 && !"in_transit".equals(order.getStatus())
                 && !"delivered".equals(order.getStatus())) {
-            throw new IllegalArgumentException("Solo puedes disputar ordenes pagadas");
+            throw new IllegalArgumentException("No hay una orden activa para reportar");
         }
         String from = order.getStatus();
         order.setStatus("disputed");
         order = marketplaceOrderRepository.save(order);
-        marketplaceOrderAuditService.append(order.getId(), actorUserId, "disputed", from, order.getStatus(), null);
+        marketplaceOrderAuditService.append(order.getId(), actorUserId, "issue_reported", from, order.getStatus(), null);
         return toDto(order);
+    }
+
+    /** @deprecated Use {@link #reportIssue}; kept for older clients. */
+    @Transactional
+    public Map<String, Object> markDisputed(UUID actorUserId, UUID threadId) {
+        return reportIssue(actorUserId, threadId);
     }
 
     @Transactional(readOnly = true)
