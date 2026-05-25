@@ -31,11 +31,12 @@ class PartnerCartHandoffServiceTest {
     @BeforeEach
     void setUp() {
         service = new PartnerCartHandoffService(
-                officialVendorRepository, partnerHandoffAnalyticsService, "https://monarchreptiles.com");
+                officialVendorRepository, partnerHandoffAnalyticsService);
         OfficialVendor vendor = new OfficialVendor();
         vendor.setId(UUID.randomUUID());
         vendor.setSlug("monarch-reptiles");
         vendor.setName("Monarch Reptiles");
+        vendor.setFeedBaseUrl("https://monarchreptiles.com");
         when(officialVendorRepository.findBySlug("monarch-reptiles")).thenReturn(Optional.of(vendor));
     }
 

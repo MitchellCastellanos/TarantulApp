@@ -7,6 +7,9 @@ import {
 } from './qrBrandComposite'
 import { formatListingPrice } from './listingShareTemplates'
 
+const BRAND_TEXTURE = '/bg-texture.png'
+const CORNER_MARK = '/tarantula-card-corner-mark.png'
+
 /** Loads a (potentially cross-origin) image so that the canvas can be exported. */
 function loadCorsImage(src) {
   return new Promise((resolve, reject) => {
@@ -121,6 +124,34 @@ function drawQrPlate(ctx, x, y, size, padding = 12, radius = 14) {
   ctx.restore()
 }
 
+function drawCardVignette(ctx, w, h) {
+  const vignette = ctx.createRadialGradient(w / 2, h * 0.42, 120, w / 2, h * 0.46, w * 0.72)
+  vignette.addColorStop(0, 'rgba(0,0,0,0)')
+  vignette.addColorStop(1, 'rgba(0,0,0,0.48)')
+  ctx.fillStyle = vignette
+  ctx.fillRect(0, 0, w, h)
+}
+
+function drawGoldRule(ctx, x, y, w, h) {
+  const grad = ctx.createLinearGradient(x, y, x + w, y)
+  grad.addColorStop(0, '#8c6b24')
+  grad.addColorStop(0.35, '#f1d06a')
+  grad.addColorStop(1, '#6f4e12')
+  ctx.fillStyle = grad
+  ctx.fillRect(x, y, w, h)
+}
+
+function drawRoundRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
+}
+
 /**
  * Generates a 1080×1080 branded share card for a marketplace listing.
  * Loads the listing image with CORS; falls back to a brand gradient if blocked.
@@ -153,6 +184,14 @@ export async function buildListingSharePngDataUrl({
   // Background.
   ctx.fillStyle = '#0c0c1e'
   ctx.fillRect(0, 0, W, H)
+  try {
+    const texture = await loadImageElement(BRAND_TEXTURE)
+    ctx.globalAlpha = 0.18
+    drawCoverImage(ctx, texture, 0, 0, W, H)
+    ctx.globalAlpha = 1
+  } catch {
+    /* texture is optional */
+  }
 
   // Top zone (image) — 55% of height; the rest is the info panel.
   const imgZoneH = Math.round(H * 0.55)
@@ -169,6 +208,8 @@ export async function buildListingSharePngDataUrl({
   if (!photoLoaded) {
     drawSpiderFallback(ctx, 0, 0, W, imgZoneH)
   }
+  drawCardVignette(ctx, W, imgZoneH)
+  drawGoldRule(ctx, 0, 0, W, 10)
 
   // Soft fade at the seam between photo and panel.
   const fadeH = 120
@@ -181,8 +222,21 @@ export async function buildListingSharePngDataUrl({
   // Bottom panel.
   const panelY = imgZoneH
   const panelH = H - imgZoneH
-  ctx.fillStyle = '#0c0c1e'
+  const panelGrad = ctx.createLinearGradient(0, panelY, W, H)
+  panelGrad.addColorStop(0, '#11112a')
+  panelGrad.addColorStop(0.58, '#0c0c1e')
+  panelGrad.addColorStop(1, '#070711')
+  ctx.fillStyle = panelGrad
   ctx.fillRect(0, panelY, W, panelH)
+  drawGoldRule(ctx, 0, panelY, W, 4)
+  try {
+    const corner = await loadImageElement(CORNER_MARK)
+    ctx.globalAlpha = 0.18
+    ctx.drawImage(corner, W - 330, panelY + 18, 280, 280)
+    ctx.globalAlpha = 1
+  } catch {
+    /* ornamental mark is optional */
+  }
 
   const pad = 56
 
@@ -218,6 +272,21 @@ export async function buildListingSharePngDataUrl({
   ctx.fillText(BRAND_WITH_TM, chipCursorX, chipY + chipLogoSize / 2)
   ctx.textBaseline = 'top'
 
+  const pillText = t('share.listing.cardEyebrow', { defaultValue: 'MARKETPLACE LISTING' }).toUpperCase()
+  ctx.font = 'bold 17px sans-serif'
+  const pillW = ctx.measureText(pillText).width + 30
+  ctx.fillStyle = 'rgba(212, 175, 55, 0.18)'
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.7)'
+  ctx.lineWidth = 1
+  drawRoundRect(ctx, W - pad - pillW, chipY + 5, pillW, 36, 18)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#f1d06a'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(pillText, W - pad - pillW / 2, chipY + 23)
+  ctx.textBaseline = 'top'
+
   // Right column hosts both QRs stacked vertically — keeps the left side
   // wide enough for a 2-line title without truncating long species names.
   const qrSize = 116
@@ -241,6 +310,14 @@ export async function buildListingSharePngDataUrl({
   const qr2LabelY = qr1Y + qrSize + qrIntraGap
   const qr2Y = qr2LabelY + qrLabelHeight + qrLabelGap
   const qr2CaptionY = qr2Y + qrSize + qrCaptionGap
+  ctx.save()
+  ctx.fillStyle = 'rgba(255,255,255,0.055)'
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.22)'
+  ctx.lineWidth = 1
+  drawRoundRect(ctx, qrColX - 24, qrStackTop - 20, qrSize + 48, qrStackHeight + 36, 22)
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
 
   // Left column content stops well before the QR strip.
   const contentLeftW = qrColX - pad - 28

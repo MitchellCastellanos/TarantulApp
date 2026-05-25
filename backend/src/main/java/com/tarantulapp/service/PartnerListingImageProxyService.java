@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.tarantulapp.entity.OfficialVendor;
+import com.tarantulapp.repository.OfficialVendorRepository;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -10,20 +11,17 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Locale;
-import java.util.Set;
 
 @Service
 public class PartnerListingImageProxyService {
 
-    private static final Set<String> ALLOWED_HOST_SUFFIXES = Set.of("monarchreptiles.com", "www.monarchreptiles.com");
-
     private final RestTemplate restTemplate;
-    private final String monarchStoreBaseUrl;
+    private final OfficialVendorRepository officialVendorRepository;
 
     public PartnerListingImageProxyService(
-            @Value("${app.partner-sync.adapters.woocommerce.monarch-base-url:https://monarchreptiles.com}") String monarchStoreBaseUrl) {
+            OfficialVendorRepository officialVendorRepository) {
         this.restTemplate = new RestTemplate();
-        this.monarchStoreBaseUrl = trimTrailingSlash(monarchStoreBaseUrl);
+        this.officialVendorRepository = officialVendorRepository;
     }
 
     public ResponseEntity<byte[]> fetchImage(String rawUrl) {
@@ -64,25 +62,39 @@ public class PartnerListingImageProxyService {
 
     private boolean isAllowedHost(String host) {
         String lower = host.toLowerCase(Locale.ROOT);
-        for (String allowed : ALLOWED_HOST_SUFFIXES) {
-            if (lower.equals(allowed) || lower.endsWith("." + allowed)) {
+        for (OfficialVendor vendor : officialVendorRepository.findAll()) {
+            if (matchesConfiguredHost(lower, vendor.getFeedBaseUrl())
+                    || matchesConfiguredHost(lower, vendor.getWebsiteUrl())) {
                 return true;
             }
-        }
-        try {
-            URI store = URI.create(monarchStoreBaseUrl);
-            if (store.getHost() != null && lower.equals(store.getHost().toLowerCase(Locale.ROOT))) {
-                return true;
-            }
-        } catch (Exception ignored) {
-            // fall through
         }
         return false;
     }
 
+    private boolean matchesConfiguredHost(String requestHost, String configuredUrl) {
+        String configuredHost = hostFromUrl(configuredUrl);
+        if (configuredHost == null) {
+            return false;
+        }
+        return requestHost.equals(configuredHost) || requestHost.endsWith("." + configuredHost);
+    }
+
+    private String hostFromUrl(String rawUrl) {
+        String trimmed = trimTrailingSlash(rawUrl);
+        if (trimmed == null) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(trimmed);
+            return uri.getHost() == null ? null : uri.getHost().toLowerCase(Locale.ROOT);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     private String trimTrailingSlash(String url) {
         if (url == null || url.isBlank()) {
-            return "https://monarchreptiles.com";
+            return null;
         }
         String trimmed = url.trim();
         return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;

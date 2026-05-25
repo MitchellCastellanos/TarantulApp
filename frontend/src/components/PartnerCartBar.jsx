@@ -8,7 +8,7 @@ import {
   updatePartnerCartQty,
 } from '../utils/partnerCart'
 import { decodeListingTitle } from '../utils/listingDisplay'
-import { openMonarchCartHandoff } from '../utils/monarchCartHandoff'
+import { openPartnerCartHandoff } from '../utils/partnerCartHandoff'
 
 export default function PartnerCartBar() {
   const { t } = useTranslation()
@@ -50,7 +50,7 @@ export default function PartnerCartBar() {
         })),
       })
       if (handoff?.checkoutUrl) {
-        openMonarchCartHandoff(handoff)
+        openPartnerCartHandoff(handoff)
         setMessage(
           cart.lines.length > 1
             ? t('marketplace.partnerCartBatchHandoff', { count: cart.lines.length })

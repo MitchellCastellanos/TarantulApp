@@ -15,7 +15,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import MarketplaceFilterBar from '../components/MarketplaceFilterBar'
-import { addPartnerCartLine, MONARCH_VENDOR_SLUG } from '../utils/partnerCart'
+import { addPartnerCartLine } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import { formatListingPrice } from '../utils/formatPrice'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
@@ -436,7 +436,7 @@ export default function MarketplacePage() {
   const addPartnerLineToCart = (l, ev) => {
     ev?.stopPropagation?.()
     addPartnerCartLine({
-      vendorSlug: l.officialVendor?.slug || MONARCH_VENDOR_SLUG,
+      vendorSlug: l.officialVendor?.slug,
       listingId: l.id,
       externalProductId: l.partnerExternalId || l.externalId,
       title: l.title,
