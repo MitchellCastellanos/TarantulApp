@@ -175,13 +175,19 @@ public class AdminController {
                                                 String partnerProgramTier,
                                                 String feedType,
                                                 String feedBaseUrl,
-                                                Map<String, Object> feedConfig) {}
+                                                Map<String, Object> feedConfig,
+                                                String badge,
+                                                String websiteUrl,
+                                                Integer influenceScore,
+                                                String note) {}
     record PromoteOfficialVendorLeadRequest(Boolean enableImport,
                                             Boolean strategicFounder,
                                             String partnerProgramTier,
                                             String feedType,
                                             String feedBaseUrl,
-                                            Map<String, Object> feedConfig) {}
+                                            Map<String, Object> feedConfig,
+                                            String badge,
+                                            Integer influenceScore) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
@@ -365,7 +371,9 @@ public class AdminController {
                     req == null ? null : req.partnerProgramTier(),
                     req == null ? null : req.feedType(),
                     req == null ? null : req.feedBaseUrl(),
-                    req == null ? null : req.feedConfig()));
+                    req == null ? null : req.feedConfig(),
+                    req == null ? null : req.badge(),
+                    req == null ? null : req.influenceScore()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -388,7 +396,11 @@ public class AdminController {
                 && req.partnerProgramTier() == null
                 && req.feedType() == null
                 && req.feedBaseUrl() == null
-                && req.feedConfig() == null) {
+                && req.feedConfig() == null
+                && req.badge() == null
+                && req.websiteUrl() == null
+                && req.influenceScore() == null
+                && req.note() == null) {
             throw new IllegalArgumentException("partner config update requerido");
         }
         return ResponseEntity.ok(officialVendorService.adminUpdateStrategicProgram(
@@ -398,7 +410,11 @@ public class AdminController {
                 req.partnerProgramTier(),
                 req.feedType(),
                 req.feedBaseUrl(),
-                req.feedConfig()));
+                req.feedConfig(),
+                req.badge(),
+                req.websiteUrl(),
+                req.influenceScore(),
+                req.note()));
     }
 
     @PostMapping("/partner-sync/run")
