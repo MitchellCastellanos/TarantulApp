@@ -84,7 +84,7 @@ PARTNER_SYNC_ADAPTER_WOOCOMMERCE_ENABLED=true
 PARTNER_SYNC_MONARCH_BASE_URL=https://monarchreptiles.com   # fallback legacy
 ```
 
-Despliegue: Flyway aplica `V104__official_vendor_feed_config.sql` (columnas `feed_base_url`, `feed_type` en `official_vendors`).
+Despliegue: Flyway aplica `V109__official_vendor_feed_config.sql` (columnas `feed_base_url`, `feed_type` en `official_vendors`).
 
 ---
 
