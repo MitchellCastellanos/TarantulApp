@@ -60,3 +60,255 @@
   box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.28), 0 4px 12px rgba(91, 33, 182, 0.35);
   background: linear-gradient(145deg, rgba(109, 40, 217, 0.55) 0%, rgba(76, 29, 149, 0.72) 100%);
 }
+
+/* ============================================================
+   App chrome: X/Instagram-style vertical rail (desktop) +
+   bottom tab bar (mobile). Scoped to body.ta-app-chrome.
+   ============================================================ */
+:root {
+  --ta-rail-w: 212px;
+  --ta-bottomnav-h: 60px;
+}
+
+@media (min-width: 768px) {
+  body.ta-app-chrome {
+    padding-left: var(--ta-rail-w);
+  }
+}
+@media (max-width: 767.98px) {
+  body.ta-app-chrome {
+    padding-bottom: calc(var(--ta-bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- Desktop vertical rail ---- */
+.ta-rail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--ta-rail-w);
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.6rem 1rem;
+  background: var(--ta-bg, #0f0e0c);
+  border-right: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+  overflow-y: auto;
+  z-index: 1040;
+}
+.ta-rail__brand {
+  padding: 0 0.3rem 0.6rem;
+}
+.ta-rail__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+.ta-rail__link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 12px;
+  color: rgba(248, 250, 252, 0.84) !important;
+  text-decoration: none !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.ta-rail__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ta-parchment) !important;
+}
+.ta-rail__link.is-active {
+  background: rgba(232, 197, 71, 0.14);
+  color: var(--ta-parchment) !important;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--ta-gold, #c9a227);
+}
+.ta-rail__icon {
+  font-size: 1.1rem;
+  width: 1.4rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.ta-rail__label {
+  min-width: 0;
+}
+.ta-rail__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+}
+.ta-rail__more {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(248, 250, 252, 0.9);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ta-rail__more:hover,
+.ta-rail__more.is-open {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- "More" menu (shared popover/sheet content) ---- */
+.ta-more-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem;
+  border-radius: 12px;
+  border: 1px solid var(--ta-border, rgba(255, 255, 255, 0.14));
+  background: #16130f;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+.ta-more__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  color: rgba(248, 250, 252, 0.88) !important;
+  text-decoration: none !important;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.ta-more__item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ta-parchment) !important;
+}
+.ta-more__item--btn {
+  color: #ffb4a8 !important;
+}
+.ta-more__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-top: 1px solid var(--ta-border, rgba(255, 255, 255, 0.1));
+  margin-top: 0.2rem;
+}
+
+/* ---- Mobile slim top bar ---- */
+.ta-mtop {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  background: var(--ta-bg, #0f0e0c);
+  border-bottom: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+/* ---- Mobile bottom tab bar ---- */
+.ta-bottomnav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--ta-bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  background: var(--ta-bg, #0f0e0c);
+  border-top: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+  z-index: 1040;
+}
+.ta-bottomnav__tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(248, 250, 252, 0.7) !important;
+  text-decoration: none !important;
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.ta-bottomnav__tab.is-active {
+  color: var(--ta-gold, #c9a227) !important;
+}
+.ta-bottomnav__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.ta-bottomnav__label {
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Mobile "More" bottom sheet ---- */
+.ta-more-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+}
+.ta-more-sheet__panel {
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem calc(0.75rem + var(--ta-bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  background: #16130f;
+  border: 1px solid var(--ta-border, rgba(255, 255, 255, 0.14));
+}
+.ta-more-sheet__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0.2rem 0 0.6rem;
+}
+
+/* bootstrap-icons sizing inside app-chrome menus */
+.ta-more__item > i.bi {
+  width: 1.25rem;
+  text-align: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+i.ta-rail__icon.bi {
+  font-size: 1.15rem;
+}
+i.ta-bottomnav__icon.bi {
+  font-size: 1.3rem;
+}
