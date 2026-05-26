@@ -58,9 +58,9 @@ Save real captures under:
 
 | File | Capture |
 |------|---------|
-| `01-storefront-wide.webp` | `/partner/monarch-reptiles` (desktop) |
-| `02-marketplace-card.webp` | Marketplace listing with partner badge |
-| `03-cart-handoff.webp` | (optional) Partner cart bar |
+| `01-storefront-wide.png` | `/partner/monarch-reptiles` (desktop) |
+| `02-marketplace-card.png` | Marketplace listing with partner badge |
+| `03-cart-handoff.png` | (optional) Partner cart bar |
 
 Public URLs: `https://tarantulapp.com/outreach/monarch/<filename>`
 

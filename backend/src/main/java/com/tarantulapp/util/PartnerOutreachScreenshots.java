@@ -8,9 +8,9 @@ public final class PartnerOutreachScreenshots {
     public static final String MONARCH_SLUG = "monarch-reptiles";
     public static final String PUBLIC_PATH_PREFIX = "/outreach/monarch/";
 
-    public static final String STOREFRONT_WIDE = "01-storefront-wide.webp";
-    public static final String MARKETPLACE_CARD = "02-marketplace-card.webp";
-    public static final String CART_HANDOFF = "03-cart-handoff.webp";
+    public static final String STOREFRONT_WIDE = "01-storefront-wide.png";
+    public static final String MARKETPLACE_CARD = "02-marketplace-card.png";
+    public static final String CART_HANDOFF = "03-cart-handoff.png";
 
     private PartnerOutreachScreenshots() {
     }
