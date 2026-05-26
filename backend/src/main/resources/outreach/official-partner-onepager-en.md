@@ -52,7 +52,8 @@ If your Woo theme supports standard `add-to-cart` URLs, keepers can add multiple
 
 ## Next step
 
-Reply to this email or apply at **https://tarantulapp.com/partners**  
-We confirm fit, send authorization, run a test sync, and go live when you approve.
+**Reply to this email** — we’ll book a short call (~15 min), send authorization, run a test sync, and go live when you approve.
+
+Optional: program details and application at **https://tarantulapp.com/partners**
 
 — TarantulApp team · https://tarantulapp.com

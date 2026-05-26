@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import marketplaceService from '../services/marketplaceService'
 import {
@@ -10,12 +10,41 @@ import {
 import { decodeListingTitle } from '../utils/listingDisplay'
 import { openPartnerCartHandoff } from '../utils/partnerCartHandoff'
 
+const BAR_STATE_KEY = 'tarantulapp.partnerCartBar.state'
+
+function readBarState() {
+  try {
+    const raw = sessionStorage.getItem(BAR_STATE_KEY)
+    if (raw === 'minimized' || raw === 'dismissed') return raw
+  } catch {
+    /* ignore */
+  }
+  return 'expanded'
+}
+
+function writeBarState(state) {
+  try {
+    sessionStorage.setItem(BAR_STATE_KEY, state)
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function PartnerCartBar() {
   const { t } = useTranslation()
   const [cart, setCart] = useState(() => readPartnerCart())
-  const [open, setOpen] = useState(false)
+  const [barState, setBarState] = useState(readBarState)
   const [checkingOut, setCheckingOut] = useState(false)
   const [message, setMessage] = useState('')
+  const prevCountRef = useRef(partnerCartCount(readPartnerCart()))
+
+  const setBarStatePersisted = useCallback((next) => {
+    setBarState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next
+      writeBarState(resolved)
+      return resolved
+    })
+  }, [])
 
   const refresh = useCallback(() => setCart(readPartnerCart()), [])
 
@@ -29,10 +58,22 @@ export default function PartnerCartBar() {
   const count = partnerCartCount(cart)
 
   useEffect(() => {
-    if (count > 0) setOpen(true)
-  }, [count])
+    if (count === 0) {
+      prevCountRef.current = 0
+      setBarStatePersisted('expanded')
+      return
+    }
+    if (count > prevCountRef.current) {
+      setBarStatePersisted((prev) => (prev === 'dismissed' ? 'minimized' : 'expanded'))
+    }
+    prevCountRef.current = count
+  }, [count, setBarStatePersisted])
 
-  if (count === 0 && !open) {
+  if (count === 0) {
+    return null
+  }
+
+  if (barState === 'dismissed') {
     return null
   }
 
@@ -64,53 +105,95 @@ export default function PartnerCartBar() {
     }
   }
 
+  if (barState === 'minimized') {
+    return (
+      <div className="ta-partner-cart-bar position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1040 }}>
+        <button
+          type="button"
+          className="btn btn-warning text-dark fw-semibold shadow-lg ta-partner-cart-minimized"
+          onClick={() => setBarStatePersisted('expanded')}
+          aria-label={t('marketplace.partnerCartExpand')}
+        >
+          {t('marketplace.partnerCartTitle', { count })}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="ta-partner-cart-bar position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1040, maxWidth: 360 }}>
       <div className="card border-warning shadow-lg ta-premium-pane">
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
-            <button type="button" className="btn btn-sm btn-warning text-dark fw-semibold" onClick={() => setOpen((v) => !v)}>
+            <span className="small fw-semibold text-truncate" style={{ color: 'var(--ta-gold)' }}>
               {t('marketplace.partnerCartTitle', { count })}
-            </button>
-            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { clearPartnerCart(); refresh() }}>
+            </span>
+            <div className="d-flex gap-1 flex-shrink-0">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setBarStatePersisted('minimized')}
+                title={t('marketplace.partnerCartMinimize')}
+                aria-label={t('marketplace.partnerCartMinimize')}
+              >
+                −
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setBarStatePersisted('dismissed')}
+                title={t('marketplace.partnerCartClose')}
+                aria-label={t('marketplace.partnerCartClose')}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <ul className="list-unstyled small mb-2" style={{ maxHeight: 180, overflowY: 'auto' }}>
+            {cart.lines.map((line) => (
+              <li key={line.externalProductId} className="d-flex justify-content-between align-items-start gap-2 mb-2 border-bottom border-secondary border-opacity-25 pb-2">
+                <div className="min-w-0">
+                  <div className="fw-semibold text-truncate">{decodeListingTitle(line.title) || line.externalProductId}</div>
+                  {line.priceAmount != null && (
+                    <div className="text-muted">
+                      {line.priceAmount} {line.currency || ''}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  className="form-control form-control-sm"
+                  style={{ width: 64 }}
+                  value={line.quantity || 1}
+                  onChange={(e) => {
+                    updatePartnerCartQty(line.externalProductId, Number(e.target.value) || 1)
+                    refresh()
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+          <div className="d-flex gap-2 mb-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary flex-grow-1"
+              onClick={() => { clearPartnerCart(); refresh() }}
+            >
               {t('marketplace.partnerCartClear')}
             </button>
+            <button
+              type="button"
+              className="btn btn-warning text-dark btn-sm flex-grow-1 fw-semibold ta-partner-cart-checkout"
+              disabled={checkingOut || cart.lines.length === 0}
+              onClick={checkout}
+            >
+              {checkingOut ? t('common.loading') : t('marketplace.partnerCartCheckout')}
+            </button>
           </div>
-          {open && (
-            <>
-              <ul className="list-unstyled small mb-2" style={{ maxHeight: 180, overflowY: 'auto' }}>
-                {cart.lines.map((line) => (
-                  <li key={line.externalProductId} className="d-flex justify-content-between align-items-start gap-2 mb-2 border-bottom border-secondary border-opacity-25 pb-2">
-                    <div className="min-w-0">
-                      <div className="fw-semibold text-truncate">{decodeListingTitle(line.title) || line.externalProductId}</div>
-                      {line.priceAmount != null && (
-                        <div className="text-muted">
-                          {line.priceAmount} {line.currency || ''}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="number"
-                      min={1}
-                      max={99}
-                      className="form-control form-control-sm"
-                      style={{ width: 64 }}
-                      value={line.quantity || 1}
-                      onChange={(e) => {
-                        updatePartnerCartQty(line.externalProductId, Number(e.target.value) || 1)
-                        refresh()
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
-              <button type="button" className="btn btn-warning text-dark btn-sm w-100 fw-semibold ta-partner-cart-checkout" disabled={checkingOut || cart.lines.length === 0} onClick={checkout}>
-                {checkingOut ? t('common.loading') : t('marketplace.partnerCartCheckout')}
-              </button>
-              {message && <p className="small text-success mb-0 mt-2">{message}</p>}
-              <p className="small text-muted mb-0 mt-2">{t('marketplace.partnerCartFootnote')}</p>
-            </>
-          )}
+          {message && <p className="small text-success mb-0 mt-2">{message}</p>}
+          <p className="small text-muted mb-0 mt-2">{t('marketplace.partnerCartFootnote')}</p>
         </div>
       </div>
     </div>

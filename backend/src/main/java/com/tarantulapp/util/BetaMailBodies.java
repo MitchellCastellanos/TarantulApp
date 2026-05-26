@@ -1312,15 +1312,21 @@ public final class BetaMailBodies {
             default -> "Producto en el feed del marketplace";
         };
         String closing = switch (loc) {
-            case "en" -> "Attached: one-pager (EN/ES/FR). If it’s a fit, a ~15-minute call, short authorization, and a test sync is all we need.<br><br>"
-                    + "Apply: <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
-                    + "Open to a short call this week?<br><br>— TarantulApp team";
-            case "fr" -> "One-pager joint (FR/EN/ES). Si cela vous convient : appel ~15 min, autorisation courte, test sync.<br><br>"
-                    + "Candidature : <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
-                    + "Disponibles pour un court appel cette semaine ?<br><br>— Équipe TarantulApp";
-            default -> "Adjuntamos one-pager (ES/EN/FR). Si encaja: llamada ~15 min, autorización corta y test sync.<br><br>"
-                    + "También pueden aplicar en <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
-                    + "¿Les interesa una llamada corta esta semana?<br><br>— Equipo TarantulApp";
+            case "en" -> "One-pager attached (PDF). If this sounds like a fit, <strong>reply to this email</strong> — "
+                    + "we’ll schedule a short call (~15 min), send a brief authorization, and run a test sync.<br><br>"
+                    + "<span style=\"" + muted + "\">Optional: "
+                    + "<a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">program details at tarantulapp.com/partners</a></span><br><br>"
+                    + "— TarantulApp team";
+            case "fr" -> "One-pager joint (PDF). Si le programme vous intéresse, <strong>répondez à ce courriel</strong> — "
+                    + "nous planifierons un court appel (~15 min), l’autorisation et un test de sync.<br><br>"
+                    + "<span style=\"" + muted + "\">Optionnel : "
+                    + "<a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">détails sur tarantulapp.com/partners</a></span><br><br>"
+                    + "— Équipe TarantulApp";
+            default -> "Adjuntamos one-pager (PDF). Si les interesa, <strong>respondan a este correo</strong> — "
+                    + "agendamos una llamada corta (~15 min), autorización breve y test sync.<br><br>"
+                    + "<span style=\"" + muted + "\">Opcional: "
+                    + "<a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">más info en tarantulapp.com/partners</a></span><br><br>"
+                    + "— Equipo TarantulApp";
         };
 
         String img1 = imgUrls.isEmpty() ? "" : "<figure style=\"margin:16px 0 0;\">"
@@ -1398,9 +1404,9 @@ public final class BetaMailBodies {
                 + "• Keepers exploran en TarantulApp; compran en su checkout (clicks con UTM)\n"
                 + "• Opcional: carrito multi-artículo hacia su Woo\n"
                 + monarchScreenshotBlockEs(appBaseUrl)
-                + "Adjuntamos one-pager (ES/EN/FR). Si encaja: llamada ~15 min, autorización corta y test sync.\n\n"
-                + "Aplicar: " + DEFAULT_APP_URL + "/partners\n\n"
-                + "¿Les interesa una llamada corta esta semana?\n\n"
+                + "Adjuntamos one-pager (PDF). Si les interesa, respondan a este correo — agendamos llamada corta (~15 min), "
+                + "autorización y test sync.\n\n"
+                + "Opcional — más info o formulario: " + DEFAULT_APP_URL + "/partners\n\n"
                 + "— Equipo TarantulApp\n";
     }
 
@@ -1418,9 +1424,9 @@ public final class BetaMailBodies {
                 + "• Keepers browse in TarantulApp; they buy on your checkout (UTM-tagged clicks)\n"
                 + "• Optional multi-item cart handoff to your Woo\n"
                 + monarchScreenshotBlockEn(appBaseUrl)
-                + "Attached: one-pager (EN/ES/FR). If it’s a fit: ~15-minute call, short authorization, test sync.\n\n"
-                + "Apply: " + DEFAULT_APP_URL + "/partners\n\n"
-                + "Open to a short call this week?\n\n"
+                + "One-pager attached (PDF). If this sounds like a fit, reply to this email — we’ll set up a short call (~15 min), "
+                + "authorization, and test sync.\n\n"
+                + "Optional — program details: " + DEFAULT_APP_URL + "/partners\n\n"
                 + "— TarantulApp team\n";
     }
 
@@ -1438,9 +1444,9 @@ public final class BetaMailBodies {
                 + "• Les keepers explorent TarantulApp ; achat sur votre checkout (clics UTM)\n"
                 + "• Handoff panier multi-articles optionnel\n"
                 + monarchScreenshotBlockFr(appBaseUrl)
-                + "One-pager joint (FR/EN/ES). Si cela vous convient : appel ~15 min, autorisation, test sync.\n\n"
-                + "Candidature : " + DEFAULT_APP_URL + "/partners\n\n"
-                + "Disponibles pour un court appel cette semaine ?\n\n"
+                + "One-pager joint (PDF). Si le programme vous intéresse, répondez à ce courriel — appel court (~15 min), "
+                + "autorisation et test sync.\n\n"
+                + "Optionnel — détails : " + DEFAULT_APP_URL + "/partners\n\n"
                 + "— Équipe TarantulApp\n";
     }
 

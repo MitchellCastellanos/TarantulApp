@@ -37,7 +37,7 @@ ESTRUCTURA (en este orden):
 3. Mini diagrama de flujo: WooCommerce → sync → app → checkout en su web (UTM)
 4. Sección “Qué necesitamos” — lista corta numerada
 5. Dos screenshots lado a lado o apilados (URLs abajo) con pies: “Vitrina” y “Marketplace”
-6. Footer: tarantulapp.com/partners + “Monarch Reptiles — ejemplo en vivo” con URL partner/monarch-reptiles
+6. Footer: **“Reply to this email”** as primary CTA; optional small line: tarantulapp.com/partners · Monarch ejemplo: partner/monarch-reptiles
 
 REGLAS DE COPY:
 - Enfócate en: descubrimiento en la app, badge Official Partner, sync Woo, clicks/tráfico a SU tienda
@@ -104,8 +104,9 @@ Si su Woo acepta URLs `add-to-cart`, el keeper puede llevar varios ítems al car
 
 ## Siguiente paso
 
-Respondan este correo o apliquen en **https://tarantulapp.com/partners**  
-Confirmamos fit, autorización, test sync y publicamos con su OK.
+**Respondan a este correo** — agendamos llamada corta (~15 min), autorización, test sync y publicamos con su OK.
+
+Opcional: más info en **https://tarantulapp.com/partners**
 
 — Equipo TarantulApp · https://tarantulapp.com
 
@@ -155,8 +156,9 @@ If your Woo theme supports standard `add-to-cart` URLs, keepers can add multiple
 
 ## Next step
 
-Reply to this email or apply at **https://tarantulapp.com/partners**  
-We confirm fit, send authorization, run a test sync, and go live when you approve.
+**Reply to this email** — we’ll book a short call (~15 min), send authorization, run a test sync, and go live when you approve.
+
+Optional: **https://tarantulapp.com/partners**
 
 — TarantulApp team · https://tarantulapp.com
 
@@ -206,8 +208,9 @@ Si votre Woo accepte les URL `add-to-cart` standard, panier multi-articles possi
 
 ## Prochaine étape
 
-Répondez à ce courriel ou postulez sur **https://tarantulapp.com/partners**  
-Nous validons l’adéquation, envoyons l’autorisation, testons le sync et publions avec votre accord.
+**Répondez à ce courriel** — appel court (~15 min), autorisation, test sync et mise en ligne avec votre accord.
+
+Optionnel : **https://tarantulapp.com/partners**
 
 — Équipe TarantulApp · https://tarantulapp.com
 

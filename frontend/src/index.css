@@ -2338,6 +2338,12 @@ a.text-collection:hover {
   border-color: var(--ta-border, rgba(255, 255, 255, 0.2));
 }
 
+.ta-partner-cart-minimized {
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  color: #1a1208 !important;
+}
+
 .ta-marketplace-category-nav__label {
   letter-spacing: 0.04em;
 }
@@ -4883,6 +4889,16 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
   border-radius: 50%;
   object-fit: cover;
   display: block;
+}
+
+.ta-spotlight-story-ring:focus-visible {
+  outline: 2px solid var(--ta-gold);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.ta-spotlight-lightbox__panel {
+  padding: 2.5rem 1rem 1rem;
 }
 
 .ta-spotlight-story-caption {

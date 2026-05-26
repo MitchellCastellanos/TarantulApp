@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import communityService from '../services/communityService'
-import { imgUrl } from '../services/api'
+import api, { imgUrl } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { publicUrl } from '../utils/publicAssets.js'
 
 const STORY_DURATION_MS = 4500
@@ -91,9 +93,21 @@ function SpotlightThumb({ item, placeholder, onOpen, t }) {
 }
 
 function StoryViewer({ items, index, placeholder, onClose, onNext, onPrev, t }) {
+  const { user } = useAuth()
   const item = items[index]
   const photoSrc = imgUrl(item.photoUrl) || placeholder
   const touchStartX = useRef(null)
+  const [spoodCount, setSpoodCount] = useState(() => Number(item.spoodCount || 0))
+  const [spoodedByViewer, setSpoodedByViewer] = useState(() => Boolean(item.spoodedByViewer))
+  const [spoodBusy, setSpoodBusy] = useState(false)
+
+  const spiderHref = item.shortId ? `/t/${item.shortId}` : null
+  const canSpood = Boolean(item.shortId) && !item.viewerIsOwner
+
+  useEffect(() => {
+    setSpoodCount(Number(item.spoodCount || 0))
+    setSpoodedByViewer(Boolean(item.spoodedByViewer))
+  }, [index, item.spoodCount, item.spoodedByViewer])
 
   useEffect(() => {
     const timer = setTimeout(onNext, STORY_DURATION_MS)
@@ -114,6 +128,25 @@ function StoryViewer({ items, index, placeholder, onClose, onNext, onPrev, t }) 
       document.body.style.overflow = prevOverflow
     }
   }, [onClose, onNext, onPrev])
+
+  const handleSpood = async (e) => {
+    e.stopPropagation()
+    if (!canSpood || spoodBusy) return
+    if (!user) {
+      window.location.href = '/login'
+      return
+    }
+    setSpoodBusy(true)
+    try {
+      const { data } = await api.post(`/public/t/${item.shortId}/spood`)
+      setSpoodCount(Number(data?.spoodCount || 0))
+      setSpoodedByViewer(Boolean(data?.spoodedByViewer))
+    } catch {
+      // no-op
+    } finally {
+      setSpoodBusy(false)
+    }
+  }
 
   const onTouchStart = (e) => {
     touchStartX.current = e.touches[0]?.clientX ?? null
@@ -163,6 +196,24 @@ function StoryViewer({ items, index, placeholder, onClose, onNext, onPrev, t }) 
             <span className="small opacity-75">{t('social.spotlightStoryFallback')}</span>
           )}
           {item.speciesName ? <div className="small fst-italic opacity-75">{item.speciesName}</div> : null}
+          <div className="d-flex flex-wrap gap-2 mt-2">
+            {canSpood && (
+              <button
+                type="button"
+                className={`btn btn-sm ${spoodedByViewer ? 'btn-light' : 'btn-outline-light'}`}
+                disabled={spoodBusy}
+                onClick={handleSpood}
+                title={t('social.spoodLike')}
+              >
+                🕷️ {t('social.spoodCount', { count: spoodCount })}
+              </button>
+            )}
+            {spiderHref && (
+              <Link to={spiderHref} className="btn btn-sm btn-outline-light" onClick={onClose}>
+                {t('social.spotlightOpenSpecimen')}
+              </Link>
+            )}
+          </div>
         </div>
 
         <button

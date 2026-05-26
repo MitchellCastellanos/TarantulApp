@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar'
 import userPublicService from '../services/userPublicService'
 import marketplaceService from '../services/marketplaceService'
 import moderationService from '../services/moderationService'
-import { imgUrl } from '../services/api'
+import api, { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { socialOgImageUrl } from '../constants/socialOg'
 import { BRAND_WITH_TM } from '../constants/brand'
@@ -30,6 +30,7 @@ export default function PublicKeeperProfilePage() {
   const [keeperData, setKeeperData] = useState(null)
   const [reviews, setReviews] = useState([])
   const [notice, setNotice] = useState('')
+  const [collectionSpood, setCollectionSpood] = useState({})
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const profileUrl = useMemo(() => {
@@ -56,6 +57,7 @@ export default function PublicKeeperProfilePage() {
     setProfile(null)
     setKeeperData(null)
     setReviews([])
+    setCollectionSpood({})
     userPublicService
       .byHandle(handle || '')
       .then(async (p) => {
@@ -90,6 +92,27 @@ export default function PublicKeeperProfilePage() {
   const reputation = keeperData?.reputation || null
   const sexId = profile?.sexId || null
   const sameUser = user && profile?.id && String(user.id) === String(profile.id)
+
+  const handleSpoodCollectionItem = async (tar) => {
+    if (!tar?.shortId || sameUser) return
+    if (!user) {
+      window.location.href = '/login'
+      return
+    }
+    const key = String(tar.id || tar.shortId)
+    try {
+      const { data } = await api.post(`/public/t/${encodeURIComponent(tar.shortId)}/spood`)
+      setCollectionSpood((prev) => ({
+        ...prev,
+        [key]: {
+          spoodCount: Number(data?.spoodCount || 0),
+          spoodedByViewer: Boolean(data?.spoodedByViewer),
+        },
+      }))
+    } catch {
+      // no-op
+    }
+  }
 
   const reportKeeper = async () => {
     if (!profile?.id) return
@@ -268,14 +291,19 @@ export default function PublicKeeperProfilePage() {
                   <p className="small text-muted mb-0">{t('public.keeperCollectionEmpty')}</p>
                 ) : (
                   <div className="row g-2">
-                    {(keeperData.publicCollection || []).map((tar) => (
+                    {(keeperData.publicCollection || []).map((tar) => {
+                      const spoodKey = String(tar.id || tar.shortId)
+                      const spoodState = collectionSpood[spoodKey]
+                      const spoodCount = spoodState?.spoodCount ?? Number(tar.spoodCount || 0)
+                      const spoodedByViewer = spoodState?.spoodedByViewer ?? false
+                      return (
                       <div key={tar.id} className="col-md-6">
-                        <Link
-                          to={`/t/${encodeURIComponent(tar.shortId)}`}
-                          className="text-decoration-none"
-                          style={{ color: 'inherit' }}
-                        >
-                          <div className="border rounded p-2 h-100 small d-flex align-items-center gap-2">
+                        <div className="border rounded p-2 h-100 small d-flex align-items-center gap-2">
+                          <Link
+                            to={`/t/${encodeURIComponent(tar.shortId)}`}
+                            className="d-flex align-items-center gap-2 flex-grow-1 min-w-0 text-decoration-none"
+                            style={{ color: 'inherit' }}
+                          >
                             <img
                               src={imgUrl(tar.profilePhoto) || '/spider-default.png'}
                               alt={tar.name || 'specimen'}
@@ -284,14 +312,27 @@ export default function PublicKeeperProfilePage() {
                             <div className="min-w-0">
                               <div className="fw-semibold text-truncate">{tar.name || 'Specimen'}</div>
                               <div className="text-muted text-truncate">{tar.speciesName || '-'}</div>
-                              <div className="small" style={{ color: 'var(--ta-gold-soft)' }}>
-                                🕷️ {Number(tar.spoodCount || 0)}
-                              </div>
                             </div>
-                          </div>
-                        </Link>
+                          </Link>
+                          {!sameUser && tar.shortId && (
+                            <button
+                              type="button"
+                              className={`btn btn-sm flex-shrink-0 ${spoodedByViewer ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              onClick={() => handleSpoodCollectionItem(tar)}
+                              title={t('social.spoodLike')}
+                            >
+                              🕷️ {spoodCount}
+                            </button>
+                          )}
+                          {sameUser && (
+                            <span className="small flex-shrink-0" style={{ color: 'var(--ta-gold-soft)' }}>
+                              🕷️ {spoodCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

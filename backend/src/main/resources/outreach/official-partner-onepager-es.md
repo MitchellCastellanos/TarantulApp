@@ -52,7 +52,8 @@ Si su Woo acepta URLs `add-to-cart`, el keeper puede llevar varios ítems al car
 
 ## Siguiente paso
 
-Respondan este correo o apliquen en **https://tarantulapp.com/partners**  
-Confirmamos fit, autorización, test sync y publicamos con su OK.
+**Respondan a este correo** — agendamos una llamada corta (~15 min), autorización, test sync y publicamos con su OK.
+
+Opcional: más información y formulario en **https://tarantulapp.com/partners**
 
 — Equipo TarantulApp · https://tarantulapp.com

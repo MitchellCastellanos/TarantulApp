@@ -76,7 +76,7 @@ public class User {
     private Boolean searchVisible = true;
 
     @Column(name = "community_profile_visibility", nullable = false, length = 20)
-    private String communityProfileVisibility = "preview_only";
+    private String communityProfileVisibility = "public_full";
 
     /** When true, newly created tarantulas default to is_public=true for this keeper. */
     @Column(name = "default_tarantula_public", nullable = false)
@@ -184,7 +184,7 @@ public class User {
             searchVisible = true;
         }
         if (communityProfileVisibility == null || communityProfileVisibility.isBlank()) {
-            communityProfileVisibility = "preview_only";
+            communityProfileVisibility = "public_full";
         }
         if (defaultTarantulaPublic == null) {
             defaultTarantulaPublic = true;

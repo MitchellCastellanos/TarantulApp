@@ -272,7 +272,9 @@
     "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing.",
     "spotlightTitle": "Nuevas en la comunidad",
     "spotlightSubtitle": "Tarántulas públicas recientes de otros keepers.",
-    "spotlightStoryFallback": "keeper"
+    "spotlightStoryFallback": "keeper",
+    "spotlightViewPhoto": "Ver foto",
+    "spotlightOpenSpecimen": "Ver ejemplar"
   },
   "handleSetup": {
     "title": "Elige tu @keeper",
@@ -1175,6 +1177,9 @@
     "tarantulaCribsFilter": "Solo Tarantula Cribs",
     "partnerAddToCart": "Agregar al carrito",
     "partnerCartTitle": "Carrito partner ({{count}})",
+    "partnerCartMinimize": "Minimizar",
+    "partnerCartClose": "Ocultar carrito",
+    "partnerCartExpand": "Mostrar carrito partner",
     "partnerCartClear": "Vaciar",
     "partnerCartCheckout": "Continuar en el sitio del partner",
     "partnerCartBatchHandoff": "Enviando {{count}} artículos al sitio del partner. Permite pop-ups si el navegador lo pide y revisa el carrito allá.",
@@ -3139,7 +3144,7 @@
       "avatarAlt": "Foto de perfil",
       "searchVisibleLabel": "Aparecer en búsqueda pública de keepers",
       "collectionPublicLabel": "Perfil keeper y colección públicos",
-      "collectionPublicHint": "Desactiva esto para marcar toda tu colección como privada y limitar tu perfil keeper. Las arañas nuevas siguen siendo públicas por defecto hasta que lo cambies aquí o en cada ficha.",
+      "collectionPublicHint": "Desactiva esto para ocultar tu colección en el perfil keeper. Las arañas y el perfil son públicos por defecto; puedes cambiarlo aquí o en cada ficha.",
       "collectionPublicStats": "{{publicCount}} de {{totalCount}} arañas son públicas ahora.",
       "collectionPublicConfirmOff": "Esto ocultará tu colección en el perfil y marcará todas tus arañas como privadas. ¿Continuar?",
       "collectionPublicSavedOn": "Perfil y las {{count}} arañas quedaron públicas.",

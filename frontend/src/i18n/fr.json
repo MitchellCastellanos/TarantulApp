@@ -265,7 +265,9 @@
     "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing.",
     "spotlightTitle": "Nouveautés communauté",
     "spotlightSubtitle": "Araignées publiques récemment partagées par d'autres keepers.",
-    "spotlightStoryFallback": "keeper"
+    "spotlightStoryFallback": "keeper",
+    "spotlightViewPhoto": "Voir la photo",
+    "spotlightOpenSpecimen": "Voir le spécimen"
   },
   "handleSetup": {
     "title": "Choisissez votre @keeper",
@@ -1160,6 +1162,9 @@
     "tarantulaCribsFilter": "Tarantula Cribs uniquement",
     "partnerAddToCart": "Ajouter au panier",
     "partnerCartTitle": "Panier partenaire ({{count}})",
+    "partnerCartMinimize": "Réduire",
+    "partnerCartClose": "Masquer le panier",
+    "partnerCartExpand": "Afficher le panier partenaire",
     "partnerCartClear": "Vider",
     "partnerCartCheckout": "Continuer sur le site partenaire",
     "partnerCartBatchHandoff": "Envoi de {{count}} articles vers le site partenaire. Autorisez les pop-ups si demandé, puis vérifiez le panier là-bas.",
@@ -3099,7 +3104,7 @@
       "avatarAlt": "Photo de profil",
       "searchVisibleLabel": "Apparaître dans les résultats publics de recherche de keepers",
       "collectionPublicLabel": "Profil keeper et collection publics",
-      "collectionPublicHint": "Désactivez pour rendre toute la collection privée et limiter le profil keeper. Les nouvelles araignées restent publiques par défaut jusqu'à changement ici ou par fiche.",
+      "collectionPublicHint": "Désactivez pour masquer la collection sur le profil keeper. Araignées et profil sont publics par défaut ; changez ici ou par fiche.",
       "collectionPublicStats": "{{publicCount}} sur {{totalCount}} araignées sont publiques.",
       "collectionPublicConfirmOff": "Cela limitera votre profil et rendra toutes vos araignées privées. Continuer ?",
       "collectionPublicSavedOn": "Profil et les {{count}} araignées sont maintenant publics.",

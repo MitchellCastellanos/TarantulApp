@@ -271,7 +271,9 @@
     "threadViewHint": "Thread view keeps the conversation focused. Jump back to Community for broader browsing.",
     "spotlightTitle": "New in the community",
     "spotlightSubtitle": "Recently shared public spiders from keepers like you.",
-    "spotlightStoryFallback": "keeper"
+    "spotlightStoryFallback": "keeper",
+    "spotlightViewPhoto": "View photo",
+    "spotlightOpenSpecimen": "Open specimen"
   },
   "handleSetup": {
     "title": "Choose your @keeper",
@@ -1168,6 +1170,9 @@
     "tarantulaCribsFilter": "Tarantula Cribs only",
     "partnerAddToCart": "Add to cart",
     "partnerCartTitle": "Partner cart ({{count}})",
+    "partnerCartMinimize": "Minimize",
+    "partnerCartClose": "Hide cart",
+    "partnerCartExpand": "Show partner cart",
     "partnerCartClear": "Clear",
     "partnerCartCheckout": "Continue on partner site",
     "partnerCartBatchHandoff": "Sending {{count}} items to the partner site. Allow pop-ups if the browser asks, then check your cart there.",
@@ -3160,7 +3165,7 @@
       "avatarAlt": "Profile photo",
       "searchVisibleLabel": "Appear in public keeper search results",
       "collectionPublicLabel": "Public keeper profile and collection",
-      "collectionPublicHint": "Turn this off to make your whole collection private and limit your keeper profile. New spiders still default to public until you change it here or per spider.",
+      "collectionPublicHint": "Turn this off to hide your collection on your keeper profile. Spiders and your profile are public by default; change it here or per spider.",
       "collectionPublicStats": "{{publicCount}} of {{totalCount}} spiders are public right now.",
       "collectionPublicConfirmOff": "This will hide your keeper collection and mark all your spiders private. Continue?",
       "collectionPublicSavedOn": "Profile and all {{count}} spiders are now public.",
