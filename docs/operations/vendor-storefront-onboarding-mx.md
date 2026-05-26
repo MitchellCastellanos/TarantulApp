@@ -12,7 +12,7 @@ Checklist interno después de la llamada con el prospecto y alrededor del correo
    - Revisar `publicHandle` único (será `/shop/{handle}`).
 3. Si es **socio oficial** (catálogo importado + categorías de insumos):
    - Crear/actualizar fila en `official_vendors`.
-   - `listing_import_enabled = true`, tier `STRATEGIC_PARTNER` o `STRATEGIC_FOUNDER`.
+   - `listing_import_enabled = true`, tier `OFFICIAL_PARTNER` o `FOUNDING_PARTNER` (legacy `STRATEGIC_*` aún se lee).
    - Asignar `listing_category` en `partner_listings` al sincronizar (`live_food`, `substrates`, `terrariums`, `supplies`, `tarantulas`).
 
 ## 2. Tier dinámico (sin escrow, auto-ajustado)

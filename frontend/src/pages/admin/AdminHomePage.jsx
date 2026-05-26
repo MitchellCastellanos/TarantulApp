@@ -221,24 +221,6 @@ export default function AdminHomePage() {
     return 'hide_tarantula'
   }
 
-  const toggleOfficialVendor = async (vendorId, nextEnabled) => {
-    try {
-      const updated = await adminService.setOfficialVendorStatus(vendorId, nextEnabled)
-      setOfficialVendors((prev) => prev.map((v) => (v.id === vendorId ? updated : v)))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
-  const patchVendorStrategic = async (vendorId, body) => {
-    try {
-      const updated = await adminService.updateOfficialVendorStrategicProgram(vendorId, body)
-      setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendorId) ? updated : v)))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
   const runPartnerSyncNow = async () => {
     setPartnerSyncLoading(true)
     setPartnerSyncMessage('')
@@ -530,65 +512,16 @@ export default function AdminHomePage() {
       </div>
 
       <div className="card p-3 mt-3">
-        <h2 className="h6 mb-3">{t('admin.officialVendorsTitle')}</h2>
-        {officialVendors.length === 0 ? (
-          <p className="text-muted small mb-0">{t('admin.officialVendorsEmpty')}</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>{t('admin.officialVendorsColBrand')}</th>
-                  <th>{t('admin.officialVendorsColLocation')}</th>
-                  <th>{t('admin.officialVendorsColScore')}</th>
-                  <th>{t('admin.officialVendorsColStatus')}</th>
-                  <th className="text-center">{t('admin.officialVendorsColFounder')}</th>
-                  <th className="text-center">{t('admin.officialVendorsColImport')}</th>
-                  <th>{t('admin.officialVendorsColActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {officialVendors.map((v) => (
-                  <tr key={v.id}>
-                    <td>
-                      <div className="fw-semibold">{v.name}</div>
-                      <div className="small text-muted">{v.websiteUrl}</div>
-                    </td>
-                    <td>{[v.city, v.state, v.country].filter(Boolean).join(' · ') || '-'}</td>
-                    <td>{v.influenceScore ?? 0}</td>
-                    <td>{v.enabled ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
-                    <td className="text-center">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        title="FOUNDING_PARTNER"
-                        checked={v.isFoundingPartner || v.partnerProgramTier === 'FOUNDING_PARTNER' || v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
-                        onChange={(e) => patchVendorStrategic(v.id, { strategicFounder: e.target.checked })}
-                      />
-                    </td>
-                    <td className="text-center">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        checked={!!v.listingImportEnabled}
-                        onChange={(e) => patchVendorStrategic(v.id, { listingImportEnabled: e.target.checked })}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${v.enabled ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                        onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
-                      >
-                        {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h2 className="h6 mb-2">{t('admin.officialVendorsTitle')}</h2>
+        <p className="small text-muted mb-2">{t('admin.adminHomeOfficialVendorsHint')}</p>
+        <p className="small mb-2">
+          {officialVendors.length === 0
+            ? t('admin.officialVendorsEmpty')
+            : t('admin.officialVendorsCount', { count: officialVendors.length })}
+        </p>
+        <Link to="/admin/marketplace#badges-partners" className="btn btn-sm btn-dark">
+          {t('admin.navMarketplace')}
+        </Link>
       </div>
 
       <div className="card p-3 mt-3">

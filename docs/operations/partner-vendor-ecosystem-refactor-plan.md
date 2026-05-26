@@ -24,6 +24,7 @@ Automatic sync is gated by `official_vendors.listing_import_enabled` plus offici
 | Verification emails + admin queue | Done | PR #54 |
 | Partner ops summary (handoffs + sync) | Done | PR #55 |
 | Per-vendor test sync (admin) | Done | `POST /admin/partner-sync/run/{vendorId}` |
+| Admin badges panel (`/admin/marketplace`) | Done | PR #57 — Verified Shop queue, seller toggles, partner tier/badge, sync |
 | Monarch parity runbook | Ops | See checklist below |
 
 ## Admin Ops Quick Reference
@@ -42,6 +43,17 @@ Run after deploy or feed config change:
 3. Marketplace partner strip — Monarch listed, not dominating peer listings
 4. Add 2+ items to partner cart → handoff URL opens monarchreptiles.com (403 on batch add may still need partner Woo fix — see [`../ops/monarch-cart-handoff-email-to-partner.md`](../ops/monarch-cart-handoff-email-to-partner.md))
 5. Admin → Ops column: handoffs 30d + latest sync `success` with reasonable upserted/processed counts
+
+## Remaining for closure (ops + product)
+
+Architecture and admin tooling for the four-layer model are in **main** (PRs #50–#57). To call the transformation **operationally closed**:
+
+1. Ops uses **`/admin/marketplace`** only for badges, tiers, and sync (Admin Home links there; no duplicate vendor table).
+2. **Flyway V110** applied in production (`STRATEGIC_*` rows migrated to `OFFICIAL_*` / `FOUNDING_*`).
+3. At least one **official partner** besides Monarch with green test sync in admin.
+4. **Monarch cart handoff** works in prod (partner Woo may need `add-to-cart` whitelist — see ops email template).
+
+**Phase 2 (not blocking):** `feed_config` UI, Shopify/scrape adapters, partner analytics, monetization.
 
 ## Deferred Until Needed
 

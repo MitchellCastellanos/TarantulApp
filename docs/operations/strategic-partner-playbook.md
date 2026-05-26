@@ -22,7 +22,7 @@ Los socios **no** necesitan `verified_breeder` salvo que también quieran operar
    - `enabled = false` (aún no visible)
    - `listing_import_enabled = false` por defecto
    - `feed_base_url` + `feed_type = woocommerce` (inferido del website)
-   - `partner_program_tier` = `STRATEGIC_PARTNER` o `STRATEGIC_FOUNDER`
+   - `partner_program_tier` = `OFFICIAL_PARTNER` o `FOUNDING_PARTNER` (legacy `STRATEGIC_*` durante migración)
 
 ### 2. Primera llamada / alianza
 
@@ -74,7 +74,7 @@ Plantillas batch actuales en admin: `vendor_welcome_mx`, `play_early_access_web`
 | Categorías (Monarch mapper + genérico) | ✅ |
 | Cart handoff con UTM | ✅ `PartnerCartHandoffService` usa `feed_base_url` |
 | Admin promote lead → vendor | ✅ |
-| Sync manual admin | ✅ botón en Admin Marketplace / Home |
+| Sync manual admin | ✅ Admin → Marketplace & badges (`/admin/marketplace`) |
 | Shopify / otros feeds | ❌ pendiente |
 
 **Limitaciones conocidas:**

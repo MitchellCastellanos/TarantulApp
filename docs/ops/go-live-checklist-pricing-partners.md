@@ -108,12 +108,12 @@ Opcional Android:
 
 ---
 
-## 5. Partners estratégicos (Monarch y outreach)
+## 5. Partners oficiales (Monarch y outreach)
 
 Por cada distribuidor con sitio web:
 
 1. Firma: `docs/legal/strategic-partner-listing-authorization-onepager-es-en.md`
-2. Admin → Official vendors: tier **STRATEGIC_PARTNER** (o FOUNDER), **Import** on
+2. Admin → **Marketplace & badges** (`/admin/marketplace`): tier **OFFICIAL_PARTNER** u **FOUNDING_PARTNER**, **Import** on
 3. Rellenar en DB o futuro admin:
    - `feed_type` = `woocommerce`
    - `feed_base_url` = `https://su-tienda.com` (sin slash final)

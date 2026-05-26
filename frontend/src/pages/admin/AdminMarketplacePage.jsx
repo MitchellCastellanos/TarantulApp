@@ -122,21 +122,15 @@ export default function AdminMarketplacePage() {
       setError(t('admin.promoteLeadNeedsWebsite'))
       return
     }
-    const tierRaw = window.prompt(
-      t('admin.partnerPromoteTierPrompt', { defaultValue: 'Partner tier: official or founding' }),
-      'official',
-    )
+    const tierRaw = window.prompt(t('admin.partnerPromoteTierPrompt'), 'official')
     if (tierRaw == null) return
     const tier = String(tierRaw).trim().toLowerCase()
     const isFounding = tier === 'founding' || tier === 'founder'
-    const enableImport = window.confirm(t('admin.partnerPromoteImportConfirm', { defaultValue: 'Enable approved catalog sync now?' }))
-    const feedBaseUrl = window.prompt(
-      t('admin.partnerFeedBaseUrlPrompt', { defaultValue: 'Feed/store base URL' }),
-      lead.websiteUrl || '',
-    )
+    const enableImport = window.confirm(t('admin.partnerPromoteImportConfirm'))
+    const feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), lead.websiteUrl || '')
     if (feedBaseUrl == null) return
     const badge = window.prompt(
-      t('admin.partnerBadgePrompt', { defaultValue: 'Public partner badge' }),
+      t('admin.partnerBadgePrompt'),
       isFounding ? 'Founding partner' : 'Official partner',
     )
     if (badge == null) return
@@ -170,31 +164,22 @@ export default function AdminMarketplacePage() {
   const editOfficialVendorConfig = async (vendor) => {
     if (!vendor?.id) return
     const tierRaw = window.prompt(
-      t('admin.partnerPromoteTierPrompt', { defaultValue: 'Partner tier: official or founding' }),
+      t('admin.partnerPromoteTierPrompt'),
       vendor.isFoundingPartner ? 'founding' : 'official',
     )
     if (tierRaw == null) return
     const tier = String(tierRaw).trim().toLowerCase()
     const isFounding = tier === 'founding' || tier === 'founder'
     const badge = window.prompt(
-      t('admin.partnerBadgePrompt', { defaultValue: 'Public partner badge' }),
+      t('admin.partnerBadgePrompt'),
       vendor.badge || (isFounding ? 'Founding partner' : 'Official partner'),
     )
     if (badge == null) return
-    const websiteUrl = window.prompt(
-      t('admin.partnerWebsitePrompt', { defaultValue: 'Partner website URL' }),
-      vendor.websiteUrl || '',
-    )
+    const websiteUrl = window.prompt(t('admin.partnerWebsitePrompt'), vendor.websiteUrl || '')
     if (websiteUrl == null) return
-    const feedBaseUrl = window.prompt(
-      t('admin.partnerFeedBaseUrlPrompt', { defaultValue: 'Feed/store base URL' }),
-      vendor.feedBaseUrl || websiteUrl || '',
-    )
+    const feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), vendor.feedBaseUrl || websiteUrl || '')
     if (feedBaseUrl == null) return
-    const feedType = window.prompt(
-      t('admin.partnerFeedTypePrompt', { defaultValue: 'Feed type' }),
-      vendor.feedType || 'woocommerce',
-    )
+    const feedType = window.prompt(t('admin.partnerFeedTypePrompt'), vendor.feedType || 'woocommerce')
     if (feedType == null) return
     setPartnerConfigBusyId(vendor.id)
     setError('')
@@ -214,7 +199,7 @@ export default function AdminMarketplacePage() {
         },
       })
       setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendor.id) ? updated : v)))
-      setSuccess(t('admin.partnerConfigSaved', { defaultValue: 'Partner config saved.' }))
+      setSuccess(t('admin.partnerConfigSaved'))
     } catch {
       setError(t('admin.resolveError'))
     } finally {
@@ -415,7 +400,6 @@ export default function AdminMarketplacePage() {
       const run = await adminService.runPartnerSyncForVendor(vendor.id)
       setPartnerSyncMessage(
         t('admin.partnerSyncVendorDone', {
-          defaultValue: 'Sync finished for {{name}}: {{status}}',
           name: vendor.name,
           status: run?.status || '—',
         }),
@@ -485,17 +469,17 @@ export default function AdminMarketplacePage() {
       </section>
 
       <section className="card p-3 mb-4" id="badges-verification">
-        <h3 className="h6 mb-3">{t('admin.vendorVerificationTitle', { defaultValue: 'Vendor verification queue' })}</h3>
+        <h3 className="h6 mb-3">{t('admin.vendorVerificationTitle')}</h3>
         {vendorVerifications.length === 0 ? (
-          <p className="small text-muted mb-0">{t('admin.vendorVerificationEmpty', { defaultValue: 'No pending submissions.' })}</p>
+          <p className="small text-muted mb-0">{t('admin.vendorVerificationEmpty')}</p>
         ) : (
           <div className="table-responsive">
             <table className="table table-sm mb-0">
               <thead>
                 <tr>
-                  <th>{t('admin.vendorVerificationColUser', { defaultValue: 'User' })}</th>
-                  <th>{t('admin.created', { defaultValue: 'Created' })}</th>
-                  <th>{t('admin.officialLeadsColActions', { defaultValue: 'Actions' })}</th>
+                  <th>{t('admin.vendorVerificationColUser')}</th>
+                  <th>{t('admin.created')}</th>
+                  <th>{t('admin.officialLeadsColActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -507,17 +491,17 @@ export default function AdminMarketplacePage() {
                       <div className="d-flex flex-wrap gap-2 mt-1">
                         {row.selfieMediaUrl ? (
                           <a href={row.selfieMediaUrl} target="_blank" rel="noreferrer" className="small">
-                            {t('admin.vendorVerificationSelfie', { defaultValue: 'Selfie' })}
+                            {t('admin.vendorVerificationSelfie')}
                           </a>
                         ) : null}
                         {row.inventoryMediaUrl ? (
                           <a href={row.inventoryMediaUrl} target="_blank" rel="noreferrer" className="small">
-                            {t('admin.vendorVerificationInventory', { defaultValue: 'Inventory' })}
+                            {t('admin.vendorVerificationInventory')}
                           </a>
                         ) : null}
                         {row.paperMediaUrl ? (
                           <a href={row.paperMediaUrl} target="_blank" rel="noreferrer" className="small">
-                            {t('admin.vendorVerificationPaper', { defaultValue: 'Paper' })}
+                            {t('admin.vendorVerificationPaper')}
                           </a>
                         ) : null}
                       </div>
@@ -533,7 +517,7 @@ export default function AdminMarketplacePage() {
                           try {
                             await adminService.reviewVendorVerification(row.id, { status: 'approved' })
                             setVendorVerifications((prev) => prev.filter((v) => v.id !== row.id))
-                            setSuccess(t('admin.vendorVerificationStorefrontApproved', { defaultValue: 'Verified Shop badge granted (not vendor activation).' }))
+                            setSuccess(t('admin.vendorVerificationStorefrontApproved'))
                           } catch {
                             setError(t('admin.loadError'))
                           } finally {
@@ -541,19 +525,14 @@ export default function AdminMarketplacePage() {
                           }
                         }}
                       >
-                        {t('admin.vendorVerificationApprove', { defaultValue: 'Approve' })}
+                        {t('admin.vendorVerificationApprove')}
                       </button>
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger"
                         disabled={verificationBusyId === row.id}
                         onClick={async () => {
-                          const note = window.prompt(
-                            t('admin.vendorVerificationRejectPrompt', {
-                              defaultValue: 'Optional note for the vendor (why rejected):',
-                            }),
-                            '',
-                          )
+                          const note = window.prompt(t('admin.vendorVerificationRejectPrompt'), '')
                           if (note === null) return
                           setVerificationBusyId(row.id)
                           try {
@@ -562,7 +541,7 @@ export default function AdminMarketplacePage() {
                               reviewerNote: note.trim() || undefined,
                             })
                             setVendorVerifications((prev) => prev.filter((v) => v.id !== row.id))
-                            setSuccess(t('admin.vendorVerificationRejected', { defaultValue: 'Submission rejected.' }))
+                            setSuccess(t('admin.vendorVerificationRejected'))
                           } catch {
                             setError(t('admin.loadError'))
                           } finally {
@@ -570,7 +549,7 @@ export default function AdminMarketplacePage() {
                           }
                         }}
                       >
-                        {t('admin.vendorVerificationReject', { defaultValue: 'Reject' })}
+                        {t('admin.vendorVerificationReject')}
                       </button>
                     </td>
                   </tr>
@@ -803,7 +782,7 @@ export default function AdminMarketplacePage() {
                   <th>{t('admin.officialVendorsColBrand')}</th>
                   <th>{t('admin.officialVendorsColLocation')}</th>
                   <th>{t('admin.officialVendorsColScore')}</th>
-                  <th>{t('admin.partnerOpsCol', { defaultValue: 'Ops (30d)' })}</th>
+                  <th>{t('admin.partnerOpsCol')}</th>
                   <th>{t('admin.officialVendorsColStatus')}</th>
                   <th>{t('admin.officialVendorsColTier')}</th>
                   <th>{t('admin.officialVendorsColBadge')}</th>
@@ -829,14 +808,12 @@ export default function AdminMarketplacePage() {
                         <>
                           <div>
                             {t('admin.partnerOpsHandoffs', {
-                              defaultValue: 'Handoffs: {{count}}',
                               count: v.opsSummary.handoffs30d ?? 0,
                             })}
                           </div>
                           {v.opsSummary.latestSync ? (
                             <div className="text-muted">
                               {t('admin.partnerOpsSync', {
-                                defaultValue: 'Sync: {{status}} · {{upserted}}/{{processed}}',
                                 status: v.opsSummary.latestSync.status || '—',
                                 upserted: v.opsSummary.latestSync.upsertedCount ?? 0,
                                 processed: v.opsSummary.latestSync.processedCount ?? 0,
@@ -846,7 +823,7 @@ export default function AdminMarketplacePage() {
                                 : ''}
                             </div>
                           ) : (
-                            <div className="text-muted">{t('admin.partnerOpsNoSync', { defaultValue: 'No sync runs yet' })}</div>
+                            <div className="text-muted">{t('admin.partnerOpsNoSync')}</div>
                           )}
                         </>
                       ) : (
@@ -904,7 +881,7 @@ export default function AdminMarketplacePage() {
                           >
                             {partnerSyncVendorBusyId === v.id
                               ? t('common.loading')
-                              : t('admin.partnerTestSync', { defaultValue: 'Test sync' })}
+                              : t('admin.partnerTestSync')}
                           </button>
                         ) : null}
                         <button
@@ -913,7 +890,7 @@ export default function AdminMarketplacePage() {
                           disabled={partnerConfigBusyId === v.id}
                           onClick={() => editOfficialVendorConfig(v)}
                         >
-                          {partnerConfigBusyId === v.id ? t('common.loading') : t('admin.partnerEditConfig', { defaultValue: 'Edit badge/feed' })}
+                          {partnerConfigBusyId === v.id ? t('common.loading') : t('admin.partnerEditConfig')}
                         </button>
                         <div className="btn-group btn-group-sm">
                           {['es', 'en'].map((loc) => (
