@@ -4846,15 +4846,26 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 
 .ta-spotlight-story-link {
   scroll-snap-align: start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
 }
 
 .ta-spotlight-story-ring {
-  width: 76px;
-  height: 76px;
-  padding: 3px;
+  width: 64px;
+  height: 64px;
+  padding: 2px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--ta-gold, #c9a227), #7c5cbf, #2ec4b6);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.ta-spotlight-story-link:hover .ta-spotlight-story-ring,
+.ta-spotlight-story-link:focus-visible .ta-spotlight-story-ring {
+  transform: scale(1.06);
 }
 
 .ta-spotlight-story-inner {
@@ -4875,5 +4886,144 @@ details.ta-marketplace-official-apply-details > summary::-webkit-details-marker 
 }
 
 .ta-spotlight-story-caption {
-  max-width: 76px;
+  max-width: 64px;
+}
+
+/* Dashboard quick tiles (Sex ID, invite) */
+.ta-dashboard-tile {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.ta-dashboard-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.ta-dashboard-tile--highlight {
+  outline: 2px solid var(--ta-gold, #c9a227);
+  outline-offset: 2px;
+}
+
+/* Community spotlight — Instagram-style story viewer */
+.ta-spotlight-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.ta-spotlight-viewer__stage {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: min(88vh, 760px);
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+}
+
+.ta-spotlight-viewer__progress {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+}
+
+.ta-spotlight-viewer__bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+
+.ta-spotlight-viewer__bar-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #fff;
+  border-radius: 3px;
+}
+
+.ta-spotlight-viewer__bar-fill.is-done {
+  width: 100%;
+}
+
+.ta-spotlight-viewer__bar-fill.is-active {
+  animation: ta-spotlight-fill linear forwards;
+}
+
+@keyframes ta-spotlight-fill {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.ta-spotlight-viewer__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ta-spotlight-viewer__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 40px 16px 16px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+.ta-spotlight-viewer__close {
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  z-index: 4;
+  width: 34px;
+  height: 34px;
+  line-height: 1;
+  font-size: 1.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+
+.ta-spotlight-viewer__zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  z-index: 2;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ta-spotlight-viewer__zone--prev {
+  left: 0;
+}
+
+.ta-spotlight-viewer__zone--next {
+  right: 0;
+  width: 65%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ta-spotlight-viewer__bar-fill.is-active {
+    animation: none;
+    width: 100%;
+  }
 }

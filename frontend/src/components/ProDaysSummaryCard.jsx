@@ -125,7 +125,7 @@ export default function ProDaysSummaryCard() {
         <ul className="small mb-0 ps-3">
           <li>
             {t('proGrants.howToEarnMore.referral')}{' '}
-            <Link to="/community?tab=invite">{t('proGrants.howToEarnMore.referralCta')}</Link>
+            <Link to="/?invite=1">{t('proGrants.howToEarnMore.referralCta')}</Link>
           </li>
           <li>{t('proGrants.howToEarnMore.milestones')}</li>
           <li>{t('proGrants.howToEarnMore.subscribe')}</li>
