@@ -358,23 +358,23 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       {token ? (
         <>
           <Link to={myPublicProfilePath} onClick={onClick} className="ta-more__item">
-            <span aria-hidden="true">👤</span> {t('nav.publicProfileTitle')}
+            <i className="bi bi-person" aria-hidden="true" /> {t('nav.publicProfileTitle')}
           </Link>
           <Link to="/account" onClick={onClick} className="ta-more__item">
-            <span aria-hidden="true">⚙</span> {t('nav.accountSettings')}
+            <i className="bi bi-gear" aria-hidden="true" /> {t('nav.accountSettings')}
           </Link>
         </>
       ) : (
         <Link to="/login" onClick={onClick} className="ta-more__item">
-          <span aria-hidden="true">↳</span> {t('nav.login', 'Login')}
+          <i className="bi bi-box-arrow-in-right" aria-hidden="true" /> {t('nav.login', 'Login')}
         </Link>
       )}
       <Link to="/pro" onClick={onClick} className="ta-more__item">
-        <span aria-hidden="true">⭐</span> {t('nav.proMenuItem', 'Pro / plan')}
+        <i className="bi bi-star" aria-hidden="true" /> {t('nav.proMenuItem', 'Pro / plan')}
       </Link>
       {user && isAdmin && (
         <Link to="/admin" onClick={onClick} className="ta-more__item">
-          <span aria-hidden="true">🛡</span> {t('nav.admin')}
+          <i className="bi bi-shield-lock" aria-hidden="true" /> {t('nav.admin')}
         </Link>
       )}
       <div className="ta-more__row">
@@ -410,7 +410,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
             logout()
           }}
         >
-          <span aria-hidden="true">⎋</span> {t('nav.logout')}
+          <i className="bi bi-box-arrow-right" aria-hidden="true" /> {t('nav.logout')}
         </button>
       )}
     </>
@@ -420,18 +420,18 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
     const railItems = [
       {
         to: token ? '/' : inviteOnlyNav ? '/' : '/login',
-        icon: '🏠',
+        icon: 'bi-house-door',
         label: token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta'),
         active: navCollection,
       },
-      { to: '/descubrir', icon: '🔍', label: t('nav.discoverSpecies'), active: navDiscover },
-      { to: '/marketplace', icon: '🛒', label: t('marketplace.nav'), active: navMarketplace },
-      { to: '/sex-id', icon: '⚥', label: t('nav.sexId', 'Sex ID'), active: navSexId },
-      { to: '/tools/qr', icon: '📷', label: t('nav.qrTool'), active: navQr },
+      { to: '/descubrir', icon: 'bi-compass', label: t('nav.discoverSpecies'), active: navDiscover },
+      { to: '/marketplace', icon: 'bi-shop', label: t('marketplace.nav'), active: navMarketplace },
+      { to: '/sex-id', icon: 'bi-gender-ambiguous', label: t('nav.sexId', 'Sex ID'), active: navSexId },
+      { to: '/tools/qr', icon: 'bi-qr-code', label: t('nav.qrTool'), active: navQr },
       ...(token
         ? [
-            { to: '/insights', icon: '📊', label: t('nav.insights'), active: navInsights },
-            { to: '/notifications', icon: '🔔', label: t('nav.notifications'), active: navNotifications, badge: notifUnread },
+            { to: '/insights', icon: 'bi-graph-up', label: t('nav.insights'), active: navInsights },
+            { to: '/notifications', icon: 'bi-bell', label: t('nav.notifications'), active: navNotifications, badge: notifUnread },
           ]
         : []),
     ]
@@ -453,7 +453,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                 className={`ta-rail__link ${it.active ? 'is-active' : ''}`}
                 title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : it.label}
               >
-                <span className="ta-rail__icon" aria-hidden="true">{it.icon}</span>
+                <i className={`bi ${it.icon} ta-rail__icon`} aria-hidden="true" />
                 <span className="ta-rail__label">{it.label}</span>
                 {it.badge > 0 ? (
                   <span className="badge rounded-pill bg-danger ms-auto" style={{ fontSize: '0.6rem' }}>
@@ -472,7 +472,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                 onClick={() => setMoreMenuOpen((o) => !o)}
                 aria-expanded={moreMenuOpen}
               >
-                <span className="ta-rail__icon" aria-hidden="true">👤</span>
+                <i className="bi bi-person-circle ta-rail__icon" aria-hidden="true" />
                 <span className="ta-rail__label text-truncate">
                   {token ? user?.displayName || user?.email || t('nav.more', 'More') : t('nav.more', 'More')}
                 </span>
@@ -491,7 +491,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           <div className="ms-auto d-flex align-items-center gap-1">
             {token && (
               <Link to="/notifications" className="btn btn-sm ta-mobile-icon-btn position-relative" aria-label={t('nav.notifications')}>
-                🔔
+                <i className="bi bi-bell" aria-hidden="true" />
                 {notifUnread > 0 && (
                   <span className="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style={{ fontSize: '0.55rem' }}>
                     {notifUnread > 99 ? '99+' : notifUnread}
@@ -504,7 +504,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               className="btn btn-sm ta-mobile-icon-btn"
               aria-label={token ? t('nav.publicProfileAria') : t('nav.login', 'Login')}
             >
-              👤
+              <i className="bi bi-person-circle" aria-hidden="true" />
             </Link>
           </div>
         </nav>
@@ -519,7 +519,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               className={`ta-bottomnav__tab ${it.active ? 'is-active' : ''}`}
               title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : it.label}
             >
-              <span className="ta-bottomnav__icon" aria-hidden="true">{it.icon}</span>
+              <i className={`bi ${it.icon} ta-bottomnav__icon`} aria-hidden="true" />
               <span className="ta-bottomnav__label">{it.label}</span>
             </NavDest>
           ))}
@@ -529,7 +529,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
             onClick={() => setMobileMenuOpen((o) => !o)}
             aria-expanded={mobileMenuOpen}
           >
-            <span className="ta-bottomnav__icon" aria-hidden="true">☰</span>
+            <i className="bi bi-list ta-bottomnav__icon" aria-hidden="true" />
             <span className="ta-bottomnav__label">{t('nav.more', 'More')}</span>
           </button>
         </nav>
@@ -541,11 +541,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
               <div className="ta-more-sheet__handle" aria-hidden="true" />
               {token && (
                 <Link to="/insights" onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
-                  <span aria-hidden="true">📊</span> {t('nav.insights')}
+                  <i className="bi bi-graph-up" aria-hidden="true" /> {t('nav.insights')}
                 </Link>
               )}
               <Link to="/tools/qr" onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
-                <span aria-hidden="true">📷</span> {t('nav.qrTool')}
+                <i className="bi bi-qr-code" aria-hidden="true" /> {t('nav.qrTool')}
               </Link>
               {renderMoreContent(() => setMobileMenuOpen(false))}
             </div>

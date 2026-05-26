@@ -298,3 +298,17 @@
   background: rgba(255, 255, 255, 0.25);
   margin: 0.2rem 0 0.6rem;
 }
+
+/* bootstrap-icons sizing inside app-chrome menus */
+.ta-more__item > i.bi {
+  width: 1.25rem;
+  text-align: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+i.ta-rail__icon.bi {
+  font-size: 1.15rem;
+}
+i.ta-bottomnav__icon.bi {
+  font-size: 1.3rem;
+}
