@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import PartnerReadinessReportPanel from '../../components/admin/PartnerReadinessReportPanel'
 import adminService from '../../services/adminService'
 
 const CHECKLIST_KEYS = [
@@ -46,8 +47,9 @@ export default function AdminPartnerOutreachPage() {
   const [savingLead, setSavingLead] = useState(false)
   const [draft, setDraft] = useState(null)
   const [savingDraft, setSavingDraft] = useState(false)
-  const [probing, setProbing] = useState(false)
-  const [probeResult, setProbeResult] = useState(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [readinessReport, setReadinessReport] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState('')
   const [emailTemplate, setEmailTemplate] = useState('partner_outreach_intro')
   const [emailLocale, setEmailLocale] = useState('es')
   const [attachOnePager, setAttachOnePager] = useState(true)
@@ -80,7 +82,7 @@ export default function AdminPartnerOutreachPage() {
   useEffect(() => {
     if (!selected) {
       setDraft(null)
-      setProbeResult(null)
+      setReadinessReport(null)
       return
     }
     setDraft({
@@ -90,7 +92,8 @@ export default function AdminPartnerOutreachPage() {
       qualification: { ...(selected.qualification || {}) },
     })
     setEmailLocale(selected.outreachLocale || 'es')
-    setProbeResult(null)
+    setReadinessReport(null)
+    setPreviewUrl(selected.websiteUrl || '')
   }, [selected])
 
   const openLeads = useMemo(
@@ -149,29 +152,39 @@ export default function AdminPartnerOutreachPage() {
     }))
   }
 
-  const runProbe = async () => {
-    if (!selected?.id) return
-    setProbing(true)
+  const runAnalyze = async (urlOverride) => {
+    const url = (urlOverride || draft?.websiteUrl || previewUrl || '').trim()
+    if (!url) return
+    setAnalyzing(true)
     setError('')
-    setProbeResult(null)
+    setReadinessReport(null)
     try {
-      const data = await adminService.probeWooCommerceForLead(selected.id)
-      setProbeResult(data?.wooProbe || data)
-      if (data?.id) {
-        setLeads((prev) => prev.map((l) => (l.id === data.id ? data : l)))
-        setDraft({
-          websiteUrl: data.websiteUrl || '',
-          outreachLocale: data.outreachLocale || 'es',
-          internalNotes: data.internalNotes || '',
-          qualification: { ...(data.qualification || {}) },
-        })
+      let data
+      const savedUrl = (selected?.websiteUrl || '').trim()
+      const useLeadEndpoint =
+        selected?.id && !urlOverride && url === savedUrl && url === (draft?.websiteUrl || '').trim()
+      if (useLeadEndpoint) {
+        data = await adminService.partnerReadinessReportForLead(selected.id)
+        setReadinessReport(data?.readinessReport || data)
+        if (data?.id) {
+          setLeads((prev) => prev.map((l) => (l.id === data.id ? data : l)))
+          setDraft({
+            websiteUrl: data.websiteUrl || '',
+            outreachLocale: data.outreachLocale || 'es',
+            internalNotes: data.internalNotes || '',
+            qualification: { ...(data.qualification || {}) },
+          })
+        }
+      } else {
+        data = await adminService.partnerReadinessReportForUrl(url)
+        setReadinessReport(data)
       }
-      setSuccess(t('admin.partnerOutreachProbeDone'))
+      setSuccess(t('admin.partnerOutreachAnalyzeDone'))
     } catch (err) {
       const detail = err?.response?.data?.error || err?.message || t('common.error')
-      setError(t('admin.partnerOutreachProbeError', { detail }))
+      setError(t('admin.partnerOutreachAnalyzeError', { detail }))
     } finally {
-      setProbing(false)
+      setAnalyzing(false)
     }
   }
 
@@ -213,6 +226,40 @@ export default function AdminPartnerOutreachPage() {
       <p className="small mb-3">
         <Link to="/admin/marketplace">{t('admin.partnerOutreachMarketplaceLink')}</Link>
       </p>
+
+      <div className="card mb-4 border-success">
+        <div className="card-header py-2 bg-success bg-opacity-10">
+          <strong className="small">{t('admin.partnerOutreachPreviewTitle')}</strong>
+        </div>
+        <div className="card-body small">
+          <p className="text-muted mb-2">{t('admin.partnerOutreachPreviewBlurb')}</p>
+          <div className="d-flex flex-wrap gap-2 align-items-end">
+            <div className="flex-grow-1" style={{ minWidth: 220 }}>
+              <label className="form-label mb-0">{t('admin.partnerOutreachWebsite')}</label>
+              <input
+                type="url"
+                className="form-control form-control-sm"
+                placeholder="https://tienda-ejemplo.com"
+                value={previewUrl}
+                onChange={(e) => setPreviewUrl(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-success"
+              disabled={analyzing || !previewUrl?.trim()}
+              onClick={() => runAnalyze(previewUrl)}
+            >
+              {analyzing ? t('common.loading') : t('admin.partnerOutreachAnalyze')}
+            </button>
+          </div>
+          {readinessReport && (
+            <div className="mt-3">
+              <PartnerReadinessReportPanel report={readinessReport} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {error && (
         <div className="alert alert-danger py-2 small" role="alert">
@@ -392,24 +439,13 @@ export default function AdminPartnerOutreachPage() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-primary"
-                  disabled={probing || !draft.websiteUrl?.trim()}
-                  onClick={runProbe}
+                  className="btn btn-sm btn-outline-success"
+                  disabled={analyzing || !draft.websiteUrl?.trim()}
+                  onClick={() => runAnalyze()}
                 >
-                  {probing ? t('common.loading') : t('admin.partnerOutreachProbeWoo')}
+                  {analyzing ? t('common.loading') : t('admin.partnerOutreachAnalyze')}
                 </button>
               </div>
-
-              {(probeResult || selected.wooProbeStatus) && (
-                <div className="alert alert-light border small py-2 mb-3">
-                  <strong>{t('admin.partnerOutreachWooStatus')}:</strong>{' '}
-                  {probeResult?.status || selected.wooProbeStatus || '—'}
-                  <br />
-                  <span className="text-muted">
-                    {probeResult?.detail || selected.wooProbeDetail || ''}
-                  </span>
-                </div>
-              )}
 
               <div className="card border-primary">
                 <div className="card-header py-2 bg-primary bg-opacity-10">

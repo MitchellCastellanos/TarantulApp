@@ -396,6 +396,27 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/official-vendor-leads/readiness-report")
+    public ResponseEntity<Map<String, Object>> partnerReadinessReport(@RequestBody WooProbeRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReport(
+                    req == null ? null : req.websiteUrl()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/official-vendor-leads/{id}/readiness-report")
+    public ResponseEntity<Map<String, Object>> partnerReadinessReportForLead(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReportForLead(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     record SendLeadOutreachEmailRequest(String template, String locale, Boolean attachOnePager) {}
 
     @PostMapping("/official-vendor-leads/{id}/send-outreach-email")

@@ -31,6 +31,10 @@ const adminService = {
     api.post('/admin/official-vendor-leads/probe-woocommerce', { websiteUrl }).then((r) => r.data),
   probeWooCommerceForLead: (leadId) =>
     api.post(`/admin/official-vendor-leads/${leadId}/probe-woocommerce`).then((r) => r.data),
+  partnerReadinessReportForUrl: (websiteUrl) =>
+    api.post('/admin/official-vendor-leads/readiness-report', { websiteUrl }).then((r) => r.data),
+  partnerReadinessReportForLead: (leadId) =>
+    api.post(`/admin/official-vendor-leads/${leadId}/readiness-report`).then((r) => r.data),
   sendOfficialVendorLeadOutreachEmail: (leadId, payload) =>
     api.post(`/admin/official-vendor-leads/${leadId}/send-outreach-email`, payload).then((r) => r.data),
   promoteOfficialVendorLead: (leadId, payload = {}) =>

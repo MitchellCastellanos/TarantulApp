@@ -13,6 +13,7 @@ import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
 import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
+import com.tarantulapp.service.vendors.PartnerReadinessReportService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ public class OfficialVendorService {
     private final PartnerListingRepository partnerListingRepository;
     private final PartnerListingSyncRunRepository partnerListingSyncRunRepository;
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
+    private final PartnerReadinessReportService partnerReadinessReportService;
     private final EmailService emailService;
     private final String appBaseUrl;
     private final boolean seedOnStartup;
@@ -55,6 +57,7 @@ public class OfficialVendorService {
                                  PartnerListingRepository partnerListingRepository,
                                  PartnerListingSyncRunRepository partnerListingSyncRunRepository,
                                  PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
+                                 PartnerReadinessReportService partnerReadinessReportService,
                                  EmailService emailService,
                                  @Value("${app.base-url:http://localhost:5173}") String appBaseUrl,
                                  @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
@@ -63,6 +66,7 @@ public class OfficialVendorService {
         this.partnerListingRepository = partnerListingRepository;
         this.partnerListingSyncRunRepository = partnerListingSyncRunRepository;
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
+        this.partnerReadinessReportService = partnerReadinessReportService;
         this.emailService = emailService;
         this.appBaseUrl = trimTrailingSlash(appBaseUrl);
         this.seedOnStartup = seedOnStartup;
@@ -212,6 +216,36 @@ public class OfficialVendorService {
             lead.setWebsiteUrl(cleanText(websiteUrl, 350));
         }
         return mapLead(officialVendorLeadRepository.save(lead));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminPartnerReadinessReport(String websiteUrl) {
+        return partnerReadinessReportService.analyze(websiteUrl);
+    }
+
+    @Transactional
+    public Map<String, Object> adminPartnerReadinessReportForLead(UUID leadId) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        Map<String, Object> report = partnerReadinessReportService.analyze(lead.getWebsiteUrl());
+        Map<String, Object> qual = lead.getQualification() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(lead.getQualification());
+        String verdict = String.valueOf(report.getOrDefault("verdict", ""));
+        boolean wooOk = "woocommerce".equals(report.get("detectedPlatform"));
+        qual.put("wooCommerce", wooOk && List.of("ready", "needs_feed_config", "low_fit").contains(verdict));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> catalog = (Map<String, Object>) report.get("catalog");
+        if (catalog != null) {
+            qual.put("catalogRelevant", Boolean.TRUE.equals(catalog.get("hasCatalog"))
+                    && !"low_fit".equals(verdict) && !"no_catalog".equals(verdict));
+        }
+        lead.setQualification(qual);
+        lead.setWooProbeStatus(wooOk ? "reachable" : String.valueOf(report.getOrDefault("detectedPlatform", "unknown")));
+        lead.setWooProbeDetail(String.valueOf(report.getOrDefault("verdictSummary", "")).substring(0,
+                Math.min(500, String.valueOf(report.getOrDefault("verdictSummary", "")).length())));
+        officialVendorLeadRepository.save(lead);
+        Map<String, Object> out = mapLead(lead);
+        out.put("readinessReport", report);
+        return out;
     }
 
     @Transactional(readOnly = true)
