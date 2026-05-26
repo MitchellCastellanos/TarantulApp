@@ -628,6 +628,34 @@ a.btn.btn-warning:hover {
 }
 .badge.bg-warning,
 .badge.bg-warning.text-dark,
+/* Discover + login: horizontal seller/partner strips */
+.ta-discover-sellers-strip__card--founding,
+.ta-login-partners__card--founding {
+  border: 1px solid rgba(212, 175, 55, 0.55) !important;
+  background: linear-gradient(145deg, rgba(28, 22, 12, 0.95), rgba(12, 10, 8, 0.98));
+}
+:root[data-theme='light'] .ta-discover-sellers-strip__card--founding,
+:root[data-theme='light'] .ta-login-partners__card--founding {
+  background: linear-gradient(145deg, rgba(255, 248, 235, 0.98), rgba(248, 239, 220, 0.95));
+}
+.ta-login-partners__card {
+  display: block;
+  width: 168px;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ta-border);
+  background: var(--ta-bg-card);
+}
+.ta-login-partners--compact .ta-login-partners__card {
+  width: 148px;
+}
+.ta-login-page main {
+  max-width: 1120px;
+}
+.ta-discover-sellers-strip__preview {
+  max-width: 50%;
+}
+
 .ta-partner-storefront-hero--founding h1 .badge.bg-warning {
   color: #1c1208 !important;
 }

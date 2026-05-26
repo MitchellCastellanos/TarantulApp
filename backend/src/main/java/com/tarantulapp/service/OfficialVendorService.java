@@ -532,6 +532,12 @@ public class OfficialVendorService {
         out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
         out.put("feedConfig", vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig());
         out.put("createdAt", vendor.getCreatedAt());
+        if (vendor.getId() != null && Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
+            out.put("activeListingCount", partnerListingRepository.countByOfficialVendorIdAndStatus(
+                    vendor.getId(), PartnerListingStatus.ACTIVE));
+        } else {
+            out.put("activeListingCount", 0L);
+        }
         return out;
     }
 

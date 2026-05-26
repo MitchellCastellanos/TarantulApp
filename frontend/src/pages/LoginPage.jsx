@@ -8,6 +8,7 @@ import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
 import PlayStoreEarlyAccessCallout from '../components/PlayStoreEarlyAccessCallout'
 import Navbar from '../components/Navbar'
+import LoginFeaturedPartners from '../components/LoginFeaturedPartners'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 import { inferBillingRegion } from '../utils/inferBillingRegion'
@@ -282,10 +283,10 @@ export default function LoginPage() {
     : t('auth.loginPage.heroLeadCollector')
 
   return (
-    <div className="min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
-      <Navbar variant="public" hideLoginLink />
+    <div className="ta-login-page min-vh-100 d-flex flex-column" style={{ background: 'var(--ta-bg, #0f0e0c)' }}>
+      <Navbar hideLoginLink />
 
-      <main className="container py-3 py-lg-4">
+      <main className="container flex-grow-1 py-3 py-lg-4">
         <div className="row justify-content-center g-0">
           <div className="col-12 col-xl-11 col-xxl-10 d-flex flex-column gap-4 gap-lg-5">
             <div className="row g-4 align-items-stretch">
@@ -338,19 +339,25 @@ export default function LoginPage() {
                     <div className="d-flex flex-wrap gap-2 mt-auto pt-1">
                       {loginAudience === 'seller' ? (
                         <>
-                          <Link to="/marketplace" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaMarketplace')}</Link>
-                          <Link to="/marketplace/sell" className="btn btn-sm btn-outline-light">{t('publicBetaHome.ctaSell')}</Link>
-                          <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
+                          <Link to="/marketplace/sell" className="btn btn-sm btn-warning fw-semibold text-dark">
+                            {t('publicBetaHome.ctaSell')}
+                          </Link>
+                          <Link to="/partners" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaBecomePartner')}</Link>
+                          <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
                         </>
                       ) : (
                         <>
                           <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
                           <Link to="/marketplace" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaMarketplace')}</Link>
+                          <Link to="/partner/monarch-reptiles" className="btn btn-sm btn-outline-warning">
+                            {t('auth.loginPage.ctaFoundingExample')}
+                          </Link>
                         </>
                       )}
                       <Link to="/pro" className="btn btn-sm btn-outline-secondary">{t('publicBetaHome.ctaPro')}</Link>
                     </div>
                   )}
+                  {!inviteOnly && loginAudience === 'seller' && <LoginFeaturedPartners compact />}
                 </section>
               </div>
 
@@ -570,6 +577,10 @@ export default function LoginPage() {
                 </section>
               </div>
             </div>
+
+          {!inviteOnly && (
+            <LoginFeaturedPartners />
+          )}
 
           {/* Feature bullets */}
           <section className="w-100">
