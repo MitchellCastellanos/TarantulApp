@@ -1,3 +1,4 @@
-# Browser "Save Page As" — only commit 01-storefront-wide.png and 02-marketplace-card.png
+# Browser "Save Page As" — only commit the .webp files below
 *_files/
 *.html
+*.png
