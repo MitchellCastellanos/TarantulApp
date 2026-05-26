@@ -31,13 +31,23 @@ const adminService = {
     api.post('/admin/official-vendor-leads/probe-woocommerce', { websiteUrl }).then((r) => r.data),
   probeWooCommerceForLead: (leadId) =>
     api.post(`/admin/official-vendor-leads/${leadId}/probe-woocommerce`).then((r) => r.data),
-  partnerReadinessReportForUrl: (websiteUrl, feedUrl) =>
-    api
-      .post('/admin/official-vendor-leads/readiness-report', {
-        websiteUrl,
-        ...(feedUrl?.trim() ? { feedUrl: feedUrl.trim() } : {}),
-      })
-      .then((r) => r.data),
+  partnerReadinessReportForUrl: (websiteUrl, options = {}) => {
+    const body = { websiteUrl }
+    const trim = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null)
+    const feedUrl = trim(options.feedUrl)
+    const shopifyShopDomain = trim(options.shopifyShopDomain)
+    const shopifyAccessToken = trim(options.shopifyAccessToken)
+    const lightspeedApiKey = trim(options.lightspeedApiKey)
+    const lightspeedApiSecret = trim(options.lightspeedApiSecret)
+    const lightspeedLang = trim(options.lightspeedLang)
+    if (feedUrl) body.feedUrl = feedUrl
+    if (shopifyShopDomain) body.shopifyShopDomain = shopifyShopDomain
+    if (shopifyAccessToken) body.shopifyAccessToken = shopifyAccessToken
+    if (lightspeedApiKey) body.lightspeedApiKey = lightspeedApiKey
+    if (lightspeedApiSecret) body.lightspeedApiSecret = lightspeedApiSecret
+    if (lightspeedLang) body.lightspeedLang = lightspeedLang
+    return api.post('/admin/official-vendor-leads/readiness-report', body).then((r) => r.data)
+  },
   partnerReadinessReportForLead: (leadId) =>
     api.post(`/admin/official-vendor-leads/${leadId}/readiness-report`).then((r) => r.data),
   sendOfficialVendorLeadOutreachEmail: (leadId, payload) =>

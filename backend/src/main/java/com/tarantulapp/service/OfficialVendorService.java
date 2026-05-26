@@ -219,8 +219,49 @@ public class OfficialVendorService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> adminPartnerReadinessReport(String websiteUrl, String feedUrl) {
-        return partnerReadinessReportService.analyze(websiteUrl, feedUrl, null);
+    public Map<String, Object> adminPartnerReadinessReport(
+            String websiteUrl,
+            String feedUrl,
+            String shopifyShopDomain,
+            String shopifyAccessToken,
+            String lightspeedApiKey,
+            String lightspeedApiSecret,
+            String lightspeedLang) {
+        return partnerReadinessReportService.analyze(
+                websiteUrl,
+                feedUrl,
+                buildPreviewFeedConfig(
+                        feedUrl,
+                        shopifyShopDomain,
+                        shopifyAccessToken,
+                        lightspeedApiKey,
+                        lightspeedApiSecret,
+                        lightspeedLang));
+    }
+
+    private static Map<String, Object> buildPreviewFeedConfig(
+            String feedUrl,
+            String shopifyShopDomain,
+            String shopifyAccessToken,
+            String lightspeedApiKey,
+            String lightspeedApiSecret,
+            String lightspeedLang) {
+        Map<String, Object> config = new LinkedHashMap<>();
+        if (feedUrl != null && !feedUrl.isBlank()) {
+            config.put("feedUrl", feedUrl.trim());
+        }
+        putIfNonBlank(config, "shopifyShopDomain", shopifyShopDomain);
+        putIfNonBlank(config, "shopifyAccessToken", shopifyAccessToken);
+        putIfNonBlank(config, "lightspeedApiKey", lightspeedApiKey);
+        putIfNonBlank(config, "lightspeedApiSecret", lightspeedApiSecret);
+        putIfNonBlank(config, "lightspeedLang", lightspeedLang);
+        return config.isEmpty() ? null : config;
+    }
+
+    private static void putIfNonBlank(Map<String, Object> config, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            config.put(key, value.trim());
+        }
     }
 
     @Transactional

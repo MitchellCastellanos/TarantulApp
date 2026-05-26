@@ -374,7 +374,14 @@ public class AdminController {
 
     record WooProbeRequest(String websiteUrl) {}
 
-    record PartnerReadinessRequest(String websiteUrl, String feedUrl) {}
+    record PartnerReadinessRequest(
+            String websiteUrl,
+            String feedUrl,
+            String shopifyShopDomain,
+            String shopifyAccessToken,
+            String lightspeedApiKey,
+            String lightspeedApiSecret,
+            String lightspeedLang) {}
 
     @PostMapping("/official-vendor-leads/probe-woocommerce")
     public ResponseEntity<Map<String, Object>> probeWooCommerceForLead(
@@ -404,7 +411,12 @@ public class AdminController {
         try {
             return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReport(
                     req == null ? null : req.websiteUrl(),
-                    req == null ? null : req.feedUrl()));
+                    req == null ? null : req.feedUrl(),
+                    req == null ? null : req.shopifyShopDomain(),
+                    req == null ? null : req.shopifyAccessToken(),
+                    req == null ? null : req.lightspeedApiKey(),
+                    req == null ? null : req.lightspeedApiSecret(),
+                    req == null ? null : req.lightspeedLang()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

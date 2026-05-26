@@ -82,6 +82,12 @@ public class PartnerReadinessReportService {
         out.put("missingRequirements", feedReadiness.get("missingRequirements"));
         out.put("syncSupport", feedReadiness.get("syncSupport"));
         out.put("csvFeedProbe", feedReadiness.get("csvFeedProbe"));
+        if (feedReadiness.get("shopifyFeedProbe") != null) {
+            out.put("shopifyFeedProbe", feedReadiness.get("shopifyFeedProbe"));
+        }
+        if (feedReadiness.get("lightspeedFeedProbe") != null) {
+            out.put("lightspeedFeedProbe", feedReadiness.get("lightspeedFeedProbe"));
+        }
         out.put("api", Map.of(
                 "woocommerceStoreApi", wooProbe,
                 "shopifyProductsJson", shopifyProbe,
@@ -137,6 +143,7 @@ public class PartnerReadinessReportService {
             storeCategories = List.of();
             out.put("sampleProductNames", List.of());
         }
+        mergeCredentialProbesIntoProducts(productsBlock, feedReadiness);
         out.put("products", productsBlock);
         out.put("storeCategories", storeCategories);
 
@@ -197,6 +204,42 @@ public class PartnerReadinessReportService {
             // fall through
         }
         return "";
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void mergeCredentialProbesIntoProducts(
+            Map<String, Object> productsBlock, Map<String, Object> feedReadiness) {
+        String source = String.valueOf(productsBlock.getOrDefault("dataSource", ""));
+        if ("woocommerce_store_api".equals(source) || "shopify_products_json".equals(source)) {
+            return;
+        }
+        mergeApiProbeIntoProducts(productsBlock, feedReadiness.get("lightspeedFeedProbe"),
+                "lightspeed_api", "Catálogo desde Lightspeed API (credenciales de preview)");
+        mergeApiProbeIntoProducts(productsBlock, feedReadiness.get("shopifyFeedProbe"),
+                "shopify_admin_api", "Catálogo desde Shopify Admin API (token de preview)");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void mergeApiProbeIntoProducts(
+            Map<String, Object> productsBlock,
+            Object rawProbe,
+            String dataSource,
+            String fetchDetail) {
+        if (!(rawProbe instanceof Map<?, ?> probe) || !Boolean.TRUE.equals(probe.get("ok"))) {
+            return;
+        }
+        Object rowCount = probe.get("rowCount");
+        if (!(rowCount instanceof Number n) || n.intValue() <= 0) {
+            return;
+        }
+        productsBlock.put("found", true);
+        productsBlock.put("countTotalEstimate", n.intValue());
+        productsBlock.put("dataSource", dataSource);
+        productsBlock.put("fetchDetail", fetchDetail);
+        Object samples = probe.get("sampleTitles");
+        if (samples instanceof List<?> list && !list.isEmpty()) {
+            productsBlock.put("credentialSampleTitles", list);
+        }
     }
 
     @SuppressWarnings("unchecked")

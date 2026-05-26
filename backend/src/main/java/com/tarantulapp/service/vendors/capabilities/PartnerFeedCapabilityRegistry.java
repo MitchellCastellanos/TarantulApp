@@ -83,7 +83,7 @@ public class PartnerFeedCapabilityRegistry {
         return switch (detectedStoreType == null ? "unknown" : detectedStoreType) {
             case "woocommerce", "wordpress" -> "woocommerce";
             case "shopify" -> "shopify";
-            case "lightspeed" -> "csv";
+            case "lightspeed" -> "lightspeed";
             default -> "csv";
         };
     }

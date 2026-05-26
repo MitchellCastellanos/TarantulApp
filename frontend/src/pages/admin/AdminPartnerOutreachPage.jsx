@@ -51,6 +51,11 @@ export default function AdminPartnerOutreachPage() {
   const [readinessReport, setReadinessReport] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [previewFeedUrl, setPreviewFeedUrl] = useState('')
+  const [previewCredsOpen, setPreviewCredsOpen] = useState(false)
+  const [previewShopifyDomain, setPreviewShopifyDomain] = useState('')
+  const [previewShopifyToken, setPreviewShopifyToken] = useState('')
+  const [previewLightspeedKey, setPreviewLightspeedKey] = useState('')
+  const [previewLightspeedSecret, setPreviewLightspeedSecret] = useState('')
   const [emailTemplate, setEmailTemplate] = useState('partner_outreach_intro')
   const [emailLocale, setEmailLocale] = useState('es')
   const [attachOnePager, setAttachOnePager] = useState(true)
@@ -177,7 +182,13 @@ export default function AdminPartnerOutreachPage() {
           })
         }
       } else {
-        data = await adminService.partnerReadinessReportForUrl(url, previewFeedUrl)
+        data = await adminService.partnerReadinessReportForUrl(url, {
+          feedUrl: previewFeedUrl,
+          shopifyShopDomain: previewShopifyDomain,
+          shopifyAccessToken: previewShopifyToken,
+          lightspeedApiKey: previewLightspeedKey,
+          lightspeedApiSecret: previewLightspeedSecret,
+        })
         setReadinessReport(data)
       }
       setSuccess(t('admin.partnerOutreachAnalyzeDone'))
@@ -264,6 +275,59 @@ export default function AdminPartnerOutreachPage() {
               {analyzing ? t('common.loading') : t('admin.partnerOutreachAnalyze')}
             </button>
           </div>
+          <details
+            className="mt-2"
+            open={previewCredsOpen}
+            onToggle={(e) => setPreviewCredsOpen(e.target.open)}
+          >
+            <summary className="small fw-semibold text-muted">
+              {t('admin.partnerPreviewCredentialsTitle')}
+            </summary>
+            <p className="small text-muted mb-2 mt-1">{t('admin.partnerPreviewCredentialsBlurb')}</p>
+            <div className="row g-2">
+              <div className="col-md-6">
+                <label className="form-label mb-0">{t('admin.partnerPreviewShopifyDomain')}</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="tienda.myshopify.com"
+                  value={previewShopifyDomain}
+                  onChange={(e) => setPreviewShopifyDomain(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label mb-0">{t('admin.partnerPreviewShopifyToken')}</label>
+                <input
+                  type="password"
+                  className="form-control form-control-sm"
+                  value={previewShopifyToken}
+                  onChange={(e) => setPreviewShopifyToken(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label mb-0">{t('admin.partnerPreviewLightspeedKey')}</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={previewLightspeedKey}
+                  onChange={(e) => setPreviewLightspeedKey(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label mb-0">{t('admin.partnerPreviewLightspeedSecret')}</label>
+                <input
+                  type="password"
+                  className="form-control form-control-sm"
+                  value={previewLightspeedSecret}
+                  onChange={(e) => setPreviewLightspeedSecret(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+          </details>
           {readinessReport && (
             <div className="mt-3">
               <PartnerReadinessReportPanel report={readinessReport} />

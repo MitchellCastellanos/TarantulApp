@@ -91,11 +91,12 @@ export default function PartnerReadinessReportPanel({ report }) {
           </div>
         )}
 
-        {sampleNames.length > 0 && (
+        {(sampleNames.length > 0 ||
+          (Array.isArray(products.credentialSampleTitles) && products.credentialSampleTitles.length > 0)) && (
           <div className="mb-2">
             <div className="fw-semibold mb-1">{t('admin.partnerPreviewSampleProducts')}</div>
             <ul className="mb-0 ps-3">
-              {sampleNames.map((name) => (
+              {(sampleNames.length > 0 ? sampleNames : products.credentialSampleTitles).map((name) => (
                 <li key={name}>{name}</li>
               ))}
             </ul>
