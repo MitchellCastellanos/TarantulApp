@@ -22,14 +22,14 @@ class PartnerReadinessReportServiceTest {
   }
 
   @Test
-  void analyzeUnknownHostReturnsNoCatalogVerdict() {
+  void analyzeUnknownHostReturnsFactualPreview() {
     Map<String, Object> report = service.analyze("https://this-domain-definitely-does-not-exist-xyz123.invalid");
-    assertEquals("unknown", report.get("detectedPlatform"));
+    assertEquals("unknown", report.get("storeType"));
     @SuppressWarnings("unchecked")
-    Map<String, Object> catalog = (Map<String, Object>) report.get("catalog");
-    assertFalse(Boolean.TRUE.equals(catalog.get("hasCatalog")));
-    assertTrue(List.of("no_catalog", "unknown_platform").contains(report.get("verdict")));
-    assertTrue(report.containsKey("verdictSummary"));
-    assertTrue(report.get("pitchHints") instanceof List<?>);
+    Map<String, Object> products = (Map<String, Object>) report.get("products");
+    assertFalse(Boolean.TRUE.equals(products.get("found")));
+    assertTrue(report.containsKey("summaryLine"));
+    assertTrue(report.get("storeCategories") instanceof List<?>);
+    assertTrue(report.get("checklistNotes") instanceof Map<?, ?>);
   }
 }

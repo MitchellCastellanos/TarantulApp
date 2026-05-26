@@ -229,19 +229,16 @@ public class OfficialVendorService {
                 .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
         Map<String, Object> report = partnerReadinessReportService.analyze(lead.getWebsiteUrl());
         Map<String, Object> qual = lead.getQualification() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(lead.getQualification());
-        String verdict = String.valueOf(report.getOrDefault("verdict", ""));
-        boolean wooOk = "woocommerce".equals(report.get("detectedPlatform"));
-        qual.put("wooCommerce", wooOk && List.of("ready", "needs_feed_config", "low_fit").contains(verdict));
         @SuppressWarnings("unchecked")
-        Map<String, Object> catalog = (Map<String, Object>) report.get("catalog");
-        if (catalog != null) {
-            qual.put("catalogRelevant", Boolean.TRUE.equals(catalog.get("hasCatalog"))
-                    && !"low_fit".equals(verdict) && !"no_catalog".equals(verdict));
-        }
+        Map<String, Object> api = (Map<String, Object>) report.get("api");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> wooApi = api == null ? null : (Map<String, Object>) api.get("woocommerceStoreApi");
+        boolean wooApiOk = wooApi != null && Boolean.TRUE.equals(wooApi.get("ok"));
+        qual.put("wooCommerce", wooApiOk);
         lead.setQualification(qual);
-        lead.setWooProbeStatus(wooOk ? "reachable" : String.valueOf(report.getOrDefault("detectedPlatform", "unknown")));
-        lead.setWooProbeDetail(String.valueOf(report.getOrDefault("verdictSummary", "")).substring(0,
-                Math.min(500, String.valueOf(report.getOrDefault("verdictSummary", "")).length())));
+        lead.setWooProbeStatus(wooApiOk ? "reachable" : String.valueOf(report.getOrDefault("storeType", "unknown")));
+        String summary = String.valueOf(report.getOrDefault("summaryLine", ""));
+        lead.setWooProbeDetail(summary.substring(0, Math.min(500, summary.length())));
         officialVendorLeadRepository.save(lead);
         Map<String, Object> out = mapLead(lead);
         out.put("readinessReport", report);
