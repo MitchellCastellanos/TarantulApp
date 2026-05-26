@@ -1,8 +1,8 @@
 # TarantulApp — Official Partner Program (one-pager)
 
 **For:** WooCommerce shops and distributors (tarantulas, feeders, substrates, enclosures)  
-**Offer:** Invite-only **Official Partner** — **no platform fee** on this track  
-**Checkout:** Always on **your website** (we send qualified traffic with UTM tracking)
+**Invitation:** **Official Partner** — we mirror your catalog in the app and send keepers to your store  
+**Checkout:** Always on **your website** (traffic tagged with UTM)
 
 ---
 
@@ -11,11 +11,11 @@
 | Benefit | Detail |
 |--------|--------|
 | **In-app storefront** | Public page: `tarantulapp.com/partner/your-brand` |
-| **Marketplace discovery** | Your products appear in the main feed with an **Official Partner** badge |
-| **Zero duplicate work** | We **sync** from your WooCommerce catalog — you do **not** upload listings in our app |
-| **Checkout on your site** | Keepers browse in TarantulApp; payment and fulfillment stay on **your store** |
-| **Optional cart handoff** | Multi-item cart can open your Woo cart with UTM (`utm_source=tarantulapp`) |
-| **Social-ready link** | Share your storefront from the app (caption + QR-style card) |
+| **Marketplace discovery** | Your products in the main feed with an **Official Partner** badge |
+| **Clicks to your store** | Keepers browse in TarantulApp; they buy on **your checkout** |
+| **Zero duplicate work** | **Sync** from your Woo catalog — no manual listing uploads in our app |
+| **Optional cart handoff** | Multi-item cart can open your Woo cart with UTM |
+| **Social-ready link** | Share your storefront from the app |
 
 **Live example (founding partner):** https://tarantulapp.com/partner/monarch-reptiles
 
@@ -23,37 +23,36 @@
 
 ## What we need from you
 
-1. **WooCommerce** store with a **public** product API (we test your site URL).  
-2. **Authorization** to display selected catalog items and link to your product URLs (short one-pager to sign).  
-3. **~15 minutes** on a call to confirm categories, shipping regions, and (optional) cart handoff test.  
-4. Keep your **website catalog updated** — our sync picks up changes automatically.
+1. **WooCommerce** store with a reachable catalog (we test your URL).  
+2. **Authorization** to display selected products and link to your URLs (short doc to sign).  
+3. **~15 minutes** on a call: categories, shipping regions, optional cart test.  
+4. Keep your **website catalog updated** — sync picks up changes automatically.
 
-We do **not** need: a TarantulApp user account for every SKU, manual photo uploads, or changing how you run checkout.
+We do **not** need: a user account per SKU, manual photo uploads, or changing how you run checkout.
 
 ---
 
-## How it works (technical, simple)
+## How it works
 
 ```
 Your WooCommerce  →  automatic sync  →  TarantulApp storefront + marketplace
-Keeper taps Buy   →  your website checkout (with UTM)
+Keeper buys       →  on your website (UTM)
 ```
 
-- **Official Partner** (this program): free invite, synced catalog, external checkout.  
-- **Paid Vendor** (separate): breeders who list manually inside the app and use our seller tools — different track.
+- **Official Partner** (this program): mirrored catalog, badge, traffic to your store.  
+- **Paid Vendor** (separate track): breeders who list manually inside the app.
 
 ---
 
 ## Optional: cart handoff
 
-If your Woo theme allows standard `add-to-cart` URLs, keepers can add multiple items and land on your cart in one flow. If not, each product still opens on your site — traffic is tracked either way.
+If your Woo theme supports standard `add-to-cart` URLs, keepers can add multiple items to your cart. Otherwise each product opens on your site with UTM.
 
 ---
 
 ## Next step
 
 Reply to this email or apply at **https://tarantulapp.com/partners**  
-We will confirm fit, send the authorization PDF, run a test sync, and go live when you approve.
+We confirm fit, send authorization, run a test sync, and go live when you approve.
 
-— TarantulApp team  
-https://tarantulapp.com
+— TarantulApp team · https://tarantulapp.com
