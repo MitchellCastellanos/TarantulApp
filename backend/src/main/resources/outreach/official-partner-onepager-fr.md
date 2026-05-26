@@ -52,7 +52,8 @@ Si votre Woo accepte les URL `add-to-cart` standard, panier multi-articles possi
 
 ## Prochaine étape
 
-Répondez à ce courriel ou postulez sur **https://tarantulapp.com/partners**  
-Nous validons l’adéquation, envoyons l’autorisation, testons le sync et publions avec votre accord.
+**Répondez à ce courriel** — nous planifions un court appel (~15 min), l’autorisation, le test sync et la mise en ligne avec votre accord.
+
+Optionnel : détails et formulaire sur **https://tarantulapp.com/partners**
 
 — Équipe TarantulApp · https://tarantulapp.com

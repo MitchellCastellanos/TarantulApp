@@ -77,7 +77,7 @@ See [`frontend/public/outreach/monarch/README.md`](../../frontend/public/outreac
 ## Live demo links
 
 - Founding example: https://tarantulapp.com/partner/monarch-reptiles  
-- Apply form: https://tarantulapp.com/partners  
+- Primary CTA: **reply to outreach email**. Optional self-serve: https://tarantulapp.com/partners  
 
 ## After they say yes
 
