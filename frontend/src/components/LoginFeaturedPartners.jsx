@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import marketplaceService from '../services/marketplaceService'
 import OfficialPartnerShield from './OfficialPartnerShield'
+import PartnerCatalogPreviewStrip from './PartnerCatalogPreviewStrip'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
+import { fetchPartnerCatalogMeta, resolvePartnerCatalogCount } from '../utils/partnerCatalogMeta'
 
 export default function LoginFeaturedPartners({ compact = false }) {
   const { t } = useTranslation()
   const [partners, setPartners] = useState([])
+  const [partnerCatalogMeta, setPartnerCatalogMeta] = useState({})
 
   useEffect(() => {
     marketplaceService
@@ -28,6 +31,28 @@ export default function LoginFeaturedPartners({ compact = false }) {
       })
       .catch(() => setPartners([]))
   }, [compact])
+
+  useEffect(() => {
+    if (!partners.length) {
+      setPartnerCatalogMeta({})
+      return undefined
+    }
+    let cancelled = false
+    Promise.all(
+      partners.map(async (v) => {
+        const slug = String(v.slug || '').trim()
+        if (!slug) return [slug, { catalogTotal: 0, previewItems: [] }]
+        const meta = await fetchPartnerCatalogMeta(slug)
+        return [slug, meta]
+      }),
+    ).then((pairs) => {
+      if (cancelled) return
+      setPartnerCatalogMeta(Object.fromEntries(pairs.filter(([slug]) => slug)))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [partners])
 
   if (partners.length === 0) return null
 
@@ -51,30 +76,35 @@ export default function LoginFeaturedPartners({ compact = false }) {
           const founding = isFoundingPartnerTier(v)
           const href = partnerStorefrontPath(v.slug)
           const location = [v.city, v.country].filter(Boolean).join(' · ')
+          const meta = partnerCatalogMeta[v.slug] || {}
+          const previews = meta.previewItems || []
+          const count = resolvePartnerCatalogCount(v, meta)
           return (
-            <Link
+            <div
               key={v.id}
-              to={href}
-              className={`ta-login-partners__card flex-shrink-0 text-decoration-none${founding ? ' ta-login-partners__card--founding' : ''}`}
+              className={`ta-login-partners__card flex-shrink-0${founding ? ' ta-login-partners__card--founding' : ''}${previews.length ? ' ta-login-partners__card--with-previews' : ''}`}
             >
-              <div className="d-flex align-items-center gap-1 mb-1">
-                {founding ? <OfficialPartnerShield width={14} height={16} idPrefix={`lp-${v.id}`} /> : null}
-                <span className={`badge ${founding ? 'bg-warning text-dark' : 'bg-dark'}`} style={{ fontSize: '0.55rem' }}>
-                  {founding ? t('marketplace.foundingPartnerBadge') : t('marketplace.officialPartnerBadge')}
-                </span>
-              </div>
-              <div className="small fw-semibold text-truncate" style={{ color: 'var(--ta-parchment)' }}>
-                {v.name}
-              </div>
-              {location ? (
-                <div className="small text-truncate" style={{ color: 'var(--ta-text-muted)', fontSize: '0.68rem' }}>
-                  {location}
+              <Link to={href} className="text-decoration-none d-block" style={{ color: 'inherit' }}>
+                <div className="d-flex align-items-center gap-1 mb-1">
+                  {founding ? <OfficialPartnerShield width={14} height={16} idPrefix={`lp-${v.id}`} /> : null}
+                  <span className={`badge ${founding ? 'bg-warning text-dark' : 'bg-dark'}`} style={{ fontSize: '0.55rem' }}>
+                    {founding ? t('marketplace.foundingPartnerBadge') : t('marketplace.officialPartnerBadge')}
+                  </span>
                 </div>
-              ) : null}
-              <div className="small mt-1" style={{ color: 'var(--ta-text-muted)', fontSize: '0.68rem' }}>
-                {t('marketplace.partnerVendorListingCount', { count: v.activeListingCount ?? 0 })}
-              </div>
-            </Link>
+                <div className="small fw-semibold text-truncate" style={{ color: 'var(--ta-parchment)' }}>
+                  {v.name}
+                </div>
+                {location ? (
+                  <div className="small text-truncate" style={{ color: 'var(--ta-text-muted)', fontSize: '0.68rem' }}>
+                    {location}
+                  </div>
+                ) : null}
+                <div className="small mt-1" style={{ color: 'var(--ta-text-muted)', fontSize: '0.68rem' }}>
+                  {t('marketplace.partnerVendorListingCount', { count })}
+                </div>
+              </Link>
+              {!compact && <PartnerCatalogPreviewStrip items={previews} t={t} />}
+            </div>
           )
         })}
       </div>

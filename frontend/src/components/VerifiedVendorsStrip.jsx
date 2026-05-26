@@ -4,14 +4,10 @@ import { useTranslation } from 'react-i18next'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
 import OfficialPartnerShield from './OfficialPartnerShield'
+import PartnerCatalogPreviewStrip from './PartnerCatalogPreviewStrip'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
-import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
-import { formatListingPrice } from '../utils/formatPrice'
-import { publicUrl } from '../utils/publicAssets'
-
-const PARTNER_PREVIEW_COUNT = 2
-const SPIDER_PH = publicUrl('spider-default.png')
+import { fetchPartnerCatalogMeta, resolvePartnerCatalogCount } from '../utils/partnerCatalogMeta'
 
 function sortPartners(rows) {
   return [...rows].sort((a, b) => {
@@ -22,77 +18,11 @@ function sortPartners(rows) {
   })
 }
 
-async function fetchPartnerPreviewItems(slug) {
-  try {
-    let data = await marketplaceService.getPartnerCatalog({
-      vendorSlug: slug,
-      promotedOnly: true,
-    })
-    let items = Array.isArray(data?.items) ? data.items : []
-    if (items.length < PARTNER_PREVIEW_COUNT) {
-      data = await marketplaceService.getPartnerCatalog({ vendorSlug: slug })
-      items = Array.isArray(data?.items) ? data.items : []
-    }
-    return items.slice(0, PARTNER_PREVIEW_COUNT)
-  } catch {
-    return []
-  }
-}
-
-function PartnerListingPreviews({ items, t }) {
-  if (!items?.length) return null
-  return (
-    <div className="ta-discover-sellers-strip__previews mt-2" aria-label={t('marketplace.verifiedVendorsStripPreviewAria')}>
-      <div className="small text-muted mb-1" style={{ fontSize: '0.62rem' }}>
-        {t('marketplace.verifiedVendorsStripPreviewLabel')}
-      </div>
-      <div className="d-flex gap-1">
-        {items.map((item) => {
-          const thumb = partnerListingImageUrl(item.imageUrl) || SPIDER_PH
-          const price = formatListingPrice(item.priceAmount, item.currency, t)
-          return (
-            <div key={item.id} className="ta-discover-sellers-strip__preview flex-grow-1 min-w-0">
-              <Link
-                to={`/marketplace/listing/${item.id}`}
-                className="d-block text-decoration-none"
-                title={decodeListingTitle(item.title)}
-              >
-                <div
-                  className="rounded overflow-hidden mb-1"
-                  style={{ height: 52, background: 'var(--ta-bg-panel)' }}
-                >
-                  <img
-                    src={thumb}
-                    alt=""
-                    className="w-100 h-100"
-                    style={{ objectFit: 'cover' }}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null
-                      e.currentTarget.src = SPIDER_PH
-                    }}
-                  />
-                </div>
-                <div className="small text-truncate fw-semibold" style={{ fontSize: '0.62rem', color: 'var(--ta-parchment)' }}>
-                  {decodeListingTitle(item.title)}
-                </div>
-                <div className="small" style={{ fontSize: '0.62rem', color: 'var(--ta-gold)' }}>
-                  {price}
-                </div>
-              </Link>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 export default function VerifiedVendorsStrip() {
   const { t } = useTranslation()
   const [partners, setPartners] = useState([])
   const [verified, setVerified] = useState([])
-  const [partnerPreviews, setPartnerPreviews] = useState({})
+  const [partnerCatalogMeta, setPartnerCatalogMeta] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -116,20 +46,20 @@ export default function VerifiedVendorsStrip() {
 
   useEffect(() => {
     if (!partners.length) {
-      setPartnerPreviews({})
+      setPartnerCatalogMeta({})
       return undefined
     }
     let cancelled = false
     Promise.all(
       partners.map(async (v) => {
         const slug = String(v.slug || '').trim()
-        if (!slug) return [slug, []]
-        const items = await fetchPartnerPreviewItems(slug)
-        return [slug, items]
+        if (!slug) return [slug, { catalogTotal: 0, previewItems: [] }]
+        const meta = await fetchPartnerCatalogMeta(slug)
+        return [slug, meta]
       }),
     ).then((pairs) => {
       if (cancelled) return
-      setPartnerPreviews(Object.fromEntries(pairs.filter(([slug]) => slug)))
+      setPartnerCatalogMeta(Object.fromEntries(pairs.filter(([slug]) => slug)))
     })
     return () => {
       cancelled = true
@@ -167,8 +97,9 @@ export default function VerifiedVendorsStrip() {
             const founding = isFoundingPartnerTier(v)
             const href = partnerStorefrontPath(v.slug)
             const location = [v.city, v.state, v.country].filter(Boolean).join(' · ')
-            const count = v.activeListingCount ?? 0
-            const previews = partnerPreviews[v.slug] || []
+            const meta = partnerCatalogMeta[v.slug] || {}
+            const previews = meta.previewItems || []
+            const count = resolvePartnerCatalogCount(v, meta)
             return (
               <div
                 key={card.key}
@@ -198,7 +129,7 @@ export default function VerifiedVendorsStrip() {
                       {t('marketplace.partnerVendorListingCount', { count })}
                     </div>
                   </Link>
-                  <PartnerListingPreviews items={previews} t={t} />
+                  <PartnerCatalogPreviewStrip items={previews} t={t} />
                 </div>
               </div>
             )

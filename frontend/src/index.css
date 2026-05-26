@@ -646,6 +646,9 @@ a.btn.btn-warning:hover {
   border: 1px solid var(--ta-border);
   background: var(--ta-bg-card);
 }
+.ta-login-partners__card--with-previews {
+  width: 220px;
+}
 .ta-login-partners--compact .ta-login-partners__card {
   width: 148px;
 }

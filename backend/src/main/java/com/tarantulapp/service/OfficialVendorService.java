@@ -12,6 +12,7 @@ import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
+import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -532,13 +533,29 @@ public class OfficialVendorService {
         out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
         out.put("feedConfig", vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig());
         out.put("createdAt", vendor.getCreatedAt());
-        if (vendor.getId() != null && Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
-            out.put("activeListingCount", partnerListingRepository.countByOfficialVendorIdAndStatus(
-                    vendor.getId(), PartnerListingStatus.ACTIVE));
-        } else {
-            out.put("activeListingCount", 0L);
-        }
+        long catalogTotal = resolvePublicCatalogTotal(vendor);
+        out.put("catalogTotal", catalogTotal);
+        out.put("activeListingCount", catalogTotal);
         return out;
+    }
+
+    /** Same gate + filters as {@link com.tarantulapp.service.MarketplaceService#publicPartnerCatalog}. */
+    private long resolvePublicCatalogTotal(OfficialVendor vendor) {
+        if (vendor.getId() == null || !Boolean.TRUE.equals(vendor.getListingImportEnabled())) {
+            return 0L;
+        }
+        PartnerProgramTier tier = vendor.getPartnerProgramTier();
+        if (tier == null || !tier.isOfficialPartner()) {
+            return 0L;
+        }
+        Map<String, Object> feedConfig = vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig();
+        return partnerListingRepository
+                .findByOfficialVendorIdAndStatusInOrderByPromotedDescLastSyncedAtDesc(
+                        vendor.getId(), List.of(PartnerListingStatus.ACTIVE))
+                .stream()
+                .filter(p -> PartnerListingCatalogRules.isAllowedListing(
+                        p.getTitle(), p.getDescription(), p.getListingCategory(), feedConfig))
+                .count();
     }
 
     /**
