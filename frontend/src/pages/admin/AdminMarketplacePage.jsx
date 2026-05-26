@@ -11,6 +11,14 @@ function sellerTierKey(row) {
   return 'community'
 }
 
+function isPartnerFounding(v) {
+  return (
+    v?.isFoundingPartner ||
+    v?.partnerProgramTier === 'FOUNDING_PARTNER' ||
+    v?.partnerProgramTier === 'STRATEGIC_FOUNDER'
+  )
+}
+
 export default function AdminMarketplacePage() {
   const { t } = useTranslation()
   const [error, setError] = useState('')
@@ -35,6 +43,7 @@ export default function AdminMarketplacePage() {
   const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
   const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
   const [partnerSyncVendorBusyId, setPartnerSyncVendorBusyId] = useState(null)
+  const [storefrontBusyId, setStorefrontBusyId] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -327,9 +336,56 @@ export default function AdminMarketplacePage() {
   const patchVendorStrategic = async (vendorId, body) => {
     try {
       const updated = await adminService.updateOfficialVendorStrategicProgram(vendorId, body)
-      setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendorId) ? updated : v)))
+      setOfficialVendors((prev) =>
+        prev.map((v) =>
+          String(v.id) === String(vendorId)
+            ? { ...v, ...updated, opsSummary: updated?.opsSummary ?? v.opsSummary }
+            : v,
+        ),
+      )
     } catch {
       setError(t('admin.resolveError'))
+    }
+  }
+
+  const patchPartnerTier = async (vendor, tier) => {
+    const isFounding = tier === 'founding'
+    await patchVendorStrategic(vendor.id, {
+      partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
+      strategicFounder: isFounding,
+      feedConfig: {
+        ...(vendor.feedConfig || {}),
+        partnerTier: isFounding ? 'founding' : 'official',
+        boostLevel: isFounding ? 2 : 1,
+      },
+    })
+  }
+
+  const savePartnerBadge = async (vendor, badge) => {
+    await patchVendorStrategic(vendor.id, { badge: String(badge || '').trim() })
+  }
+
+  const toggleStorefrontVerified = async (row, next) => {
+    setStorefrontBusyId(row.id)
+    setError('')
+    try {
+      const updated = await adminService.setUserStorefrontVerified(row.id, next)
+      setSellers((prev) =>
+        prev.map((s) =>
+          String(s.id) === String(row.id)
+            ? {
+                ...s,
+                storefrontVerified: !!updated?.storefrontVerified,
+                storefrontVerifiedAt: updated?.storefrontVerifiedAt ?? null,
+              }
+            : s,
+        ),
+      )
+      setSuccess(next ? t('admin.storefrontVerifiedOn') : t('admin.storefrontVerifiedOff'))
+    } catch {
+      setError(t('admin.resolveError'))
+    } finally {
+      setStorefrontBusyId(null)
     }
   }
 
@@ -394,157 +450,41 @@ export default function AdminMarketplacePage() {
       {success && <div className="alert alert-success">{success}</div>}
       {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
 
-      <section className="card p-3 mb-4 border-primary">
-        <h3 className="h6 mb-2">{t('admin.marketplaceSellersTitle')}</h3>
-        <p className="small text-muted mb-3">{t('admin.marketplaceSellersBlurb')}</p>
-        <div className="d-flex flex-wrap gap-2 align-items-end mb-3">
-          <div className="flex-grow-1" style={{ minWidth: 200 }}>
-            <label className="form-label small mb-0" htmlFor="mp-seller-q">
-              {t('admin.marketplaceSellerSearchLabel')}
-            </label>
-            <input
-              id="mp-seller-q"
-              type="search"
-              className="form-control form-control-sm"
-              placeholder={t('admin.marketplaceSellerSearchPlaceholder')}
-              value={sellerQuery}
-              onChange={(e) => setSellerQuery(e.target.value)}
-            />
+      <section className="card p-3 mb-4 border-dark" id="badges-hub">
+        <h3 className="h6 mb-2">{t('admin.badgesHubTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.badgesHubBlurb')}</p>
+        <div className="row g-2 small">
+          <div className="col-md-4">
+            <div className="border rounded p-2 h-100">
+              <strong>{t('admin.badgesHubVerifiedShop')}</strong>
+              <p className="text-muted mb-2">{t('admin.badgesHubVerifiedShopHint')}</p>
+              <a href="#badges-verification" className="btn btn-sm btn-outline-success">
+                {t('admin.badgesHubGoVerification')}
+              </a>
+            </div>
           </div>
-          <div className="form-check mb-1">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="mp-vendors-only"
-              checked={vendorsOnly}
-              onChange={(e) => setVendorsOnly(e.target.checked)}
-            />
-            <label className="form-check-label small" htmlFor="mp-vendors-only">
-              {t('admin.marketplaceVendorsOnlyFilter')}
-            </label>
+          <div className="col-md-4">
+            <div className="border rounded p-2 h-100">
+              <strong>{t('admin.badgesHubVendor')}</strong>
+              <p className="text-muted mb-2">{t('admin.badgesHubVendorHint')}</p>
+              <a href="#badges-sellers" className="btn btn-sm btn-outline-dark">
+                {t('admin.badgesHubGoSellers')}
+              </a>
+            </div>
           </div>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadSellers()}>
-            {t('common.search')}
-          </button>
+          <div className="col-md-4">
+            <div className="border rounded p-2 h-100">
+              <strong>{t('admin.badgesHubPartner')}</strong>
+              <p className="text-muted mb-2">{t('admin.badgesHubPartnerHint')}</p>
+              <a href="#badges-partners" className="btn btn-sm btn-outline-warning">
+                {t('admin.badgesHubGoPartners')}
+              </a>
+            </div>
+          </div>
         </div>
-
-        {sellersLoading ? (
-          <p className="text-muted small mb-0">{t('common.loading')}</p>
-        ) : sellers.length === 0 ? (
-          <p className="text-muted small mb-0">{t('admin.marketplaceSellersEmpty')}</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>{t('auth.email')}</th>
-                  <th>{t('admin.marketplaceColStorefront')}</th>
-                  <th>{t('admin.plan')}</th>
-                  <th>{t('admin.marketplaceColSellerTier')}</th>
-                  <th>{t('admin.marketplaceColListings')}</th>
-                  <th>{t('admin.marketplaceColVendor')}</th>
-                  <th>{t('admin.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sellers.map((row) => {
-                  const tier = row.sellerProgram?.tier || sellerTierKey(row)
-                  const limit = row.sellerProgram?.activeListingLimit ?? 5
-                  const active = Number(row.activeListingsCount ?? 0)
-                  const handle = row.publicHandle?.trim()
-                  return (
-                    <tr key={row.id}>
-                      <td>
-                        <div className="fw-semibold">{row.email}</div>
-                        <div className="small text-muted d-block">{row.displayName || '—'}</div>
-                      </td>
-                      <td>
-                        {handle ? (
-                          <Link to={`/shop/${encodeURIComponent(handle)}`} target="_blank" rel="noreferrer">
-                            {row.storefrontName || `@${handle}`}
-                          </Link>
-                        ) : (
-                          <span className="text-muted small">{t('admin.marketplaceNoHandle')}</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={`badge text-bg-${adminPlanBadgeClass(row)}`}>
-                          {formatAdminPlanSummary(row, t)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge text-bg-dark">{t(`admin.marketplaceTier.${tier}`)}</span>
-                        <div className="small text-muted d-block">
-                          {active}/{limit} {t('admin.activeListingsShort')}
-                        </div>
-                      </td>
-                      <td className="font-monospace small">
-                        {active} / {row.totalListingsCount ?? 0}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${row.verifiedBreeder ? 'btn-success' : 'btn-outline-success'}`}
-                          disabled={vendorBusyId === row.id}
-                          onClick={() => toggleVerifiedBreeder(row)}
-                        >
-                          {vendorBusyId === row.id
-                            ? t('common.loading')
-                            : row.verifiedBreeder
-                              ? t('admin.marketplaceVendorOn')
-                              : t('admin.marketplaceMakeVendor')}
-                        </button>
-                        {row.verifiedBreederAt && (
-                          <div className="small text-muted d-block mt-1" style={{ fontSize: '0.7rem' }}>
-                            {new Date(row.verifiedBreederAt).toLocaleDateString()}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div className="d-flex flex-column gap-1" style={{ minWidth: 140 }}>
-                          <Link to="/marketplace/sell" className="btn btn-sm btn-outline-dark">
-                            {t('admin.marketplaceOpenSellHub')}
-                          </Link>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            disabled={planBusyId === row.id}
-                            onClick={() => patchPlan(row, { plan: 'PRO' })}
-                          >
-                            {t('admin.grantPro')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            disabled={planBusyId === row.id}
-                            onClick={() => patchPlan(row, { plan: 'FREE' })}
-                          >
-                            {t('admin.setFree')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-info"
-                            disabled={planBusyId === row.id}
-                            onClick={() => extendTrial(row)}
-                          >
-                            {t('admin.extendTrial')}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="small text-muted mt-2 mb-0">
-          {t('admin.marketplaceVendorEmailHint')}{' '}
-          <code>docs/beta/vendor-welcome-email-template-es-2026-05-15.md</code>
-        </p>
       </section>
 
-      <section className="card p-3 mb-4">
+      <section className="card p-3 mb-4" id="badges-verification">
         <h3 className="h6 mb-3">{t('admin.vendorVerificationTitle', { defaultValue: 'Vendor verification queue' })}</h3>
         {vendorVerifications.length === 0 ? (
           <p className="small text-muted mb-0">{t('admin.vendorVerificationEmpty', { defaultValue: 'No pending submissions.' })}</p>
@@ -641,6 +581,175 @@ export default function AdminMarketplacePage() {
         )}
       </section>
 
+      <section className="card p-3 mb-4 border-primary" id="badges-sellers">
+        <h3 className="h6 mb-2">{t('admin.marketplaceSellersTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.marketplaceSellersBlurb')}</p>
+        <div className="d-flex flex-wrap gap-2 align-items-end mb-3">
+          <div className="flex-grow-1" style={{ minWidth: 200 }}>
+            <label className="form-label small mb-0" htmlFor="mp-seller-q">
+              {t('admin.marketplaceSellerSearchLabel')}
+            </label>
+            <input
+              id="mp-seller-q"
+              type="search"
+              className="form-control form-control-sm"
+              placeholder={t('admin.marketplaceSellerSearchPlaceholder')}
+              value={sellerQuery}
+              onChange={(e) => setSellerQuery(e.target.value)}
+            />
+          </div>
+          <div className="form-check mb-1">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="mp-vendors-only"
+              checked={vendorsOnly}
+              onChange={(e) => setVendorsOnly(e.target.checked)}
+            />
+            <label className="form-check-label small" htmlFor="mp-vendors-only">
+              {t('admin.marketplaceVendorsOnlyFilter')}
+            </label>
+          </div>
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadSellers()}>
+            {t('common.search')}
+          </button>
+        </div>
+
+        {sellersLoading ? (
+          <p className="text-muted small mb-0">{t('common.loading')}</p>
+        ) : sellers.length === 0 ? (
+          <p className="text-muted small mb-0">{t('admin.marketplaceSellersEmpty')}</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{t('auth.email')}</th>
+                  <th>{t('admin.marketplaceColStorefront')}</th>
+                  <th>{t('admin.plan')}</th>
+                  <th>{t('admin.marketplaceColSellerTier')}</th>
+                  <th>{t('admin.marketplaceColListings')}</th>
+                  <th>{t('admin.marketplaceColVendor')}</th>
+                  <th>{t('admin.marketplaceColVerifiedShop')}</th>
+                  <th>{t('admin.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sellers.map((row) => {
+                  const tier = row.sellerProgram?.tier || sellerTierKey(row)
+                  const limit = row.sellerProgram?.activeListingLimit ?? 5
+                  const active = Number(row.activeListingsCount ?? 0)
+                  const handle = row.publicHandle?.trim()
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        <div className="fw-semibold">{row.email}</div>
+                        <div className="small text-muted d-block">{row.displayName || '—'}</div>
+                      </td>
+                      <td>
+                        {handle ? (
+                          <Link to={`/shop/${encodeURIComponent(handle)}`} target="_blank" rel="noreferrer">
+                            {row.storefrontName || `@${handle}`}
+                          </Link>
+                        ) : (
+                          <span className="text-muted small">{t('admin.marketplaceNoHandle')}</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`badge text-bg-${adminPlanBadgeClass(row)}`}>
+                          {formatAdminPlanSummary(row, t)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge text-bg-dark">{t(`admin.marketplaceTier.${tier}`)}</span>
+                        <div className="small text-muted d-block">
+                          {active}/{limit} {t('admin.activeListingsShort')}
+                        </div>
+                      </td>
+                      <td className="font-monospace small">
+                        {active} / {row.totalListingsCount ?? 0}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${row.verifiedBreeder ? 'btn-success' : 'btn-outline-success'}`}
+                          disabled={vendorBusyId === row.id}
+                          onClick={() => toggleVerifiedBreeder(row)}
+                        >
+                          {vendorBusyId === row.id
+                            ? t('common.loading')
+                            : row.verifiedBreeder
+                              ? t('admin.marketplaceVendorOn')
+                              : t('admin.marketplaceMakeVendor')}
+                        </button>
+                        {row.verifiedBreederAt && (
+                          <div className="small text-muted d-block mt-1" style={{ fontSize: '0.7rem' }}>
+                            {new Date(row.verifiedBreederAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {row.verifiedBreeder ? (
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${row.storefrontVerified ? 'btn-success' : 'btn-outline-success'}`}
+                            disabled={storefrontBusyId === row.id}
+                            onClick={() => toggleStorefrontVerified(row, !row.storefrontVerified)}
+                          >
+                            {storefrontBusyId === row.id
+                              ? t('common.loading')
+                              : row.storefrontVerified
+                                ? t('admin.storefrontVerifiedBadge')
+                                : t('admin.marketplaceGrantVerifiedShop')}
+                          </button>
+                        ) : (
+                          <span className="small text-muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="d-flex flex-column gap-1" style={{ minWidth: 140 }}>
+                          <Link to="/marketplace/sell" className="btn btn-sm btn-outline-dark">
+                            {t('admin.marketplaceOpenSellHub')}
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            disabled={planBusyId === row.id}
+                            onClick={() => patchPlan(row, { plan: 'PRO' })}
+                          >
+                            {t('admin.grantPro')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            disabled={planBusyId === row.id}
+                            onClick={() => patchPlan(row, { plan: 'FREE' })}
+                          >
+                            {t('admin.setFree')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-info"
+                            disabled={planBusyId === row.id}
+                            onClick={() => extendTrial(row)}
+                          >
+                            {t('admin.extendTrial')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="small text-muted mt-2 mb-0">
+          {t('admin.marketplaceVendorEmailHint')}{' '}
+          <code>docs/beta/vendor-welcome-email-template-es-2026-05-15.md</code>
+        </p>
+      </section>
+
       <section className="card p-3 mb-4 border-warning">
         <h3 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h3>
         <p className="small text-muted mb-2">{t('admin.strategicPartnerSectionBlurb')}</p>
@@ -681,8 +790,9 @@ export default function AdminMarketplacePage() {
         )}
       </section>
 
-      <section className="card p-3 mb-4">
+      <section className="card p-3 mb-4" id="badges-partners">
         <h3 className="h6 mb-3">{t('admin.officialVendorsTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.officialVendorsSyncHint')}</p>
         {officialVendors.length === 0 ? (
           <p className="text-muted small mb-0">{t('admin.officialVendorsEmpty')}</p>
         ) : (
@@ -695,7 +805,8 @@ export default function AdminMarketplacePage() {
                   <th>{t('admin.officialVendorsColScore')}</th>
                   <th>{t('admin.partnerOpsCol', { defaultValue: 'Ops (30d)' })}</th>
                   <th>{t('admin.officialVendorsColStatus')}</th>
-                  <th className="text-center">{t('admin.officialVendorsColFounder')}</th>
+                  <th>{t('admin.officialVendorsColTier')}</th>
+                  <th>{t('admin.officialVendorsColBadge')}</th>
                   <th className="text-center">{t('admin.officialVendorsColImport')}</th>
                   <th>{t('admin.officialVendorsColActions')}</th>
                 </tr>
@@ -707,7 +818,6 @@ export default function AdminMarketplacePage() {
                       <div className="fw-semibold">{v.name}</div>
                       <div className="small text-muted">{v.websiteUrl}</div>
                       <div className="small d-flex flex-wrap gap-1 mt-1">
-                        <span className="badge text-bg-warning text-dark">{v.badge || (v.isFoundingPartner ? 'Founding partner' : 'Official partner')}</span>
                         {v.feedType && <span className="badge text-bg-secondary">{v.feedType}</span>}
                         {v.feedBaseUrl && <span className="text-muted">{v.feedBaseUrl}</span>}
                       </div>
@@ -744,12 +854,28 @@ export default function AdminMarketplacePage() {
                       )}
                     </td>
                     <td>{v.enabled ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
-                    <td className="text-center">
+                    <td>
+                      <select
+                        className="form-select form-select-sm"
+                        style={{ minWidth: 130 }}
+                        value={isPartnerFounding(v) ? 'founding' : 'official'}
+                        onChange={(e) => patchPartnerTier(v, e.target.value)}
+                      >
+                        <option value="official">{t('admin.partnerTierOfficial')}</option>
+                        <option value="founding">{t('admin.partnerTierFounding')}</option>
+                      </select>
+                    </td>
+                    <td>
                       <input
-                        type="checkbox"
-                        className="form-check-input"
-                        checked={v.isFoundingPartner || v.partnerProgramTier === 'FOUNDING_PARTNER' || v.partnerProgramTier === 'STRATEGIC_FOUNDER'}
-                        onChange={(e) => patchVendorStrategic(v.id, { strategicFounder: e.target.checked })}
+                        type="text"
+                        className="form-control form-control-sm"
+                        style={{ minWidth: 140 }}
+                        defaultValue={v.badge || (isPartnerFounding(v) ? 'Founding partner' : 'Official partner')}
+                        onBlur={(e) => {
+                          const next = e.target.value.trim()
+                          const prev = (v.badge || '').trim()
+                          if (next !== prev) savePartnerBadge(v, next)
+                        }}
                       />
                     </td>
                     <td className="text-center">

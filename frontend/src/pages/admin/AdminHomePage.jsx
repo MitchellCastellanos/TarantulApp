@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import {
@@ -514,7 +515,10 @@ export default function AdminHomePage() {
 
       <div className="card p-3 mt-3 border-warning">
         <h2 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h2>
-        <p className="small text-muted mb-3">{t('admin.strategicPartnerSectionBlurb')}</p>
+        <p className="small text-muted mb-2">{t('admin.strategicPartnerSectionBlurb')}</p>
+        <Link to="/admin/marketplace" className="btn btn-sm btn-dark mb-3">
+          {t('admin.navMarketplace')}
+        </Link>
         <button
           type="button"
           className="btn btn-sm btn-dark"

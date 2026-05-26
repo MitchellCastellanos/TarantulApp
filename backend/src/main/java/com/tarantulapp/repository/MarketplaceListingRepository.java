@@ -47,6 +47,12 @@ public interface MarketplaceListingRepository extends JpaRepository<MarketplaceL
             """)
     List<Object[]> countActiveBySellerGroupedByCategory(@Param("sellerIds") List<UUID> sellerIds);
 
+    @Query("""
+            select distinct l.sellerUserId from MarketplaceListing l
+            where l.sellerUserId is not null
+            """)
+    List<UUID> findDistinctSellerUserIds();
+
     @Modifying
     @Query(value = "delete from marketplace_listings where title like :prefix", nativeQuery = true)
     int deleteDemoByTitlePrefix(String prefix);
