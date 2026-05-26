@@ -13,6 +13,8 @@
     "insightsTitle": "Collection stats and feeding gaps",
     "sexId": "Sex ID",
     "sexIdTitle": "Sex ID help — male or female?",
+    "more": "More",
+    "proMenuItem": "Pro / plan",
     "badgeReadOnly": "Read-only",
     "badgeOverLimit": "Some spiders locked",
     "badgeOverLimitTitle": "On the free plan you can edit your 6 oldest spiders; the rest are read-only. Upgrade to Pro or delete spiders to unlock editing.",

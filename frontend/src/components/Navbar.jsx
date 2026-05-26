@@ -37,11 +37,12 @@ function NavDest({ lock, to, className, title, style, children, onClick, 'aria-l
 /**
  * @param {{ variant?: 'app' | 'public', hideLoginLink?: boolean }} [props]
  */
-export default function Navbar({ variant: _variant = 'app', hideLoginLink = false }) {
+export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { token, user, logout } = useAuth()
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [mobileOpenGroup, setMobileOpenGroup] = useState('app')
   const [notifUnread, setNotifUnread] = useState(0)
   const plan = user?.plan || 'FREE'
@@ -152,7 +153,14 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
 
   useEffect(() => {
     closeMobileMenu()
+    setMoreMenuOpen(false)
   }, [path])
+
+  useEffect(() => {
+    if (variant !== 'app') return undefined
+    document.body.classList.add('ta-app-chrome')
+    return () => document.body.classList.remove('ta-app-chrome')
+  }, [variant])
 
   useEffect(() => {
     if (!mobileMenuOpen) return
@@ -344,6 +352,208 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
       </Link>
     )
   })()
+
+  const renderMoreContent = (onClick) => (
+    <>
+      {token ? (
+        <>
+          <Link to={myPublicProfilePath} onClick={onClick} className="ta-more__item">
+            <span aria-hidden="true">👤</span> {t('nav.publicProfileTitle')}
+          </Link>
+          <Link to="/account" onClick={onClick} className="ta-more__item">
+            <span aria-hidden="true">⚙</span> {t('nav.accountSettings')}
+          </Link>
+        </>
+      ) : (
+        <Link to="/login" onClick={onClick} className="ta-more__item">
+          <span aria-hidden="true">↳</span> {t('nav.login', 'Login')}
+        </Link>
+      )}
+      <Link to="/pro" onClick={onClick} className="ta-more__item">
+        <span aria-hidden="true">⭐</span> {t('nav.proMenuItem', 'Pro / plan')}
+      </Link>
+      {user && isAdmin && (
+        <Link to="/admin" onClick={onClick} className="ta-more__item">
+          <span aria-hidden="true">🛡</span> {t('nav.admin')}
+        </Link>
+      )}
+      <div className="ta-more__row">
+        <ThemeToggleButton compact />
+        <div className="d-flex gap-1 align-items-center">
+          {APP_LANGS.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              title={LOGIN_LANG_LABELS[l.code]}
+              aria-label={LOGIN_LANG_LABELS[l.code]}
+              onClick={() => i18n.changeLanguage(l.code)}
+              className="btn btn-sm px-1 py-0 border-0"
+              style={{
+                background: 'transparent',
+                color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {l.display}
+            </button>
+          ))}
+        </div>
+      </div>
+      {token && (
+        <button
+          type="button"
+          className="ta-more__item ta-more__item--btn"
+          onClick={() => {
+            onClick?.()
+            logout()
+          }}
+        >
+          <span aria-hidden="true">⎋</span> {t('nav.logout')}
+        </button>
+      )}
+    </>
+  )
+
+  if (variant === 'app') {
+    const railItems = [
+      {
+        to: token ? '/' : inviteOnlyNav ? '/' : '/login',
+        icon: '🏠',
+        label: token ? t('discover.myCollection', 'My collection') : t('nav.myCollectionGuestCta'),
+        active: navCollection,
+      },
+      { to: '/descubrir', icon: '🔍', label: t('nav.discoverSpecies'), active: navDiscover },
+      { to: '/marketplace', icon: '🛒', label: t('marketplace.nav'), active: navMarketplace },
+      { to: '/sex-id', icon: '⚥', label: t('nav.sexId', 'Sex ID'), active: navSexId },
+      { to: '/tools/qr', icon: '📷', label: t('nav.qrTool'), active: navQr },
+      ...(token
+        ? [
+            { to: '/insights', icon: '📊', label: t('nav.insights'), active: navInsights },
+            { to: '/notifications', icon: '🔔', label: t('nav.notifications'), active: navNotifications, badge: notifUnread },
+          ]
+        : []),
+    ]
+    const bottomTabs = railItems.slice(0, 4)
+
+    return (
+      <>
+        {/* Desktop: vertical rail (X / Instagram style) */}
+        <nav className="ta-rail d-none d-md-flex" aria-label={t('nav.primaryNavAria', 'Primary')}>
+          <div className="ta-rail__brand">
+            <BrandNavbarLogo key={path} homeTo={logoHome} showIntro disableLink={lockPublicNav} />
+          </div>
+          <div className="ta-rail__items">
+            {railItems.map((it) => (
+              <NavDest
+                key={it.to + it.label}
+                lock={lockPublicNav}
+                to={it.to}
+                className={`ta-rail__link ${it.active ? 'is-active' : ''}`}
+                title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : it.label}
+              >
+                <span className="ta-rail__icon" aria-hidden="true">{it.icon}</span>
+                <span className="ta-rail__label">{it.label}</span>
+                {it.badge > 0 ? (
+                  <span className="badge rounded-pill bg-danger ms-auto" style={{ fontSize: '0.6rem' }}>
+                    {it.badge > 99 ? '99+' : it.badge}
+                  </span>
+                ) : null}
+              </NavDest>
+            ))}
+          </div>
+          <div className="ta-rail__footer">
+            {planControl}
+            <div className="position-relative w-100">
+              <button
+                type="button"
+                className={`ta-rail__more ${moreMenuOpen ? 'is-open' : ''}`}
+                onClick={() => setMoreMenuOpen((o) => !o)}
+                aria-expanded={moreMenuOpen}
+              >
+                <span className="ta-rail__icon" aria-hidden="true">👤</span>
+                <span className="ta-rail__label text-truncate">
+                  {token ? user?.displayName || user?.email || t('nav.more', 'More') : t('nav.more', 'More')}
+                </span>
+                <span aria-hidden="true" className="ms-auto">{moreMenuOpen ? '▾' : '▸'}</span>
+              </button>
+              {moreMenuOpen && (
+                <div className="ta-more-menu">{renderMoreContent(() => setMoreMenuOpen(false))}</div>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        {/* Mobile: slim top bar */}
+        <nav className="ta-mtop d-md-none" aria-label={t('nav.primaryNavAria', 'Primary')}>
+          <BrandNavbarLogo key={`m-${path}`} homeTo={logoHome} showIntro disableLink={lockPublicNav} />
+          <div className="ms-auto d-flex align-items-center gap-1">
+            {token && (
+              <Link to="/notifications" className="btn btn-sm ta-mobile-icon-btn position-relative" aria-label={t('nav.notifications')}>
+                🔔
+                {notifUnread > 0 && (
+                  <span className="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style={{ fontSize: '0.55rem' }}>
+                    {notifUnread > 99 ? '99+' : notifUnread}
+                  </span>
+                )}
+              </Link>
+            )}
+            <Link
+              to={token ? myPublicProfilePath : '/login'}
+              className="btn btn-sm ta-mobile-icon-btn"
+              aria-label={token ? t('nav.publicProfileAria') : t('nav.login', 'Login')}
+            >
+              👤
+            </Link>
+          </div>
+        </nav>
+
+        {/* Mobile: bottom tab bar */}
+        <nav className="ta-bottomnav d-md-none" aria-label={t('nav.primaryNavAria', 'Primary')}>
+          {bottomTabs.map((it) => (
+            <NavDest
+              key={`tab-${it.to}`}
+              lock={lockPublicNav}
+              to={it.to}
+              className={`ta-bottomnav__tab ${it.active ? 'is-active' : ''}`}
+              title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : it.label}
+            >
+              <span className="ta-bottomnav__icon" aria-hidden="true">{it.icon}</span>
+              <span className="ta-bottomnav__label">{it.label}</span>
+            </NavDest>
+          ))}
+          <button
+            type="button"
+            className={`ta-bottomnav__tab ${mobileMenuOpen ? 'is-active' : ''}`}
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-expanded={mobileMenuOpen}
+          >
+            <span className="ta-bottomnav__icon" aria-hidden="true">☰</span>
+            <span className="ta-bottomnav__label">{t('nav.more', 'More')}</span>
+          </button>
+        </nav>
+
+        {/* Mobile: "More" sheet */}
+        {mobileMenuOpen && (
+          <div className="ta-more-sheet d-md-none" role="dialog" aria-modal="true" onClick={() => setMobileMenuOpen(false)}>
+            <div className="ta-more-sheet__panel" onClick={(e) => e.stopPropagation()}>
+              <div className="ta-more-sheet__handle" aria-hidden="true" />
+              {token && (
+                <Link to="/insights" onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
+                  <span aria-hidden="true">📊</span> {t('nav.insights')}
+                </Link>
+              )}
+              <Link to="/tools/qr" onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
+                <span aria-hidden="true">📷</span> {t('nav.qrTool')}
+              </Link>
+              {renderMoreContent(() => setMobileMenuOpen(false))}
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
 
   return (
     <>
