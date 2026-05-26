@@ -310,6 +310,110 @@ public class AdminController {
         return ResponseEntity.ok(officialVendorService.adminListLeads());
     }
 
+    record AdminUpsertOutreachLeadRequest(
+            String businessName,
+            String contactEmail,
+            String contactName,
+            String websiteUrl,
+            String country,
+            String state,
+            String city,
+            String shippingScope,
+            String note,
+            String outreachLocale,
+            Map<String, Object> qualification,
+            String internalNotes
+    ) {}
+
+    @PostMapping("/official-vendor-leads/outreach")
+    public ResponseEntity<Map<String, Object>> upsertOfficialVendorOutreachLead(
+            @RequestBody AdminUpsertOutreachLeadRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminUpsertOutreachLead(
+                    req.businessName(),
+                    req.contactEmail(),
+                    req.contactName(),
+                    req.websiteUrl(),
+                    req.country(),
+                    req.state(),
+                    req.city(),
+                    req.shippingScope(),
+                    req.note(),
+                    req.outreachLocale(),
+                    req.qualification(),
+                    req.internalNotes()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    record AdminPatchLeadOutreachRequest(
+            String outreachLocale,
+            Map<String, Object> qualification,
+            String internalNotes,
+            String websiteUrl
+    ) {}
+
+    @PatchMapping("/official-vendor-leads/{id}/outreach")
+    public ResponseEntity<Map<String, Object>> patchOfficialVendorLeadOutreach(
+            @PathVariable UUID id,
+            @RequestBody AdminPatchLeadOutreachRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminPatchLeadOutreach(
+                    id,
+                    req == null ? null : req.outreachLocale(),
+                    req == null ? null : req.qualification(),
+                    req == null ? null : req.internalNotes(),
+                    req == null ? null : req.websiteUrl()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    record WooProbeRequest(String websiteUrl) {}
+
+    @PostMapping("/official-vendor-leads/probe-woocommerce")
+    public ResponseEntity<Map<String, Object>> probeWooCommerceForLead(
+            @RequestBody WooProbeRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminProbeWooCommerce(
+                    req == null ? null : req.websiteUrl()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/official-vendor-leads/{id}/probe-woocommerce")
+    public ResponseEntity<Map<String, Object>> probeWooCommerceForLeadById(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminProbeAndSaveLeadWoo(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    record SendLeadOutreachEmailRequest(String template, String locale, Boolean attachOnePager) {}
+
+    @PostMapping("/official-vendor-leads/{id}/send-outreach-email")
+    public ResponseEntity<Map<String, Object>> sendOfficialVendorLeadOutreachEmail(
+            @PathVariable UUID id,
+            @RequestBody(required = false) SendLeadOutreachEmailRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminSendLeadOutreachEmail(
+                    id,
+                    req == null ? null : req.template(),
+                    req == null ? null : req.locale(),
+                    req != null && Boolean.TRUE.equals(req.attachOnePager())));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("sent", false, "error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/vendor-verifications")
     public ResponseEntity<List<Map<String, Object>>> vendorVerifications(
             @RequestParam(required = false) String status) {

@@ -23,6 +23,16 @@ const adminService = {
     api.patch(`/admin/reports/${id}/resolve`, { action, note }).then((r) => r.data),
   officialVendors: () => api.get('/admin/official-vendors').then((r) => r.data),
   officialVendorLeads: () => api.get('/admin/official-vendor-leads').then((r) => r.data),
+  upsertOfficialVendorOutreachLead: (payload) =>
+    api.post('/admin/official-vendor-leads/outreach', payload).then((r) => r.data),
+  patchOfficialVendorLeadOutreach: (leadId, payload) =>
+    api.patch(`/admin/official-vendor-leads/${leadId}/outreach`, payload).then((r) => r.data),
+  probeWooCommerceForUrl: (websiteUrl) =>
+    api.post('/admin/official-vendor-leads/probe-woocommerce', { websiteUrl }).then((r) => r.data),
+  probeWooCommerceForLead: (leadId) =>
+    api.post(`/admin/official-vendor-leads/${leadId}/probe-woocommerce`).then((r) => r.data),
+  sendOfficialVendorLeadOutreachEmail: (leadId, payload) =>
+    api.post(`/admin/official-vendor-leads/${leadId}/send-outreach-email`, payload).then((r) => r.data),
   promoteOfficialVendorLead: (leadId, payload = {}) =>
     api.post(`/admin/official-vendor-leads/${leadId}/promote`, payload).then((r) => r.data),
   vendorVerifications: (status) =>

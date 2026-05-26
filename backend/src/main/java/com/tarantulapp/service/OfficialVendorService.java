@@ -5,6 +5,7 @@ import com.tarantulapp.entity.OfficialVendorLead;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.util.BetaMailBodies;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
@@ -18,6 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -145,6 +151,156 @@ public class OfficialVendorService {
         return officialVendorLeadRepository.findTop100ByOrderByCreatedAtDesc().stream()
                 .map(this::mapLead)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Map<String, Object> adminUpsertOutreachLead(String businessName, String contactEmail, String contactName,
+                                                       String websiteUrl, String country, String state, String city,
+                                                       String shippingScope, String note, String outreachLocale,
+                                                       Map<String, Object> qualification, String internalNotes) {
+        if (businessName == null || businessName.isBlank() || contactEmail == null || contactEmail.isBlank()) {
+            throw new IllegalArgumentException("BUSINESS_NAME_AND_EMAIL_REQUIRED");
+        }
+        String emailNorm = contactEmail.trim().toLowerCase(Locale.ROOT);
+        OfficialVendorLead lead = officialVendorLeadRepository.findTop100ByOrderByCreatedAtDesc().stream()
+                .filter(l -> emailNorm.equalsIgnoreCase(l.getContactEmail()))
+                .findFirst()
+                .orElseGet(OfficialVendorLead::new);
+        lead.setBusinessName(cleanText(businessName, 140));
+        lead.setContactEmail(cleanText(contactEmail, 255));
+        lead.setContactName(cleanText(contactName, 120));
+        lead.setWebsiteUrl(cleanText(websiteUrl, 350));
+        lead.setCountry(cleanText(country, 80));
+        lead.setState(cleanText(state, 80));
+        lead.setCity(cleanText(city, 80));
+        lead.setShippingScope(cleanText(shippingScope, 80));
+        if (note != null) {
+            lead.setNote(cleanText(note, 1200));
+        }
+        if (outreachLocale != null && !outreachLocale.isBlank()) {
+            lead.setOutreachLocale(BetaMailBodies.normalizeLocale(outreachLocale));
+        }
+        if (qualification != null) {
+            lead.setQualification(new LinkedHashMap<>(qualification));
+        }
+        if (internalNotes != null) {
+            lead.setInternalNotes(cleanText(internalNotes, 4000));
+        }
+        if (lead.getStatus() == null || lead.getStatus().isBlank()) {
+            lead.setStatus("open");
+        }
+        return mapLead(officialVendorLeadRepository.save(lead));
+    }
+
+    @Transactional
+    public Map<String, Object> adminPatchLeadOutreach(UUID leadId, String outreachLocale,
+                                                      Map<String, Object> qualification, String internalNotes,
+                                                      String websiteUrl) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        if (outreachLocale != null && !outreachLocale.isBlank()) {
+            lead.setOutreachLocale(BetaMailBodies.normalizeLocale(outreachLocale));
+        }
+        if (qualification != null) {
+            lead.setQualification(new LinkedHashMap<>(qualification));
+        }
+        if (internalNotes != null) {
+            lead.setInternalNotes(cleanText(internalNotes, 4000));
+        }
+        if (websiteUrl != null) {
+            lead.setWebsiteUrl(cleanText(websiteUrl, 350));
+        }
+        return mapLead(officialVendorLeadRepository.save(lead));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminProbeWooCommerce(String websiteUrl) {
+        String base = trimTrailingSlash(websiteUrl);
+        if (base == null || base.isBlank()) {
+            throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+        }
+        String probeUrl = base + "/wp-json/wc/store/v1/products?per_page=1";
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("websiteUrl", base);
+        out.put("probeUrl", probeUrl);
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(8))
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder(URI.create(probeUrl))
+                    .timeout(Duration.ofSeconds(12))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            int code = response.statusCode();
+            out.put("httpStatus", code);
+            boolean ok = code >= 200 && code < 300 && response.body() != null && response.body().contains("\"id\"");
+            out.put("ok", ok);
+            out.put("status", ok ? "reachable" : "failed");
+            out.put("detail", ok ? "Woo Store API responded with products" : "HTTP " + code + " — check Woo Store API or firewall");
+        } catch (Exception ex) {
+            out.put("ok", false);
+            out.put("status", "error");
+            out.put("detail", ex.getMessage() == null ? "Probe failed" : ex.getMessage());
+        }
+        return out;
+    }
+
+    @Transactional
+    public Map<String, Object> adminProbeAndSaveLeadWoo(UUID leadId) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        Map<String, Object> probe = adminProbeWooCommerce(lead.getWebsiteUrl());
+        lead.setWooProbeStatus(String.valueOf(probe.get("status")));
+        Object detail = probe.get("detail");
+        lead.setWooProbeDetail(detail == null ? "" : String.valueOf(detail).substring(0, Math.min(500, String.valueOf(detail).length())));
+        Map<String, Object> qual = lead.getQualification() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(lead.getQualification());
+        qual.put("wooCommerce", Boolean.TRUE.equals(probe.get("ok")));
+        lead.setQualification(qual);
+        officialVendorLeadRepository.save(lead);
+        Map<String, Object> out = mapLead(lead);
+        out.put("wooProbe", probe);
+        return out;
+    }
+
+    @Transactional
+    public Map<String, Object> adminSendLeadOutreachEmail(UUID leadId, String templateKey, String locale,
+                                                          boolean attachOnePager) {
+        OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
+                .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
+        String loc = locale == null || locale.isBlank()
+                ? (lead.getOutreachLocale() == null ? "en" : lead.getOutreachLocale())
+                : locale;
+        loc = BetaMailBodies.normalizeLocale(loc);
+        String template = templateKey == null || templateKey.isBlank() ? "partner_outreach_intro" : templateKey.trim();
+        if (!BetaMailBodies.BATCH_CAMPAIGN_KEYS.contains(template)) {
+            throw new IllegalArgumentException("INVALID_OUTREACH_TEMPLATE");
+        }
+        if ("partner_catalog_live".equals(template) && !"converted".equalsIgnoreCase(lead.getStatus())) {
+            throw new IllegalArgumentException("LEAD_NOT_CONVERTED_USE_INTRO");
+        }
+        if ("partner_outreach_intro".equals(template)) {
+            emailService.sendPartnerOutreachIntroEmail(
+                    lead.getContactEmail(), lead.getBusinessName(), lead.getWebsiteUrl(), loc, attachOnePager);
+        } else if ("partner_catalog_live".equals(template)) {
+            emailService.sendPartnerCatalogLiveEmail(
+                    lead.getContactEmail(), lead.getBusinessName(), 0L,
+                    appBaseUrl + "/partners", lead.getWebsiteUrl(), loc, attachOnePager);
+        } else {
+            throw new IllegalArgumentException("INVALID_OUTREACH_TEMPLATE");
+        }
+        lead.setLastOutreachAt(Instant.now());
+        lead.setOutreachLocale(loc);
+        officialVendorLeadRepository.save(lead);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("sent", true);
+        out.put("email", lead.getContactEmail());
+        out.put("template", template);
+        out.put("locale", loc);
+        out.put("attachOnePager", attachOnePager);
+        return out;
     }
 
     /**
@@ -619,7 +775,14 @@ public class OfficialVendorService {
         out.put("shippingScope", lead.getShippingScope() == null ? "" : lead.getShippingScope());
         out.put("note", lead.getNote() == null ? "" : lead.getNote());
         out.put("status", lead.getStatus());
+        out.put("outreachLocale", lead.getOutreachLocale() == null ? "en" : lead.getOutreachLocale());
+        out.put("internalNotes", lead.getInternalNotes() == null ? "" : lead.getInternalNotes());
+        out.put("qualification", lead.getQualification() == null ? Map.of() : lead.getQualification());
+        out.put("wooProbeStatus", lead.getWooProbeStatus() == null ? "" : lead.getWooProbeStatus());
+        out.put("wooProbeDetail", lead.getWooProbeDetail() == null ? "" : lead.getWooProbeDetail());
+        out.put("lastOutreachAt", lead.getLastOutreachAt());
         out.put("createdAt", lead.getCreatedAt());
+        out.put("updatedAt", lead.getUpdatedAt());
         return out;
     }
 

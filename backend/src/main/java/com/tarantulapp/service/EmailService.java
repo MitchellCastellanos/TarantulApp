@@ -1,9 +1,11 @@
 package com.tarantulapp.service;
 
 import com.resend.Resend;
+import com.resend.services.emails.model.Attachment;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.util.BetaMailBodies;
+import com.tarantulapp.util.PartnerOutreachDocuments;
 import com.tarantulapp.util.LogSafe;
 import com.tarantulapp.util.SupportedLocales;
 import org.slf4j.Logger;
@@ -16,6 +18,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
+import java.util.Base64;
+import java.util.List;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -63,27 +67,84 @@ public class EmailService {
 
     // ── Core routing ──────────────────────────────────────────────────────────
 
+    public record EmailAttachment(String filename, byte[] content, String contentType) {
+    }
+
     private void doSend(String to, String subject, String text) throws Exception {
-        if (resendApiKey != null && !resendApiKey.isBlank()) {
-            Resend resend = new Resend(resendApiKey);
-            String fromField = fromName + " <" + fromAddress + ">";
-            CreateEmailOptions opts = CreateEmailOptions.builder()
-                    .from(fromField)
-                    .to(to)
-                    .subject(subject)
-                    .text(text)
-                    .build();
-            resend.emails().send(opts);
-        } else {
+        doSend(to, subject, text, null, null);
+    }
+
+    private void doSend(String to, String subject, String text, EmailAttachment attachment) throws Exception {
+        doSend(to, subject, text, null, attachment);
+    }
+
+    private void doSend(String to, String subject, String text, String html, EmailAttachment attachment) throws Exception {
+        if (attachment != null && attachment.content() != null && attachment.content().length > 0) {
+            if (resendApiKey != null && !resendApiKey.isBlank()) {
+                Resend resend = new Resend(resendApiKey);
+                String fromField = fromName + " <" + fromAddress + ">";
+                Attachment resendAttachment = Attachment.builder()
+                        .fileName(attachment.filename())
+                        .content(Base64.getEncoder().encodeToString(attachment.content()))
+                        .build();
+                var builder = CreateEmailOptions.builder()
+                        .from(fromField)
+                        .to(to)
+                        .subject(subject)
+                        .text(text)
+                        .attachments(List.of(resendAttachment));
+                if (html != null && !html.isBlank()) {
+                    builder.html(html);
+                }
+                resend.emails().send(builder.build());
+                return;
+            }
             MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
             helper.setFrom(fromAddress, fromName);
             helper.setTo(to);
             helper.setSubject(subject);
             if (replyToAddress != null && !replyToAddress.isBlank()) {
                 helper.setReplyTo(replyToAddress);
             }
-            helper.setText(text);
+            if (html != null && !html.isBlank()) {
+                helper.setText(text, html);
+            } else {
+                helper.setText(text);
+            }
+            String mime = attachment.contentType() == null || attachment.contentType().isBlank()
+                    ? "text/markdown; charset=UTF-8"
+                    : attachment.contentType();
+            helper.addAttachment(attachment.filename(), () -> new java.io.ByteArrayInputStream(attachment.content()), mime);
+            mailSender.send(msg);
+            return;
+        }
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            Resend resend = new Resend(resendApiKey);
+            String fromField = fromName + " <" + fromAddress + ">";
+            var builder = CreateEmailOptions.builder()
+                    .from(fromField)
+                    .to(to)
+                    .subject(subject)
+                    .text(text);
+            if (html != null && !html.isBlank()) {
+                builder.html(html);
+            }
+            resend.emails().send(builder.build());
+        } else {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, html != null && !html.isBlank(), "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            if (replyToAddress != null && !replyToAddress.isBlank()) {
+                helper.setReplyTo(replyToAddress);
+            }
+            if (html != null && !html.isBlank()) {
+                helper.setText(text, html);
+            } else {
+                helper.setText(text);
+            }
             mailSender.send(msg);
         }
     }
@@ -437,17 +498,51 @@ public class EmailService {
 
     public void sendPartnerCatalogLiveEmail(String toEmail, String partnerName, long listingCount,
                                             String storefrontUrl, String websiteUrl, String locale) {
+        sendPartnerCatalogLiveEmail(toEmail, partnerName, listingCount, storefrontUrl, websiteUrl, locale, false);
+    }
+
+    public void sendPartnerCatalogLiveEmail(String toEmail, String partnerName, long listingCount,
+                                            String storefrontUrl, String websiteUrl, String locale,
+                                            boolean attachOnePager) {
+        sendPartnerOutreachEmail(toEmail, partnerName, websiteUrl, locale, "partner_catalog_live",
+                listingCount, storefrontUrl, attachOnePager);
+    }
+
+    public void sendPartnerOutreachIntroEmail(String toEmail, String partnerName, String websiteUrl,
+                                              String locale, boolean attachOnePager) {
+        sendPartnerOutreachEmail(toEmail, partnerName, websiteUrl, locale, "partner_outreach_intro",
+                0L, null, attachOnePager);
+    }
+
+    private void sendPartnerOutreachEmail(String toEmail, String partnerName, String websiteUrl, String locale,
+                                          String templateKey, long listingCount, String storefrontUrl,
+                                          boolean attachOnePager) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         String sendDate = formatBetaSendDateForLocale(loc);
-        String body = BetaMailBodies.partnerCatalogLiveBody(
-                loc, partnerName, listingCount, storefrontUrl, websiteUrl, sendDate);
-        String subject = BetaMailBodies.campaignSubject("partner_catalog_live", loc);
+        String appUrl = baseUrl == null || baseUrl.isBlank()
+                ? BetaMailBodies.DEFAULT_APP_URL
+                : baseUrl.trim();
+        String body = "partner_catalog_live".equals(templateKey)
+                ? BetaMailBodies.partnerCatalogLiveBody(loc, partnerName, listingCount, storefrontUrl, websiteUrl, sendDate)
+                : BetaMailBodies.partnerOutreachIntroBody(loc, partnerName, websiteUrl, sendDate, appUrl);
+        String html = "partner_outreach_intro".equals(templateKey)
+                ? BetaMailBodies.partnerOutreachIntroHtml(loc, partnerName, websiteUrl, sendDate, appUrl)
+                : null;
+        String subject = BetaMailBodies.campaignSubject(templateKey, loc);
+        EmailAttachment attachment = null;
+        if (attachOnePager) {
+            attachment = new EmailAttachment(
+                    PartnerOutreachDocuments.onePagerAttachmentFilename(loc),
+                    PartnerOutreachDocuments.loadOnePagerMarkdown(loc),
+                    "text/markdown; charset=UTF-8");
+        }
         try {
-            doSend(toEmail, subject, body);
-            log.info("Partner catalog live email sent to {} (locale={})", LogSafe.maskEmail(toEmail), loc);
+            doSend(toEmail, subject, body, html, attachment);
+            log.info("Partner outreach {} email sent to {} (locale={}, attachment={})",
+                    templateKey, LogSafe.maskEmail(toEmail), loc, attachOnePager);
         } catch (Exception e) {
-            log.error("Failed partner catalog email to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
-            throw new RuntimeException("No se pudo enviar correo partner catalog: " + e.getMessage());
+            log.error("Failed partner outreach {} to {}: {}", templateKey, LogSafe.maskEmail(toEmail), e.getMessage(), e);
+            throw new RuntimeException("No se pudo enviar correo partner outreach: " + e.getMessage());
         }
     }
 

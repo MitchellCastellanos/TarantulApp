@@ -35,6 +35,7 @@ public final class BetaMailBodies {
             "creator_partner_reminder",
             "vendor_welcome_mx",
             "partner_catalog_live",
+            "partner_outreach_intro",
             "tarantula_public_default"
     );
 
@@ -43,6 +44,7 @@ public final class BetaMailBodies {
             "play_early_access_web",
             "vendor_welcome_mx",
             "partner_catalog_live",
+            "partner_outreach_intro",
             "tarantula_public_default"
     );
 
@@ -124,6 +126,11 @@ public final class BetaMailBodies {
                 case "en" -> "TarantulApp — Your storefront is live (no setup needed on your side)";
                 case "fr" -> "TarantulApp — Votre vitrine est en ligne (rien à configurer de votre côté)";
                 default -> "TarantulApp — Tu vitrina ya está en la app (no necesitas subir nada)";
+            };
+            case "partner_outreach_intro" -> switch (loc) {
+                case "en" -> "TarantulApp — Official Partner invite (zero listing upload, checkout on your site)";
+                case "fr" -> "TarantulApp — Invitation Partenaire Officiel (sans double catalogue, paiement sur votre site)";
+                default -> "TarantulApp — Invitación Socio Oficial (sin subir catálogo, checkout en tu web)";
             };
             case "tarantula_public_default" -> switch (loc) {
                 case "en" -> "TarantulApp — Your spiders are now public by default";
@@ -1205,6 +1212,148 @@ public final class BetaMailBodies {
                 + "— TarantulApp\n";
     }
 
+    /** Cold outreach before go-live (official partner invite). */
+    public static String partnerOutreachIntroBody(String locale, String partnerName, String websiteUrl, String sendDate) {
+        return partnerOutreachIntroBody(locale, partnerName, websiteUrl, sendDate, DEFAULT_APP_URL);
+    }
+
+    public static String partnerOutreachIntroBody(String locale, String partnerName, String websiteUrl,
+                                                  String sendDate, String appBaseUrl) {
+        String loc = normalizeLocale(locale);
+        String name = partnerName == null || partnerName.isBlank() ? "there" : partnerName.trim();
+        String site = websiteUrl == null || websiteUrl.isBlank() ? "" : websiteUrl.trim();
+        return switch (loc) {
+            case "en" -> partnerOutreachIntroEn(name, site, sendDate, appBaseUrl);
+            case "fr" -> partnerOutreachIntroFr(name, site, sendDate, appBaseUrl);
+            default -> partnerOutreachIntroEs(name, site, sendDate, appBaseUrl);
+        };
+    }
+
+    public static String partnerOutreachIntroHtml(String locale, String partnerName, String websiteUrl,
+                                                   String sendDate, String appBaseUrl) {
+        String loc = normalizeLocale(locale);
+        String name = partnerName == null || partnerName.isBlank() ? "there" : partnerName.trim();
+        String site = websiteUrl == null || websiteUrl.isBlank() ? "" : websiteUrl.trim();
+        String text = partnerOutreachIntroBody(loc, name, site, sendDate, appBaseUrl);
+        String escaped = escapeHtml(text).replace("\n", "<br>\n");
+        StringBuilder imgs = new StringBuilder();
+        for (String url : PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl)) {
+            imgs.append("<p style=\"margin:12px 0 4px;\"><img src=\"")
+                    .append(escapeHtml(url))
+                    .append("\" alt=\"TarantulApp partner example\" style=\"max-width:100%;width:560px;height:auto;border:1px solid #e8e4dc;border-radius:8px;\" /></p>\n");
+        }
+        String caption = switch (loc) {
+            case "en" -> "Screenshots: Monarch Reptiles (founding partner) — same in-app experience for Official Partners.";
+            case "fr" -> "Captures : Monarch Reptiles (partenaire fondateur) — même expérience pour les partenaires officiels.";
+            default -> "Capturas: Monarch Reptiles (socio fundador) — la misma experiencia en app para Official Partners.";
+        };
+        return "<!DOCTYPE html><html><body style=\"font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;\">\n"
+                + "<p style=\"color:#5c5348;font-size:13px;margin-bottom:16px;\">"
+                + escapeHtml(caption)
+                + "</p>\n"
+                + imgs
+                + "<div style=\"margin-top:20px;\">"
+                + escaped
+                + "</div></body></html>";
+    }
+
+    private static String escapeHtml(String raw) {
+        if (raw == null) return "";
+        return raw.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    private static String monarchScreenshotBlockEs(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\nAsí se ve hoy en la app Monarch Reptiles, uno de nuestros founding partners — "
+                + "el mismo modelo que tendrías como Official Partner (tu marca, tu catálogo Woo, checkout en tu sitio):\n"
+                + "• Vitrina: " + store + "\n"
+                + "• Captura vitrina: " + urls.get(0) + "\n"
+                + "• Captura en marketplace: " + urls.get(1) + "\n\n";
+    }
+
+    private static String monarchScreenshotBlockEn(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\nHere’s how Monarch Reptiles — a founding partner — looks in the app today. "
+                + "You’d get the same setup as an Official Partner (your brand, synced Woo catalog, checkout on your site):\n"
+                + "• Storefront: " + store + "\n"
+                + "• Storefront capture: " + urls.get(0) + "\n"
+                + "• Marketplace capture: " + urls.get(1) + "\n\n";
+    }
+
+    private static String monarchScreenshotBlockFr(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\nVoici Monarch Reptiles (partenaire fondateur) dans l’app aujourd’hui — "
+                + "même modèle pour vous en partenaire officiel (votre marque, catalogue Woo synchronisé, paiement sur votre site) :\n"
+                + "• Vitrine : " + store + "\n"
+                + "• Capture vitrine : " + urls.get(0) + "\n"
+                + "• Capture marketplace : " + urls.get(1) + "\n\n";
+    }
+
+    private static String partnerOutreachIntroEs(String name, String site, String sendDate, String appBaseUrl) {
+        return "Hola equipo " + name + ",\n\n"
+                + "Fecha: " + sendDate + "\n\n"
+                + monarchScreenshotBlockEs(appBaseUrl)
+                + "Somos TarantulApp — marketplace y herramientas para keepers de tarántulas. "
+                + "Buscamos socios oficiales con tienda WooCommerce como la suya"
+                + (site.isBlank() ? "" : " (" + site + ")")
+                + " para reflejar su catálogo dentro de la app sin subir listings a mano.\n\n"
+                + "Qué significa en la práctica:\n"
+                + "• Vitrina pública en la app: tarantulapp.com/partner/su-marca\n"
+                + "• Sync automático desde su Woo — ustedes siguen actualizando solo su web\n"
+                + "• El keeper compra en su checkout (tráfico con UTM, sin comisión en este track)\n"
+                + "• Opcional: carrito multi-artículo hacia su Woo si su tema lo permite\n\n"
+                + "Ejemplo en vivo (founding partner): " + PARTNER_EXAMPLE_STOREFRONT + "\n\n"
+                + "Adjuntamos un one-pager (ES/EN/FR) con el programa. Si encaja, en ~15 minutos "
+                + "alineamos categorías, firmamos autorización corta y hacemos un test sync.\n\n"
+                + "Aplicar también: " + DEFAULT_APP_URL + "/partners\n\n"
+                + "¿Les interesa una llamada corta esta semana?\n\n"
+                + "— Equipo TarantulApp\n";
+    }
+
+    private static String partnerOutreachIntroEn(String name, String site, String sendDate, String appBaseUrl) {
+        return "Hi " + name + " team,\n\n"
+                + "Date: " + sendDate + "\n\n"
+                + monarchScreenshotBlockEn(appBaseUrl)
+                + "We’re TarantulApp — a marketplace and keeper tools platform for tarantula hobbyists. "
+                + "We’re inviting select WooCommerce shops"
+                + (site.isBlank() ? "" : " like yours (" + site + ")")
+                + " as Official Partners: your catalog mirrored in the app with no manual listing uploads.\n\n"
+                + "What that means:\n"
+                + "• Public in-app storefront: tarantulapp.com/partner/your-brand\n"
+                + "• Automatic sync from your Woo — you only maintain your website\n"
+                + "• Keepers checkout on your store (UTM-tagged traffic, no platform fee on this track)\n"
+                + "• Optional multi-item cart handoff to your Woo when supported\n\n"
+                + "Live reference (founding partner): " + PARTNER_EXAMPLE_STOREFRONT + "\n\n"
+                + "Attached: one-pager (EN/ES/FR). If it’s a fit, a ~15-minute call, short authorization, "
+                + "and a test sync is all we need to go live.\n\n"
+                + "Apply: " + DEFAULT_APP_URL + "/partners\n\n"
+                + "Open to a short call this week?\n\n"
+                + "— TarantulApp team\n";
+    }
+
+    private static String partnerOutreachIntroFr(String name, String site, String sendDate, String appBaseUrl) {
+        return "Bonjour équipe " + name + ",\n\n"
+                + "Date : " + sendDate + "\n\n"
+                + monarchScreenshotBlockFr(appBaseUrl)
+                + "Nous sommes TarantulApp — marketplace et outils pour les keepers de mygales. "
+                + "Nous invitons des boutiques WooCommerce"
+                + (site.isBlank() ? "" : " comme la vôtre (" + site + ")")
+                + " en partenaires officiels : catalogue miroir dans l’app, sans saisie manuelle.\n\n"
+                + "En pratique :\n"
+                + "• Vitrine : tarantulapp.com/partner/votre-marque\n"
+                + "• Sync automatique depuis votre Woo\n"
+                + "• Paiement sur votre site (UTM, pas de frais plateforme sur ce track)\n"
+                + "• Handoff panier multi-articles optionnel\n\n"
+                + "Référence en ligne : " + PARTNER_EXAMPLE_STOREFRONT + "\n\n"
+                + "One-pager joint (FR/EN/ES). Si cela vous convient : appel ~15 min, autorisation courte, test sync.\n\n"
+                + "Candidature : " + DEFAULT_APP_URL + "/partners\n\n"
+                + "Disponibles pour un court appel cette semaine ?\n\n"
+                + "— Équipe TarantulApp\n";
+    }
+
     /** Strategic partner outreach after catalog sync (no user account required). */
     public static String partnerCatalogLiveBody(String locale, String partnerName, long listingCount,
                                                 String storefrontUrl, String websiteUrl, String sendDate) {
@@ -1225,7 +1374,7 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveEs(String name, long count, String store, String site, String sendDate) {
         return "Hola equipo " + name + ",\n\n"
                 + "Fecha: " + sendDate + "\n\n"
-                + "Te escribimos porque ya estás en el programa de socios estratégicos de TarantulApp: "
+                + "Te escribimos porque ya estás en el programa Official Partner de TarantulApp: "
                 + "tu vitrina y tus artículos en el marketplace salen de tu tienda en línea (WooCommerce u otro feed), "
                 + "sin que tengas que crear cuentas, subir fotos ni duplicar inventario en nuestra app.\n\n"
                 + "En la práctica:\n"
@@ -1250,7 +1399,7 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveEn(String name, long count, String store, String site, String sendDate) {
         return "Hi " + name + " team,\n\n"
                 + "Date: " + sendDate + "\n\n"
-                + "You’re on TarantulApp’s strategic partner track: your in-app storefront and marketplace listings "
+                + "You’re on TarantulApp’s Official Partner program: your in-app storefront and marketplace listings "
                 + "mirror your existing online store (WooCommerce or another feed). You do not need to create accounts, "
                 + "upload photos, or maintain a second catalog in our app.\n\n"
                 + "In practice:\n"
@@ -1274,7 +1423,7 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveFr(String name, long count, String store, String site, String sendDate) {
         return "Bonjour équipe " + name + ",\n\n"
                 + "Date : " + sendDate + "\n\n"
-                + "Vous êtes sur le programme partenaires stratégiques TarantulApp : votre vitrine et vos annonces "
+                + "Vous êtes sur le programme Partenaire Officiel TarantulApp : votre vitrine et vos annonces "
                 + "reflètent votre boutique en ligne (WooCommerce ou autre flux). Aucun compte à créer, aucune photo "
                 + "à téléverser, aucun inventaire en double dans l’app.\n\n"
                 + "En pratique :\n"
