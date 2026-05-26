@@ -36,7 +36,7 @@ function mergePlanFields(raw) {
     profileCity: raw?.profileCity || '',
     qrPrintExports: Number(raw?.qrPrintExports || 0),
     profilePhoto: raw?.profilePhoto || '',
-    communityProfileVisibility: raw?.communityProfileVisibility || 'preview_only',
+    communityProfileVisibility: raw?.communityProfileVisibility || 'public_full',
     defaultTarantulaPublic: raw?.defaultTarantulaPublic === true,
     admin: raw?.admin === true,
     betaTester: raw?.betaTester === true || raw?.isBetaTester === true,

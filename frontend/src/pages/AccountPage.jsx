@@ -82,7 +82,7 @@ export default function AccountPage() {
     profileState: user?.profileState || '',
     profileCity: user?.profileCity || '',
     searchVisible: user?.searchVisible !== false,
-    collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
+    collectionPublic: (user?.communityProfileVisibility || 'public_full') === 'public_full',
   })
 
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
@@ -190,7 +190,7 @@ export default function AccountPage() {
       profileState: user?.profileState || '',
       profileCity: user?.profileCity || '',
       searchVisible: user?.searchVisible !== false,
-      collectionPublic: (user?.communityProfileVisibility || 'preview_only') === 'public_full',
+      collectionPublic: (user?.communityProfileVisibility || 'public_full') === 'public_full',
     })
   }, [user])
 
@@ -237,7 +237,7 @@ export default function AccountPage() {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
-    const wasCollectionPublic = (user?.communityProfileVisibility || 'preview_only') === 'public_full'
+    const wasCollectionPublic = (user?.communityProfileVisibility || 'public_full') === 'public_full'
     const willBeCollectionPublic = profileForm.collectionPublic === true
     if (
       wasCollectionPublic

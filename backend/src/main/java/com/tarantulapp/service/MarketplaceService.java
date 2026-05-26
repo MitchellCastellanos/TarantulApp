@@ -1383,7 +1383,7 @@ public class MarketplaceService {
 
     private String normalizeCommunityProfileVisibility(String raw) {
         if (raw == null || raw.isBlank()) {
-            return "preview_only";
+            return "public_full";
         }
         String v = raw.trim().toLowerCase();
         if (!v.equals("public_full") && !v.equals("preview_only") && !v.equals("private")) {

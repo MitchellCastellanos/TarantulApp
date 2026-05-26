@@ -46,7 +46,7 @@ public class PublicUserController {
         if (u.getPublicHandle() == null || u.getPublicHandle().isBlank()) {
             throw new NotFoundException("Handle no encontrado");
         }
-        String visibility = u.getCommunityProfileVisibility() == null ? "preview_only" : u.getCommunityProfileVisibility().trim().toLowerCase();
+        String visibility = u.getCommunityProfileVisibility() == null ? "public_full" : u.getCommunityProfileVisibility().trim().toLowerCase();
         long publicCollectionCount = tarantulaRepository.findTop24ByUserIdAndIsPublicTrueOrderByCreatedAtDesc(u.getId()).size();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", u.getId());

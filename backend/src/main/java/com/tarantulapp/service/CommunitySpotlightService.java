@@ -5,7 +5,9 @@ import com.tarantulapp.entity.Tarantula;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.repository.PhotoRepository;
 import com.tarantulapp.repository.TarantulaRepository;
+import com.tarantulapp.repository.TarantulaSpoodRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.util.SecurityHelper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,13 +30,19 @@ public class CommunitySpotlightService {
     private final TarantulaRepository tarantulaRepository;
     private final PhotoRepository photoRepository;
     private final UserRepository userRepository;
+    private final TarantulaSpoodRepository tarantulaSpoodRepository;
+    private final SecurityHelper securityHelper;
 
     public CommunitySpotlightService(TarantulaRepository tarantulaRepository,
                                      PhotoRepository photoRepository,
-                                     UserRepository userRepository) {
+                                     UserRepository userRepository,
+                                     TarantulaSpoodRepository tarantulaSpoodRepository,
+                                     SecurityHelper securityHelper) {
         this.tarantulaRepository = tarantulaRepository;
         this.photoRepository = photoRepository;
         this.userRepository = userRepository;
+        this.tarantulaSpoodRepository = tarantulaSpoodRepository;
+        this.securityHelper = securityHelper;
     }
 
     @Transactional(readOnly = true)
@@ -60,6 +70,12 @@ public class CommunitySpotlightService {
 
         List<UUID> tarantulaIds = rows.stream().map(Tarantula::getId).toList();
         Map<UUID, String> galleryFirstByTarantula = firstGalleryPhotoByTarantula(tarantulaIds);
+        Map<UUID, Long> spoodCounts = spoodCountByTarantula(tarantulaIds);
+
+        Optional<UUID> viewerId = securityHelper.tryGetCurrentUserId();
+        Set<UUID> spoodedByViewer = viewerId
+                .map(uid -> tarantulaSpoodRepository.findTarantulaIdsSpoodedByUser(tarantulaIds, uid))
+                .orElse(Set.of());
 
         List<UUID> userIds = rows.stream().map(Tarantula::getUserId).distinct().toList();
         Map<UUID, User> usersById = new HashMap<>();
@@ -72,6 +88,7 @@ public class CommunitySpotlightService {
                 continue;
             }
             User keeper = usersById.get(t.getUserId());
+            boolean viewerIsOwner = viewerId.map(v -> v.equals(t.getUserId())).orElse(false);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("tarantulaId", t.getId());
             row.put("shortId", t.getShortId() == null ? "" : t.getShortId());
@@ -81,6 +98,9 @@ public class CommunitySpotlightService {
                     ? "" : t.getSpecies().getScientificName());
             row.put("stage", t.getStage() == null ? "" : t.getStage());
             row.put("keeperUserId", t.getUserId());
+            row.put("spoodCount", spoodCounts.getOrDefault(t.getId(), 0L));
+            row.put("spoodedByViewer", spoodedByViewer.contains(t.getId()));
+            row.put("viewerIsOwner", viewerIsOwner);
             if (keeper != null) {
                 row.put("keeperHandle", keeper.getPublicHandle() == null ? "" : keeper.getPublicHandle());
                 row.put("keeperDisplayName", keeper.getDisplayName() == null || keeper.getDisplayName().isBlank()
@@ -94,6 +114,17 @@ public class CommunitySpotlightService {
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", items);
+        return out;
+    }
+
+    private Map<UUID, Long> spoodCountByTarantula(List<UUID> tarantulaIds) {
+        Map<UUID, Long> out = new HashMap<>();
+        if (tarantulaIds.isEmpty()) {
+            return out;
+        }
+        for (Object[] row : tarantulaSpoodRepository.countGroupedByTarantulaIds(tarantulaIds)) {
+            out.put((UUID) row[0], (Long) row[1]);
+        }
         return out;
     }
 
