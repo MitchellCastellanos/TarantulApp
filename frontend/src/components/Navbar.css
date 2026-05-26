@@ -312,3 +312,12 @@ i.ta-rail__icon.bi {
 i.ta-bottomnav__icon.bi {
   font-size: 1.3rem;
 }
+
+/* Minimal top bar for auth pages (login / password) — no rail, no offset */
+.ta-auth-topbar {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  background: var(--ta-bg, #0f0e0c);
+  border-bottom: 1px solid var(--ta-border, rgba(255, 255, 255, 0.12));
+}

@@ -68,6 +68,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const navNotifications = path.startsWith('/notifications')
   const navAdmin = path.startsWith('/admin')
   const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
+  const isAuthPage =
+    path === '/login' ||
+    path.startsWith('/forgot-password') ||
+    path.startsWith('/reset-password')
   const myPublicProfilePath = useMemo(() => {
     if (!user) return '/account'
     const h = String(user.publicHandle || '').trim()
@@ -95,9 +99,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   }, [path])
 
   useEffect(() => {
+    if (isAuthPage) return undefined
     document.body.classList.add('ta-app-chrome')
     return () => document.body.classList.remove('ta-app-chrome')
-  }, [])
+  }, [isAuthPage])
 
   useEffect(() => {
     if (!token) {
@@ -312,6 +317,38 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       )}
     </>
   )
+
+  if (isAuthPage) {
+    return (
+      <nav className="ta-auth-topbar">
+        <BrandNavbarLogo key={path} homeTo={logoHome} showIntro disableLink={lockPublicNav} />
+        <div className="ms-auto d-flex align-items-center gap-2">
+          <ThemeToggleButton compact />
+          <div className="d-flex gap-1 align-items-center">
+            {APP_LANGS.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                title={LOGIN_LANG_LABELS[l.code]}
+                aria-label={LOGIN_LANG_LABELS[l.code]}
+                onClick={() => i18n.changeLanguage(l.code)}
+                className="btn btn-sm px-1 py-0 border-0"
+                style={{
+                  background: 'transparent',
+                  color: appLangBase(i18n.language) === l.code ? 'var(--ta-gold)' : 'var(--ta-text-muted)',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {l.display}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   {
     const railItems = [
