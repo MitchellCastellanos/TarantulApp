@@ -533,8 +533,8 @@ public class EmailService {
         if (attachOnePager) {
             attachment = new EmailAttachment(
                     PartnerOutreachDocuments.onePagerAttachmentFilename(loc),
-                    PartnerOutreachDocuments.loadOnePagerMarkdown(loc),
-                    "text/markdown; charset=UTF-8");
+                    PartnerOutreachDocuments.loadOnePagerPdf(loc),
+                    PartnerOutreachDocuments.onePagerContentType());
         }
         try {
             doSend(toEmail, subject, body, html, attachment);

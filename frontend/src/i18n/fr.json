@@ -2550,7 +2550,7 @@
     "partnerOutreachEmailTemplate": "Modèle",
     "partnerOutreachTemplateIntro": "Intro — invitation Official Partner",
     "partnerOutreachTemplateCatalog": "Catalogue en ligne (après promotion)",
-    "partnerOutreachAttachOnePager": "Joindre le one-pager (.md)",
+    "partnerOutreachAttachOnePager": "Joindre le one-pager (PDF)",
     "partnerOutreachSendNow": "Envoyer le courriel",
     "partnerOutreachEmailSent": "Courriel envoyé à {{email}}.",
     "partnerOutreachEmailFailed": "Courriel non envoyé : {{detail}}",

@@ -2585,7 +2585,7 @@
     "partnerOutreachEmailTemplate": "Template",
     "partnerOutreachTemplateIntro": "Intro — Official Partner invite",
     "partnerOutreachTemplateCatalog": "Catalog live (after promote)",
-    "partnerOutreachAttachOnePager": "Attach one-pager (.md)",
+    "partnerOutreachAttachOnePager": "Attach one-pager (PDF)",
     "partnerOutreachSendNow": "Send email",
     "partnerOutreachEmailSent": "Email sent to {{email}}.",
     "partnerOutreachEmailFailed": "Email not sent: {{detail}}",

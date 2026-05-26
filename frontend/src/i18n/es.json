@@ -2566,7 +2566,7 @@
     "partnerOutreachEmailTemplate": "Plantilla",
     "partnerOutreachTemplateIntro": "Intro — invitación Official Partner",
     "partnerOutreachTemplateCatalog": "Catálogo en vivo (tras promover)",
-    "partnerOutreachAttachOnePager": "Adjuntar one-pager (.md)",
+    "partnerOutreachAttachOnePager": "Adjuntar one-pager (PDF)",
     "partnerOutreachSendNow": "Enviar correo",
     "partnerOutreachEmailSent": "Correo enviado a {{email}}.",
     "partnerOutreachEmailFailed": "No se envió el correo: {{detail}}",

@@ -42,13 +42,17 @@ Templates: `partner_outreach_intro` (cold invite), `partner_catalog_live` (after
 
 ## One-pagers (email attachment)
 
-Classpath (also in repo):
+**PDF attachments** (emailed when `attachOnePager: true`):
 
-- `backend/src/main/resources/outreach/official-partner-onepager-en.md`
-- `backend/src/main/resources/outreach/official-partner-onepager-es.md`
-- `backend/src/main/resources/outreach/official-partner-onepager-fr.md`
+| File on disk | Recipient sees |
+|--------------|----------------|
+| `backend/src/main/resources/outreach/official-partner-onepager-es.pdf` | `TarantulApp-Official-Partner-es.pdf` |
+| `backend/src/main/resources/outreach/official-partner-onepager-en.pdf` | `TarantulApp-Official-Partner-en.pdf` |
+| `backend/src/main/resources/outreach/official-partner-onepager-fr.pdf` | `TarantulApp-Official-Partner-fr.pdf` |
 
-Attached as `TarantulApp-Official-Partner-{locale}.md` when `attachOnePager: true`.
+**Markdown source** (edit copy / ChatGPT; not attached to email):
+
+- `official-partner-onepager-es.md`, `-en.md`, `-fr.md` in the same folder
 
 ## Monarch screenshots (intro email)
 

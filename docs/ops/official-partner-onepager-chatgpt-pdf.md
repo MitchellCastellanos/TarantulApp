@@ -2,11 +2,13 @@
 
 Use this doc to generate a **print-ready PDF** (Canva-style) from the same copy we attach in outreach emails.
 
-Source of truth in repo (markdown, also attached to emails):
+**Put finished PDFs here** (attached to outreach emails):
 
-- `backend/src/main/resources/outreach/official-partner-onepager-es.md`
-- `backend/src/main/resources/outreach/official-partner-onepager-en.md`
-- `backend/src/main/resources/outreach/official-partner-onepager-fr.md`
+- `backend/src/main/resources/outreach/official-partner-onepager-es.pdf`
+- `backend/src/main/resources/outreach/official-partner-onepager-en.pdf`
+- `backend/src/main/resources/outreach/official-partner-onepager-fr.pdf`
+
+**Markdown** in the same folder is for editing copy / ChatGPT only (`official-partner-onepager-{es,en,fr}.md`).
 
 Screenshots for the PDF (optional embed):
 
