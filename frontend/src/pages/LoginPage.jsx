@@ -3,13 +3,11 @@ import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import publicApi from '../services/publicApi'
-import communityService from '../services/communityService'
 import authService from '../services/authService'
 import BrandLogoMark from '../components/BrandLogoMark'
 import BrandName from '../components/BrandName'
 import PlayStoreEarlyAccessCallout from '../components/PlayStoreEarlyAccessCallout'
 import Navbar from '../components/Navbar'
-import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 import { inferBillingRegion } from '../utils/inferBillingRegion'
@@ -31,8 +29,6 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [communityPreview, setCommunityPreview] = useState([])
-  const [communityLoading, setCommunityLoading] = useState(true)
   const [theme, setTheme] = useState(() => getStoredTheme())
   const [showIntro, setShowIntro] = useState(false)
   const [loginAudience, setLoginAudience] = useState(() => {
@@ -98,21 +94,6 @@ export default function LoginPage() {
     }
   }, [inviteOnly])
 
-  useEffect(() => {
-    let cancelled = false
-    setCommunityLoading(true)
-    communityService.publicFeed(0, 6)
-      .then((data) => {
-        if (!cancelled) setCommunityPreview(Array.isArray(data?.content) ? data.content.slice(0, 4) : [])
-      })
-      .catch(() => {
-        if (!cancelled) setCommunityPreview([])
-      })
-      .finally(() => {
-        if (!cancelled) setCommunityLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [])
 
   useEffect(() => {
     const syncTheme = () => setTheme(getStoredTheme())
@@ -281,14 +262,10 @@ export default function LoginPage() {
         title: t('auth.loginPage.featureMarketplaceTitle'),
         bullets: [t('auth.loginPage.featureMarketplaceB1'), t('auth.loginPage.featureMarketplaceB2')],
       },
-      community: {
-        title: t('auth.loginPage.featureCommunityTitle'),
-        bullets: [t('auth.loginPage.featureCommunityB1'), t('auth.loginPage.featureCommunityB2')],
-      },
     }
     const order = loginAudience === 'seller'
-      ? ['marketplace', 'collection', 'discover', 'community']
-      : ['discover', 'collection', 'marketplace', 'community']
+      ? ['marketplace', 'collection', 'discover']
+      : ['discover', 'collection', 'marketplace']
     return order.map((k) => blocks[k])
   }, [t, loginAudience])
 
@@ -364,13 +341,11 @@ export default function LoginPage() {
                           <Link to="/marketplace" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaMarketplace')}</Link>
                           <Link to="/marketplace/sell" className="btn btn-sm btn-outline-light">{t('publicBetaHome.ctaSell')}</Link>
                           <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
-                          <Link to="/community" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaCommunity')}</Link>
                         </>
                       ) : (
                         <>
                           <Link to="/discover" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaDiscover')}</Link>
-                          <Link to="/marketplace" className="btn btn-sm btn-outline-light">{t('auth.loginPage.ctaMarketplace')}</Link>
-                          <Link to="/community" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaCommunity')}</Link>
+                          <Link to="/marketplace" className="btn btn-sm btn-dark">{t('auth.loginPage.ctaMarketplace')}</Link>
                         </>
                       )}
                       <Link to="/pro" className="btn btn-sm btn-outline-secondary">{t('publicBetaHome.ctaPro')}</Link>
@@ -596,7 +571,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-          {/* Feature bullets + community preview */}
+          {/* Feature bullets */}
           <section className="w-100">
             <div className="row g-3 mb-3">
               {loginFeatureBlocks.map((block) => (
@@ -615,63 +590,6 @@ export default function LoginPage() {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div
-              className="rounded-3 p-3 p-md-4"
-              style={{
-                border: '1px solid var(--ta-border)',
-                background: isLight ? 'rgba(255,249,238,0.92)' : 'rgba(20,17,13,0.85)',
-              }}
-            >
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <h3 className="h6 fw-bold mb-0" style={{ color: 'var(--ta-parchment)' }}>{t('auth.loginPage.previewTitle')}</h3>
-                <Link to="/community" className="btn btn-sm btn-outline-secondary">{t('social.seeAll')}</Link>
-              </div>
-              <p className="small text-muted mb-3">
-                {t('auth.loginPage.previewLead')}
-              </p>
-              <div className="row g-2">
-                {communityLoading ? (
-                  <div className="col-12">
-                    <div className="small text-muted">{t('auth.loginPage.loadingPosts')}</div>
-                  </div>
-                ) : communityPreview.length === 0 ? (
-                  <div className="col-12">
-                    <div className="small text-muted">{t('auth.loginPage.noPublicPosts')}</div>
-                  </div>
-                ) : (
-                  communityPreview.map((p) => (
-                    <div className="col-12 col-md-6" key={p.id}>
-                      <div
-                        className="rounded p-2 h-100"
-                        style={{
-                          border: '1px solid var(--ta-border)',
-                          background: isLight ? 'rgba(255,255,255,0.66)' : 'rgba(0,0,0,0.15)',
-                        }}
-                      >
-                        <div className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
-                          {p.authorHandle ? (
-                            <PublicKeeperHandle
-                              handle={p.authorHandle}
-                              displayName={p.authorDisplayName || t('auth.loginPage.keeperFallback')}
-                              profilePhoto={p.authorProfilePhoto || p.profilePhoto || null}
-                            />
-                          ) : (
-                            p.authorDisplayName || t('auth.loginPage.keeperFallback')
-                          )}
-                        </div>
-                        <p className="small mb-2" style={{ color: 'var(--ta-text-muted)' }}>
-                          {(p.body || '').slice(0, 140) || t('auth.loginPage.postExcerptEmpty')}
-                        </p>
-                        <div className="small text-muted">
-                          {t('auth.loginPage.postStats', { spoods: p.likeCount ?? 0, comments: p.commentsCount ?? 0 })}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </section>
           </div>

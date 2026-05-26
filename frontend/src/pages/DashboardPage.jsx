@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -17,6 +17,7 @@ import { imgUrl } from '../services/api'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import DashboardKeeperAchievementsPanel from '../components/DashboardKeeperAchievementsPanel'
 import CommunitySpotlightCarousel from '../components/CommunitySpotlightCarousel'
+import DashboardInviteCard from '../components/DashboardInviteCard'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import {
@@ -28,6 +29,8 @@ export default function DashboardPage() {
   const { t, i18n } = useTranslation()
   const { user, token } = useAuth()
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const wantsInvite = new URLSearchParams(location.search).get('invite') === '1'
   const { data: tarantulas = [], isLoading: loading } = useQuery({
     queryKey: tarantulaKeys.list(),
     queryFn: () => tarantulaService.getAll(),
@@ -231,6 +234,26 @@ export default function DashboardPage() {
           </div>
         </div>
         <CommunitySpotlightCarousel className="ta-dashboard-spotlight" />
+        <div className="row g-3 mb-3 ta-dashboard-tiles">
+          <div className="col-12 col-md-6">
+            <Link to="/sex-id" className="card border-0 shadow-sm h-100 ta-dashboard-tile text-decoration-none text-reset d-block">
+              <div className="card-body py-3">
+                <h3 className="h6 fw-bold mb-1">
+                  <span aria-hidden="true">⚥</span> {t('sexIdCase.dashboardTileTitle', 'Male or female?')}
+                </h3>
+                <p className="small text-muted mb-2">
+                  {t('sexIdCase.dashboardTileBody', 'Post a ventral or molt photo and let keepers help you sex your spider.')}
+                </p>
+                <span className="btn btn-sm btn-outline-secondary">
+                  {t('sexIdCase.dashboardTileCta', 'Open Sex ID')}
+                </span>
+              </div>
+            </Link>
+          </div>
+          <div className="col-12 col-md-6">
+            <DashboardInviteCard highlight={wantsInvite} />
+          </div>
+        </div>
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div>

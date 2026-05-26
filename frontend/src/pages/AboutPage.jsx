@@ -2,12 +2,10 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { usePageSeo } from '../hooks/usePageSeo'
-import { useAuth } from '../context/AuthContext'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
 
 export default function AboutPage() {
   const { t } = useTranslation()
-  const { token } = useAuth()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   usePageSeo({
     title: t('about.pageTitle'),
@@ -91,17 +89,6 @@ export default function AboutPage() {
               }}
             >
               {t('marketplace.nav')}
-            </Link>
-            <Link
-              to={token ? '/community' : '/login'}
-              className="btn btn-sm"
-              style={{
-                border: '1px solid var(--ta-gold)',
-                color: 'var(--ta-gold)',
-                background: 'transparent',
-              }}
-            >
-              {t('nav.community')}
             </Link>
             <Link
               to="/contact"

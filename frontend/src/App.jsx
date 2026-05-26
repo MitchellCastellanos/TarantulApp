@@ -58,8 +58,7 @@ const AdminMarketplacePage = lazy(() => import('./pages/admin/AdminMarketplacePa
 const AdminPartnerOutreachPage = lazy(() => import('./pages/admin/AdminPartnerOutreachPage'))
 const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const AdminSpeciesTradePage = lazy(() => import('./pages/admin/AdminSpeciesTradePage'))
-const SocialHubPage = lazy(() => import('./pages/SocialHubPage'))
-const CommunityPostThreadPage = lazy(() => import('./pages/CommunityPostThreadPage'))
+const SexIdPage = lazy(() => import('./pages/SexIdPage'))
 const SexIdCasePublicPage = lazy(() => import('./pages/SexIdCasePublicPage'))
 const PublicKeeperProfilePage = lazy(() => import('./pages/PublicKeeperProfilePage'))
 const HandleSetupPage = lazy(() => import('./pages/HandleSetupPage'))
@@ -199,6 +198,7 @@ function AppRoutes() {
       <Route path="/launch_registration" element={<LaunchRegistrationPage />} />
       <Route path="/beta/apply" element={<BetaApplyPage />} />
       <Route path="/u/:handle" element={<PublicKeeperProfilePage />} />
+      <Route path="/sex-id" element={<SexIdPage />} />
       <Route path="/sex-id/:caseId" element={<SexIdCasePublicPage />} />
       <Route path="/onboarding/handle" element={<PrivateRoute><HandleSetupPage /></PrivateRoute>} />
 
@@ -213,9 +213,10 @@ function AppRoutes() {
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
       <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
-      <Route path="/community" element={<SocialHubPage />} />
-      <Route path="/community/post/:postId" element={<CommunityPostThreadPage />} />
-      <Route path="/comunidad" element={<LegacyPathRedirect to="/community" />} />
+      {/* Community paused: redirect legacy routes to the dashboard. */}
+      <Route path="/community" element={<Navigate to="/" replace />} />
+      <Route path="/community/post/:postId" element={<Navigate to="/" replace />} />
+      <Route path="/comunidad" element={<Navigate to="/" replace />} />
       <Route path="/admin" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
         <Route index element={<AdminHomePage />} />
         <Route path="vendors" element={<AdminVendorsPage />} />
@@ -233,7 +234,6 @@ function AppRoutes() {
 
 function Footer() {
   const { t } = useTranslation()
-  const { token } = useAuth()
 
   return (
     <footer className="ta-app-footer text-center py-3 mt-5">
@@ -286,10 +286,6 @@ function Footer() {
           ·
         </span>{' '}
         <Link to="/about">{t('nav.about')}</Link>
-        <span className="ta-app-footer__dot" aria-hidden>
-          ·
-        </span>{' '}
-        <Link to={token ? '/community' : '/login'}>{t('nav.community')}</Link>
         <span className="ta-app-footer__dot" aria-hidden>
           ·
         </span>{' '}

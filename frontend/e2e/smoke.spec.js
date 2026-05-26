@@ -21,18 +21,19 @@ test.describe('Sprint 1 public routes', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 
-  test('Community route is public when logged out (no redirect to login)', async ({ page }) => {
-    // /comunidad is a legacy path that redirects to the canonical /community.
-    // The check that matters here is "not bounced to /login" — the public hub must render.
+  test('Legacy /comunidad redirects away from the paused community hub', async ({ page }) => {
+    // Community is paused: /comunidad and /community no longer render a hub —
+    // they redirect to the dashboard (and on to /login when logged out).
     await page.goto('/comunidad')
-    await expect(page).toHaveURL(/\/community/)
+    await expect(page).not.toHaveURL(/comunidad|community/)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 })
 
-test.describe('Phase F — community visibility (public)', () => {
-  test('community hub loads without auth redirect', async ({ page }) => {
+test.describe('Phase F — community paused', () => {
+  test('community route redirects away (hub paused)', async ({ page }) => {
     await page.goto('/community')
+    await expect(page).not.toHaveURL(/\/community/)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 })

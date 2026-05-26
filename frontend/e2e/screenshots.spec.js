@@ -41,10 +41,10 @@ test.describe('Marketing screenshots (mobile viewport)', () => {
     await page.screenshot({ path: out('marketplace.png'), fullPage: false })
   })
 
-  test('community', async ({ page }) => {
-    await page.goto('/community', { waitUntil: 'domcontentloaded' })
+  test('sex-id', async ({ page }) => {
+    await page.goto('/sex-id', { waitUntil: 'domcontentloaded' })
     await page.getByRole('heading', { level: 1 }).first().waitFor({ state: 'visible', timeout: 20_000 })
-    await page.screenshot({ path: out('community.png'), fullPage: false })
+    await page.screenshot({ path: out('sex-id.png'), fullPage: false })
   })
 
   test('login', async ({ page }) => {

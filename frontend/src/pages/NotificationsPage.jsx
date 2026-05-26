@@ -27,18 +27,17 @@ export function notificationTargetPath(n) {
   const rawData = n?.data
   const data =
     rawData && typeof rawData === 'object' && !Array.isArray(rawData) ? rawData : {}
-  const postId = data.postId != null ? String(data.postId) : ''
-  if (postId && (n.type === 'POST_COMMENT' || n.type === 'SPOOD_RECEIVED')) {
-    const base = `/community/post/${encodeURIComponent(postId)}`
-    return n.type === 'POST_COMMENT' ? `${base}?comments=1` : base
+  // Community is paused: post/spood notifications no longer have a destination.
+  if (n.type === 'POST_COMMENT' || n.type === 'SPOOD_RECEIVED') {
+    return '/'
   }
   let route = typeof data.route === 'string' ? data.route.trim() : ''
   if (!route && data.caseId != null) {
     route = `/sex-id/${encodeURIComponent(String(data.caseId))}`
   }
-  if (!route) return '/community'
-  if (route === '/comunidad') return '/community'
-  if (route.startsWith('/comunidad/')) return `/community${route.slice('/comunidad'.length)}`
+  if (!route) return '/'
+  if (route === '/comunidad' || route === '/community') return '/'
+  if (route.startsWith('/comunidad/') || route.startsWith('/community/')) return '/'
   return route
 }
 
