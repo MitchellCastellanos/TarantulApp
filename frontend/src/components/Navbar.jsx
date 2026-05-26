@@ -62,6 +62,7 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
     path.startsWith('/herramientas/qr') ||
     path.startsWith('/tarantulas/qr-print')
   const navMarketplace = path.startsWith('/marketplace')
+  const navSexId = path.startsWith('/sex-id')
   const navCollection = Boolean(token) && path === '/'
   const navInsights = Boolean(token) && path.startsWith('/insights')
   const navNotifications = path.startsWith('/notifications')
@@ -130,6 +131,12 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             label: t('marketplace.nav'),
             title: t('marketplace.title'),
             routeMatchers: ['/marketplace'],
+          },
+          {
+            to: '/sex-id',
+            label: t('nav.sexId', 'Sex ID'),
+            title: t('nav.sexIdTitle', 'Sex ID help — male or female?'),
+            routeMatchers: ['/sex-id'],
           },
         ],
       },
@@ -462,14 +469,16 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
           <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div>{planControl}</div>
             <div className="d-flex align-items-center gap-2">
-                <div className="position-relative">
-                  <Link onClick={closeMobileMenu} to="/notifications" className="btn btn-sm btn-outline-light">
-                    🔔 {t('nav.notifications')}
-                    {notifUnread > 0 ? ` (${notifUnread > 99 ? '99+' : notifUnread})` : ''}
-                  </Link>
-                </div>
+                {token && (
+                  <div className="position-relative">
+                    <Link onClick={closeMobileMenu} to="/notifications" className="btn btn-sm btn-outline-light">
+                      🔔 {t('nav.notifications')}
+                      {notifUnread > 0 ? ` (${notifUnread > 99 ? '99+' : notifUnread})` : ''}
+                    </Link>
+                  </div>
+                )}
               <ThemeToggleButton compact />
-              {token ? (
+              {token && (
                 <button
                   className="btn btn-sm btn-outline-light"
                   onClick={logout}
@@ -477,15 +486,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                 >
                   {t('nav.logout')}
                 </button>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={closeMobileMenu}
-                  className="btn btn-sm btn-outline-light"
-                  style={{ borderColor: 'var(--ta-border)', color: 'var(--ta-parchment)', fontSize: '0.8rem' }}
-                >
-                  {t('nav.login', 'Login')}
-                </Link>
               )}
             </div>
           </div>
@@ -516,6 +516,14 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('marketplace.title')}
           >
             {t('marketplace.nav')}
+          </NavDest>
+          <NavDest
+            lock={lockPublicNav}
+            to="/sex-id"
+            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navSexId ? 'ta-navbar-primary-link--active' : ''}`}
+            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('nav.sexIdTitle', 'Sex ID help — male or female?')}
+          >
+            {t('nav.sexId', 'Sex ID')}
           </NavDest>
           <NavDest
             lock={lockPublicNav}
