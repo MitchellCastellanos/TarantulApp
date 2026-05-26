@@ -84,6 +84,10 @@ const adminService = {
     api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
   setUserStorefrontVerified: (id, storefrontVerified) =>
     api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified }).then((r) => r.data),
+  setVerifiedBreeder: (id, verifiedBreeder) =>
+    api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  marketplaceSellers: (params = {}) =>
+    api.get('/admin/marketplace/sellers', { params }).then((r) => r.data),
   sendOfficialVendorPartnerCatalogEmail: (vendorId, payload) =>
     api.post(`/admin/official-vendors/${vendorId}/send-partner-catalog-email`, payload || {}).then((r) => r.data),
   sendOfficialVendorLeadPartnerCatalogEmail: (leadId, payload) =>

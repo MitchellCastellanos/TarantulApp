@@ -27,6 +27,7 @@ import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
+import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.service.ReferralService;
@@ -97,6 +98,7 @@ public class AdminController {
     private final ReferralService referralService;
     private final TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService;
     private final VendorVerificationService vendorVerificationService;
+    private final MarketplaceService marketplaceService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -137,7 +139,8 @@ public class AdminController {
                            TopVendorService topVendorService,
                            ReferralService referralService,
                            TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService,
-                           VendorVerificationService vendorVerificationService) {
+                           VendorVerificationService vendorVerificationService,
+                           MarketplaceService marketplaceService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -166,6 +169,7 @@ public class AdminController {
         this.referralService = referralService;
         this.tarantulaPublicDefaultAnnouncementService = tarantulaPublicDefaultAnnouncementService;
         this.vendorVerificationService = vendorVerificationService;
+        this.marketplaceService = marketplaceService;
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}
@@ -684,6 +688,69 @@ public class AdminController {
     }
 
     /** Admin: list active vendors + optional pending invites; includes marketplace + billing hints for ops. */
+    @GetMapping("/marketplace/sellers")
+    public ResponseEntity<Map<String, Object>> marketplaceSellers(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "80") int limit,
+            @RequestParam(defaultValue = "false") boolean vendorsOnly) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        int cap = Math.min(Math.max(limit, 1), 200);
+        String query = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+        List<User> users;
+        if (vendorsOnly) {
+            users = new ArrayList<>(userRepository.findVerifiedBreedersForAdmin(PageRequest.of(0, cap)));
+        } else {
+            List<UUID> sellerIds = marketplaceListingRepository.findDistinctSellerUserIds();
+            if (sellerIds.isEmpty()) {
+                users = List.of();
+            } else {
+                users = userRepository.findAllById(sellerIds);
+            }
+        }
+        if (!query.isEmpty()) {
+            users = users.stream()
+                    .filter(u -> matchesMarketplaceSellerQuery(u, query))
+                    .collect(Collectors.toList());
+        }
+        users = users.stream().limit(cap).collect(Collectors.toList());
+        List<UUID> ids = users.stream().map(User::getId).collect(Collectors.toList());
+        Map<UUID, Long> spiderCounts = loadTarantulaCountsForUsers(ids);
+        VendorRosterStats stats = loadVendorRosterStats(ids);
+        List<Map<String, Object>> sellers = users.stream()
+                .map(u -> mapMarketplaceSellerRow(u, spiderCounts, stats))
+                .collect(Collectors.toList());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("sellers", sellers);
+        body.put("limit", cap);
+        body.put("vendorsOnly", vendorsOnly);
+        return ResponseEntity.ok(body);
+    }
+
+    private static boolean matchesMarketplaceSellerQuery(User u, String queryNorm) {
+        if (u == null || queryNorm.isBlank()) {
+            return true;
+        }
+        String email = u.getEmail() == null ? "" : u.getEmail().toLowerCase(Locale.ROOT);
+        String name = u.getDisplayName() == null ? "" : u.getDisplayName().toLowerCase(Locale.ROOT);
+        String handle = u.getPublicHandle() == null ? "" : u.getPublicHandle().toLowerCase(Locale.ROOT);
+        String storefront = u.getStorefrontName() == null ? "" : u.getStorefrontName().toLowerCase(Locale.ROOT);
+        return email.contains(queryNorm)
+                || name.contains(queryNorm)
+                || handle.contains(queryNorm)
+                || storefront.contains(queryNorm);
+    }
+
+    private Map<String, Object> mapMarketplaceSellerRow(User u, Map<UUID, Long> spiderCounts, VendorRosterStats stats) {
+        Map<String, Object> out = mapVendorDirectoryUser(u, spiderCounts, stats);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> totals = (Map<String, Object>) out.getOrDefault("marketplaceListingTotals", Map.of());
+        out.put("activeListingsCount", totals.getOrDefault("active", 0L));
+        out.put("totalListingsCount", totals.getOrDefault("all", 0L));
+        out.put("storefrontName", u.getStorefrontName() == null ? "" : u.getStorefrontName());
+        out.put("sellerProgram", marketplaceService.resolveSellerProgram(u));
+        return out;
+    }
+
     @GetMapping("/vendor-users")
     public ResponseEntity<Map<String, Object>> vendorUsers(
             @RequestParam(defaultValue = "100") int limit,

@@ -202,7 +202,7 @@ public class MarketplaceService {
         out.put("badges", computeBadges(userId, flavor));
         out.put("badgesProgress", computeBadgeProgress(userId, flavor));
         out.put("reputation", computeReputation(userId));
-        out.put("sellerProgram", resolveSellerProgram(profile));
+        out.put("sellerProgram", resolveSellerProgramInternal(profile));
         return out;
     }
 
@@ -225,7 +225,7 @@ public class MarketplaceService {
             throw new IllegalArgumentException("Titulo requerido");
         }
         User seller = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-        Map<String, Object> sellerProgram = resolveSellerProgram(seller);
+        Map<String, Object> sellerProgram = resolveSellerProgramInternal(seller);
         String tier = String.valueOf(sellerProgram.get("tier"));
         String category = MarketplaceListingCategories.normalizeOrDefault(listingCategory);
         if ("community".equals(tier) && !MarketplaceListingCategories.isCommunityPeerCategory(category)) {
@@ -1188,7 +1188,16 @@ public class MarketplaceService {
         return out;
     }
 
-    private Map<String, Object> resolveSellerProgram(User seller) {
+    /** Admin marketplace panel: seller tier limits and flags (community / pro / vendor). */
+    public Map<String, Object> resolveSellerProgram(User seller) {
+        return resolveSellerProgramInternal(seller);
+    }
+
+    public boolean isEligibleForPartnerCatalogSync(PartnerProgramTier tier) {
+        return tier != null && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
+    }
+
+    private Map<String, Object> resolveSellerProgramInternal(User seller) {
         String tier = sellerProgramTierKey(seller);
         int activeListingLimit;
         boolean canRequestBoost;
