@@ -374,6 +374,8 @@ public class AdminController {
 
     record WooProbeRequest(String websiteUrl) {}
 
+    record PartnerReadinessRequest(String websiteUrl, String feedUrl) {}
+
     @PostMapping("/official-vendor-leads/probe-woocommerce")
     public ResponseEntity<Map<String, Object>> probeWooCommerceForLead(
             @RequestBody WooProbeRequest req) {
@@ -397,11 +399,12 @@ public class AdminController {
     }
 
     @PostMapping("/official-vendor-leads/readiness-report")
-    public ResponseEntity<Map<String, Object>> partnerReadinessReport(@RequestBody WooProbeRequest req) {
+    public ResponseEntity<Map<String, Object>> partnerReadinessReport(@RequestBody PartnerReadinessRequest req) {
         adminAccessService.assertCurrentUserIsAdmin();
         try {
             return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReport(
-                    req == null ? null : req.websiteUrl()));
+                    req == null ? null : req.websiteUrl(),
+                    req == null ? null : req.feedUrl()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

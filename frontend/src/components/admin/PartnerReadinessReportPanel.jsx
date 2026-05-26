@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 const STORE_TYPE_LABEL = {
   woocommerce: 'WooCommerce',
   shopify: 'Shopify',
+  lightspeed: 'Lightspeed eCom',
   wordpress: 'WordPress',
+  bigcommerce: 'BigCommerce',
   unknown: '—',
 }
 
@@ -13,18 +15,23 @@ export default function PartnerReadinessReportPanel({ report }) {
 
   const products = report.products || {}
   const storeCategories = Array.isArray(report.storeCategories) ? report.storeCategories : []
-  const appCounts = report.appCategoryCounts || {}
   const sampleNames = Array.isArray(report.sampleProductNames) ? report.sampleProductNames : []
   const checklistNotes = report.checklistNotes || {}
+  const syncSupport = report.syncSupport || {}
   const storeType = report.storeType || 'unknown'
+  const fromSitemap = products.dataSource === 'sitemap'
 
   const countLabel =
-    products.countTotalEstimate != null && products.countTotalEstimate > (products.countInSample ?? 0)
-      ? t('admin.partnerPreviewProductCountWithTotal', {
-          sample: products.countInSample ?? 0,
-          total: products.countTotalEstimate,
-        })
-      : t('admin.partnerPreviewProductCount', { count: products.countInSample ?? 0 })
+    products.countTotalEstimate != null && products.countTotalEstimate > 0
+      ? fromSitemap
+        ? t('admin.partnerPreviewProductCountSitemap', { total: products.countTotalEstimate })
+        : products.countInSample != null
+          ? t('admin.partnerPreviewProductCountWithTotal', {
+              sample: products.countInSample,
+              total: products.countTotalEstimate,
+            })
+          : t('admin.partnerPreviewProductCount', { count: products.countTotalEstimate })
+      : t('admin.partnerPreviewNoProducts')
 
   return (
     <div className="card border-success mb-3">
@@ -32,25 +39,36 @@ export default function PartnerReadinessReportPanel({ report }) {
         <strong className="small">{t('admin.partnerPreviewReportTitle')}</strong>
       </div>
       <div className="card-body small">
-        {report.summaryLine && <p className="mb-2 fw-semibold">{report.summaryLine}</p>}
+        {syncSupport.headline && (
+          <div
+            className={`alert py-2 mb-2 ${
+              syncSupport.autosyncToday ? 'alert-success' : 'alert-warning'
+            }`}
+            role="status"
+          >
+            <div className="fw-semibold">{syncSupport.headline}</div>
+            {syncSupport.detail && <div className="mb-0 mt-1">{syncSupport.detail}</div>}
+          </div>
+        )}
+
+        {report.summaryLine && <p className="mb-2 text-muted">{report.summaryLine}</p>}
 
         <dl className="row mb-2 g-1">
           <dt className="col-sm-4 mb-0 text-muted">{t('admin.partnerPreviewStoreType')}</dt>
           <dd className="col-sm-8 mb-0">
             {report.storeTypeLabel || STORE_TYPE_LABEL[storeType] || storeType}
-            {report.autosyncSupportedToday && (
-              <span className="badge bg-success ms-1">{t('admin.partnerPreviewAutosyncYes')}</span>
-            )}
-            {storeType === 'shopify' && (
-              <span className="badge bg-secondary ms-1">{t('admin.partnerPreviewAutosyncNo')}</span>
+            {report.recommendedFeedType && (
+              <span className="text-muted ms-1">
+                · {t('admin.partnerPreviewRecommendedFeed', { feed: report.recommendedFeedType })}
+              </span>
             )}
           </dd>
 
           <dt className="col-sm-4 mb-0 text-muted">{t('admin.partnerPreviewProducts')}</dt>
           <dd className="col-sm-8 mb-0">
             {products.found ? countLabel : t('admin.partnerPreviewNoProducts')}
-            {products.fetchDetail && products.fetchDetail !== 'OK' && (
-              <span className="text-muted"> ({products.fetchDetail})</span>
+            {products.fetchDetail && (
+              <div className="text-muted mt-1">{products.fetchDetail}</div>
             )}
           </dd>
         </dl>
@@ -64,21 +82,9 @@ export default function PartnerReadinessReportPanel({ report }) {
                   <code>{cat.slug}</code>
                   {cat.name && cat.name !== cat.slug ? ` (${cat.name})` : ''}
                   {' — '}
-                  {t('admin.partnerPreviewCategoryProductCount', { count: cat.productCount ?? 0 })}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {Object.keys(appCounts).length > 0 && (
-          <div className="mb-2">
-            <div className="fw-semibold mb-1">{t('admin.partnerPreviewAppCategories')}</div>
-            <p className="text-muted mb-1">{t('admin.partnerPreviewAppCategoriesHint')}</p>
-            <ul className="mb-0 ps-3">
-              {Object.entries(appCounts).map(([cat, count]) => (
-                <li key={cat}>
-                  {cat}: {count}
+                  {cat.productCount != null
+                    ? t('admin.partnerPreviewCategoryProductCount', { count: cat.productCount })
+                    : t('admin.partnerPreviewCategoryUrlCount', { count: cat.urlCount ?? 0 })}
                 </li>
               ))}
             </ul>

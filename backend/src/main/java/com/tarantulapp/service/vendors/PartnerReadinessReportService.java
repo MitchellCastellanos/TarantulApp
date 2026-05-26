@@ -2,6 +2,7 @@ package com.tarantulapp.service.vendors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tarantulapp.service.vendors.capabilities.PartnerFeedReadinessEvaluator;
 import com.tarantulapp.service.vendors.woocommerce.GenericWooCommerceCategoryMapper;
 import org.springframework.stereotype.Service;
 
@@ -28,13 +29,17 @@ public class PartnerReadinessReportService {
     private static final int SAMPLE_SIZE = 50;
     private static final int SAMPLE_NAMES = 10;
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
-    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final PartnerFeedReadinessEvaluator feedReadinessEvaluator;
 
-    public PartnerReadinessReportService(ObjectMapper objectMapper) {
+    public PartnerReadinessReportService(
+            ObjectMapper objectMapper,
+            PartnerFeedReadinessEvaluator feedReadinessEvaluator) {
         this.objectMapper = objectMapper;
+        this.feedReadinessEvaluator = feedReadinessEvaluator;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .followRedirects(HttpClient.Redirect.NORMAL)
@@ -42,23 +47,41 @@ public class PartnerReadinessReportService {
     }
 
     public Map<String, Object> analyze(String websiteUrl) {
-        String base = trimTrailingSlash(websiteUrl);
-        if (base == null || base.isBlank()) {
+        return analyze(websiteUrl, null, null);
+    }
+
+    public Map<String, Object> analyze(String websiteUrl, String optionalFeedUrl, Map<String, Object> vendorFeedConfig) {
+        String storeOrigin = resolveStoreOrigin(websiteUrl);
+        if (storeOrigin == null || storeOrigin.isBlank()) {
             throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
         }
 
-        Map<String, Object> wooProbe = probeJsonGet(base + "/wp-json/wc/store/v1/products?per_page=1", "\"id\"");
-        Map<String, Object> shopifyProbe = probeJsonGet(base + "/products.json?limit=1", "\"id\"");
-        Map<String, Object> wpProbe = probeJsonGet(base + "/wp-json/", "\"name\"");
+        Map<String, Object> wooProbe = probeJsonGet(storeOrigin + "/wp-json/wc/store/v1/products?per_page=1", "\"id\"");
+        Map<String, Object> shopifyProbe = probeJsonGet(storeOrigin + "/products.json?limit=1", "\"id\"");
+        Map<String, Object> wpProbe = probeJsonGet(storeOrigin + "/wp-json/", "\"name\"");
 
-        String storeType = detectStoreType(wooProbe, shopifyProbe, wpProbe);
+        String homepageHtml = fetchHtml(storeOrigin + "/");
+        String htmlPlatform = StoreHtmlPlatformProbe.detect(homepageHtml);
+        StoreSitemapCatalogProbe.SitemapCatalogSnapshot sitemap = fetchAndParseSitemap(storeOrigin);
+
+        String storeType = detectStoreType(wooProbe, shopifyProbe, wpProbe, htmlPlatform, sitemap);
+        boolean wooApiOk = Boolean.TRUE.equals(wooProbe.get("ok"));
+        Map<String, Object> feedReadiness = feedReadinessEvaluator.evaluate(
+                storeType, wooApiOk, optionalFeedUrl, vendorFeedConfig);
+        boolean autosyncToday = Boolean.TRUE.equals(feedReadiness.get("autosyncSupportedToday"));
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("websiteUrl", base);
+        out.put("websiteUrl", websiteUrl.trim());
+        out.put("storeOrigin", storeOrigin);
         out.put("previewedAt", Instant.now().toString());
         out.put("storeType", storeType);
         out.put("storeTypeLabel", storeTypeLabel(storeType));
-        out.put("autosyncSupportedToday", "woocommerce".equals(storeType));
+        out.put("autosyncSupportedToday", autosyncToday);
+        out.put("recommendedFeedType", feedReadiness.get("recommendedFeedType"));
+        out.put("activeFeedType", feedReadiness.get("activeFeedType"));
+        out.put("missingRequirements", feedReadiness.get("missingRequirements"));
+        out.put("syncSupport", feedReadiness.get("syncSupport"));
+        out.put("csvFeedProbe", feedReadiness.get("csvFeedProbe"));
         out.put("api", Map.of(
                 "woocommerceStoreApi", wooProbe,
                 "shopifyProductsJson", shopifyProbe,
@@ -70,14 +93,14 @@ public class PartnerReadinessReportService {
         String fetchDetail = "";
         String dataSource = "none";
 
-        if ("woocommerce".equals(storeType)) {
-            FetchResult fetch = fetchWooProducts(base, SAMPLE_SIZE);
+        if ("woocommerce".equals(storeType) && wooApiOk) {
+            FetchResult fetch = fetchWooProducts(storeOrigin, SAMPLE_SIZE);
             products = fetch.products();
             totalEstimate = fetch.totalEstimate();
             fetchDetail = fetch.detail();
             dataSource = "woocommerce_store_api";
-        } else if ("shopify".equals(storeType)) {
-            FetchResult fetch = fetchShopifyProducts(base, SAMPLE_SIZE);
+        } else if ("shopify".equals(storeType) && Boolean.TRUE.equals(shopifyProbe.get("ok"))) {
+            FetchResult fetch = fetchShopifyProducts(storeOrigin, SAMPLE_SIZE);
             products = fetch.products();
             totalEstimate = fetch.totalEstimate();
             fetchDetail = fetch.detail();
@@ -85,14 +108,36 @@ public class PartnerReadinessReportService {
         }
 
         Map<String, Object> productsBlock = new LinkedHashMap<>();
-        productsBlock.put("found", !products.isEmpty());
-        productsBlock.put("countInSample", products.size());
-        productsBlock.put("countTotalEstimate", totalEstimate);
-        productsBlock.put("dataSource", dataSource);
-        productsBlock.put("fetchDetail", fetchDetail);
-        out.put("products", productsBlock);
+        List<Map<String, Object>> storeCategories;
 
-        List<Map<String, Object>> storeCategories = summarizeStoreCategories(products);
+        if (!products.isEmpty()) {
+            productsBlock.put("found", true);
+            productsBlock.put("countInSample", products.size());
+            productsBlock.put("countTotalEstimate", totalEstimate);
+            productsBlock.put("dataSource", dataSource);
+            productsBlock.put("fetchDetail", fetchDetail);
+            storeCategories = summarizeStoreCategories(products);
+            out.put("sampleProductNames", sampleProductNames(products, SAMPLE_NAMES));
+        } else if (sitemap.found()) {
+            productsBlock.put("found", true);
+            productsBlock.put("countInSample", null);
+            productsBlock.put("countTotalEstimate", sitemap.productCountEstimate());
+            productsBlock.put("dataSource", "sitemap");
+            productsBlock.put("fetchDetail", "Catálogo estimado desde sitemap.xml (sin API de productos pública)");
+            productsBlock.put("sitemapUrlCount", sitemap.totalUrlCount());
+            storeCategories = sitemap.storeCategories();
+            out.put("sampleProductNames", sitemap.sampleProductNames());
+            mergeCsvProbeIntoProducts(productsBlock, feedReadiness);
+        } else {
+            productsBlock.put("found", false);
+            productsBlock.put("countInSample", 0);
+            productsBlock.put("countTotalEstimate", null);
+            productsBlock.put("dataSource", dataSource);
+            productsBlock.put("fetchDetail", fetchDetail.isBlank() ? "Sin API ni sitemap legible" : fetchDetail);
+            storeCategories = List.of();
+            out.put("sampleProductNames", List.of());
+        }
+        out.put("products", productsBlock);
         out.put("storeCategories", storeCategories);
 
         Map<String, Integer> appCategoryCounts = summarizeAppCategoryCounts(products);
@@ -100,13 +145,72 @@ public class PartnerReadinessReportService {
             out.put("appCategoryCounts", appCategoryCounts);
         }
 
-        out.put("sampleProductNames", sampleProductNames(products, SAMPLE_NAMES));
-
-        out.put("checklistNotes", buildChecklistNotes(storeType, wooProbe, productsBlock, storeCategories));
-
-        out.put("summaryLine", buildSummaryLine(storeType, productsBlock, storeCategories, totalEstimate));
+        out.put("checklistNotes", buildChecklistNotes(storeType, autosyncToday, wooProbe, productsBlock, storeCategories));
+        out.put("summaryLine", buildSummaryLine(storeType, autosyncToday, productsBlock, storeCategories));
 
         return out;
+    }
+
+    private static String resolveStoreOrigin(String websiteUrl) {
+        String trimmed = trimTrailingSlash(websiteUrl);
+        if (trimmed == null || trimmed.isBlank()) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(trimmed);
+            if (uri.getScheme() == null || uri.getHost() == null) {
+                uri = URI.create("https://" + trimmed);
+            }
+            String scheme = uri.getScheme() == null ? "https" : uri.getScheme();
+            String host = uri.getHost();
+            int port = uri.getPort();
+            if (port > 0 && port != 80 && port != 443) {
+                return scheme + "://" + host + ":" + port;
+            }
+            return scheme + "://" + host;
+        } catch (Exception ex) {
+            return trimmed;
+        }
+    }
+
+    private StoreSitemapCatalogProbe.SitemapCatalogSnapshot fetchAndParseSitemap(String storeOrigin) {
+        String xml = fetchHtml(storeOrigin + "/sitemap.xml");
+        if (xml == null || !xml.contains("<loc>")) {
+            return StoreSitemapCatalogProbe.SitemapCatalogSnapshot.empty("sitemap.xml no disponible");
+        }
+        return StoreSitemapCatalogProbe.parse(xml, storeOrigin);
+    }
+
+    private String fetchHtml(String url) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Accept", "text/html,application/xml,text/xml,*/*")
+                    .header("User-Agent", "TarantulApp-PartnerPreview/1.0")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return response.body();
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return "";
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void mergeCsvProbeIntoProducts(Map<String, Object> productsBlock, Map<String, Object> feedReadiness) {
+        Object raw = feedReadiness.get("csvFeedProbe");
+        if (!(raw instanceof Map<?, ?> probe) || !Boolean.TRUE.equals(probe.get("ok"))) {
+            return;
+        }
+        Object rowCount = probe.get("rowCount");
+        if (rowCount instanceof Number n && n.intValue() > 0) {
+            productsBlock.put("countTotalEstimate", n.intValue());
+            productsBlock.put("dataSource", "csv_feed");
+            productsBlock.put("fetchDetail", "CSV/feed URL legible — listo para feedType=csv");
+        }
     }
 
     private static List<Map<String, Object>> summarizeStoreCategories(List<JsonNode> products) {
@@ -125,6 +229,10 @@ public class PartnerReadinessReportService {
                 agg.productCount++;
             }
         }
+        return toCategoryRows(bySlug);
+    }
+
+    private static List<Map<String, Object>> toCategoryRows(Map<String, CategoryAgg> bySlug) {
         return bySlug.values().stream()
                 .sorted(Comparator.comparingInt((CategoryAgg a) -> a.productCount).reversed())
                 .map(a -> {
@@ -165,27 +273,31 @@ public class PartnerReadinessReportService {
     }
 
     private static Map<String, String> buildChecklistNotes(String storeType,
-                                                         Map<String, Object> wooProbe,
-                                                         Map<String, Object> products,
-                                                         List<Map<String, Object>> storeCategories) {
+                                                           boolean autosyncToday,
+                                                           Map<String, Object> wooProbe,
+                                                           Map<String, Object> products,
+                                                           List<Map<String, Object>> storeCategories) {
         Map<String, String> notes = new LinkedHashMap<>();
-        boolean wooApi = Boolean.TRUE.equals(wooProbe.get("ok"));
-        notes.put("wooCommerce", wooApi
-                ? "Woo Store API pública responde — encaja con checklist autosync."
-                : ("woocommerce".equals(storeType) ? "Woo detectado pero API no legible en preview." : "No Woo Store API en esta URL."));
-        int sample = products.get("countInSample") instanceof Number n ? n.intValue() : 0;
-        notes.put("catalogRelevant", sample > 0
-                ? sample + " productos en muestra — revisa categorías abajo (tú marcas si encaja con tarántulas / feeders / equipo)."
-                : "Sin productos leídos vía API pública.");
-        notes.put("shippingFit", "No detectable desde URL — confirmar en llamada / web.");
-        notes.put("syncPath", switch (storeType) {
-            case "woocommerce" -> "Autosync WooCommerce soportado hoy (feedType=woocommerce + feed_config).";
-            case "shopify" -> "Shopify visible; autosync Woo no aplica — otro camino o manual.";
-            case "wordpress" -> "WordPress sin catálogo Woo en preview — investigar plugin/tienda.";
-            default -> "Plataforma no clara — revisar manualmente antes del pitch.";
-        });
+        notes.put("wooCommerce", autosyncToday
+                ? "Woo Store API pública — autosync posible hoy."
+                : ("lightspeed".equals(storeType)
+                ? "Lightspeed (no Woo Store API). No marcar autosync en pitch."
+                : "Woo Store API no responde en esta URL."));
+        Object estimate = products.get("countTotalEstimate");
+        boolean found = Boolean.TRUE.equals(products.get("found"));
+        String source = String.valueOf(products.getOrDefault("dataSource", ""));
+        notes.put("catalogRelevant", found && estimate != null
+                ? "Catálogo estimado: " + estimate + ("sitemap".equals(source) ? " (vía sitemap)" : " (API)")
+                + " — tú validas nicho tarántulas / feeders / equipo."
+                : (found ? "Catálogo parcial en preview — revisar web." : "Sin catálogo legible en preview."));
+        notes.put("shippingFit", "No detectable desde URL — confirmar en llamada.");
+        notes.put("syncPath", autosyncToday
+                ? "Autosync según feed configurado (Woo o CSV)."
+                : ("lightspeed".equals(storeType)
+                ? "Recomendado: feedType=csv + feedUrl al export del socio."
+                : "Definir feedType y credenciales según plataforma."));
         if (!storeCategories.isEmpty()) {
-            List<String> top = storeCategories.stream().limit(6)
+            List<String> top = storeCategories.stream().limit(8)
                     .map(c -> String.valueOf(c.get("slug")))
                     .toList();
             notes.put("categoriesSeen", String.join(", ", top));
@@ -194,37 +306,68 @@ public class PartnerReadinessReportService {
     }
 
     private static String buildSummaryLine(String storeType,
+                                           boolean autosyncToday,
                                            Map<String, Object> products,
-                                           List<Map<String, Object>> storeCategories,
-                                           Integer totalEstimate) {
-        int sample = products.get("countInSample") instanceof Number n ? n.intValue() : 0;
-        String countPart = totalEstimate != null && totalEstimate > sample
-                ? sample + " en muestra / ~" + totalEstimate + " en tienda"
-                : String.valueOf(sample) + " en muestra";
+                                           List<Map<String, Object>> storeCategories) {
+        Integer total = products.get("countTotalEstimate") instanceof Number n ? n.intValue() : null;
+        Object sample = products.get("countInSample");
+        String countPart;
+        if (total != null && total > 0) {
+            countPart = sample instanceof Number s && s.intValue() > 0
+                    ? s.intValue() + " en muestra / ~" + total + " estimados"
+                    : "~" + total + " productos (estimado)";
+        } else {
+            countPart = "sin conteo de productos";
+        }
+        String syncPart = autosyncToday ? "autosync Woo sí" : "autosync Woo no";
         String cats = storeCategories.isEmpty()
-                ? "sin categorías en muestra"
-                : storeCategories.size() + " categorías Woo (" + storeCategories.stream().limit(4)
-                        .map(c -> String.valueOf(c.get("slug"))).reduce((a, b) -> a + ", " + b).orElse("") + ")";
-        return storeTypeLabel(storeType) + " · " + countPart + " · " + cats;
+                ? "sin categorías listadas"
+                : storeCategories.size() + " categorías/nav";
+        return storeTypeLabel(storeType) + " · " + countPart + " · " + syncPart + " · " + cats;
     }
 
     private static String storeTypeLabel(String storeType) {
         return switch (storeType) {
             case "woocommerce" -> "WooCommerce";
             case "shopify" -> "Shopify";
+            case "lightspeed" -> "Lightspeed eCom";
             case "wordpress" -> "WordPress";
+            case "bigcommerce" -> "BigCommerce";
+            case "squarespace" -> "Squarespace";
+            case "wix" -> "Wix";
+            case "magento" -> "Magento";
             default -> "Desconocida";
         };
     }
 
     private static String detectStoreType(Map<String, Object> wooProbe,
                                           Map<String, Object> shopifyProbe,
-                                          Map<String, Object> wpProbe) {
+                                          Map<String, Object> wpProbe,
+                                          String htmlPlatform,
+                                          StoreSitemapCatalogProbe.SitemapCatalogSnapshot sitemap) {
         if (Boolean.TRUE.equals(wooProbe.get("ok"))) {
             return "woocommerce";
         }
         if (Boolean.TRUE.equals(shopifyProbe.get("ok"))) {
             return "shopify";
+        }
+        if ("woocommerce".equals(htmlPlatform)) {
+            return "woocommerce";
+        }
+        if ("shopify".equals(htmlPlatform)) {
+            return "shopify";
+        }
+        if ("lightspeed".equals(htmlPlatform)) {
+            return "lightspeed";
+        }
+        if (sitemap.found() && sitemap.productCountEstimate() > 0) {
+            // Heuristic: Mini Beasts style URLs → Lightspeed
+            if (sitemap.sampleProductNames().isEmpty() || htmlPlatform == null) {
+                return "lightspeed";
+            }
+        }
+        if (htmlPlatform != null && !htmlPlatform.isBlank()) {
+            return htmlPlatform;
         }
         if (Boolean.TRUE.equals(wpProbe.get("ok"))) {
             return "wordpress";

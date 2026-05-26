@@ -219,24 +219,20 @@ public class OfficialVendorService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> adminPartnerReadinessReport(String websiteUrl) {
-        return partnerReadinessReportService.analyze(websiteUrl);
+    public Map<String, Object> adminPartnerReadinessReport(String websiteUrl, String feedUrl) {
+        return partnerReadinessReportService.analyze(websiteUrl, feedUrl, null);
     }
 
     @Transactional
     public Map<String, Object> adminPartnerReadinessReportForLead(UUID leadId) {
         OfficialVendorLead lead = officialVendorLeadRepository.findById(leadId)
                 .orElseThrow(() -> new NotFoundException("Lead no encontrado"));
-        Map<String, Object> report = partnerReadinessReportService.analyze(lead.getWebsiteUrl());
+        Map<String, Object> report = partnerReadinessReportService.analyze(lead.getWebsiteUrl(), null, null);
         Map<String, Object> qual = lead.getQualification() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(lead.getQualification());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> api = (Map<String, Object>) report.get("api");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> wooApi = api == null ? null : (Map<String, Object>) api.get("woocommerceStoreApi");
-        boolean wooApiOk = wooApi != null && Boolean.TRUE.equals(wooApi.get("ok"));
-        qual.put("wooCommerce", wooApiOk);
+        boolean autosyncToday = Boolean.TRUE.equals(report.get("autosyncSupportedToday"));
+        qual.put("wooCommerce", autosyncToday);
         lead.setQualification(qual);
-        lead.setWooProbeStatus(wooApiOk ? "reachable" : String.valueOf(report.getOrDefault("storeType", "unknown")));
+        lead.setWooProbeStatus(autosyncToday ? "reachable" : String.valueOf(report.getOrDefault("storeType", "unknown")));
         String summary = String.valueOf(report.getOrDefault("summaryLine", ""));
         lead.setWooProbeDetail(summary.substring(0, Math.min(500, summary.length())));
         officialVendorLeadRepository.save(lead);
@@ -758,7 +754,7 @@ public class OfficialVendorService {
         if (raw == null) return null;
         String t = raw.trim().toLowerCase(Locale.ROOT);
         if (t.isBlank()) return null;
-        if (!List.of("woocommerce", "static", "mock", "shopify", "html_scraper").contains(t)) {
+        if (!List.of("woocommerce", "static", "mock", "shopify", "html_scraper", "csv", "lightspeed").contains(t)) {
             throw new IllegalArgumentException("INVALID_FEED_TYPE");
         }
         return t;

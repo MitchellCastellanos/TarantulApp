@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
 
-const DEFAULT_FEED_JSON = `{
+const DEFAULT_WOO_FEED_JSON = `{
   "allowedCategories": ["tarantulas", "terrariums", "substrates", "live_food", "supplies"],
   "cartHandoffMode": "woocommerce"
+}`
+
+const DEFAULT_CSV_FEED_JSON = `{
+  "feedUrl": "",
+  "csvDelimiter": ",",
+  "allowedCategories": ["tarantulas", "terrariums", "substrates", "live_food", "supplies"],
+  "categoryMapping": {}
 }`
 
 export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave }) {
@@ -14,7 +21,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [feedBaseUrl, setFeedBaseUrl] = useState('')
   const [feedType, setFeedType] = useState('woocommerce')
-  const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_FEED_JSON)
+  const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_WOO_FEED_JSON)
   const [jsonError, setJsonError] = useState('')
 
   useEffect(() => {
@@ -25,11 +32,21 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     setFeedBaseUrl(vendor.feedBaseUrl || vendor.websiteUrl || '')
     setFeedType(vendor.feedType || 'woocommerce')
     const fc = vendor.feedConfig && Object.keys(vendor.feedConfig).length > 0 ? vendor.feedConfig : null
-    setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : DEFAULT_FEED_JSON)
+    setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : defaultFeedJsonForType(vendor.feedType))
     setJsonError('')
   }, [vendor])
 
   if (!vendor) return null
+
+  const onFeedTypeChange = (next) => {
+    setFeedType(next)
+    if (next === 'csv' && feedConfigJson.trim() === DEFAULT_WOO_FEED_JSON.trim()) {
+      setFeedConfigJson(DEFAULT_CSV_FEED_JSON)
+    }
+    if (next === 'woocommerce' && feedConfigJson.trim() === DEFAULT_CSV_FEED_JSON.trim()) {
+      setFeedConfigJson(DEFAULT_WOO_FEED_JSON)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -88,7 +105,17 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
               </div>
               <div className="col-md-4">
                 <label className="form-label small">{t('admin.partnerFeedTypePrompt')}</label>
-                <input className="form-control form-control-sm" value={feedType} onChange={(e) => setFeedType(e.target.value)} />
+                <select
+                  className="form-select form-select-sm"
+                  value={feedType}
+                  onChange={(e) => onFeedTypeChange(e.target.value)}
+                >
+                  <option value="woocommerce">woocommerce</option>
+                  <option value="csv">csv</option>
+                  <option value="static">static</option>
+                  <option value="shopify">shopify</option>
+                  <option value="lightspeed">lightspeed</option>
+                </select>
               </div>
               <div className="col-12">
                 <label className="form-label small">{t('admin.partnerFeedConfigJsonLabel')}</label>
@@ -115,4 +142,8 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
       </div>
     </div>
   )
+}
+
+function defaultFeedJsonForType(type) {
+  return type === 'csv' ? DEFAULT_CSV_FEED_JSON : DEFAULT_WOO_FEED_JSON
 }

@@ -50,6 +50,7 @@ export default function AdminPartnerOutreachPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [readinessReport, setReadinessReport] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
+  const [previewFeedUrl, setPreviewFeedUrl] = useState('')
   const [emailTemplate, setEmailTemplate] = useState('partner_outreach_intro')
   const [emailLocale, setEmailLocale] = useState('es')
   const [attachOnePager, setAttachOnePager] = useState(true)
@@ -176,7 +177,7 @@ export default function AdminPartnerOutreachPage() {
           })
         }
       } else {
-        data = await adminService.partnerReadinessReportForUrl(url)
+        data = await adminService.partnerReadinessReportForUrl(url, previewFeedUrl)
         setReadinessReport(data)
       }
       setSuccess(t('admin.partnerOutreachAnalyzeDone'))
@@ -242,6 +243,16 @@ export default function AdminPartnerOutreachPage() {
                 placeholder="https://tienda-ejemplo.com"
                 value={previewUrl}
                 onChange={(e) => setPreviewUrl(e.target.value)}
+              />
+            </div>
+            <div className="flex-grow-1" style={{ minWidth: 220 }}>
+              <label className="form-label mb-0">{t('admin.partnerPreviewFeedUrl')}</label>
+              <input
+                type="url"
+                className="form-control form-control-sm"
+                placeholder="https://…/export.csv (opcional)"
+                value={previewFeedUrl}
+                onChange={(e) => setPreviewFeedUrl(e.target.value)}
               />
             </div>
             <button
