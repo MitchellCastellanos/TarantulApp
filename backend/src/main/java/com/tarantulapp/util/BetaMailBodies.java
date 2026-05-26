@@ -35,6 +35,7 @@ public final class BetaMailBodies {
             "creator_partner_reminder",
             "vendor_welcome_mx",
             "partner_catalog_live",
+            "partner_outreach_intro",
             "tarantula_public_default"
     );
 
@@ -43,6 +44,7 @@ public final class BetaMailBodies {
             "play_early_access_web",
             "vendor_welcome_mx",
             "partner_catalog_live",
+            "partner_outreach_intro",
             "tarantula_public_default"
     );
 
@@ -124,6 +126,11 @@ public final class BetaMailBodies {
                 case "en" -> "TarantulApp — Your storefront is live (no setup needed on your side)";
                 case "fr" -> "TarantulApp — Votre vitrine est en ligne (rien à configurer de votre côté)";
                 default -> "TarantulApp — Tu vitrina ya está en la app (no necesitas subir nada)";
+            };
+            case "partner_outreach_intro" -> switch (loc) {
+                case "en" -> "TarantulApp — Official Partner invite (zero listing upload, checkout on your site)";
+                case "fr" -> "TarantulApp — Invitation Partenaire Officiel (sans double catalogue, paiement sur votre site)";
+                default -> "TarantulApp — Invitación Socio Oficial (sin subir catálogo, checkout en tu web)";
             };
             case "tarantula_public_default" -> switch (loc) {
                 case "en" -> "TarantulApp — Your spiders are now public by default";
@@ -1205,6 +1212,238 @@ public final class BetaMailBodies {
                 + "— TarantulApp\n";
     }
 
+    /** Cold outreach before go-live (official partner invite). */
+    public static String partnerOutreachIntroBody(String locale, String partnerName, String websiteUrl, String sendDate) {
+        return partnerOutreachIntroBody(locale, partnerName, websiteUrl, sendDate, DEFAULT_APP_URL);
+    }
+
+    public static String partnerOutreachIntroBody(String locale, String partnerName, String websiteUrl,
+                                                  String sendDate, String appBaseUrl) {
+        String loc = normalizeLocale(locale);
+        String name = partnerName == null || partnerName.isBlank() ? "there" : partnerName.trim();
+        String site = websiteUrl == null || websiteUrl.isBlank() ? "" : websiteUrl.trim();
+        return switch (loc) {
+            case "en" -> partnerOutreachIntroEn(name, site, sendDate, appBaseUrl);
+            case "fr" -> partnerOutreachIntroFr(name, site, sendDate, appBaseUrl);
+            default -> partnerOutreachIntroEs(name, site, sendDate, appBaseUrl);
+        };
+    }
+
+    public static String partnerOutreachIntroHtml(String locale, String partnerName, String websiteUrl,
+                                                   String sendDate, String appBaseUrl) {
+        String loc = normalizeLocale(locale);
+        String name = partnerName == null || partnerName.isBlank() ? "there" : partnerName.trim();
+        String site = websiteUrl == null || websiteUrl.isBlank() ? "" : websiteUrl.trim();
+        var imgUrls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String storeUrl = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        String wrap = "font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.55;color:#1c1916;";
+        String muted = "color:#5c5348;font-size:14px;";
+        String h2 = "font-size:17px;font-weight:700;margin:28px 0 10px;color:#1c1916;";
+        String card = "max-width:600px;margin:0 auto;padding:8px 4px 24px;";
+
+        String greeting = switch (loc) {
+            case "en" -> "Hi <strong>" + escapeHtml(name) + "</strong> team,";
+            case "fr" -> "Bonjour équipe <strong>" + escapeHtml(name) + "</strong>,";
+            default -> "Hola equipo <strong>" + escapeHtml(name) + "</strong>,";
+        };
+        String intro = switch (loc) {
+            case "en" -> "We’re <strong>TarantulApp</strong> — a marketplace and keeper tools app for tarantula hobbyists. "
+                    + "We’re inviting select WooCommerce shops"
+                    + (site.isBlank() ? "" : " like <a href=\"" + escapeHtml(site) + "\" style=\"color:#8b6914;\">" + escapeHtml(site) + "</a>")
+                    + " to join as <strong>Official Partners</strong>: we mirror your catalog inside the app and send qualified keepers to your store — you keep checkout on your website.";
+            case "fr" -> "Nous sommes <strong>TarantulApp</strong> — marketplace et outils pour les keepers de mygales. "
+                    + "Nous invitons des boutiques WooCommerce"
+                    + (site.isBlank() ? "" : " comme <a href=\"" + escapeHtml(site) + "\" style=\"color:#8b6914;\">" + escapeHtml(site) + "</a>")
+                    + " en <strong>partenaires officiels</strong> : nous reflétons votre catalogue dans l’app et envoyons des keepers vers votre boutique — le paiement reste sur votre site.";
+            default -> "Somos <strong>TarantulApp</strong> — marketplace y herramientas para keepers de tarántulas. "
+                    + "Invitamos tiendas WooCommerce"
+                    + (site.isBlank() ? "" : " como <a href=\"" + escapeHtml(site) + "\" style=\"color:#8b6914;\">" + escapeHtml(site) + "</a>")
+                    + " como <strong>Official Partner</strong>: reflejamos su catálogo en la app y les llevamos keepers a su tienda — el checkout sigue en su web.";
+        };
+        String benefitsTitle = switch (loc) {
+            case "en" -> "What you get";
+            case "fr" -> "Ce que vous obtenez";
+            default -> "Qué obtienen";
+        };
+        String benefits = switch (loc) {
+            case "en" -> "<ul style=\"margin:0 0 0 1.1em;padding:0;\">"
+                    + "<li style=\"margin-bottom:6px;\">Public storefront: <code style=\"font-size:13px;\">tarantulapp.com/partner/your-brand</code></li>"
+                    + "<li style=\"margin-bottom:6px;\">Products in the marketplace feed with an <strong>Official Partner</strong> badge</li>"
+                    + "<li style=\"margin-bottom:6px;\">Automatic sync from your Woo — you only update your website</li>"
+                    + "<li style=\"margin-bottom:6px;\">Keepers browse here; they buy on <strong>your</strong> checkout (UTM-tagged clicks)</li>"
+                    + "<li>Optional multi-item cart handoff to your Woo when supported</li>"
+                    + "</ul>";
+            case "fr" -> "<ul style=\"margin:0 0 0 1.1em;padding:0;\">"
+                    + "<li style=\"margin-bottom:6px;\">Vitrine : <code style=\"font-size:13px;\">tarantulapp.com/partner/votre-marque</code></li>"
+                    + "<li style=\"margin-bottom:6px;\">Produits dans le marketplace avec badge <strong>Partenaire Officiel</strong></li>"
+                    + "<li style=\"margin-bottom:6px;\">Sync automatique depuis votre Woo — vous mettez à jour uniquement votre site</li>"
+                    + "<li style=\"margin-bottom:6px;\">Les keepers explorent ici ; achat sur <strong>votre</strong> checkout (clics UTM)</li>"
+                    + "<li>Handoff panier multi-articles optionnel</li>"
+                    + "</ul>";
+            default -> "<ul style=\"margin:0 0 0 1.1em;padding:0;\">"
+                    + "<li style=\"margin-bottom:6px;\">Vitrina pública: <code style=\"font-size:13px;\">tarantulapp.com/partner/su-marca</code></li>"
+                    + "<li style=\"margin-bottom:6px;\">Productos en el marketplace con badge <strong>Official Partner</strong></li>"
+                    + "<li style=\"margin-bottom:6px;\">Sync automático desde su Woo — solo actualizan su web</li>"
+                    + "<li style=\"margin-bottom:6px;\">Keepers exploran aquí; compran en <strong>su</strong> checkout (clicks con UTM)</li>"
+                    + "<li>Opcional: carrito multi-artículo hacia su Woo</li>"
+                    + "</ul>";
+        };
+        String previewTitle = switch (loc) {
+            case "en" -> "See it in the app (live example)";
+            case "fr" -> "Aperçu dans l’app (exemple en ligne)";
+            default -> "Así se ve en la app (ejemplo en vivo)";
+        };
+        String previewBlurb = switch (loc) {
+            case "en" -> "<a href=\"" + escapeHtml(storeUrl) + "\" style=\"color:#8b6914;\">Monarch Reptiles</a> is a founding partner today. "
+                    + "As an Official Partner you’d get the same model — your brand, synced catalog, traffic to your store:";
+            case "fr" -> "<a href=\"" + escapeHtml(storeUrl) + "\" style=\"color:#8b6914;\">Monarch Reptiles</a> est partenaire fondateur aujourd’hui. "
+                    + "En partenaire officiel, même modèle — votre marque, catalogue synchronisé, trafic vers votre boutique :";
+            default -> "<a href=\"" + escapeHtml(storeUrl) + "\" style=\"color:#8b6914;\">Monarch Reptiles</a> es socio fundador hoy. "
+                    + "Como Official Partner tendrían el mismo modelo — su marca, catálogo en sync, tráfico a su tienda:";
+        };
+        String cap1 = switch (loc) {
+            case "en" -> "Partner storefront";
+            case "fr" -> "Vitrine partenaire";
+            default -> "Vitrina del socio";
+        };
+        String cap2 = switch (loc) {
+            case "en" -> "Listing in the marketplace feed";
+            case "fr" -> "Annonce dans le marketplace";
+            default -> "Producto en el feed del marketplace";
+        };
+        String closing = switch (loc) {
+            case "en" -> "Attached: one-pager (EN/ES/FR). If it’s a fit, a ~15-minute call, short authorization, and a test sync is all we need.<br><br>"
+                    + "Apply: <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
+                    + "Open to a short call this week?<br><br>— TarantulApp team";
+            case "fr" -> "One-pager joint (FR/EN/ES). Si cela vous convient : appel ~15 min, autorisation courte, test sync.<br><br>"
+                    + "Candidature : <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
+                    + "Disponibles pour un court appel cette semaine ?<br><br>— Équipe TarantulApp";
+            default -> "Adjuntamos one-pager (ES/EN/FR). Si encaja: llamada ~15 min, autorización corta y test sync.<br><br>"
+                    + "También pueden aplicar en <a href=\"" + DEFAULT_APP_URL + "/partners\" style=\"color:#8b6914;\">tarantulapp.com/partners</a><br><br>"
+                    + "¿Les interesa una llamada corta esta semana?<br><br>— Equipo TarantulApp";
+        };
+
+        String img1 = imgUrls.isEmpty() ? "" : "<figure style=\"margin:16px 0 0;\">"
+                + "<img src=\"" + escapeHtml(imgUrls.get(0)) + "\" alt=\"" + escapeHtml(cap1) + "\" "
+                + "style=\"display:block;max-width:100%;width:560px;height:auto;border:1px solid #e8e4dc;border-radius:10px;\" />"
+                + "<figcaption style=\"" + muted + "margin-top:6px;\">" + escapeHtml(cap1) + "</figcaption></figure>";
+        String img2 = imgUrls.size() < 2 ? "" : "<figure style=\"margin:16px 0 0;\">"
+                + "<img src=\"" + escapeHtml(imgUrls.get(1)) + "\" alt=\"" + escapeHtml(cap2) + "\" "
+                + "style=\"display:block;max-width:100%;width:560px;height:auto;border:1px solid #e8e4dc;border-radius:10px;\" />"
+                + "<figcaption style=\"" + muted + "margin-top:6px;\">" + escapeHtml(cap2) + "</figcaption></figure>";
+
+        return "<!DOCTYPE html><html><body style=\"margin:0;padding:16px;background:#f7f4ee;\">"
+                + "<div style=\"" + wrap + card + "\">"
+                + "<p style=\"margin:0 0 12px;\">" + greeting + "</p>"
+                + "<p style=\"margin:0 0 8px;" + muted + "\">" + escapeHtml(sendDate) + "</p>"
+                + "<p style=\"margin:0 0 20px;\">" + intro + "</p>"
+                + "<h2 style=\"" + h2 + "\">" + escapeHtml(benefitsTitle) + "</h2>"
+                + benefits
+                + "<h2 style=\"" + h2 + "\">" + escapeHtml(previewTitle) + "</h2>"
+                + "<p style=\"margin:0 0 8px;" + muted + "\">" + previewBlurb + "</p>"
+                + img1 + img2
+                + "<p style=\"margin:28px 0 0;\">" + closing + "</p>"
+                + "</div></body></html>";
+    }
+
+    private static String escapeHtml(String raw) {
+        if (raw == null) return "";
+        return raw.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    private static String monarchScreenshotBlockEs(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\n--- Así se ve en la app (ejemplo) ---\n"
+                + "Monarch Reptiles (founding partner): " + store + "\n"
+                + "Mismo modelo para ustedes como Official Partner — su marca, catálogo en sync, clicks a su tienda.\n"
+                + (urls.isEmpty() ? "" : "Vitrina: " + urls.get(0) + "\n")
+                + (urls.size() < 2 ? "" : "Marketplace: " + urls.get(1) + "\n")
+                + "---\n\n";
+    }
+
+    private static String monarchScreenshotBlockEn(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\n--- See it in the app (example) ---\n"
+                + "Monarch Reptiles (founding partner): " + store + "\n"
+                + "Same model for you as an Official Partner — your brand, synced catalog, clicks to your store.\n"
+                + (urls.isEmpty() ? "" : "Storefront: " + urls.get(0) + "\n")
+                + (urls.size() < 2 ? "" : "Marketplace: " + urls.get(1) + "\n")
+                + "---\n\n";
+    }
+
+    private static String monarchScreenshotBlockFr(String appBaseUrl) {
+        var urls = PartnerOutreachScreenshots.introEmailImageUrls(appBaseUrl);
+        String store = PartnerOutreachScreenshots.monarchStorefrontUrl(appBaseUrl);
+        return "\n--- Aperçu dans l’app (exemple) ---\n"
+                + "Monarch Reptiles (partenaire fondateur) : " + store + "\n"
+                + "Même modèle pour vous en partenaire officiel — votre marque, catalogue sync, clics vers votre boutique.\n"
+                + (urls.isEmpty() ? "" : "Vitrine : " + urls.get(0) + "\n")
+                + (urls.size() < 2 ? "" : "Marketplace : " + urls.get(1) + "\n")
+                + "---\n\n";
+    }
+
+    private static String partnerOutreachIntroEs(String name, String site, String sendDate, String appBaseUrl) {
+        return "Hola equipo " + name + ",\n\n"
+                + "Fecha: " + sendDate + "\n\n"
+                + "Somos TarantulApp — marketplace y herramientas para keepers de tarántulas. "
+                + "Invitamos tiendas WooCommerce"
+                + (site.isBlank() ? "" : " como la suya (" + site + ")")
+                + " como Official Partner: reflejamos su catálogo en la app y les llevamos keepers a su tienda — el checkout sigue en su web.\n\n"
+                + "Qué obtienen:\n"
+                + "• Vitrina pública: tarantulapp.com/partner/su-marca\n"
+                + "• Productos en el marketplace con badge Official Partner\n"
+                + "• Sync automático desde su Woo — solo actualizan su web\n"
+                + "• Keepers exploran en TarantulApp; compran en su checkout (clicks con UTM)\n"
+                + "• Opcional: carrito multi-artículo hacia su Woo\n"
+                + monarchScreenshotBlockEs(appBaseUrl)
+                + "Adjuntamos one-pager (ES/EN/FR). Si encaja: llamada ~15 min, autorización corta y test sync.\n\n"
+                + "Aplicar: " + DEFAULT_APP_URL + "/partners\n\n"
+                + "¿Les interesa una llamada corta esta semana?\n\n"
+                + "— Equipo TarantulApp\n";
+    }
+
+    private static String partnerOutreachIntroEn(String name, String site, String sendDate, String appBaseUrl) {
+        return "Hi " + name + " team,\n\n"
+                + "Date: " + sendDate + "\n\n"
+                + "We’re TarantulApp — a marketplace and keeper tools platform for tarantula hobbyists. "
+                + "We’re inviting select WooCommerce shops"
+                + (site.isBlank() ? "" : " like yours (" + site + ")")
+                + " as Official Partners: we mirror your catalog in the app and send keepers to your store — checkout stays on your website.\n\n"
+                + "What you get:\n"
+                + "• Public storefront: tarantulapp.com/partner/your-brand\n"
+                + "• Marketplace listings with an Official Partner badge\n"
+                + "• Automatic sync from your Woo — you only maintain your website\n"
+                + "• Keepers browse in TarantulApp; they buy on your checkout (UTM-tagged clicks)\n"
+                + "• Optional multi-item cart handoff to your Woo\n"
+                + monarchScreenshotBlockEn(appBaseUrl)
+                + "Attached: one-pager (EN/ES/FR). If it’s a fit: ~15-minute call, short authorization, test sync.\n\n"
+                + "Apply: " + DEFAULT_APP_URL + "/partners\n\n"
+                + "Open to a short call this week?\n\n"
+                + "— TarantulApp team\n";
+    }
+
+    private static String partnerOutreachIntroFr(String name, String site, String sendDate, String appBaseUrl) {
+        return "Bonjour équipe " + name + ",\n\n"
+                + "Date : " + sendDate + "\n\n"
+                + "Nous sommes TarantulApp — marketplace et outils pour les keepers de mygales. "
+                + "Nous invitons des boutiques WooCommerce"
+                + (site.isBlank() ? "" : " comme la vôtre (" + site + ")")
+                + " en partenaires officiels : nous reflétons votre catalogue dans l’app et envoyons des keepers vers votre boutique — paiement sur votre site.\n\n"
+                + "Ce que vous obtenez :\n"
+                + "• Vitrine : tarantulapp.com/partner/votre-marque\n"
+                + "• Annonces dans le marketplace avec badge Partenaire Officiel\n"
+                + "• Sync automatique depuis votre Woo — vous mettez à jour uniquement votre site\n"
+                + "• Les keepers explorent TarantulApp ; achat sur votre checkout (clics UTM)\n"
+                + "• Handoff panier multi-articles optionnel\n"
+                + monarchScreenshotBlockFr(appBaseUrl)
+                + "One-pager joint (FR/EN/ES). Si cela vous convient : appel ~15 min, autorisation, test sync.\n\n"
+                + "Candidature : " + DEFAULT_APP_URL + "/partners\n\n"
+                + "Disponibles pour un court appel cette semaine ?\n\n"
+                + "— Équipe TarantulApp\n";
+    }
+
     /** Strategic partner outreach after catalog sync (no user account required). */
     public static String partnerCatalogLiveBody(String locale, String partnerName, long listingCount,
                                                 String storefrontUrl, String websiteUrl, String sendDate) {
@@ -1225,14 +1464,13 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveEs(String name, long count, String store, String site, String sendDate) {
         return "Hola equipo " + name + ",\n\n"
                 + "Fecha: " + sendDate + "\n\n"
-                + "Te escribimos porque ya estás en el programa de socios estratégicos de TarantulApp: "
+                + "Te escribimos porque ya estás en el programa Official Partner de TarantulApp: "
                 + "tu vitrina y tus artículos en el marketplace salen de tu tienda en línea (WooCommerce u otro feed), "
                 + "sin que tengas que crear cuentas, subir fotos ni duplicar inventario en nuestra app.\n\n"
                 + "En la práctica:\n"
                 + "• No necesitamos nada de ustedes para que la vitrina y el catálogo estén visibles.\n"
                 + "• Lo que publicas y actualizas en tu web se refleja en la app en el siguiente sync automático.\n"
-                + "• Los keepers exploran en TarantulApp; el checkout sigue en tu sitio (tráfico calificado, sin comisión "
-                + "ni custodia de pagos en este track fundador).\n\n"
+                + "• Los keepers exploran en TarantulApp; el checkout sigue en tu sitio (tráfico calificado con UTM).\n\n"
                 + "Tu vitrina en la app:\n" + store + "\n"
                 + (count > 0 ? "Productos visibles ahora: " + count + "\n" : "Primer sync en curso — en breve verás artículos.\n")
                 + (site.isBlank() ? "" : "Tu tienda: " + site + "\n")
@@ -1250,14 +1488,13 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveEn(String name, long count, String store, String site, String sendDate) {
         return "Hi " + name + " team,\n\n"
                 + "Date: " + sendDate + "\n\n"
-                + "You’re on TarantulApp’s strategic partner track: your in-app storefront and marketplace listings "
+                + "You’re on TarantulApp’s Official Partner program: your in-app storefront and marketplace listings "
                 + "mirror your existing online store (WooCommerce or another feed). You do not need to create accounts, "
                 + "upload photos, or maintain a second catalog in our app.\n\n"
                 + "In practice:\n"
                 + "• We do not need anything from you for the storefront and products to go live.\n"
                 + "• Updates on your website flow into the app on the next automatic sync.\n"
-                + "• Keepers browse in TarantulApp; checkout stays on your site (qualified traffic — no platform fee "
-                + "or payment custody on this founding track).\n\n"
+                + "• Keepers browse in TarantulApp; checkout stays on your site (qualified, UTM-tagged traffic).\n\n"
                 + "Your in-app storefront:\n" + store + "\n"
                 + (count > 0 ? "Live products now: " + count + "\n" : "First sync in progress — listings will appear shortly.\n")
                 + (site.isBlank() ? "" : "Your store: " + site + "\n")
@@ -1274,14 +1511,13 @@ public final class BetaMailBodies {
     private static String partnerCatalogLiveFr(String name, long count, String store, String site, String sendDate) {
         return "Bonjour équipe " + name + ",\n\n"
                 + "Date : " + sendDate + "\n\n"
-                + "Vous êtes sur le programme partenaires stratégiques TarantulApp : votre vitrine et vos annonces "
+                + "Vous êtes sur le programme Partenaire Officiel TarantulApp : votre vitrine et vos annonces "
                 + "reflètent votre boutique en ligne (WooCommerce ou autre flux). Aucun compte à créer, aucune photo "
                 + "à téléverser, aucun inventaire en double dans l’app.\n\n"
                 + "En pratique :\n"
                 + "• Rien n’est requis de votre côté pour que la vitrine et le catalogue soient visibles.\n"
                 + "• Les mises à jour sur votre site arrivent dans l’app au prochain sync automatique.\n"
-                + "• Les keepers parcourent TarantulApp ; le paiement reste sur votre site (trafic qualifié — pas de "
-                + "commission ni de détention de paiement sur ce track fondateur).\n\n"
+                + "• Les keepers parcourent TarantulApp ; le paiement reste sur votre site (trafic qualifié, balisé UTM).\n\n"
                 + "Vitrine dans l’app :\n" + store + "\n"
                 + (count > 0 ? "Produits visibles : " + count + "\n" : "Première sync en cours.\n")
                 + (site.isBlank() ? "" : "Boutique : " + site + "\n")

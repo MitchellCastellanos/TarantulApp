@@ -1,0 +1,4 @@
+# Browser "Save Page As" — only commit the .webp files below
+*_files/
+*.html
+*.png

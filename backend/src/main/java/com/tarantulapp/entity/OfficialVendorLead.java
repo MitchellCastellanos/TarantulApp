@@ -8,8 +8,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -51,6 +55,25 @@ public class OfficialVendorLead {
     @Column(nullable = false, length = 30)
     private String status = "open";
 
+    @Column(name = "outreach_locale", nullable = false, length = 8)
+    private String outreachLocale = "en";
+
+    @Column(name = "internal_notes", columnDefinition = "text")
+    private String internalNotes;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> qualification = new LinkedHashMap<>();
+
+    @Column(name = "woo_probe_status", length = 40)
+    private String wooProbeStatus;
+
+    @Column(name = "woo_probe_detail", length = 500)
+    private String wooProbeDetail;
+
+    @Column(name = "last_outreach_at")
+    private Instant lastOutreachAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -62,11 +85,17 @@ public class OfficialVendorLead {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
+        if (qualification == null) {
+            qualification = new LinkedHashMap<>();
+        }
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = Instant.now();
+        if (qualification == null) {
+            qualification = new LinkedHashMap<>();
+        }
     }
 
     public UUID getId() { return id; }
@@ -91,6 +120,18 @@ public class OfficialVendorLead {
     public void setNote(String note) { this.note = note; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getOutreachLocale() { return outreachLocale; }
+    public void setOutreachLocale(String outreachLocale) { this.outreachLocale = outreachLocale; }
+    public String getInternalNotes() { return internalNotes; }
+    public void setInternalNotes(String internalNotes) { this.internalNotes = internalNotes; }
+    public Map<String, Object> getQualification() { return qualification; }
+    public void setQualification(Map<String, Object> qualification) { this.qualification = qualification; }
+    public String getWooProbeStatus() { return wooProbeStatus; }
+    public void setWooProbeStatus(String wooProbeStatus) { this.wooProbeStatus = wooProbeStatus; }
+    public String getWooProbeDetail() { return wooProbeDetail; }
+    public void setWooProbeDetail(String wooProbeDetail) { this.wooProbeDetail = wooProbeDetail; }
+    public Instant getLastOutreachAt() { return lastOutreachAt; }
+    public void setLastOutreachAt(Instant lastOutreachAt) { this.lastOutreachAt = lastOutreachAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
