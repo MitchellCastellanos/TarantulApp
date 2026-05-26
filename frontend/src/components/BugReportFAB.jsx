@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import BugReportModal from './BugReportModal'
+import './BugReportFAB.css'
 
 export default function BugReportFAB() {
   const { user, token } = useAuth()
@@ -13,8 +14,7 @@ export default function BugReportFAB() {
     <>
       <button
         type="button"
-        className="btn btn-warning rounded-circle shadow position-fixed"
-        style={{ right: 16, bottom: 16, width: 52, height: 52, zIndex: 1050 }}
+        className="btn btn-warning rounded-circle shadow ta-bug-report-fab"
         aria-label="Report bug"
         onClick={() => setOpen(true)}
       >

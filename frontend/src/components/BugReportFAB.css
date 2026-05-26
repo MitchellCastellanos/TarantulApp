@@ -1,0 +1,27 @@
+.ta-bug-report-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 52px;
+  height: 52px;
+  z-index: 1035; /* Below navbars (1040) but above most content */
+  transition: bottom 0.3s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ta-bug-report-fab:active {
+  transform: scale(0.92);
+}
+
+/* When the app chrome is present (mobile bottom nav or desktop rail) */
+@media (max-width: 767.98px) {
+  body.ta-app-chrome .ta-bug-report-fab {
+    /* Move above the bottom navbar (60px) + some margin */
+    bottom: calc(var(--ta-bottomnav-h, 60px) + 16px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Ensure it doesn't cover the "More" menu or other high-level UI if they are open */
+/* But generally, 1035 is safe to be behind the navbar (1040) */

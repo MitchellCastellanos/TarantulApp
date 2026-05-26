@@ -34,7 +34,7 @@ export default function BugReportModal({ open, onClose }) {
   }
 
   return (
-    <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={onClose}>
+    <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.55)', zIndex: 1100 }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
