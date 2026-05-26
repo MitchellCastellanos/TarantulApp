@@ -462,6 +462,12 @@ public class AdminController {
         return ResponseEntity.accepted().body(taxonomyDiscoveryService.runFamilyWideAsync());
     }
 
+    @GetMapping("/partner-ecosystem/closure-status")
+    public ResponseEntity<Map<String, Object>> partnerEcosystemClosureStatus() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminEcosystemClosureStatus());
+    }
+
     @GetMapping("/partner-sync/runs")
     public ResponseEntity<List<Map<String, Object>>> partnerSyncRuns(@RequestParam(required = false) UUID vendorId) {
         adminAccessService.assertCurrentUserIsAdmin();

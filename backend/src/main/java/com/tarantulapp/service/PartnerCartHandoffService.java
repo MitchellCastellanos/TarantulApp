@@ -53,8 +53,9 @@ public class PartnerCartHandoffService {
             out.put("checkoutUrl", addToCartUrls.get(0));
             out.put("handoffMode", "product_page_add");
         } else {
-            out.put("checkoutUrl", buildCommaBatchUrl(storeBase, normalized));
-            out.put("fallbackBatchUrl", buildColonBatchUrl(storeBase, normalized));
+            // Prefer /cart/?add-to-cart=id:qty — better Woo compatibility than comma batch on home (Monarch 403).
+            out.put("checkoutUrl", buildColonBatchUrl(storeBase, normalized));
+            out.put("fallbackBatchUrl", buildCommaBatchUrl(storeBase, normalized));
             out.put("handoffMode", "batch_fill");
         }
         int totalQty = normalized.stream().mapToInt(CartLine::quantity).sum();

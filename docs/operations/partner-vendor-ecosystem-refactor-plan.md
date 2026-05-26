@@ -25,6 +25,8 @@ Automatic sync is gated by `official_vendors.listing_import_enabled` plus offici
 | Partner ops summary (handoffs + sync) | Done | PR #55 |
 | Per-vendor test sync (admin) | Done | `POST /admin/partner-sync/run/{vendorId}` |
 | Admin badges panel (`/admin/marketplace`) | Done | PR #57 — Verified Shop queue, seller toggles, partner tier/badge, sync |
+| i18n + Admin Home dedupe + docs tiers | Done | Marketplace panel copy; link from Admin Home |
+| Closure: V111 migration, handoff colon cart, feed_config modal, closure API/UI | Done | See [`ecosystem-closure-checklist.md`](ecosystem-closure-checklist.md) |
 | Monarch parity runbook | Ops | See checklist below |
 
 ## Admin Ops Quick Reference
@@ -44,16 +46,16 @@ Run after deploy or feed config change:
 4. Add 2+ items to partner cart → handoff URL opens monarchreptiles.com (403 on batch add may still need partner Woo fix — see [`../ops/monarch-cart-handoff-email-to-partner.md`](../ops/monarch-cart-handoff-email-to-partner.md))
 5. Admin → Ops column: handoffs 30d + latest sync `success` with reasonable upserted/processed counts
 
-## Remaining for closure (ops + product)
+## Remaining for ops (after code closure)
 
-Architecture and admin tooling for the four-layer model are in **main** (PRs #50–#57). To call the transformation **operationally closed**:
+**Code and admin tooling are complete in main** (PRs #50–#57 + closure). Live checklist: **Admin → Marketplace** top card or [`ecosystem-closure-checklist.md`](ecosystem-closure-checklist.md).
 
-1. Ops uses **`/admin/marketplace`** only for badges, tiers, and sync (Admin Home links there; no duplicate vendor table).
-2. **Flyway V110** applied in production (`STRATEGIC_*` rows migrated to `OFFICIAL_*` / `FOUNDING_*`).
-3. At least one **official partner** besides Monarch with green test sync in admin.
-4. **Monarch cart handoff** works in prod (partner Woo may need `add-to-cart` whitelist — see ops email template).
+1. Deploy through **Flyway V111** (idempotent tier cleanup + default `cartHandoffMode`).
+2. Run Monarch **test sync** and verify `/partner/monarch-reptiles`.
+3. Onboard **one non-Monarch official partner** (import on + test sync).
+4. Confirm **cart handoff** in prod (colon `/cart/` URL first; partner Woo whitelist if needed).
 
-**Phase 2 (not blocking):** `feed_config` UI, Shopify/scrape adapters, partner analytics, monetization.
+**Phase 2 (optional):** Shopify/scrape adapters, full feed rule builder UI, partner analytics, monetization.
 
 ## Deferred Until Needed
 

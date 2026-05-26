@@ -771,6 +771,7 @@
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "close": "Fermer",
     "delete": "Supprimer",
     "edit": "Modifier",
     "loading": "Chargement...",
@@ -2549,6 +2550,20 @@
     "partnerConfigSaved": "Config partenaire enregistrée.",
     "partnerEditConfig": "Modifier badge/flux",
     "adminHomeOfficialVendorsHint": "Tiers, badges, import et test sync par partenaire : panneau Marketplace.",
+    "ecosystemClosureTitle": "Checklist clôture écosystème",
+    "ecosystemClosureBlurb": "L'architecture produit est prête quand tous les contrôles passent. Le handoff panier Woo du partenaire peut nécessiter un réglage côté site.",
+    "ecosystemClosureAllPass": "Tout est vert",
+    "ecosystemClosurePending": "Action requise",
+    "ecosystemClosureCheck": {
+      "legacyTiersMigrated": "Tiers legacy migrés",
+      "monarchConfigured": "Monarch fondateur prêt",
+      "monarchSyncSuccess": "Sync Monarch réussie",
+      "secondOfficialPartner": "Autre partenaire officiel avec import"
+    },
+    "partnerConfigModalTitle": "Config partenaire — {{name}}",
+    "partnerFeedConfigJsonLabel": "feed_config (JSON)",
+    "partnerFeedConfigJsonHint": "categoryMapping, allowedCategories, blockedCategorySlugs, cartHandoffMode, boostLevel, etc.",
+    "partnerFeedConfigJsonInvalid": "JSON invalide pour feed_config.",
     "officialVendorsCount": "{{count}} partenaire(s) officiel(s) configuré(s).",
     "marketplaceTier": {
       "community": "Community",

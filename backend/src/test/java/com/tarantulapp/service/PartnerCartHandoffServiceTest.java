@@ -41,13 +41,16 @@ class PartnerCartHandoffServiceTest {
     }
 
     @Test
-    void multiItemUsesCommaBatchCheckoutUrl() {
+    void multiItemUsesColonCartBatchCheckoutUrl() {
         Map<String, Object> handoff = service.buildHandoff("monarch-reptiles", List.of(
                 new PartnerCartHandoffService.CartLine("101", 1, "A", "https://monarchreptiles.com/product/a/"),
                 new PartnerCartHandoffService.CartLine("202", 2, "B", "https://monarchreptiles.com/product/b/")));
         assertEquals("batch_fill", handoff.get("handoffMode"));
         String url = (String) handoff.get("checkoutUrl");
-        assertTrue(url.contains("add-to-cart=101,202"));
-        assertTrue(url.contains("quantity=1,2"));
+        assertTrue(url.contains("/cart/"));
+        assertTrue(url.contains("add-to-cart=101:1,202:2"));
+        String fallback = (String) handoff.get("fallbackBatchUrl");
+        assertTrue(fallback.contains("add-to-cart=101,202"));
+        assertTrue(fallback.contains("quantity=1,2"));
     }
 }

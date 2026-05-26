@@ -19,6 +19,7 @@ import { addPartnerCartLine } from '../utils/partnerCart'
 import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import { formatListingPrice } from '../utils/formatPrice'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
+import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -426,7 +427,7 @@ export default function MarketplacePage() {
   }, [officialVendors])
 
   const partnerBadgeFor = (l) => {
-    if (l.isFoundingPartner || l.partnerProgramTier === 'FOUNDING_PARTNER' || l.partnerProgramTier === 'STRATEGIC_FOUNDER') {
+    if (isFoundingPartnerTier(l)) {
       return t('marketplace.foundingPartnerBadge')
     }
     if (l.promoted) return t('marketplace.tarantulaCribsBadge')
@@ -592,21 +593,21 @@ export default function MarketplacePage() {
               )}
               {sortedOfficialVendors.map((vendor) => (
                 <div key={vendor.id} className="ta-marketplace-official-strip__item flex-shrink-0 d-flex">
-                  <div className={`official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column${vendor.isFoundingPartner ? ' official-vendor-card--founding' : ''}`}>
+                  <div className={`official-vendor-card official-vendor-card--strip h-100 w-100 p-2 d-flex flex-column${isFoundingPartnerTier(vendor) ? ' official-vendor-card--founding' : ''}`}>
                     <div className="official-vendor-card__inner d-flex flex-column flex-grow-1">
                       <div className="flex-grow-1 min-h-0">
                         <div className="d-flex justify-content-between align-items-start gap-2">
                           <div className="min-w-0">
                             <div className="fw-semibold small d-flex align-items-center gap-1">
-                              {vendor.isFoundingPartner && <OfficialPartnerShield width={18} height={20} />}
+                              {isFoundingPartnerTier(vendor) && <OfficialPartnerShield width={18} height={20} />}
                               <span>{vendor.name}</span>
                             </div>
                             <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
                               {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <span className={`official-vendor-card__ribbon flex-shrink-0${vendor.isFoundingPartner ? ' bg-warning text-dark' : ''}`} style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
-                            {vendor.isFoundingPartner
+                          <span className={`official-vendor-card__ribbon flex-shrink-0${isFoundingPartnerTier(vendor) ? ' bg-warning text-dark' : ''}`} style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
+                            {isFoundingPartnerTier(vendor)
                               ? t('marketplace.foundingPartnerBadge')
                               : (vendor.badge || t('marketplace.officialPartnerBadge'))}
                           </span>
@@ -623,7 +624,7 @@ export default function MarketplacePage() {
                         {vendorHasInAppStorefront(vendor) && partnerStorefrontPath(vendor.slug) ? (
                           <Link
                             to={partnerStorefrontPath(vendor.slug)}
-                            className={`btn btn-sm w-100 fw-semibold${vendor.isFoundingPartner ? ' btn-warning' : ' btn-dark'}`}
+                            className={`btn btn-sm w-100 fw-semibold${isFoundingPartnerTier(vendor) ? ' btn-warning' : ' btn-dark'}`}
                           >
                             {t('marketplace.partnerStorefrontOpenCta')}
                           </Link>

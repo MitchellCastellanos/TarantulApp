@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
+import PartnerVendorConfigModal from '../../components/admin/PartnerVendorConfigModal'
+import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
 import { formatAdminPlanSummary, adminPlanBadgeClass } from './adminShared'
 
 function sellerTierKey(row) {
@@ -9,14 +11,6 @@ function sellerTierKey(row) {
   const plan = String(row?.plan || 'FREE').toUpperCase()
   if (plan === 'PRO' || row?.inTrial) return 'pro'
   return 'community'
-}
-
-function isPartnerFounding(v) {
-  return (
-    v?.isFoundingPartner ||
-    v?.partnerProgramTier === 'FOUNDING_PARTNER' ||
-    v?.partnerProgramTier === 'STRATEGIC_FOUNDER'
-  )
 }
 
 export default function AdminMarketplacePage() {
@@ -42,8 +36,10 @@ export default function AdminMarketplacePage() {
   const [verificationBusyId, setVerificationBusyId] = useState(null)
   const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
   const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
+  const [partnerConfigModalVendor, setPartnerConfigModalVendor] = useState(null)
   const [partnerSyncVendorBusyId, setPartnerSyncVendorBusyId] = useState(null)
   const [storefrontBusyId, setStorefrontBusyId] = useState(null)
+  const [closureStatus, setClosureStatus] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -69,13 +65,15 @@ export default function AdminMarketplacePage() {
       adminService.officialVendors(),
       adminService.officialVendorLeads(),
       adminService.vendorVerifications('pending').catch(() => []),
+      adminService.partnerEcosystemClosureStatus().catch(() => null),
     ])
-      .then(([openReports, vendors, leads, verifications]) => {
+      .then(([openReports, vendors, leads, verifications, closure]) => {
         if (cancelled) return
         setReports(Array.isArray(openReports) ? openReports : [])
         setOfficialVendors(Array.isArray(vendors) ? vendors : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
         setVendorVerifications(Array.isArray(verifications) ? verifications : [])
+        setClosureStatus(closure)
       })
       .catch(() => {
         if (!cancelled) setError(t('admin.loadError'))
@@ -161,45 +159,19 @@ export default function AdminMarketplacePage() {
     }
   }
 
-  const editOfficialVendorConfig = async (vendor) => {
+  const saveOfficialVendorConfig = async (payload) => {
+    const vendor = partnerConfigModalVendor
     if (!vendor?.id) return
-    const tierRaw = window.prompt(
-      t('admin.partnerPromoteTierPrompt'),
-      vendor.isFoundingPartner ? 'founding' : 'official',
-    )
-    if (tierRaw == null) return
-    const tier = String(tierRaw).trim().toLowerCase()
-    const isFounding = tier === 'founding' || tier === 'founder'
-    const badge = window.prompt(
-      t('admin.partnerBadgePrompt'),
-      vendor.badge || (isFounding ? 'Founding partner' : 'Official partner'),
-    )
-    if (badge == null) return
-    const websiteUrl = window.prompt(t('admin.partnerWebsitePrompt'), vendor.websiteUrl || '')
-    if (websiteUrl == null) return
-    const feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), vendor.feedBaseUrl || websiteUrl || '')
-    if (feedBaseUrl == null) return
-    const feedType = window.prompt(t('admin.partnerFeedTypePrompt'), vendor.feedType || 'woocommerce')
-    if (feedType == null) return
     setPartnerConfigBusyId(vendor.id)
     setError('')
     setSuccess('')
     try {
-      const updated = await adminService.updateOfficialVendorStrategicProgram(vendor.id, {
-        partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
-        strategicFounder: isFounding,
-        badge,
-        websiteUrl,
-        feedBaseUrl,
-        feedType,
-        feedConfig: {
-          ...(vendor.feedConfig || {}),
-          partnerTier: isFounding ? 'founding' : 'official',
-          boostLevel: isFounding ? 2 : 1,
-        },
-      })
+      const updated = await adminService.updateOfficialVendorStrategicProgram(vendor.id, payload)
       setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendor.id) ? updated : v)))
       setSuccess(t('admin.partnerConfigSaved'))
+      setPartnerConfigModalVendor(null)
+      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
+      setClosureStatus(closure)
     } catch {
       setError(t('admin.resolveError'))
     } finally {
@@ -385,6 +357,8 @@ export default function AdminMarketplacePage() {
       await loadSyncRuns()
       const vendors = await adminService.officialVendors()
       setOfficialVendors(Array.isArray(vendors) ? vendors : [])
+      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
+      setClosureStatus(closure)
     } catch {
       setError(t('admin.partnerSyncError'))
     } finally {
@@ -407,6 +381,8 @@ export default function AdminMarketplacePage() {
       const vendors = await adminService.officialVendors()
       setOfficialVendors(Array.isArray(vendors) ? vendors : [])
       await loadSyncRuns()
+      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
+      setClosureStatus(closure)
     } catch (err) {
       setError(err?.response?.data?.error || t('admin.partnerSyncError'))
     } finally {
@@ -433,6 +409,30 @@ export default function AdminMarketplacePage() {
       {error && <div className="alert alert-danger">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
       {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
+
+      {closureStatus && (
+        <section
+          className={`card p-3 mb-4 border-2 ${closureStatus.allChecksPass ? 'border-success' : 'border-warning'}`}
+          id="ecosystem-closure"
+        >
+          <h3 className="h6 mb-2">{t('admin.ecosystemClosureTitle')}</h3>
+          <p className="small text-muted mb-2">{t('admin.ecosystemClosureBlurb')}</p>
+          <ul className="list-unstyled small mb-2">
+            {(closureStatus.checks || []).map((c) => (
+              <li key={c.id} className="mb-1">
+                <span className={c.ok ? 'text-success' : 'text-warning'}>{c.ok ? '✓' : '○'}</span>{' '}
+                {t(`admin.ecosystemClosureCheck.${c.id}`, { defaultValue: c.detail })}
+                {!c.ok && c.detail ? <span className="text-muted"> — {c.detail}</span> : null}
+              </li>
+            ))}
+          </ul>
+          {closureStatus.allChecksPass ? (
+            <span className="badge text-bg-success">{t('admin.ecosystemClosureAllPass')}</span>
+          ) : (
+            <span className="badge text-bg-warning text-dark">{t('admin.ecosystemClosurePending')}</span>
+          )}
+        </section>
+      )}
 
       <section className="card p-3 mb-4 border-dark" id="badges-hub">
         <h3 className="h6 mb-2">{t('admin.badgesHubTitle')}</h3>
@@ -835,7 +835,7 @@ export default function AdminMarketplacePage() {
                       <select
                         className="form-select form-select-sm"
                         style={{ minWidth: 130 }}
-                        value={isPartnerFounding(v) ? 'founding' : 'official'}
+                        value={isFoundingPartnerTier(v) ? 'founding' : 'official'}
                         onChange={(e) => patchPartnerTier(v, e.target.value)}
                       >
                         <option value="official">{t('admin.partnerTierOfficial')}</option>
@@ -847,7 +847,7 @@ export default function AdminMarketplacePage() {
                         type="text"
                         className="form-control form-control-sm"
                         style={{ minWidth: 140 }}
-                        defaultValue={v.badge || (isPartnerFounding(v) ? 'Founding partner' : 'Official partner')}
+                        defaultValue={v.badge || (isFoundingPartnerTier(v) ? 'Founding partner' : 'Official partner')}
                         onBlur={(e) => {
                           const next = e.target.value.trim()
                           const prev = (v.badge || '').trim()
@@ -888,7 +888,7 @@ export default function AdminMarketplacePage() {
                           type="button"
                           className="btn btn-sm btn-outline-dark"
                           disabled={partnerConfigBusyId === v.id}
-                          onClick={() => editOfficialVendorConfig(v)}
+                          onClick={() => setPartnerConfigModalVendor(v)}
                         >
                           {partnerConfigBusyId === v.id ? t('common.loading') : t('admin.partnerEditConfig')}
                         </button>
@@ -1006,6 +1006,15 @@ export default function AdminMarketplacePage() {
           </>
         )}
       </section>
+
+      {partnerConfigModalVendor ? (
+        <PartnerVendorConfigModal
+          vendor={partnerConfigModalVendor}
+          busy={partnerConfigBusyId === partnerConfigModalVendor.id}
+          onClose={() => setPartnerConfigModalVendor(null)}
+          onSave={saveOfficialVendorConfig}
+        />
+      ) : null}
     </>
   )
 }

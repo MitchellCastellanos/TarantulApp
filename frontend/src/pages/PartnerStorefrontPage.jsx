@@ -10,6 +10,7 @@ import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisp
 import { addPartnerCartLine } from '../utils/partnerCart'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
 
 const ALL_CATEGORY = 'all'
 const CATEGORIES = [
@@ -69,7 +70,7 @@ export default function PartnerStorefrontPage() {
   const query = searchParams.get('q') || ''
   const promotedOnly = searchParams.get('promoted') === '1'
 
-  const isFounding = vendor?.isFoundingPartner === true
+  const isFounding = isFoundingPartnerTier(vendor)
   const location = useMemo(
     () => [vendor?.city, vendor?.state, vendor?.country].filter(Boolean).join(' · '),
     [vendor?.city, vendor?.country, vendor?.state],
@@ -154,7 +155,7 @@ export default function PartnerStorefrontPage() {
   }
 
   const partnerBadge = (l) => {
-    if (l?.isFoundingPartner || l?.partnerProgramTier === 'FOUNDING_PARTNER' || l?.partnerProgramTier === 'STRATEGIC_FOUNDER') {
+    if (isFoundingPartnerTier(l)) {
       return t('marketplace.foundingPartnerBadge')
     }
     return l?.badgeLabel || t('marketplace.certifiedPartnerBadge')

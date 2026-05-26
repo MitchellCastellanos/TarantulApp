@@ -69,7 +69,7 @@ public class MarketplaceService {
     private static final long MIN_MESSAGES_PER_PARTICIPANT = 2L;
 
     /** Official vendors whose partner listings appear in the public marketplace feed. */
-    private static final List<PartnerProgramTier> STRATEGIC_PARTNER_FEED_TIERS = List.of(
+    private static final List<PartnerProgramTier> OFFICIAL_PARTNER_FEED_TIERS = List.of(
             PartnerProgramTier.FOUNDING_PARTNER,
             PartnerProgramTier.OFFICIAL_PARTNER,
             PartnerProgramTier.STRATEGIC_FOUNDER,
@@ -408,7 +408,7 @@ public class MarketplaceService {
 
         Map<UUID, OfficialVendor> eligibleVendors = officialVendorRepository
                 .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        STRATEGIC_PARTNER_FEED_TIERS)
+                        OFFICIAL_PARTNER_FEED_TIERS)
                 .stream()
                 .collect(Collectors.toMap(OfficialVendor::getId, v -> v, (a, b) -> a, LinkedHashMap::new));
 
@@ -683,7 +683,7 @@ public class MarketplaceService {
             return false;
         }
         PartnerProgramTier tier = vendor.getPartnerProgramTier();
-        return tier != null && tier.isOfficialPartner() && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
+        return tier != null && tier.isOfficialPartner() && OFFICIAL_PARTNER_FEED_TIERS.contains(tier);
     }
 
     private List<Map<String, Object>> relatedPeerListings(UUID sellerUserId, UUID excludeId) {
@@ -897,7 +897,7 @@ public class MarketplaceService {
         String queryNorm = normalizeFilter(q);
         Map<UUID, OfficialVendor> eligibleVendorById = officialVendorRepository
                 .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        STRATEGIC_PARTNER_FEED_TIERS)
+                        OFFICIAL_PARTNER_FEED_TIERS)
                 .stream()
                 .collect(Collectors.toMap(OfficialVendor::getId, v -> v));
 
@@ -1194,7 +1194,7 @@ public class MarketplaceService {
     }
 
     public boolean isEligibleForPartnerCatalogSync(PartnerProgramTier tier) {
-        return tier != null && STRATEGIC_PARTNER_FEED_TIERS.contains(tier);
+        return tier != null && OFFICIAL_PARTNER_FEED_TIERS.contains(tier);
     }
 
     private Map<String, Object> resolveSellerProgramInternal(User seller) {
@@ -1931,13 +1931,14 @@ public class MarketplaceService {
         long partnerActive = partnerListingRepository.countByStatus(PartnerListingStatus.ACTIVE);
         long strategicVendors = officialVendorRepository.findByEnabledTrueOrderByInfluenceScoreDescNameAsc().stream()
                 .filter(v -> v.getPartnerProgramTier() != null
-                        && STRATEGIC_PARTNER_FEED_TIERS.contains(v.getPartnerProgramTier()))
+                        && OFFICIAL_PARTNER_FEED_TIERS.contains(v.getPartnerProgramTier()))
                 .count();
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("peerActiveListings", peerActive);
         out.put("partnerActiveListings", partnerActive);
         out.put("totalActiveListings", peerActive + partnerActive);
         out.put("strategicPartnerVendorCount", strategicVendors);
+        out.put("officialPartnerVendorCount", strategicVendors);
         long displayPartner = partnerActive >= 400 ? 400 : partnerActive;
         out.put("partnerListingsDisplayCount", displayPartner);
         out.put("partnerListingsDisplayPlus", partnerActive >= 400);

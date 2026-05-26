@@ -764,6 +764,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",
@@ -2584,6 +2585,20 @@
     "partnerConfigSaved": "Partner config saved.",
     "partnerEditConfig": "Edit badge/feed",
     "adminHomeOfficialVendorsHint": "Manage tiers, badges, import, and per-partner test sync on the Marketplace panel.",
+    "ecosystemClosureTitle": "Ecosystem closure checklist",
+    "ecosystemClosureBlurb": "Product architecture is complete when every check passes. Cart handoff on partner Woo may still need their site tweak (see ops email template).",
+    "ecosystemClosureAllPass": "All checks pass",
+    "ecosystemClosurePending": "Action needed",
+    "ecosystemClosureCheck": {
+      "legacyTiersMigrated": "Legacy tiers migrated",
+      "monarchConfigured": "Monarch founding partner ready",
+      "monarchSyncSuccess": "Monarch sync succeeded",
+      "secondOfficialPartner": "Second official partner with import"
+    },
+    "partnerConfigModalTitle": "Partner config — {{name}}",
+    "partnerFeedConfigJsonLabel": "feed_config (JSON)",
+    "partnerFeedConfigJsonHint": "categoryMapping, allowedCategories, blockedCategorySlugs, cartHandoffMode, boostLevel, etc.",
+    "partnerFeedConfigJsonInvalid": "Invalid JSON for feed_config.",
     "officialVendorsCount": "{{count}} official partner(s) configured.",
     "marketplaceTier": {
       "community": "Community",

@@ -6,6 +6,7 @@ import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.entity.PartnerListingSyncRun;
+import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -143,6 +145,84 @@ public class OfficialVendorService {
         return officialVendorLeadRepository.findTop100ByOrderByCreatedAtDesc().stream()
                 .map(this::mapLead)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Admin checklist for partner/vendor ecosystem closure (tiers migrated, Monarch ready, second official partner).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminEcosystemClosureStatus() {
+        List<OfficialVendor> all = officialVendorRepository.findAll();
+        long legacyTierRows = all.stream()
+                .filter(v -> v.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_FOUNDER
+                        || v.getPartnerProgramTier() == PartnerProgramTier.STRATEGIC_PARTNER)
+                .count();
+
+        Optional<OfficialVendor> monarchOpt = officialVendorRepository.findBySlug("monarch-reptiles");
+        boolean monarchConfigured = monarchOpt.isPresent();
+        boolean monarchFoundingTier = monarchOpt
+                .map(v -> v.getPartnerProgramTier() != null && v.getPartnerProgramTier().isFoundingPartner())
+                .orElse(false);
+        boolean monarchImportEnabled = monarchOpt
+                .map(v -> Boolean.TRUE.equals(v.getListingImportEnabled()))
+                .orElse(false);
+        boolean monarchEnabled = monarchOpt.map(OfficialVendor::getEnabled).orElse(false);
+        String monarchLatestSyncStatus = "";
+        boolean monarchSyncOk = false;
+        if (monarchOpt.isPresent()) {
+            List<PartnerListingSyncRun> runs = partnerListingSyncRunRepository
+                    .findTop50ByOfficialVendorIdOrderByStartedAtDesc(monarchOpt.get().getId());
+            if (!runs.isEmpty() && runs.get(0).getStatus() != null) {
+                monarchLatestSyncStatus = runs.get(0).getStatus().name().toLowerCase(Locale.ROOT);
+                monarchSyncOk = runs.get(0).getStatus() == PartnerListingSyncRunStatus.SUCCESS;
+            }
+        }
+
+        long otherOfficialWithImport = all.stream()
+                .filter(v -> v.getSlug() != null && !"monarch-reptiles".equals(v.getSlug()))
+                .filter(v -> Boolean.TRUE.equals(v.getListingImportEnabled()))
+                .filter(v -> v.getPartnerProgramTier() != null && v.getPartnerProgramTier().isOfficialPartner())
+                .count();
+
+        boolean legacyTierOk = legacyTierRows == 0;
+        boolean otherOfficialPartnerOk = otherOfficialWithImport >= 1;
+        boolean monarchReady = monarchConfigured && monarchFoundingTier && monarchImportEnabled && monarchEnabled;
+        boolean allChecksPass = legacyTierOk && monarchReady && monarchSyncOk && otherOfficialPartnerOk;
+
+        List<Map<String, Object>> checks = new ArrayList<>();
+        checks.add(closureCheck("legacyTiersMigrated", legacyTierOk,
+                legacyTierOk ? "No STRATEGIC_* tiers in official_vendors" : legacyTierRows + " row(s) still use legacy tiers"));
+        checks.add(closureCheck("monarchConfigured", monarchReady,
+                monarchReady ? "Monarch founding partner enabled with import" : "Configure monarch-reptiles (founding, import, enabled)"));
+        checks.add(closureCheck("monarchSyncSuccess", monarchSyncOk,
+                monarchSyncOk ? "Latest Monarch sync succeeded" : "Run test sync for Monarch (status: " + monarchLatestSyncStatus + ")"));
+        checks.add(closureCheck("secondOfficialPartner", otherOfficialPartnerOk,
+                otherOfficialPartnerOk
+                        ? otherOfficialWithImport + " other official partner(s) with import on"
+                        : "Promote/onboard at least one non-Monarch official partner with import enabled"));
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("legacyTierRows", legacyTierRows);
+        out.put("legacyTierOk", legacyTierOk);
+        out.put("monarchConfigured", monarchConfigured);
+        out.put("monarchFoundingTier", monarchFoundingTier);
+        out.put("monarchImportEnabled", monarchImportEnabled);
+        out.put("monarchEnabled", monarchEnabled);
+        out.put("monarchLatestSyncStatus", monarchLatestSyncStatus);
+        out.put("monarchSyncOk", monarchSyncOk);
+        out.put("otherOfficialPartnersWithImport", otherOfficialWithImport);
+        out.put("otherOfficialPartnerOk", otherOfficialPartnerOk);
+        out.put("allChecksPass", allChecksPass);
+        out.put("checks", checks);
+        return out;
+    }
+
+    private static Map<String, Object> closureCheck(String id, boolean ok, String detail) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", id);
+        row.put("ok", ok);
+        row.put("detail", detail);
+        return row;
     }
 
     @Transactional

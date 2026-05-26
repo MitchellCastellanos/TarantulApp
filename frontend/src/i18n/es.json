@@ -771,6 +771,7 @@
   "common": {
     "save": "Guardar",
     "cancel": "Cancelar",
+    "close": "Cerrar",
     "delete": "Eliminar",
     "edit": "Editar",
     "loading": "Cargando...",
@@ -2565,6 +2566,20 @@
     "partnerConfigSaved": "Config del socio guardada.",
     "partnerEditConfig": "Editar badge/feed",
     "adminHomeOfficialVendorsHint": "Tiers, badges, import y test sync por socio están en el panel Marketplace.",
+    "ecosystemClosureTitle": "Checklist cierre del ecosistema",
+    "ecosystemClosureBlurb": "La arquitectura de producto está lista cuando pasan todos los checks. El handoff de carrito en Woo del socio puede requerir ajuste en su sitio.",
+    "ecosystemClosureAllPass": "Todo en verde",
+    "ecosystemClosurePending": "Falta acción",
+    "ecosystemClosureCheck": {
+      "legacyTiersMigrated": "Tiers legacy migrados",
+      "monarchConfigured": "Monarch fundador listo",
+      "monarchSyncSuccess": "Sync Monarch exitoso",
+      "secondOfficialPartner": "Segundo socio oficial con import"
+    },
+    "partnerConfigModalTitle": "Config socio — {{name}}",
+    "partnerFeedConfigJsonLabel": "feed_config (JSON)",
+    "partnerFeedConfigJsonHint": "categoryMapping, allowedCategories, blockedCategorySlugs, cartHandoffMode, boostLevel, etc.",
+    "partnerFeedConfigJsonInvalid": "JSON inválido en feed_config.",
     "officialVendorsCount": "{{count}} socio(s) oficial(es) configurado(s).",
     "marketplaceTier": {
       "community": "Community",
