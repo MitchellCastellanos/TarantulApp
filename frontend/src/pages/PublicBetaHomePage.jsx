@@ -116,9 +116,6 @@ export default function PublicBetaHomePage() {
                   </Link>
                 </>
               )}
-              <Link to="/community" className="btn btn-outline-secondary fw-semibold px-4 py-2">
-                {t('publicBetaHome.ctaCommunity')}
-              </Link>
             </div>
 
             <div className="row g-3 mb-0">

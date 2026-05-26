@@ -56,7 +56,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const inviteOnlyNav = isInviteOnlyEnabled()
   const lockPublicNav = inviteOnlyNav && !token
   const path = location.pathname
-  const searchTab = new URLSearchParams(location.search).get('tab')
   const navDiscover = path.startsWith('/descubrir')
   const navQr =
     path.startsWith('/tools/qr') ||
@@ -65,8 +64,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
   const navMarketplace = path.startsWith('/marketplace')
   const navCollection = Boolean(token) && path === '/'
   const navInsights = Boolean(token) && path.startsWith('/insights')
-  const navCommunity = path.startsWith('/community') || path.startsWith('/comunidad')
-  const navReferralsActive = Boolean(token) && navCommunity && searchTab === 'invite'
   const navNotifications = path.startsWith('/notifications')
   const navAdmin = path.startsWith('/admin')
   const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
@@ -134,23 +131,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
             title: t('marketplace.title'),
             routeMatchers: ['/marketplace'],
           },
-          {
-            to: '/community',
-            label: t('nav.community'),
-            title: t('social.navTitle'),
-            routeMatchers: ['/community', '/comunidad'],
-          },
-          ...(token
-            ? [
-                {
-                  to: '/community?tab=invite',
-                  label: t('nav.referrals'),
-                  title: t('nav.referralsTitle'),
-                  routeMatchers: ['/community', '/comunidad'],
-                  tabActive: 'invite',
-                },
-              ]
-            : []),
         ],
       },
     ]
@@ -427,12 +407,9 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                 {group.items.length > 0 && (
                   <div className={`ta-mobile-nav-sublist ${groupIsOpen ? 'is-open' : ''}`} aria-hidden={!groupIsOpen}>
                     {group.items.map((item) => {
-                      const isActive = item.tabActive
-                        ? path.startsWith('/community') &&
-                          new URLSearchParams(location.search).get('tab') === item.tabActive
-                        : item.exact
-                          ? path === item.to.split('?')[0]
-                          : isRouteActive(item.routeMatchers || [item.to])
+                      const isActive = item.exact
+                        ? path === item.to.split('?')[0]
+                        : isRouteActive(item.routeMatchers || [item.to])
                       return (
                         <NavDest
                           key={item.to}
@@ -579,25 +556,6 @@ export default function Navbar({ variant: _variant = 'app', hideLoginLink = fals
                   </span>
                 )}
               </span>
-            </Link>
-          )}
-          <NavDest
-            lock={lockPublicNav}
-            to="/community"
-            className={`ta-navbar-primary-link text-decoration-none small fw-semibold d-none d-md-inline ${navCommunity && searchTab !== 'invite' ? 'ta-navbar-primary-link--active' : ''}`}
-            title={lockPublicNav ? t('nav.inviteOnlyNavLocked') : t('social.navTitle')}
-          >
-            {t('nav.community')}
-          </NavDest>
-          {token && (
-            <Link
-              to="/community?tab=invite"
-              className={`ta-navbar-referrals-pill text-decoration-none small fw-semibold d-none d-md-inline-flex align-items-center gap-1 ${navReferralsActive ? 'ta-navbar-referrals-pill--active' : ''}`}
-              title={t('nav.referralsTitle')}
-              aria-label={t('nav.referralsTitle')}
-            >
-              <span aria-hidden="true">🎁</span>
-              <span className="d-none d-lg-inline">{t('nav.referrals')}</span>
             </Link>
           )}
         </div>

@@ -310,7 +310,7 @@ export default function SexIdCasePublicPage() {
                   <button type="button" onClick={copyShare}>
                     {t('sexIdCase.copyLink')}
                   </button>
-                  <Link to="/community?tab=invite" onClick={() => setMenuOpen(false)}>
+                  <Link to="/?invite=1" onClick={() => setMenuOpen(false)}>
                     {t('sexIdCase.inviteKeepers')}
                   </Link>
                 </div>
