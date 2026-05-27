@@ -30,6 +30,7 @@ public class AuthResponse {
     private String communityProfileVisibility;
     private boolean defaultTarantulaPublic;
     private boolean admin;
+    private boolean marketingOps;
     private boolean betaTester;
     private Instant betaAgreementAcceptedAt;
     private String registrationMode;
@@ -93,6 +94,8 @@ public class AuthResponse {
 
     public boolean isAdmin() { return admin; }
     public void setAdmin(boolean admin) { this.admin = admin; }
+    public boolean isMarketingOps() { return marketingOps; }
+    public void setMarketingOps(boolean marketingOps) { this.marketingOps = marketingOps; }
     public boolean isBetaTester() { return betaTester; }
     public void setBetaTester(boolean betaTester) { this.betaTester = betaTester; }
 

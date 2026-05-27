@@ -225,6 +225,7 @@ public class BillingService {
         body.put("overFreeLimit", planAccessService.isOverFreeTierLimit(user));
         body.put("strictReadOnly", planAccessService.isStrictReadOnly(user));
         body.put("admin", adminAccessService.isAdminEmail(user.getEmail()));
+        body.put("marketingOps", Boolean.TRUE.equals(user.getIsMarketingOps()));
         body.put("isBetaTester", Boolean.TRUE.equals(user.getIsBetaTester()));
         body.put("betaAgreementAcceptedAt", user.getBetaAgreementAcceptedAt() != null
                 ? user.getBetaAgreementAcceptedAt().toString()

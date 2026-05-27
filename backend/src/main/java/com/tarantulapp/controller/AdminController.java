@@ -196,6 +196,7 @@ public class AdminController {
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
     record SetVerifiedBreederRequest(Boolean verifiedBreeder) {}
+    record SetMarketingOpsRequest(Boolean marketingOps) {}
 
     record SetStorefrontVerifiedRequest(Boolean storefrontVerified) {}
     /**
@@ -306,7 +307,7 @@ public class AdminController {
 
     @GetMapping("/official-vendor-leads")
     public ResponseEntity<List<Map<String, Object>>> officialVendorLeads() {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         return ResponseEntity.ok(officialVendorService.adminListLeads());
     }
 
@@ -328,7 +329,7 @@ public class AdminController {
     @PostMapping("/official-vendor-leads/outreach")
     public ResponseEntity<Map<String, Object>> upsertOfficialVendorOutreachLead(
             @RequestBody AdminUpsertOutreachLeadRequest req) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminUpsertOutreachLead(
                     req.businessName(),
@@ -359,7 +360,7 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> patchOfficialVendorLeadOutreach(
             @PathVariable UUID id,
             @RequestBody AdminPatchLeadOutreachRequest req) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminPatchLeadOutreach(
                     id,
@@ -386,7 +387,7 @@ public class AdminController {
     @PostMapping("/official-vendor-leads/probe-woocommerce")
     public ResponseEntity<Map<String, Object>> probeWooCommerceForLead(
             @RequestBody WooProbeRequest req) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminProbeWooCommerce(
                     req == null ? null : req.websiteUrl()));
@@ -397,7 +398,7 @@ public class AdminController {
 
     @PostMapping("/official-vendor-leads/{id}/probe-woocommerce")
     public ResponseEntity<Map<String, Object>> probeWooCommerceForLeadById(@PathVariable UUID id) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminProbeAndSaveLeadWoo(id));
         } catch (IllegalArgumentException e) {
@@ -407,7 +408,7 @@ public class AdminController {
 
     @PostMapping("/official-vendor-leads/readiness-report")
     public ResponseEntity<Map<String, Object>> partnerReadinessReport(@RequestBody PartnerReadinessRequest req) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReport(
                     req == null ? null : req.websiteUrl(),
@@ -424,7 +425,7 @@ public class AdminController {
 
     @PostMapping("/official-vendor-leads/{id}/readiness-report")
     public ResponseEntity<Map<String, Object>> partnerReadinessReportForLead(@PathVariable UUID id) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminPartnerReadinessReportForLead(id));
         } catch (IllegalArgumentException e) {
@@ -438,7 +439,7 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> sendOfficialVendorLeadOutreachEmail(
             @PathVariable UUID id,
             @RequestBody(required = false) SendLeadOutreachEmailRequest req) {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         try {
             return ResponseEntity.ok(officialVendorService.adminSendLeadOutreachEmail(
                     id,
@@ -814,6 +815,21 @@ public class AdminController {
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    @PatchMapping("/users/{id}/marketing-ops")
+    public ResponseEntity<Map<String, Object>> setUserMarketingOps(@PathVariable UUID id,
+                                                                    @RequestBody(required = false) SetMarketingOpsRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean enabled = req != null && Boolean.TRUE.equals(req.marketingOps());
+        user.setIsMarketingOps(enabled);
+        userRepository.save(user);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", user.getId());
+        out.put("email", user.getEmail());
+        out.put("marketingOps", Boolean.TRUE.equals(user.getIsMarketingOps()));
+        return ResponseEntity.ok(out);
     }
 
     /** Admin: grant or revoke "Tienda verificada" trust badge (after live call or approved self-verification). */
@@ -1441,6 +1457,7 @@ public class AdminController {
         out.put("publicHandle", u.getPublicHandle() == null ? "" : u.getPublicHandle());
         putPlanAccessFields(u, out);
         out.put("isBetaTester", Boolean.TRUE.equals(u.getIsBetaTester()));
+        out.put("marketingOps", Boolean.TRUE.equals(u.getIsMarketingOps()));
         out.put("verifiedBreeder", Boolean.TRUE.equals(u.getVerifiedBreeder()));
         out.put("verifiedBreederAt", u.getVerifiedBreederAt());
         out.put("storefrontVerified", u.getStorefrontVerifiedAt() != null);

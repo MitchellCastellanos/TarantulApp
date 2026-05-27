@@ -109,6 +109,22 @@ function PrivateRoute({ children }) {
   return children
 }
 
+function AdminRoute({ children }) {
+  const { user } = useAuth()
+  if (user?.admin === true || user?.marketingOps === true) {
+    return children
+  }
+  return <Navigate to="/" replace />
+}
+
+function AdminOnlyRoute({ children }) {
+  const { user } = useAuth()
+  if (user?.admin === true) {
+    return children
+  }
+  return <Navigate to="/admin/marketing" replace />
+}
+
 function HomeGate() {
   const { token, user } = useAuth()
   const inviteOnly = isInviteOnlyEnabled()
@@ -217,14 +233,14 @@ function AppRoutes() {
       <Route path="/community" element={<Navigate to="/" replace />} />
       <Route path="/community/post/:postId" element={<Navigate to="/" replace />} />
       <Route path="/comunidad" element={<Navigate to="/" replace />} />
-      <Route path="/admin" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
-        <Route index element={<AdminHomePage />} />
-        <Route path="vendors" element={<AdminVendorsPage />} />
-        <Route path="marketplace" element={<AdminMarketplacePage />} />
+      <Route path="/admin" element={<PrivateRoute><AdminRoute><AdminLayout /></AdminRoute></PrivateRoute>}>
+        <Route index element={<AdminOnlyRoute><AdminHomePage /></AdminOnlyRoute>} />
+        <Route path="vendors" element={<AdminOnlyRoute><AdminVendorsPage /></AdminOnlyRoute>} />
+        <Route path="marketplace" element={<AdminOnlyRoute><AdminMarketplacePage /></AdminOnlyRoute>} />
         <Route path="partner-outreach" element={<AdminPartnerOutreachPage />} />
         <Route path="marketing" element={<AdminMarketingPage />} />
-        <Route path="trade" element={<AdminSpeciesTradePage />} />
-        <Route path="beta" element={<AdminBetaPage />} />
+        <Route path="trade" element={<AdminOnlyRoute><AdminSpeciesTradePage /></AdminOnlyRoute>} />
+        <Route path="beta" element={<AdminOnlyRoute><AdminBetaPage /></AdminOnlyRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

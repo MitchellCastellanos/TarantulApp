@@ -39,6 +39,7 @@ function mergePlanFields(raw) {
     communityProfileVisibility: raw?.communityProfileVisibility || 'public_full',
     defaultTarantulaPublic: raw?.defaultTarantulaPublic === true,
     admin: raw?.admin === true,
+    marketingOps: raw?.marketingOps === true,
     betaTester: raw?.betaTester === true || raw?.isBetaTester === true,
     betaAgreementAcceptedAt: raw?.betaAgreementAcceptedAt ?? null,
   }
@@ -92,6 +93,7 @@ export function AuthProvider({ children }) {
       communityProfileVisibility: authData.communityProfileVisibility,
       defaultTarantulaPublic: authData.defaultTarantulaPublic === true,
       admin: authData.admin === true,
+      marketingOps: authData.marketingOps === true,
       betaTester: authData.betaTester === true || authData.isBetaTester === true,
       betaAgreementAcceptedAt: authData.betaAgreementAcceptedAt ?? null,
     })
@@ -142,6 +144,8 @@ export function AuthProvider({ children }) {
           if (!prev) return prev
           const admin =
             typeof data.admin === 'boolean' ? data.admin : prev.admin === true
+          const marketingOps =
+            typeof data.marketingOps === 'boolean' ? data.marketingOps : prev.marketingOps === true
           const betaTester =
             typeof data.isBetaTester === 'boolean' ? data.isBetaTester : prev.betaTester === true
           const betaAgreementAcceptedAt =
@@ -157,6 +161,7 @@ export function AuthProvider({ children }) {
             overFreeLimit: data.overFreeLimit,
             strictReadOnly: data.strictReadOnly,
             admin,
+            marketingOps,
             betaTester,
             betaAgreementAcceptedAt,
           })

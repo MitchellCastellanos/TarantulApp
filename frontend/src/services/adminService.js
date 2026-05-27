@@ -113,6 +113,8 @@ const adminService = {
     api.get('/admin/user-lookup', { params: { email } }).then((r) => r.data),
   setUserVerifiedBreeder: (id, verifiedBreeder) =>
     api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  setUserMarketingOps: (id, marketingOps) =>
+    api.patch(`/admin/users/${id}/marketing-ops`, { marketingOps }).then((r) => r.data),
   setUserStorefrontVerified: (id, storefrontVerified) =>
     api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified }).then((r) => r.data),
   setVerifiedBreeder: (id, verifiedBreeder) =>
@@ -139,6 +141,12 @@ const adminService = {
     api.get('/admin/marketing/top-vendors/live', { params: { limit } }).then((r) => r.data),
   topVendorHistory: (month) =>
     api.get('/admin/marketing/top-vendors/history', month ? { params: { month } } : {}).then((r) => r.data),
+  adStudioListings: (params = {}) =>
+    api.get('/admin/marketing/ad-studio/listings', { params }).then((r) => r.data),
+  adStudioGenerate: (payload) =>
+    api.post('/admin/marketing/ad-studio/generate', payload).then((r) => r.data),
+  adStudioTemplates: () =>
+    api.get('/admin/marketing/ad-studio/templates').then((r) => r.data),
   listSpeciesTradeNotes: () => api.get('/admin/species-trade-notes').then((r) => r.data),
   upsertSpeciesTradeNote: (payload) => api.put('/admin/species-trade-notes', payload).then((r) => r.data),
   deleteSpeciesTradeNote: (id) => api.delete(`/admin/species-trade-notes/${id}`),

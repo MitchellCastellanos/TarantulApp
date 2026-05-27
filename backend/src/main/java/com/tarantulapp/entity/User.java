@@ -161,6 +161,9 @@ public class User {
     /** Per-user admin flag (V65). APP_ADMIN_EMAILS is bootstrap-only: AuthService promotes on first login. */
     @Column(name = "is_admin", nullable = false)
     private Boolean isAdmin = false;
+    /** Limited ops role for growth workflows (Ad Studio + Partner Outreach) without full admin powers. */
+    @Column(name = "is_marketing_ops", nullable = false)
+    private Boolean isMarketingOps = false;
 
     @PrePersist
     protected void onCreate() {
@@ -191,6 +194,9 @@ public class User {
         }
         if (isAdmin == null) {
             isAdmin = false;
+        }
+        if (isMarketingOps == null) {
+            isMarketingOps = false;
         }
     }
 
@@ -331,5 +337,7 @@ public class User {
 
     public Boolean getIsAdmin() { return isAdmin; }
     public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
+    public Boolean getIsMarketingOps() { return isMarketingOps; }
+    public void setIsMarketingOps(Boolean isMarketingOps) { this.isMarketingOps = isMarketingOps; }
 
 }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import marketplaceService from '../../services/marketplaceService'
+import { useAuth } from '../../context/AuthContext'
 
 function downloadCsv(filename, rows) {
   if (!Array.isArray(rows) || rows.length === 0) return
@@ -57,6 +59,11 @@ function groupByCountry(items, key = vendorCountry) {
 
 export default function AdminMarketingPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const isAdmin = user?.admin === true
+  const isMarketingOps = user?.marketingOps === true
+  const marketingLite = isMarketingOps && !isAdmin
   const [summary, setSummary] = useState(null)
   const [vendors, setVendors] = useState([])
   const [totalVendors, setTotalVendors] = useState(0)
@@ -79,21 +86,46 @@ export default function AdminMarketingPage() {
   const [newsletterBusy, setNewsletterBusy] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [liveTopVendors, setLiveTopVendors] = useState([])
+  const [adTemplates, setAdTemplates] = useState({ channels: [], tones: [], templates: [] })
+  const [adSearch, setAdSearch] = useState('')
+  const [adStorefront, setAdStorefront] = useState('monarch')
+  const [adSource, setAdSource] = useState('all')
+  const [adListings, setAdListings] = useState([])
+  const [selectedAdListingIds, setSelectedAdListingIds] = useState([])
+  const [adChannel, setAdChannel] = useState('kijiji')
+  const [adTone, setAdTone] = useState('collector')
+  const [adTemplateKey, setAdTemplateKey] = useState('inventory_push')
+  const [adCityHint, setAdCityHint] = useState('')
+  const [adDrafts, setAdDrafts] = useState([])
+  const [adBusy, setAdBusy] = useState(false)
+  const [marketingEmail, setMarketingEmail] = useState('')
+  const [marketingLookup, setMarketingLookup] = useState(null)
+  const [marketingLookupBusy, setMarketingLookupBusy] = useState(false)
+  const [marketingToggleBusy, setMarketingToggleBusy] = useState(false)
 
   const reload = () => {
     setLoading(true)
-    Promise.all([
-      adminService.summary(),
-      adminService.vendorUsers(500, true),
-      adminService.betaStats().catch(() => null),
-      adminService.officialVendors().catch(() => []),
-      adminService.officialVendorLeads().catch(() => []),
-      adminService.tapToContactRate().catch(() => null),
-      adminService.listingCounts().catch(() => null),
-      adminService.newsletterSubscriberCount().catch(() => ({ count: 0 })),
-      adminService.liveTopVendors(3).catch(() => []),
-    ])
-      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs, topVendors]) => {
+    const tasks = marketingLite
+      ? [adminService.adStudioTemplates().catch(() => ({ channels: [], tones: [], templates: [] }))]
+      : [
+          adminService.summary(),
+          adminService.vendorUsers(500, true),
+          adminService.betaStats().catch(() => null),
+          adminService.officialVendors().catch(() => []),
+          adminService.officialVendorLeads().catch(() => []),
+          adminService.tapToContactRate().catch(() => null),
+          adminService.listingCounts().catch(() => null),
+          adminService.newsletterSubscriberCount().catch(() => ({ count: 0 })),
+          adminService.liveTopVendors(3).catch(() => []),
+          adminService.adStudioTemplates().catch(() => ({ channels: [], tones: [], templates: [] })),
+        ]
+    Promise.all(tasks)
+      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs, topVendors, templates]) => {
+        if (marketingLite) {
+          const onlyTemplates = s && typeof s === 'object' ? s : { channels: [], tones: [], templates: [] }
+          setAdTemplates(onlyTemplates)
+          return
+        }
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -107,6 +139,9 @@ export default function AdminMarketingPage() {
         setListingCounts(counts && typeof counts === 'object' ? counts : null)
         setSubscriberCount(typeof subs?.count === 'number' ? subs.count : 0)
         setLiveTopVendors(Array.isArray(topVendors) ? topVendors : [])
+        setAdTemplates(templates && typeof templates === 'object'
+          ? templates
+          : { channels: [], tones: [], templates: [] })
       })
       .catch((err) => {
         const code = err?.response?.status
@@ -118,7 +153,7 @@ export default function AdminMarketingPage() {
   useEffect(() => {
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [marketingLite])
 
   const verifiedCount = useMemo(() => vendors.filter((v) => v.verifiedBreeder).length, [vendors])
   const verifiableQueue = useMemo(
@@ -214,6 +249,45 @@ export default function AdminMarketingPage() {
     }
   }, [listingQuery])
 
+  useEffect(() => {
+    const fromListingId = searchParams.get('listingId') || undefined
+    let cancelled = false
+    setAdBusy(true)
+    adminService
+      .adStudioListings({
+        q: adSearch || undefined,
+        source: adSource || undefined,
+        storefront: adStorefront || undefined,
+        listingId: fromListingId,
+        limit: 60,
+      })
+      .then((rows) => {
+        if (cancelled) return
+        const list = Array.isArray(rows) ? rows : []
+        setAdListings(list)
+        setSelectedAdListingIds((prev) => prev.filter((id) => list.some((x) => x.id === id)))
+      })
+      .catch(() => {
+        if (cancelled) return
+        setAdListings([])
+      })
+      .finally(() => {
+        if (!cancelled) setAdBusy(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [adSearch, adSource, adStorefront, searchParams])
+
+  useEffect(() => {
+    const fromListing = searchParams.get('listingId')
+    if (!fromListing || adListings.length === 0) return
+    const exists = adListings.some((l) => String(l.id) === String(fromListing))
+    if (exists) {
+      setSelectedAdListingIds((prev) => (prev.includes(fromListing) ? prev : [...prev, fromListing]))
+    }
+  }, [searchParams, adListings])
+
   const toggleListingSelection = (id) => {
     setSelectedListingIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
@@ -239,6 +313,109 @@ export default function AdminMarketingPage() {
     }
   }
 
+  const toggleAdListingSelection = (id) => {
+    setSelectedAdListingIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const generateAds = async () => {
+    if (selectedAdListingIds.length === 0) {
+      setError('Select at least one listing for Ad Studio.')
+      return
+    }
+    setAdBusy(true)
+    setError('')
+    try {
+      const out = await adminService.adStudioGenerate({
+        channel: adChannel,
+        tone: adTone,
+        templateKey: adTemplateKey,
+        cityHint: adCityHint || undefined,
+        listingIds: selectedAdListingIds,
+      })
+      const rows = Array.isArray(out?.ads) ? out.ads : []
+      setAdDrafts(rows)
+      setSuccess(`Generated ${rows.length} ad drafts.`)
+    } catch (e) {
+      setError(e?.response?.data?.message || 'Unable to generate ads right now.')
+    } finally {
+      setAdBusy(false)
+    }
+  }
+
+  const copyAdDraft = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text || '')
+      setSuccess('Ad text copied to clipboard.')
+    } catch {
+      setError('Could not copy text from browser.')
+    }
+  }
+
+  const exportAdDraftsCsv = () => {
+    if (!Array.isArray(adDrafts) || adDrafts.length === 0) {
+      setError('No ad drafts to export yet.')
+      return
+    }
+    const rows = adDrafts.map((d) => ({
+      listing_id: d.listingId || '',
+      source: d.source || '',
+      title: d.title || '',
+      species: d.speciesName || '',
+      seller: d.sellerName || '',
+      channel: d.channel || '',
+      tone: d.tone || '',
+      template: d.templateKey || '',
+      listing_url: d.listingUrl || '',
+      text: d.text || '',
+    }))
+    downloadCsv(`tarantulapp-ad-studio-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+  }
+
+  const addListingFromDropdown = (id) => {
+    if (!id) return
+    setSelectedAdListingIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+  }
+
+  const lookupMarketingUser = async () => {
+    const email = marketingEmail.trim()
+    if (!email) {
+      setError('Enter an email first.')
+      return
+    }
+    setMarketingLookupBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const out = await adminService.userLookupByEmail(email)
+      if (!out?.found) {
+        setMarketingLookup(null)
+        setError('User not found.')
+        return
+      }
+      setMarketingLookup(out.user)
+      setSuccess('User loaded.')
+    } catch {
+      setError('Could not lookup user.')
+    } finally {
+      setMarketingLookupBusy(false)
+    }
+  }
+
+  const toggleMarketingOps = async (next) => {
+    if (!marketingLookup?.id) return
+    setMarketingToggleBusy(true)
+    setError('')
+    try {
+      const updated = await adminService.setUserMarketingOps(marketingLookup.id, next)
+      setMarketingLookup((prev) => ({ ...prev, marketingOps: updated?.marketingOps === true }))
+      setSuccess(next ? 'Marketing access granted.' : 'Marketing access removed.')
+    } catch {
+      setError('Could not update marketing access.')
+    } finally {
+      setMarketingToggleBusy(false)
+    }
+  }
+
   const sendNewsletter = async () => {
     if (!newsletterDraft?.id) return
     if (!window.confirm(t('admin.mkt.newsletterSendConfirm', { count: subscriberCount }))) return
@@ -260,13 +437,19 @@ export default function AdminMarketingPage() {
     <div>
       <h2 className="h5 mb-1">{t('admin.mkt.title')}</h2>
       <p className="small text-muted mb-3">{t('admin.mkt.blurb')}</p>
+      {marketingLite && (
+        <div className="alert alert-info small py-2">
+          Marketing role mode: Ad Studio + Partner Outreach access only. Use{' '}
+          <Link to="/admin/partner-outreach">Partner Outreach</Link> for lead operations.
+        </div>
+      )}
 
       {error && <div className="alert alert-danger small py-2">{error}</div>}
       {success && <div className="alert alert-success small py-2">{success}</div>}
 
       {loading && <p className="small text-muted">{t('admin.loading')}</p>}
 
-      {summary && (
+      {!marketingLite && summary && (
         <div className="row g-3 mb-4">
           <div className="col-6 col-md-3">
             <div className="card p-3">
@@ -306,7 +489,7 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
-      {tapRate && (
+      {!marketingLite && tapRate && (
         <div className="card p-3 mb-4">
           <h3 className="h6 mb-1">{t('admin.mkt.northMetricTitle')}</h3>
           <p className="small text-muted mb-3">{t('admin.mkt.northMetricBlurb')}</p>
@@ -343,7 +526,7 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
-      <div className="row g-3 mb-4">
+      {!marketingLite && <div className="row g-3 mb-4">
         <div className="col-12 col-lg-6">
           <div className="card p-3 h-100">
             <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
@@ -469,9 +652,9 @@ export default function AdminMarketingPage() {
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
-      <div className="card p-3 mb-4">
+      {!marketingLite && <div className="card p-3 mb-4">
         <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
           <div>
             <h3 className="h6 mb-0">{t('admin.mkt.verifyQueueTitle')}</h3>
@@ -518,9 +701,152 @@ export default function AdminMarketingPage() {
             </table>
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="card p-3 mb-4">
+        <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+          <div>
+            <h3 className="h6 mb-0">Ad Studio (Phase 1)</h3>
+            <small className="text-muted">
+              Generate Kijiji/Facebook-ready copy for direct and partner mirror listings.
+            </small>
+          </div>
+          <span className="badge bg-dark">Monarch-ready</span>
+        </div>
+        <div className="row g-2 mb-2">
+          <div className="col-12 col-md-4">
+            <input
+              className="form-control form-control-sm"
+              value={adStorefront}
+              onChange={(e) => setAdStorefront(e.target.value)}
+              placeholder="Storefront filter (e.g. monarch)"
+            />
+          </div>
+          <div className="col-12 col-md-4">
+            <input
+              className="form-control form-control-sm"
+              value={adSearch}
+              onChange={(e) => setAdSearch(e.target.value)}
+              placeholder="Search listing/species"
+            />
+          </div>
+          <div className="col-12 col-md-4">
+            <select className="form-select form-select-sm" value={adSource} onChange={(e) => setAdSource(e.target.value)}>
+              <option value="all">All sources</option>
+              <option value="peer">Direct TarantulApp</option>
+              <option value="partner">Mirror / Partner</option>
+            </select>
+          </div>
+        </div>
+        <div className="row g-2 mb-2">
+          <div className="col-12 col-md-7">
+            <select className="form-select form-select-sm" value="" onChange={(e) => addListingFromDropdown(e.target.value)}>
+              <option value="">Quick add listing to selection...</option>
+              {adListings.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {(l.title || l.speciesName || 'Listing')} · {l.source === 'partner' ? 'mirror' : 'direct'}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-12 col-md-5">
+            <div className="small text-muted border rounded p-2">
+              Selected: {selectedAdListingIds.length}
+            </div>
+          </div>
+        </div>
+        <div className="border rounded p-2 mb-2" style={{ maxHeight: 220, overflowY: 'auto' }}>
+          {adBusy && adListings.length === 0 ? (
+            <div className="small text-muted">Loading listings...</div>
+          ) : adListings.length === 0 ? (
+            <div className="small text-muted">No listings found for current filters.</div>
+          ) : (
+            adListings.map((l) => (
+              <label key={l.id} className="d-flex align-items-start gap-2 small mb-1">
+                <input
+                  type="checkbox"
+                  checked={selectedAdListingIds.includes(l.id)}
+                  onChange={() => toggleAdListingSelection(l.id)}
+                />
+                <span>
+                  <strong>{l.title || l.speciesName || 'Listing'}</strong>
+                  {' · '}
+                  <span className="text-muted">{l.source === 'partner' ? 'mirror' : 'direct'}</span>
+                  {l.sellerName ? ` · ${l.sellerName}` : ''}
+                  {l.city ? ` · ${l.city}` : ''}
+                </span>
+              </label>
+            ))
+          )}
+        </div>
+        <div className="row g-2 mb-2">
+          <div className="col-12 col-md-3">
+            <select className="form-select form-select-sm" value={adChannel} onChange={(e) => setAdChannel(e.target.value)}>
+              {(adTemplates.channels?.length ? adTemplates.channels : [{ key: 'kijiji', label: 'Kijiji' }]).map((c) => (
+                <option key={c.key} value={c.key}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-12 col-md-3">
+            <select className="form-select form-select-sm" value={adTone} onChange={(e) => setAdTone(e.target.value)}>
+              {(adTemplates.tones?.length ? adTemplates.tones : [{ key: 'collector', label: 'Collector' }]).map((tone) => (
+                <option key={tone.key} value={tone.key}>{tone.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-12 col-md-3">
+            <select
+              className="form-select form-select-sm"
+              value={adTemplateKey}
+              onChange={(e) => setAdTemplateKey(e.target.value)}
+            >
+              {(adTemplates.templates?.length ? adTemplates.templates : [{ key: 'inventory_push', label: 'Inventory push' }]).map((tpl) => (
+                <option key={tpl.key} value={tpl.key}>{tpl.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-12 col-md-3">
+            <input
+              className="form-control form-control-sm"
+              value={adCityHint}
+              onChange={(e) => setAdCityHint(e.target.value)}
+              placeholder="City hint (optional)"
+            />
+          </div>
+        </div>
+        <div className="d-flex flex-wrap gap-2 mb-2">
+          <button type="button" className="btn btn-sm btn-dark" disabled={adBusy} onClick={generateAds}>
+            {adBusy ? 'Generating...' : `Generate ads (${selectedAdListingIds.length})`}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            disabled={adDrafts.length === 0}
+            onClick={exportAdDraftsCsv}
+          >
+            Export drafts CSV
+          </button>
+        </div>
+        {adDrafts.length > 0 && (
+          <div className="border rounded p-2" style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {adDrafts.map((d) => (
+              <div key={`${d.listingId}-${d.channel}`} className="border rounded p-2 mb-2">
+                <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
+                  <div className="small">
+                    <strong>{d.title || d.speciesName || 'Draft'}</strong> · {d.source || 'unknown'} · {d.channel}
+                  </div>
+                  <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => copyAdDraft(d.text)}>
+                    Copy
+                  </button>
+                </div>
+                <textarea className="form-control form-control-sm" rows={6} value={d.text || ''} readOnly />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!marketingLite && <div className="card p-3 mb-4">
         <h3 className="h6 mb-1">{t('admin.mkt.dropsTitle')}</h3>
         <p className="small text-muted mb-2">
           {t('admin.mkt.newsletterSubscribers', { count: subscriberCount })}
@@ -565,9 +891,9 @@ export default function AdminMarketingPage() {
             {t('admin.mkt.newsletterSend')}
           </button>
         </div>
-      </div>
+      </div>}
 
-      {showPreview && newsletterDraft?.bodyHtml && (
+      {!marketingLite && showPreview && newsletterDraft?.bodyHtml && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)' }} role="dialog">
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
@@ -584,7 +910,7 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
-      <div className="card p-3">
+      {!marketingLite && <div className="card p-3">
         <h3 className="h6 mb-1">{t('admin.mkt.topVendorsLiveTitle')}</h3>
         <p className="small text-muted mb-2">{t('admin.mkt.topVendorsLiveBlurb')}</p>
         {liveTopVendors.length === 0 ? (
@@ -605,7 +931,63 @@ export default function AdminMarketingPage() {
             })}
           </ul>
         )}
-      </div>
+      </div>}
+
+      {isAdmin && (
+        <div className="card p-3 mt-4">
+          <h3 className="h6 mb-1">Marketing Ops Access</h3>
+          <p className="small text-muted mb-2">
+            Grant limited access to Ad Studio and Partner Outreach without full admin rights.
+          </p>
+          <div className="row g-2 mb-2">
+            <div className="col-12 col-md-8">
+              <input
+                className="form-control form-control-sm"
+                value={marketingEmail}
+                onChange={(e) => setMarketingEmail(e.target.value)}
+                placeholder="user@email.com"
+              />
+            </div>
+            <div className="col-12 col-md-4">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-dark w-100"
+                disabled={marketingLookupBusy}
+                onClick={lookupMarketingUser}
+              >
+                {marketingLookupBusy ? 'Loading...' : 'Lookup user'}
+              </button>
+            </div>
+          </div>
+          {marketingLookup && (
+            <div className="border rounded p-2 small">
+              <div><strong>{marketingLookup.email}</strong></div>
+              <div className="text-muted mb-2">
+                {marketingLookup.displayName || 'No display name'} · marketingOps:{' '}
+                {marketingLookup.marketingOps ? 'yes' : 'no'}
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success"
+                  disabled={marketingToggleBusy}
+                  onClick={() => toggleMarketingOps(true)}
+                >
+                  Grant marketing access
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={marketingToggleBusy}
+                  onClick={() => toggleMarketingOps(false)}
+                >
+                  Revoke marketing access
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

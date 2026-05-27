@@ -280,6 +280,14 @@ export default function MarketplaceListingDetailPage() {
                   <p className="h5 fw-semibold mb-0" style={{ color: 'var(--ta-gold-light-classic, #e8d4a8)' }}>
                     {formatListingPrice(listing.priceAmount, listing.currency, t)}
                   </p>
+                  {(user?.admin === true || user?.marketingOps === true) && (
+                    <Link
+                      className="btn btn-sm btn-outline-dark"
+                      to={`/admin/marketing?listingId=${encodeURIComponent(String(listingId || ''))}`}
+                    >
+                      Generate in Ad Studio
+                    </Link>
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary"

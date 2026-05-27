@@ -378,6 +378,7 @@ public class AuthService {
         r.setDefaultTarantulaPublic(Boolean.TRUE.equals(user.getDefaultTarantulaPublic()));
         r.setAdmin(Boolean.TRUE.equals(user.getIsAdmin())
                 || adminAccessService.shouldBootstrapAdmin(user));
+        r.setMarketingOps(Boolean.TRUE.equals(user.getIsMarketingOps()));
         r.setBetaTester(Boolean.TRUE.equals(user.getIsBetaTester()));
         r.setBetaAgreementAcceptedAt(user.getBetaAgreementAcceptedAt());
         r.setRegistrationMode(registrationMode.wireName());

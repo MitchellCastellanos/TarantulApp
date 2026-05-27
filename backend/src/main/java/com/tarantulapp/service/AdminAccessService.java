@@ -43,12 +43,29 @@ public class AdminAccessService {
         }
     }
 
+    public void assertCurrentUserCanUseMarketingTools() {
+        String email = securityHelper.getCurrentUserEmail();
+        if (!isCurrentUserAdmin(email) && !isCurrentUserMarketingOps(email)) {
+            throw new AccessDeniedException("Acceso solo para admin/marketing");
+        }
+    }
+
     private boolean isCurrentUserAdmin(String email) {
         if (email == null || email.isBlank()) {
             return false;
         }
         return userRepository.findByEmail(email)
                 .map(User::getIsAdmin)
+                .filter(Boolean.TRUE::equals)
+                .isPresent();
+    }
+
+    private boolean isCurrentUserMarketingOps(String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        return userRepository.findByEmail(email)
+                .map(User::getIsMarketingOps)
                 .filter(Boolean.TRUE::equals)
                 .isPresent();
     }
