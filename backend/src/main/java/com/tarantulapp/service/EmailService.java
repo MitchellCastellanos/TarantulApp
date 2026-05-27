@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
+import java.net.SocketTimeoutException;
 import java.util.Base64;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -31,6 +32,8 @@ public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final int RESEND_MAX_ATTEMPTS = 3;
+    private static final long RESEND_RETRY_BASE_DELAY_MS = 350L;
 
     private final JavaMailSender mailSender;
     private final MessageSource messageSource;
@@ -81,7 +84,6 @@ public class EmailService {
     private void doSend(String to, String subject, String text, String html, EmailAttachment attachment) throws Exception {
         if (attachment != null && attachment.content() != null && attachment.content().length > 0) {
             if (resendApiKey != null && !resendApiKey.isBlank()) {
-                Resend resend = new Resend(resendApiKey);
                 String fromField = fromName + " <" + fromAddress + ">";
                 Attachment resendAttachment = Attachment.builder()
                         .fileName(attachment.filename())
@@ -96,7 +98,7 @@ public class EmailService {
                 if (html != null && !html.isBlank()) {
                     builder.html(html);
                 }
-                resend.emails().send(builder.build());
+                sendWithResendRetry(builder.build(), to, subject);
                 return;
             }
             MimeMessage msg = mailSender.createMimeMessage();
@@ -120,7 +122,6 @@ public class EmailService {
             return;
         }
         if (resendApiKey != null && !resendApiKey.isBlank()) {
-            Resend resend = new Resend(resendApiKey);
             String fromField = fromName + " <" + fromAddress + ">";
             var builder = CreateEmailOptions.builder()
                     .from(fromField)
@@ -130,7 +131,7 @@ public class EmailService {
             if (html != null && !html.isBlank()) {
                 builder.html(html);
             }
-            resend.emails().send(builder.build());
+            sendWithResendRetry(builder.build(), to, subject);
         } else {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, html != null && !html.isBlank(), "UTF-8");
@@ -146,6 +147,52 @@ public class EmailService {
                 helper.setText(text);
             }
             mailSender.send(msg);
+        }
+    }
+
+    private void sendWithResendRetry(CreateEmailOptions options, String to, String subject) throws Exception {
+        Exception last = null;
+        for (int attempt = 1; attempt <= RESEND_MAX_ATTEMPTS; attempt++) {
+            try {
+                Resend resend = new Resend(resendApiKey);
+                resend.emails().send(options);
+                return;
+            } catch (Exception ex) {
+                last = ex;
+                if (!isRetryableResendFailure(ex) || attempt >= RESEND_MAX_ATTEMPTS) {
+                    throw ex;
+                }
+                long delayMs = RESEND_RETRY_BASE_DELAY_MS * (1L << (attempt - 1));
+                log.warn("Resend timeout attempt {}/{} for {} (subject='{}'). Retrying in {}ms",
+                        attempt, RESEND_MAX_ATTEMPTS, LogSafe.maskEmail(to), subject, delayMs);
+                sleepQuietly(delayMs);
+            }
+        }
+        if (last != null) {
+            throw last;
+        }
+    }
+
+    private static boolean isRetryableResendFailure(Throwable ex) {
+        Throwable cursor = ex;
+        while (cursor != null) {
+            if (cursor instanceof SocketTimeoutException) {
+                return true;
+            }
+            String msg = cursor.getMessage();
+            if (msg != null && msg.toLowerCase(Locale.ROOT).contains("timeout")) {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
+    }
+
+    private static void sleepQuietly(long delayMs) {
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
