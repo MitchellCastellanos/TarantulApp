@@ -8,6 +8,7 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import billingService from '../services/billingService'
+import { usePageSeo } from '../hooks/usePageSeo'
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import {
   BILLING_REGION_CODES,
@@ -24,6 +25,13 @@ export default function ProPage() {
   const { user, setPlan } = useAuth()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('pro.title')} | TarantulApp™`,
+    description: t('pro.metaDescription', { defaultValue: t('pro.subtitle') }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/pro` : undefined,
+  })
   const [billing, setBilling] = useState(null)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [error, setError] = useState('')

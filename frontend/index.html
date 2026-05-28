@@ -3,8 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TarantulApp&#8482;</title>
-    <meta name="description" content="Manage your tarantula collection: profiles, reminders, terrarium QR labels, and species catalog." />
+    <title>TarantulApp&#8482; — Tarantula keeper logbook, species catalog &amp; marketplace</title>
+    <meta name="description" content="Manage your tarantula collection: profiles, feeding &amp; molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="TarantulApp&#8482;" />
+    <link rel="canonical" href="https://tarantulapp.com/" />
+
+    <!-- Open Graph (static fallback for crawlers that do not run JS; usePageSeo overrides per route) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TarantulApp&#8482;" />
+    <meta property="og:title" content="TarantulApp&#8482; — Tarantula keeper logbook, species catalog &amp; marketplace" />
+    <meta property="og:description" content="Manage your tarantula collection: profiles, feeding &amp; molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace." />
+    <meta property="og:url" content="https://tarantulapp.com/" />
+    <meta property="og:image" content="https://tarantulapp.com/og-social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TarantulApp&#8482; — tarantula keeper app" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="es_MX" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="fr_CA" />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TarantulApp" />
+    <meta name="twitter:creator" content="@TarantulApp" />
+    <meta name="twitter:title" content="TarantulApp&#8482; — Tarantula keeper logbook, species catalog &amp; marketplace" />
+    <meta name="twitter:description" content="Manage your tarantula collection: profiles, feeding &amp; molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace." />
+    <meta name="twitter:image" content="https://tarantulapp.com/og-social.png" />
+
+    <script type="application/ld+json" id="site-jsonld">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://tarantulapp.com/#organization",
+            "name": "TarantulApp",
+            "url": "https://tarantulapp.com/",
+            "logo": "https://tarantulapp.com/icon-512.png",
+            "sameAs": [
+              "https://www.instagram.com/tarantulapp_official",
+              "https://www.tiktok.com/@tarantulapp_offic",
+              "https://x.com/TarantulApp"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://tarantulapp.com/#website",
+            "url": "https://tarantulapp.com/",
+            "name": "TarantulApp",
+            "publisher": { "@id": "https://tarantulapp.com/#organization" },
+            "inLanguage": ["en", "es", "fr"],
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://tarantulapp.com/discover/catalog?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "TarantulApp",
+            "operatingSystem": "Android, Web",
+            "applicationCategory": "LifestyleApplication",
+            "url": "https://tarantulapp.com/",
+            "image": "https://tarantulapp.com/icon-512.png",
+            "description": "Tarantula keeper logbook: collection profiles, feeding and molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace.",
+            "publisher": { "@id": "https://tarantulapp.com/#organization" },
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">

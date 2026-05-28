@@ -1,6 +1,7 @@
 import Navbar from '../components/Navbar'
 import { useTranslation } from 'react-i18next'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 function ContactBlock({ title, body, email }) {
   return (
@@ -26,6 +27,15 @@ function ContactBlock({ title, body, email }) {
 
 export default function ContactPage() {
   const { t } = useTranslation()
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('contact.title')} | TarantulApp™`,
+    description: t('contact.metaDescription', {
+      defaultValue: 'Reach TarantulApp™: topic-specific inboxes for support, billing, marketplace, and platform matters so we can reply faster.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/contact` : undefined,
+  })
   const contactBlocks = [
     { title: t('contact.helloTitle'), body: t('contact.helloBody'), email: PUBLIC_CONTACT.hello },
     { title: t('contact.supportTitle'), body: t('contact.supportBody'), email: PUBLIC_CONTACT.support },

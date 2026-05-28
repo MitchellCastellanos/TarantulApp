@@ -1,23 +1,44 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-/** Rutas públicas indexables (sin área autenticada). */
+/** Rutas públicas indexables (canónicas, sin área autenticada ni redirecciones 301). */
 const PUBLIC_ROUTES = [
   '/',
   '/login',
+  '/discover',
+  '/discover/catalog',
+  '/discover/compare',
+  '/tools/qr',
+  '/marketplace',
+  '/partners',
+  '/sex-id',
+  '/about',
+  '/pro',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/marketplace-policy',
+  '/legal/verified-vendors',
+  '/account-deletion',
+]
+
+/** Áreas autenticadas, transaccionales o solo-redirección que no deben rastrearse. */
+const DISALLOWED_PATHS = [
+  '/account',
+  '/admin',
+  '/reminders',
+  '/insights',
+  '/notifications',
+  '/wishlist',
+  '/onboarding',
+  '/tarantulas/',
+  '/marketplace/messages',
+  '/marketplace/sell',
   '/forgot-password',
   '/reset-password',
-  '/descubrir',
-  '/descubrir/comparar',
-  '/discover',
-  '/herramientas/qr',
-  '/about',
-  '/marketplace',
-  '/pro',
-  '/privacy',
-  '/account-deletion',
-  '/terms',
-  '/contact',
+  '/vendor-invite',
+  '/launch',
+  '/launch_registration',
 ]
 
 function normalizeBase(url) {
@@ -81,16 +102,27 @@ function buildSitemapXml(base, extraRoutes = []) {
   const body = allRoutes.map((route) => {
     const loc = escapeXml(locForRoute(base, route))
     const isSpecies = route.startsWith('/discover/species/')
+    const isPrimary =
+      route === '/tools/qr' ||
+      route === '/discover' ||
+      route === '/discover/catalog' ||
+      route === '/marketplace' ||
+      route === '/about'
     const priority =
       route === '/'
         ? '1.0'
         : isSpecies
           ? '0.75'
-          : route === '/herramientas/qr' || route === '/descubrir' || route === '/discover' || route === '/marketplace' || route === '/about'
+          : isPrimary
             ? '0.9'
             : '0.65'
     const changefreq =
-      route === '/' || route === '/descubrir' || route === '/discover' || route === '/herramientas/qr' || route === '/marketplace' || isSpecies
+      route === '/' ||
+      route === '/discover' ||
+      route === '/discover/catalog' ||
+      route === '/tools/qr' ||
+      route === '/marketplace' ||
+      isSpecies
         ? 'weekly'
         : 'monthly'
     return `  <url>
@@ -110,6 +142,7 @@ ${body}
 
 function buildRobotsTxt(base) {
   let out = 'User-agent: *\nAllow: /\n'
+  for (const p of DISALLOWED_PATHS) out += `Disallow: ${p}\n`
   if (base) out += `\nSitemap: ${base}/sitemap.xml\n`
   return out
 }

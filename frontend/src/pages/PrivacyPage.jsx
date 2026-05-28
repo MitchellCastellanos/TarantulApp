@@ -3,10 +3,20 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 export default function PrivacyPage() {
   const { t } = useTranslation()
   const sections = t('legal.privacy.sections', { returnObjects: true }) || []
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('legal.privacy.title')} | TarantulApp™`,
+    description: t('legal.privacy.metaDescription', {
+      defaultValue: 'How TarantulApp™ collects, uses, and protects your data across the keeper app, species catalog, and marketplace.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/privacy` : undefined,
+  })
   return (
     <div>
       <Navbar />

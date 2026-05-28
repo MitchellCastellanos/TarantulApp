@@ -2,9 +2,16 @@ import { useEffect } from 'react'
 import { BRAND_WITH_TM } from '../constants/brand'
 
 /** Debe coincidir con `index.html` (SEO por defecto de la SPA). */
-export const SITE_DEFAULT_TITLE = BRAND_WITH_TM
+export const SITE_DEFAULT_TITLE =
+  `${BRAND_WITH_TM} — Tarantula keeper logbook, species catalog & marketplace`
 export const SITE_DEFAULT_DESCRIPTION =
-  'Manage your tarantula collection: profiles, reminders, terrarium QR labels, and species catalog.'
+  'Manage your tarantula collection: profiles, feeding & molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace.'
+export const SITE_DEFAULT_IMAGE_PATH = '/og-social.png'
+
+function siteDefaultImageUrl() {
+  if (typeof window === 'undefined' || !window.location?.origin) return undefined
+  return `${window.location.origin}${SITE_DEFAULT_IMAGE_PATH}`
+}
 
 function upsertMeta(attr, key, content) {
   if (content == null || content === '') return
@@ -36,6 +43,7 @@ export function usePageSeo({
   canonicalHref,
   jsonLd,
   jsonLdId = 'page-jsonld',
+  ogType = 'website',
   noindex = false,
 }) {
   useEffect(() => {
@@ -59,17 +67,19 @@ export function usePageSeo({
     }
 
     const desc = description ?? ''
+    const ogImage = imageUrl || siteDefaultImageUrl()
 
     upsertMeta('name', 'description', desc)
-    upsertMeta('property', 'og:title', title ?? '')
+    upsertMeta('property', 'og:type', ogType)
+    upsertMeta('property', 'og:title', title ?? SITE_DEFAULT_TITLE)
     upsertMeta('property', 'og:description', desc)
     upsertMeta('property', 'og:url', pageUrl)
-    if (imageUrl) upsertMeta('property', 'og:image', imageUrl)
+    if (ogImage) upsertMeta('property', 'og:image', ogImage)
 
     upsertMeta('name', 'twitter:card', 'summary_large_image')
-    upsertMeta('name', 'twitter:title', title ?? '')
+    upsertMeta('name', 'twitter:title', title ?? SITE_DEFAULT_TITLE)
     upsertMeta('name', 'twitter:description', desc)
-    if (imageUrl) upsertMeta('name', 'twitter:image', imageUrl)
+    if (ogImage) upsertMeta('name', 'twitter:image', ogImage)
 
     if (jsonLd) {
       removeJsonLd(jsonLdId)
@@ -85,16 +95,18 @@ export function usePageSeo({
     }
 
     return () => {
+      const defaultImage = siteDefaultImageUrl()
       document.title = SITE_DEFAULT_TITLE
       upsertMeta('name', 'description', SITE_DEFAULT_DESCRIPTION)
+      upsertMeta('property', 'og:type', 'website')
       upsertMeta('property', 'og:title', SITE_DEFAULT_TITLE)
       upsertMeta('property', 'og:description', SITE_DEFAULT_DESCRIPTION)
       removeMeta('property', 'og:url')
-      removeMeta('property', 'og:image')
-      removeMeta('name', 'twitter:card')
-      removeMeta('name', 'twitter:title')
-      removeMeta('name', 'twitter:description')
-      removeMeta('name', 'twitter:image')
+      if (defaultImage) upsertMeta('property', 'og:image', defaultImage)
+      upsertMeta('name', 'twitter:card', 'summary_large_image')
+      upsertMeta('name', 'twitter:title', SITE_DEFAULT_TITLE)
+      upsertMeta('name', 'twitter:description', SITE_DEFAULT_DESCRIPTION)
+      if (defaultImage) upsertMeta('name', 'twitter:image', defaultImage)
       if (noindex) removeMeta('name', 'robots')
       removeJsonLd(jsonLdId)
 
@@ -105,5 +117,5 @@ export function usePageSeo({
         else lc.remove()
       }
     }
-  }, [title, description, imageUrl, canonicalHref, jsonLd, jsonLdId, noindex])
+  }, [title, description, imageUrl, canonicalHref, jsonLd, jsonLdId, ogType, noindex])
 }

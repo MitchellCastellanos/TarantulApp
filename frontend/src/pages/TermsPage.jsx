@@ -3,10 +3,20 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 export default function TermsPage() {
   const { t } = useTranslation()
   const sections = t('legal.terms.sections', { returnObjects: true }) || []
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('legal.terms.title')} | TarantulApp™`,
+    description: t('legal.terms.metaDescription', {
+      defaultValue: 'The Terms of Service for using TarantulApp™ — the keeper logbook, species catalog, and community marketplace.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/terms` : undefined,
+  })
   return (
     <div>
       <Navbar />

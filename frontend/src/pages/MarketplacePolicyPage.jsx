@@ -3,10 +3,20 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 export default function MarketplacePolicyPage() {
   const { t } = useTranslation()
   const sections = t('legal.marketplacePolicy.sections', { returnObjects: true }) || []
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('legal.marketplacePolicy.title')} | TarantulApp™`,
+    description: t('legal.marketplacePolicy.metaDescription', {
+      defaultValue: 'Rules for buying and selling tarantulas on the TarantulApp™ keeper marketplace: listings, conduct, and safety.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/marketplace-policy` : undefined,
+  })
 
   return (
     <div>

@@ -2,10 +2,20 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 export default function LegalVerifiedVendorsPage() {
   const { t } = useTranslation()
   const bullets = t('legal.verifiedVendors.bullets', { returnObjects: true }) || []
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('legal.verifiedVendors.title')} | TarantulApp™`,
+    description: t('legal.verifiedVendors.metaDescription', {
+      defaultValue: 'What the TarantulApp™ Verified Vendor badge means and how reviewed sellers are vetted before listing on the marketplace.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    canonicalHref: origin ? `${origin}/legal/verified-vendors` : undefined,
+  })
   return (
     <div>
       <Navbar />

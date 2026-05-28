@@ -6,6 +6,7 @@ import BrandLogoMark from '../components/BrandLogoMark'
 import speciesService from '../services/speciesService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 const PAGE_SIZE = 24
 
@@ -38,6 +39,17 @@ export default function DiscoverCatalogBrowsePage() {
     if (habitatType === 'arboreal') return t('discover.browseTitleArboreal')
     return t('discover.browseTitleAll')
   }, [hobbyWorld, habitatType, semi, t])
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${title} | TarantulApp™`,
+    description: t('discover.browseMetaDescription', {
+      defaultValue: 'Browse the TarantulApp™ species catalog: filter tarantulas by habitat, size, experience level, and New/Old World, sourced from WSC/GBIF.',
+    }),
+    imageUrl: origin ? `${origin}/og-social.png` : undefined,
+    // Canonical to the clean catalog URL so filter/pagination params do not fragment ranking.
+    canonicalHref: origin ? `${origin}/discover/catalog` : undefined,
+  })
 
   const load = useCallback(() => {
     setError(false)

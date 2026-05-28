@@ -47,4 +47,13 @@ i18n
     interpolation: { escapeValue: false },
   })
 
+/** Mantiene <html lang> en sync con el idioma activo (SEO + accesibilidad). */
+function syncHtmlLang(lng) {
+  if (typeof document === 'undefined') return
+  const lang = lng || i18n.resolvedLanguage || i18n.language || 'en'
+  document.documentElement.setAttribute('lang', lang)
+}
+syncHtmlLang(i18n.resolvedLanguage || i18n.language)
+i18n.on('languageChanged', syncHtmlLang)
+
 export default i18n

@@ -13,6 +13,7 @@ import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
 import { inferBillingRegion } from '../utils/inferBillingRegion'
 import HCaptchaWidget, { isCaptchaEnabled } from '../components/HCaptchaWidget'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 const LOGIN_AUDIENCE_KEY = 'ta-login-audience'
 
@@ -21,6 +22,17 @@ export default function LoginPage() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
+  const seoOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: t('login.metaTitle', {
+      defaultValue: 'TarantulApp™ — Tarantula keeper logbook, species catalog & marketplace',
+    }),
+    description: t('login.metaDescription', {
+      defaultValue: 'Track your tarantula collection: feeding & molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace. Free on web and Android.',
+    }),
+    imageUrl: seoOrigin ? `${seoOrigin}/og-social.png` : undefined,
+    canonicalHref: seoOrigin ? `${seoOrigin}/login` : undefined,
+  })
   const [mode, setMode] = useState(() => (location.state?.initialMode === 'register' ? 'register' : 'login'))
   const [form, setForm] = useState({ email: '', password: '', displayName: '', legalAccepted: false })
   const [captchaToken, setCaptchaToken] = useState('')

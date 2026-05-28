@@ -6,11 +6,23 @@ import AndroidPlayBetaCallout from '../components/AndroidPlayBetaCallout'
 import Navbar from '../components/Navbar'
 import { THEME_CHANGE_EVENT, getStoredTheme } from '../utils/themePreference'
 import { useEffect, useState } from 'react'
+import { usePageSeo } from '../hooks/usePageSeo'
 
 const AUDIENCE_KEY = 'ta-public-home-audience'
 
 export default function PublicBetaHomePage() {
   const { t } = useTranslation()
+  const seoOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: t('home.metaTitle', {
+      defaultValue: 'TarantulApp™ — Tarantula keeper logbook, species catalog & marketplace',
+    }),
+    description: t('home.metaDescription', {
+      defaultValue: 'The all-in-one app for tarantula keepers: collection profiles, feeding & molt reminders, terrarium QR labels, a sourced species catalog (WSC/GBIF), and a keeper marketplace.',
+    }),
+    imageUrl: seoOrigin ? `${seoOrigin}/og-social.png` : undefined,
+    canonicalHref: seoOrigin ? `${seoOrigin}/` : undefined,
+  })
   const [theme, setTheme] = useState(() => getStoredTheme())
   const [audience, setAudience] = useState(() => {
     try {
