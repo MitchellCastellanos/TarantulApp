@@ -97,8 +97,9 @@ function PrivateRoute({ children }) {
     )
   }
   if (isInviteOnlyEnabled()) {
-    const isBeta = user?.betaTester === true || user?.admin === true
-    if (!isBeta) {
+    const hasAppAccess =
+      user?.betaTester === true || user?.admin === true || user?.marketingOps === true
+    if (!hasAppAccess) {
       return <Navigate to="/" replace />
     }
   }
@@ -132,16 +133,20 @@ function HomeGate() {
     return inviteOnly ? <PublicBetaHomePage /> : <Navigate to="/login" replace />
   }
   if (inviteOnly) {
-    const isBeta = user?.betaTester === true || user?.admin === true
-    if (!isBeta) {
+    const hasAppAccess =
+      user?.betaTester === true || user?.admin === true || user?.marketingOps === true
+    if (!hasAppAccess) {
       return <BetaPendingHomePage />
     }
+  }
+  if (user?.marketingOps === true && user?.admin !== true) {
+    return <Navigate to="/admin/marketing" replace />
   }
   return <DashboardPage />
 }
 
 function LoginGate() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const location = useLocation()
   if (token) {
     let r = location.state?.redirectAfterAuth
@@ -158,6 +163,9 @@ function LoginGate() {
     }
     if (typeof r === 'string' && r.startsWith('/')) {
       return <Navigate to={r} replace />
+    }
+    if (user?.marketingOps === true && user?.admin !== true) {
+      return <Navigate to="/admin/marketing" replace />
     }
     return <Navigate to="/" replace />
   }

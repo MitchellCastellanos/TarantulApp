@@ -52,6 +52,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   // Admin gating is server-driven (users.is_admin via AuthResponse#admin); no client-side fallback,
   // since shipping admin emails in the bundle leaks ops staff and lets attackers target them.
   const isAdmin = user?.admin === true
+  const isMarketingOps = user?.marketingOps === true
+  const showAdminNav = isAdmin || isMarketingOps
+  const adminNavHref = isAdmin ? '/admin' : '/admin/marketing'
 
   const inviteOnlyNav = isInviteOnlyEnabled()
   const lockPublicNav = inviteOnlyNav && !token
@@ -274,9 +277,10 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       <Link to="/pro" onClick={onClick} className="ta-more__item">
         <i className="bi bi-star" aria-hidden="true" /> {t('nav.proMenuItem', 'Pro / plan')}
       </Link>
-      {user && isAdmin && (
-        <Link to="/admin" onClick={onClick} className="ta-more__item">
-          <i className="bi bi-shield-lock" aria-hidden="true" /> {t('nav.admin')}
+      {user && showAdminNav && (
+        <Link to={adminNavHref} onClick={onClick} className="ta-more__item">
+          <i className="bi bi-shield-lock" aria-hidden="true" />{' '}
+          {isAdmin ? t('nav.admin') : t('nav.marketingTools', 'Marketing tools')}
         </Link>
       )}
       <div className="ta-more__row">

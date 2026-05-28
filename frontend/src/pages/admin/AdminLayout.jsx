@@ -7,12 +7,19 @@ export default function AdminLayout() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.admin === true
+  const isMarketingOnly = user?.marketingOps === true && !isAdmin
   return (
     <div>
       <Navbar />
       <div className="container-xxl mt-4 mb-5 px-3 px-md-4">
-        <h1 className="h4 mb-2">{t('admin.title')}</h1>
-        <p className="small text-muted mb-3">{t('admin.layoutBlurb')}</p>
+        <h1 className="h4 mb-2">
+          {isMarketingOnly ? t('nav.marketingTools', 'Marketing tools') : t('admin.title')}
+        </h1>
+        <p className="small text-muted mb-3">
+          {isMarketingOnly
+            ? 'Ad Studio and Partner Outreach. Open Marketing for ads or Partner Outreach for vendor leads.'
+            : t('admin.layoutBlurb')}
+        </p>
         <ul className="nav nav-pills flex-column flex-sm-row gap-2 mb-4">
           {isAdmin && (
             <li className="nav-item">
