@@ -150,7 +150,7 @@ function groupByCountry(items, key = vendorCountry) {
 }
 
 export default function AdminMarketingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const isAdmin = user?.admin === true
@@ -185,7 +185,10 @@ export default function AdminMarketingPage() {
   const [adListings, setAdListings] = useState([])
   const [selectedAdListingIds, setSelectedAdListingIds] = useState([])
   const [adChannel, setAdChannel] = useState('kijiji')
-  const [adTone, setAdTone] = useState('collector')
+  const [adLocale, setAdLocale] = useState(() => {
+    const base = String(i18n.language || 'en').split('-')[0].toLowerCase()
+    return base === 'es' || base === 'fr' ? base : 'en'
+  })
   const [adTemplateKey, setAdTemplateKey] = useState('inventory_push')
   const [adCityHint, setAdCityHint] = useState('')
   const [adCopyMode, setAdCopyMode] = useState('listing')
@@ -423,10 +426,10 @@ export default function AdminMarketingPage() {
     try {
       const out = await adminService.adStudioGenerate({
         channel: adChannel,
-        tone: adTone,
         templateKey: adTemplateKey,
         cityHint: adCityHint || undefined,
         copyMode: adCopyMode,
+        locale: adLocale,
         listingIds: selectedAdListingIds,
       })
       const rows = Array.isArray(out?.ads) ? out.ads : []
@@ -462,7 +465,7 @@ export default function AdminMarketingPage() {
       species: d.speciesName || '',
       seller: d.sellerName || '',
       channel: d.channel || '',
-      tone: d.tone || '',
+      locale: d.locale || '',
       template: d.templateKey || '',
       copy_mode: d.copyMode || '',
       listing_url: d.listingUrl || '',
@@ -933,9 +936,13 @@ export default function AdminMarketingPage() {
             </select>
           </div>
           <div className="col-12 col-md-2">
-            <select className="form-select form-select-sm" value={adTone} onChange={(e) => setAdTone(e.target.value)}>
-              {(adTemplates.tones?.length ? adTemplates.tones : [{ key: 'collector', label: 'Collector' }]).map((tone) => (
-                <option key={tone.key} value={tone.key}>{tone.label}</option>
+            <select className="form-select form-select-sm" value={adLocale} onChange={(e) => setAdLocale(e.target.value)}>
+              {(adTemplates.locales?.length ? adTemplates.locales : [
+                { key: 'en', label: 'English' },
+                { key: 'es', label: 'Español' },
+                { key: 'fr', label: 'Français' },
+              ]).map((loc) => (
+                <option key={loc.key} value={loc.key}>{loc.label}</option>
               ))}
             </select>
           </div>

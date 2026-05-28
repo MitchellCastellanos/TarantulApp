@@ -2,6 +2,7 @@ package com.tarantulapp.controller;
 
 import com.tarantulapp.service.AdminAccessService;
 import com.tarantulapp.service.MarketplaceService;
+import com.tarantulapp.util.BetaMailBodies;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +38,36 @@ public class AdminMarketingAdStudioController {
             String templateKey,
             List<UUID> listingIds,
             String cityHint,
-            String copyMode
+            String copyMode,
+            String locale
+    ) {}
+
+    private record AdCopyStrings(
+            String tarantulaForSale,
+            String newTarantula,
+            String femaleTarantula,
+            String beginnerTarantula,
+            String labelSpecies,
+            String labelSex,
+            String labelStage,
+            String labelLineage,
+            String labelPrice,
+            String labelLocation,
+            String labelSeller,
+            String priceOnRequest,
+            String channelKijiji,
+            String channelFacebookMarketplace,
+            String channelFacebookGroups,
+            String channelReddit,
+            String channelDiscord,
+            String channelDefault,
+            String storefrontBrowse,
+            String storefrontExampleListing,
+            String storefrontFullShop,
+            String storefrontLiveInventory,
+            String storefrontNewStock,
+            String storefrontFemalesInStock,
+            String storefrontBeginnerPicks
     ) {}
 
     @GetMapping("/templates")
@@ -64,11 +94,17 @@ public class AdminMarketingAdStudioController {
                 Map.of("key", "listing", "label", "Listing details"),
                 Map.of("key", "storefront", "label", "Storefront / shop")
         );
+        List<Map<String, String>> locales = List.of(
+                Map.of("key", "en", "label", "English"),
+                Map.of("key", "es", "label", "Español"),
+                Map.of("key", "fr", "label", "Français")
+        );
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("channels", channels);
         out.put("tones", tones);
         out.put("templates", templates);
         out.put("copyModes", copyModes);
+        out.put("locales", locales);
         return ResponseEntity.ok(out);
     }
 
@@ -121,12 +157,14 @@ public class AdminMarketingAdStudioController {
         String template = normalizeTemplate(req.templateKey());
         String cityHint = normalize(req.cityHint());
         String copyMode = normalizeCopyMode(req.copyMode());
+        String locale = normalizeLocale(req.locale());
+        AdCopyStrings strings = copyStrings(locale);
         List<Map<String, Object>> ads = new ArrayList<>();
         for (UUID listingId : req.listingIds()) {
             if (listingId == null) continue;
             Map<String, Object> payload = marketplaceService.publicListingDetail(listingId);
             Map<String, Object> listing = unwrapListing(payload);
-            Map<String, Object> copy = buildAdCopy(payload, channel, tone, template, cityHint, copyMode);
+            Map<String, Object> copy = buildAdCopy(payload, channel, template, cityHint, copyMode, strings);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("listingId", listingId);
             row.put("source", asText(listing.get("source")));
@@ -137,6 +175,7 @@ public class AdminMarketingAdStudioController {
             row.put("tone", tone);
             row.put("templateKey", template);
             row.put("copyMode", copyMode);
+            row.put("locale", locale);
             row.put("listingUrl", copy.get("listingUrl"));
             row.put("storeUrl", copy.get("storeUrl"));
             row.put("imageUrl", copy.get("imageUrl"));
@@ -172,8 +211,8 @@ public class AdminMarketingAdStudioController {
         return out;
     }
 
-    private Map<String, Object> buildAdCopy(Map<String, Object> payload, String channel, String tone,
-                                            String template, String cityHint, String copyMode) {
+    private Map<String, Object> buildAdCopy(Map<String, Object> payload, String channel, String template,
+                                            String cityHint, String copyMode, AdCopyStrings strings) {
         Map<String, Object> listing = unwrapListing(payload);
         Map<String, Object> sellerPreview = unwrapSellerPreview(payload);
         boolean storefront = "storefront".equals(copyMode);
@@ -181,24 +220,16 @@ public class AdminMarketingAdStudioController {
         String listingUrl = listingUrl(listing);
         String store = storeUrl(listing);
         String imageUrl = primaryImageUrl(listing);
-
-        String channelLine = switch (channel) {
-            case "kijiji" -> "See full specimen details, molt context, and more photos on TarantulApp:";
-            case "facebook_marketplace" -> "Browse the full listing and verified seller context on TarantulApp:";
-            case "facebook_groups" -> "Full details and live inventory link:";
-            case "reddit" -> "Listing details and current availability:";
-            case "discord" -> "Live listing details:";
-            default -> "Full details:";
-        };
+        String channelLine = channelLine(channel, strings);
 
         String adTitle;
         String adDescription;
         if (storefront) {
-            adTitle = buildStorefrontTitle(listing, sellerPreview, template);
-            adDescription = buildStorefrontDescription(listing, sellerPreview, tone, channelLine, store, listingUrl);
+            adTitle = buildStorefrontTitle(listing, sellerPreview, template, strings);
+            adDescription = buildStorefrontDescription(listing, sellerPreview, channelLine, store, listingUrl, strings);
         } else {
-            adTitle = buildListingTitle(listing, template);
-            adDescription = buildListingDescription(listing, sellerPreview, tone, cityHint, channelLine, listingUrl);
+            adTitle = buildListingTitle(listing, template, strings);
+            adDescription = buildListingDescription(listing, sellerPreview, cityHint, channelLine, listingUrl, strings);
         }
 
         String text = adTitle + "\n\n" + adDescription;
@@ -212,18 +243,18 @@ public class AdminMarketingAdStudioController {
         return out;
     }
 
-    private String buildListingTitle(Map<String, Object> listing, String template) {
-        String title = fallback(asText(listing.get("title")), fallback(asText(listing.get("speciesName")), "Tarantula listing"));
+    private String buildListingTitle(Map<String, Object> listing, String template, AdCopyStrings strings) {
         String opening = switch (template) {
-            case "new_arrival" -> "New arrival";
-            case "female_available" -> "Female available";
-            case "beginner_friendly" -> "Beginner-friendly";
-            default -> "Available now";
+            case "new_arrival" -> strings.newTarantula();
+            case "female_available" -> strings.femaleTarantula();
+            case "beginner_friendly" -> strings.beginnerTarantula();
+            default -> strings.tarantulaForSale();
         };
+        String display = listingDisplayName(listing);
         String species = asText(listing.get("speciesName"));
         String sex = asText(listing.get("sex"));
-        StringBuilder sb = new StringBuilder(opening).append(": ").append(title);
-        if (!species.isBlank() && !species.equalsIgnoreCase(title)) {
+        StringBuilder sb = new StringBuilder(opening).append(" — ").append(display);
+        if (!species.isBlank() && !species.equalsIgnoreCase(display)) {
             sb.append(" (").append(species).append(")");
         }
         if (!sex.isBlank()) {
@@ -233,7 +264,8 @@ public class AdminMarketingAdStudioController {
     }
 
     private String buildListingDescription(Map<String, Object> listing, Map<String, Object> sellerPreview,
-                                           String tone, String cityHint, String channelLine, String listingUrl) {
+                                           String cityHint, String channelLine, String listingUrl,
+                                           AdCopyStrings strings) {
         String description = stripHtml(asText(listing.get("description")));
         String species = asText(listing.get("speciesName"));
         String sex = asText(listing.get("sex"));
@@ -242,10 +274,8 @@ public class AdminMarketingAdStudioController {
         String city = fallback(asText(listing.get("city")), cityHint == null ? "" : cityHint);
         String state = asText(listing.get("state"));
         String country = asText(listing.get("country"));
-        String price = formatPrice(listing.get("priceAmount"), asText(listing.get("currency")));
+        String price = formatPrice(listing.get("priceAmount"), asText(listing.get("currency")), strings);
         String seller = resolveSellerLabel(listing, sellerPreview);
-        String source = asText(listing.get("source"));
-        String badge = asText(listing.get("badgeLabel"));
 
         List<String> lines = new ArrayList<>();
         if (!description.isBlank()) {
@@ -253,79 +283,166 @@ public class AdminMarketingAdStudioController {
             lines.add("");
         }
         List<String> facts = new ArrayList<>();
-        if (!species.isBlank()) facts.add("Species: " + species);
-        if (!sex.isBlank()) facts.add("Sex: " + sex);
-        if (!stage.isBlank()) facts.add("Stage: " + stage);
-        if (!pedigree.isBlank()) facts.add("Lineage / ref: " + pedigree);
-        facts.add("Price: " + price);
+        if (!species.isBlank()) facts.add(strings.labelSpecies() + ": " + species);
+        if (!sex.isBlank()) facts.add(strings.labelSex() + ": " + sex);
+        if (!stage.isBlank()) facts.add(strings.labelStage() + ": " + stage);
+        if (!pedigree.isBlank()) facts.add(strings.labelLineage() + ": " + pedigree);
+        facts.add(strings.labelPrice() + ": " + price);
         String location = formatLocation(city, state, country);
-        if (!location.isBlank()) facts.add("Location: " + location);
+        if (!location.isBlank()) facts.add(strings.labelLocation() + ": " + location);
         lines.add(String.join("\n", facts));
         lines.add("");
-        lines.add("Seller: " + seller + (badge.isBlank() ? "" : " (" + badge + ")"));
-        lines.add("partner".equalsIgnoreCase(source)
-                ? "Official partner storefront mirrored on TarantulApp."
-                : "Direct TarantulApp listing from a verified keeper storefront.");
-        lines.add(toneLine(tone));
+        lines.add(strings.labelSeller() + ": " + seller);
         lines.add("");
         lines.add(channelLine);
         lines.add(listingUrl);
         return String.join("\n", lines);
     }
 
-    private String buildStorefrontTitle(Map<String, Object> listing, Map<String, Object> sellerPreview, String template) {
+    private String buildStorefrontTitle(Map<String, Object> listing, Map<String, Object> sellerPreview,
+                                        String template, AdCopyStrings strings) {
         String storeName = resolveStoreName(listing, sellerPreview);
         String opening = switch (template) {
-            case "new_arrival" -> "New stock";
-            case "female_available" -> "Females in stock";
-            case "beginner_friendly" -> "Beginner-friendly picks";
-            default -> "Live inventory";
+            case "new_arrival" -> strings.storefrontNewStock();
+            case "female_available" -> strings.storefrontFemalesInStock();
+            case "beginner_friendly" -> strings.storefrontBeginnerPicks();
+            default -> strings.storefrontLiveInventory();
         };
-        return truncate(opening + " — " + storeName + " on TarantulApp", 72);
+        return truncate(opening + " — " + storeName, 72);
     }
 
     private String buildStorefrontDescription(Map<String, Object> listing, Map<String, Object> sellerPreview,
-                                              String tone, String channelLine, String storeUrl, String listingUrl) {
+                                              String channelLine, String storeUrl, String listingUrl,
+                                              AdCopyStrings strings) {
         String storeName = resolveStoreName(listing, sellerPreview);
-        String source = asText(listing.get("source"));
-        String badge = asText(listing.get("badgeLabel"));
         String city = asText(listing.get("city"));
         String country = asText(listing.get("country"));
-        String website = officialVendorField(listing, "websiteUrl");
 
         List<String> lines = new ArrayList<>();
-        lines.add("Browse " + storeName + "'s live tarantula inventory on TarantulApp — curated listings with photos, pricing, and species details in one place.");
-        lines.add("");
-        if (!website.isBlank()) {
-            lines.add("Official website: " + website);
-        }
+        lines.add(strings.storefrontBrowse().replace("{store}", storeName));
         String location = formatLocation(city, "", country);
         if (!location.isBlank()) {
-            lines.add("Based in: " + location);
+            lines.add(strings.labelLocation() + ": " + location);
         }
-        if (!badge.isBlank()) {
-            lines.add("Badge: " + badge);
-        }
-        lines.add("partner".equalsIgnoreCase(source)
-                ? "Strategic partner storefront synced to TarantulApp."
-                : "Keeper storefront on TarantulApp.");
-        lines.add(toneLine(tone));
         lines.add("");
-        lines.add("Example listing: " + fallback(asText(listing.get("title")), asText(listing.get("speciesName"))));
+        lines.add(strings.storefrontExampleListing() + ": "
+                + fallback(asText(listing.get("title")), asText(listing.get("speciesName"))));
         lines.add(listingUrl);
         lines.add("");
-        lines.add("Full shop / catalog:");
+        lines.add(strings.storefrontFullShop() + ":");
         lines.add(storeUrl.isBlank() ? listingUrl : storeUrl);
         lines.add("");
         lines.add(channelLine);
         return String.join("\n", lines);
     }
 
-    private static String toneLine(String tone) {
-        return switch (tone) {
-            case "premium" -> "Premium presentation with clear specimen details and trusted source.";
-            default -> "Collector-ready details and updated stock.";
+    private static String listingDisplayName(Map<String, Object> listing) {
+        String title = asText(listing.get("title"));
+        String species = asText(listing.get("speciesName"));
+        if (!title.isBlank()) return title;
+        if (!species.isBlank()) return species;
+        return "Tarantula";
+    }
+
+    private static String channelLine(String channel, AdCopyStrings strings) {
+        return switch (channel) {
+            case "kijiji" -> strings.channelKijiji();
+            case "facebook_marketplace" -> strings.channelFacebookMarketplace();
+            case "facebook_groups" -> strings.channelFacebookGroups();
+            case "reddit" -> strings.channelReddit();
+            case "discord" -> strings.channelDiscord();
+            default -> strings.channelDefault();
         };
+    }
+
+    private static AdCopyStrings copyStrings(String locale) {
+        return switch (locale) {
+            case "es" -> new AdCopyStrings(
+                    "Tarántula en venta",
+                    "Tarántula nueva",
+                    "Tarántula hembra",
+                    "Tarántula para principiantes",
+                    "Especie",
+                    "Sexo",
+                    "Etapa",
+                    "Linaje / ref.",
+                    "Precio",
+                    "Ubicación",
+                    "Vendedor",
+                    "Ver anuncio para precio",
+                    "Más fotos y detalles en TarantulApp:",
+                    "Anuncio completo en TarantulApp:",
+                    "Inventario y detalles en TarantulApp:",
+                    "Detalles y disponibilidad en TarantulApp:",
+                    "Anuncio en vivo en TarantulApp:",
+                    "Detalles en TarantulApp:",
+                    "Inventario de tarántulas de {store} en TarantulApp — fotos, precios y especies en un solo lugar.",
+                    "Ejemplo de anuncio",
+                    "Tienda completa",
+                    "Tarántulas en venta",
+                    "Stock nuevo",
+                    "Hembras disponibles",
+                    "Opciones para principiantes"
+            );
+            case "fr" -> new AdCopyStrings(
+                    "Tarentule à vendre",
+                    "Nouvelle tarentule",
+                    "Tarentule femelle",
+                    "Tarentule pour débutants",
+                    "Espèce",
+                    "Sexe",
+                    "Stade",
+                    "Lignée / réf.",
+                    "Prix",
+                    "Emplacement",
+                    "Vendeur",
+                    "Voir l'annonce pour le prix",
+                    "Plus de photos et détails sur TarantulApp :",
+                    "Annonce complète sur TarantulApp :",
+                    "Inventaire et détails sur TarantulApp :",
+                    "Détails et disponibilité sur TarantulApp :",
+                    "Annonce en direct sur TarantulApp :",
+                    "Détails sur TarantulApp :",
+                    "Inventaire de tarentules {store} sur TarantulApp — photos, prix et espèces au même endroit.",
+                    "Exemple d'annonce",
+                    "Boutique complète",
+                    "Tarentules à vendre",
+                    "Nouveau stock",
+                    "Femelles disponibles",
+                    "Choix pour débutants"
+            );
+            default -> new AdCopyStrings(
+                    "Tarantula for sale",
+                    "New tarantula",
+                    "Female tarantula",
+                    "Beginner tarantula",
+                    "Species",
+                    "Sex",
+                    "Stage",
+                    "Lineage / ref",
+                    "Price",
+                    "Location",
+                    "Seller",
+                    "See listing for price",
+                    "More photos and details on TarantulApp:",
+                    "Full listing on TarantulApp:",
+                    "Inventory and details on TarantulApp:",
+                    "Details and availability on TarantulApp:",
+                    "Live listing on TarantulApp:",
+                    "Details on TarantulApp:",
+                    "Browse {store}'s live tarantula inventory on TarantulApp — photos, pricing, and species in one place.",
+                    "Example listing",
+                    "Full shop",
+                    "Tarantulas for sale",
+                    "New stock",
+                    "Females in stock",
+                    "Beginner-friendly picks"
+            );
+        };
+    }
+
+    private static String normalizeLocale(String locale) {
+        return BetaMailBodies.normalizeLocale(locale);
     }
 
     private static String resolveSellerLabel(Map<String, Object> listing, Map<String, Object> sellerPreview) {
@@ -386,15 +503,6 @@ public class AdminMarketingAdStudioController {
     }
 
     private String listingUrl(Map<String, Object> listing) {
-        String source = asText(listing.get("source"));
-        if ("partner".equalsIgnoreCase(source)) {
-            String canonical = asText(listing.get("canonicalUrl"));
-            if (!canonical.isBlank()) return canonical;
-            Object id = listing.get("id");
-            if (id != null) {
-                return "https://tarantulapp.com/marketplace/listing/" + id;
-            }
-        }
         Object id = listing.get("id");
         if (id != null) {
             return "https://tarantulapp.com/marketplace/listing/" + id;
@@ -402,9 +510,9 @@ public class AdminMarketingAdStudioController {
         return "https://tarantulapp.com/marketplace";
     }
 
-    private static String formatPrice(Object rawAmount, String currency) {
+    private static String formatPrice(Object rawAmount, String currency, AdCopyStrings strings) {
         if (!(rawAmount instanceof BigDecimal amount)) {
-            return "See listing for price";
+            return strings.priceOnRequest();
         }
         String cur = (currency == null || currency.isBlank()) ? "CAD" : currency.toUpperCase(Locale.ROOT);
         return cur + " " + amount.stripTrailingZeros().toPlainString();
