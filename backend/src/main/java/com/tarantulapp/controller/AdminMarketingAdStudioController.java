@@ -239,7 +239,7 @@ public class AdminMarketingAdStudioController {
         String sex = asText(listing.get("sex"));
         String stage = asText(listing.get("stage"));
         String pedigree = asText(listing.get("pedigreeRef"));
-        String city = fallback(asText(listing.get("city")), cityHint);
+        String city = fallback(asText(listing.get("city")), cityHint == null ? "" : cityHint);
         String state = asText(listing.get("state"));
         String country = asText(listing.get("country"));
         String price = formatPrice(listing.get("priceAmount"), asText(listing.get("currency")));
@@ -355,9 +355,9 @@ public class AdminMarketingAdStudioController {
 
     private static String formatLocation(String city, String state, String country) {
         List<String> parts = new ArrayList<>();
-        if (!city.isBlank()) parts.add(city);
-        if (!state.isBlank()) parts.add(state);
-        if (!country.isBlank()) parts.add(country);
+        if (!asText(city).isBlank()) parts.add(asText(city));
+        if (!asText(state).isBlank()) parts.add(asText(state));
+        if (!asText(country).isBlank()) parts.add(asText(country));
         return String.join(", ", parts);
     }
 
