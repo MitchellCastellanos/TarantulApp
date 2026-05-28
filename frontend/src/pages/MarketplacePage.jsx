@@ -20,6 +20,7 @@ import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partne
 import { formatListingPrice } from '../utils/formatPrice'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
+import { trackListingEvent } from '../utils/listingEventTracker'
 
 const EMPTY_PROFILE_FORM = {
   handle: '',
@@ -788,6 +789,7 @@ export default function MarketplacePage() {
                     className="card border-warning shadow-sm h-100 ta-premium-pane ta-marketplace-listing-card ta-marketplace-listing-card-clickable"
                     onClick={(ev) => {
                       if (ev.target.closest('a')) return
+                      trackListingEvent(l.id, 'card_click', { country: l.country })
                       navigate(`/marketplace/listing/${l.id}`)
                     }}
                     role="presentation"
@@ -855,6 +857,7 @@ export default function MarketplacePage() {
                     className="card border-0 shadow-sm h-100 ta-premium-pane ta-marketplace-listing-card ta-marketplace-listing-card-clickable position-relative"
                     onClick={(ev) => {
                       if (ev.target.closest('a, button')) return
+                      trackListingEvent(l.id, 'card_click', { country: l.country })
                       navigate(`/marketplace/listing/${l.id}`)
                     }}
                     role="presentation"

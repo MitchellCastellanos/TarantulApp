@@ -151,7 +151,7 @@ public class AdminMarketingAdStudioController {
             if (listingId == null) continue;
             Map<String, Object> payload = marketplaceService.publicListingDetail(listingId);
             Map<String, Object> listing = unwrapListing(payload);
-            Map<String, Object> copy = buildAdCopy(payload, template, cityHint, copyMode, strings, locale);
+            Map<String, Object> copy = buildAdCopy(payload, template, cityHint, copyMode, strings, locale, channel);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("listingId", listingId);
             row.put("source", asText(listing.get("source")));
@@ -199,12 +199,13 @@ public class AdminMarketingAdStudioController {
     }
 
     private Map<String, Object> buildAdCopy(Map<String, Object> payload, String template,
-                                            String cityHint, String copyMode, AdCopyStrings strings, String locale) {
+                                            String cityHint, String copyMode, AdCopyStrings strings,
+                                            String locale, String channel) {
         Map<String, Object> listing = unwrapListing(payload);
         Map<String, Object> sellerPreview = unwrapSellerPreview(payload);
         boolean storefront = "storefront".equals(copyMode);
 
-        String listingUrl = listingUrl(listing);
+        String listingUrl = listingUrl(listing, channel);
         String store = storeUrl(listing);
         String imageUrl = primaryImageUrl(listing);
 
@@ -433,11 +434,29 @@ public class AdminMarketingAdStudioController {
     }
 
     private String listingUrl(Map<String, Object> listing) {
+        return listingUrl(listing, null);
+    }
+
+    private String listingUrl(Map<String, Object> listing, String channel) {
         Object id = listing.get("id");
         if (id != null) {
-            return "https://tarantulapp.com/marketplace/listing/" + id;
+            return withAdStudioUtm("https://tarantulapp.com/marketplace/listing/" + id, channel);
         }
         return "https://tarantulapp.com/marketplace";
+    }
+
+    private static String withAdStudioUtm(String base, String channel) {
+        String ch = normalizeChannel(channel);
+        String sep = base.contains("?") ? "&" : "?";
+        return base + sep + "utm_source=" + urlEncodeParam(ch) + "&utm_medium=ad_studio";
+    }
+
+    private static String urlEncodeParam(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     private boolean matchesStorefront(Map<String, Object> row, String storefrontNorm) {

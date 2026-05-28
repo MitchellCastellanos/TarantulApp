@@ -55,6 +55,12 @@ const marketplaceService = {
       .then((r) => r.data)
       .catch(() => null),
 
+  recordStorefrontEvent: (payload) =>
+    publicApi
+      .post('/public/marketplace/storefront-events', payload)
+      .then((r) => r.data)
+      .catch(() => null),
+
   /** Per-listing analytics for the current seller. */
   getSellerAnalytics: () =>
     api.get('/marketplace/seller/analytics', { skipAuthRedirect: true }).then((r) => r.data),

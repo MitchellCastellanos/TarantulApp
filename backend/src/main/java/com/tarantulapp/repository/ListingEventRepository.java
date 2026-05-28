@@ -46,6 +46,15 @@ public interface ListingEventRepository extends JpaRepository<ListingEvent, UUID
             """)
     List<Object[]> partnerTotalsSince(@Param("since") Instant since);
 
+    @Query("""
+            select count(e)
+            from ListingEvent e
+            where e.kind = 'storefront_view'
+              and e.listingSource = 'partner'
+              and e.occurredAt >= :since
+            """)
+    long countPartnerStorefrontViewsSince(@Param("since") Instant since);
+
     /**
      * Seller leaderboard by tap-to-contact rate. Returns rows of
      * (sellerUserId, views, contactTaps) for events in [since, until).

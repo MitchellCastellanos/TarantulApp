@@ -217,6 +217,18 @@ public class PublicMarketplaceController {
             @NotBlank String kind,
             String anonSessionId,
             String country,
+            String referrerHost,
+            String utmSource,
+            String utmMedium,
+            String utmCampaign
+    ) {}
+
+    record StorefrontEventRequest(
+            @NotBlank String contextType,
+            @NotBlank String contextKey,
+            @NotBlank String kind,
+            String anonSessionId,
+            String country,
             String referrerHost
     ) {}
 
@@ -225,6 +237,22 @@ public class PublicMarketplaceController {
                                                                    @Valid @RequestBody ListingEventRequest req) {
         boolean accepted = listingEventService.recordEvent(
                 listingId,
+                req.kind(),
+                req.anonSessionId(),
+                req.country(),
+                req.referrerHost(),
+                req.utmSource(),
+                req.utmMedium(),
+                req.utmCampaign()
+        );
+        return ResponseEntity.ok(Map.of("accepted", accepted));
+    }
+
+    @PostMapping("/storefront-events")
+    public ResponseEntity<Map<String, Object>> recordStorefrontEvent(@Valid @RequestBody StorefrontEventRequest req) {
+        boolean accepted = listingEventService.recordStorefrontEvent(
+                req.contextType(),
+                req.contextKey(),
                 req.kind(),
                 req.anonSessionId(),
                 req.country(),

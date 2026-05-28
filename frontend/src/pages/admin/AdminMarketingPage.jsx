@@ -706,6 +706,18 @@ export default function AdminMarketingPage() {
                     <div className="h6 mb-0">{partnerListingEvents.shareDownloads30d ?? 0}</div>
                   </div>
                 </div>
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Card clicks (30d)</div>
+                    <div className="h6 mb-0">{partnerListingEvents.cardClicks30d ?? 0}</div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Storefront views (30d)</div>
+                    <div className="h6 mb-0">{partnerListingEvents.storefrontViews30d ?? 0}</div>
+                  </div>
+                </div>
               </div>
             </>
           )}

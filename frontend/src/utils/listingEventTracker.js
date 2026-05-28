@@ -7,7 +7,6 @@ function makeUuid() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
   }
-  // Fallback UUID-ish for very old browsers (mobile webviews).
   return 'anon-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36)
 }
 
@@ -32,27 +31,26 @@ function dedupeKey(listingId, kind) {
   return `${DEDUPE_PREFIX}${kind}_${listingId}_${ymdToday()}`
 }
 
-function alreadyFiredToday(listingId, kind) {
+function storefrontDedupeKey(contextType, contextKey, kind) {
+  return `${DEDUPE_PREFIX}sf_${contextType}_${contextKey}_${kind}_${ymdToday()}`
+}
+
+function alreadyFiredToday(key) {
   try {
-    return sessionStorage.getItem(dedupeKey(listingId, kind)) === '1'
+    return sessionStorage.getItem(key) === '1'
   } catch {
     return false
   }
 }
 
-function markFiredToday(listingId, kind) {
+function markFiredToday(key) {
   try {
-    sessionStorage.setItem(dedupeKey(listingId, kind), '1')
+    sessionStorage.setItem(key, '1')
   } catch {
     /* ignore */
   }
 }
 
-/**
- * Fire-and-forget event recorder for marketplace analytics.
- * Dedupes per (listing, kind) per UTC day inside the same tab session so
- * a refresh does not inflate counters; cross-tab dedupe lives on the server.
- */
 function normalizeCountryCode(raw) {
   if (raw == null) return null
   const c = String(raw).trim().toUpperCase()
@@ -61,24 +59,60 @@ function normalizeCountryCode(raw) {
   return null
 }
 
-export function trackListingEvent(listingId, kind, { force = false, country = null } = {}) {
-  if (!listingId || !kind) return
-  if (!force && alreadyFiredToday(listingId, kind)) return
-  markFiredToday(listingId, kind)
-  const referrerHost = (() => {
-    try {
-      if (typeof document !== 'undefined' && document.referrer) {
-        return new URL(document.referrer).host || null
-      }
-    } catch {
-      /* ignore */
+export function utmFromSearchParams(searchParams) {
+  if (!searchParams) return {}
+  const source = searchParams.get('utm_source')
+  const medium = searchParams.get('utm_medium')
+  const campaign = searchParams.get('utm_campaign')
+  if (!source && !medium && !campaign) return {}
+  return {
+    source: source || null,
+    medium: medium || null,
+    campaign: campaign || null,
+  }
+}
+
+function referrerHost() {
+  try {
+    if (typeof document !== 'undefined' && document.referrer) {
+      return new URL(document.referrer).host || null
     }
-    return null
-  })()
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+/**
+ * Fire-and-forget event recorder for marketplace analytics.
+ */
+export function trackListingEvent(listingId, kind, { force = false, country = null, utm = null } = {}) {
+  if (!listingId || !kind) return
+  const key = dedupeKey(listingId, kind)
+  if (!force && alreadyFiredToday(key)) return
+  markFiredToday(key)
   marketplaceService.recordListingEvent(listingId, {
     kind,
     anonSessionId: getAnonSessionId(),
-    referrerHost,
+    referrerHost: referrerHost(),
+    country: normalizeCountryCode(country),
+    utmSource: utm?.source ?? null,
+    utmMedium: utm?.medium ?? null,
+    utmCampaign: utm?.campaign ?? null,
+  })
+}
+
+export function trackStorefrontEvent(contextType, contextKey, kind = 'storefront_view', { force = false, country = null } = {}) {
+  if (!contextType || !contextKey || !kind) return
+  const key = storefrontDedupeKey(contextType, contextKey, kind)
+  if (!force && alreadyFiredToday(key)) return
+  markFiredToday(key)
+  marketplaceService.recordStorefrontEvent({
+    contextType,
+    contextKey,
+    kind,
+    anonSessionId: getAnonSessionId(),
+    referrerHost: referrerHost(),
     country: normalizeCountryCode(country),
   })
 }

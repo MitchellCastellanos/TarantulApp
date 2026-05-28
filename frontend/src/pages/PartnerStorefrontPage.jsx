@@ -11,6 +11,7 @@ import { addPartnerCartLine } from '../utils/partnerCart'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
+import { trackListingEvent, trackStorefrontEvent } from '../utils/listingEventTracker'
 
 const ALL_CATEGORY = 'all'
 const CATEGORIES = [
@@ -97,6 +98,11 @@ export default function PartnerStorefrontPage() {
       const list = Array.isArray(data?.items) ? data.items : []
       setAllItems(list)
       setCatalogTotal(data?.catalogTotal ?? list.length)
+      if (data?.vendor?.slug) {
+        trackStorefrontEvent('partner', data.vendor.slug, 'storefront_view', {
+          country: data.vendor.country,
+        })
+      }
     } catch (err) {
       setVendor(null)
       setAllItems([])
@@ -318,6 +324,7 @@ export default function PartnerStorefrontPage() {
                     className="card border-warning shadow-sm h-100 ta-premium-pane ta-marketplace-listing-card ta-marketplace-listing-card-clickable"
                     onClick={(ev) => {
                       if (ev.target.closest('a, button')) return
+                      trackListingEvent(l.id, 'card_click', { country: l.country })
                       navigate(`/marketplace/listing/${l.id}`)
                     }}
                     role="presentation"

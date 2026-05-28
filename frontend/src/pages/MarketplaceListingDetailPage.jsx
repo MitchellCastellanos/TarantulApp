@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
@@ -24,7 +24,7 @@ import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partne
 import ListingShareKit from '../components/ListingShareKit'
 import SpeciesTradeNoteBlock from '../components/SpeciesTradeNoteBlock'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
-import { trackListingEvent } from '../utils/listingEventTracker'
+import { trackListingEvent, utmFromSearchParams } from '../utils/listingEventTracker'
 import { formatListingPrice } from '../utils/formatPrice'
 
 function listingGalleryUrls(listing) {
@@ -47,6 +47,8 @@ function formatListedAt(iso, locale) {
 
 export default function MarketplaceListingDetailPage() {
   const { listingId } = useParams()
+  const [searchParams] = useSearchParams()
+  const utm = useMemo(() => utmFromSearchParams(searchParams), [searchParams])
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const [payload, setPayload] = useState(null)
@@ -72,7 +74,7 @@ export default function MarketplaceListingDetailPage() {
         if (!cancelled) {
           setPayload(data)
           setPhotoIdx(0)
-          trackListingEvent(listingId, 'view', { country: data?.listing?.country })
+          trackListingEvent(listingId, 'view', { country: data?.listing?.country, utm })
         }
       })
       .catch((err) => {
@@ -87,7 +89,7 @@ export default function MarketplaceListingDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [listingId])
+  }, [listingId, utm])
 
   useEffect(() => {
     if (!user?.id || !listingId) {
@@ -429,7 +431,7 @@ export default function MarketplaceListingDetailPage() {
                           <Link
                             className="btn btn-sm btn-outline-dark"
                             to={`/shop/${encodeURIComponent(sellerHandle)}`}
-                            onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap_store', { country: listing?.country })}
                           >
                             {t('marketplace.listingDetailVisitStore')}
                           </Link>
@@ -450,7 +452,7 @@ export default function MarketplaceListingDetailPage() {
                             className="btn btn-dark btn-sm"
                             to="/login"
                             state={{ redirectAfterAuth: chatHref }}
-                            onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap_message', { country: listing?.country })}
                           >
                             {t('marketplace.messageSeller')}
                           </Link>
@@ -458,7 +460,7 @@ export default function MarketplaceListingDetailPage() {
                           <Link
                             className="btn btn-dark btn-sm"
                             to={chatHref}
-                            onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                            onClick={() => trackListingEvent(listingId, 'contact_tap_message', { country: listing?.country })}
                           >
                             {t('marketplace.messageSeller')}
                           </Link>
@@ -551,7 +553,7 @@ export default function MarketplaceListingDetailPage() {
                         type="button"
                         className="btn btn-warning btn-sm w-100 mb-2"
                         onClick={() => {
-                          trackListingEvent(listingId, 'contact_tap', { country: listing?.country })
+                          trackListingEvent(listingId, 'contact_tap_cart', { country: listing?.country })
                           addPartnerCartLine({
                             vendorSlug: listing.officialVendor?.slug,
                             listingId: listing.id,
@@ -572,7 +574,7 @@ export default function MarketplaceListingDetailPage() {
                         <Link
                           to={partnerStorefrontPath(listing.officialVendor.slug)}
                           className="btn btn-warning btn-sm w-100 mb-2 fw-semibold"
-                          onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                          onClick={() => trackListingEvent(listingId, 'contact_tap_store', { country: listing?.country })}
                         >
                           {t('marketplace.partnerStorefrontOpenCta')}
                         </Link>
@@ -583,7 +585,7 @@ export default function MarketplaceListingDetailPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="btn btn-outline-secondary btn-sm w-100 mb-2"
-                          onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                          onClick={() => trackListingEvent(listingId, 'contact_tap_external', { country: listing?.country })}
                         >
                           {t('marketplace.partnerStorefrontVisitWebsite', {
                             name: listing.officialVendor?.name || listing.sellerName,
@@ -596,7 +598,7 @@ export default function MarketplaceListingDetailPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="btn btn-dark btn-sm w-100"
-                          onClick={() => trackListingEvent(listingId, 'contact_tap', { country: listing?.country })}
+                          onClick={() => trackListingEvent(listingId, 'contact_tap_external', { country: listing?.country })}
                         >
                           {t('marketplace.listingDetailOfficialCta')}
                         </a>

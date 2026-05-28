@@ -20,7 +20,7 @@ public class ListingEvent {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @Column(name = "listing_id", nullable = false, columnDefinition = "uuid")
+    @Column(name = "listing_id", columnDefinition = "uuid")
     private UUID listingId;
 
     /** {@code peer} = marketplace_listings, {@code partner} = partner_listings (same listing_id UUID space). */
@@ -38,6 +38,18 @@ public class ListingEvent {
 
     @Column(name = "referrer_host", length = 128)
     private String referrerHost;
+
+    @Column(name = "context_key", length = 128)
+    private String contextKey;
+
+    @Column(name = "utm_source", length = 64)
+    private String utmSource;
+
+    @Column(name = "utm_medium", length = 64)
+    private String utmMedium;
+
+    @Column(name = "utm_campaign", length = 96)
+    private String utmCampaign;
 
     @Column(name = "actor_user_id", columnDefinition = "uuid")
     private UUID actorUserId;
@@ -72,6 +84,18 @@ public class ListingEvent {
 
     public String getReferrerHost() { return referrerHost; }
     public void setReferrerHost(String referrerHost) { this.referrerHost = referrerHost; }
+
+    public String getContextKey() { return contextKey; }
+    public void setContextKey(String contextKey) { this.contextKey = contextKey; }
+
+    public String getUtmSource() { return utmSource; }
+    public void setUtmSource(String utmSource) { this.utmSource = utmSource; }
+
+    public String getUtmMedium() { return utmMedium; }
+    public void setUtmMedium(String utmMedium) { this.utmMedium = utmMedium; }
+
+    public String getUtmCampaign() { return utmCampaign; }
+    public void setUtmCampaign(String utmCampaign) { this.utmCampaign = utmCampaign; }
 
     public UUID getActorUserId() { return actorUserId; }
     public void setActorUserId(UUID actorUserId) { this.actorUserId = actorUserId; }

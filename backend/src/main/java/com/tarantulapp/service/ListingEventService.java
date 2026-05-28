@@ -5,7 +5,9 @@ import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
+import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
+import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.security.RateLimiter;
 import com.tarantulapp.util.SecurityHelper;
 import org.springframework.stereotype.Service;
@@ -36,7 +38,13 @@ public class ListingEventService {
     /** Whitelist of event kinds the public endpoint will accept. */
     private static final Set<String> ALLOWED_KINDS = Set.of(
             "view",
+            "card_click",
+            "storefront_view",
             "contact_tap",
+            "contact_tap_message",
+            "contact_tap_store",
+            "contact_tap_cart",
+            "contact_tap_external",
             "share_open",
             "share_download"
     );
@@ -50,17 +58,23 @@ public class ListingEventService {
     private final ListingEventRepository listingEventRepository;
     private final MarketplaceListingRepository marketplaceListingRepository;
     private final PartnerListingRepository partnerListingRepository;
+    private final OfficialVendorRepository officialVendorRepository;
+    private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
     private final RateLimiter rateLimiter;
 
     public ListingEventService(ListingEventRepository listingEventRepository,
                                MarketplaceListingRepository marketplaceListingRepository,
                                PartnerListingRepository partnerListingRepository,
+                               OfficialVendorRepository officialVendorRepository,
+                               UserRepository userRepository,
                                SecurityHelper securityHelper,
                                RateLimiter rateLimiter) {
         this.listingEventRepository = listingEventRepository;
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.partnerListingRepository = partnerListingRepository;
+        this.officialVendorRepository = officialVendorRepository;
+        this.userRepository = userRepository;
         this.securityHelper = securityHelper;
         this.rateLimiter = rateLimiter;
     }
@@ -71,39 +85,36 @@ public class ListingEventService {
      */
     @Transactional
     public boolean recordEvent(UUID listingId, String rawKind, String anonSessionId,
-                                String country, String referrerHost) {
+                                String country, String referrerHost,
+                                String utmSource, String utmMedium, String utmCampaign) {
         if (listingId == null) {
             return false;
         }
         String kind = normalizeKind(rawKind);
-        if (kind == null) {
+        if (kind == null || !rateLimit(anonSessionId)) {
             return false;
         }
-
-        String session = (anonSessionId == null || anonSessionId.isBlank())
-                ? "anon"
-                : anonSessionId.trim();
-        // Hard cap on anonymous throughput per session.
-        String floodKey = "listing_events|" + session;
-        if (!rateLimiter.allow(floodKey, ANON_MAX_EVENTS_PER_MIN, Duration.ofMinutes(1))) {
-            return false;
-        }
-
         String listingSource = resolveListingSource(listingId);
         if (listingSource == null) {
             return false;
         }
+        return persistEvent(listingId, listingSource, kind, anonSessionId, country, referrerHost,
+                null, utmSource, utmMedium, utmCampaign);
+    }
 
-        ListingEvent event = new ListingEvent();
-        event.setListingId(listingId);
-        event.setListingSource(listingSource);
-        event.setKind(kind);
-        event.setAnonSessionId(truncate(session, 64));
-        event.setCountry(truncate(normalizeCountry(country), 8));
-        event.setReferrerHost(truncate(referrerHost, 128));
-        securityHelper.tryGetCurrentUserId().ifPresent(event::setActorUserId);
-        listingEventRepository.save(event);
-        return true;
+    @Transactional
+    public boolean recordStorefrontEvent(String contextType, String contextKey, String rawKind,
+                                         String anonSessionId, String country, String referrerHost) {
+        String kind = normalizeKind(rawKind);
+        if (!"storefront_view".equals(kind) || !rateLimit(anonSessionId)) {
+            return false;
+        }
+        String source = normalizeStorefrontContextType(contextType);
+        String key = normalizeContextKey(contextKey);
+        if (source == null || key == null || !storefrontExists(source, key)) {
+            return false;
+        }
+        return persistEvent(null, source, kind, anonSessionId, country, referrerHost, key, null, null, null);
     }
 
     /**
@@ -172,9 +183,9 @@ public class ListingEventService {
         Map<String, KindAgg> totals30d = totalsByKind(listingEventRepository.networkTotalsSince(since30d));
 
         long views7d = totals7d.getOrDefault("view", KindAgg.EMPTY).total;
-        long taps7d = totals7d.getOrDefault("contact_tap", KindAgg.EMPTY).total;
+        long taps7d = contactTapsFrom(totals7d);
         long views30d = totals30d.getOrDefault("view", KindAgg.EMPTY).total;
-        long taps30d = totals30d.getOrDefault("contact_tap", KindAgg.EMPTY).total;
+        long taps30d = contactTapsFrom(totals30d);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("views7d", views7d);
@@ -208,6 +219,9 @@ public class ListingEventService {
         out.put("contactTapRate30d", safeRate(taps30d, views30d));
         out.put("shareOpens30d", totals30d.getOrDefault("share_open", KindAgg.EMPTY).total);
         out.put("shareDownloads30d", totals30d.getOrDefault("share_download", KindAgg.EMPTY).total);
+        out.put("cardClicks30d", totals30d.getOrDefault("card_click", KindAgg.EMPTY).total);
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        out.put("storefrontViews30d", listingEventRepository.countPartnerStorefrontViewsSince(since30d));
         return out;
     }
 
@@ -221,6 +235,59 @@ public class ListingEventService {
                 .filter(p -> p.getStatus() == PartnerListingStatus.ACTIVE)
                 .map(p -> SOURCE_PARTNER)
                 .orElse(null);
+    }
+
+    private boolean rateLimit(String anonSessionId) {
+        String session = (anonSessionId == null || anonSessionId.isBlank()) ? "anon" : anonSessionId.trim();
+        return rateLimiter.allow("listing_events|" + session, ANON_MAX_EVENTS_PER_MIN, Duration.ofMinutes(1));
+    }
+
+    private boolean persistEvent(UUID listingId, String listingSource, String kind, String anonSessionId,
+                                 String country, String referrerHost, String contextKey,
+                                 String utmSource, String utmMedium, String utmCampaign) {
+        String session = (anonSessionId == null || anonSessionId.isBlank()) ? "anon" : anonSessionId.trim();
+        ListingEvent event = new ListingEvent();
+        event.setListingId(listingId);
+        event.setListingSource(listingSource);
+        event.setKind(kind);
+        event.setAnonSessionId(truncate(session, 64));
+        event.setCountry(truncate(normalizeCountry(country), 8));
+        event.setReferrerHost(truncate(referrerHost, 128));
+        event.setContextKey(truncate(contextKey, 128));
+        event.setUtmSource(truncate(normalizeUtm(utmSource), 64));
+        event.setUtmMedium(truncate(normalizeUtm(utmMedium), 64));
+        event.setUtmCampaign(truncate(normalizeUtm(utmCampaign), 96));
+        securityHelper.tryGetCurrentUserId().ifPresent(event::setActorUserId);
+        listingEventRepository.save(event);
+        return true;
+    }
+
+    private static String normalizeStorefrontContextType(String raw) {
+        if (raw == null) return null;
+        String t = raw.trim().toLowerCase(Locale.ROOT);
+        if (SOURCE_PEER.equals(t) || SOURCE_PARTNER.equals(t)) {
+            return t;
+        }
+        return null;
+    }
+
+    private static String normalizeContextKey(String raw) {
+        if (raw == null) return null;
+        String k = raw.trim().toLowerCase(Locale.ROOT);
+        return k.isEmpty() ? null : k;
+    }
+
+    private static String normalizeUtm(String raw) {
+        if (raw == null) return null;
+        String u = raw.trim().toLowerCase(Locale.ROOT);
+        return u.isEmpty() ? null : u;
+    }
+
+    private boolean storefrontExists(String source, String contextKey) {
+        if (SOURCE_PARTNER.equals(source)) {
+            return officialVendorRepository.findBySlug(contextKey).isPresent();
+        }
+        return userRepository.findByPublicHandleIgnoreCase(contextKey).isPresent();
     }
 
     private record KindAgg(long total, long unique) {

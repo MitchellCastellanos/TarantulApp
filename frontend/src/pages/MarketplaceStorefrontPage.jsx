@@ -6,6 +6,7 @@ import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import marketplaceService from '../services/marketplaceService'
 import { imgUrl } from '../services/api'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { trackListingEvent, trackStorefrontEvent } from '../utils/listingEventTracker'
 
 export default function MarketplaceStorefrontPage() {
   const { handle } = useParams()
@@ -40,7 +41,15 @@ export default function MarketplaceStorefrontPage() {
     marketplaceService
       .getStorefrontByHandle(handle || '')
       .then((data) => {
-        if (!cancelled) setPayload(data || null)
+        if (!cancelled) {
+          setPayload(data || null)
+          const h = (handle || '').trim().toLowerCase()
+          if (h) {
+            trackStorefrontEvent('peer', h, 'storefront_view', {
+              country: data?.seller?.profile?.country,
+            })
+          }
+        }
       })
       .catch((err) => {
         if (cancelled) return
@@ -170,6 +179,7 @@ export default function MarketplaceStorefrontPage() {
                   <Link
                     to={`/marketplace/listing/${l.id}`}
                     className="card border-0 shadow-sm h-100 ta-premium-pane ta-marketplace-listing-card text-decoration-none"
+                    onClick={() => trackListingEvent(l.id, 'card_click', { country: l.country })}
                   >
                     <img
                       src={imgUrl(l.imageUrl) || l.imageUrl || '/spider-default.png'}
