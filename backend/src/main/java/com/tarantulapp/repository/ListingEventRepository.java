@@ -37,6 +37,15 @@ public interface ListingEventRepository extends JpaRepository<ListingEvent, UUID
             """)
     List<Object[]> networkTotalsSince(@Param("since") Instant since);
 
+    @Query("""
+            select e.kind, count(e), count(distinct e.anonSessionId)
+            from ListingEvent e
+            where e.listingSource = 'partner'
+              and e.occurredAt >= :since
+            group by e.kind
+            """)
+    List<Object[]> partnerTotalsSince(@Param("since") Instant since);
+
     /**
      * Seller leaderboard by tap-to-contact rate. Returns rows of
      * (sellerUserId, views, contactTaps) for events in [since, until).
@@ -49,6 +58,7 @@ public interface ListingEventRepository extends JpaRepository<ListingEvent, UUID
             INNER JOIN marketplace_listings l ON l.id = e.listing_id
             WHERE e.occurred_at >= :since
               AND e.occurred_at < :until
+              AND e.listing_source = 'peer'
             GROUP BY l.seller_user_id
             HAVING SUM(CASE WHEN e.kind = 'view' THEN 1 ELSE 0 END) >= :minViews
             ORDER BY (CAST(SUM(CASE WHEN e.kind = 'contact_tap' THEN 1 ELSE 0 END) AS double precision)

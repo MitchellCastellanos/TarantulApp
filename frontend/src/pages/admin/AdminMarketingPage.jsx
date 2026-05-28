@@ -5,6 +5,7 @@ import adminService from '../../services/adminService'
 import marketplaceService from '../../services/marketplaceService'
 import { useAuth } from '../../context/AuthContext'
 import { buildAdStudioListingSharePng, downloadAdStudioListingSharePng } from '../../utils/adStudioShareAssets'
+import { trackListingEvent } from '../../utils/listingEventTracker'
 
 function downloadCsv(filename, rows) {
   if (!Array.isArray(rows) || rows.length === 0) return
@@ -81,6 +82,7 @@ function AdStudioDraftCard({ draft, t, onCopy }) {
     setImgBusy(true)
     try {
       await downloadAdStudioListingSharePng(draft.listingId, draft.adTitle || draft.title, t)
+      trackListingEvent(draft.listingId, 'share_download', { force: true })
     } finally {
       setImgBusy(false)
     }
@@ -165,6 +167,7 @@ export default function AdminMarketingPage() {
   const [officialVendors, setOfficialVendors] = useState([])
   const [officialLeads, setOfficialLeads] = useState([])
   const [tapRate, setTapRate] = useState(null)
+  const [partnerListingEvents, setPartnerListingEvents] = useState(null)
   const [listingCounts, setListingCounts] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -203,7 +206,11 @@ export default function AdminMarketingPage() {
   const reload = () => {
     setLoading(true)
     const tasks = marketingLite
-      ? [adminService.adStudioTemplates().catch(() => ({ channels: [], tones: [], templates: [] }))]
+      ? [
+          adminService.adStudioTemplates().catch(() => ({ channels: [], tones: [], templates: [] })),
+          adminService.partnerListingEvents().catch(() => null),
+          adminService.tapToContactRate().catch(() => null),
+        ]
       : [
           adminService.summary(),
           adminService.vendorUsers(500, true),
@@ -211,18 +218,22 @@ export default function AdminMarketingPage() {
           adminService.officialVendors().catch(() => []),
           adminService.officialVendorLeads().catch(() => []),
           adminService.tapToContactRate().catch(() => null),
+          adminService.partnerListingEvents().catch(() => null),
           adminService.listingCounts().catch(() => null),
           adminService.newsletterSubscriberCount().catch(() => ({ count: 0 })),
           adminService.liveTopVendors(3).catch(() => []),
           adminService.adStudioTemplates().catch(() => ({ channels: [], tones: [], templates: [] })),
         ]
     Promise.all(tasks)
-      .then(([s, vendorsPack, beta, partners, leads, rate, counts, subs, topVendors, templates]) => {
+      .then((results) => {
         if (marketingLite) {
-          const onlyTemplates = s && typeof s === 'object' ? s : { channels: [], tones: [], templates: [] }
-          setAdTemplates(onlyTemplates)
+          const [templates, partnerEv, rate] = results
+          setAdTemplates(templates && typeof templates === 'object' ? templates : { channels: [], tones: [], templates: [] })
+          setPartnerListingEvents(partnerEv && typeof partnerEv === 'object' ? partnerEv : null)
+          setTapRate(rate && typeof rate === 'object' ? rate : null)
           return
         }
+        const [s, vendorsPack, beta, partners, leads, rate, partnerEv, counts, subs, topVendors, templates] = results
         setSummary(s)
         setVendors(Array.isArray(vendorsPack?.users) ? vendorsPack.users : [])
         setTotalVendors(typeof vendorsPack?.totalVendors === 'number' ? vendorsPack.totalVendors : 0)
@@ -233,6 +244,7 @@ export default function AdminMarketingPage() {
         setOfficialVendors(Array.isArray(partners) ? partners : [])
         setOfficialLeads(Array.isArray(leads) ? leads : [])
         setTapRate(rate && typeof rate === 'object' ? rate : null)
+        setPartnerListingEvents(partnerEv && typeof partnerEv === 'object' ? partnerEv : null)
         setListingCounts(counts && typeof counts === 'object' ? counts : null)
         setSubscriberCount(typeof subs?.count === 'number' ? subs.count : 0)
         setLiveTopVendors(Array.isArray(topVendors) ? topVendors : [])
@@ -625,11 +637,12 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
-      {!marketingLite && tapRate && (
+      {(tapRate || partnerListingEvents) && (
         <div className="card p-3 mb-4">
           <h3 className="h6 mb-1">{t('admin.mkt.northMetricTitle')}</h3>
           <p className="small text-muted mb-3">{t('admin.mkt.northMetricBlurb')}</p>
-          <div className="row g-2">
+          {tapRate && (
+          <div className="row g-2 mb-3">
             <div className="col-6 col-md-3">
               <div className="border rounded p-2 small">
                 <div className="text-muted">{t('admin.mkt.northMetricViews7d')}</div>
@@ -659,6 +672,43 @@ export default function AdminMarketingPage() {
               </div>
             </div>
           </div>
+          )}
+          {partnerListingEvents && (
+            <>
+              <h4 className="h6 mb-2">Partner / mirror listings</h4>
+              <p className="small text-muted mb-2">
+                Monarch and other official vendor mirrors (views, contact taps, shares).
+              </p>
+              <div className="row g-2">
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Views (30d)</div>
+                    <div className="h6 mb-0">{partnerListingEvents.views30d ?? 0}</div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Contact taps (30d)</div>
+                    <div className="h6 mb-0">{partnerListingEvents.contactTaps30d ?? 0}</div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Tap rate (30d)</div>
+                    <div className="h6 mb-0">
+                      {Math.round(((partnerListingEvents.contactTapRate30d ?? 0) * 100) * 10) / 10}%
+                    </div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="border rounded p-2 small">
+                    <div className="text-muted">Share downloads (30d)</div>
+                    <div className="h6 mb-0">{partnerListingEvents.shareDownloads30d ?? 0}</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 

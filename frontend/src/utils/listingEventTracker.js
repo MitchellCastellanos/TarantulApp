@@ -53,7 +53,15 @@ function markFiredToday(listingId, kind) {
  * Dedupes per (listing, kind) per UTC day inside the same tab session so
  * a refresh does not inflate counters; cross-tab dedupe lives on the server.
  */
-export function trackListingEvent(listingId, kind, { force = false } = {}) {
+function normalizeCountryCode(raw) {
+  if (raw == null) return null
+  const c = String(raw).trim().toUpperCase()
+  if (c.length === 2) return c
+  if (c.length > 2) return c.slice(0, 2)
+  return null
+}
+
+export function trackListingEvent(listingId, kind, { force = false, country = null } = {}) {
   if (!listingId || !kind) return
   if (!force && alreadyFiredToday(listingId, kind)) return
   markFiredToday(listingId, kind)
@@ -71,5 +79,6 @@ export function trackListingEvent(listingId, kind, { force = false } = {}) {
     kind,
     anonSessionId: getAnonSessionId(),
     referrerHost,
+    country: normalizeCountryCode(country),
   })
 }

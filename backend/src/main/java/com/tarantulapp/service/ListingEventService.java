@@ -2,8 +2,10 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.entity.ListingEvent;
 import com.tarantulapp.entity.MarketplaceListing;
+import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
+import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.security.RateLimiter;
 import com.tarantulapp.util.SecurityHelper;
 import org.springframework.stereotype.Service;
@@ -42,17 +44,23 @@ public class ListingEventService {
     /** General flood control on the anonymous endpoint. */
     private static final int ANON_MAX_EVENTS_PER_MIN = 60;
 
+    private static final String SOURCE_PEER = "peer";
+    private static final String SOURCE_PARTNER = "partner";
+
     private final ListingEventRepository listingEventRepository;
     private final MarketplaceListingRepository marketplaceListingRepository;
+    private final PartnerListingRepository partnerListingRepository;
     private final SecurityHelper securityHelper;
     private final RateLimiter rateLimiter;
 
     public ListingEventService(ListingEventRepository listingEventRepository,
                                MarketplaceListingRepository marketplaceListingRepository,
+                               PartnerListingRepository partnerListingRepository,
                                SecurityHelper securityHelper,
                                RateLimiter rateLimiter) {
         this.listingEventRepository = listingEventRepository;
         this.marketplaceListingRepository = marketplaceListingRepository;
+        this.partnerListingRepository = partnerListingRepository;
         this.securityHelper = securityHelper;
         this.rateLimiter = rateLimiter;
     }
@@ -81,13 +89,14 @@ public class ListingEventService {
             return false;
         }
 
-        if (!marketplaceListingRepository.existsById(listingId)) {
-            // Unknown listing: silently drop (don't 404 — avoids fingerprinting).
+        String listingSource = resolveListingSource(listingId);
+        if (listingSource == null) {
             return false;
         }
 
         ListingEvent event = new ListingEvent();
         event.setListingId(listingId);
+        event.setListingSource(listingSource);
         event.setKind(kind);
         event.setAnonSessionId(truncate(session, 64));
         event.setCountry(truncate(normalizeCountry(country), 8));
@@ -177,7 +186,42 @@ public class ListingEventService {
         return response;
     }
 
+    /**
+     * Network-wide partner listing aggregates (Monarch / official vendor mirrors).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getPartnerListingEventTotals() {
+        Instant since7d = Instant.now().minus(7, ChronoUnit.DAYS);
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        Map<String, KindAgg> totals7d = totalsByKind(listingEventRepository.partnerTotalsSince(since7d));
+        Map<String, KindAgg> totals30d = totalsByKind(listingEventRepository.partnerTotalsSince(since30d));
+        long views7d = totals7d.getOrDefault("view", KindAgg.EMPTY).total;
+        long taps7d = totals7d.getOrDefault("contact_tap", KindAgg.EMPTY).total;
+        long views30d = totals30d.getOrDefault("view", KindAgg.EMPTY).total;
+        long taps30d = totals30d.getOrDefault("contact_tap", KindAgg.EMPTY).total;
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("views7d", views7d);
+        out.put("views30d", views30d);
+        out.put("contactTaps7d", taps7d);
+        out.put("contactTaps30d", taps30d);
+        out.put("contactTapRate7d", safeRate(taps7d, views7d));
+        out.put("contactTapRate30d", safeRate(taps30d, views30d));
+        out.put("shareOpens30d", totals30d.getOrDefault("share_open", KindAgg.EMPTY).total);
+        out.put("shareDownloads30d", totals30d.getOrDefault("share_download", KindAgg.EMPTY).total);
+        return out;
+    }
+
     // ─── helpers ──────────────────────────────────────────────────────────────
+
+    private String resolveListingSource(UUID listingId) {
+        if (marketplaceListingRepository.existsById(listingId)) {
+            return SOURCE_PEER;
+        }
+        return partnerListingRepository.findById(listingId)
+                .filter(p -> p.getStatus() == PartnerListingStatus.ACTIVE)
+                .map(p -> SOURCE_PARTNER)
+                .orElse(null);
+    }
 
     private record KindAgg(long total, long unique) {
         static final KindAgg EMPTY = new KindAgg(0, 0);

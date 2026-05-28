@@ -4,10 +4,11 @@ import { buildListingShareText, whatsappShareUrl } from '../utils/listingShareTe
 import { buildListingSharePngDataUrl } from '../utils/listingShareCard'
 import { shareOrCopyText } from '../utils/shareUtils'
 import { shareOrDownloadDataUrl, sanitizeFilename } from '../utils/shareOrDownloadBlob'
+import { trackListingEvent } from '../utils/listingEventTracker'
 
 const CHANNELS = ['default', 'whatsapp', 'instagram']
 
-export default function ListingShareKit({ listing, sellerName, sellerHandle, listingUrl, storeUrl, imageUrl, onClose }) {
+export default function ListingShareKit({ listingId, listing, sellerName, sellerHandle, listingUrl, storeUrl, imageUrl, onClose }) {
   const { t } = useTranslation()
   const [channel, setChannel] = useState('default')
   const [toast, setToast] = useState('')
@@ -94,6 +95,12 @@ export default function ListingShareKit({ listing, sellerName, sellerHandle, lis
         title: listing?.title || 'TarantulApp',
         dialogTitle: t('share.listing.dialogTitle', { defaultValue: 'Share listing' }),
       })
+      if (listingId) {
+        trackListingEvent(listingId, 'share_download', {
+          force: true,
+          country: listing?.country,
+        })
+      }
     } finally {
       setBusy(false)
     }

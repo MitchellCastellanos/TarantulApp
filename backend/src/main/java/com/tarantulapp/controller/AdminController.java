@@ -1758,8 +1758,14 @@ public class AdminController {
 
     @GetMapping("/marketing/tap-to-contact-rate")
     public ResponseEntity<Map<String, Object>> tapToContactRate() {
-        adminAccessService.assertCurrentUserIsAdmin();
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
         return ResponseEntity.ok(listingEventService.getNetworkTapToContactRate());
+    }
+
+    @GetMapping("/marketing/partner-listing-events")
+    public ResponseEntity<Map<String, Object>> partnerListingEvents() {
+        adminAccessService.assertCurrentUserCanUseMarketingTools();
+        return ResponseEntity.ok(listingEventService.getPartnerListingEventTotals());
     }
 
     @GetMapping("/marketing/listing-counts")

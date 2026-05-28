@@ -23,6 +23,10 @@ public class ListingEvent {
     @Column(name = "listing_id", nullable = false, columnDefinition = "uuid")
     private UUID listingId;
 
+    /** {@code peer} = marketplace_listings, {@code partner} = partner_listings (same listing_id UUID space). */
+    @Column(name = "listing_source", nullable = false, length = 16)
+    private String listingSource = "peer";
+
     @Column(nullable = false, length = 32)
     private String kind;
 
@@ -53,6 +57,9 @@ public class ListingEvent {
 
     public UUID getListingId() { return listingId; }
     public void setListingId(UUID listingId) { this.listingId = listingId; }
+
+    public String getListingSource() { return listingSource; }
+    public void setListingSource(String listingSource) { this.listingSource = listingSource; }
 
     public String getKind() { return kind; }
     public void setKind(String kind) { this.kind = kind; }
