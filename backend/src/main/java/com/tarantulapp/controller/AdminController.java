@@ -198,6 +198,13 @@ public class AdminController {
     record SetVerifiedBreederRequest(Boolean verifiedBreeder) {}
     record SetMarketingOpsRequest(Boolean marketingOps) {}
 
+    record ProvisionMarketingTeamRequest(
+            @Email @NotBlank String email,
+            String displayName,
+            Boolean sendWelcomeEmail,
+            Boolean resetPassword
+    ) {}
+
     record SetStorefrontVerifiedRequest(Boolean storefrontVerified) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
@@ -829,6 +836,63 @@ public class AdminController {
         out.put("id", user.getId());
         out.put("email", user.getEmail());
         out.put("marketingOps", Boolean.TRUE.equals(user.getIsMarketingOps()));
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * Admin: find user by email or create a marketing-team account, grant marketing ops, optionally
+     * reset password and send the English marketing welcome email.
+     */
+    @PostMapping("/marketing/provision-team-member")
+    public ResponseEntity<Map<String, Object>> provisionMarketingTeamMember(
+            @Valid @RequestBody ProvisionMarketingTeamRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        String email = req.email().trim().toLowerCase(Locale.ROOT);
+        boolean sendWelcome = req.sendWelcomeEmail() == null || Boolean.TRUE.equals(req.sendWelcomeEmail());
+        boolean resetPassword = req.resetPassword() == null || Boolean.TRUE.equals(req.resetPassword());
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        boolean created = false;
+        String plainPassword = null;
+        if (user == null) {
+            AuthService.AdminUserPasswordResult result =
+                    authService.adminProvisionMarketingTeamMember(email, req.displayName());
+            user = userRepository.findById(result.user().getId()).orElse(result.user());
+            created = result.created();
+            plainPassword = result.plainPassword();
+        } else {
+            user.setIsMarketingOps(true);
+            if (req.displayName() != null && !req.displayName().isBlank()
+                    && (user.getDisplayName() == null || user.getDisplayName().isBlank())) {
+                user.setDisplayName(req.displayName().trim());
+            }
+            if (resetPassword) {
+                AuthService.AdminUserPasswordResult pw =
+                        authService.adminSetPasswordByUserId(user.getId(), null, true);
+                plainPassword = pw.plainPassword();
+                user = userRepository.findById(pw.user().getId()).orElse(user);
+            }
+            user.setIsMarketingOps(true);
+            userRepository.save(user);
+        }
+
+        boolean welcomeSent = false;
+        if (sendWelcome) {
+            String name = user.getDisplayName() == null || user.getDisplayName().isBlank()
+                    ? email : user.getDisplayName();
+            emailService.sendMarketingTeamWelcomeEmail(email, name, plainPassword);
+            welcomeSent = true;
+        }
+
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("user", mapVendorDirectoryUser(user, counts, stats));
+        out.put("created", created);
+        out.put("welcomeEmailSent", welcomeSent);
+        if (plainPassword != null) {
+            out.put("plainPassword", plainPassword);
+        }
         return ResponseEntity.ok(out);
     }
 

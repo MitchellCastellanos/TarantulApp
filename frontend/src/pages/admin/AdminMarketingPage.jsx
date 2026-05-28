@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import marketplaceService from '../../services/marketplaceService'
 import { useAuth } from '../../context/AuthContext'
+import { buildAdStudioListingSharePng, downloadAdStudioListingSharePng } from '../../utils/adStudioShareAssets'
 
 function downloadCsv(filename, rows) {
   if (!Array.isArray(rows) || rows.length === 0) return
@@ -44,6 +45,97 @@ function vendorActiveListings(u) {
 
 function vendorSoldCount(u) {
   return u?.marketplaceListingTotals?.sold ?? 0
+}
+
+function AdStudioDraftCard({ draft, t, onCopy }) {
+  const [cardPreview, setCardPreview] = useState(null)
+  const [cardLoading, setCardLoading] = useState(true)
+  const [cardError, setCardError] = useState(false)
+  const [imgBusy, setImgBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!draft?.listingId) {
+      setCardLoading(false)
+      return undefined
+    }
+    setCardLoading(true)
+    setCardError(false)
+    buildAdStudioListingSharePng(draft.listingId, t)
+      .then((dataUrl) => {
+        if (!cancelled) setCardPreview(dataUrl)
+      })
+      .catch(() => {
+        if (!cancelled) setCardError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setCardLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [draft?.listingId, t])
+
+  const downloadImage = async () => {
+    if (!draft?.listingId) return
+    setImgBusy(true)
+    try {
+      await downloadAdStudioListingSharePng(draft.listingId, draft.adTitle || draft.title, t)
+    } finally {
+      setImgBusy(false)
+    }
+  }
+
+  return (
+    <div className="border rounded p-2 mb-2">
+      <div className="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">
+        <div className="small">
+          <strong>{draft.title || draft.speciesName || 'Draft'}</strong>
+          {' · '}
+          {draft.source || 'unknown'}
+          {' · '}
+          {draft.channel}
+          {draft.copyMode ? ` · ${draft.copyMode}` : ''}
+        </div>
+        <div className="d-flex gap-1 flex-wrap">
+          <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => onCopy(draft.text)}>
+            Copy all
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-dark"
+            disabled={imgBusy || cardLoading || cardError}
+            onClick={downloadImage}
+          >
+            {imgBusy ? 'Downloading…' : 'Download share image'}
+          </button>
+        </div>
+      </div>
+      <div className="row g-2">
+        <div className="col-12 col-lg-7">
+          <label className="form-label small text-muted mb-0">Ad title (Kijiji / FB)</label>
+          <textarea className="form-control form-control-sm mb-2" rows={2} value={draft.adTitle || ''} readOnly />
+          <label className="form-label small text-muted mb-0">Description</label>
+          <textarea className="form-control form-control-sm" rows={8} value={draft.adDescription || draft.text || ''} readOnly />
+        </div>
+        <div className="col-12 col-lg-5">
+          <label className="form-label small text-muted mb-0">Listing photo (share card)</label>
+          <div className="border rounded bg-light d-flex align-items-center justify-content-center" style={{ minHeight: 200 }}>
+            {cardLoading ? (
+              <span className="small text-muted p-3">Loading preview…</span>
+            ) : cardError ? (
+              <span className="small text-danger p-3">Could not build share image.</span>
+            ) : cardPreview ? (
+              <img src={cardPreview} alt="" className="img-fluid rounded" style={{ maxHeight: 280 }} />
+            ) : null}
+          </div>
+          <p className="small text-muted mt-1 mb-0">
+            Same branded PNG as listing share — use this as the marketplace listing photo.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function groupByCountry(items, key = vendorCountry) {
@@ -96,12 +188,16 @@ export default function AdminMarketingPage() {
   const [adTone, setAdTone] = useState('collector')
   const [adTemplateKey, setAdTemplateKey] = useState('inventory_push')
   const [adCityHint, setAdCityHint] = useState('')
+  const [adCopyMode, setAdCopyMode] = useState('listing')
   const [adDrafts, setAdDrafts] = useState([])
   const [adBusy, setAdBusy] = useState(false)
   const [marketingEmail, setMarketingEmail] = useState('')
+  const [marketingDisplayName, setMarketingDisplayName] = useState('')
   const [marketingLookup, setMarketingLookup] = useState(null)
+  const [marketingUserNotFound, setMarketingUserNotFound] = useState(false)
   const [marketingLookupBusy, setMarketingLookupBusy] = useState(false)
   const [marketingToggleBusy, setMarketingToggleBusy] = useState(false)
+  const [marketingProvisionBusy, setMarketingProvisionBusy] = useState(false)
 
   const reload = () => {
     setLoading(true)
@@ -330,6 +426,7 @@ export default function AdminMarketingPage() {
         tone: adTone,
         templateKey: adTemplateKey,
         cityHint: adCityHint || undefined,
+        copyMode: adCopyMode,
         listingIds: selectedAdListingIds,
       })
       const rows = Array.isArray(out?.ads) ? out.ads : []
@@ -360,12 +457,16 @@ export default function AdminMarketingPage() {
       listing_id: d.listingId || '',
       source: d.source || '',
       title: d.title || '',
+      ad_title: d.adTitle || '',
+      ad_description: d.adDescription || '',
       species: d.speciesName || '',
       seller: d.sellerName || '',
       channel: d.channel || '',
       tone: d.tone || '',
       template: d.templateKey || '',
+      copy_mode: d.copyMode || '',
       listing_url: d.listingUrl || '',
+      store_url: d.storeUrl || '',
       text: d.text || '',
     }))
     downloadCsv(`tarantulapp-ad-studio-${new Date().toISOString().slice(0, 10)}.csv`, rows)
@@ -385,19 +486,53 @@ export default function AdminMarketingPage() {
     setMarketingLookupBusy(true)
     setError('')
     setSuccess('')
+    setMarketingUserNotFound(false)
     try {
       const out = await adminService.userLookupByEmail(email)
       if (!out?.found) {
         setMarketingLookup(null)
-        setError('User not found.')
+        setMarketingUserNotFound(true)
         return
       }
       setMarketingLookup(out.user)
+      setMarketingUserNotFound(false)
       setSuccess('User loaded.')
     } catch {
       setError('Could not lookup user.')
     } finally {
       setMarketingLookupBusy(false)
+    }
+  }
+
+  const provisionMarketingTeam = async () => {
+    const email = marketingEmail.trim()
+    if (!email) {
+      setError('Enter an email first.')
+      return
+    }
+    if (!window.confirm(`Create or update marketing access for ${email} and send the welcome email?`)) return
+    setMarketingProvisionBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const out = await adminService.provisionMarketingTeamMember({
+        email,
+        displayName: marketingDisplayName.trim() || undefined,
+        sendWelcomeEmail: true,
+        resetPassword: true,
+      })
+      if (out?.user) {
+        setMarketingLookup(out.user)
+        setMarketingUserNotFound(false)
+      }
+      const created = out?.created ? 'Account created. ' : ''
+      const welcome = out?.welcomeEmailSent ? 'Welcome email sent.' : ''
+      const pwd = out?.plainPassword ? ` Temp password (also emailed): ${out.plainPassword}` : ''
+      setSuccess(`${created}${welcome}${pwd}`.trim())
+    } catch (e) {
+      setError(e?.response?.data?.message || 'Could not provision marketing team member.')
+    } finally {
+      setMarketingProvisionBusy(false)
     }
   }
 
@@ -706,9 +841,9 @@ export default function AdminMarketingPage() {
       <div className="card p-3 mb-4">
         <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
           <div>
-            <h3 className="h6 mb-0">Ad Studio (Phase 1)</h3>
+            <h3 className="h6 mb-0">Ad Studio</h3>
             <small className="text-muted">
-              Generate Kijiji/Facebook-ready copy for direct and partner mirror listings.
+              Listing or storefront copy from live data, plus the same share-card image used on marketplace posts.
             </small>
           </div>
           <span className="badge bg-dark">Monarch-ready</span>
@@ -780,14 +915,24 @@ export default function AdminMarketingPage() {
           )}
         </div>
         <div className="row g-2 mb-2">
-          <div className="col-12 col-md-3">
+          <div className="col-12 col-md-2">
+            <select className="form-select form-select-sm" value={adCopyMode} onChange={(e) => setAdCopyMode(e.target.value)}>
+              {(adTemplates.copyModes?.length ? adTemplates.copyModes : [
+                { key: 'listing', label: 'Listing details' },
+                { key: 'storefront', label: 'Storefront / shop' },
+              ]).map((m) => (
+                <option key={m.key} value={m.key}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-12 col-md-2">
             <select className="form-select form-select-sm" value={adChannel} onChange={(e) => setAdChannel(e.target.value)}>
               {(adTemplates.channels?.length ? adTemplates.channels : [{ key: 'kijiji', label: 'Kijiji' }]).map((c) => (
                 <option key={c.key} value={c.key}>{c.label}</option>
               ))}
             </select>
           </div>
-          <div className="col-12 col-md-3">
+          <div className="col-12 col-md-2">
             <select className="form-select form-select-sm" value={adTone} onChange={(e) => setAdTone(e.target.value)}>
               {(adTemplates.tones?.length ? adTemplates.tones : [{ key: 'collector', label: 'Collector' }]).map((tone) => (
                 <option key={tone.key} value={tone.key}>{tone.label}</option>
@@ -810,7 +955,7 @@ export default function AdminMarketingPage() {
               className="form-control form-control-sm"
               value={adCityHint}
               onChange={(e) => setAdCityHint(e.target.value)}
-              placeholder="City hint (optional)"
+              placeholder="City hint (listing mode)"
             />
           </div>
         </div>
@@ -828,19 +973,9 @@ export default function AdminMarketingPage() {
           </button>
         </div>
         {adDrafts.length > 0 && (
-          <div className="border rounded p-2" style={{ maxHeight: 360, overflowY: 'auto' }}>
+          <div className="border rounded p-2" style={{ maxHeight: 720, overflowY: 'auto' }}>
             {adDrafts.map((d) => (
-              <div key={`${d.listingId}-${d.channel}`} className="border rounded p-2 mb-2">
-                <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
-                  <div className="small">
-                    <strong>{d.title || d.speciesName || 'Draft'}</strong> · {d.source || 'unknown'} · {d.channel}
-                  </div>
-                  <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => copyAdDraft(d.text)}>
-                    Copy
-                  </button>
-                </div>
-                <textarea className="form-control form-control-sm" rows={6} value={d.text || ''} readOnly />
-              </div>
+              <AdStudioDraftCard key={`${d.listingId}-${d.channel}-${d.copyMode}`} draft={d} t={t} onCopy={copyAdDraft} />
             ))}
           </div>
         )}
@@ -940,33 +1075,57 @@ export default function AdminMarketingPage() {
             Grant limited access to Ad Studio and Partner Outreach without full admin rights.
           </p>
           <div className="row g-2 mb-2">
-            <div className="col-12 col-md-8">
+            <div className="col-12 col-md-5">
               <input
                 className="form-control form-control-sm"
                 value={marketingEmail}
-                onChange={(e) => setMarketingEmail(e.target.value)}
+                onChange={(e) => {
+                  setMarketingEmail(e.target.value)
+                  setMarketingUserNotFound(false)
+                }}
                 placeholder="user@email.com"
               />
             </div>
             <div className="col-12 col-md-4">
+              <input
+                className="form-control form-control-sm"
+                value={marketingDisplayName}
+                onChange={(e) => setMarketingDisplayName(e.target.value)}
+                placeholder="Display name (optional)"
+              />
+            </div>
+            <div className="col-12 col-md-3">
               <button
                 type="button"
                 className="btn btn-sm btn-outline-dark w-100"
                 disabled={marketingLookupBusy}
                 onClick={lookupMarketingUser}
               >
-                {marketingLookupBusy ? 'Loading...' : 'Lookup user'}
+                {marketingLookupBusy ? 'Loading...' : 'Search'}
               </button>
             </div>
           </div>
+          {marketingUserNotFound && (
+            <div className="border rounded p-2 small mb-2">
+              <p className="mb-2 text-muted">No account with that email. Create one, grant marketing access, and send the English welcome email.</p>
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                disabled={marketingProvisionBusy}
+                onClick={provisionMarketingTeam}
+              >
+                {marketingProvisionBusy ? 'Provisioning…' : 'Create account & send welcome'}
+              </button>
+            </div>
+          )}
           {marketingLookup && (
             <div className="border rounded p-2 small">
               <div><strong>{marketingLookup.email}</strong></div>
               <div className="text-muted mb-2">
-                {marketingLookup.displayName || 'No display name'} · marketingOps:{' '}
+                {marketingLookup.displayName || marketingLookup.publicHandle || 'No display name'} · marketingOps:{' '}
                 {marketingLookup.marketingOps ? 'yes' : 'no'}
               </div>
-              <div className="d-flex gap-2">
+              <div className="d-flex gap-2 flex-wrap">
                 <button
                   type="button"
                   className="btn btn-sm btn-success"
@@ -982,6 +1141,14 @@ export default function AdminMarketingPage() {
                   onClick={() => toggleMarketingOps(false)}
                 >
                   Revoke marketing access
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-dark"
+                  disabled={marketingProvisionBusy}
+                  onClick={provisionMarketingTeam}
+                >
+                  {marketingProvisionBusy ? 'Sending…' : 'Reset password & resend welcome'}
                 </button>
               </div>
             </div>

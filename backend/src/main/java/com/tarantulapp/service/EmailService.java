@@ -507,6 +507,38 @@ public class EmailService {
     /**
      * Closed-beta welcome with credentials (same copy as the admin copy/paste templates).
      */
+    /**
+     * Marketing team onboarding (English). Includes credentials when {@code plainPassword} is set.
+     */
+    public void sendMarketingTeamWelcomeEmail(String toEmail, String displayName, String plainPassword) {
+        String name = displayName == null || displayName.isBlank() ? toEmail : displayName.trim();
+        String appUrl = baseUrl == null || baseUrl.isBlank() ? BetaMailBodies.DEFAULT_APP_URL : baseUrl.trim();
+        boolean withPassword = plainPassword != null && !plainPassword.isBlank();
+        StringBuilder body = new StringBuilder();
+        body.append("Hi ").append(name).append(",\n\n");
+        body.append("You have been added to the TarantulApp marketing team. ");
+        body.append("Your account can use Ad Studio and Partner Outreach tools in the admin area.\n\n");
+        if (withPassword) {
+            body.append("Sign-in email: ").append(toEmail).append("\n");
+            body.append("Temporary password: ").append(plainPassword).append("\n\n");
+            body.append("Please sign in and change your password after your first login.\n\n");
+        } else {
+            body.append("Sign in with your existing TarantulApp credentials at:\n");
+            body.append(appUrl).append("\n\n");
+        }
+        body.append("Marketing hub: ").append(appUrl).append("/admin/marketing\n\n");
+        body.append("If you did not expect this invitation, reply to this email.\n\n");
+        body.append("— TarantulApp Marketing");
+        String subject = "Welcome to the TarantulApp marketing team";
+        try {
+            doSend(toEmail, subject, body.toString());
+            log.info("Marketing team welcome email sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.error("Failed to send marketing team welcome to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage(), e);
+            throw new RuntimeException("Could not send marketing team welcome email: " + e.getMessage());
+        }
+    }
+
     public void sendBetaWelcomeEmail(String toEmail, String displayName, String plainPassword, String welcomeLocale) {
         String loc = BetaMailBodies.normalizeLocale(welcomeLocale);
         String sendDate = formatBetaSendDateForLocale(loc);

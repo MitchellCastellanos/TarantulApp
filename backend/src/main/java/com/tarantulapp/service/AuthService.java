@@ -476,6 +476,47 @@ public class AuthService {
     }
 
     /**
+     * Admin: find or create a marketing-team account by email, always with a freshly generated password
+     * for new users (or reset password when the user already exists).
+     */
+    @Transactional
+    public AdminUserPasswordResult adminProvisionMarketingTeamMember(String email, String displayName) {
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        if (normalizedEmail.isBlank()) {
+            throw new IllegalArgumentException("EMAIL_REQUIRED");
+        }
+        String plain = randomPasswordChars(14);
+        Optional<User> existing = userRepository.findByEmail(normalizedEmail);
+        if (existing.isPresent()) {
+            User user = existing.get();
+            user.setPasswordHash(passwordEncoder.encode(plain));
+            user.setIsMarketingOps(true);
+            if (displayName != null && !displayName.isBlank()
+                    && (user.getDisplayName() == null || user.getDisplayName().isBlank())) {
+                user.setDisplayName(displayName.trim());
+            }
+            userRepository.save(user);
+            googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(user.getId());
+            return new AdminUserPasswordResult(user, plain, false);
+        }
+        User user = new User();
+        user.setEmail(normalizedEmail);
+        user.setPasswordHash(passwordEncoder.encode(plain));
+        user.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName.trim());
+        user.setPlan(UserPlan.FREE);
+        user.setTrialEndsAt(LocalDateTime.now().plusDays(7));
+        user.setIsMarketingOps(true);
+        user.setIsBetaTester(false);
+        userRepository.save(user);
+        publicHandleService.assignInitialPublicHandleIfMissing(user.getId());
+        referralService.applyReferralForNewAccount(user.getId(), null);
+        referralService.ensureReferralCodeForUser(user.getId());
+        User refreshed = userRepository.findById(user.getId()).orElse(user);
+        googleGroupSyncAsyncInvoker.scheduleAfterCommitOrNow(refreshed.getId());
+        return new AdminUserPasswordResult(refreshed, plain, true);
+    }
+
+    /**
      * Admin: find user by email or public handle (with or without leading {@code @}), set password,
      * mark as beta tester. If no user exists and {@code identifier} is an email, creates an account
      * (beta tester, free plan, trial) like register but without welcome email.
