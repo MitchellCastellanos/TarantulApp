@@ -96,6 +96,7 @@ function AdStudioDraftCard({ draft, t, onCopy }) {
           {' · '}
           {draft.channel}
           {draft.copyMode ? ` · ${draft.copyMode}` : ''}
+          {draft.locale ? ` · ${String(draft.locale).toUpperCase()}` : ''}
         </div>
         <div className="d-flex gap-1 flex-wrap">
           <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => onCopy(draft.text)}>
@@ -150,7 +151,7 @@ function groupByCountry(items, key = vendorCountry) {
 }
 
 export default function AdminMarketingPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const isAdmin = user?.admin === true
@@ -185,10 +186,7 @@ export default function AdminMarketingPage() {
   const [adListings, setAdListings] = useState([])
   const [selectedAdListingIds, setSelectedAdListingIds] = useState([])
   const [adChannel, setAdChannel] = useState('kijiji')
-  const [adLocale, setAdLocale] = useState(() => {
-    const base = String(i18n.language || 'en').split('-')[0].toLowerCase()
-    return base === 'es' || base === 'fr' ? base : 'en'
-  })
+  const [adLocale, setAdLocale] = useState('en')
   const [adTemplateKey, setAdTemplateKey] = useState('inventory_push')
   const [adCityHint, setAdCityHint] = useState('')
   const [adCopyMode, setAdCopyMode] = useState('listing')
@@ -917,53 +915,73 @@ export default function AdminMarketingPage() {
             ))
           )}
         </div>
-        <div className="row g-2 mb-2">
-          <div className="col-12 col-md-2">
-            <select className="form-select form-select-sm" value={adCopyMode} onChange={(e) => setAdCopyMode(e.target.value)}>
-              {(adTemplates.copyModes?.length ? adTemplates.copyModes : [
-                { key: 'listing', label: 'Listing details' },
-                { key: 'storefront', label: 'Storefront / shop' },
-              ]).map((m) => (
-                <option key={m.key} value={m.key}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-12 col-md-2">
-            <select className="form-select form-select-sm" value={adChannel} onChange={(e) => setAdChannel(e.target.value)}>
-              {(adTemplates.channels?.length ? adTemplates.channels : [{ key: 'kijiji', label: 'Kijiji' }]).map((c) => (
-                <option key={c.key} value={c.key}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-12 col-md-2">
-            <select className="form-select form-select-sm" value={adLocale} onChange={(e) => setAdLocale(e.target.value)}>
-              {(adTemplates.locales?.length ? adTemplates.locales : [
-                { key: 'en', label: 'English' },
-                { key: 'es', label: 'Español' },
-                { key: 'fr', label: 'Français' },
-              ]).map((loc) => (
-                <option key={loc.key} value={loc.key}>{loc.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-12 col-md-3">
-            <select
-              className="form-select form-select-sm"
-              value={adTemplateKey}
-              onChange={(e) => setAdTemplateKey(e.target.value)}
-            >
-              {(adTemplates.templates?.length ? adTemplates.templates : [{ key: 'inventory_push', label: 'Inventory push' }]).map((tpl) => (
-                <option key={tpl.key} value={tpl.key}>{tpl.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-12 col-md-3">
-            <input
-              className="form-control form-control-sm"
-              value={adCityHint}
-              onChange={(e) => setAdCityHint(e.target.value)}
-              placeholder="City hint (listing mode)"
-            />
+        <div className="border rounded p-2 mb-2 bg-light">
+          <div className="small fw-semibold mb-2">Generate settings</div>
+          <div className="row g-2 align-items-end">
+            <div className="col-12">
+              <label className="form-label small fw-semibold mb-1">
+                Ad language <span className="text-muted fw-normal">(title + description)</span>
+              </label>
+              <div className="btn-group btn-group-sm w-100" role="group" aria-label="Ad language">
+                {[
+                  { key: 'en', label: 'English' },
+                  { key: 'es', label: 'Español' },
+                  { key: 'fr', label: 'Français' },
+                ].map((loc) => (
+                  <button
+                    key={loc.key}
+                    type="button"
+                    className={`btn ${adLocale === loc.key ? 'btn-dark' : 'btn-outline-dark'}`}
+                    onClick={() => setAdLocale(loc.key)}
+                  >
+                    {loc.label}
+                  </button>
+                ))}
+              </div>
+              <div className="form-text">
+                Independent from app UI language. Kijiji / Facebook ads usually use English in Canada.
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <label className="form-label small mb-0">Copy type</label>
+              <select className="form-select form-select-sm" value={adCopyMode} onChange={(e) => setAdCopyMode(e.target.value)}>
+                {(adTemplates.copyModes?.length ? adTemplates.copyModes : [
+                  { key: 'listing', label: 'Listing details' },
+                  { key: 'storefront', label: 'Storefront / shop' },
+                ]).map((m) => (
+                  <option key={m.key} value={m.key}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-md-3">
+              <label className="form-label small mb-0">Channel</label>
+              <select className="form-select form-select-sm" value={adChannel} onChange={(e) => setAdChannel(e.target.value)}>
+                {(adTemplates.channels?.length ? adTemplates.channels : [{ key: 'kijiji', label: 'Kijiji' }]).map((c) => (
+                  <option key={c.key} value={c.key}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-md-3">
+              <label className="form-label small mb-0">Template</label>
+              <select
+                className="form-select form-select-sm"
+                value={adTemplateKey}
+                onChange={(e) => setAdTemplateKey(e.target.value)}
+              >
+                {(adTemplates.templates?.length ? adTemplates.templates : [{ key: 'inventory_push', label: 'Inventory push' }]).map((tpl) => (
+                  <option key={tpl.key} value={tpl.key}>{tpl.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-md-3">
+              <label className="form-label small mb-0">City hint</label>
+              <input
+                className="form-control form-control-sm"
+                value={adCityHint}
+                onChange={(e) => setAdCityHint(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
           </div>
         </div>
         <div className="d-flex flex-wrap gap-2 mb-2">
