@@ -730,6 +730,8 @@
     "proTeaserBody": "Pro (tarif mensuel régional sur la page Pro) : tarentules illimitées, historique complet, exports (Excel, PDF), QR massif, IA plus détaillée et analyses Cases complètes. Vendor est disponible aux États-Unis, au Canada, au Mexique et en Colombie ; Free reste l’entrée large avec Cases, Communauté et Discover.",
     "orContinueWith": "ou continuer avec",
     "googleLoginError": "Connexion avec Google impossible.",
+    "continueWithApple": "Continuer avec Apple",
+    "appleLoginError": "Connexion avec Apple impossible.",
     "GOOGLE_TOKEN_INVALID": "Connexion Google non vérifiée. Réessayez.",
     "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
     "loginBadResponse": "Le serveur n’a pas renvoyé de session valide. Si le problème persiste, contactez-nous.",

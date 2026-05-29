@@ -46,6 +46,10 @@ export default function ProPage() {
   const [polling, setPolling] = useState(false)
   const pollingRef = useRef(false)
   const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+  const isIosNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+  // Apple (Guideline 3.1.1) and Google both require in-app purchase for digital subscriptions,
+  // so on either native store we use the on-device billing flow instead of the Stripe web checkout.
+  const isNativeStore = isAndroidNative || isIosNative
   const [androidSyncing, setAndroidSyncing] = useState(false)
   const [androidMessage, setAndroidMessage] = useState('')
   const [vendorActivateBusy, setVendorActivateBusy] = useState(false)
@@ -241,8 +245,8 @@ export default function ProPage() {
       return
     }
 
-    if (isAndroidNative) {
-      handleAndroidPurchase()
+    if (isNativeStore) {
+      handleNativePurchase()
       return
     }
 
@@ -258,14 +262,19 @@ export default function ProPage() {
     }
   }
 
-  const handleAndroidPurchase = async () => {
+  // Native in-app purchase via cordova-plugin-purchase. Routes to Google Play on Android
+  // and to the Apple App Store (StoreKit) on iOS, verifying the receipt server-side in both cases.
+  const handleNativePurchase = async () => {
     if (!window.CdvPurchase) {
       setAndroidMessage(t('pro.androidPurchaseUnavailable'))
       return
     }
 
     const { store, ProductType, Platform } = window.CdvPurchase
-    const productId = import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || 'tarantulapp_pro_monthly'
+    const storePlatform = isIosNative ? Platform.APPLE_APPSTORE : Platform.GOOGLE_PLAY
+    const productId = isIosNative
+      ? (import.meta.env.VITE_IOS_APPSTORE_PRODUCT_ID || 'tarantulapp_pro_monthly')
+      : (import.meta.env.VITE_ANDROID_PLAY_PRODUCT_ID || 'tarantulapp_pro_monthly')
 
     setAndroidSyncing(true)
     setAndroidMessage(t('pro.androidStartingPurchase'))
@@ -273,17 +282,23 @@ export default function ProPage() {
     store.register([{
       id: productId,
       type: ProductType.PAID_SUBSCRIPTION,
-      platform: Platform.GOOGLE_PLAY,
+      platform: storePlatform,
     }])
 
     store.when()
       .approved(async (transaction) => {
         setAndroidMessage(t('pro.androidVerifyingPurchase'))
         try {
-          const data = await billingService.verifyGooglePlayPurchase({
-            purchaseToken: transaction.purchaseToken,
-            productId: productId,
-          })
+          const data = isIosNative
+            ? await billingService.verifyAppStorePurchase({
+                productId,
+                transactionId: transaction.transactionId,
+                appStoreReceipt: store.appStoreReceipt || transaction.appStoreReceipt,
+              })
+            : await billingService.verifyGooglePlayPurchase({
+                purchaseToken: transaction.purchaseToken,
+                productId,
+              })
           if (data?.plan === 'PRO') {
             await loadBilling()
             setAndroidMessage(t('pro.androidPurchaseSynced'))
@@ -306,7 +321,7 @@ export default function ProPage() {
         setAndroidSyncing(false)
       })
 
-    store.initialize([Platform.GOOGLE_PLAY])
+    store.initialize([storePlatform])
       .then(() => {
         const product = store.get(productId)
         if (product && product.canPurchase) {
@@ -482,7 +497,7 @@ export default function ProPage() {
                                 </ul>
                               </>
                             ) : null}
-                            {user && !isAndroidNative && vendorFlatCheckout ? (
+                            {user && !isNativeStore && vendorFlatCheckout ? (
                               <button
                                 type="button"
                                 className="btn btn-sm btn-warning align-self-start"
@@ -492,7 +507,7 @@ export default function ProPage() {
                                 {loadingCheckout ? t('common.loading') : t('pro.vendorSubscribeCta')}
                               </button>
                             ) : null}
-                            {user && !isAndroidNative && vendorDynamicTier
+                            {user && !isNativeStore && vendorDynamicTier
                               && vendorMxTier?.requiresPaidSubscription
                               && vendorMxTier?.stripeCheckoutAvailable !== false ? (
                               <button
@@ -564,7 +579,7 @@ export default function ProPage() {
                           {vendorActivateBusy ? t('common.loading') : t('pro.vendorMxStarterActivateCta')}
                         </button>
                       ) : (
-                        user && !isAndroidNative && (
+                        user && !isNativeStore && (
                           <button
                             type="button"
                             className="btn btn-sm btn-warning"
@@ -603,10 +618,18 @@ export default function ProPage() {
               )}
               {!isPro && (
                 <div className="d-flex flex-column gap-3">
-                  {isAndroidNative ? (
+                  {isNativeStore ? (
                     <div className="border rounded p-3" style={{ borderColor: 'var(--ta-border)' }}>
-                      <p className="small mb-2">{t('pro.androidPurchaseTitle', 'Google Play Billing')}</p>
-                      <p className="small text-muted mb-3">{t('pro.androidPurchaseBody', 'Upgrade to Pro directly through your Google account.')}</p>
+                      <p className="small mb-2">
+                        {isIosNative
+                          ? t('pro.iosPurchaseTitle', 'App Store In‑App Purchase')
+                          : t('pro.androidPurchaseTitle', 'Google Play Billing')}
+                      </p>
+                      <p className="small text-muted mb-3">
+                        {isIosNative
+                          ? t('pro.iosPurchaseBody', 'Upgrade to Pro directly through your Apple ID.')
+                          : t('pro.androidPurchaseBody', 'Upgrade to Pro directly through your Google account.')}
+                      </p>
                       {!user ? (
                         <button
                           type="button"

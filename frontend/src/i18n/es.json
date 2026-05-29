@@ -741,6 +741,8 @@
     "proTeaserBody": "Pro (precio mensual regional en la página Pro): colección sin tope, exportaciones (Excel, PDF), QR masivo, IA más detallada y análisis completo de Cases. Vendor ya está en EE.UU., Canadá, México y Colombia; Free sigue siendo la puerta de entrada con Cases, Comunidad y Discover.",
     "orContinueWith": "o continúa con",
     "googleLoginError": "No se pudo iniciar sesión con Google.",
+    "continueWithApple": "Continuar con Apple",
+    "appleLoginError": "No se pudo iniciar sesión con Apple.",
     "GOOGLE_TOKEN_INVALID": "No se pudo verificar Google. Intenta de nuevo.",
     "networkError": "No pudimos conectar con el servidor. Revisa tu red o inténtalo más tarde.",
     "loginBadResponse": "El servidor no devolvió una sesión válida. Si el fallo continúa, avísanos.",

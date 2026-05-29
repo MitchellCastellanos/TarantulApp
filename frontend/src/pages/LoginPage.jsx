@@ -43,6 +43,10 @@ export default function LoginPage() {
   })
   const googleBtnRef = useRef(null)
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  // Sign in with Apple (Services ID for web/WebView). Required by App Store Guideline 4.8
+  // whenever a third-party sign-in (Google) is offered.
+  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID
+  const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI
   const loginRef = useRef(login)
   const tRef = useRef(t)
   loginRef.current = login
@@ -246,6 +250,64 @@ export default function LoginPage() {
       if (window.google?.accounts?.id) window.google.accounts.id.cancel()
     }
   }, [googleClientId, inviteOnly])
+
+  useEffect(() => {
+    if (inviteOnly) return undefined
+    if (!appleClientId) return undefined
+    const initApple = () => {
+      if (!window.AppleID?.auth) return
+      window.AppleID.auth.init({
+        clientId: appleClientId,
+        scope: 'name email',
+        redirectURI: appleRedirectUri || window.location.origin + '/login',
+        usePopup: true,
+      })
+    }
+    const existing = document.querySelector('script[data-apple-signin="1"]')
+    if (existing) {
+      initApple()
+      return undefined
+    }
+    const script = document.createElement('script')
+    script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js'
+    script.async = true
+    script.defer = true
+    script.dataset.appleSignin = '1'
+    script.onload = initApple
+    document.head.appendChild(script)
+    return undefined
+  }, [appleClientId, appleRedirectUri, inviteOnly])
+
+  const handleAppleSignIn = async () => {
+    if (!window.AppleID?.auth) return
+    setError('')
+    setLoading(true)
+    try {
+      const res = await window.AppleID.auth.signIn()
+      const identityToken = res?.authorization?.id_token
+      if (!identityToken) throw new Error('apple-token-missing')
+      const name = res?.user?.name
+      const fullName = name ? [name.firstName, name.lastName].filter(Boolean).join(' ') : undefined
+      const ref = new URLSearchParams(window.location.search).get('ref')
+      const data = await authService.oauthApple({
+        identityToken,
+        fullName,
+        referralCode: ref ? String(ref).trim().toUpperCase() : undefined,
+      })
+      loginRef.current(data)
+    } catch (err) {
+      const d = err.response?.data
+      if (d?.error === 'REGISTRATION_CLOSED') {
+        setError(tRef.current('auth.registrationClosed'))
+      } else if (err?.error === 'popup_closed_by_user' || err?.error === 'user_cancelled_authorize') {
+        /* user dismissed the Apple dialog — no error message */
+      } else {
+        setError(d?.error || tRef.current('auth.appleLoginError'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const isLight = theme === 'light'
   const showRegisterUi = registrationPolicy.registrationOpen && !inviteOnly
@@ -540,6 +602,20 @@ export default function LoginPage() {
                   ) : (
                     <p className="small text-muted mb-0">{t('auth.googlePendingConfig')}</p>
                   )}
+                  {appleClientId ? (
+                    <div className="d-flex justify-content-center mt-2">
+                      <button
+                        type="button"
+                        className="btn btn-dark btn-sm d-inline-flex align-items-center gap-2"
+                        style={{ borderRadius: 999, minWidth: 320, justifyContent: 'center' }}
+                        onClick={handleAppleSignIn}
+                        disabled={loading}
+                      >
+                        <i className="bi bi-apple" aria-hidden="true" />
+                        {t('auth.continueWithApple', 'Continue with Apple')}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 )}
 

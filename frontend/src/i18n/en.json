@@ -734,6 +734,8 @@
     "proTeaserBody": "Pro (regional monthly pricing on the Pro page): unlimited spiders, full history, exports (Excel, PDF), bulk QR, deeper AI, and full Case analytics. Vendor is live in the US, Canada, Mexico, and Colombia; Free stays the wide funnel with Cases, Community, and Discover.",
     "orContinueWith": "or continue with",
     "googleLoginError": "Could not sign in with Google.",
+    "continueWithApple": "Continue with Apple",
+    "appleLoginError": "Could not sign in with Apple.",
     "GOOGLE_TOKEN_INVALID": "Google sign-in could not be verified. Try again.",
     "networkError": "Could not reach the server. Check your connection and try again.",
     "loginBadResponse": "The server did not return a valid session. If this keeps happening, let us know.",

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+		Capabilities required for App Store submission.
+		These must also be enabled in the App ID on the Apple Developer portal
+		and the entitlements file must be linked in Xcode
+		(Target > Signing & Capabilities, or Build Settings > Code Signing Entitlements).
+		- aps-environment: APNs push notifications (@capacitor/push-notifications).
+		- com.apple.developer.applesignin: required because the app offers Google sign-in,
+		  so Apple Guideline 4.8 requires Sign in with Apple as an equivalent option.
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+</dict>
+</plist>

@@ -8,6 +8,10 @@ const billingService = {
   verifySession: (sessionId) => api.post('/billing/verify-session', { sessionId }).then(r => r.data),
   verifyGooglePlayPurchase: ({ purchaseToken, productId }) =>
     api.post('/billing/google-play/verify', { purchaseToken, productId }).then(r => r.data),
+  // Apple App Store (StoreKit) receipt verification. Backend endpoint /billing/apple/verify
+  // should validate the transaction against the App Store Server API and upgrade the plan.
+  verifyAppStorePurchase: ({ productId, transactionId, appStoreReceipt }) =>
+    api.post('/billing/apple/verify', { productId, transactionId, appStoreReceipt }).then(r => r.data),
   createPortalSession: () => api.post('/billing/portal').then(r => r.data),
   requestVendorInvite: (locale) =>
     api.post('/billing/vendor-invite/request', locale ? { locale } : {}).then((r) => r.data),
