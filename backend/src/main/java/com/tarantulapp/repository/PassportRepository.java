@@ -23,4 +23,7 @@ public interface PassportRepository extends JpaRepository<Passport, UUID> {
     long countByBatchIdAndClaimedAtIsNotNull(UUID batchId);
 
     long countByCreatedByUserId(UUID userId);
+
+    @EntityGraph(attributePaths = "species")
+    List<Passport> findByCreatedByUserIdOrderByCreatedAtDesc(UUID createdByUserId);
 }

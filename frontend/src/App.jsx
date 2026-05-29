@@ -40,8 +40,11 @@ const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPa
 const DiscoverSpeciesDetailPage = lazy(() => import('./pages/DiscoverSpeciesDetailPage'))
 const DiscoverComparePage = lazy(() => import('./pages/DiscoverComparePage'))
 const DiscoverCatalogBrowsePage = lazy(() => import('./pages/DiscoverCatalogBrowsePage'))
+const StudioLayout = lazy(() => import('./pages/StudioLayout'))
 const StudioPage = lazy(() => import('./pages/StudioPage'))
 const StudioBatchPage = lazy(() => import('./pages/StudioBatchPage'))
+const StudioPassportsPage = lazy(() => import('./pages/StudioPassportsPage'))
+const StudioOriginPage = lazy(() => import('./pages/StudioOriginPage'))
 const QrToolPage = lazy(() => import('./pages/QrToolPage'))
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
 const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))
@@ -185,6 +188,11 @@ function LegacyPathRedirect({ to }) {
   return <Navigate to={`${resolvedTo}${location.search || ''}`} replace />
 }
 
+function LabelStudioLegacyRedirect() {
+  const location = useLocation()
+  return <Navigate to={`/studio/labels${location.search || ''}`} replace />
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -211,11 +219,16 @@ function AppRoutes() {
       <Route path="/descubrir/taxon/:gbifKey" element={<LegacyPathRedirect to="/discover/taxon/:gbifKey" />} />
       <Route path="/descubrir/especie/:id" element={<LegacyPathRedirect to="/discover/species/:id" />} />
       <Route path="/descubrir/comparar" element={<LegacyPathRedirect to="/discover/compare" />} />
-      <Route path="/studio" element={<PrivateRoute><StudioPage /></PrivateRoute>} />
-      <Route path="/studio/batches/:batchId" element={<PrivateRoute><StudioBatchPage /></PrivateRoute>} />
-      <Route path="/tools/qr" element={<QrToolPage />} />
-      <Route path="/tools/labels" element={<QrToolPage />} />
-      <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
+      <Route path="/studio" element={<PrivateRoute><StudioLayout /></PrivateRoute>}>
+        <Route index element={<StudioPage />} />
+        <Route path="passports" element={<StudioPassportsPage />} />
+        <Route path="batches/:batchId" element={<StudioBatchPage />} />
+        <Route path="labels" element={<QrToolPage />} />
+        <Route path="origin" element={<StudioOriginPage />} />
+      </Route>
+      <Route path="/tools/qr" element={<LabelStudioLegacyRedirect />} />
+      <Route path="/tools/labels" element={<LabelStudioLegacyRedirect />} />
+      <Route path="/herramientas/qr" element={<LabelStudioLegacyRedirect />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />
       <Route path="/shop/:handle" element={<MarketplaceStorefrontPage />} />
@@ -239,7 +252,7 @@ function AppRoutes() {
       <Route path="/tarantulas/:id/edit" element={<PrivateRoute><AddTarantulaPage /></PrivateRoute>} />
       <Route path="/reminders" element={<PrivateRoute><RemindersPage /></PrivateRoute>} />
       <Route path="/insights" element={<PrivateRoute><InsightsPage /></PrivateRoute>} />
-      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/tools/qr?mode=bulk" replace /></PrivateRoute>} />
+      <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/studio/labels?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
       <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />

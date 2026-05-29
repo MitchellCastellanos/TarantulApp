@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
 import FangPanel from '../components/FangPanel'
 import studioService from '../services/studioService'
 import speciesService from '../services/speciesService'
@@ -11,7 +10,7 @@ import { useCapabilities, capabilitiesKeys } from '../hooks/useCapabilities'
 export default function StudioPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { data: capabilities, isLoading: capsLoading } = useCapabilities()
+  const { data: capabilities } = useCapabilities()
 
   const { data: batches = [], isLoading } = useQuery({
     queryKey: ['studio', 'batches'],
@@ -55,44 +54,17 @@ export default function StudioPage() {
     }
   }
 
-  if (capsLoading) {
-    return (
-      <div>
-        <Navbar />
-        <div className="container py-4"><p>{t('common.loading')}</p></div>
-      </div>
-    )
-  }
-
   if (!capabilities?.passportCreator) {
     return (
-      <div>
-        <Navbar />
-        <div className="container py-4" style={{ maxWidth: 560 }}>
-          <FangPanel>
-            <h1 className="h5">{t('studio.title')}</h1>
-            <p className="small text-muted mb-0">{t('studio.notEnabled')}</p>
-          </FangPanel>
-        </div>
-      </div>
+      <FangPanel>
+        <p className="small text-muted mb-0">{t('studio.notEnabled')}</p>
+      </FangPanel>
     )
   }
 
   return (
-    <div>
-      <Navbar />
-      <div className="container py-4" style={{ maxWidth: 720 }}>
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-          <div>
-            <h1 className="h4 mb-1">{t('studio.title')}</h1>
-            <p className="small text-muted mb-0">{t('studio.subtitle')}</p>
-          </div>
-          <div className="d-flex gap-2">
-            <Link to="/tools/qr" className="btn btn-sm btn-outline-secondary">{t('studio.labelsLink')}</Link>
-            <Link to="/marketplace/sell" className="btn btn-sm btn-outline-secondary">{t('studio.listingsLink')}</Link>
-          </div>
-        </div>
-
+    <>
+      {capabilities?.passportCreator && (
         <FangPanel className="mb-4">
           <h2 className="h6 mb-3">{t('studio.createBatchTitle')}</h2>
           <form
@@ -159,36 +131,36 @@ export default function StudioPage() {
             </button>
           </form>
         </FangPanel>
+      )}
 
-        <h2 className="h6 mb-2">{t('studio.batchesTitle')}</h2>
-        {isLoading ? (
-          <p>{t('common.loading')}</p>
-        ) : batches.length === 0 ? (
-          <FangPanel><p className="small text-muted mb-0">{t('studio.batchesEmpty')}</p></FangPanel>
-        ) : (
-          <div className="d-grid gap-2">
-            {batches.map((b) => (
-              <Link key={b.id} to={`/studio/batches/${b.id}`} className="text-decoration-none">
-                <FangPanel className="mb-0">
-                  <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div>
-                      <div className="fw-semibold">{b.name}</div>
-                      <div className="small text-muted">
-                        {b.scientificName || t('studio.unknownSpecies')}
-                        {b.commonName ? ` · ${b.commonName}` : ''}
-                      </div>
-                    </div>
-                    <div className="text-end small">
-                      <div>{t('studio.qtyAvailable', { count: b.quantityAvailable })}</div>
-                      <div className="text-muted">{t('studio.passportsCount', { count: b.passportsGenerated })}</div>
+      <h2 className="h6 mb-2">{t('studio.batchesTitle')}</h2>
+      {isLoading ? (
+        <p>{t('common.loading')}</p>
+      ) : batches.length === 0 ? (
+        <FangPanel><p className="small text-muted mb-0">{t('studio.batchesEmpty')}</p></FangPanel>
+      ) : (
+        <div className="d-grid gap-2">
+          {batches.map((b) => (
+            <Link key={b.id} to={`/studio/batches/${b.id}`} className="text-decoration-none">
+              <FangPanel className="mb-0">
+                <div className="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div className="fw-semibold">{b.name}</div>
+                    <div className="small text-muted">
+                      {b.scientificName || t('studio.unknownSpecies')}
+                      {b.commonName ? ` · ${b.commonName}` : ''}
                     </div>
                   </div>
-                </FangPanel>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                  <div className="text-end small">
+                    <div>{t('studio.qtyAvailable', { count: b.quantityAvailable })}</div>
+                    <div className="text-muted">{t('studio.passportsCount', { count: b.passportsGenerated })}</div>
+                  </div>
+                </div>
+              </FangPanel>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
   )
 }

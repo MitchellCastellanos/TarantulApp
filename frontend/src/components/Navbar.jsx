@@ -64,6 +64,8 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const navQr =
     path.startsWith('/tools/qr') ||
     path.startsWith('/tools/labels') ||
+    path.startsWith('/studio/labels') ||
+    path.startsWith('/tools/labels') ||
     path.startsWith('/herramientas/qr') ||
     path.startsWith('/tarantulas/qr-print')
   const navMarketplace = path.startsWith('/marketplace')

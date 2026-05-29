@@ -5,15 +5,18 @@ import com.tarantulapp.dto.GenerateBatchPassportsRequest;
 import com.tarantulapp.dto.GenerateBatchPassportsResponse;
 import com.tarantulapp.dto.InventoryBatchAdjustmentRequest;
 import com.tarantulapp.dto.InventoryBatchResponse;
+import com.tarantulapp.dto.StudioClaimSignalDTO;
 import com.tarantulapp.dto.StudioPassportSummaryDTO;
 import com.tarantulapp.entity.InventoryAdjustment;
 import com.tarantulapp.entity.InventoryBatch;
 import com.tarantulapp.entity.Passport;
+import com.tarantulapp.entity.PassportClaimEvent;
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.InventoryAdjustmentRepository;
 import com.tarantulapp.repository.InventoryBatchRepository;
+import com.tarantulapp.repository.PassportClaimEventRepository;
 import com.tarantulapp.repository.PassportRepository;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.UserRepository;
@@ -23,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,6 +38,7 @@ public class InventoryBatchService {
     private final InventoryBatchRepository batchRepository;
     private final InventoryAdjustmentRepository adjustmentRepository;
     private final PassportRepository passportRepository;
+    private final PassportClaimEventRepository passportClaimEventRepository;
     private final SpeciesRepository speciesRepository;
     private final UserRepository userRepository;
     private final ShortIdService shortIdService;
@@ -44,6 +50,7 @@ public class InventoryBatchService {
     public InventoryBatchService(InventoryBatchRepository batchRepository,
                                  InventoryAdjustmentRepository adjustmentRepository,
                                  PassportRepository passportRepository,
+                                 PassportClaimEventRepository passportClaimEventRepository,
                                  SpeciesRepository speciesRepository,
                                  UserRepository userRepository,
                                  ShortIdService shortIdService,
@@ -51,6 +58,7 @@ public class InventoryBatchService {
         this.batchRepository = batchRepository;
         this.adjustmentRepository = adjustmentRepository;
         this.passportRepository = passportRepository;
+        this.passportClaimEventRepository = passportClaimEventRepository;
         this.speciesRepository = speciesRepository;
         this.userRepository = userRepository;
         this.shortIdService = shortIdService;
@@ -116,6 +124,9 @@ public class InventoryBatchService {
         adj.setDeltaTotal(deltaTotal);
         adj.setReason(normalizeReason(req.getReason()));
         adj.setNotes(trimToNull(req.getNotes()));
+        if (req.getPassportId() != null) {
+            adj.setPassportId(req.getPassportId());
+        }
         adjustmentRepository.save(adj);
 
         return toResponse(batch);
@@ -165,6 +176,70 @@ public class InventoryBatchService {
     }
 
     @Transactional(readOnly = true)
+    public List<StudioPassportSummaryDTO> listAllPassportsForUser(UUID userId) {
+        userCapabilitiesService.ensureStudioAccess(userId);
+        String base = publicBaseUrl.endsWith("/") ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1) : publicBaseUrl;
+        Map<UUID, InventoryBatch> batchById = new HashMap<>();
+        return passportRepository.findByCreatedByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(p -> toPassportSummaryEnriched(p, base, batchById))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudioClaimSignalDTO> listClaimSignalsForBatch(UUID batchId, UUID userId) {
+        userCapabilitiesService.ensureStudioAccess(userId);
+        requireOwnedBatch(batchId, userId);
+        List<Passport> passports = passportRepository.findByBatchIdOrderByCreatedAtDesc(batchId).stream()
+                .filter(Passport::isClaimed)
+                .toList();
+        if (passports.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> passportIds = passports.stream().map(Passport::getId).toList();
+        Map<UUID, PassportClaimEvent> latestEventByPassport = new HashMap<>();
+        for (PassportClaimEvent event : passportClaimEventRepository.findByPassportIdInOrderByCreatedAtDesc(passportIds)) {
+            latestEventByPassport.putIfAbsent(event.getPassportId(), event);
+        }
+        List<StudioClaimSignalDTO> out = new ArrayList<>();
+        for (Passport passport : passports) {
+            PassportClaimEvent event = latestEventByPassport.get(passport.getId());
+            if (event == null) {
+                continue;
+            }
+            StudioClaimSignalDTO dto = new StudioClaimSignalDTO();
+            dto.setEventId(event.getId());
+            dto.setPassportId(passport.getId());
+            dto.setShortId(passport.getShortId());
+            dto.setClaimedAt(event.getCreatedAt());
+            dto.setHandled(adjustmentRepository.existsByPassportIdAndReason(passport.getId(), "CLAIM_SUGGESTION"));
+            out.add(dto);
+        }
+        return out;
+    }
+
+    public InventoryBatchResponse applyClaimSignal(UUID batchId, UUID passportId, UUID userId) {
+        userCapabilitiesService.ensureStudioAccess(userId);
+        requireOwnedBatch(batchId, userId);
+        Passport passport = passportRepository.findById(passportId)
+                .orElseThrow(() -> new NotFoundException("Passport no encontrado"));
+        if (passport.getBatchId() == null || !passport.getBatchId().equals(batchId)) {
+            throw new IllegalArgumentException("PASSPORT_NOT_IN_BATCH");
+        }
+        if (!passport.isClaimed()) {
+            throw new IllegalArgumentException("PASSPORT_NOT_CLAIMED");
+        }
+        if (adjustmentRepository.existsByPassportIdAndReason(passportId, "CLAIM_SUGGESTION")) {
+            throw new IllegalArgumentException("CLAIM_SIGNAL_ALREADY_HANDLED");
+        }
+        InventoryBatchAdjustmentRequest req = new InventoryBatchAdjustmentRequest();
+        req.setDeltaSold(1);
+        req.setReason("CLAIM_SUGGESTION");
+        req.setNotes("Passport claim signal for /t/" + passport.getShortId());
+        req.setPassportId(passportId);
+        return adjust(batchId, userId, req);
+    }
+
+    @Transactional(readOnly = true)
     public List<StudioPassportSummaryDTO> listPassportsForBatch(UUID batchId, UUID userId) {
         userCapabilitiesService.ensureStudioAccess(userId);
         requireOwnedBatch(batchId, userId);
@@ -211,6 +286,11 @@ public class InventoryBatchService {
     }
 
     private StudioPassportSummaryDTO toPassportSummary(Passport passport, String base) {
+        return toPassportSummaryEnriched(passport, base, new HashMap<>());
+    }
+
+    private StudioPassportSummaryDTO toPassportSummaryEnriched(Passport passport, String base,
+                                                               Map<UUID, InventoryBatch> batchById) {
         StudioPassportSummaryDTO dto = new StudioPassportSummaryDTO();
         dto.setId(passport.getId());
         dto.setShortId(passport.getShortId());
@@ -220,6 +300,18 @@ public class InventoryBatchService {
         dto.setStage(passport.getStage());
         dto.setSex(passport.getSex());
         dto.setLabelNotes(passport.getLabelNotes());
+        if (passport.getBatchId() != null) {
+            dto.setBatchId(passport.getBatchId());
+            InventoryBatch batch = batchById.computeIfAbsent(passport.getBatchId(),
+                    id -> batchRepository.findById(id).orElse(null));
+            if (batch != null) {
+                dto.setBatchName(batch.getName());
+            }
+        }
+        if (passport.getSpecies() != null) {
+            dto.setScientificName(passport.getSpecies().getScientificName());
+            dto.setCommonName(passport.getSpecies().getCommonName());
+        }
         return dto;
     }
 

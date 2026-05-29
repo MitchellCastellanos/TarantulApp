@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface InventoryAdjustmentRepository extends JpaRepository<InventoryAdjustment, UUID> {
 
     List<InventoryAdjustment> findByBatchIdOrderByCreatedAtDesc(UUID batchId);
+
+    boolean existsByPassportIdAndReason(UUID passportId, String reason);
 }

@@ -5,6 +5,7 @@ import com.tarantulapp.dto.GenerateBatchPassportsRequest;
 import com.tarantulapp.dto.GenerateBatchPassportsResponse;
 import com.tarantulapp.dto.InventoryBatchAdjustmentRequest;
 import com.tarantulapp.dto.InventoryBatchResponse;
+import com.tarantulapp.dto.StudioClaimSignalDTO;
 import com.tarantulapp.dto.StudioPassportSummaryDTO;
 import com.tarantulapp.service.InventoryBatchService;
 import com.tarantulapp.util.SecurityHelper;
@@ -65,9 +66,28 @@ public class StudioController {
         return ResponseEntity.ok(inventoryBatchService.generatePassports(batchId, userId, req));
     }
 
+    @GetMapping("/passports")
+    public ResponseEntity<List<StudioPassportSummaryDTO>> listAllPassports() {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(inventoryBatchService.listAllPassportsForUser(userId));
+    }
+
     @GetMapping("/batches/{batchId}/passports")
     public ResponseEntity<List<StudioPassportSummaryDTO>> listPassports(@PathVariable UUID batchId) {
         UUID userId = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(inventoryBatchService.listPassportsForBatch(batchId, userId));
+    }
+
+    @GetMapping("/batches/{batchId}/claim-signals")
+    public ResponseEntity<List<StudioClaimSignalDTO>> listClaimSignals(@PathVariable UUID batchId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(inventoryBatchService.listClaimSignalsForBatch(batchId, userId));
+    }
+
+    @PostMapping("/batches/{batchId}/claim-signals/{passportId}/apply")
+    public ResponseEntity<InventoryBatchResponse> applyClaimSignal(@PathVariable UUID batchId,
+                                                                   @PathVariable UUID passportId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(inventoryBatchService.applyClaimSignal(batchId, passportId, userId));
     }
 }

@@ -12,6 +12,10 @@ public class StudioPassportSummaryDTO {
     private String stage;
     private String sex;
     private String labelNotes;
+    private UUID batchId;
+    private String batchName;
+    private String scientificName;
+    private String commonName;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -29,4 +33,12 @@ public class StudioPassportSummaryDTO {
     public void setSex(String sex) { this.sex = sex; }
     public String getLabelNotes() { return labelNotes; }
     public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
+    public UUID getBatchId() { return batchId; }
+    public void setBatchId(UUID batchId) { this.batchId = batchId; }
+    public String getBatchName() { return batchName; }
+    public void setBatchName(String batchName) { this.batchName = batchName; }
+    public String getScientificName() { return scientificName; }
+    public void setScientificName(String scientificName) { this.scientificName = scientificName; }
+    public String getCommonName() { return commonName; }
+    public void setCommonName(String commonName) { this.commonName = commonName; }
 }

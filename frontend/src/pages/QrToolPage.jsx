@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import QRCodeSvg from 'react-qr-code'
 import { useTranslation } from 'react-i18next'
@@ -69,6 +69,8 @@ export default function QrToolPage() {
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const inStudio = location.pathname.startsWith('/studio/')
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
   const batchId = searchParams.get('batch') || ''
@@ -601,14 +603,15 @@ export default function QrToolPage() {
 
   const isNative = Capacitor.isNativePlatform()
 
-  return (
-    <PublicShell>
-      <div className="mx-auto" style={{ maxWidth: 560 }}>
+  const pageBody = (
+    <div className="mx-auto" style={{ maxWidth: 560 }}>
+        {!inStudio && (
         <p className="small mb-2">
           <Link to="/discover" className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
             ← {t('discover.navTitle')}
           </Link>
         </p>
+        )}
 
         {isNative && (
           <div className="mb-4">
@@ -1124,6 +1127,7 @@ export default function QrToolPage() {
           {t('qrTool.footerNote')}
         </p>
       </div>
-    </PublicShell>
   )
+
+  return inStudio ? pageBody : <PublicShell>{pageBody}</PublicShell>
 }
