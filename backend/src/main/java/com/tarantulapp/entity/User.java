@@ -165,6 +165,14 @@ public class User {
     @Column(name = "is_marketing_ops", nullable = false)
     private Boolean isMarketingOps = false;
 
+    /** May create batches and generate passports in Studio. */
+    @Column(name = "passport_creator_enabled_at")
+    private Instant passportCreatorEnabledAt;
+
+    /** Studio appears in primary navigation when set. */
+    @Column(name = "studio_activated_at")
+    private Instant studioActivatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -339,5 +347,11 @@ public class User {
     public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
     public Boolean getIsMarketingOps() { return isMarketingOps; }
     public void setIsMarketingOps(Boolean isMarketingOps) { this.isMarketingOps = isMarketingOps; }
+
+    public Instant getPassportCreatorEnabledAt() { return passportCreatorEnabledAt; }
+    public void setPassportCreatorEnabledAt(Instant passportCreatorEnabledAt) { this.passportCreatorEnabledAt = passportCreatorEnabledAt; }
+
+    public Instant getStudioActivatedAt() { return studioActivatedAt; }
+    public void setStudioActivatedAt(Instant studioActivatedAt) { this.studioActivatedAt = studioActivatedAt; }
 
 }

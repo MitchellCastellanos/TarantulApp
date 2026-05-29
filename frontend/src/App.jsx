@@ -40,6 +40,8 @@ const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPa
 const DiscoverSpeciesDetailPage = lazy(() => import('./pages/DiscoverSpeciesDetailPage'))
 const DiscoverComparePage = lazy(() => import('./pages/DiscoverComparePage'))
 const DiscoverCatalogBrowsePage = lazy(() => import('./pages/DiscoverCatalogBrowsePage'))
+const StudioPage = lazy(() => import('./pages/StudioPage'))
+const StudioBatchPage = lazy(() => import('./pages/StudioBatchPage'))
 const QrToolPage = lazy(() => import('./pages/QrToolPage'))
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
 const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))
@@ -208,6 +210,8 @@ function AppRoutes() {
       <Route path="/descubrir/taxon/:gbifKey" element={<LegacyPathRedirect to="/discover/taxon/:gbifKey" />} />
       <Route path="/descubrir/especie/:id" element={<LegacyPathRedirect to="/discover/species/:id" />} />
       <Route path="/descubrir/comparar" element={<LegacyPathRedirect to="/discover/compare" />} />
+      <Route path="/studio" element={<PrivateRoute><StudioPage /></PrivateRoute>} />
+      <Route path="/studio/batches/:batchId" element={<PrivateRoute><StudioBatchPage /></PrivateRoute>} />
       <Route path="/tools/qr" element={<QrToolPage />} />
       <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />

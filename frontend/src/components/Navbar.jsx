@@ -8,6 +8,7 @@ import ThemeToggleButton from './ThemeToggleButton'
 import BrandNavbarLogo from './BrandNavbarLogo'
 import './Navbar.css'
 import notificationsService from '../services/notificationsService'
+import { useCapabilities } from '../hooks/useCapabilities'
 
 import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import { isInviteOnlyEnabled } from '../utils/inviteOnly'
@@ -70,6 +71,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const navInsights = Boolean(token) && path.startsWith('/insights')
   const navNotifications = path.startsWith('/notifications')
   const navAdmin = path.startsWith('/admin')
+  const { data: capabilities } = useCapabilities()
+  const navStudio = path.startsWith('/studio')
+  const showStudioNav = Boolean(token && capabilities?.studio)
   const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
   const isAuthPage =
     path === '/login' ||
@@ -268,6 +272,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           <Link to="/account" onClick={onClick} className="ta-more__item">
             <i className="bi bi-gear" aria-hidden="true" /> {t('nav.accountSettings')}
           </Link>
+          {capabilities?.passportCreator && !capabilities?.studio && (
+            <Link to="/studio" onClick={onClick} className="ta-more__item">
+              <i className="bi bi-briefcase" aria-hidden="true" /> {t('studio.nav')}
+            </Link>
+          )}
         </>
       ) : (
         <Link to="/login" onClick={onClick} className="ta-more__item">
@@ -364,6 +373,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       },
       { to: '/descubrir', icon: 'bi-compass', label: t('nav.discoverSpecies'), active: navDiscover },
       { to: '/marketplace', icon: 'bi-shop', label: t('marketplace.nav'), active: navMarketplace },
+      ...(showStudioNav
+        ? [{ to: '/studio', icon: 'bi-briefcase', label: t('studio.nav'), active: navStudio }]
+        : []),
       { to: '/sex-id', icon: 'bi-gender-ambiguous', label: t('nav.sexId', 'Sex ID'), active: navSexId },
       { to: '/tools/qr', icon: 'bi-qr-code', label: t('nav.qrTool'), active: navQr },
       ...(token

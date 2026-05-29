@@ -31,6 +31,7 @@ import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.MarketplaceService;
+import com.tarantulapp.service.UserCapabilitiesService;
 import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.service.ReferralService;
@@ -103,6 +104,7 @@ public class AdminController {
     private final VendorVerificationService vendorVerificationService;
     private final MarketplaceService marketplaceService;
     private final PassportService passportService;
+    private final UserCapabilitiesService userCapabilitiesService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -145,7 +147,8 @@ public class AdminController {
                            TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService,
                            VendorVerificationService vendorVerificationService,
                            MarketplaceService marketplaceService,
-                           PassportService passportService) {
+                           PassportService passportService,
+                           UserCapabilitiesService userCapabilitiesService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -176,6 +179,7 @@ public class AdminController {
         this.vendorVerificationService = vendorVerificationService;
         this.marketplaceService = marketplaceService;
         this.passportService = passportService;
+        this.userCapabilitiesService = userCapabilitiesService;
     }
 
     @PostMapping("/passports")
@@ -923,6 +927,25 @@ public class AdminController {
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    record SetPassportCreatorRequest(Boolean enabled) {}
+
+    @PatchMapping("/users/{id}/passport-creator")
+    public ResponseEntity<Map<String, Object>> setUserPassportCreator(@PathVariable UUID id,
+                                                                      @RequestBody SetPassportCreatorRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (req == null || req.enabled() == null) {
+            throw new IllegalArgumentException("ENABLED_REQUIRED");
+        }
+        userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        userCapabilitiesService.setPassportCreatorEnabled(id, req.enabled());
+        User user = userRepository.findById(id).orElseThrow();
+        return ResponseEntity.ok(Map.of(
+                "userId", user.getId(),
+                "passportCreatorEnabled", user.getPassportCreatorEnabledAt() != null,
+                "studioActivated", user.getStudioActivatedAt() != null
+        ));
     }
 
     /** Admin: list active vendors + optional pending invites; includes marketplace + billing hints for ops. */

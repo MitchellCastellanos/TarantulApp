@@ -58,6 +58,9 @@ public class Passport {
     @Column(name = "tarantula_id", columnDefinition = "uuid")
     private UUID tarantulaId;
 
+    @Column(name = "batch_id", columnDefinition = "uuid")
+    private UUID batchId;
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
@@ -109,6 +112,8 @@ public class Passport {
     public void setClaimedByUserId(UUID claimedByUserId) { this.claimedByUserId = claimedByUserId; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
+    public UUID getBatchId() { return batchId; }
+    public void setBatchId(UUID batchId) { this.batchId = batchId; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

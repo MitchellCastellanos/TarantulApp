@@ -18,6 +18,8 @@ import { trialCalendarDaysRemaining } from '../utils/trialDaysLeft'
 import DashboardKeeperAchievementsPanel from '../components/DashboardKeeperAchievementsPanel'
 import CommunitySpotlightCarousel from '../components/CommunitySpotlightCarousel'
 import DashboardInviteCard from '../components/DashboardInviteCard'
+import StudioDiscoverCard from '../components/StudioDiscoverCard'
+import { useCapabilities } from '../hooks/useCapabilities'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import {
@@ -31,6 +33,7 @@ export default function DashboardPage() {
   const queryClient = useQueryClient()
   const location = useLocation()
   const wantsInvite = new URLSearchParams(location.search).get('invite') === '1'
+  const { data: capabilities } = useCapabilities()
   const { data: tarantulas = [], isLoading: loading } = useQuery({
     queryKey: tarantulaKeys.list(),
     queryFn: () => tarantulaService.getAll(),
@@ -234,6 +237,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <CommunitySpotlightCarousel className="ta-dashboard-spotlight" />
+        <StudioDiscoverCard capabilities={capabilities} />
         <div className="row g-3 mb-3 ta-dashboard-tiles">
           <div className="col-12 col-md-6">
             <Link to="/sex-id" className="card border-0 shadow-sm h-100 ta-dashboard-tile text-decoration-none text-reset d-block">

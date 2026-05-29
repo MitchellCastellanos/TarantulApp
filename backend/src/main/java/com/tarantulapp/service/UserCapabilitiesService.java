@@ -1,0 +1,83 @@
+package com.tarantulapp.service;
+
+import com.tarantulapp.dto.MeCapabilitiesDTO;
+import com.tarantulapp.entity.User;
+import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+@Transactional
+public class UserCapabilitiesService {
+
+    private final UserRepository userRepository;
+    private final AdminAccessService adminAccessService;
+
+    public UserCapabilitiesService(UserRepository userRepository, AdminAccessService adminAccessService) {
+        this.userRepository = userRepository;
+        this.adminAccessService = adminAccessService;
+    }
+
+    @Transactional(readOnly = true)
+    public MeCapabilitiesDTO getCapabilities(UUID userId) {
+        User user = requireUser(userId);
+        MeCapabilitiesDTO dto = new MeCapabilitiesDTO();
+        dto.setCollection(true);
+        dto.setMarketplace(true);
+        dto.setPassportCreator(canCreatePassports(user));
+        dto.setStudio(user.getStudioActivatedAt() != null);
+        dto.setVerifiedBreeder(Boolean.TRUE.equals(user.getVerifiedBreeder()));
+        dto.setVerifiedOrigin(user.getStorefrontVerifiedAt() != null);
+        dto.setOfficialPartner(false);
+        return dto;
+    }
+
+    public MeCapabilitiesDTO activateStudio(UUID userId) {
+        User user = requireUser(userId);
+        if (!canCreatePassports(user)) {
+            throw new IllegalArgumentException("PASSPORT_CREATOR_REQUIRED");
+        }
+        if (user.getStudioActivatedAt() == null) {
+            user.setStudioActivatedAt(Instant.now());
+            userRepository.save(user);
+        }
+        return getCapabilities(userId);
+    }
+
+    public void setPassportCreatorEnabled(UUID userId, boolean enabled) {
+        User user = requireUser(userId);
+        user.setPassportCreatorEnabledAt(enabled ? Instant.now() : null);
+        userRepository.save(user);
+    }
+
+    public boolean canCreatePassports(User user) {
+        if (user == null) return false;
+        if (Boolean.TRUE.equals(user.getIsAdmin()) || adminAccessService.shouldBootstrapAdmin(user)) {
+            return true;
+        }
+        if (user.getPassportCreatorEnabledAt() != null) {
+            return true;
+        }
+        return Boolean.TRUE.equals(user.getVerifiedBreeder());
+    }
+
+    public void ensurePassportCreator(UUID userId) {
+        User user = requireUser(userId);
+        if (!canCreatePassports(user)) {
+            throw new IllegalArgumentException("PASSPORT_CREATOR_REQUIRED");
+        }
+    }
+
+    public void ensureStudioAccess(UUID userId) {
+        ensurePassportCreator(userId);
+    }
+
+    private User requireUser(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+    }
+}
