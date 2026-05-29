@@ -95,3 +95,43 @@ export function buildQrBulkItem(tarantula, { qrTargetMode, careFactsOn, t, local
     factLines,
   }
 }
+
+/**
+ * Label item for an unclaimed passport (Studio batch mode).
+ * @param {import('i18next').TFunction} t
+ */
+export function buildPassportLabelItem({ passport, batch, t, careFactsOn, locale, species }) {
+  const url = passport.publicUrl || specimenPublicUrl(passport.shortId)
+  const sci = batch?.scientificName || species?.scientificName || ''
+  const common = batch?.commonName || species?.commonName || ''
+  const stageKey = passport.stage ? `stages.${passport.stage}` : null
+  const sexKey = passport.sex ? `sex.${passport.sex}` : null
+  const stageLabel = stageKey ? t(stageKey, passport.stage) : null
+  const sexLabel = sexKey ? t(sexKey, passport.sex) : null
+  const meta = [stageLabel, sexLabel].filter(Boolean).join(' · ')
+  const titleLine1 = sci || passport.shortId
+  const subtitleParts = [batch?.name, meta].filter(Boolean)
+  const titleLine2 = subtitleParts.length ? subtitleParts.join(' · ') : common
+
+  const notes = passport.labelNotes?.trim()
+  const factFromNotes = notes ? [notes] : null
+  const { factLines: careFacts } = buildQrLabelExtras(species, t, locale, careFactsOn && species?.id != null)
+  const factLines = careFactsOn
+    ? [...(careFacts || []), ...(factFromNotes || [])].filter(Boolean).slice(0, 4) || null
+    : factFromNotes
+
+  return {
+    url,
+    titleLine1,
+    titleLine2,
+    filenameBase: passport.shortId,
+    factLines: factLines?.length ? factLines : null,
+  }
+}
+
+/** @param {import('i18next').TFunction} t */
+export function buildBatchPassportItems(passports, batch, { t, careFactsOn, locale, species }) {
+  return (passports || []).map((passport) =>
+    buildPassportLabelItem({ passport, batch, t, careFactsOn, locale, species }),
+  )
+}

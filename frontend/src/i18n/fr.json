@@ -25,8 +25,8 @@
     "discoverSearchButton": "Rechercher",
     "discoverSearchAria": "Recherche taxonomique officielle (Découvrir)",
     "discoverLinkTitle": "Découvrir : taxonomie officielle et catalogue",
-    "qrTool": "QR terrarium",
-    "qrToolTitle": "Générateur de codes QR gratuits pour étiqueter les terrariums",
+    "qrTool": "Label Studio",
+    "qrToolTitle": "Label Studio — étiquettes prêtes pour terrarium et passeports",
     "qrScanAria": "Scanner QR et étiquettes terrarium",
     "inviteOnlyNavLocked": "Connectez-vous pour débloquer Discover, le marketplace spécialisé et la communauté (accès anticipé sur invitation).",
     "contact": "Contact",
@@ -593,11 +593,11 @@
     "browsePageStatus": "Page {{current}} sur {{total}}"
   },
   "qrTool": {
-    "pageTitle": "QR gratuits pour terrarium — TarantulApp\u2122",
-    "metaDescription": "Générez un QR à partir de vos exemplaires vivants pour étiqueter le terrarium. Le lien public est dans le QR ; téléchargez un PNG épuré prêt à imprimer.",
-    "heading": "Étiquettes QR pour vos terrariums",
-    "intro": "Choisissez un exemplaire dans votre collection : le QR ouvre sa fiche publique. Le premier vivant est présélectionné ; si vous arrivez depuis l’ajout d’un exemplaire, c’est celui-là.",
-    "introNativeOneLine": "Scannez une étiquette pour ouvrir la fiche publique. Plus bas : générez des PNG depuis votre collection.",
+    "pageTitle": "Label Studio — TarantulApp\u2122",
+    "metaDescription": "Concevez et imprimez des étiquettes depuis votre collection ou des lots de passeports Studio. PDF ou PNG prêts à imprimer avec QR vers /t/{shortId}.",
+    "heading": "Label Studio",
+    "intro": "Créez des étiquettes depuis votre collection ou des lots Studio. Chaque QR ouvre la fiche publique sur /t/{shortId} — un lien pour la vie.",
+    "introNativeOneLine": "Scannez une étiquette ou générez des étiquettes prêtes à imprimer depuis votre collection ou Studio.",
     "scanHeroHint": "Lit les QR d’étiquettes qui pointent vers les fiches publiques TarantulApp.",
     "pickSpecimen": "Exemplaire",
     "downloadPng": "Télécharger PNG",
@@ -619,8 +619,30 @@
     "scanError": "Impossible d’ouvrir la caméra scanner.",
     "scanPermissionDenied": "L’autorisation caméra est nécessaire pour lire le QR. Activez-la dans les paramètres de l’app ou réessayez en acceptant la demande.",
     "scanUnrecognized": "Ce QR n’est pas un lien public TarantulApp. Essayez un autre code.",
-    "schemaName": "Générateur QR pour terrarium — TarantulApp\u2122",
-    "schemaDescription": "Outil gratuit pour créer des codes QR depuis votre collection de mygales, vers la fiche publique de chaque exemplaire."
+    "schemaName": "Label Studio — TarantulApp\u2122",
+    "schemaDescription": "Étiquettes terrarium et passeports avec QR vers les fiches publiques."
+  },
+  "labelStudio": {
+    "batchTab": "Étiquettes du lot",
+    "collectionTab": "Étiquettes collection",
+    "backToBatch": "← Retour au lot",
+    "batchNotFound": "Ce lot n’est pas disponible.",
+    "batchEmpty": "Aucun passeport dans ce lot. Générez des passeports dans Studio d’abord.",
+    "exportSection": "Exporter les étiquettes",
+    "batchExportHint": "Chaque QR ouvre le passeport sur /t/{shortId}. Imprimez le PDF sur feuilles d’étiquettes ou papier standard.",
+    "sizeLabel": "Taille (PDF)",
+    "sizeHelp": "La grille PDF utilise ce preset. Tiny = 4 colonnes ; large = 2.",
+    "wordSizeHelp": "Export Word uniquement — taille fixe du QR en cm.",
+    "downloadPdf": "Télécharger PDF",
+    "downloadDocxFixed": "Word — grille fixe",
+    "downloadDocxFlex": "Word — flexible",
+    "pdfDocTitle": "TarantulApp\u2122 — étiquettes",
+    "size": {
+      "tiny": "Tiny (2 cm)",
+      "small": "Small (2.8 cm)",
+      "medium": "Medium (4 cm)",
+      "large": "Large (5 cm)"
+    }
   },
   "publicBetaHome": {
     "eyebrow": "Marketplace spécialisé et OS du collectionneur",

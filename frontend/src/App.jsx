@@ -213,6 +213,7 @@ function AppRoutes() {
       <Route path="/studio" element={<PrivateRoute><StudioPage /></PrivateRoute>} />
       <Route path="/studio/batches/:batchId" element={<PrivateRoute><StudioBatchPage /></PrivateRoute>} />
       <Route path="/tools/qr" element={<QrToolPage />} />
+      <Route path="/tools/labels" element={<QrToolPage />} />
       <Route path="/herramientas/qr" element={<LegacyPathRedirect to="/tools/qr" />} />
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />

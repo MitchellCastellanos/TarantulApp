@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
+import studioService from '../services/studioService'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import QrLabelPreview from '../components/QrLabelPreview'
 import {
@@ -25,6 +26,12 @@ import {
   triggerDocxDownload,
 } from '../utils/buildQrBulkDocx'
 import {
+  LABEL_BULK_MAX,
+  triggerLabelPdfDownload,
+} from '../utils/buildLabelBulkPdf'
+import { DEFAULT_LABEL_SIZE_ID, LABEL_SIZE_IDS, resolveLabelSizePreset } from '../utils/labelSizes'
+import {
+  buildBatchPassportItems,
   buildQrBulkItem,
   buildQrLabelExtras,
   buildQrLabelLines,
@@ -64,7 +71,8 @@ export default function QrToolPage() {
   const navigate = useNavigate()
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
-  const mode = searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
+  const batchId = searchParams.get('batch') || ''
+  const mode = batchId ? 'batch' : searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
 
   const [copied, setCopied] = useState(false)
   const { data: allTarantulas = [], isPending: collectionLoading } = useQuery({
@@ -80,8 +88,10 @@ export default function QrToolPage() {
   const [bulkSelected, setBulkSelected] = useState(() => new Set())
   const [includeDeceased, setIncludeDeceased] = useState(false)
   const [sizeCm, setSizeCm] = useState(5)
+  const [labelSizeId, setLabelSizeId] = useState(DEFAULT_LABEL_SIZE_ID)
   const [busy, setBusy] = useState(false)
   const [busyKind, setBusyKind] = useState('')
+  const [batchSelected, setBatchSelected] = useState(() => new Set())
   const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
   const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
   const [labelPreviewUrl, setLabelPreviewUrl] = useState('')
@@ -94,6 +104,90 @@ export default function QrToolPage() {
   useEffect(() => {
     navigateRef.current = navigate
   }, [navigate])
+
+  const { data: batchData, isPending: batchLoading } = useQuery({
+    queryKey: ['studio', 'batch', batchId],
+    queryFn: () => studioService.getBatch(batchId),
+    enabled: Boolean(token && batchId),
+  })
+
+  const { data: batchPassports = [] } = useQuery({
+    queryKey: ['studio', 'batch', batchId, 'passports'],
+    queryFn: () => studioService.listPassports(batchId),
+    enabled: Boolean(token && batchId),
+  })
+
+  useEffect(() => {
+    if (!batchPassports.length) {
+      setBatchSelected(new Set())
+      return
+    }
+    setBatchSelected(new Set(batchPassports.map((p) => p.id)))
+  }, [batchPassports])
+
+  const batchSelectedList = useMemo(
+    () => batchPassports.filter((p) => batchSelected.has(p.id)),
+    [batchPassports, batchSelected],
+  )
+
+  const batchSpecies = useMemo(() => {
+    if (!batchData) return null
+    return {
+      id: batchData.speciesId,
+      scientificName: batchData.scientificName,
+      commonName: batchData.commonName,
+    }
+  }, [batchData])
+
+  const buildBatchItems = () =>
+    buildBatchPassportItems(batchSelectedList.slice(0, LABEL_BULK_MAX), batchData, {
+      t,
+      careFactsOn,
+      locale: i18n.language,
+      species: batchSpecies,
+    })
+
+  const toggleBatchPassport = (id) => {
+    setBatchSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAllBatch = () => setBatchSelected(new Set(batchPassports.map((p) => p.id)))
+  const clearBatchSelection = () => setBatchSelected(new Set())
+
+  const registerPrint = async () => {
+    await marketplaceService.registerQrPrint().catch(() => {})
+    queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
+  }
+
+  const downloadBulkPdf = async (items, filenameBase) => {
+    if (!items.length || busy) return
+    setBusy(true)
+    setBusyKind('pdf')
+    try {
+      await triggerLabelPdfDownload({
+        items,
+        sizeId: labelSizeId,
+        docTitle: t('labelStudio.pdfDocTitle'),
+        filename: `${filenameBase}-${labelSizeId}.pdf`,
+      })
+      await registerPrint()
+    } finally {
+      setBusy(false)
+      setBusyKind('')
+    }
+  }
+
+  const downloadCollectionBulkPdf = () =>
+    downloadBulkPdf(buildBulkItems(), `tarantulapp-labels-collection`)
+
+  const downloadBatchBulkPdf = () =>
+    downloadBulkPdf(buildBatchItems(), `tarantulapp-labels-${batchData?.name || 'batch'}`)
+
 
   const selected = useMemo(
     () => aliveCollection.find((x) => String(x.id) === pickId) ?? null,
@@ -572,21 +666,158 @@ export default function QrToolPage() {
                 className="d-flex gap-2 flex-wrap mb-4 pb-3"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
               >
-                <Link
-                  to="/tools/qr"
-                  className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
-                >
-                  {t('tarantula.qrCode')}
-                </Link>
-                <Link
-                  to="/tools/qr?mode=bulk"
-                  className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
-                >
-                  {t('dashboard.qrBulkPrint')}
-                </Link>
+                {batchId ? (
+                  <>
+                    <span className="btn btn-sm btn-dark disabled">{t('labelStudio.batchTab')}</span>
+                    <Link to="/tools/qr" className="btn btn-sm btn-outline-light">
+                      {t('labelStudio.collectionTab')}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/tools/qr"
+                      className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
+                    >
+                      {t('tarantula.qrCode')}
+                    </Link>
+                    <Link
+                      to="/tools/qr?mode=bulk"
+                      className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
+                    >
+                      {t('dashboard.qrBulkPrint')}
+                    </Link>
+                  </>
+                )}
               </div>
 
-              {!token && (
+              {mode === 'batch' && batchId && (
+                <>
+                  {batchLoading && (
+                    <p className="small text-muted mb-4">{t('common.loading')}</p>
+                  )}
+                  {!batchLoading && !batchData && (
+                    <p className="small text-warning mb-4">{t('labelStudio.batchNotFound')}</p>
+                  )}
+                  {batchData && (
+                    <>
+                      <div className="mb-3">
+                        <p className="small fw-semibold mb-1" style={{ color: 'var(--ta-parchment)' }}>
+                          {batchData.name}
+                        </p>
+                        <p className="small text-muted mb-0">
+                          {batchData.scientificName}
+                          {batchData.commonName ? ` · ${batchData.commonName}` : ''}
+                        </p>
+                        <Link to={`/studio/batches/${batchId}`} className="small text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
+                          {t('labelStudio.backToBatch')}
+                        </Link>
+                      </div>
+
+                      {batchPassports.length === 0 ? (
+                        <p className="small text-muted mb-4">{t('labelStudio.batchEmpty')}</p>
+                      ) : (
+                        <>
+                          <QrLabelOptionsPanel
+                            careFactsOn={careFactsOn}
+                            onCareFactsChange={onCareFactsChange}
+                            qrTargetMode="specimen"
+                            onQrTargetChange={() => {}}
+                            speciesLinked={Boolean(batchData.speciesId)}
+                            hideTargetMode
+                          />
+
+                          <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
+                            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={selectAllBatch}>
+                              {t('qrBulk.selectAll')}
+                            </button>
+                            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearBatchSelection}>
+                              {t('qrBulk.selectNone')}
+                            </button>
+                            <span className="small text-muted ms-auto">
+                              {batchSelectedList.length}/{batchPassports.length} · max {LABEL_BULK_MAX}
+                            </span>
+                          </div>
+
+                          <div className="list-group list-group-flush border rounded mb-4" style={{ maxHeight: 360, overflowY: 'auto' }}>
+                            {batchPassports.map((p) => {
+                              const url = p.publicUrl || `${origin}/t/${p.shortId}`
+                              const on = batchSelected.has(p.id)
+                              return (
+                                <label
+                                  key={p.id}
+                                  className={`list-group-item list-group-item-action d-flex gap-3 align-items-center py-2 ${on ? 'active' : ''}`}
+                                  style={{ cursor: 'pointer', ...(on ? { background: 'rgba(40,35,28,0.95)' } : {}) }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input flex-shrink-0 mt-0"
+                                    checked={on}
+                                    onChange={() => toggleBatchPassport(p.id)}
+                                  />
+                                  <div className="flex-shrink-0 bg-white p-1 rounded border" style={{ lineHeight: 0 }}>
+                                    <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                                      <QRCodeSvg value={url} size={44} level="H" />
+                                      <img
+                                        src={BRAND_LOGO_FOR_LIGHT_BG}
+                                        alt=""
+                                        aria-hidden="true"
+                                        style={qrCenterLogoOverlayStyles(44)}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="min-w-0 flex-grow-1">
+                                    <div className="fw-semibold text-truncate">{p.shortId}</div>
+                                    <div className="small text-truncate" style={{ opacity: 0.85 }}>
+                                      {p.claimed ? t('studio.passportClaimed') : t('studio.passportUnclaimed')}
+                                    </div>
+                                  </div>
+                                </label>
+                              )
+                            })}
+                          </div>
+
+                          <div>
+                            <h6 className="fw-bold mb-2">{t('labelStudio.exportSection')}</h6>
+                            <p className="small text-muted mb-3">{t('labelStudio.batchExportHint')}</p>
+                            <div className="row g-3 mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label small fw-semibold">{t('labelStudio.sizeLabel')}</label>
+                                <select
+                                  className="form-select form-select-sm"
+                                  value={labelSizeId}
+                                  onChange={(e) => setLabelSizeId(e.target.value)}
+                                >
+                                  {LABEL_SIZE_IDS.map((id) => (
+                                    <option key={id} value={id}>
+                                      {t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                            <div className="d-flex flex-column flex-sm-row gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                className="btn btn-dark"
+                                disabled={!batchSelectedList.length || busy}
+                                onClick={downloadBatchBulkPdf}
+                              >
+                                {busy && busyKind === 'pdf' ? t('qrBulk.generating') : t('labelStudio.downloadPdf')}
+                              </button>
+                            </div>
+                            {batchSelectedList.length > LABEL_BULK_MAX && (
+                              <p className="small text-warning mt-2 mb-0">{t('qrBulk.trimWarning', { max: LABEL_BULK_MAX })}</p>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {mode !== 'batch' && !token && (
                 <p className="small mb-4" style={{ color: 'var(--ta-text)' }}>
                   {t('qrTool.loginRequiredBody')}{' '}
                   <Link to="/login" className="text-decoration-none fw-semibold" style={{ color: 'var(--ta-gold)' }}>
@@ -595,15 +826,15 @@ export default function QrToolPage() {
                 </p>
               )}
 
-              {token && collectionLoading && (
+              {mode !== 'batch' && token && collectionLoading && (
                 <p className="small text-muted mb-4">{t('qrTool.loadingCollection')}</p>
               )}
 
-              {token && !collectionLoading && aliveCollection.length === 0 && (
+              {mode !== 'batch' && token && !collectionLoading && aliveCollection.length === 0 && (
                 <p className="small text-warning mb-4">{t('qrTool.emptyCollection')}</p>
               )}
 
-              {token && aliveCollection.length > 0 && (
+              {mode !== 'batch' && token && aliveCollection.length > 0 && (
                 <QrLabelOptionsPanel
                   careFactsOn={careFactsOn}
                   onCareFactsChange={onCareFactsChange}
@@ -617,7 +848,7 @@ export default function QrToolPage() {
                 />
               )}
 
-              {token && aliveCollection.length > 0 && mode === 'single' && (
+              {mode !== 'batch' && token && aliveCollection.length > 0 && mode === 'single' && (
                 <div className="mb-4">
                   <label className="form-label small fw-semibold" style={{ color: 'var(--ta-parchment)' }}>
                     {t('qrTool.pickSpecimen')}
@@ -637,7 +868,7 @@ export default function QrToolPage() {
                 </div>
               )}
 
-              {mode === 'single' && (
+              {mode !== 'batch' && mode === 'single' && (
                 <>
               <div className="text-center mb-4">
                 {parsed.ok ? (
@@ -709,7 +940,7 @@ export default function QrToolPage() {
                 </>
               )}
 
-              {mode === 'bulk' && (
+              {mode !== 'batch' && mode === 'bulk' && (
                 <>
                   {!hasProFeatures && (
                     <div
@@ -802,10 +1033,25 @@ export default function QrToolPage() {
                       </div>
 
                       <div className={`${!hasProFeatures ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <h6 className="fw-bold mb-2">{t('qrBulk.exportSection')}</h6>
+                        <h6 className="fw-bold mb-2">{t('labelStudio.exportSection')}</h6>
                         <p className="small text-muted mb-3">{t('qrBulk.exportHint')}</p>
 
                         <div className="row g-3 mb-3">
+                          <div className="col-md-6">
+                            <label className="form-label small fw-semibold">{t('labelStudio.sizeLabel')}</label>
+                            <select
+                              className="form-select form-select-sm"
+                              value={labelSizeId}
+                              onChange={(e) => setLabelSizeId(e.target.value)}
+                            >
+                              {LABEL_SIZE_IDS.map((id) => (
+                                <option key={id} value={id}>
+                                  {t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="small text-muted mt-2 mb-0">{t('labelStudio.sizeHelp')}</p>
+                          </div>
                           <div className="col-md-6">
                             <label className="form-label small fw-semibold">{t('qrBulk.sizeLabel')}</label>
                             <select
@@ -819,9 +1065,9 @@ export default function QrToolPage() {
                                 </option>
                               ))}
                             </select>
-                            <p className="small text-muted mt-2 mb-0">{t('qrBulk.sizeHelp')}</p>
+                            <p className="small text-muted mt-2 mb-0">{t('labelStudio.wordSizeHelp')}</p>
                           </div>
-                          <div className="col-md-6 d-flex flex-column align-items-center justify-content-center">
+                          <div className="col-12 d-flex flex-column align-items-center justify-content-center">
                             <span className="small text-muted mb-1">{t('qrBulk.previewApprox')}</span>
                             <div className="bg-white p-2 rounded border" style={{ lineHeight: 0, maxWidth: '100%' }}>
                               <QrLabelPreview
@@ -840,17 +1086,25 @@ export default function QrToolPage() {
                             type="button"
                             className="btn btn-dark"
                             disabled={!bulkSelectedList.length || busy}
-                            onClick={downloadBulkFixed}
+                            onClick={downloadCollectionBulkPdf}
                           >
-                            {busy && busyKind === 'fixed' ? t('qrBulk.generating') : t('qrBulk.downloadFixed')}
+                            {busy && busyKind === 'pdf' ? t('qrBulk.generating') : t('labelStudio.downloadPdf')}
                           </button>
                           <button
                             type="button"
-                            className="btn btn-outline-warning text-dark"
+                            className="btn btn-outline-light btn-sm"
+                            disabled={!bulkSelectedList.length || busy}
+                            onClick={downloadBulkFixed}
+                          >
+                            {busy && busyKind === 'fixed' ? t('qrBulk.generating') : t('labelStudio.downloadDocxFixed')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
                             disabled={!bulkSelectedList.length || busy}
                             onClick={downloadBulkFlex}
                           >
-                            {busy && busyKind === 'flex' ? t('qrBulk.generating') : t('qrBulk.downloadFlex')}
+                            {busy && busyKind === 'flex' ? t('qrBulk.generating') : t('labelStudio.downloadDocxFlex')}
                           </button>
                         </div>
                         {bulkSelectedList.length > QR_BULK_MAX && (

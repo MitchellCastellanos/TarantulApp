@@ -123,6 +123,7 @@ public class SecurityConfig {
                                 "/descubrir/**",
                                 "/herramientas/qr",
                                 "/tools/qr",
+                                "/tools/labels",
                                 "/marketplace",
                                 "/marketplace/**",
                                 "/community",

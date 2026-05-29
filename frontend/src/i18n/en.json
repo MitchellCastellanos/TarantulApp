@@ -29,8 +29,8 @@
     "discoverSearchButton": "Search",
     "discoverSearchAria": "Search official taxonomy (Discover)",
     "discoverLinkTitle": "Discover: official taxonomy and in-app catalog",
-    "qrTool": "Terrarium QR",
-    "qrToolTitle": "Free QR code generator for tarantula enclosure labels",
+    "qrTool": "Label Studio",
+    "qrToolTitle": "Label Studio — print-ready terrarium and passport labels",
     "qrScanAria": "QR scanner and enclosure labels",
     "inviteOnlyNavLocked": "Sign in to unlock Discover, the specialty marketplace, and community (invite-only early access).",
     "contact": "Contact",
@@ -597,11 +597,11 @@
     "browsePageStatus": "Page {{current}} of {{total}}"
   },
   "qrTool": {
-    "pageTitle": "Free terrarium QR labels — TarantulApp\u2122",
-    "metaDescription": "Generate a QR from your live collection spiders for enclosure labels. The public link is inside the QR; download a clean print-ready PNG.",
-    "heading": "QR labels for your enclosures",
-    "intro": "Pick a spider from your collection: the QR opens its public profile. The first live entry is selected by default; if you land here right after adding one, that spider is chosen.",
-    "introNativeOneLine": "Scan a terrarium label to open its public profile. Below you can generate PNG labels from your collection.",
+    "pageTitle": "Label Studio — TarantulApp\u2122",
+    "metaDescription": "Design and print terrarium labels from your collection or Studio passport batches. Download print-ready PDF or PNG with QR codes that link to public profiles.",
+    "heading": "Label Studio",
+    "intro": "Create enclosure labels from your collection or Studio passport batches. Each QR opens the public profile at /t/{shortId} — one link for life.",
+    "introNativeOneLine": "Scan a terrarium label or generate print-ready labels from your collection or Studio batches.",
     "scanHeroHint": "Reads enclosure QR codes that link to TarantulApp public profiles.",
     "pickSpecimen": "Spider",
     "downloadPng": "Download PNG",
@@ -623,8 +623,30 @@
     "scanError": "Could not open the camera scanner.",
     "scanPermissionDenied": "We need camera permission to read the QR. Enable it in the app settings, or try again and accept the permission prompt.",
     "scanUnrecognized": "That QR is not a TarantulApp public link. Try another code.",
-    "schemaName": "Terrarium QR generator — TarantulApp\u2122",
-    "schemaDescription": "Free tool to create QR codes from your tarantula collection, linking each spider’s public profile."
+    "schemaName": "Label Studio — TarantulApp\u2122",
+    "schemaDescription": "Print terrarium and passport labels with QR codes linking to public specimen profiles."
+  },
+  "labelStudio": {
+    "batchTab": "Batch labels",
+    "collectionTab": "Collection labels",
+    "backToBatch": "← Back to batch",
+    "batchNotFound": "This batch is not available.",
+    "batchEmpty": "No passports in this batch yet. Generate passports in Studio first.",
+    "exportSection": "Export labels",
+    "batchExportHint": "Each QR opens the passport page at /t/{shortId}. Print the PDF on label sheets or plain paper.",
+    "sizeLabel": "Label size (PDF)",
+    "sizeHelp": "PDF grid uses this preset. Tiny fits 4 columns; large fits 2.",
+    "wordSizeHelp": "Word export only — fixed grid QR size in cm.",
+    "downloadPdf": "Download PDF",
+    "downloadDocxFixed": "Word — fixed grid",
+    "downloadDocxFlex": "Word — flexible",
+    "pdfDocTitle": "TarantulApp\u2122 — labels",
+    "size": {
+      "tiny": "Tiny (2 cm)",
+      "small": "Small (2.8 cm)",
+      "medium": "Medium (4 cm)",
+      "large": "Large (5 cm)"
+    }
   },
   "publicBetaHome": {
     "eyebrow": "Specialty marketplace \u0026 keeper OS",

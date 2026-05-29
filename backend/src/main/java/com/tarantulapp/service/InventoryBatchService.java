@@ -219,6 +219,7 @@ public class InventoryBatchService {
         dto.setClaimedAt(passport.getClaimedAt());
         dto.setStage(passport.getStage());
         dto.setSex(passport.getSex());
+        dto.setLabelNotes(passport.getLabelNotes());
         return dto;
     }
 

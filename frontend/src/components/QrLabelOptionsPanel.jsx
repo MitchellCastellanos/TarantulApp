@@ -9,6 +9,7 @@ export default function QrLabelOptionsPanel({
   qrTargetMode,
   onQrTargetChange,
   speciesLinked,
+  hideTargetMode = false,
   className = '',
 }) {
   const { t } = useTranslation()
@@ -29,6 +30,7 @@ export default function QrLabelOptionsPanel({
         </label>
       </div>
 
+      {!hideTargetMode ? (
       <fieldset className="mb-0">
         <legend className="form-label small fw-semibold mb-2">{t('qr.qrTarget.heading')}</legend>
         <div className="d-flex flex-column gap-2">
@@ -67,6 +69,7 @@ export default function QrLabelOptionsPanel({
           </label>
         </div>
       </fieldset>
+      ) : null}
     </div>
   )
 }

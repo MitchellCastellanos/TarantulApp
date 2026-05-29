@@ -11,6 +11,7 @@ public class StudioPassportSummaryDTO {
     private Instant claimedAt;
     private String stage;
     private String sex;
+    private String labelNotes;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -26,4 +27,6 @@ public class StudioPassportSummaryDTO {
     public void setStage(String stage) { this.stage = stage; }
     public String getSex() { return sex; }
     public void setSex(String sex) { this.sex = sex; }
+    public String getLabelNotes() { return labelNotes; }
+    public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
 }

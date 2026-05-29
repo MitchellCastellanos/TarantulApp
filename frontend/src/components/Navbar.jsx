@@ -63,6 +63,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const navDiscover = path.startsWith('/descubrir')
   const navQr =
     path.startsWith('/tools/qr') ||
+    path.startsWith('/tools/labels') ||
     path.startsWith('/herramientas/qr') ||
     path.startsWith('/tarantulas/qr-print')
   const navMarketplace = path.startsWith('/marketplace')
