@@ -44,6 +44,9 @@ npx cap open ios      # abre App.xcworkspace en Xcode
 - [ ] Crea un **Services ID** para Sign in with Apple en web/WebView y registra el *Return URL*
       (ej. `https://tarantulapp.com/login`). Ese Services ID va en `VITE_APPLE_CLIENT_ID`
       y la URL en `VITE_APPLE_REDIRECT_URI` del build del frontend.
+- [x] **Backend:** `POST /api/auth/oauth/apple` implementado (`AppleSignInVerifier`, verifica el
+      identity token contra el JWKS de Apple). **Falta tu config:** `APP_AUTH_APPLE_CLIENT_IDS`
+      (CSV con el bundle id `com.tarantulapp.app` y el Services ID web) en Railway.
 
 ## 4. In-App Purchase (BLOQUEADOR — Guideline 3.1.1)
 
@@ -53,9 +56,13 @@ El código ya enruta la compra de **Pro** por StoreKit en iOS
 - [ ] En App Store Connect crea la **suscripción auto-renovable** con product id
       `tarantulapp_pro_monthly` (o el que pongas en `VITE_IOS_APPSTORE_PRODUCT_ID`).
 - [ ] Crea el grupo de suscripción, precios por territorio y la pantalla de revisión.
-- [ ] **Backend:** implementar `POST /api/billing/apple/verify` — valida `transactionId` /
-      recibo contra la **App Store Server API** y sube el plan a PRO (espejo de `/billing/google-play/verify`).
-- [ ] Configurar **App Store Server Notifications V2** (URL de webhook) para renovaciones/cancelaciones.
+- [x] **Backend:** `POST /api/billing/apple/verify` implementado
+      (`BillingService.verifyAppStoreSubscription` + `AppStoreServerClient`, espejo de Google Play
+      con modo `stub`/`real` y guardas de producción). **Falta tu config:**
+  - [ ] `APPLE_BILLING_ENABLED=true`, `APPLE_BILLING_MODE=real` en Railway.
+  - [ ] `APPLE_SERVER_API_KEY_ID`, `APPLE_SERVER_API_ISSUER_ID`, `APPLE_SERVER_API_PRIVATE_KEY_PATH` (.p8), `APPLE_BUNDLE_ID`.
+- [ ] Configurar **App Store Server Notifications V2** (URL de webhook) para renovaciones/cancelaciones
+      (endpoint aún por crear; la verificación puntual ya funciona).
 - [ ] Probar compra en **Sandbox** con un Sandbox Apple ID.
 
 > Importante: en iOS los checkouts web de Stripe (Pro y Vendor) quedan ocultos
@@ -98,12 +105,13 @@ El código ya enruta la compra de **Pro** por StoreKit en iOS
 | `Info.plist`: NSCamera/NSPhotoLibrary(+Add), UIBackgroundModes, ITSAppUsesNonExemptEncryption | ✔ |
 | `App.entitlements`: aps-environment + Sign in with Apple | ✔ |
 | `PrivacyInfo.xcprivacy` (privacy manifest) | ✔ |
-| IAP Apple en `ProPage.jsx` + `billingService.verifyAppStorePurchase` | ✔ (falta endpoint backend) |
-| Sign in with Apple en `LoginPage.jsx` + `authService.oauthApple` | ✔ (falta endpoint backend) |
+| IAP Apple en `ProPage.jsx` + `billingService.verifyAppStorePurchase` | ✔ |
+| Sign in with Apple en `LoginPage.jsx` + `authService.oauthApple` | ✔ |
 | Vars de entorno (`VITE_APPLE_*`, `VITE_IOS_APPSTORE_PRODUCT_ID`) | ✔ documentadas en `.env.example` |
 | `capacitor.config.ts` bloque iOS | ✔ |
+| Backend `POST /api/billing/apple/verify` (`verifyAppStoreSubscription` + `AppStoreServerClient`) | ✔ (falta config ops) |
+| Backend `POST /api/auth/oauth/apple` (`AppleSignInVerifier`) | ✔ (falta config ops) |
 
-### Pendientes que requieren código backend
-- `POST /api/billing/apple/verify` (verificación de recibo StoreKit).
-- `POST /api/auth/oauth/apple` (validación del identity token de Apple).
-- App Store Server Notifications V2.
+### Pendientes que aún requieren código backend
+- **App Store Server Notifications V2** (webhook de renovaciones/cancelaciones): por crear.
+  La verificación puntual de compra y el login con Apple ya están implementados.
