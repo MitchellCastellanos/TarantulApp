@@ -1,13 +1,16 @@
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { Suspense } from 'react'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useCapabilities } from '../hooks/useCapabilities'
 
 export default function StudioLayout() {
   const { t } = useTranslation()
-  const { data: capabilities, isLoading } = useCapabilities()
+  const location = useLocation()
+  const { data: capabilities, isPending } = useCapabilities()
+  const bootstrapping = isPending && !capabilities
 
-  if (isLoading) {
+  if (bootstrapping) {
     return (
       <div>
         <Navbar />
@@ -33,6 +36,7 @@ export default function StudioLayout() {
   }
 
   const tabClass = ({ isActive }) => `nav-link ${isActive ? 'active' : ''}`
+  const outletKey = `${location.pathname}${location.search}`
 
   return (
     <div>
@@ -73,7 +77,9 @@ export default function StudioLayout() {
           </li>
         </ul>
 
-        <Outlet />
+        <Suspense fallback={<p className="small text-muted mb-0">{t('common.loading')}</p>}>
+          <Outlet key={outletKey} />
+        </Suspense>
       </div>
     </div>
   )

@@ -17,6 +17,12 @@ import BugReportFAB from './components/BugReportFAB'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
 import KeeperGamificationCelebrationHost from './components/KeeperGamificationCelebrationHost'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
+// Eager: Studio shell tabs must not suspend the whole router when switching sub-nav.
+import StudioLayout from './pages/StudioLayout'
+import StudioPage from './pages/StudioPage'
+import StudioBatchPage from './pages/StudioBatchPage'
+import StudioPassportsPage from './pages/StudioPassportsPage'
+import StudioOriginPage from './pages/StudioOriginPage'
 
 // Lazy-loaded routes — each becomes its own JS chunk and only downloads when visited.
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -40,11 +46,6 @@ const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPa
 const DiscoverSpeciesDetailPage = lazy(() => import('./pages/DiscoverSpeciesDetailPage'))
 const DiscoverComparePage = lazy(() => import('./pages/DiscoverComparePage'))
 const DiscoverCatalogBrowsePage = lazy(() => import('./pages/DiscoverCatalogBrowsePage'))
-const StudioLayout = lazy(() => import('./pages/StudioLayout'))
-const StudioPage = lazy(() => import('./pages/StudioPage'))
-const StudioBatchPage = lazy(() => import('./pages/StudioBatchPage'))
-const StudioPassportsPage = lazy(() => import('./pages/StudioPassportsPage'))
-const StudioOriginPage = lazy(() => import('./pages/StudioOriginPage'))
 const QrToolPage = lazy(() => import('./pages/QrToolPage'))
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
 const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))

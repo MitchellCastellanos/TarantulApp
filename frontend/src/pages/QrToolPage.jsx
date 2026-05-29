@@ -469,6 +469,14 @@ export default function QrToolPage() {
     })()
   }
 
+  useEffect(
+    () => () => {
+      setAndroidScanOpen(false)
+      void stopAndroidHtml5Scanner()
+    },
+    [stopAndroidHtml5Scanner],
+  )
+
   useEffect(() => {
     if (!androidScanOpen) return undefined
 
