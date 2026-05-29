@@ -75,6 +75,7 @@ const adminService = {
     api.get('/admin/partner-sync/runs', { params: vendorId ? { vendorId } : {} }).then((r) => r.data),
   partnerEcosystemClosureStatus: () =>
     api.get('/admin/partner-ecosystem/closure-status').then((r) => r.data),
+  partnerDashboard: () => api.get('/admin/partners/dashboard').then((r) => r.data),
   bugReports: (status = '') =>
     api.get('/admin/bug-reports', { params: status ? { status } : {} }).then((r) => r.data),
   patchBugReport: (id, payload) =>

@@ -26,6 +26,7 @@ import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.service.PassportService;
 import com.tarantulapp.service.OfficialVendorService;
+import com.tarantulapp.service.PartnerDashboardService;
 import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
 import com.tarantulapp.service.TaxonomySyncService;
@@ -108,6 +109,7 @@ public class AdminController {
     private final PassportService passportService;
     private final UserCapabilitiesService userCapabilitiesService;
     private final VerifiedOriginService verifiedOriginService;
+    private final PartnerDashboardService partnerDashboardService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -152,7 +154,8 @@ public class AdminController {
                            MarketplaceService marketplaceService,
                            PassportService passportService,
                            UserCapabilitiesService userCapabilitiesService,
-                           VerifiedOriginService verifiedOriginService) {
+                           VerifiedOriginService verifiedOriginService,
+                           PartnerDashboardService partnerDashboardService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -185,6 +188,7 @@ public class AdminController {
         this.passportService = passportService;
         this.userCapabilitiesService = userCapabilitiesService;
         this.verifiedOriginService = verifiedOriginService;
+        this.partnerDashboardService = partnerDashboardService;
     }
 
     @PostMapping("/passports")
@@ -635,6 +639,12 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> partnerEcosystemClosureStatus() {
         adminAccessService.assertCurrentUserIsAdmin();
         return ResponseEntity.ok(officialVendorService.adminEcosystemClosureStatus());
+    }
+
+    @GetMapping("/partners/dashboard")
+    public ResponseEntity<Map<String, Object>> partnerDashboard() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(partnerDashboardService.getAdminDashboard());
     }
 
     @GetMapping("/partner-sync/runs")

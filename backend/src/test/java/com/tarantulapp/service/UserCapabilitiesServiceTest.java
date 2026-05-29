@@ -1,6 +1,9 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.entity.OfficialVendor;
+import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.entity.User;
+import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(MockitoExtension.class)
 class UserCapabilitiesServiceTest {
@@ -23,12 +27,14 @@ class UserCapabilitiesServiceTest {
     private UserRepository userRepository;
     @Mock
     private AdminAccessService adminAccessService;
+    @Mock
+    private OfficialVendorRepository officialVendorRepository;
 
     private UserCapabilitiesService service;
 
     @BeforeEach
     void setUp() {
-        service = new UserCapabilitiesService(userRepository, adminAccessService);
+        service = new UserCapabilitiesService(userRepository, adminAccessService, officialVendorRepository);
     }
 
     @Test
@@ -62,5 +68,33 @@ class UserCapabilitiesServiceTest {
 
         var caps = service.activateStudio(userId);
         assertTrue(caps.isStudio());
+    }
+
+    @Test
+    void officialPartnerWhenHandleMatchesEnabledVendor() {
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setPublicHandle("monarch-reptiles");
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setSlug("monarch-reptiles");
+        vendor.setEnabled(true);
+        vendor.setPartnerProgramTier(PartnerProgramTier.FOUNDING_PARTNER);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(officialVendorRepository.findBySlug("monarch-reptiles")).thenReturn(Optional.of(vendor));
+
+        assertTrue(service.getCapabilities(userId).isOfficialPartner());
+    }
+
+    @Test
+    void notOfficialPartnerWithoutMatchingVendor() {
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setPublicHandle("random-keeper");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(officialVendorRepository.findBySlug(anyString())).thenReturn(Optional.empty());
+
+        assertFalse(service.getCapabilities(userId).isOfficialPartner());
     }
 }

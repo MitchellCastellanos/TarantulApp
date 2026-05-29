@@ -21,8 +21,6 @@ export default function AdminHomePage() {
   const [officialLeads, setOfficialLeads] = useState([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
-  const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
   const [mailStatus, setMailStatus] = useState(null)
   const [mailTestTo, setMailTestTo] = useState('')
   const [mailTestLoading, setMailTestLoading] = useState(false)
@@ -221,28 +219,12 @@ export default function AdminHomePage() {
     return 'hide_tarantula'
   }
 
-  const runPartnerSyncNow = async () => {
-    setPartnerSyncLoading(true)
-    setPartnerSyncMessage('')
-    setError('')
-    try {
-      const runs = await adminService.runPartnerSync()
-      const n = Array.isArray(runs) ? runs.length : 0
-      setPartnerSyncMessage(t('admin.partnerSyncDone', { count: n }))
-    } catch {
-      setError(t('admin.partnerSyncError'))
-    } finally {
-      setPartnerSyncLoading(false)
-    }
-  }
-
   return (
     <>
       <h2 className="h5 mb-3">{t('admin.titleGeneral')}</h2>
       <p className="small text-muted mb-3">{t('admin.generalPageBlurb')}</p>
       {error && <div className="alert alert-danger">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
 
       {mailStatus && (
         <div className={`card p-3 mb-3 ${mailStatus.usernameConfigured ? 'border-secondary' : 'border-warning'}`}>
@@ -498,17 +480,9 @@ export default function AdminHomePage() {
       <div className="card p-3 mt-3 border-warning">
         <h2 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h2>
         <p className="small text-muted mb-2">{t('admin.strategicPartnerSectionBlurb')}</p>
-        <Link to="/admin/marketplace" className="btn btn-sm btn-dark mb-3">
-          {t('admin.navMarketplace')}
+        <Link to="/admin/partners" className="btn btn-sm btn-dark">
+          {t('admin.navPartners')}
         </Link>
-        <button
-          type="button"
-          className="btn btn-sm btn-dark"
-          disabled={partnerSyncLoading}
-          onClick={() => runPartnerSyncNow()}
-        >
-          {partnerSyncLoading ? t('admin.partnerSyncRunning') : t('admin.runPartnerSync')}
-        </button>
       </div>
 
       <div className="card p-3 mt-3">
@@ -519,8 +493,8 @@ export default function AdminHomePage() {
             ? t('admin.officialVendorsEmpty')
             : t('admin.officialVendorsCount', { count: officialVendors.length })}
         </p>
-        <Link to="/admin/marketplace#badges-partners" className="btn btn-sm btn-dark">
-          {t('admin.navMarketplace')}
+        <Link to="/admin/partners" className="btn btn-sm btn-dark">
+          {t('admin.navPartners')}
         </Link>
       </div>
 

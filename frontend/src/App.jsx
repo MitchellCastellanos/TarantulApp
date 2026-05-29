@@ -57,6 +57,7 @@ const AdminHomePage = lazy(() => import('./pages/admin/AdminHomePage'))
 const AdminBetaPage = lazy(() => import('./pages/admin/AdminBetaPage'))
 const AdminVendorsPage = lazy(() => import('./pages/admin/AdminVendorsPage'))
 const AdminMarketplacePage = lazy(() => import('./pages/admin/AdminMarketplacePage'))
+const AdminPartnerDashboardPage = lazy(() => import('./pages/admin/AdminPartnerDashboardPage'))
 const AdminPartnerOutreachPage = lazy(() => import('./pages/admin/AdminPartnerOutreachPage'))
 const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const AdminSpeciesTradePage = lazy(() => import('./pages/admin/AdminSpeciesTradePage'))
@@ -250,6 +251,7 @@ function AppRoutes() {
         <Route index element={<AdminOnlyRoute><AdminHomePage /></AdminOnlyRoute>} />
         <Route path="vendors" element={<AdminOnlyRoute><AdminVendorsPage /></AdminOnlyRoute>} />
         <Route path="marketplace" element={<AdminOnlyRoute><AdminMarketplacePage /></AdminOnlyRoute>} />
+        <Route path="partners" element={<AdminOnlyRoute><AdminPartnerDashboardPage /></AdminOnlyRoute>} />
         <Route path="partner-outreach" element={<AdminPartnerOutreachPage />} />
         <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="trade" element={<AdminOnlyRoute><AdminSpeciesTradePage /></AdminOnlyRoute>} />

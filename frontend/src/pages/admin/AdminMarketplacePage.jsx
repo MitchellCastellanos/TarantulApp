@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
-import PartnerVendorConfigModal from '../../components/admin/PartnerVendorConfigModal'
-import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
 import { formatAdminPlanSummary, adminPlanBadgeClass } from './adminShared'
 
 function sellerTierKey(row) {
@@ -25,21 +23,9 @@ export default function AdminMarketplacePage() {
   const [planBusyId, setPlanBusyId] = useState(null)
 
   const [reports, setReports] = useState([])
-  const [officialVendors, setOfficialVendors] = useState([])
-  const [officialLeads, setOfficialLeads] = useState([])
-  const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
-  const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
-  const [syncRuns, setSyncRuns] = useState([])
-  const [syncRunsLoading, setSyncRunsLoading] = useState(false)
-  const [leadPromoteBusyId, setLeadPromoteBusyId] = useState(null)
   const [vendorVerifications, setVendorVerifications] = useState([])
   const [verificationBusyId, setVerificationBusyId] = useState(null)
-  const [partnerCatalogBusyKey, setPartnerCatalogBusyKey] = useState(null)
-  const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
-  const [partnerConfigModalVendor, setPartnerConfigModalVendor] = useState(null)
-  const [partnerSyncVendorBusyId, setPartnerSyncVendorBusyId] = useState(null)
   const [storefrontBusyId, setStorefrontBusyId] = useState(null)
-  const [closureStatus, setClosureStatus] = useState(null)
 
   const loadSellers = useCallback(async () => {
     setSellersLoading(true)
@@ -62,18 +48,12 @@ export default function AdminMarketplacePage() {
     let cancelled = false
     Promise.all([
       adminService.reports('open'),
-      adminService.officialVendors(),
-      adminService.officialVendorLeads(),
       adminService.vendorVerifications('pending').catch(() => []),
-      adminService.partnerEcosystemClosureStatus().catch(() => null),
     ])
-      .then(([openReports, vendors, leads, verifications, closure]) => {
+      .then(([openReports, verifications]) => {
         if (cancelled) return
         setReports(Array.isArray(openReports) ? openReports : [])
-        setOfficialVendors(Array.isArray(vendors) ? vendors : [])
-        setOfficialLeads(Array.isArray(leads) ? leads : [])
         setVendorVerifications(Array.isArray(verifications) ? verifications : [])
-        setClosureStatus(closure)
       })
       .catch(() => {
         if (!cancelled) setError(t('admin.loadError'))
@@ -87,109 +67,6 @@ export default function AdminMarketplacePage() {
     const id = window.setTimeout(() => loadSellers(), 280)
     return () => window.clearTimeout(id)
   }, [loadSellers])
-
-  const sendPartnerCatalogToVendor = async (vendor, locale = 'es') => {
-    setPartnerCatalogBusyKey(`${vendor.id}:${locale}`)
-    setError('')
-    try {
-      const data = await adminService.sendOfficialVendorPartnerCatalogEmail(vendor.id, { locale })
-      setSuccess(t('admin.partnerCatalogEmailSent', { email: data?.email, count: data?.listingCount ?? 0 }))
-    } catch {
-      setError(t('admin.loadError'))
-    } finally {
-      setPartnerCatalogBusyKey(null)
-    }
-  }
-
-  const sendPartnerCatalogToLead = async (lead, locale = 'es') => {
-    setPartnerCatalogBusyKey(`lead:${lead.id}:${locale}`)
-    setError('')
-    try {
-      const data = await adminService.sendOfficialVendorLeadPartnerCatalogEmail(lead.id, { locale })
-      setSuccess(t('admin.partnerCatalogEmailSent', { email: data?.email, count: 0 }))
-    } catch {
-      setError(t('admin.loadError'))
-    } finally {
-      setPartnerCatalogBusyKey(null)
-    }
-  }
-
-  const promoteLead = async (lead) => {
-    if (!lead?.id || lead.status === 'converted') return
-    if (!lead.websiteUrl?.trim()) {
-      setError(t('admin.promoteLeadNeedsWebsite'))
-      return
-    }
-    const tierRaw = window.prompt(t('admin.partnerPromoteTierPrompt'), 'official')
-    if (tierRaw == null) return
-    const tier = String(tierRaw).trim().toLowerCase()
-    const isFounding = tier === 'founding' || tier === 'founder'
-    const enableImport = window.confirm(t('admin.partnerPromoteImportConfirm'))
-    const feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), lead.websiteUrl || '')
-    if (feedBaseUrl == null) return
-    const badge = window.prompt(
-      t('admin.partnerBadgePrompt'),
-      isFounding ? 'Founding partner' : 'Official partner',
-    )
-    if (badge == null) return
-    setLeadPromoteBusyId(lead.id)
-    setError('')
-    setSuccess('')
-    try {
-      const result = await adminService.promoteOfficialVendorLead(lead.id, {
-        enableImport,
-        strategicFounder: isFounding,
-        partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
-        feedType: 'woocommerce',
-        feedBaseUrl,
-        badge,
-      })
-      const vendor = result?.vendor
-      setOfficialLeads((prev) =>
-        prev.map((l) => (l.id === lead.id ? { ...l, status: 'converted' } : l)),
-      )
-      if (vendor) {
-        setOfficialVendors((prev) => [vendor, ...prev])
-      }
-      setSuccess(t('admin.promoteLeadSuccess', { slug: vendor?.slug || '' }))
-    } catch {
-      setError(t('admin.promoteLeadError'))
-    } finally {
-      setLeadPromoteBusyId(null)
-    }
-  }
-
-  const saveOfficialVendorConfig = async (payload) => {
-    const vendor = partnerConfigModalVendor
-    if (!vendor?.id) return
-    setPartnerConfigBusyId(vendor.id)
-    setError('')
-    setSuccess('')
-    try {
-      const updated = await adminService.updateOfficialVendorStrategicProgram(vendor.id, payload)
-      setOfficialVendors((prev) => prev.map((v) => (String(v.id) === String(vendor.id) ? updated : v)))
-      setSuccess(t('admin.partnerConfigSaved'))
-      setPartnerConfigModalVendor(null)
-      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
-      setClosureStatus(closure)
-    } catch {
-      setError(t('admin.resolveError'))
-    } finally {
-      setPartnerConfigBusyId(null)
-    }
-  }
-
-  const loadSyncRuns = async () => {
-    setSyncRunsLoading(true)
-    try {
-      const runs = await adminService.partnerSyncRuns()
-      setSyncRuns(Array.isArray(runs) ? runs : [])
-    } catch {
-      setSyncRuns([])
-    } finally {
-      setSyncRunsLoading(false)
-    }
-  }
 
   const toggleVerifiedBreeder = async (row) => {
     const next = !row?.verifiedBreeder
@@ -281,47 +158,6 @@ export default function AdminMarketplacePage() {
     return 'hide_tarantula'
   }
 
-  const toggleOfficialVendor = async (vendorId, nextEnabled) => {
-    try {
-      const updated = await adminService.setOfficialVendorStatus(vendorId, nextEnabled)
-      setOfficialVendors((prev) => prev.map((v) => (v.id === vendorId ? updated : v)))
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
-  const patchVendorStrategic = async (vendorId, body) => {
-    try {
-      const updated = await adminService.updateOfficialVendorStrategicProgram(vendorId, body)
-      setOfficialVendors((prev) =>
-        prev.map((v) =>
-          String(v.id) === String(vendorId)
-            ? { ...v, ...updated, opsSummary: updated?.opsSummary ?? v.opsSummary }
-            : v,
-        ),
-      )
-    } catch {
-      setError(t('admin.resolveError'))
-    }
-  }
-
-  const patchPartnerTier = async (vendor, tier) => {
-    const isFounding = tier === 'founding'
-    await patchVendorStrategic(vendor.id, {
-      partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
-      strategicFounder: isFounding,
-      feedConfig: {
-        ...(vendor.feedConfig || {}),
-        partnerTier: isFounding ? 'founding' : 'official',
-        boostLevel: isFounding ? 2 : 1,
-      },
-    })
-  }
-
-  const savePartnerBadge = async (vendor, badge) => {
-    await patchVendorStrategic(vendor.id, { badge: String(badge || '').trim() })
-  }
-
   const toggleStorefrontVerified = async (row, next) => {
     setStorefrontBusyId(row.id)
     setError('')
@@ -346,50 +182,6 @@ export default function AdminMarketplacePage() {
     }
   }
 
-  const runPartnerSyncNow = async () => {
-    setPartnerSyncLoading(true)
-    setPartnerSyncMessage('')
-    setError('')
-    try {
-      const runs = await adminService.runPartnerSync()
-      const n = Array.isArray(runs) ? runs.length : 0
-      setPartnerSyncMessage(t('admin.partnerSyncDone', { count: n }))
-      await loadSyncRuns()
-      const vendors = await adminService.officialVendors()
-      setOfficialVendors(Array.isArray(vendors) ? vendors : [])
-      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
-      setClosureStatus(closure)
-    } catch {
-      setError(t('admin.partnerSyncError'))
-    } finally {
-      setPartnerSyncLoading(false)
-    }
-  }
-
-  const runPartnerSyncForVendor = async (vendor) => {
-    if (!vendor?.id || !vendor.listingImportEnabled) return
-    setPartnerSyncVendorBusyId(vendor.id)
-    setError('')
-    try {
-      const run = await adminService.runPartnerSyncForVendor(vendor.id)
-      setPartnerSyncMessage(
-        t('admin.partnerSyncVendorDone', {
-          name: vendor.name,
-          status: run?.status || '—',
-        }),
-      )
-      const vendors = await adminService.officialVendors()
-      setOfficialVendors(Array.isArray(vendors) ? vendors : [])
-      await loadSyncRuns()
-      const closure = await adminService.partnerEcosystemClosureStatus().catch(() => null)
-      setClosureStatus(closure)
-    } catch (err) {
-      setError(err?.response?.data?.error || t('admin.partnerSyncError'))
-    } finally {
-      setPartnerSyncVendorBusyId(null)
-    }
-  }
-
   const marketplaceReports = reports.filter((r) => r.targetType === 'marketplace_listing')
   const otherReports = reports.filter((r) => r.targetType !== 'marketplace_listing')
 
@@ -408,31 +200,14 @@ export default function AdminMarketplacePage() {
 
       {error && <div className="alert alert-danger">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      {partnerSyncMessage && <div className="alert alert-success small py-2">{partnerSyncMessage}</div>}
 
-      {closureStatus && (
-        <section
-          className={`card p-3 mb-4 border-2 ${closureStatus.allChecksPass ? 'border-success' : 'border-warning'}`}
-          id="ecosystem-closure"
-        >
-          <h3 className="h6 mb-2">{t('admin.ecosystemClosureTitle')}</h3>
-          <p className="small text-muted mb-2">{t('admin.ecosystemClosureBlurb')}</p>
-          <ul className="list-unstyled small mb-2">
-            {(closureStatus.checks || []).map((c) => (
-              <li key={c.id} className="mb-1">
-                <span className={c.ok ? 'text-success' : 'text-warning'}>{c.ok ? '✓' : '○'}</span>{' '}
-                {t(`admin.ecosystemClosureCheck.${c.id}`, { defaultValue: c.detail })}
-                {!c.ok && c.detail ? <span className="text-muted"> — {c.detail}</span> : null}
-              </li>
-            ))}
-          </ul>
-          {closureStatus.allChecksPass ? (
-            <span className="badge text-bg-success">{t('admin.ecosystemClosureAllPass')}</span>
-          ) : (
-            <span className="badge text-bg-warning text-dark">{t('admin.ecosystemClosurePending')}</span>
-          )}
-        </section>
-      )}
+      <section className="card p-3 mb-4 border-warning">
+        <h3 className="h6 mb-2">{t('admin.marketplacePartnersMovedTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.marketplacePartnersMovedBlurb')}</p>
+        <Link to="/admin/partners" className="btn btn-sm btn-dark">
+          {t('admin.navPartners')}
+        </Link>
+      </section>
 
       <section className="card p-3 mb-4 border-dark" id="badges-hub">
         <h3 className="h6 mb-2">{t('admin.badgesHubTitle')}</h3>
@@ -460,9 +235,9 @@ export default function AdminMarketplacePage() {
             <div className="border rounded p-2 h-100">
               <strong>{t('admin.badgesHubPartner')}</strong>
               <p className="text-muted mb-2">{t('admin.badgesHubPartnerHint')}</p>
-              <a href="#badges-partners" className="btn btn-sm btn-outline-warning">
+              <Link to="/admin/partners" className="btn btn-sm btn-outline-warning">
                 {t('admin.badgesHubGoPartners')}
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -729,261 +504,6 @@ export default function AdminMarketplacePage() {
         </p>
       </section>
 
-      <section className="card p-3 mb-4 border-warning">
-        <h3 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h3>
-        <p className="small text-muted mb-2">{t('admin.strategicPartnerSectionBlurb')}</p>
-        <div className="d-flex flex-wrap gap-2 mb-3">
-          <button
-            type="button"
-            className="btn btn-sm btn-dark"
-            disabled={partnerSyncLoading}
-            onClick={() => runPartnerSyncNow()}
-          >
-            {partnerSyncLoading ? t('admin.partnerSyncRunning') : t('admin.runPartnerSync')}
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadSyncRuns()}>
-            {syncRunsLoading ? t('common.loading') : t('admin.marketplaceLoadSyncRuns')}
-          </button>
-        </div>
-        {syncRuns.length > 0 && (
-          <div className="table-responsive">
-            <table className="table table-sm mb-0">
-              <thead>
-                <tr>
-                  <th>{t('admin.marketplaceSyncColVendor')}</th>
-                  <th>{t('admin.marketplaceSyncColStatus')}</th>
-                  <th>{t('admin.created')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {syncRuns.slice(0, 12).map((run) => (
-                  <tr key={run.id}>
-                    <td className="small font-monospace">{String(run.officialVendorId || '').slice(0, 8)}…</td>
-                    <td className="small">{run.status || '—'}</td>
-                    <td className="small">{run.startedAt ? new Date(run.startedAt).toLocaleString() : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="card p-3 mb-4" id="badges-partners">
-        <h3 className="h6 mb-3">{t('admin.officialVendorsTitle')}</h3>
-        <p className="small text-muted mb-3">{t('admin.officialVendorsSyncHint')}</p>
-        {officialVendors.length === 0 ? (
-          <p className="text-muted small mb-0">{t('admin.officialVendorsEmpty')}</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>{t('admin.officialVendorsColBrand')}</th>
-                  <th>{t('admin.officialVendorsColLocation')}</th>
-                  <th>{t('admin.officialVendorsColScore')}</th>
-                  <th>{t('admin.partnerOpsCol')}</th>
-                  <th>{t('admin.officialVendorsColStatus')}</th>
-                  <th>{t('admin.officialVendorsColTier')}</th>
-                  <th>{t('admin.officialVendorsColBadge')}</th>
-                  <th className="text-center">{t('admin.officialVendorsColImport')}</th>
-                  <th>{t('admin.officialVendorsColActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {officialVendors.map((v) => (
-                  <tr key={v.id}>
-                    <td>
-                      <div className="fw-semibold">{v.name}</div>
-                      <div className="small text-muted">{v.websiteUrl}</div>
-                      <div className="small d-flex flex-wrap gap-1 mt-1">
-                        {v.feedType && <span className="badge text-bg-secondary">{v.feedType}</span>}
-                        {v.feedBaseUrl && <span className="text-muted">{v.feedBaseUrl}</span>}
-                      </div>
-                    </td>
-                    <td>{[v.city, v.state, v.country].filter(Boolean).join(' · ') || '-'}</td>
-                    <td>{v.influenceScore ?? 0}</td>
-                    <td className="small">
-                      {v.opsSummary ? (
-                        <>
-                          <div>
-                            {t('admin.partnerOpsHandoffs', {
-                              count: v.opsSummary.handoffs30d ?? 0,
-                            })}
-                          </div>
-                          {v.opsSummary.latestSync ? (
-                            <div className="text-muted">
-                              {t('admin.partnerOpsSync', {
-                                status: v.opsSummary.latestSync.status || '—',
-                                upserted: v.opsSummary.latestSync.upsertedCount ?? 0,
-                                processed: v.opsSummary.latestSync.processedCount ?? 0,
-                              })}
-                              {(v.opsSummary.latestSync.staleCount ?? 0) > 0
-                                ? ` · stale ${v.opsSummary.latestSync.staleCount}`
-                                : ''}
-                            </div>
-                          ) : (
-                            <div className="text-muted">{t('admin.partnerOpsNoSync')}</div>
-                          )}
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td>{v.enabled ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
-                    <td>
-                      <select
-                        className="form-select form-select-sm"
-                        style={{ minWidth: 130 }}
-                        value={isFoundingPartnerTier(v) ? 'founding' : 'official'}
-                        onChange={(e) => patchPartnerTier(v, e.target.value)}
-                      >
-                        <option value="official">{t('admin.partnerTierOfficial')}</option>
-                        <option value="founding">{t('admin.partnerTierFounding')}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        style={{ minWidth: 140 }}
-                        defaultValue={v.badge || (isFoundingPartnerTier(v) ? 'Founding partner' : 'Official partner')}
-                        onBlur={(e) => {
-                          const next = e.target.value.trim()
-                          const prev = (v.badge || '').trim()
-                          if (next !== prev) savePartnerBadge(v, next)
-                        }}
-                      />
-                    </td>
-                    <td className="text-center">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        checked={!!v.listingImportEnabled}
-                        onChange={(e) => patchVendorStrategic(v.id, { listingImportEnabled: e.target.checked })}
-                      />
-                    </td>
-                    <td>
-                      <div className="d-flex flex-column gap-1">
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${v.enabled ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                          onClick={() => toggleOfficialVendor(v.id, !v.enabled)}
-                        >
-                          {v.enabled ? t('admin.officialVendorsDeactivate') : t('admin.officialVendorsActivate')}
-                        </button>
-                        {v.listingImportEnabled ? (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-warning"
-                            disabled={partnerSyncVendorBusyId === v.id}
-                            onClick={() => runPartnerSyncForVendor(v)}
-                          >
-                            {partnerSyncVendorBusyId === v.id
-                              ? t('common.loading')
-                              : t('admin.partnerTestSync')}
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-dark"
-                          disabled={partnerConfigBusyId === v.id}
-                          onClick={() => setPartnerConfigModalVendor(v)}
-                        >
-                          {partnerConfigBusyId === v.id ? t('common.loading') : t('admin.partnerEditConfig')}
-                        </button>
-                        <div className="btn-group btn-group-sm">
-                          {['es', 'en'].map((loc) => (
-                            <button
-                              key={loc}
-                              type="button"
-                              className="btn btn-outline-primary"
-                              disabled={partnerCatalogBusyKey === `${v.id}:${loc}`}
-                              onClick={() => sendPartnerCatalogToVendor(v, loc)}
-                            >
-                              {partnerCatalogBusyKey === `${v.id}:${loc}` ? '…' : `📧 ${loc}`}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="card p-3 mb-4">
-        <h3 className="h6 mb-3">{t('admin.officialLeadsTitle')}</h3>
-        {officialLeads.length === 0 ? (
-          <p className="text-muted small mb-0">{t('admin.officialLeadsEmpty')}</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>{t('admin.officialLeadsColBrand')}</th>
-                  <th>{t('admin.officialLeadsColContact')}</th>
-                  <th>{t('admin.officialLeadsColCoverage')}</th>
-                  <th>{t('admin.officialLeadsColNotes')}</th>
-                  <th>{t('admin.created')}</th>
-                  <th>{t('admin.officialLeadsColActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {officialLeads.map((lead) => (
-                  <tr key={lead.id}>
-                    <td>
-                      <div className="fw-semibold">{lead.businessName}</div>
-                      <div className="small text-muted">{lead.websiteUrl || '-'}</div>
-                    </td>
-                    <td>
-                      <div>{lead.contactName || '-'}</div>
-                      <div className="small text-muted">{lead.contactEmail}</div>
-                    </td>
-                    <td>{[lead.city, lead.state, lead.country].filter(Boolean).join(' · ') || '-'}</td>
-                    <td>{lead.note || '-'}</td>
-                    <td>{lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
-                    <td>
-                      {lead.status === 'converted' ? (
-                        <span className="badge bg-secondary">{t('admin.promoteLeadConverted')}</span>
-                      ) : (
-                        <div className="d-flex flex-column gap-1">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-dark"
-                            disabled={leadPromoteBusyId === lead.id}
-                            onClick={() => promoteLead(lead)}
-                          >
-                            {leadPromoteBusyId === lead.id ? t('common.loading') : t('admin.promoteLeadToVendor')}
-                          </button>
-                          <div className="btn-group btn-group-sm">
-                            {['es', 'en'].map((loc) => (
-                              <button
-                                key={loc}
-                                type="button"
-                                className="btn btn-outline-secondary"
-                                disabled={partnerCatalogBusyKey === `lead:${lead.id}:${loc}`}
-                                onClick={() => sendPartnerCatalogToLead(lead, loc)}
-                                title={t('admin.sendPartnerCatalogHint')}
-                              >
-                                {partnerCatalogBusyKey === `lead:${lead.id}:${loc}` ? '…' : `📧 ${loc}`}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
       <section className="card p-3 mb-4">
         <h3 className="h6 mb-2">{t('admin.marketplaceModerationTitle')}</h3>
         <p className="small text-muted mb-3">{t('admin.marketplaceModerationBlurb')}</p>
@@ -1006,15 +526,6 @@ export default function AdminMarketplacePage() {
           </>
         )}
       </section>
-
-      {partnerConfigModalVendor ? (
-        <PartnerVendorConfigModal
-          vendor={partnerConfigModalVendor}
-          busy={partnerConfigBusyId === partnerConfigModalVendor.id}
-          onClose={() => setPartnerConfigModalVendor(null)}
-          onSave={saveOfficialVendorConfig}
-        />
-      ) : null}
     </>
   )
 }

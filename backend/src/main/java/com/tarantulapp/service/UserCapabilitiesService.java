@@ -3,6 +3,9 @@ package com.tarantulapp.service;
 import com.tarantulapp.dto.MeCapabilitiesDTO;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.entity.OfficialVendor;
+import com.tarantulapp.entity.PartnerProgramTier;
+import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +19,14 @@ public class UserCapabilitiesService {
 
     private final UserRepository userRepository;
     private final AdminAccessService adminAccessService;
+    private final OfficialVendorRepository officialVendorRepository;
 
-    public UserCapabilitiesService(UserRepository userRepository, AdminAccessService adminAccessService) {
+    public UserCapabilitiesService(UserRepository userRepository,
+                                   AdminAccessService adminAccessService,
+                                   OfficialVendorRepository officialVendorRepository) {
         this.userRepository = userRepository;
         this.adminAccessService = adminAccessService;
+        this.officialVendorRepository = officialVendorRepository;
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +39,7 @@ public class UserCapabilitiesService {
         dto.setStudio(user.getStudioActivatedAt() != null);
         dto.setVerifiedBreeder(Boolean.TRUE.equals(user.getVerifiedBreeder()));
         dto.setVerifiedOrigin(VerifiedOriginService.isVerified(user));
-        dto.setOfficialPartner(false);
+        dto.setOfficialPartner(isOfficialPartner(user));
         return dto;
     }
 
@@ -79,5 +86,18 @@ public class UserCapabilitiesService {
     private User requireUser(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+    }
+
+    private boolean isOfficialPartner(User user) {
+        if (user == null || user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            return false;
+        }
+        return officialVendorRepository.findBySlug(user.getPublicHandle().trim())
+                .filter(v -> Boolean.TRUE.equals(v.getEnabled()))
+                .map(vendor -> {
+                    PartnerProgramTier tier = vendor.getPartnerProgramTier();
+                    return tier != null && tier.isOfficialPartner();
+                })
+                .orElse(false);
     }
 }
