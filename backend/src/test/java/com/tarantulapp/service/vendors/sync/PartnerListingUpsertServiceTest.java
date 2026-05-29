@@ -3,6 +3,7 @@ package com.tarantulapp.service.vendors.sync;
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
 import com.tarantulapp.entity.PartnerListingAvailability;
+import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
@@ -71,12 +72,13 @@ class PartnerListingUpsertServiceTest {
                 false
         );
 
-        PartnerListing saved = service.upsert(req);
+        PartnerListingUpsertResult saved = service.upsert(req);
 
-        assertEquals("SKU-1", saved.getExternalId());
-        assertEquals("USD", saved.getCurrency());
-        assertEquals(new BigDecimal("125.56"), saved.getPriceAmount());
-        assertEquals(PartnerListingAvailability.IN_STOCK, saved.getAvailability());
+        assertEquals("SKU-1", saved.listing().getExternalId());
+        assertEquals("USD", saved.listing().getCurrency());
+        assertEquals(new BigDecimal("125.56"), saved.listing().getPriceAmount());
+        assertEquals(PartnerListingAvailability.IN_STOCK, saved.listing().getAvailability());
+        assertEquals(PartnerListingUpsertChange.CREATED, saved.change());
         verify(partnerListingRepository).save(any(PartnerListing.class));
     }
 
@@ -162,7 +164,7 @@ class PartnerListingUpsertServiceTest {
         when(partnerListingRepository.findByOfficialVendorIdAndExternalId(vendorId, "SKU-SP1")).thenReturn(Optional.empty());
         when(partnerListingRepository.save(any(PartnerListing.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        PartnerListing saved = service.upsert(new PartnerListingUpsertRequest(
+        PartnerListingUpsertResult saved = service.upsert(new PartnerListingUpsertRequest(
                 vendorId,
                 "SKU-SP1",
                 "Pamphobeteus sling line",
@@ -185,7 +187,51 @@ class PartnerListingUpsertServiceTest {
                 false
         ));
 
-        assertEquals("SKU-SP1", saved.getExternalId());
+        assertEquals("SKU-SP1", saved.listing().getExternalId());
+    }
+
+    @Test
+    void upsertDetectsPriceAndStockChanges() {
+        UUID vendorId = UUID.randomUUID();
+        OfficialVendor vendor = strategicEnabledVendor(vendorId);
+        PartnerListing existing = new PartnerListing();
+        existing.setOfficialVendorId(vendorId);
+        existing.setExternalId("SKU-4");
+        existing.setTitle("Same title");
+        existing.setPriceAmount(new BigDecimal("10.00"));
+        existing.setCurrency("USD");
+        existing.setStockQuantity(5);
+        existing.setAvailability(PartnerListingAvailability.IN_STOCK);
+        existing.setStatus(PartnerListingStatus.ACTIVE);
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(vendor));
+        when(partnerListingRepository.findByOfficialVendorIdAndExternalId(vendorId, "SKU-4")).thenReturn(Optional.of(existing));
+        when(partnerListingRepository.save(any(PartnerListing.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PartnerListingUpsertResult result = service.upsert(new PartnerListingUpsertRequest(
+                vendorId,
+                "SKU-4",
+                "Same title",
+                null,
+                null,
+                null,
+                null,
+                new BigDecimal("12.00"),
+                "USD",
+                0,
+                PartnerListingAvailability.OUT_OF_STOCK,
+                null,
+                "https://vendor.example.com/p/sku-4",
+                null,
+                null,
+                null,
+                null,
+                PartnerListingStatus.ACTIVE,
+                null,
+                false
+        ));
+
+        assertEquals(PartnerListingUpsertChange.UPDATED, result.change());
+        assertEquals(true, result.changeDetail() != null && result.changeDetail().contains("precio"));
     }
 
     private OfficialVendor strategicEnabledVendor(UUID vendorId) {

@@ -44,6 +44,8 @@ class PartnerListingSyncServiceTest {
     @Mock
     private PartnerListingSyncRunService partnerListingSyncRunService;
     @Mock
+    private PartnerListingSyncReportService partnerListingSyncReportService;
+    @Mock
     private ObjectProvider<PartnerListingSyncItemProvider> itemProvider;
 
     private PartnerListingSyncService service;
@@ -55,6 +57,7 @@ class PartnerListingSyncServiceTest {
                 partnerListingSyncRunRepository,
                 partnerListingUpsertService,
                 partnerListingSyncRunService,
+                partnerListingSyncReportService,
                 itemProvider
         );
         when(partnerListingSyncRunService.startRun(any(), any()))
@@ -72,12 +75,10 @@ class PartnerListingSyncServiceTest {
     @Test
     void syncMarksOutOfStockAsActiveAndStalesMissingItems() {
         UUID vendorId = UUID.randomUUID();
-        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(syncVendor(vendorId)));
-        PartnerListing existingMissing = new PartnerListing();
-        existingMissing.setOfficialVendorId(vendorId);
-        existingMissing.setExternalId("missing-1");
-        existingMissing.setStatus(PartnerListingStatus.ACTIVE);
-        when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(1);
+        OfficialVendor vendor = syncVendor(vendorId);
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(vendor));
+        when(partnerListingSyncRunService.markMissingAsStale(any(), any()))
+                .thenReturn(new MarkStaleResult(1, List.of(new StaleListingRef("missing-1", "Missing item"))));
 
         PartnerListingUpsertRequest item = new PartnerListingUpsertRequest(
                 vendorId,
@@ -102,6 +103,12 @@ class PartnerListingSyncServiceTest {
                 false
         );
 
+        PartnerListing saved = new PartnerListing();
+        saved.setTitle("title");
+        saved.setExternalId("sku-1");
+        when(partnerListingUpsertService.upsert(any())).thenReturn(
+                new PartnerListingUpsertResult(saved, PartnerListingUpsertChange.UPDATED, "stock 1 -> 0"));
+
         PartnerListingSyncRun run = service.syncVendorListings(
                 vendorId,
                 List.of(item),
@@ -119,8 +126,9 @@ class PartnerListingSyncServiceTest {
     @Test
     void syncSkipsInvalidExternalIdAndReturnsPartial() {
         UUID vendorId = UUID.randomUUID();
-        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(syncVendor(vendorId)));
-        when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(0);
+        OfficialVendor vendor = syncVendor(vendorId);
+        when(officialVendorRepository.findById(vendorId)).thenReturn(Optional.of(vendor));
+        when(partnerListingSyncRunService.markMissingAsStale(any(), any())).thenReturn(MarkStaleResult.empty());
 
         PartnerListingSyncRun run = service.syncVendorListings(
                 vendorId,
@@ -158,6 +166,7 @@ class PartnerListingSyncServiceTest {
         OfficialVendor vendor = new OfficialVendor();
         vendor.setId(vendorId);
         vendor.setSlug("partner-test");
+        vendor.setName("Partner Test");
         vendor.setPartnerProgramTier(PartnerProgramTier.OFFICIAL_PARTNER);
         vendor.setListingImportEnabled(true);
         vendor.setEnabled(true);

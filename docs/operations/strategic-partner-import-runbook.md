@@ -37,10 +37,16 @@ Do not represent bootstrap/mock data as signed partner feed.
 
 Properties:
 
-- `PARTNER_SYNC_ENABLED` (default false)
-- `PARTNER_SYNC_CRON` (default `0 */30 * * * *`)
+- `PARTNER_SYNC_ENABLED` (default false) — set `true` in production to run scheduled imports
+- `PARTNER_SYNC_CRON` (default `0 0 6,18 * * *` — every 12h at 06:00 and 18:00 UTC)
+- `PARTNER_SYNC_REPORT_ENABLED` (default true) — email digest to `MAIL_ADMIN_NOTIFY_TO` when changes are detected
+- `PARTNER_SYNC_REPORT_ON_MANUAL` (default false) — also email after admin manual sync
 - `PARTNER_SYNC_ADAPTER_STATIC_ENABLED` (default true)
 - `PARTNER_SYNC_ADAPTER_MOCK_ENABLED` (default true)
+
+Eligible vendors are picked up automatically: any official vendor with `listing_import_enabled=true`, `enabled=true`, and tier in `FOUNDING_PARTNER`, `OFFICIAL_PARTNER`, `STRATEGIC_FOUNDER`, or `STRATEGIC_PARTNER` (e.g. Monarch Reptiles via WooCommerce).
+
+Scheduled sync sends one admin email per run when any vendor has new items, price/stock changes, removals, or sync errors. Sections are grouped by vendor.
 
 Manual admin trigger:
 

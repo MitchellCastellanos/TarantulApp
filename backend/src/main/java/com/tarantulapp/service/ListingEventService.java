@@ -220,7 +220,6 @@ public class ListingEventService {
         out.put("shareOpens30d", totals30d.getOrDefault("share_open", KindAgg.EMPTY).total);
         out.put("shareDownloads30d", totals30d.getOrDefault("share_download", KindAgg.EMPTY).total);
         out.put("cardClicks30d", totals30d.getOrDefault("card_click", KindAgg.EMPTY).total);
-        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
         out.put("storefrontViews30d", listingEventRepository.countPartnerStorefrontViewsSince(since30d));
         return out;
     }
@@ -450,5 +449,12 @@ public class ListingEventService {
         if (denominator <= 0) return 0.0;
         double r = (double) numerator / (double) denominator;
         return Math.round(r * 10000.0) / 10000.0;
+    }
+
+    private static long contactTapsFrom(Map<String, KindAgg> totals) {
+        return totals.entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getKey().startsWith("contact_tap"))
+                .mapToLong(e -> e.getValue().total)
+                .sum();
     }
 }

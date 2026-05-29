@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,8 +42,8 @@ public class PartnerListingSyncRunService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public int markMissingAsStale(UUID vendorId, Set<String> seenExternalIds) {
-        int stale = 0;
+    public MarkStaleResult markMissingAsStale(UUID vendorId, Set<String> seenExternalIds) {
+        List<StaleListingRef> items = new ArrayList<>();
         List<PartnerListing> current = partnerListingRepository.findByOfficialVendorId(vendorId);
         Instant now = Instant.now();
         for (PartnerListing listing : current) {
@@ -51,10 +52,10 @@ public class PartnerListingSyncRunService {
                 listing.setStatus(PartnerListingStatus.STALE);
                 listing.setLastSyncedAt(now);
                 partnerListingRepository.save(listing);
-                stale++;
+                items.add(new StaleListingRef(ext, listing.getTitle()));
             }
         }
-        return stale;
+        return new MarkStaleResult(items.size(), List.copyOf(items));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

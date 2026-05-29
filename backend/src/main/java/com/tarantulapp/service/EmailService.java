@@ -679,6 +679,19 @@ public class EmailService {
         }
     }
 
+    @Async("emailExecutor")
+    public void sendAdminPartnerSyncReport(String subject, String body) {
+        if (adminNotifyTo == null || adminNotifyTo.isBlank()) {
+            return;
+        }
+        try {
+            doSend(adminNotifyTo, subject, body);
+            log.info("Admin partner sync report sent to {}", adminNotifyTo);
+        } catch (Exception e) {
+            log.error("Failed to send admin partner sync report: {}", e.getMessage());
+        }
+    }
+
     public void sendVendorInviteEmail(String toEmail, String displayName, String locale, String inviteAbsoluteUrl) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         String sendDate = formatBetaSendDateForLocale(loc);

@@ -8,7 +8,6 @@ import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.entity.PartnerListingSyncTriggerSource;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.repository.OfficialVendorRepository;
-import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
 import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -35,6 +34,7 @@ public class PartnerListingSyncService {
     private final PartnerListingSyncRunRepository partnerListingSyncRunRepository;
     private final PartnerListingUpsertService partnerListingUpsertService;
     private final PartnerListingSyncRunService partnerListingSyncRunService;
+    private final PartnerListingSyncReportService partnerListingSyncReportService;
     private final ObjectProvider<PartnerListingSyncItemProvider> itemProvider;
     private static final List<PartnerProgramTier> SYNC_PARTNER_TIERS = List.of(
             PartnerProgramTier.FOUNDING_PARTNER,
@@ -45,20 +45,25 @@ public class PartnerListingSyncService {
     @Value("${app.partner-sync.enabled:false}")
     private boolean schedulerEnabled;
 
+    @Value("${app.partner-sync.report-on-manual:false}")
+    private boolean reportOnManual;
+
     public PartnerListingSyncService(OfficialVendorRepository officialVendorRepository,
                                      PartnerListingSyncRunRepository partnerListingSyncRunRepository,
                                      PartnerListingUpsertService partnerListingUpsertService,
                                      PartnerListingSyncRunService partnerListingSyncRunService,
+                                     PartnerListingSyncReportService partnerListingSyncReportService,
                                      ObjectProvider<PartnerListingSyncItemProvider> itemProvider) {
         this.officialVendorRepository = officialVendorRepository;
         this.partnerListingSyncRunRepository = partnerListingSyncRunRepository;
         this.partnerListingUpsertService = partnerListingUpsertService;
         this.partnerListingSyncRunService = partnerListingSyncRunService;
+        this.partnerListingSyncReportService = partnerListingSyncReportService;
         this.itemProvider = itemProvider;
     }
 
-    @Scheduled(cron = "${app.partner-sync.cron:0 */30 * * * *}")
-    @SchedulerLock(name = "partnerListingSync", lockAtLeastFor = "PT2M", lockAtMostFor = "PT25M")
+    @Scheduled(cron = "${app.partner-sync.cron:0 0 6,18 * * *}")
+    @SchedulerLock(name = "partnerListingSync", lockAtLeastFor = "PT2M", lockAtMostFor = "PT90M")
     public void runScheduledSync() {
         if (!schedulerEnabled) {
             return;
@@ -68,17 +73,13 @@ public class PartnerListingSyncService {
             log.warn("Partner sync scheduler enabled but no item provider configured");
             return;
         }
-        List<OfficialVendor> strategicVendors = officialVendorRepository
-                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        SYNC_PARTNER_TIERS);
+        List<OfficialVendor> strategicVendors = eligibleSyncVendors();
+        List<PartnerListingSyncVendorReport> reports = new ArrayList<>();
         for (OfficialVendor vendor : strategicVendors) {
-            try {
-                List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
-                syncVendorListings(vendor.getId(), items, PartnerListingSyncTriggerSource.SCHEDULER);
-            } catch (Exception ex) {
-                log.warn("Partner sync failed for vendor {}: {}", vendor.getId(), ex.getMessage());
-            }
+            reports.add(syncVendorSafely(provider, vendor, PartnerListingSyncTriggerSource.SCHEDULER));
         }
+        partnerListingSyncReportService.sendIfNotable(reports);
+        log.info("Partner sync scheduler finished for {} vendors", strategicVendors.size());
     }
 
     public List<PartnerListingSyncRun> runManualSyncAllStrategic() {
@@ -86,16 +87,18 @@ public class PartnerListingSyncService {
         if (provider == null) {
             return List.of();
         }
-        List<OfficialVendor> strategicVendors = officialVendorRepository
-                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
-                        SYNC_PARTNER_TIERS);
+        List<OfficialVendor> strategicVendors = eligibleSyncVendors();
         List<PartnerListingSyncRun> runs = new ArrayList<>();
+        List<PartnerListingSyncVendorReport> reports = new ArrayList<>();
         for (OfficialVendor vendor : strategicVendors) {
-            try {
-                runs.add(runManualSyncForVendor(vendor.getId()));
-            } catch (Exception ex) {
-                log.warn("Manual partner sync failed for vendor {}: {}", vendor.getId(), ex.getMessage());
+            PartnerListingSyncVendorReport report = syncVendorSafely(provider, vendor, PartnerListingSyncTriggerSource.MANUAL);
+            if (report.run() != null) {
+                runs.add(report.run());
             }
+            reports.add(report);
+        }
+        if (reportOnManual) {
+            partnerListingSyncReportService.sendIfNotable(reports);
         }
         return runs;
     }
@@ -114,8 +117,14 @@ public class PartnerListingSyncService {
         if (tier == null || !SYNC_PARTNER_TIERS.contains(tier)) {
             throw new IllegalArgumentException("PARTNER_TIER_NOT_ELIGIBLE");
         }
-        List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
-        return syncVendorListings(vendor.getId(), items, PartnerListingSyncTriggerSource.MANUAL);
+        PartnerListingSyncVendorReport report = syncVendorSafely(provider, vendor, PartnerListingSyncTriggerSource.MANUAL);
+        if (reportOnManual) {
+            partnerListingSyncReportService.sendIfNotable(List.of(report));
+        }
+        if (report.run() == null) {
+            throw new IllegalStateException("PARTNER_SYNC_RUN_FAILED");
+        }
+        return report.run();
     }
 
     @Transactional(readOnly = true)
@@ -130,17 +139,48 @@ public class PartnerListingSyncService {
         return partnerListingSyncRunRepository.findTop50ByOfficialVendorIdOrderByStartedAtDesc(vendorId);
     }
 
-    public PartnerListingSyncRun syncVendorListings(UUID officialVendorId,
-                                                    List<PartnerListingUpsertRequest> incomingItems,
-                                                    PartnerListingSyncTriggerSource triggerSource) {
-        OfficialVendor vendor = officialVendorRepository.findById(officialVendorId)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor no encontrado"));
+    private List<OfficialVendor> eligibleSyncVendors() {
+        return officialVendorRepository
+                .findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                        SYNC_PARTNER_TIERS);
+    }
+
+    private PartnerListingSyncVendorReport syncVendorSafely(PartnerListingSyncItemProvider provider,
+                                                            OfficialVendor vendor,
+                                                            PartnerListingSyncTriggerSource triggerSource) {
+        try {
+            List<PartnerListingUpsertRequest> items = provider.fetchItems(vendor);
+            return syncVendorListings(vendor, items, triggerSource);
+        } catch (Exception ex) {
+            log.warn("Partner sync failed for vendor {} ({}): {}", vendor.getId(), vendor.getSlug(), ex.getMessage());
+            return new PartnerListingSyncVendorReport(
+                    vendor.getId(),
+                    vendor.getName(),
+                    vendor.getSlug(),
+                    null,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    0,
+                    0,
+                    crop(ex.getMessage(), 1500)
+            );
+        }
+    }
+
+    PartnerListingSyncVendorReport syncVendorListings(OfficialVendor vendor,
+                                                      List<PartnerListingUpsertRequest> incomingItems,
+                                                      PartnerListingSyncTriggerSource triggerSource) {
+        UUID officialVendorId = vendor.getId();
         PartnerListingSyncRun run = partnerListingSyncRunService.startRun(officialVendorId, triggerSource);
         int processed = 0;
         int upserted = 0;
         int failed = 0;
         int skipped = 0;
         int stale = 0;
+        List<PartnerListingSyncChangeLine> newItems = new ArrayList<>();
+        List<PartnerListingSyncChangeLine> updatedItems = new ArrayList<>();
+        List<PartnerListingSyncChangeLine> removedItems = new ArrayList<>();
 
         boolean loggedItemFailure = false;
         try {
@@ -153,9 +193,14 @@ public class PartnerListingSyncService {
                         skipped++;
                         continue;
                     }
-                    partnerListingUpsertService.upsert(normalized);
+                    PartnerListingUpsertResult result = partnerListingUpsertService.upsert(normalized);
                     upserted++;
                     seenExternalIds.add(normalized.externalId().trim());
+                    switch (result.change()) {
+                        case CREATED, RESTORED -> newItems.add(PartnerListingSyncReportService.toLine(result));
+                        case UPDATED -> updatedItems.add(PartnerListingSyncReportService.toLine(result));
+                        case UNCHANGED -> { /* no report line */ }
+                    }
                 } catch (Exception itemError) {
                     failed++;
                     if (!loggedItemFailure) {
@@ -174,9 +219,27 @@ public class PartnerListingSyncService {
                 }
             }
 
-            stale = partnerListingSyncRunService.markMissingAsStale(officialVendorId, seenExternalIds);
-            stale += partnerListingSyncRunService.markDisallowedAsStale(officialVendorId, vendor);
-            return completeRun(run, processed, upserted, failed, skipped, stale);
+            MarkStaleResult staleResult = partnerListingSyncRunService.markMissingAsStale(officialVendorId, seenExternalIds);
+            stale = staleResult.count();
+            for (StaleListingRef ref : staleResult.items()) {
+                removedItems.add(PartnerListingSyncReportService.staleLine(ref));
+            }
+            int disallowedStale = partnerListingSyncRunService.markDisallowedAsStale(officialVendorId, vendor);
+            stale += disallowedStale;
+
+            PartnerListingSyncRun finished = completeRun(run, processed, upserted, failed, skipped, stale);
+            return new PartnerListingSyncVendorReport(
+                    vendor.getId(),
+                    vendor.getName(),
+                    vendor.getSlug(),
+                    finished,
+                    List.copyOf(newItems),
+                    List.copyOf(updatedItems),
+                    List.copyOf(removedItems),
+                    failed,
+                    skipped,
+                    null
+            );
         } catch (Exception ex) {
             run.setStatus(PartnerListingSyncRunStatus.FAILED);
             run.setProcessedCount(processed);
@@ -186,8 +249,28 @@ public class PartnerListingSyncService {
             run.setStaleCount(stale);
             run.setErrorMessage(crop(ex.getMessage(), 1500));
             run.setFinishedAt(Instant.now());
-            return partnerListingSyncRunService.finishRun(run);
+            PartnerListingSyncRun finished = partnerListingSyncRunService.finishRun(run);
+            return new PartnerListingSyncVendorReport(
+                    vendor.getId(),
+                    vendor.getName(),
+                    vendor.getSlug(),
+                    finished,
+                    List.copyOf(newItems),
+                    List.copyOf(updatedItems),
+                    List.copyOf(removedItems),
+                    failed + 1,
+                    skipped,
+                    crop(ex.getMessage(), 1500)
+            );
         }
+    }
+
+    public PartnerListingSyncRun syncVendorListings(UUID officialVendorId,
+                                                    List<PartnerListingUpsertRequest> incomingItems,
+                                                    PartnerListingSyncTriggerSource triggerSource) {
+        OfficialVendor vendor = officialVendorRepository.findById(officialVendorId)
+                .orElseThrow(() -> new IllegalArgumentException("Vendor no encontrado"));
+        return syncVendorListings(vendor, incomingItems, triggerSource).run();
     }
 
     private PartnerListingSyncRun completeRun(PartnerListingSyncRun run,
