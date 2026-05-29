@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
@@ -13,6 +13,7 @@ const STEP_PRIVACY = 'privacy'
 export default function HandleSetupPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { user, updateUserProfile } = useAuth()
   const [step, setStep] = useState(STEP_HANDLE)
@@ -85,7 +86,8 @@ export default function HandleSetupPage() {
       })
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       queryClient.invalidateQueries({ queryKey: tarantulaKeys.list() })
-      navigate('/', { replace: true })
+      const after = location.state?.redirectAfterAuth
+      navigate(typeof after === 'string' && after.startsWith('/') ? after : '/', { replace: true })
     } catch (e2) {
       setErr(e2?.response?.data?.error || t('handleSetup.saveError'))
     } finally {

@@ -2010,7 +2010,24 @@
     "fromCreator": "From",
     "giftTitle": "Included with your specimen",
     "giftBody": "{{days}} days of TarantulApp Pro — a gift included with your specimen, not a trial.",
-    "claimComingSoon": "Claim this specimen to add it to your collection — coming in the next update."
+    "giftActivated": "{{days}} days of Pro are now active on your account — included with your specimen.",
+    "claimPrompt": "Claim this specimen to start tracking care, molts, and reminders in your collection.",
+    "claimCta": "Claim this specimen",
+    "claimCtaSignIn": "Sign in to claim this specimen",
+    "claimFormTitle": "Add to your collection",
+    "specimenNameLabel": "Name for this specimen",
+    "specimenNamePlaceholder": "e.g. Rosie",
+    "setupReminderLabel": "Schedule a first feeding reminder",
+    "claimConfirm": "Claim and add to collection",
+    "claimSuccessTitle": "{{name}} is in your collection!",
+    "claimSuccessBody": "Your digital passport is now linked to your keeper account — same QR, forever.",
+    "claimAlreadyClaimed": "This passport was already claimed by another keeper.",
+    "claimFreeLimit": "The free plan holds up to 6 specimens. Upgrade to Pro to claim more.",
+    "claimError": "Could not claim this passport. Try again in a moment.",
+    "reminderScheduled": "We scheduled a first feeding reminder based on this life stage.",
+    "viewSpecimenCard": "View specimen card",
+    "openInCollection": "Open in my collection",
+    "setupKeeperProfile": "Set up keeper profile to open collection"
   },
   "proGrants": {
     "title": "Your Pro days",
@@ -2027,6 +2044,7 @@
       "REFERRAL_MILESTONE": "Referral milestone bonus",
       "ADMIN": "TarantulApp team grant",
       "LEGACY_MIGRATION": "Legacy ledger backfill",
+      "PASSPORT_CLAIM": "Included with your specimen",
       "UNKNOWN": "Pro days"
     },
     "howToEarnMoreTitle": "How to earn more",

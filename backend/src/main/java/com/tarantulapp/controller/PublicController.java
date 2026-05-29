@@ -6,11 +6,14 @@ import com.tarantulapp.dto.FeedingLogRequest;
 import com.tarantulapp.dto.FeedingLogResponse;
 import com.tarantulapp.dto.MoltLogRequest;
 import com.tarantulapp.dto.MoltLogResponse;
+import com.tarantulapp.dto.PassportClaimRequest;
+import com.tarantulapp.dto.PassportClaimResponse;
 import com.tarantulapp.dto.PublicProfileDTO;
 import com.tarantulapp.dto.PhotoResponse;
 import com.tarantulapp.dto.SpoodToggleResponse;
 import com.tarantulapp.dto.TimelineEventDTO;
 import com.tarantulapp.service.LogsService;
+import com.tarantulapp.service.PassportService;
 import com.tarantulapp.service.TarantulaService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
@@ -28,17 +31,32 @@ public class PublicController {
 
     private final TarantulaService tarantulaService;
     private final LogsService logsService;
+    private final PassportService passportService;
     private final SecurityHelper securityHelper;
 
-    public PublicController(TarantulaService tarantulaService, LogsService logsService, SecurityHelper securityHelper) {
+    public PublicController(TarantulaService tarantulaService,
+                            LogsService logsService,
+                            PassportService passportService,
+                            SecurityHelper securityHelper) {
         this.tarantulaService = tarantulaService;
         this.logsService = logsService;
+        this.passportService = passportService;
         this.securityHelper = securityHelper;
     }
 
     @GetMapping("/t/{shortId}")
     public ResponseEntity<PublicProfileDTO> getPublicProfile(@PathVariable String shortId) {
         return ResponseEntity.ok(tarantulaService.getPublicProfile(shortId));
+    }
+
+    /** Authenticated keeper claims an unclaimed passport label into their collection. */
+    @PostMapping("/t/{shortId}/claim")
+    public ResponseEntity<PassportClaimResponse> claimPassport(@PathVariable String shortId,
+                                                               @RequestBody(required = false) PassportClaimRequest req) {
+        UUID userId = securityHelper.tryGetCurrentUserId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+        PassportClaimRequest body = req != null ? req : new PassportClaimRequest();
+        return ResponseEntity.ok(passportService.claimPassport(shortId, body, userId));
     }
 
     @GetMapping("/t/{shortId}/timeline")

@@ -8,5 +8,6 @@ public enum ProDayGrantSource {
     REFERRAL_SIGNUP,
     REFERRAL_MILESTONE,
     ADMIN,
-    LEGACY_MIGRATION
+    LEGACY_MIGRATION,
+    PASSPORT_CLAIM
 }

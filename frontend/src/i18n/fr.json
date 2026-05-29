@@ -1983,7 +1983,24 @@
     "fromCreator": "De",
     "giftTitle": "Inclus avec votre spécimen",
     "giftBody": "{{days}} jours de TarantulApp Pro — un cadeau inclus avec votre spécimen, pas un essai.",
-    "claimComingSoon": "Revendiquez ce spécimen pour l'ajouter à votre collection — bientôt disponible."
+    "giftActivated": "{{days}} jours de Pro sont maintenant actifs sur votre compte — inclus avec votre spécimen.",
+    "claimPrompt": "Revendiquez ce spécimen pour suivre soins, mues et rappels dans votre collection.",
+    "claimCta": "Revendiquer ce spécimen",
+    "claimCtaSignIn": "Connectez-vous pour revendiquer",
+    "claimFormTitle": "Ajouter à votre collection",
+    "specimenNameLabel": "Nom du spécimen",
+    "specimenNamePlaceholder": "ex. Rosie",
+    "setupReminderLabel": "Programmer un premier rappel d'alimentation",
+    "claimConfirm": "Revendiquer et ajouter à la collection",
+    "claimSuccessTitle": "{{name}} est dans votre collection !",
+    "claimSuccessBody": "Votre passeport numérique est lié à votre compte — même QR, pour toujours.",
+    "claimAlreadyClaimed": "Ce passeport a déjà été revendiqué par un autre keeper.",
+    "claimFreeLimit": "Le plan gratuit permet jusqu'à 6 spécimens. Passez à Pro pour en revendiquer plus.",
+    "claimError": "Impossible de revendiquer ce passeport. Réessayez.",
+    "reminderScheduled": "Nous avons programmé un premier rappel d'alimentation selon le stade de vie.",
+    "viewSpecimenCard": "Voir la fiche du spécimen",
+    "openInCollection": "Ouvrir dans ma collection",
+    "setupKeeperProfile": "Configurer le profil keeper pour ouvrir la collection"
   },
   "proGrants": {
     "title": "Vos jours Pro",
@@ -2000,6 +2017,7 @@
       "REFERRAL_MILESTONE": "Bonus palier de parrainage",
       "ADMIN": "Cadeau de l'\u00e9quipe TarantulApp",
       "LEGACY_MIGRATION": "Ajustement initial du registre",
+      "PASSPORT_CLAIM": "Inclus avec votre spécimen",
       "UNKNOWN": "Jours Pro"
     },
     "howToEarnMoreTitle": "Comment en gagner plus",

@@ -2012,7 +2012,24 @@
     "fromCreator": "De",
     "giftTitle": "Incluido con tu espécimen",
     "giftBody": "{{days}} días de TarantulApp Pro — un regalo incluido con tu espécimen, no una prueba.",
-    "claimComingSoon": "Reclama este espécimen para añadirlo a tu colección — próximamente."
+    "giftActivated": "{{days}} días de Pro ya están activos en tu cuenta — incluidos con tu espécimen.",
+    "claimPrompt": "Reclama este espécimen para registrar cuidados, mudas y recordatorios en tu colección.",
+    "claimCta": "Reclamar espécimen",
+    "claimCtaSignIn": "Inicia sesión para reclamar",
+    "claimFormTitle": "Añadir a tu colección",
+    "specimenNameLabel": "Nombre del espécimen",
+    "specimenNamePlaceholder": "ej. Rosie",
+    "setupReminderLabel": "Programar un primer recordatorio de alimentación",
+    "claimConfirm": "Reclamar y añadir a la colección",
+    "claimSuccessTitle": "¡{{name}} está en tu colección!",
+    "claimSuccessBody": "Tu pasaporte digital quedó vinculado a tu cuenta — mismo QR, para siempre.",
+    "claimAlreadyClaimed": "Este pasaporte ya fue reclamado por otro keeper.",
+    "claimFreeLimit": "El plan gratis permite hasta 6 espécimenes. Pasa a Pro para reclamar más.",
+    "claimError": "No se pudo reclamar este pasaporte. Intenta de nuevo.",
+    "reminderScheduled": "Programamos un primer recordatorio de alimentación según la etapa de vida.",
+    "viewSpecimenCard": "Ver ficha del espécimen",
+    "openInCollection": "Abrir en mi colección",
+    "setupKeeperProfile": "Configura tu perfil keeper para abrir la colección"
   },
   "proGrants": {
     "title": "Tus d\u00edas Pro",
@@ -2029,6 +2046,7 @@
       "REFERRAL_MILESTONE": "Bonus por hito de referidos",
       "ADMIN": "Cortes\u00eda del equipo TarantulApp",
       "LEGACY_MIGRATION": "Ajuste inicial al registro de d\u00edas",
+      "PASSPORT_CLAIM": "Incluido con tu espécimen",
       "UNKNOWN": "D\u00edas Pro"
     },
     "howToEarnMoreTitle": "C\u00f3mo conseguir m\u00e1s",
