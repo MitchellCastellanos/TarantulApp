@@ -640,7 +640,7 @@ export default function AddTarantulaPage() {
                       </button>
                       {createdTarantula.shortId && (
                         <Link
-                          to={`/tools/qr?shortId=${encodeURIComponent(createdTarantula.shortId)}`}
+                          to={`/studio/labels?shortId=${encodeURIComponent(createdTarantula.shortId)}`}
                           className="btn btn-outline-secondary"
                         >
                           {t('form.postCreateQrTerrarium')}

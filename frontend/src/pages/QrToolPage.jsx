@@ -71,6 +71,7 @@ export default function QrToolPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const inStudio = location.pathname.startsWith('/studio/')
+  const labelsBase = inStudio || token ? '/studio/labels' : '/tools/qr'
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
   const batchId = searchParams.get('batch') || ''
@@ -268,7 +269,7 @@ export default function QrToolPage() {
         price: '0',
         priceCurrency: 'USD',
       },
-      url: `${base}/tools/qr`,
+      url: `${base}/studio/labels`,
     }
   }, [t, i18n.language])
 
@@ -276,7 +277,7 @@ export default function QrToolPage() {
     title: t('qrTool.pageTitle'),
     description: t('qrTool.metaDescription'),
     imageUrl: ogImage,
-    canonicalHref: origin ? `${origin}/tools/qr` : undefined,
+    canonicalHref: origin ? `${origin}/studio/labels` : undefined,
     jsonLd,
     jsonLdId: 'qr-tool-jsonld',
   })
@@ -672,20 +673,20 @@ export default function QrToolPage() {
                 {batchId ? (
                   <>
                     <span className="btn btn-sm btn-dark disabled">{t('labelStudio.batchTab')}</span>
-                    <Link to="/tools/qr" className="btn btn-sm btn-outline-light">
+                    <Link to={labelsBase} className="btn btn-sm btn-outline-light">
                       {t('labelStudio.collectionTab')}
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link
-                      to="/tools/qr"
+                      to={labelsBase}
                       className={`btn btn-sm ${mode === 'single' ? 'btn-dark' : 'btn-outline-light'}`}
                     >
                       {t('tarantula.qrCode')}
                     </Link>
                     <Link
-                      to="/tools/qr?mode=bulk"
+                      to={`${labelsBase}?mode=bulk`}
                       className={`btn btn-sm ${mode === 'bulk' ? 'btn-dark' : 'btn-outline-light'}`}
                     >
                       {t('dashboard.qrBulkPrint')}

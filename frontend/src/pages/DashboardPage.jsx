@@ -336,7 +336,7 @@ export default function DashboardPage() {
                   onChange={handleImportJsonFile}
                 />
                 <Link
-                  to="/tools/qr?mode=bulk"
+                  to="/studio/labels?mode=bulk"
                   className="btn btn-outline-secondary btn-sm"
                   title={t('dashboard.qrBulkPrintTitle')}
                 >
@@ -354,7 +354,7 @@ export default function DashboardPage() {
                   <span className="badge bg-dark ms-1 align-middle" style={{ fontSize: '0.65rem' }}>PRO</span>
                 </Link>
                 <Link
-                  to="/tools/qr?mode=bulk"
+                  to="/studio/labels?mode=bulk"
                   className="btn btn-outline-secondary btn-sm position-relative"
                   title={t('dashboard.qrBulkPrintProOnly')}
                 >
@@ -408,7 +408,7 @@ export default function DashboardPage() {
 
         <div className="alert small py-2 mb-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 ta-dashboard-qr-banner">
           <span className="mb-0">{t('dashboard.qrBannerLead')}</span>
-          <Link to="/tools/qr" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
+          <Link to="/studio/labels" className="btn btn-sm btn-dark align-self-stretch align-self-sm-auto shrink-0">
             {t('dashboard.qrBannerLink')}
           </Link>
         </div>

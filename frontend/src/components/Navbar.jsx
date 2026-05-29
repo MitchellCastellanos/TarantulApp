@@ -77,7 +77,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { data: capabilities } = useCapabilities()
   const navStudio = path.startsWith('/studio')
   const showStudioNav = Boolean(token && capabilities?.studio)
-  const labelsPath = showStudioNav || capabilities?.passportCreator ? '/studio/labels' : '/tools/qr'
+  const labelsPath = token ? '/studio/labels' : '/tools/qr'
   const navPartnerHub = path.startsWith('/partner/hub')
   const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
   const isAuthPage =
