@@ -31,7 +31,7 @@ public class UserCapabilitiesService {
         dto.setPassportCreator(canCreatePassports(user));
         dto.setStudio(user.getStudioActivatedAt() != null);
         dto.setVerifiedBreeder(Boolean.TRUE.equals(user.getVerifiedBreeder()));
-        dto.setVerifiedOrigin(user.getStorefrontVerifiedAt() != null);
+        dto.setVerifiedOrigin(VerifiedOriginService.isVerified(user));
         dto.setOfficialPartner(false);
         return dto;
     }

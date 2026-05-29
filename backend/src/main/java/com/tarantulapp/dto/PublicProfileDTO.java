@@ -46,6 +46,9 @@ public class PublicProfileDTO {
     /** Passport-only: Pro days included as a gift when the keeper claims this specimen. */
     private Integer proGiftDays;
 
+    /** Verified Origin of the passport creator or specimen keeper (public trust signal). */
+    private PublicOriginDTO origin;
+
     public PageMode getPageMode() { return pageMode; }
     public void setPageMode(PageMode pageMode) { this.pageMode = pageMode; }
     public String getShortId() { return shortId; }
@@ -96,4 +99,6 @@ public class PublicProfileDTO {
     public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
     public Integer getProGiftDays() { return proGiftDays; }
     public void setProGiftDays(Integer proGiftDays) { this.proGiftDays = proGiftDays; }
+    public PublicOriginDTO getOrigin() { return origin; }
+    public void setOrigin(PublicOriginDTO origin) { this.origin = origin; }
 }

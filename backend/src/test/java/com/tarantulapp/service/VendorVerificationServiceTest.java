@@ -1,6 +1,7 @@
 package com.tarantulapp.service;
 
 import com.tarantulapp.entity.User;
+import com.tarantulapp.entity.VerifiedOriginKind;
 import com.tarantulapp.entity.VendorVerificationSubmission;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.repository.UserRepository;
@@ -35,6 +36,8 @@ class VendorVerificationServiceTest {
     private UserRepository userRepository;
     @Mock
     private EmailService emailService;
+    @Mock
+    private VerifiedOriginService verifiedOriginService;
 
     private VendorVerificationService service;
     private UUID userId;
@@ -42,7 +45,7 @@ class VendorVerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VendorVerificationService(submissionRepository, userRepository, emailService);
+        service = new VendorVerificationService(submissionRepository, userRepository, emailService, verifiedOriginService);
         userId = UUID.randomUUID();
         vendorUser = new User();
         vendorUser.setId(userId);
@@ -79,15 +82,12 @@ class VendorVerificationServiceTest {
         UUID submissionId = UUID.randomUUID();
         VendorVerificationSubmission sub = pendingSubmission();
         when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(sub));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(vendorUser));
         when(submissionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(vendorUser));
 
         service.adminReview(submissionId, "approved", null);
 
-        ArgumentCaptor<User> userCap = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCap.capture());
-        assertNotNull(userCap.getValue().getStorefrontVerifiedAt());
+        verify(verifiedOriginService).grantVerifiedOrigin(userId, VerifiedOriginKind.VENDOR);
         verify(emailService).sendVendorVerificationApproved(eq("vendor@example.com"), eq("Test Shop"), eq("en"));
     }
 

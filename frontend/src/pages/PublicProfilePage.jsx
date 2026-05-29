@@ -14,6 +14,7 @@ import { publicUrl } from '../utils/publicAssets.js'
 import { PARCHMENT_HISTORY_PAGE_SIZE } from '../constants/parchmentHistory.js'
 import { formatDateInUserZone, formatEventDateTime } from '../utils/dateFormat'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
+import VerifiedOriginBadge from '../components/VerifiedOriginBadge'
 import { useUnitSystem } from '../hooks/useUnitSystem'
 import { formatSize } from '../utils/units'
 
@@ -346,6 +347,11 @@ export default function PublicProfilePage() {
             <div className="d-flex justify-content-between align-items-start mb-2">
               <div className="min-w-0">
                 <h4 className="fw-bold mb-0">{profile.name}</h4>
+                {profile.origin?.verified && (
+                  <div className="mt-2">
+                    <VerifiedOriginBadge origin={profile.origin} showTooltip />
+                  </div>
+                )}
                 {profile.viewerIsOwner && (
                   <div className="small text-muted mt-1">
                     🕷️ {t('public.spoodsReceived', { count: profile.spoodCount ?? 0 })}

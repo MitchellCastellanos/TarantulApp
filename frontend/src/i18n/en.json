@@ -2098,6 +2098,23 @@
     "labelsLink": "Label Studio",
     "listingsLink": "Listings"
   },
+  "verifiedOrigin": {
+    "badge": "Verified Origin",
+    "tooltip": "Trusted source — {{kind}} · {{name}}",
+    "learnMore": "Learn more",
+    "kind": {
+      "breeder": "Breeder",
+      "store": "Store",
+      "vendor": "Vendor",
+      "seller": "Seller"
+    },
+    "submitTitle": "Apply for Verified Origin",
+    "submitHint": "Tell us about your operation. Our team reviews applications manually.",
+    "submitCta": "Submit application",
+    "submitSuccess": "Application received — we'll review it soon.",
+    "submitError": "Could not submit. Try again or contact support.",
+    "pending": "Your Verified Origin application is under review."
+  },
   "proGrants": {
     "title": "Your Pro days",
     "subtitle": "How many free Pro days you have left, where they came from, and how to earn more.",

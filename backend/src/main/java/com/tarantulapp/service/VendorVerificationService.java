@@ -22,13 +22,16 @@ public class VendorVerificationService {
     private final VendorVerificationSubmissionRepository submissionRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final VerifiedOriginService verifiedOriginService;
 
     public VendorVerificationService(VendorVerificationSubmissionRepository submissionRepository,
                                    UserRepository userRepository,
-                                   EmailService emailService) {
+                                   EmailService emailService,
+                                   VerifiedOriginService verifiedOriginService) {
         this.submissionRepository = submissionRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.verifiedOriginService = verifiedOriginService;
     }
 
     @Transactional
@@ -43,7 +46,7 @@ public class VendorVerificationService {
         if (!Boolean.TRUE.equals(user.getVerifiedBreeder())) {
             throw new IllegalArgumentException("VENDOR_ACTIVATION_REQUIRED");
         }
-        if (user.getStorefrontVerifiedAt() != null) {
+        if (user.getStorefrontVerifiedAt() != null || VerifiedOriginService.isVerified(user)) {
             throw new IllegalArgumentException("STOREFRONT_ALREADY_VERIFIED");
         }
         submissionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId).ifPresent(existing -> {
@@ -70,8 +73,9 @@ public class VendorVerificationService {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
-        out.put("storefrontVerified", user.getStorefrontVerifiedAt() != null);
-        out.put("storefrontVerifiedAt", user.getStorefrontVerifiedAt());
+        out.put("storefrontVerified", VerifiedOriginService.isVerified(user));
+        out.put("storefrontVerifiedAt", user.getVerifiedOriginAt() != null ? user.getVerifiedOriginAt() : user.getStorefrontVerifiedAt());
+        out.put("origin", verifiedOriginService.toPublicMap(user));
         submissionRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
                 .ifPresentOrElse(s -> out.put("latestSubmission", mapSubmission(s, user)),
                         () -> out.put("latestSubmission", null));
@@ -108,8 +112,8 @@ public class VendorVerificationService {
             if (!Boolean.TRUE.equals(user.getVerifiedBreeder())) {
                 throw new IllegalArgumentException("VENDOR_ACTIVATION_REQUIRED");
             }
-            user.setStorefrontVerifiedAt(Instant.now());
-            userRepository.save(user);
+            verifiedOriginService.grantVerifiedOrigin(user.getId(), com.tarantulapp.entity.VerifiedOriginKind.VENDOR);
+            user = userRepository.findById(user.getId()).orElseThrow();
             emailService.sendVendorVerificationApproved(user.getEmail(), user.getDisplayName(), locale);
         } else if ("rejected".equals(st)) {
             if (user.getStorefrontVerifiedAt() != null) {
@@ -137,8 +141,9 @@ public class VendorVerificationService {
             out.put("userEmail", user.getEmail());
             out.put("userDisplayName", user.getDisplayName() == null ? "" : user.getDisplayName());
             out.put("verifiedBreeder", Boolean.TRUE.equals(user.getVerifiedBreeder()));
-            out.put("storefrontVerified", user.getStorefrontVerifiedAt() != null);
-            out.put("storefrontVerifiedAt", user.getStorefrontVerifiedAt());
+            out.put("storefrontVerified", VerifiedOriginService.isVerified(user));
+            out.put("storefrontVerifiedAt", user.getVerifiedOriginAt() != null ? user.getVerifiedOriginAt() : user.getStorefrontVerifiedAt());
+            out.put("origin", verifiedOriginService.toPublicMap(user));
         }
         return out;
     }

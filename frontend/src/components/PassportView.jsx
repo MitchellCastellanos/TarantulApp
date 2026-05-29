@@ -5,6 +5,7 @@ import BrandLogoMark from './BrandLogoMark'
 import BrandName from './BrandName'
 import FangPanel from './FangPanel'
 import SpeciesProfileCard from './SpeciesProfileCard'
+import VerifiedOriginBadge from './VerifiedOriginBadge'
 import { useAuth } from '../context/AuthContext'
 import billingService from '../services/billingService'
 import passportService from '../services/passportService'
@@ -207,7 +208,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
           )}
 
           {creatorLabel && (
-            <p className="small mb-0" style={{ color: 'var(--ta-parchment)', opacity: 0.8 }}>
+            <p className="small mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.8 }}>
               {t('passport.fromCreator')}{' '}
               {profile?.creatorHandle ? (
                 <Link to={`/u/${profile.creatorHandle}`} className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
@@ -217,6 +218,9 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
                 <span style={{ color: 'var(--ta-gold)' }}>{creatorLabel}</span>
               )}
             </p>
+          )}
+          {profile?.origin?.verified && (
+            <VerifiedOriginBadge origin={profile.origin} showTooltip className="mt-1" />
           )}
         </FangPanel>
 

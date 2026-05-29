@@ -48,6 +48,7 @@ public class TarantulaService {
     private final ShortIdService shortIdService;
     private final PassportService passportService;
     private final PassportRepository passportRepository;
+    private final VerifiedOriginService verifiedOriginService;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -65,7 +66,8 @@ public class TarantulaService {
                             NotificationService notificationService,
                             ShortIdService shortIdService,
                             PassportService passportService,
-                            PassportRepository passportRepository) {
+                            PassportRepository passportRepository,
+                            VerifiedOriginService verifiedOriginService) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -83,6 +85,7 @@ public class TarantulaService {
         this.shortIdService = shortIdService;
         this.passportService = passportService;
         this.passportRepository = passportRepository;
+        this.verifiedOriginService = verifiedOriginService;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -366,6 +369,8 @@ public class TarantulaService {
                 .map(User::getPublicHandle)
                 .filter(h -> h != null && !h.isBlank())
                 .ifPresent(dto::setKeeperHandle);
+        userRepository.findById(t.getUserId())
+                .ifPresent(keeper -> dto.setOrigin(verifiedOriginService.resolvePublicOrigin(keeper)));
         dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());

@@ -94,6 +94,7 @@ public class MarketplaceService {
     private final KeeperRankCalculator keeperRankCalculator;
     private final SpeciesWatchService speciesWatchService;
     private final NotificationService notificationService;
+    private final VerifiedOriginService verifiedOriginService;
     @Value("${app.marketplace.partner-feed.hard-cap:500}")
     private int partnerFeedHardCap = 500;
     @Value("${app.marketplace.strategic-bootstrap-mode:true}")
@@ -128,7 +129,8 @@ public class MarketplaceService {
                               VendorBoostCreditService vendorBoostCreditService,
                               KeeperRankCalculator keeperRankCalculator,
                               SpeciesWatchService speciesWatchService,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              VerifiedOriginService verifiedOriginService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.listingEventRepository = listingEventRepository;
         this.partnerListingRepository = partnerListingRepository;
@@ -149,6 +151,7 @@ public class MarketplaceService {
         this.keeperRankCalculator = keeperRankCalculator;
         this.speciesWatchService = speciesWatchService;
         this.notificationService = notificationService;
+        this.verifiedOriginService = verifiedOriginService;
     }
 
     @Transactional
@@ -1157,7 +1160,8 @@ public class MarketplaceService {
         out.put("sellerProfilePhoto", seller == null || seller.getProfilePhoto() == null ? "" : seller.getProfilePhoto());
         out.put("sellerHandle", seller == null || seller.getPublicHandle() == null ? "" : seller.getPublicHandle());
         out.put("sellerVerifiedBreeder", seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder()));
-        out.put("sellerStorefrontVerified", seller != null && seller.getStorefrontVerifiedAt() != null);
+        out.put("sellerStorefrontVerified", VerifiedOriginService.isVerified(seller));
+        out.put("sellerOrigin", verifiedOriginService.toPublicMap(seller));
         out.put("sellerProgramTier", sellerProgramTierKey(seller));
         out.put("title", l.getTitle());
         out.put("description", l.getDescription() == null ? "" : l.getDescription());
@@ -1318,8 +1322,9 @@ public class MarketplaceService {
         out.put("contactInstagram", p.getContactInstagram() == null ? "" : p.getContactInstagram());
         out.put("verifiedBreeder", Boolean.TRUE.equals(p.getVerifiedBreeder()));
         out.put("verifiedBreederAt", p.getVerifiedBreederAt());
-        out.put("storefrontVerified", p.getStorefrontVerifiedAt() != null);
-        out.put("storefrontVerifiedAt", p.getStorefrontVerifiedAt());
+        out.put("storefrontVerified", VerifiedOriginService.isVerified(p));
+        out.put("storefrontVerifiedAt", p.getVerifiedOriginAt() != null ? p.getVerifiedOriginAt() : p.getStorefrontVerifiedAt());
+        out.put("origin", verifiedOriginService.toPublicMap(p));
         out.put("storefrontName", p.getStorefrontName() == null ? "" : p.getStorefrontName());
         out.put("storefrontTagline", p.getStorefrontTagline() == null ? "" : p.getStorefrontTagline());
         out.put("storefrontShippingPolicy", p.getStorefrontShippingPolicy() == null ? "" : p.getStorefrontShippingPolicy());

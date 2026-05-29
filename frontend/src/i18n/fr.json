@@ -2071,6 +2071,23 @@
     "labelsLink": "Label Studio",
     "listingsLink": "Annonces"
   },
+  "verifiedOrigin": {
+    "badge": "Verified Origin",
+    "tooltip": "Source de confiance — {{kind}} · {{name}}",
+    "learnMore": "En savoir plus",
+    "kind": {
+      "breeder": "Éleveur",
+      "store": "Boutique",
+      "vendor": "Vendor",
+      "seller": "Vendeur"
+    },
+    "submitTitle": "Demander Verified Origin",
+    "submitHint": "Parlez-nous de votre activité. Nous examinons les demandes manuellement.",
+    "submitCta": "Envoyer la demande",
+    "submitSuccess": "Demande reçue — nous l'examinerons bientôt.",
+    "submitError": "Envoi impossible. Réessayez ou contactez le support.",
+    "pending": "Votre demande Verified Origin est en cours d'examen."
+  },
   "proGrants": {
     "title": "Vos jours Pro",
     "subtitle": "Combien de jours Pro gratuits il vous reste, d'o\u00f9 ils viennent et comment en gagner plus.",

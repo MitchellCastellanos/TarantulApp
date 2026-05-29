@@ -54,6 +54,8 @@ class PassportServiceTest {
     private ReminderRepository reminderRepository;
     @Mock
     private PassportClaimEventRepository passportClaimEventRepository;
+    @Mock
+    private VerifiedOriginService verifiedOriginService;
 
     private PassportService service;
 
@@ -68,7 +70,8 @@ class PassportServiceTest {
                 planAccessService,
                 proDayGrantService,
                 reminderRepository,
-                passportClaimEventRepository
+                passportClaimEventRepository,
+                verifiedOriginService
         );
         ReflectionTestUtils.setField(service, "publicBaseUrl", "https://tarantulapp.com");
     }

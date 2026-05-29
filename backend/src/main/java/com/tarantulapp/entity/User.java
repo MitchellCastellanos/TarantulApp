@@ -120,6 +120,17 @@ public class User {
     @Column(name = "storefront_verified_at")
     private Instant storefrontVerifiedAt;
 
+    /** Public Verified Origin badge (canonical trust signal for commerce surfaces). */
+    @Column(name = "verified_origin_at")
+    private Instant verifiedOriginAt;
+
+    @Column(name = "verified_origin_kind", length = 20)
+    private String verifiedOriginKind;
+
+    /** Internal ops signal; never exposed in public DTOs. */
+    @Column(name = "origin_trust_score", nullable = false)
+    private Integer originTrustScore = 0;
+
     /** Non-null when a vendor invite email is pending (user must accept before verified_breeder is set). */
     @Column(name = "vendor_invite_token", columnDefinition = "uuid")
     private UUID vendorInviteToken;
@@ -309,6 +320,13 @@ public class User {
 
     public Instant getStorefrontVerifiedAt() { return storefrontVerifiedAt; }
     public void setStorefrontVerifiedAt(Instant storefrontVerifiedAt) { this.storefrontVerifiedAt = storefrontVerifiedAt; }
+
+    public Instant getVerifiedOriginAt() { return verifiedOriginAt; }
+    public void setVerifiedOriginAt(Instant verifiedOriginAt) { this.verifiedOriginAt = verifiedOriginAt; }
+    public String getVerifiedOriginKind() { return verifiedOriginKind; }
+    public void setVerifiedOriginKind(String verifiedOriginKind) { this.verifiedOriginKind = verifiedOriginKind; }
+    public Integer getOriginTrustScore() { return originTrustScore; }
+    public void setOriginTrustScore(Integer originTrustScore) { this.originTrustScore = originTrustScore; }
 
     public UUID getVendorInviteToken() { return vendorInviteToken; }
     public void setVendorInviteToken(UUID vendorInviteToken) { this.vendorInviteToken = vendorInviteToken; }

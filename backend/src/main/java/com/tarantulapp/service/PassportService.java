@@ -44,6 +44,7 @@ public class PassportService {
     private final ProDayGrantService proDayGrantService;
     private final ReminderRepository reminderRepository;
     private final PassportClaimEventRepository passportClaimEventRepository;
+    private final VerifiedOriginService verifiedOriginService;
 
     @Value("${app.public-base-url:https://tarantulapp.com}")
     private String publicBaseUrl;
@@ -56,7 +57,8 @@ public class PassportService {
                            PlanAccessService planAccessService,
                            ProDayGrantService proDayGrantService,
                            ReminderRepository reminderRepository,
-                           PassportClaimEventRepository passportClaimEventRepository) {
+                           PassportClaimEventRepository passportClaimEventRepository,
+                           VerifiedOriginService verifiedOriginService) {
         this.passportRepository = passportRepository;
         this.speciesRepository = speciesRepository;
         this.userRepository = userRepository;
@@ -66,6 +68,7 @@ public class PassportService {
         this.proDayGrantService = proDayGrantService;
         this.reminderRepository = reminderRepository;
         this.passportClaimEventRepository = passportClaimEventRepository;
+        this.verifiedOriginService = verifiedOriginService;
     }
 
     /** Links a newly created keeper specimen to a claimed passport (same short_id for life). */
@@ -105,7 +108,10 @@ public class PassportService {
                 ? passport.getOriginUserId()
                 : passport.getCreatedByUserId();
         if (creatorId != null) {
-            userRepository.findById(creatorId).ifPresent(creator -> populateCreatorFields(dto, creator));
+            userRepository.findById(creatorId).ifPresent(creator -> {
+                populateCreatorFields(dto, creator);
+                dto.setOrigin(verifiedOriginService.resolvePublicOrigin(creator));
+            });
         }
 
         return dto;

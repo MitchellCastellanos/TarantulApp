@@ -32,6 +32,8 @@ import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.UserCapabilitiesService;
+import com.tarantulapp.service.VerifiedOriginService;
+import com.tarantulapp.entity.VerifiedOriginKind;
 import com.tarantulapp.service.VendorVerificationService;
 import com.tarantulapp.service.NewsletterService;
 import com.tarantulapp.service.ReferralService;
@@ -105,6 +107,7 @@ public class AdminController {
     private final MarketplaceService marketplaceService;
     private final PassportService passportService;
     private final UserCapabilitiesService userCapabilitiesService;
+    private final VerifiedOriginService verifiedOriginService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -148,7 +151,8 @@ public class AdminController {
                            VendorVerificationService vendorVerificationService,
                            MarketplaceService marketplaceService,
                            PassportService passportService,
-                           UserCapabilitiesService userCapabilitiesService) {
+                           UserCapabilitiesService userCapabilitiesService,
+                           VerifiedOriginService verifiedOriginService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -180,6 +184,7 @@ public class AdminController {
         this.marketplaceService = marketplaceService;
         this.passportService = passportService;
         this.userCapabilitiesService = userCapabilitiesService;
+        this.verifiedOriginService = verifiedOriginService;
     }
 
     @PostMapping("/passports")
@@ -922,8 +927,12 @@ public class AdminController {
         if (verified && !Boolean.TRUE.equals(user.getVerifiedBreeder())) {
             throw new IllegalArgumentException("VENDOR_ACTIVATION_REQUIRED");
         }
-        user.setStorefrontVerifiedAt(verified ? Instant.now() : null);
-        userRepository.save(user);
+        if (verified) {
+            verifiedOriginService.grantVerifiedOrigin(id, VerifiedOriginKind.VENDOR);
+        } else {
+            verifiedOriginService.revokeVerifiedOrigin(id);
+        }
+        user = userRepository.findById(id).orElseThrow();
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
@@ -946,6 +955,49 @@ public class AdminController {
                 "passportCreatorEnabled", user.getPassportCreatorEnabledAt() != null,
                 "studioActivated", user.getStudioActivatedAt() != null
         ));
+    }
+
+    record SetVerifiedOriginRequest(Boolean verified, String kind) {}
+
+    @PatchMapping("/users/{id}/verified-origin")
+    public ResponseEntity<Map<String, Object>> setUserVerifiedOrigin(@PathVariable UUID id,
+                                                                      @RequestBody SetVerifiedOriginRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean verified = req != null && Boolean.TRUE.equals(req.verified());
+        if (verified) {
+            VerifiedOriginKind kind = VerifiedOriginKind.fromString(req != null ? req.kind() : null);
+            verifiedOriginService.grantVerifiedOrigin(id, kind);
+        } else {
+            verifiedOriginService.revokeVerifiedOrigin(id);
+        }
+        User user = userRepository.findById(id).orElseThrow();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("userId", user.getId());
+        out.put("verifiedOrigin", VerifiedOriginService.isVerified(user));
+        out.put("origin", verifiedOriginService.toPublicMap(user));
+        return ResponseEntity.ok(out);
+    }
+
+    @GetMapping("/origin-verifications")
+    public ResponseEntity<List<Map<String, Object>>> originVerifications(
+            @RequestParam(required = false) String status) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(verifiedOriginService.adminList(status));
+    }
+
+    @PatchMapping("/origin-verifications/{id}")
+    public ResponseEntity<Map<String, Object>> reviewOriginVerification(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        String status = body != null ? body.get("status") : null;
+        String note = body != null ? body.get("reviewerNote") : null;
+        try {
+            return ResponseEntity.ok(verifiedOriginService.adminReview(id, status, note));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /** Admin: list active vendors + optional pending invites; includes marketplace + billing hints for ops. */

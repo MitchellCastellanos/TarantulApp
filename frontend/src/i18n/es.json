@@ -2100,6 +2100,23 @@
     "labelsLink": "Label Studio",
     "listingsLink": "Anuncios"
   },
+  "verifiedOrigin": {
+    "badge": "Verified Origin",
+    "tooltip": "Fuente de confianza — {{kind}} · {{name}}",
+    "learnMore": "Más info",
+    "kind": {
+      "breeder": "Criador",
+      "store": "Tienda",
+      "vendor": "Vendor",
+      "seller": "Vendedor"
+    },
+    "submitTitle": "Solicitar Verified Origin",
+    "submitHint": "Cuéntanos sobre tu operación. Revisamos las solicitudes manualmente.",
+    "submitCta": "Enviar solicitud",
+    "submitSuccess": "Solicitud recibida — la revisaremos pronto.",
+    "submitError": "No se pudo enviar. Intenta de nuevo o contacta soporte.",
+    "pending": "Tu solicitud de Verified Origin está en revisión."
+  },
   "proGrants": {
     "title": "Tus d\u00edas Pro",
     "subtitle": "Cu\u00e1ntos d\u00edas Pro gratis te quedan, de d\u00f3nde vienen y c\u00f3mo conseguir m\u00e1s.",
