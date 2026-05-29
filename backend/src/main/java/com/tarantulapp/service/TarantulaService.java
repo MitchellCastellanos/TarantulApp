@@ -45,6 +45,9 @@ public class TarantulaService {
     private final SecurityHelper securityHelper;
     private final TarantulaTimelineJdbcRepository timelineJdbcRepository;
     private final NotificationService notificationService;
+    private final ShortIdService shortIdService;
+    private final PassportService passportService;
+    private final PassportRepository passportRepository;
 
     public TarantulaService(TarantulaRepository tarantulaRepository,
                             SpeciesRepository speciesRepository,
@@ -59,7 +62,10 @@ public class TarantulaService {
                             PlanAccessService planAccessService,
                             SecurityHelper securityHelper,
                             TarantulaTimelineJdbcRepository timelineJdbcRepository,
-                            NotificationService notificationService) {
+                            NotificationService notificationService,
+                            ShortIdService shortIdService,
+                            PassportService passportService,
+                            PassportRepository passportRepository) {
         this.tarantulaRepository = tarantulaRepository;
         this.speciesRepository = speciesRepository;
         this.feedingLogRepository = feedingLogRepository;
@@ -74,6 +80,9 @@ public class TarantulaService {
         this.securityHelper = securityHelper;
         this.timelineJdbcRepository = timelineJdbcRepository;
         this.notificationService = notificationService;
+        this.shortIdService = shortIdService;
+        this.passportService = passportService;
+        this.passportRepository = passportRepository;
     }
 
     public TarantulaResponse create(TarantulaRequest req, UUID userId) {
@@ -82,10 +91,13 @@ public class TarantulaService {
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         Tarantula t = new Tarantula();
         t.setUserId(userId);
-        t.setShortId(generateShortId());
+        t.setShortId(shortIdService.generateUniqueShortId());
         t.setIsPublic(true);
         applyRequest(req, t);
         Tarantula saved = tarantulaRepository.save(t);
+        var passport = passportService.createClaimedFromTarantula(saved, userId);
+        saved.setPassportId(passport.getId());
+        tarantulaRepository.save(saved);
         return toResponse(saved, planAccessService.lockedTarantulaIds(user));
     }
 
@@ -294,8 +306,7 @@ public class TarantulaService {
     /** Timeline visible en la ficha por QR: público para todos si isPublic; si es privado, solo el dueño (con JWT). */
     @Transactional(readOnly = true)
     public List<TimelineEventDTO> getPublicTimeline(String shortId) {
-        Tarantula t = tarantulaRepository.findByShortId(shortId)
-                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        Tarantula t = resolvePublicSpecimen(shortId);
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
@@ -310,8 +321,7 @@ public class TarantulaService {
 
     @Transactional(readOnly = true)
     public PagedListResponse<TimelineEventDTO> getPublicTimelinePaged(String shortId, int page, int pageSize) {
-        Tarantula t = tarantulaRepository.findByShortId(shortId)
-                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        Tarantula t = resolvePublicSpecimen(shortId);
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
@@ -322,15 +332,33 @@ public class TarantulaService {
 
     @Transactional(readOnly = true)
     public PublicProfileDTO getPublicProfile(String shortId) {
+        Optional<com.tarantulapp.entity.Passport> passportOpt = passportRepository.findByShortId(shortId.trim());
+        if (passportOpt.isPresent()) {
+            com.tarantulapp.entity.Passport passport = passportOpt.get();
+            if (!passport.isClaimed()) {
+                return passportService.buildUnclaimedPublicProfile(passport);
+            }
+            if (passport.getTarantulaId() != null) {
+                Tarantula t = tarantulaRepository.findById(passport.getTarantulaId())
+                        .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+                return buildSpecimenPublicProfile(t, passport.getShortId());
+            }
+        }
+
         Tarantula t = tarantulaRepository.findByShortId(shortId)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        return buildSpecimenPublicProfile(t, t.getShortId());
+    }
 
+    private PublicProfileDTO buildSpecimenPublicProfile(Tarantula t, String shortId) {
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
         }
 
         PublicProfileDTO dto = new PublicProfileDTO();
+        dto.setPageMode(PublicProfileDTO.PageMode.SPECIMEN);
+        dto.setShortId(shortId);
         dto.setTarantulaId(t.getId());
         dto.setOwnerId(t.getUserId());
         dto.setViewerIsOwner(owner);
@@ -370,10 +398,25 @@ public class TarantulaService {
         return dto;
     }
 
+    private Tarantula resolvePublicSpecimen(String shortId) {
+        Optional<com.tarantulapp.entity.Passport> passportOpt = passportRepository.findByShortId(shortId.trim());
+        if (passportOpt.isPresent()) {
+            com.tarantulapp.entity.Passport passport = passportOpt.get();
+            if (!passport.isClaimed()) {
+                throw new NotFoundException("Este perfil no es público");
+            }
+            if (passport.getTarantulaId() != null) {
+                return tarantulaRepository.findById(passport.getTarantulaId())
+                        .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+            }
+        }
+        return tarantulaRepository.findByShortId(shortId)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+    }
+
     @Transactional(readOnly = true)
     public List<PhotoResponse> getPublicPhotos(String shortId) {
-        Tarantula t = tarantulaRepository.findByShortId(shortId)
-                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        Tarantula t = resolvePublicSpecimen(shortId);
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
@@ -384,8 +427,7 @@ public class TarantulaService {
 
     @Transactional(readOnly = true)
     public PagedListResponse<PhotoResponse> getPublicPhotosPaged(String shortId, int page, int pageSize) {
-        Tarantula t = tarantulaRepository.findByShortId(shortId)
-                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        Tarantula t = resolvePublicSpecimen(shortId);
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
@@ -837,14 +879,6 @@ public class TarantulaService {
             return "pending_feeding";
         }
         return "active";
-    }
-
-    private String generateShortId() {
-        for (int attempts = 0; attempts < 10; attempts++) {
-            String id = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-            if (!tarantulaRepository.existsByShortId(id)) return id;
-        }
-        throw new IllegalStateException("No se pudo generar un short_id único");
     }
 
     private String buildFeedingSummary(Integer qty, String preyType, String preySize, String notes) {

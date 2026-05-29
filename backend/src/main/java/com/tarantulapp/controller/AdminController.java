@@ -1,5 +1,7 @@
 package com.tarantulapp.controller;
 
+import com.tarantulapp.dto.AdminCreatePassportRequest;
+import com.tarantulapp.dto.AdminCreatePassportResponse;
 import com.tarantulapp.entity.Subscription;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
@@ -22,6 +24,7 @@ import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.PlanAccessService;
 import com.tarantulapp.entity.ProDayGrantSource;
+import com.tarantulapp.service.PassportService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.ProDayGrantService;
 import com.tarantulapp.service.TaxonomyDiscoveryService;
@@ -99,6 +102,7 @@ public class AdminController {
     private final TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService;
     private final VendorVerificationService vendorVerificationService;
     private final MarketplaceService marketplaceService;
+    private final PassportService passportService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -140,7 +144,8 @@ public class AdminController {
                            ReferralService referralService,
                            TarantulaPublicDefaultAnnouncementService tarantulaPublicDefaultAnnouncementService,
                            VendorVerificationService vendorVerificationService,
-                           MarketplaceService marketplaceService) {
+                           MarketplaceService marketplaceService,
+                           PassportService passportService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -170,6 +175,13 @@ public class AdminController {
         this.tarantulaPublicDefaultAnnouncementService = tarantulaPublicDefaultAnnouncementService;
         this.vendorVerificationService = vendorVerificationService;
         this.marketplaceService = marketplaceService;
+        this.passportService = passportService;
+    }
+
+    @PostMapping("/passports")
+    public ResponseEntity<AdminCreatePassportResponse> createPassport(@Valid @RequestBody AdminCreatePassportRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(passportService.createUnclaimedPassport(req));
     }
 
     record SetOfficialVendorStatusRequest(Boolean enabled) {}

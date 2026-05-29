@@ -40,7 +40,8 @@ class TarantulaCollectionVisibilityTest {
                 tarantulaRepository,
                 null, null, null, null,
                 null, null, null, null,
-                userRepository, null, null, null, null);
+                userRepository, null, null, null, null,
+                null, null, null);
     }
 
     @Test

@@ -7,6 +7,7 @@ import api, { imgUrl } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import moderationService from '../services/moderationService'
 import FangPanel from '../components/FangPanel'
+import PassportView from '../components/PassportView'
 import SpeciesProfileCard from '../components/SpeciesProfileCard'
 import speciesService from '../services/speciesService'
 import { publicUrl } from '../utils/publicAssets.js'
@@ -74,6 +75,7 @@ export default function PublicProfilePage() {
     api.get(`/public/t/${shortId}`)
        .then(r => {
          setProfile(r.data)
+         const isPassport = r.data?.pageMode === 'PASSPORT'
          const sid = r.data?.speciesId
          if (sid) {
            speciesService.getDiscoverSpeciesView(sid)
@@ -81,6 +83,11 @@ export default function PublicProfilePage() {
               .catch(() => setSpeciesView(null))
          } else {
            setSpeciesView(null)
+         }
+         if (isPassport) {
+           setTimeline([])
+           setPhotos([])
+           return
          }
          api.get(`/public/t/${shortId}/timeline`, { params: { page: 0, size: 40 } })
             .then(tr => setTimeline(unwrapPagedList(tr.data)))
@@ -268,6 +275,10 @@ export default function PublicProfilePage() {
       <p style={{ color: 'var(--ta-parchment)' }}>{t('common.loading')}</p>
     </div>
   )
+
+  if (profile.pageMode === 'PASSPORT') {
+    return <PassportView profile={profile} speciesView={speciesView} shortId={shortId} />
+  }
 
   const statusCfg   = STATUS_CFG[profile.status] || { color: 'secondary' }
   const statusLabel = t(`status.${profile.status}`) || profile.status

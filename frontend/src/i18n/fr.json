@@ -1975,8 +1975,16 @@
     "reportDetailsPrompt": "Détails supplémentaires (optionnel)",
     "reportSent": "Signalement envoyé. Merci.",
     "reportError": "Impossible d'envoyer le signalement."
-  }
-  ,
+  },
+  "passport": {
+    "badge": "Passeport numérique",
+    "unknownSpecies": "Spécimen de tarantule",
+    "intro": "Cette étiquette mène à un passeport numérique pour votre spécimen — fiche espèce, provenance et outils de collection quand vous le souhaitez.",
+    "fromCreator": "De",
+    "giftTitle": "Inclus avec votre spécimen",
+    "giftBody": "{{days}} jours de TarantulApp Pro — un cadeau inclus avec votre spécimen, pas un essai.",
+    "claimComingSoon": "Revendiquez ce spécimen pour l'ajouter à votre collection — bientôt disponible."
+  },
   "proGrants": {
     "title": "Vos jours Pro",
     "subtitle": "Combien de jours Pro gratuits il vous reste, d'o\u00f9 ils viennent et comment en gagner plus.",

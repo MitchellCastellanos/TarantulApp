@@ -53,6 +53,9 @@ public class Tarantula {
     @Column(name = "short_id", unique = true, nullable = false, length = 10)
     private String shortId;
 
+    @Column(name = "passport_id", columnDefinition = "uuid")
+    private UUID passportId;
+
     @Column(name = "deceased_at")
     private LocalDateTime deceasedAt;
 
@@ -100,6 +103,8 @@ public class Tarantula {
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getShortId() { return shortId; }
     public void setShortId(String shortId) { this.shortId = shortId; }
+    public UUID getPassportId() { return passportId; }
+    public void setPassportId(UUID passportId) { this.passportId = passportId; }
     public LocalDateTime getDeceasedAt() { return deceasedAt; }
     public void setDeceasedAt(LocalDateTime deceasedAt) { this.deceasedAt = deceasedAt; }
     public String getDeathNotes() { return deathNotes; }

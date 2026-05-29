@@ -2002,8 +2002,16 @@
     "reportDetailsPrompt": "Additional details (optional)",
     "reportSent": "Report sent. Thank you.",
     "reportError": "Could not send report."
-  }
-  ,
+  },
+  "passport": {
+    "badge": "Digital passport",
+    "unknownSpecies": "Tarantula specimen",
+    "intro": "This label links to a digital passport for your specimen — species care info, provenance, and collection tools when you're ready.",
+    "fromCreator": "From",
+    "giftTitle": "Included with your specimen",
+    "giftBody": "{{days}} days of TarantulApp Pro — a gift included with your specimen, not a trial.",
+    "claimComingSoon": "Claim this specimen to add it to your collection — coming in the next update."
+  },
   "proGrants": {
     "title": "Your Pro days",
     "subtitle": "How many free Pro days you have left, where they came from, and how to earn more.",

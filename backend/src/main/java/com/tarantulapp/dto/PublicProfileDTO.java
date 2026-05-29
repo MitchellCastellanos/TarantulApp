@@ -5,6 +5,15 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class PublicProfileDTO {
+
+    public enum PageMode {
+        PASSPORT,
+        SPECIMEN
+    }
+
+    /** PASSPORT = unclaimed digital passport; SPECIMEN = claimed collection entry (default for legacy clients). */
+    private PageMode pageMode = PageMode.SPECIMEN;
+    private String shortId;
     private UUID tarantulaId;
     private UUID ownerId;
     /** true si la petición va con JWT del dueño (misma identidad que {@link #ownerId}). */
@@ -28,6 +37,19 @@ public class PublicProfileDTO {
     /** Public handle of the keeper, when set; enables a link to their collection. */
     private String keeperHandle;
 
+    /** Passport-only: creator display name when the passport has not been claimed yet. */
+    private String creatorDisplayName;
+    /** Passport-only: public handle of the passport creator / origin holder. */
+    private String creatorHandle;
+    /** Passport-only: notes printed on the physical label. */
+    private String labelNotes;
+    /** Passport-only: Pro days included as a gift when the keeper claims this specimen. */
+    private Integer proGiftDays;
+
+    public PageMode getPageMode() { return pageMode; }
+    public void setPageMode(PageMode pageMode) { this.pageMode = pageMode; }
+    public String getShortId() { return shortId; }
+    public void setShortId(String shortId) { this.shortId = shortId; }
     public UUID getTarantulaId() { return tarantulaId; }
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public UUID getOwnerId() { return ownerId; }
@@ -66,4 +88,12 @@ public class PublicProfileDTO {
     public void setSpoodedByViewer(boolean spoodedByViewer) { this.spoodedByViewer = spoodedByViewer; }
     public String getKeeperHandle() { return keeperHandle; }
     public void setKeeperHandle(String keeperHandle) { this.keeperHandle = keeperHandle; }
+    public String getCreatorDisplayName() { return creatorDisplayName; }
+    public void setCreatorDisplayName(String creatorDisplayName) { this.creatorDisplayName = creatorDisplayName; }
+    public String getCreatorHandle() { return creatorHandle; }
+    public void setCreatorHandle(String creatorHandle) { this.creatorHandle = creatorHandle; }
+    public String getLabelNotes() { return labelNotes; }
+    public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
+    public Integer getProGiftDays() { return proGiftDays; }
+    public void setProGiftDays(Integer proGiftDays) { this.proGiftDays = proGiftDays; }
 }

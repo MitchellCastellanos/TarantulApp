@@ -2004,8 +2004,16 @@
     "reportDetailsPrompt": "Detalles adicionales (opcional)",
     "reportSent": "Reporte enviado. Gracias.",
     "reportError": "No se pudo enviar el reporte."
-  }
-  ,
+  },
+  "passport": {
+    "badge": "Pasaporte digital",
+    "unknownSpecies": "Espécimen de tarántula",
+    "intro": "Esta etiqueta enlaza a un pasaporte digital para tu espécimen: ficha de especie, procedencia y herramientas de colección cuando quieras.",
+    "fromCreator": "De",
+    "giftTitle": "Incluido con tu espécimen",
+    "giftBody": "{{days}} días de TarantulApp Pro — un regalo incluido con tu espécimen, no una prueba.",
+    "claimComingSoon": "Reclama este espécimen para añadirlo a tu colección — próximamente."
+  },
   "proGrants": {
     "title": "Tus d\u00edas Pro",
     "subtitle": "Cu\u00e1ntos d\u00edas Pro gratis te quedan, de d\u00f3nde vienen y c\u00f3mo conseguir m\u00e1s.",
