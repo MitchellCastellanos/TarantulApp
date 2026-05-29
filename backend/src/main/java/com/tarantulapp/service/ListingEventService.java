@@ -220,7 +220,6 @@ public class ListingEventService {
         out.put("shareOpens30d", totals30d.getOrDefault("share_open", KindAgg.EMPTY).total);
         out.put("shareDownloads30d", totals30d.getOrDefault("share_download", KindAgg.EMPTY).total);
         out.put("cardClicks30d", totals30d.getOrDefault("card_click", KindAgg.EMPTY).total);
-        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
         out.put("storefrontViews30d", listingEventRepository.countPartnerStorefrontViewsSince(since30d));
         return out;
     }
@@ -292,6 +291,17 @@ public class ListingEventService {
 
     private record KindAgg(long total, long unique) {
         static final KindAgg EMPTY = new KindAgg(0, 0);
+    }
+
+    /** Sum of the whole contact_tap family (generic tap plus the per-channel variants). */
+    private static long contactTapsFrom(Map<String, KindAgg> totals) {
+        long sum = 0;
+        for (Map.Entry<String, KindAgg> entry : totals.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().startsWith("contact_tap")) {
+                sum += entry.getValue().total;
+            }
+        }
+        return sum;
     }
 
     private static String normalizeKind(String raw) {

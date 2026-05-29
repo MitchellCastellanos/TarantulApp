@@ -73,6 +73,15 @@ public class AuthController {
         return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.referralCode(), httpRequest.getHeader("Accept-Language")));
     }
 
+    record AppleOAuthRequest(@NotBlank String identityToken, String fullName, String referralCode) {}
+
+    @PostMapping("/oauth/apple")
+    public ResponseEntity<AuthResponse> oauthApple(@Valid @RequestBody AppleOAuthRequest request, HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(authService.appleLogin(
+                request.identityToken(), request.fullName(), request.referralCode(),
+                httpRequest.getHeader("Accept-Language")));
+    }
+
     record ForgotRequest(@Email @NotBlank String email, @Size(max = 4096) String captchaToken) {}
     record ResetRequest(@NotBlank String token, @NotBlank @Size(min = 6) String password) {}
 

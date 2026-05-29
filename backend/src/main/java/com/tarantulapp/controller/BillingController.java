@@ -119,6 +119,8 @@ public class BillingController {
         Map<String, Object> payload = new LinkedHashMap<>(billingService.getBillingMe(userId));
         payload.put("androidBillingEnabled", billingService.isGooglePlayEnabled());
         payload.put("androidBillingMode", billingService.getGooglePlayMode());
+        payload.put("appleBillingEnabled", billingService.isAppleEnabled());
+        payload.put("appleBillingMode", billingService.getAppleMode());
         return ResponseEntity.ok(payload);
     }
 
@@ -339,6 +341,21 @@ public class BillingController {
         String productId = body != null ? body.getOrDefault("productId", "") : "";
         try {
             Map<String, Object> result = billingService.verifyGooglePlaySubscription(userId, productId, purchaseToken);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/apple/verify")
+    public ResponseEntity<Map<String, Object>> verifyApplePurchase(
+            @RequestBody(required = false) Map<String, String> body) {
+        UUID userId = securityHelper.getCurrentUserId();
+        String transactionId = body != null ? body.getOrDefault("transactionId", "") : "";
+        String productId = body != null ? body.getOrDefault("productId", "") : "";
+        String appStoreReceipt = body != null ? body.getOrDefault("appStoreReceipt", "") : "";
+        try {
+            Map<String, Object> result = billingService.verifyAppStoreSubscription(userId, productId, transactionId, appStoreReceipt);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

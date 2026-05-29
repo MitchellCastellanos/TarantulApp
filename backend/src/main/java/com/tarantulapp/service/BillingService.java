@@ -156,7 +156,30 @@ public class BillingService {
     @Value("${billing.google-play.reject-test-purchases-in-production:true}")
     private boolean googlePlayRejectTestPurchasesInProduction;
 
+    // ─── Apple App Store (StoreKit) — mirrors the Google Play knobs above ───
+    @Value("${billing.apple.enabled:false}")
+    private boolean appleEnabled;
+
+    @Value("${billing.apple.mode:stub}")
+    private String appleMode;
+
+    @Value("${billing.apple.allow-test-transactions:true}")
+    private boolean appleAllowTestTransactions;
+
+    @Value("${billing.apple.bundle-id:}")
+    private String appleBundleId;
+
+    @Value("${billing.apple.subscription-product-id:}")
+    private String appleSubscriptionProductId;
+
+    @Value("${billing.apple.production-stub-guard:true}")
+    private boolean appleProductionStubGuard;
+
+    @Value("${billing.apple.reject-sandbox-in-production:true}")
+    private boolean appleRejectSandboxInProduction;
+
     private final GooglePlayBillingClient googlePlayBillingClient;
+    private final AppStoreServerClient appStoreServerClient;
     private final VendorActivationService vendorActivationService;
 
     /** Falls back to {@code spring.profiles.active} so existing deployments keep working. */
@@ -175,6 +198,7 @@ public class BillingService {
                           MarketplaceOrderRepository marketplaceOrderRepository,
                           MarketplaceOrderAuditService marketplaceOrderAuditService,
                           GooglePlayBillingClient googlePlayBillingClient,
+                          AppStoreServerClient appStoreServerClient,
                           VendorActivationService vendorActivationService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
@@ -188,6 +212,7 @@ public class BillingService {
         this.marketplaceOrderRepository = marketplaceOrderRepository;
         this.marketplaceOrderAuditService = marketplaceOrderAuditService;
         this.googlePlayBillingClient = googlePlayBillingClient;
+        this.appStoreServerClient = appStoreServerClient;
         this.vendorActivationService = vendorActivationService;
     }
 
@@ -963,6 +988,135 @@ public class BillingService {
 
     public String getGooglePlayMode() {
         return googlePlayMode;
+    }
+
+    public boolean isAppleEnabled() {
+        return appleEnabled;
+    }
+
+    public String getAppleMode() {
+        return appleMode;
+    }
+
+    /**
+     * Verifies an Apple App Store (StoreKit) subscription purchase and upgrades the user to PRO.
+     * Mirrors {@link #verifyGooglePlaySubscription}: a {@code stub} mode for local/sandbox testing
+     * and a {@code real} mode that looks the transaction up via the App Store Server API.
+     */
+    public Map<String, Object> verifyAppStoreSubscription(UUID userId, String productId,
+                                                          String transactionId, String appStoreReceipt) {
+        if (!appleEnabled) {
+            throw new IllegalArgumentException("APPLE_BILLING_DISABLED");
+        }
+        if (transactionId == null || transactionId.isBlank()) {
+            throw new IllegalArgumentException("APPLE_TRANSACTION_ID_REQUIRED");
+        }
+        String trimmedTransactionId = transactionId.trim();
+        String resolvedProductId = (productId == null || productId.isBlank())
+                ? appleSubscriptionProductId
+                : productId.trim();
+        if (resolvedProductId == null || resolvedProductId.isBlank()) {
+            throw new IllegalArgumentException("APPLE_PRODUCT_ID_REQUIRED");
+        }
+        if (appleBundleId == null || appleBundleId.isBlank()) {
+            throw new IllegalArgumentException("APPLE_BUNDLE_ID_REQUIRED");
+        }
+
+        boolean verified;
+        LocalDateTime periodEnd;
+        String subscriptionId = trimmedTransactionId;
+
+        if ("stub".equalsIgnoreCase(appleMode)) {
+            if (appleProductionStubGuard && isProductionEnvironment()) {
+                log.error("Refusing Apple stub verification in production environment={} mode={} (set APPLE_BILLING_PRODUCTION_STUB_GUARD=false to override)",
+                        appEnvironment, appleMode);
+                throw new IllegalArgumentException("APPLE_STUB_DISABLED_IN_PRODUCTION");
+            }
+            boolean looksTestTxn = trimmedTransactionId.startsWith("test_")
+                    || trimmedTransactionId.startsWith("sandbox_")
+                    || trimmedTransactionId.startsWith("fake_");
+            if (appleAllowTestTransactions && looksTestTxn) {
+                verified = true;
+                periodEnd = LocalDateTime.now(ZoneOffset.UTC).plusDays(30);
+            } else {
+                throw new IllegalArgumentException("APPLE_STUB_TRANSACTION_REJECTED");
+            }
+        } else if ("real".equalsIgnoreCase(appleMode)) {
+            JsonNode txn;
+            try {
+                txn = appStoreServerClient.lookupTransaction(trimmedTransactionId);
+            } catch (IllegalStateException ex) {
+                log.error("Apple verify unavailable: {}", ex.getMessage());
+                throw new IllegalArgumentException("APPLE_VERIFY_UNAVAILABLE");
+            }
+            if (txn == null) {
+                throw new IllegalArgumentException("APPLE_PURCHASE_NOT_FOUND");
+            }
+            String txnBundleId = txn.path("bundleId").asText("");
+            if (!appleBundleId.trim().equalsIgnoreCase(txnBundleId)) {
+                throw new IllegalArgumentException("APPLE_BUNDLE_MISMATCH");
+            }
+            String txnProductId = txn.path("productId").asText("");
+            if (!resolvedProductId.equalsIgnoreCase(txnProductId)) {
+                throw new IllegalArgumentException("APPLE_PRODUCT_MISMATCH");
+            }
+            String environment = txn.path("environment").asText("");
+            if (appleRejectSandboxInProduction && isProductionEnvironment()
+                    && "Sandbox".equalsIgnoreCase(environment)) {
+                throw new IllegalArgumentException("APPLE_SANDBOX_PURCHASE_REJECTED");
+            }
+            long expiresMs = txn.path("expiresDate").asLong(0L);
+            if (expiresMs <= 0L) {
+                throw new IllegalArgumentException("APPLE_NO_EXPIRY");
+            }
+            LocalDateTime expiry = LocalDateTime.ofInstant(Instant.ofEpochMilli(expiresMs), ZoneOffset.UTC);
+            if (expiry.isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+                throw new IllegalArgumentException("APPLE_SUBSCRIPTION_NOT_ACTIVE");
+            }
+            String originalTransactionId = txn.path("originalTransactionId").asText("");
+            if (!originalTransactionId.isBlank()) {
+                subscriptionId = originalTransactionId;
+            }
+            verified = true;
+            periodEnd = expiry;
+        } else {
+            throw new IllegalArgumentException("APPLE_UNSUPPORTED_MODE");
+        }
+
+        if (!verified) {
+            throw new IllegalArgumentException("APPLE_VERIFICATION_FAILED");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        boolean wasPro = UserPlan.PRO.equals(user.getPlan());
+
+        Subscription sub = subscriptionRepository.findByProviderSubscriptionId(subscriptionId)
+                .orElseGet(Subscription::new);
+        sub.setUserId(userId);
+        sub.setProvider("apple_app_store");
+        sub.setProviderCustomerId(null);
+        sub.setProviderSubscriptionId(subscriptionId);
+        sub.setProviderPriceId(resolvedProductId);
+        sub.setStatus("active");
+        sub.setCancelAtPeriodEnd(false);
+        sub.setCurrentPeriodEnd(periodEnd);
+        subscriptionRepository.save(sub);
+
+        user.setPlan(UserPlan.PRO);
+        userRepository.save(user);
+        if (!wasPro) {
+            emailService.sendProActivated(user.getEmail(), user.getDisplayName(), user.getPreferredLocale());
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("verified", true);
+        response.put("provider", "apple_app_store");
+        response.put("mode", appleMode);
+        response.put("productId", resolvedProductId);
+        response.put("plan", "PRO");
+        response.put("currentPeriodEnd", sub.getCurrentPeriodEnd());
+        return response;
     }
 
     /**

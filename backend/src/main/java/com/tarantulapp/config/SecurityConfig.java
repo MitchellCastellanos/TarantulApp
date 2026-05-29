@@ -153,13 +153,15 @@ public class SecurityConfig {
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/forgot-password"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/reset-password"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/oauth/google"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/oauth/apple"),
                                 AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/auth/vendor-invite/status"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/login"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/register"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/registration-policy"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/forgot-password"),
                                 AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
-                                AntPathRequestMatcher.antMatcher("/api/auth/oauth/google")
+                                AntPathRequestMatcher.antMatcher("/api/auth/oauth/google"),
+                                AntPathRequestMatcher.antMatcher("/api/auth/oauth/apple")
                         ).permitAll()
                         // Ant-style: string patterns would use MVC matchers and can fail for some /api/public/** paths
                         // with path variables → 401 on GET /api/public/marketplace/listings/{uuid} despite permitAll intent.

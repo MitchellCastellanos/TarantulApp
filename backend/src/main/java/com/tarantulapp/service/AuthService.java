@@ -58,6 +58,7 @@ public class AuthService {
     private final GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker;
     private final AppMetrics appMetrics;
     private final AuthRegistrationMode registrationMode;
+    private final AppleSignInVerifier appleSignInVerifier;
     private final RestClient restClient = RestClient.create();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
@@ -69,6 +70,7 @@ public class AuthService {
                        BetaApplicationRepository betaApplicationRepository,
                        GoogleGroupSyncAsyncInvoker googleGroupSyncAsyncInvoker,
                        AppMetrics appMetrics,
+                       AppleSignInVerifier appleSignInVerifier,
                        @Value("${app.auth.registration-mode:invite_only}") String registrationModeRaw) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -82,6 +84,7 @@ public class AuthService {
         this.betaApplicationRepository = betaApplicationRepository;
         this.googleGroupSyncAsyncInvoker = googleGroupSyncAsyncInvoker;
         this.appMetrics = appMetrics;
+        this.appleSignInVerifier = appleSignInVerifier;
         this.registrationMode = AuthRegistrationMode.fromProperty(registrationModeRaw);
     }
 
@@ -188,6 +191,26 @@ public class AuthService {
     public AuthResponse googleLogin(String idToken, String referralCode, String acceptLanguageHeader) {
         Map<String, Object> tokenInfo = fetchGoogleTokenInfo(idToken);
         String email = extractVerifiedEmailFromGoogleTokenInfo(tokenInfo);
+        Object nameRaw = tokenInfo.get("name");
+        String displayName = nameRaw == null ? null : String.valueOf(nameRaw).trim();
+        return completeOauthLogin(email, displayName, referralCode, acceptLanguageHeader, "google");
+    }
+
+    /**
+     * Sign in with Apple. The identity token is verified against Apple's JWKS; {@code fullName} is
+     * only sent by Apple on the very first authorization, so we persist it then and ignore it after.
+     */
+    public AuthResponse appleLogin(String identityToken, String fullName, String referralCode, String acceptLanguageHeader) {
+        AppleSignInVerifier.AppleIdentity identity = appleSignInVerifier.verify(identityToken);
+        return completeOauthLogin(identity.email(), fullName, referralCode, acceptLanguageHeader, "apple");
+    }
+
+    /** Shared find-or-create + session bootstrap for third-party sign-in (Google, Apple). */
+    private AuthResponse completeOauthLogin(String email, String displayName, String referralCode,
+                                            String acceptLanguageHeader, String provider) {
+        final String normalizedDisplayName = (displayName == null || displayName.isBlank())
+                ? null
+                : displayName.trim();
 
         User user = findByEmailWithOneRetry(email).orElseGet(() -> {
             if (!registrationMode.allowsSelfServeRegistration()) {
@@ -196,9 +219,7 @@ public class AuthService {
             User created = new User();
             created.setEmail(email);
             created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-            Object nameRaw = tokenInfo.get("name");
-            String displayName = nameRaw == null ? null : String.valueOf(nameRaw).trim();
-            created.setDisplayName(displayName == null || displayName.isBlank() ? null : displayName);
+            created.setDisplayName(normalizedDisplayName);
             created.setPlan(UserPlan.FREE);
             created.setTrialEndsAt(LocalDateTime.now().plusDays(7));
             created.setPreferredLocale(SupportedLocales.fromAcceptLanguage(acceptLanguageHeader));
@@ -220,7 +241,7 @@ public class AuthService {
             user = userRepository.findById(user.getId()).orElse(user);
         }
         if (adminAccessService.shouldBootstrapAdmin(user)) {
-            log.info("Bootstrapping admin flag for userId={} from APP_ADMIN_EMAILS (google)", user.getId());
+            log.info("Bootstrapping admin flag for userId={} from APP_ADMIN_EMAILS ({})", user.getId(), provider);
             adminAccessService.promoteToAdmin(user);
             user = userRepository.findById(user.getId()).orElse(user);
         }
