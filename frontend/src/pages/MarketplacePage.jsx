@@ -887,9 +887,9 @@ export default function MarketplacePage() {
                         }`}
                       >
                         <span>{l.title}</span>
-                        {l.sellerStorefrontVerified && (
-                          <VerifiedVendorBadge />
-                        )}
+                        {l.sellerOrigin?.verified || l.sellerStorefrontVerified ? (
+                          <VerifiedVendorBadge origin={l.sellerOrigin} showTooltip />
+                        ) : null}
                         {l.boosted && (
                           <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                         )}

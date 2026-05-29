@@ -77,6 +77,8 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
   const { data: capabilities } = useCapabilities()
   const navStudio = path.startsWith('/studio')
   const showStudioNav = Boolean(token && capabilities?.studio)
+  const labelsPath = showStudioNav || capabilities?.passportCreator ? '/studio/labels' : '/tools/qr'
+  const navPartnerHub = path.startsWith('/partner/hub')
   const logoHome = !token ? (inviteOnlyNav ? '/' : '/login') : '/'
   const isAuthPage =
     path === '/login' ||
@@ -275,6 +277,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           <Link to="/account" onClick={onClick} className="ta-more__item">
             <i className="bi bi-gear" aria-hidden="true" /> {t('nav.accountSettings')}
           </Link>
+          {capabilities?.officialPartner && (
+            <Link to="/partner/hub" onClick={onClick} className="ta-more__item">
+              <i className="bi bi-building" aria-hidden="true" /> {t('partnerHub.nav')}
+            </Link>
+          )}
           {capabilities?.passportCreator && !capabilities?.studio && (
             <Link to="/studio" onClick={onClick} className="ta-more__item">
               <i className="bi bi-briefcase" aria-hidden="true" /> {t('studio.nav')}
@@ -379,8 +386,11 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
       ...(showStudioNav
         ? [{ to: '/studio', icon: 'bi-briefcase', label: t('studio.nav'), active: navStudio }]
         : []),
+      ...(capabilities?.officialPartner
+        ? [{ to: '/partner/hub', icon: 'bi-building', label: t('partnerHub.nav'), active: navPartnerHub }]
+        : []),
       { to: '/sex-id', icon: 'bi-gender-ambiguous', label: t('nav.sexId', 'Sex ID'), active: navSexId },
-      { to: '/tools/qr', icon: 'bi-qr-code', label: t('nav.qrTool'), active: navQr },
+      { to: labelsPath, icon: 'bi-qr-code', label: t('nav.qrTool'), active: navQr },
       ...(token
         ? [
             { to: '/insights', icon: 'bi-graph-up', label: t('nav.insights'), active: navInsights },
@@ -497,7 +507,7 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
                   <i className="bi bi-graph-up" aria-hidden="true" /> {t('nav.insights')}
                 </Link>
               )}
-              <Link to="/tools/qr" onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
+              <Link to={labelsPath} onClick={() => setMobileMenuOpen(false)} className="ta-more__item">
                 <i className="bi bi-qr-code" aria-hidden="true" /> {t('nav.qrTool')}
               </Link>
               {renderMoreContent(() => setMobileMenuOpen(false))}

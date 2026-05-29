@@ -9,6 +9,7 @@ import VerifiedOriginBadge from './VerifiedOriginBadge'
 import { useAuth } from '../context/AuthContext'
 import billingService from '../services/billingService'
 import passportService from '../services/passportService'
+import reminderService from '../services/reminderService'
 import { publicUrl } from '../utils/publicAssets.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
@@ -25,6 +26,8 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
   const [phase, setPhase] = useState('view')
   const [name, setName] = useState('')
   const [setupReminder, setSetupReminder] = useState(true)
+  const [setupMoltReminder, setSetupMoltReminder] = useState(true)
+  const [moltReminderCreated, setMoltReminderCreated] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [claimResult, setClaimResult] = useState(null)
@@ -70,7 +73,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
         setupFeedingReminder: setupReminder,
       })
       setClaimResult(result)
-      setPhase('success')
+      setPhase('wizard')
       try {
         const billing = await billingService.me()
         if (billing?.plan) {
@@ -101,6 +104,76 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
     }
   }
 
+  const finishWizard = async () => {
+    if (setupMoltReminder && claimResult?.tarantulaId) {
+      setBusy(true)
+      try {
+        const due = new Date()
+        due.setDate(due.getDate() + 60)
+        await reminderService.create({
+          tarantulaId: claimResult.tarantulaId,
+          type: 'molt',
+          dueDate: due.toISOString(),
+          message: `Molt check for ${claimResult.name || 'your tarantula'}`,
+        })
+        setMoltReminderCreated(true)
+      } catch {
+        /* optional reminder — do not block success */
+      } finally {
+        setBusy(false)
+      }
+    }
+    setPhase('success')
+  }
+
+  if (phase === 'wizard' && claimResult) {
+    return (
+      <div className="min-vh-100" style={{ backgroundImage: `url('${publicUrl('bg-texture.png')}')`, backgroundColor: 'var(--ta-bg)' }}>
+        <div className="container py-5" style={{ maxWidth: 480 }}>
+          <div className="text-center mb-4">
+            <div className="fs-1 mb-2">🕷️</div>
+            <h1 className="h4 mb-2" style={{ color: 'var(--ta-parchment)' }}>
+              {t('passport.wizardTitle')}
+            </h1>
+            <p className="mb-0 small" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
+              {t('passport.wizardBlurb')}
+            </p>
+          </div>
+
+          <FangPanel className="mb-3">
+            {claimResult.feedingReminderCreated && (
+              <p className="small mb-2" style={{ color: 'var(--ta-parchment)' }}>
+                ✓ {t('passport.reminderScheduled')}
+              </p>
+            )}
+            <div className="form-check mb-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="passport-molt-reminder"
+                checked={setupMoltReminder}
+                onChange={(e) => setSetupMoltReminder(e.target.checked)}
+              />
+              <label htmlFor="passport-molt-reminder" className="form-check-label small" style={{ color: 'var(--ta-parchment)' }}>
+                {t('passport.wizardMoltReminder')}
+              </label>
+            </div>
+          </FangPanel>
+
+          <button
+            type="button"
+            className="btn btn-lg w-100"
+            style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
+            disabled={busy}
+            onClick={() => finishWizard()}
+          >
+            {busy ? t('common.loading') : t('passport.wizardContinue')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (phase === 'success' && claimResult) {
     return (
       <div className="min-vh-100" style={{ backgroundImage: `url('${publicUrl('bg-texture.png')}')`, backgroundColor: 'var(--ta-bg)' }}>
@@ -128,6 +201,14 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             <FangPanel className="mb-3">
               <p className="small mb-0" style={{ color: 'var(--ta-parchment)' }}>
                 {t('passport.reminderScheduled')}
+              </p>
+            </FangPanel>
+          )}
+
+          {moltReminderCreated && (
+            <FangPanel className="mb-3">
+              <p className="small mb-0" style={{ color: 'var(--ta-parchment)' }}>
+                {t('passport.moltReminderScheduled')}
               </p>
             </FangPanel>
           )}

@@ -2,6 +2,7 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.OfficialVendorLead;
+import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
@@ -12,6 +13,7 @@ import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
+import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import com.tarantulapp.service.vendors.PartnerReadinessReportService;
 import jakarta.annotation.PostConstruct;
@@ -49,6 +51,7 @@ public class OfficialVendorService {
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final PartnerReadinessReportService partnerReadinessReportService;
     private final EmailService emailService;
+    private final UserRepository userRepository;
     private final String appBaseUrl;
     private final boolean seedOnStartup;
 
@@ -59,6 +62,7 @@ public class OfficialVendorService {
                                  PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                  PartnerReadinessReportService partnerReadinessReportService,
                                  EmailService emailService,
+                                 UserRepository userRepository,
                                  @Value("${app.base-url:http://localhost:5173}") String appBaseUrl,
                                  @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
         this.officialVendorRepository = officialVendorRepository;
@@ -68,6 +72,7 @@ public class OfficialVendorService {
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.partnerReadinessReportService = partnerReadinessReportService;
         this.emailService = emailService;
+        this.userRepository = userRepository;
         this.appBaseUrl = trimTrailingSlash(appBaseUrl);
         this.seedOnStartup = seedOnStartup;
     }
@@ -156,6 +161,36 @@ public class OfficialVendorService {
         return officialVendorLeadRepository.findTop100ByOrderByCreatedAtDesc().stream()
                 .map(this::mapLead)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> mePartnerHub(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        String handle = user.getPublicHandle();
+        if (handle == null || handle.isBlank()) {
+            return Map.of("eligible", false);
+        }
+        Optional<OfficialVendor> vendorOpt = officialVendorRepository.findBySlug(handle.trim());
+        if (vendorOpt.isEmpty()) {
+            return Map.of("eligible", false);
+        }
+        OfficialVendor vendor = vendorOpt.get();
+        if (!Boolean.TRUE.equals(vendor.getEnabled())) {
+            return Map.of("eligible", false);
+        }
+        PartnerProgramTier tier = vendor.getPartnerProgramTier();
+        if (tier == null || !tier.isOfficialPartner()) {
+            return Map.of("eligible", false);
+        }
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        Map<UUID, Map<String, Object>> handoffs30d = partnerHandoffAnalyticsService.adminHandoffByVendorSince(since30d);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("eligible", true);
+        out.put("vendor", mapVendorAdmin(vendor, handoffs30d));
+        out.put("storefrontPath", "/partner/" + vendor.getSlug());
+        out.put("publicHandle", handle.trim());
+        return out;
     }
 
     @Transactional

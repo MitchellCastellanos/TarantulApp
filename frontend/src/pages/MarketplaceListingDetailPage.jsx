@@ -259,9 +259,9 @@ export default function MarketplaceListingDetailPage() {
                 <h1 className="h4 fw-bold mb-2 d-flex align-items-center gap-2 flex-wrap">
                   {isPartner && <OfficialPartnerShield width={26} height={28} />}
                   <span>{displayTitle || listing.title}</span>
-                  {listing.sellerStorefrontVerified && (
-                    <VerifiedVendorBadge />
-                  )}
+                  {listing.sellerOrigin?.verified || listing.sellerStorefrontVerified ? (
+                    <VerifiedVendorBadge origin={listing.sellerOrigin} showTooltip />
+                  ) : null}
                   {listing.boosted && (
                     <span className="badge bg-warning text-dark">{t('marketplace.boostedBadge')}</span>
                   )}
@@ -418,8 +418,8 @@ export default function MarketplaceListingDetailPage() {
                         </p>
                       )}
                       <div className="d-flex flex-wrap gap-2 mb-3">
-                        {listing.sellerStorefrontVerified ? (
-                          <VerifiedVendorBadge showTooltip verified />
+                        {listing.sellerOrigin?.verified || listing.sellerStorefrontVerified ? (
+                          <VerifiedVendorBadge origin={listing.sellerOrigin} showTooltip />
                         ) : null}
                         <ResponseBadge
                           badge={sellerPreview?.responseBadge}

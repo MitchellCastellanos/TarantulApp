@@ -98,9 +98,9 @@ export default function MarketplaceStorefrontPage() {
                   <div className="min-w-0 flex-grow-1">
                     <div className="h5 fw-bold mb-0">{storefrontTitle}</div>
                     <div className="small text-muted">@{payload?.storefrontHandle || handle || 'keeper'}</div>
-                    {profile?.storefrontVerified ? (
+                    {(profile?.origin?.verified || profile?.storefrontVerified) ? (
                       <div className="mt-1">
-                        <VerifiedVendorBadge showTooltip />
+                        <VerifiedVendorBadge origin={profile?.origin} showTooltip />
                       </div>
                     ) : profile?.verifiedBreeder ? (
                       <span className="badge bg-info-subtle text-dark border mt-1">{t('marketplace.verifiedBreederBadge')}</span>

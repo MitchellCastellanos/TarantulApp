@@ -61,6 +61,8 @@ const AdminBetaPage = lazy(() => import('./pages/admin/AdminBetaPage'))
 const AdminVendorsPage = lazy(() => import('./pages/admin/AdminVendorsPage'))
 const AdminMarketplacePage = lazy(() => import('./pages/admin/AdminMarketplacePage'))
 const AdminPartnerDashboardPage = lazy(() => import('./pages/admin/AdminPartnerDashboardPage'))
+const AdminOriginVerificationsPage = lazy(() => import('./pages/admin/AdminOriginVerificationsPage'))
+const PartnerHubPage = lazy(() => import('./pages/PartnerHubPage'))
 const AdminPartnerOutreachPage = lazy(() => import('./pages/admin/AdminPartnerOutreachPage'))
 const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const AdminSpeciesTradePage = lazy(() => import('./pages/admin/AdminSpeciesTradePage'))
@@ -232,6 +234,7 @@ function AppRoutes() {
       <Route path="/marketplace" element={<MarketplacePage />} />
       <Route path="/marketplace/listing/:listingId" element={<MarketplaceListingDetailPage />} />
       <Route path="/shop/:handle" element={<MarketplaceStorefrontPage />} />
+      <Route path="/partner/hub" element={<PrivateRoute><PartnerHubPage /></PrivateRoute>} />
       <Route path="/partner/:slug" element={<PartnerStorefrontPage />} />
       <Route path="/partners" element={<BecomePartnerPage />} />
       <Route path="/marketplace/messages" element={<PrivateRoute><MarketplaceMessagesPage /></PrivateRoute>} />
@@ -265,6 +268,7 @@ function AppRoutes() {
         <Route path="vendors" element={<AdminOnlyRoute><AdminVendorsPage /></AdminOnlyRoute>} />
         <Route path="marketplace" element={<AdminOnlyRoute><AdminMarketplacePage /></AdminOnlyRoute>} />
         <Route path="partners" element={<AdminOnlyRoute><AdminPartnerDashboardPage /></AdminOnlyRoute>} />
+        <Route path="origin-verifications" element={<AdminOnlyRoute><AdminOriginVerificationsPage /></AdminOnlyRoute>} />
         <Route path="partner-outreach" element={<AdminPartnerOutreachPage />} />
         <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="trade" element={<AdminOnlyRoute><AdminSpeciesTradePage /></AdminOnlyRoute>} />
@@ -325,7 +329,7 @@ function Footer() {
         <span className="ta-app-footer__dot" aria-hidden>
           ·
         </span>{' '}
-        <Link to="/tools/qr">{t('nav.qrTool')}</Link>
+        <Link to="/studio/labels">{t('nav.qrTool')}</Link>
         <span className="ta-app-footer__dot" aria-hidden>
           ·
         </span>{' '}
