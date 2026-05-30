@@ -3504,6 +3504,23 @@
     "activationRequired": "Primero activa tu plan Vendor (pago o invitación) antes de solicitar el badge Tienda verificada.",
     "storefrontVerified": "Tu tienda ya tiene el badge Tienda verificada.",
     "rejected": "Tu solicitud fue rechazada. Puedes enviar nuevos materiales abajo."
+  },
+  "branding": {
+    "title": "Logo de marca",
+    "hint": "Sube tu logo. Generamos una versión en blanco y negro para las etiquetas QR que emites; la versión a color se usa en tu storefront y en imágenes compartidas.",
+    "loadError": "No se pudo cargar tu marca.",
+    "fileTypeError": "Elige un archivo de imagen (PNG, JPG o WEBP).",
+    "uploadError": "No se pudo guardar el logo. Inténtalo de nuevo.",
+    "previewPrompt": "Así se verá tu logo en blanco y negro en las etiquetas. Guárdalo si te gusta.",
+    "confirmCta": "Confirmar y guardar",
+    "uploadCta": "Subir logo",
+    "replaceCta": "Reemplazar logo",
+    "removeCta": "Quitar",
+    "colorLabel": "Color",
+    "bwLabel": "Blanco y negro",
+    "useBwOnLabels": "Usar la versión en blanco y negro en las etiquetas QR",
+    "error": {
+      "NOT_ELIGIBLE_FOR_BRANDING": "Esta cuenta aún no puede usar marca."
+    }
   }
-
 }

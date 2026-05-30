@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
+import LogoUploader from '../../components/LogoUploader'
 
 const WELCOME_LOCALES = ['es', 'en', 'fr']
 
@@ -416,6 +417,15 @@ export default function AdminVendorsPage() {
                 )}
               </div>
             </div>
+            <LogoUploader
+              key={String(lookupSummary.id)}
+              allowPreferences={false}
+              service={{
+                get: () => adminService.userBranding(lookupSummary.id),
+                uploadLogo: (file) => adminService.uploadUserLogo(lookupSummary.id, file),
+                deleteLogo: () => adminService.deleteUserLogo(lookupSummary.id),
+              }}
+            />
           </div>
         )}
       </div>

@@ -149,6 +149,80 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * Save a brand logo: validates the upload, stores the full-color image, and derives a
+     * monochrome (black &amp; white) PNG variant for label compositing. Returns both stored paths.
+     * The monochrome variant flattens transparency onto white so it prints cleanly on labels.
+     */
+    public LogoVariants saveLogoWithMonochrome(MultipartFile file, String subfolder) throws IOException {
+        DetectedImage img = validateImageOrThrow(file);
+        String colorPath = isCloudinaryConfigured()
+                ? uploadToCloudinary(file, subfolder, "image")
+                : saveToLocal(file, subfolder, img.extension);
+        String bwPath;
+        try {
+            byte[] mono = toMonochromePng(file.getBytes());
+            bwPath = saveImageBytes(mono, subfolder);
+        } catch (Exception e) {
+            // ImageIO cannot decode every accepted format (e.g. some WEBP); fall back to color.
+            log.warn("Logo monochrome generation failed ({}): falling back to color variant", e.toString());
+            bwPath = colorPath;
+        }
+        return new LogoVariants(colorPath, bwPath);
+    }
+
+    public record LogoVariants(String colorPath, String bwPath) {}
+
+    /** Store already-processed PNG bytes (used for derived images such as the monochrome logo). */
+    private String saveImageBytes(byte[] pngBytes, String subfolder) throws IOException {
+        if (isCloudinaryConfigured()) {
+            Map<String, Object> params = ObjectUtils.asMap(
+                    "folder", "tarantulapp/" + sanitizeSubfolder(subfolder),
+                    "resource_type", "image",
+                    "transformation", new Transformation().quality("auto").fetchFormat("auto").width(1024).crop("limit"));
+            Map<String, Object> result = cloudinary.uploader().upload(pngBytes, params);
+            return (String) result.get("secure_url");
+        }
+        String safeSub = sanitizeSubfolder(subfolder);
+        String filename = UUID.randomUUID() + ".png";
+        Path baseDir = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path targetDir = baseDir.resolve(safeSub).normalize();
+        if (!targetDir.startsWith(baseDir)) {
+            throw new IOException("Invalid subfolder path");
+        }
+        Files.createDirectories(targetDir);
+        Files.write(targetDir.resolve(filename), pngBytes);
+        return safeSub + "/" + filename;
+    }
+
+    /** Convert an image to a grayscale PNG flattened onto a white background, capped at 1024px. */
+    private byte[] toMonochromePng(byte[] source) throws IOException {
+        java.awt.image.BufferedImage src = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(source));
+        if (src == null) {
+            throw new IOException("UNDECODABLE_IMAGE");
+        }
+        int w = src.getWidth();
+        int h = src.getHeight();
+        int max = 1024;
+        if (w > max || h > max) {
+            double scale = Math.min((double) max / w, (double) max / h);
+            w = Math.max(1, (int) Math.round(w * scale));
+            h = Math.max(1, (int) Math.round(h * scale));
+        }
+        java.awt.image.BufferedImage gray =
+                new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
+        java.awt.Graphics2D g = gray.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setColor(java.awt.Color.WHITE);
+        g.fillRect(0, 0, w, h);
+        g.drawImage(src, 0, 0, w, h, null);
+        g.dispose();
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(gray, "png", out);
+        return out.toByteArray();
+    }
+
     // ── Validation helpers ──────────────────────────────────────────────────
 
     private record DetectedImage(String mime, String extension) {}

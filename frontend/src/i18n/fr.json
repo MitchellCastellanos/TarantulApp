@@ -3464,6 +3464,23 @@
     "activationRequired": "Activez d’abord votre plan Vendor (paiement ou invitation) avant de demander le badge Boutique vérifiée.",
     "storefrontVerified": "Votre boutique a déjà le badge Boutique vérifiée.",
     "rejected": "Votre demande a été refusée. Vous pouvez téléverser de nouveaux éléments ci-dessous."
+  },
+  "branding": {
+    "title": "Logo de marque",
+    "hint": "Téléversez votre logo. Nous générons une version en noir et blanc pour les étiquettes QR que vous émettez ; la version couleur est utilisée sur votre boutique et les images partagées.",
+    "loadError": "Impossible de charger votre marque.",
+    "fileTypeError": "Choisissez un fichier image (PNG, JPG ou WEBP).",
+    "uploadError": "Impossible d'enregistrer le logo. Réessayez.",
+    "previewPrompt": "Voici à quoi ressemblera votre logo en noir et blanc sur les étiquettes. Enregistrez-le s'il vous convient.",
+    "confirmCta": "Confirmer et enregistrer",
+    "uploadCta": "Téléverser le logo",
+    "replaceCta": "Remplacer le logo",
+    "removeCta": "Retirer",
+    "colorLabel": "Couleur",
+    "bwLabel": "Noir et blanc",
+    "useBwOnLabels": "Utiliser la version noir et blanc sur les étiquettes QR",
+    "error": {
+      "NOT_ELIGIBLE_FOR_BRANDING": "Ce compte n'est pas encore éligible à la marque."
+    }
   }
-
 }

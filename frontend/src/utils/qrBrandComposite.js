@@ -84,16 +84,33 @@ export function qrCenterLogoOverlayStyles(qrSizePx, fraction = QR_CENTER_LOGO_FR
   }
 }
 
+/** True for absolute http(s) URLs pointing at a different origin (need CORS to stay canvas-safe). */
+function isCrossOrigin(src) {
+  if (typeof src !== 'string' || !/^https?:\/\//i.test(src)) return false
+  try {
+    return new URL(src, window.location.href).origin !== window.location.origin
+  } catch {
+    return false
+  }
+}
+
 export function loadImageElement(src) {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    // Remote brand logos (e.g. Cloudinary) must be CORS-loaded or canvas.toDataURL() taints.
+    if (isCrossOrigin(src)) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
     img.src = src
   })
 }
 
-export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction = QR_CENTER_LOGO_FRACTION) {
+export async function compositeQrPngDataUrl(
+  qrDataUrl,
+  rasterSize,
+  logoFraction = QR_CENTER_LOGO_FRACTION,
+  logoSrc = BRAND_LOGO_FOR_LIGHT_BG,
+) {
   const canvas = document.createElement('canvas')
   canvas.width = rasterSize
   canvas.height = rasterSize
@@ -102,9 +119,19 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
   ctx.drawImage(qrImg, 0, 0, rasterSize, rasterSize)
   let logo
   try {
-    logo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+    logo = await loadImageElement(logoSrc || BRAND_LOGO_FOR_LIGHT_BG)
   } catch {
-    return canvas.toDataURL('image/png')
+    // A custom brand logo that fails to load (e.g. CORS) should not drop the QR — fall back
+    // to the TarantulApp mark so the label still carries a center brand.
+    if (logoSrc && logoSrc !== BRAND_LOGO_FOR_LIGHT_BG) {
+      try {
+        logo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+      } catch {
+        return canvas.toDataURL('image/png')
+      }
+    } else {
+      return canvas.toDataURL('image/png')
+    }
   }
   const lw = Math.max(14, Math.round(rasterSize * logoFraction))
   const lx = (rasterSize - lw) / 2
@@ -333,6 +360,7 @@ export async function buildFullLabelPngDataUrl({
   speciesLine,
   factLines = null,
   normalizeHeight = null,
+  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
   shortIdLine: _shortIdLine,
   worldBadgeInfo: _worldBadgeInfo,
 }) {
@@ -345,7 +373,7 @@ export async function buildFullLabelPngDataUrl({
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
-  const composed = await compositeQrPngDataUrl(raw, qrSize)
+  const composed = await compositeQrPngDataUrl(raw, qrSize, QR_CENTER_LOGO_FRACTION, brandLogoSrc)
 
   const measureCanvas = document.createElement('canvas')
   const mctx = measureCanvas.getContext('2d')
@@ -439,6 +467,7 @@ export async function downloadBrandedQrPng({
   speciesLine,
   factLines = null,
   filenameBase,
+  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
   shortIdLine,
   worldBadgeInfo,
 }) {
@@ -447,6 +476,7 @@ export async function downloadBrandedQrPng({
     nameLine,
     speciesLine,
     factLines,
+    brandLogoSrc,
     shortIdLine,
     worldBadgeInfo,
   })

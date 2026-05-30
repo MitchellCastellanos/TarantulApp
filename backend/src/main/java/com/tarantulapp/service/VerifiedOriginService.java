@@ -45,7 +45,7 @@ public class VerifiedOriginService {
             return null;
         }
         String kind = resolveKind(user);
-        return new PublicOriginDTO(true, kind, resolveDisplayName(user));
+        return new PublicOriginDTO(true, kind, resolveDisplayName(user), user.getLogoUrl(), user.getLogoBwUrl());
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +58,8 @@ public class VerifiedOriginService {
         out.put("verified", true);
         out.put("kind", dto.getKind());
         out.put("displayName", dto.getDisplayName());
+        out.put("logoUrl", dto.getLogoUrl());
+        out.put("logoBwUrl", dto.getLogoBwUrl());
         return out;
     }
 

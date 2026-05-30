@@ -12,6 +12,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
 import studioService from '../services/studioService'
+import meBrandingService from '../services/meBrandingService'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import QrLabelPreview from '../components/QrLabelPreview'
 import {
@@ -74,6 +75,19 @@ export default function QrToolPage() {
   const labelsBase = inStudio || token ? '/studio/labels' : '/tools/qr'
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
+
+  // Verified-origin / breeder accounts brand their labels with their own logo (monochrome by
+  // default). Falls back to the TarantulApp mark when no custom logo is set.
+  const { data: branding } = useQuery({
+    queryKey: ['me', 'branding'],
+    queryFn: () => meBrandingService.get(),
+    enabled: Boolean(token),
+    staleTime: 60_000,
+  })
+  const brandLogoSrc = useMemo(() => {
+    if (!branding?.logoUrl) return BRAND_LOGO_FOR_LIGHT_BG
+    return branding.useBwOnLabels && branding.logoBwUrl ? branding.logoBwUrl : branding.logoUrl
+  }, [branding])
   const batchId = searchParams.get('batch') || ''
   const mode = batchId ? 'batch' : searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
 
@@ -238,6 +252,7 @@ export default function QrToolPage() {
       nameLine: labelLines.titleLine1,
       speciesLine: labelLines.titleLine2,
       factLines: labelExtras.factLines,
+      brandLogoSrc,
     })
       .then(({ dataUrl }) => {
         if (!cancelled) setLabelPreviewUrl(dataUrl)
@@ -251,7 +266,7 @@ export default function QrToolPage() {
     return () => {
       cancelled = true
     }
-  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode])
+  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode, brandLogoSrc])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -345,6 +360,7 @@ export default function QrToolPage() {
         speciesLine: labelLines.titleLine2,
         factLines: labelExtras.factLines,
         filenameBase: labelLines.filenameBase,
+        brandLogoSrc,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)

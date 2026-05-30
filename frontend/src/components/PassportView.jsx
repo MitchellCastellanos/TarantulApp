@@ -301,7 +301,16 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             </p>
           )}
           {profile?.origin?.verified && (
-            <VerifiedOriginBadge origin={profile.origin} showTooltip className="mt-1" />
+            <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
+              {profile.origin.logoUrl && (
+                <img
+                  src={profile.origin.logoUrl}
+                  alt={profile.origin.displayName || 'origin logo'}
+                  style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }}
+                />
+              )}
+              <VerifiedOriginBadge origin={profile.origin} showTooltip />
+            </div>
           )}
         </FangPanel>
 

@@ -3525,6 +3525,23 @@
     "activationRequired": "Subscribe as Vendor (or complete payment) before applying for the Verified Shop badge.",
     "storefrontVerified": "Your shop has the Verified Shop badge.",
     "rejected": "Your submission was rejected. You can upload new materials below."
+  },
+  "branding": {
+    "title": "Brand logo",
+    "hint": "Upload your logo. We generate a black & white version for the QR labels you emit; the color version is used on your storefront and shared items.",
+    "loadError": "Could not load your branding.",
+    "fileTypeError": "Please choose an image file (PNG, JPG or WEBP).",
+    "uploadError": "Could not save the logo. Please try again.",
+    "previewPrompt": "This is how your logo will look in black & white on labels. Save it if you like it.",
+    "confirmCta": "Confirm & save",
+    "uploadCta": "Upload logo",
+    "replaceCta": "Replace logo",
+    "removeCta": "Remove",
+    "colorLabel": "Color",
+    "bwLabel": "Black & white",
+    "useBwOnLabels": "Use the black & white version on QR labels",
+    "error": {
+      "NOT_ELIGIBLE_FOR_BRANDING": "This account is not eligible for branding yet."
+    }
   }
-
 }
