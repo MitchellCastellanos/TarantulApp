@@ -14,6 +14,7 @@ import RateAppPrompt from './components/RateAppPrompt'
 import AndroidUpdateBanner from './components/AndroidUpdateBanner'
 import PlayStoreWebBanner from './components/PlayStoreWebBanner'
 import BugReportFAB from './components/BugReportFAB'
+import AnalyticsTracker from './components/AnalyticsTracker'
 import BetaTesterAgreementModal from './components/BetaTesterAgreementModal'
 import KeeperGamificationCelebrationHost from './components/KeeperGamificationCelebrationHost'
 import { isInviteOnlyEnabled } from './utils/inviteOnly'
@@ -67,6 +68,7 @@ const PartnerHubPage = lazy(() => import('./pages/PartnerHubPage'))
 const AdminPartnerOutreachPage = lazy(() => import('./pages/admin/AdminPartnerOutreachPage'))
 const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const AdminSpeciesTradePage = lazy(() => import('./pages/admin/AdminSpeciesTradePage'))
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
 const SexIdPage = lazy(() => import('./pages/SexIdPage'))
 const SexIdCasePublicPage = lazy(() => import('./pages/SexIdCasePublicPage'))
 const PublicKeeperProfilePage = lazy(() => import('./pages/PublicKeeperProfilePage'))
@@ -272,6 +274,7 @@ function AppRoutes() {
         <Route path="origin-verifications" element={<AdminOnlyRoute><AdminOriginVerificationsPage /></AdminOnlyRoute>} />
         <Route path="partner-outreach" element={<AdminPartnerOutreachPage />} />
         <Route path="marketing" element={<AdminMarketingPage />} />
+        <Route path="analytics" element={<AdminOnlyRoute><AdminAnalyticsPage /></AdminOnlyRoute>} />
         <Route path="trade" element={<AdminOnlyRoute><AdminSpeciesTradePage /></AdminOnlyRoute>} />
         <Route path="beta" element={<AdminOnlyRoute><AdminBetaPage /></AdminOnlyRoute>} />
       </Route>
@@ -375,6 +378,7 @@ export default function App() {
           }}
         >
           <AuthSessionBridge />
+          <AnalyticsTracker />
           <KeeperGamificationCelebrationHost />
           <ScrollToTop />
           <PlayStoreWebBanner />
