@@ -163,6 +163,20 @@ const adminService = {
   listSpeciesTradeNotes: () => api.get('/admin/species-trade-notes').then((r) => r.data),
   upsertSpeciesTradeNote: (payload) => api.put('/admin/species-trade-notes', payload).then((r) => r.data),
   deleteSpeciesTradeNote: (id) => api.delete(`/admin/species-trade-notes/${id}`),
+  userBranding: (userId) => api.get(`/admin/users/${userId}/branding`).then((r) => r.data),
+  uploadUserLogo: (userId, file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api
+      .post(`/admin/users/${userId}/branding/logo`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data)
+  },
+  deleteUserLogo: (userId) => api.delete(`/admin/users/${userId}/branding/logo`).then((r) => r.data),
+  createSpecies: (payload) => api.post('/admin/species', payload).then((r) => r.data),
+  speciesGaps: () => api.get('/admin/species/gaps').then((r) => r.data),
+  dismissSpeciesGap: (id) => api.post(`/admin/species/gaps/${id}/dismiss`).then((r) => r.data),
 }
 
 export default adminService

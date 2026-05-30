@@ -634,6 +634,8 @@
     "schemaDescription": "Etiquetas de terrario y pasaportes con QR hacia fichas públicas de ejemplares."
   },
   "labelStudio": {
+    "consumerCaption": "Texto para el consumidor",
+    "consumerCaptionOff": "Ninguno",
     "batchTab": "Etiquetas del lote",
     "collectionTab": "Etiquetas de colección",
     "backToBatch": "← Volver al lote",
@@ -2028,6 +2030,10 @@
     "reportError": "No se pudo enviar el reporte."
   },
   "passport": {
+    "boughtFrom": "Comprado de",
+    "originMeaningTitle": "Origen Verificado.",
+    "originMeaning": "Nuestro equipo revisa cuidadosamente a este vendedor para que los animales estén bien cuidados y el origen sea legítimo.",
+    "originUnverified": "Publicado por este vendedor. El origen no está verificado por TarantulApp.",
     "badge": "Pasaporte digital",
     "unknownSpecies": "Espécimen de tarántula",
     "intro": "Esta etiqueta enlaza a un pasaporte digital para tu espécimen: ficha de especie, procedencia y herramientas de colección cuando quieras.",
@@ -2569,6 +2575,7 @@
     "navVendors": "Vendors",
     "navMarketing": "Mercadotecnia",
     "navTrade": "Cumplimiento comercio",
+    "navSpecies": "Especies",
     "navBeta": "Programa beta",
     "titleGeneral": "General",
     "navAnalytics": "Analíticas",
@@ -3504,6 +3511,90 @@
     "activationRequired": "Primero activa tu plan Vendor (pago o invitación) antes de solicitar el badge Tienda verificada.",
     "storefrontVerified": "Tu tienda ya tiene el badge Tienda verificada.",
     "rejected": "Tu solicitud fue rechazada. Puedes enviar nuevos materiales abajo."
+  },
+  "branding": {
+    "title": "Logo de marca",
+    "hint": "Sube tu logo. Generamos una versión en blanco y negro para las etiquetas QR que emites; la versión a color se usa en tu storefront y en imágenes compartidas.",
+    "loadError": "No se pudo cargar tu marca.",
+    "fileTypeError": "Elige un archivo de imagen (PNG, JPG o WEBP).",
+    "uploadError": "No se pudo guardar el logo. Inténtalo de nuevo.",
+    "previewPrompt": "Así se verá tu logo en blanco y negro en las etiquetas. Guárdalo si te gusta.",
+    "confirmCta": "Confirmar y guardar",
+    "uploadCta": "Subir logo",
+    "replaceCta": "Reemplazar logo",
+    "removeCta": "Quitar",
+    "colorLabel": "Color",
+    "bwLabel": "Blanco y negro",
+    "useBwOnLabels": "Usar la versión en blanco y negro en las etiquetas QR",
+    "error": {
+      "NOT_ELIGIBLE_FOR_BRANDING": "Esta cuenta aún no puede usar marca."
+    }
+  },
+  "transfers": {
+    "title": "Transferencias",
+    "subtitle": "Pasa un ejemplar a otro keeper, o acepta uno que te enviaron.",
+    "disclaimer": "Una transferencia es solo documentación de custodia. No tiene valor monetario, no se puede deshacer una vez aceptada y no sustituye ningún instrumento legal.",
+    "loadError": "No se pudieron cargar tus transferencias.",
+    "acceptError": "No se pudo aceptar la transferencia.",
+    "cancelError": "No se pudo cancelar la transferencia.",
+    "initiateError": "No se pudo iniciar la transferencia.",
+    "incomingTitle": "Entrantes",
+    "incomingEmpty": "No tienes transferencias esperando.",
+    "outgoingTitle": "Enviadas por ti",
+    "outgoingEmpty": "No tienes transferencias pendientes.",
+    "fromLabel": "De",
+    "toLabel": "Para",
+    "statusPending": "Pendiente",
+    "acceptCta": "Aceptar y agregar a mi colección",
+    "cancelCta": "Cancelar transferencia",
+    "backToCollection": "Volver a la colección",
+    "transferCta": "Transferir",
+    "modalTitle": "Transferir {{name}}",
+    "modalWarning": "Esto pasa el ejemplar al destinatario cuando lo acepte. Sin valor monetario y no se puede deshacer. No sustituye ningún instrumento legal.",
+    "recipientEmailLabel": "Correo del destinatario",
+    "messageLabel": "Mensaje (opcional)",
+    "messagePlaceholder": "Una nota para el destinatario",
+    "sendCta": "Enviar transferencia",
+    "initiatedSuccess": "Transferencia iniciada. Le enviamos un correo al destinatario.",
+    "initiatedHint": "Inicia sesión o crea una cuenta con ese correo para aceptar. Puedes cancelar desde tu página de transferencias hasta que la acepte.",
+    "error": {
+      "NOT_OWNER": "Este ejemplar no es tuyo.",
+      "NO_PASSPORT": "Solo se pueden transferir ejemplares con pasaporte.",
+      "EMAIL_REQUIRED": "Ingresa el correo del destinatario.",
+      "CANNOT_TRANSFER_TO_SELF": "No puedes transferir a tu propia cuenta.",
+      "TRANSFER_ALREADY_PENDING": "Ya hay una transferencia pendiente para este ejemplar.",
+      "EMAIL_MISMATCH": "Esta transferencia se envió a otro correo.",
+      "TRANSFER_NOT_PENDING": "Esta transferencia ya no está pendiente.",
+      "SPECIMEN_NOT_FOUND": "Ejemplar no encontrado."
+    }
+  },
+  "adminSpecies": {
+    "title": "Catálogo de especies",
+    "subtitle": "Agrega especies manualmente y resuelve alertas de especies faltantes de los syncs de partners.",
+    "gapsTitle": "Alertas de especie faltante",
+    "gapsEmpty": "No hay especies faltantes por ahora.",
+    "colName": "Especie",
+    "colSource": "Origen",
+    "colSeen": "Vistas",
+    "addCta": "Agregar",
+    "dismissCta": "Descartar",
+    "createTitle": "Agregar una especie",
+    "scientificName": "Nombre científico",
+    "commonName": "Nombre común",
+    "originRegion": "Región de origen",
+    "habitatType": "Hábitat",
+    "hobbyWorld": "Mundo",
+    "experienceLevel": "Nivel de experiencia",
+    "growthRate": "Ritmo de crecimiento",
+    "temperament": "Temperamento",
+    "careNotes": "Notas de cuidado",
+    "referencePhotoUrl": "URL de foto de referencia",
+    "createCta": "Crear especie",
+    "createSuccess": "Se creó {{name}}.",
+    "createError": "No se pudo crear la especie.",
+    "error": {
+      "SCIENTIFIC_NAME_REQUIRED": "El nombre científico es obligatorio.",
+      "SPECIES_ALREADY_EXISTS": "Esa especie ya existe en el catálogo."
+    }
   }
-
 }

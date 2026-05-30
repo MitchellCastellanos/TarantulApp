@@ -91,9 +91,15 @@ export default function MarketplaceStorefrontPage() {
               <div className="card-body">
                 <div className="d-flex align-items-start gap-3 mb-2">
                   <img
-                    src={imgUrl(profile?.profilePhoto) || '/spider-default.png'}
+                    src={profile?.origin?.logoUrl || imgUrl(profile?.profilePhoto) || '/spider-default.png'}
                     alt={`@${payload?.storefrontHandle || handle || 'keeper'}`}
-                    style={{ width: 72, height: 72, borderRadius: 999, objectFit: 'cover' }}
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: profile?.origin?.logoUrl ? 12 : 999,
+                      objectFit: profile?.origin?.logoUrl ? 'contain' : 'cover',
+                      background: profile?.origin?.logoUrl ? '#fff' : undefined,
+                    }}
                   />
                   <div className="min-w-0 flex-grow-1">
                     <div className="h5 fw-bold mb-0">{storefrontTitle}</div>

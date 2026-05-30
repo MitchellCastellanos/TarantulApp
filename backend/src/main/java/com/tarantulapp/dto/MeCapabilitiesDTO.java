@@ -8,6 +8,7 @@ public class MeCapabilitiesDTO {
     private boolean officialPartner;
     private boolean marketplace = true;
     private boolean verifiedBreeder;
+    private boolean branding;
 
     public boolean isCollection() { return collection; }
     public void setCollection(boolean collection) { this.collection = collection; }
@@ -23,4 +24,6 @@ public class MeCapabilitiesDTO {
     public void setMarketplace(boolean marketplace) { this.marketplace = marketplace; }
     public boolean isVerifiedBreeder() { return verifiedBreeder; }
     public void setVerifiedBreeder(boolean verifiedBreeder) { this.verifiedBreeder = verifiedBreeder; }
+    public boolean isBranding() { return branding; }
+    public void setBranding(boolean branding) { this.branding = branding; }
 }

@@ -12,6 +12,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
 import studioService from '../services/studioService'
+import meBrandingService from '../services/meBrandingService'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import QrLabelPreview from '../components/QrLabelPreview'
 import {
@@ -74,6 +75,39 @@ export default function QrToolPage() {
   const labelsBase = inStudio || token ? '/studio/labels' : '/tools/qr'
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
+
+  // Verified-origin / breeder accounts brand their labels with their own logo (monochrome by
+  // default). Falls back to the TarantulApp mark when no custom logo is set.
+  const { data: branding } = useQuery({
+    queryKey: ['me', 'branding'],
+    queryFn: () => meBrandingService.get(),
+    enabled: Boolean(token),
+    staleTime: 60_000,
+  })
+  const brandLogoSrc = useMemo(() => {
+    if (!branding?.logoUrl) return BRAND_LOGO_FOR_LIGHT_BG
+    return branding.useBwOnLabels && branding.logoBwUrl ? branding.logoBwUrl : branding.logoUrl
+  }, [branding])
+
+  // Optional consumer-facing caption printed on the label, in the buyer's language (EN/FR).
+  const CONSUMER_CAPTIONS = { en: 'Scan for care & origin', fr: 'Scannez : soins et origine' }
+  const captionLine = consumerCaptionLang ? CONSUMER_CAPTIONS[consumerCaptionLang] : null
+
+  const consumerCaptionControl = (
+    <div className="d-flex align-items-center gap-2 mb-2 small flex-wrap">
+      <label className="mb-0 text-muted">{t('labelStudio.consumerCaption')}</label>
+      <select
+        className="form-select form-select-sm"
+        style={{ width: 'auto' }}
+        value={consumerCaptionLang}
+        onChange={(e) => setConsumerCaptionLang(e.target.value)}
+      >
+        <option value="">{t('labelStudio.consumerCaptionOff')}</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+      </select>
+    </div>
+  )
   const batchId = searchParams.get('batch') || ''
   const mode = batchId ? 'batch' : searchParams.get('mode') === 'bulk' ? 'bulk' : 'single'
 
@@ -96,6 +130,7 @@ export default function QrToolPage() {
   const [busyKind, setBusyKind] = useState('')
   const [batchSelected, setBatchSelected] = useState(() => new Set())
   const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
+  const [consumerCaptionLang, setConsumerCaptionLang] = useState('') // '' = off, 'en', 'fr'
   const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
   const [labelPreviewUrl, setLabelPreviewUrl] = useState('')
   const [labelPreviewBusy, setLabelPreviewBusy] = useState(false)
@@ -177,6 +212,8 @@ export default function QrToolPage() {
         sizeId: labelSizeId,
         docTitle: t('labelStudio.pdfDocTitle'),
         filename: `${filenameBase}-${labelSizeId}.pdf`,
+        brandLogoSrc,
+        captionLine,
       })
       await registerPrint()
     } finally {
@@ -238,6 +275,8 @@ export default function QrToolPage() {
       nameLine: labelLines.titleLine1,
       speciesLine: labelLines.titleLine2,
       factLines: labelExtras.factLines,
+      captionLine,
+      brandLogoSrc,
     })
       .then(({ dataUrl }) => {
         if (!cancelled) setLabelPreviewUrl(dataUrl)
@@ -251,7 +290,7 @@ export default function QrToolPage() {
     return () => {
       cancelled = true
     }
-  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode])
+  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode, brandLogoSrc, captionLine])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -345,6 +384,8 @@ export default function QrToolPage() {
         speciesLine: labelLines.titleLine2,
         factLines: labelExtras.factLines,
         filenameBase: labelLines.filenameBase,
+        captionLine,
+        brandLogoSrc,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
@@ -414,6 +455,8 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitle'),
         footerNote: bulkFooterNote('qrBulk.docFooterNote'),
         labelAltText: t('qr.label.altText'),
+        brandLogoSrc,
+        captionLine,
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -436,6 +479,8 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
         labelAltText: t('qr.label.altText'),
+        brandLogoSrc,
+        captionLine,
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -738,6 +783,7 @@ export default function QrToolPage() {
                             speciesLinked={Boolean(batchData.speciesId)}
                             hideTargetMode
                           />
+                          {consumerCaptionControl}
 
                           <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
                             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={selectAllBatch}>
@@ -859,6 +905,7 @@ export default function QrToolPage() {
                   }
                 />
               )}
+              {mode !== 'batch' && token && aliveCollection.length > 0 && consumerCaptionControl}
 
               {mode !== 'batch' && token && aliveCollection.length > 0 && mode === 'single' && (
                 <div className="mb-4">

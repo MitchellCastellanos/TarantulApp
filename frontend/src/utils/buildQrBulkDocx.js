@@ -87,23 +87,25 @@ async function tryBrandLogoBytes() {
   }
 }
 
-async function renderLabelPng(item, normalizeHeight) {
+async function renderLabelPng(item, normalizeHeight, brandLogoSrc, captionLine) {
   return buildFullLabelPngDataUrl({
     url: item.url,
     nameLine: item.titleLine1,
     speciesLine: item.titleLine2 || '',
     factLines: item.factLines ?? null,
+    captionLine: captionLine ?? null,
     normalizeHeight,
+    brandLogoSrc,
   })
 }
 
-async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
+async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText, brandLogoSrc, captionLine) {
   const columnCount = resolveColumnCount(layout, items)
   const maxWidthPx = docxColumnMaxWidthPx(columnCount)
 
   const rendered = []
   for (const item of items) {
-    rendered.push(await renderLabelPng(item, null))
+    rendered.push(await renderLabelPng(item, null, brandLogoSrc, captionLine))
   }
 
   let normalizeHeight = null
@@ -112,7 +114,7 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
     const needsNormalize = rendered.some((r) => r.height < normalizeHeight)
     if (needsNormalize) {
       for (let i = 0; i < items.length; i++) {
-        rendered[i] = await renderLabelPng(items[i], normalizeHeight)
+        rendered[i] = await renderLabelPng(items[i], normalizeHeight, brandLogoSrc, captionLine)
       }
     }
   }
@@ -150,7 +152,7 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText) {
  * @param {string} [opts.footerNote]
  * @param {string} [opts.labelAltText] — texto accesible de la imagen (i18n)
  */
-export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote, labelAltText = 'QR label' }) {
+export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote, labelAltText = 'QR label', brandLogoSrc, captionLine }) {
   const displayQrPx = cmToDocxDisplayPx(sizeCm)
 
   const intro = []
@@ -194,6 +196,8 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     displayQrPx,
     layout,
     labelAltText,
+    brandLogoSrc,
+    captionLine,
   )
   const columnOpts = {
     count: columnCount,

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import FangPanel from '../components/FangPanel'
 import VerifiedOriginBadge from '../components/VerifiedOriginBadge'
+import LogoUploader from '../components/LogoUploader'
 import meOriginService from '../services/meOriginService'
+import meBrandingService from '../services/meBrandingService'
 import { useCapabilities } from '../hooks/useCapabilities'
 
 const KINDS = ['BREEDER', 'STORE', 'VENDOR', 'SELLER']
@@ -48,6 +50,7 @@ export default function StudioOriginPage() {
           <VerifiedOriginBadge origin={status?.origin || { verified: true, kind: status?.kind || 'BREEDER' }} />
         </div>
         <p className="small text-muted mb-0">{t('studio.originVerifiedBlurb')}</p>
+        <LogoUploader service={meBrandingService} />
       </FangPanel>
     )
   }

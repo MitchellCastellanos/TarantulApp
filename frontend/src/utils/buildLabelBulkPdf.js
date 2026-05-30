@@ -12,13 +12,15 @@ const MARGIN_PT = 18
 const ROW_GAP_PT = 8
 const COL_GAP_PT = 10
 
-async function renderLabelDataUrl(item, normalizeHeight) {
+async function renderLabelDataUrl(item, normalizeHeight, brandLogoSrc, captionLine) {
   return buildFullLabelPngDataUrl({
     url: item.url,
     nameLine: item.titleLine1,
     speciesLine: item.titleLine2 || '',
     factLines: item.factLines ?? null,
+    captionLine: captionLine ?? null,
     normalizeHeight,
+    brandLogoSrc,
   })
 }
 
@@ -36,14 +38,14 @@ function labelDisplayPt(rendered, targetQrPt) {
  * @param {string} [opts.docTitle]
  * @param {string} [opts.filename]
  */
-export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle, filename }) {
+export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle, filename, brandLogoSrc, captionLine }) {
   const preset = resolveLabelSizePreset(sizeId)
   const columns = preset.columns
   const targetQrPt = cmToPdfPt(preset.cm)
 
   const rendered = []
   for (const item of items) {
-    rendered.push(await renderLabelDataUrl(item, null))
+    rendered.push(await renderLabelDataUrl(item, null, brandLogoSrc, captionLine))
   }
 
   const normalizeHeight = rendered.length
@@ -52,7 +54,7 @@ export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle
   if (normalizeHeight) {
     for (let i = 0; i < items.length; i++) {
       if (rendered[i].height < normalizeHeight) {
-        rendered[i] = await renderLabelDataUrl(items[i], normalizeHeight)
+        rendered[i] = await renderLabelDataUrl(items[i], normalizeHeight, brandLogoSrc, captionLine)
       }
     }
   }
@@ -110,6 +112,7 @@ export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle
 }
 
 export async function triggerLabelPdfDownload(opts) {
+  // opts may include brandLogoSrc — forwarded through buildLabelBulkPdfBlob.
   const { blob, filename } = await buildLabelBulkPdfBlob(opts)
   await shareOrDownloadBlob({
     blob,

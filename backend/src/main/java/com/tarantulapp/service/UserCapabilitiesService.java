@@ -40,6 +40,7 @@ public class UserCapabilitiesService {
         dto.setVerifiedBreeder(Boolean.TRUE.equals(user.getVerifiedBreeder()));
         dto.setVerifiedOrigin(VerifiedOriginService.isVerified(user));
         dto.setOfficialPartner(isOfficialPartner(user));
+        dto.setBranding(BrandingService.canBrand(user));
         return dto;
     }
 

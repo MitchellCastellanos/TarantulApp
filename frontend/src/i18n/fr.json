@@ -623,6 +623,8 @@
     "schemaDescription": "Étiquettes terrarium et passeports avec QR vers les fiches publiques."
   },
   "labelStudio": {
+    "consumerCaption": "Légende pour le consommateur",
+    "consumerCaptionOff": "Aucune",
     "batchTab": "Étiquettes du lot",
     "collectionTab": "Étiquettes collection",
     "backToBatch": "← Retour au lot",
@@ -1999,6 +2001,10 @@
     "reportError": "Impossible d'envoyer le signalement."
   },
   "passport": {
+    "boughtFrom": "Acheté chez",
+    "originMeaningTitle": "Origine vérifiée.",
+    "originMeaning": "Notre équipe examine attentivement ce vendeur afin que les animaux soient bien soignés et que l'origine soit légitime.",
+    "originUnverified": "Publié par ce vendeur. L'origine n'est pas vérifiée par TarantulApp.",
     "badge": "Passeport numérique",
     "unknownSpecies": "Spécimen de tarantule",
     "intro": "Cette étiquette mène à un passeport numérique pour votre spécimen — fiche espèce, provenance et outils de collection quand vous le souhaitez.",
@@ -2541,6 +2547,7 @@
     "navVendors": "Vendeurs",
     "navMarketing": "Marketing",
     "navTrade": "Conformité commerce",
+    "navSpecies": "Espèces",
     "navBeta": "Programme bêta",
     "titleGeneral": "Général",
     "navAnalytics": "Analytiques",
@@ -3464,6 +3471,90 @@
     "activationRequired": "Activez d’abord votre plan Vendor (paiement ou invitation) avant de demander le badge Boutique vérifiée.",
     "storefrontVerified": "Votre boutique a déjà le badge Boutique vérifiée.",
     "rejected": "Votre demande a été refusée. Vous pouvez téléverser de nouveaux éléments ci-dessous."
+  },
+  "branding": {
+    "title": "Logo de marque",
+    "hint": "Téléversez votre logo. Nous générons une version en noir et blanc pour les étiquettes QR que vous émettez ; la version couleur est utilisée sur votre boutique et les images partagées.",
+    "loadError": "Impossible de charger votre marque.",
+    "fileTypeError": "Choisissez un fichier image (PNG, JPG ou WEBP).",
+    "uploadError": "Impossible d'enregistrer le logo. Réessayez.",
+    "previewPrompt": "Voici à quoi ressemblera votre logo en noir et blanc sur les étiquettes. Enregistrez-le s'il vous convient.",
+    "confirmCta": "Confirmer et enregistrer",
+    "uploadCta": "Téléverser le logo",
+    "replaceCta": "Remplacer le logo",
+    "removeCta": "Retirer",
+    "colorLabel": "Couleur",
+    "bwLabel": "Noir et blanc",
+    "useBwOnLabels": "Utiliser la version noir et blanc sur les étiquettes QR",
+    "error": {
+      "NOT_ELIGIBLE_FOR_BRANDING": "Ce compte n'est pas encore éligible à la marque."
+    }
+  },
+  "transfers": {
+    "title": "Transferts",
+    "subtitle": "Transférez un spécimen à un autre éleveur, ou acceptez-en un.",
+    "disclaimer": "Un transfert est une simple documentation de garde. Sans valeur monétaire, irréversible une fois accepté, et ne remplace aucun instrument légal.",
+    "loadError": "Impossible de charger vos transferts.",
+    "acceptError": "Impossible d'accepter le transfert.",
+    "cancelError": "Impossible d'annuler le transfert.",
+    "initiateError": "Impossible de lancer le transfert.",
+    "incomingTitle": "Entrants",
+    "incomingEmpty": "Aucun transfert en attente.",
+    "outgoingTitle": "Envoyés par vous",
+    "outgoingEmpty": "Aucun transfert en attente.",
+    "fromLabel": "De",
+    "toLabel": "À",
+    "statusPending": "En attente",
+    "acceptCta": "Accepter et ajouter à ma collection",
+    "cancelCta": "Annuler le transfert",
+    "backToCollection": "Retour à la collection",
+    "transferCta": "Transférer",
+    "modalTitle": "Transférer {{name}}",
+    "modalWarning": "Le spécimen rejoindra le destinataire dès acceptation. Sans valeur monétaire et irréversible. Ne remplace aucun instrument légal.",
+    "recipientEmailLabel": "E-mail du destinataire",
+    "messageLabel": "Message (facultatif)",
+    "messagePlaceholder": "Un mot pour le destinataire",
+    "sendCta": "Envoyer le transfert",
+    "initiatedSuccess": "Transfert lancé. Nous avons envoyé un e-mail au destinataire.",
+    "initiatedHint": "Il/elle se connecte ou crée un compte avec cet e-mail pour accepter. Vous pouvez annuler depuis votre page de transferts jusqu'à l'acceptation.",
+    "error": {
+      "NOT_OWNER": "Ce spécimen ne vous appartient pas.",
+      "NO_PASSPORT": "Seuls les spécimens avec passeport peuvent être transférés.",
+      "EMAIL_REQUIRED": "Saisissez l'e-mail du destinataire.",
+      "CANNOT_TRANSFER_TO_SELF": "Vous ne pouvez pas transférer vers votre propre compte.",
+      "TRANSFER_ALREADY_PENDING": "Un transfert est déjà en attente pour ce spécimen.",
+      "EMAIL_MISMATCH": "Ce transfert a été envoyé à une autre adresse.",
+      "TRANSFER_NOT_PENDING": "Ce transfert n'est plus en attente.",
+      "SPECIMEN_NOT_FOUND": "Spécimen introuvable."
+    }
+  },
+  "adminSpecies": {
+    "title": "Catalogue d'espèces",
+    "subtitle": "Ajoutez des espèces manuellement et traitez les alertes d'espèces manquantes des syncs partenaires.",
+    "gapsTitle": "Alertes d'espèces manquantes",
+    "gapsEmpty": "Aucune espèce manquante pour le moment.",
+    "colName": "Espèce",
+    "colSource": "Source",
+    "colSeen": "Vues",
+    "addCta": "Ajouter",
+    "dismissCta": "Ignorer",
+    "createTitle": "Ajouter une espèce",
+    "scientificName": "Nom scientifique",
+    "commonName": "Nom commun",
+    "originRegion": "Région d'origine",
+    "habitatType": "Habitat",
+    "hobbyWorld": "Monde",
+    "experienceLevel": "Niveau d'expérience",
+    "growthRate": "Vitesse de croissance",
+    "temperament": "Tempérament",
+    "careNotes": "Notes d'entretien",
+    "referencePhotoUrl": "URL de photo de référence",
+    "createCta": "Créer l'espèce",
+    "createSuccess": "{{name}} créée.",
+    "createError": "Impossible de créer l'espèce.",
+    "error": {
+      "SCIENTIFIC_NAME_REQUIRED": "Le nom scientifique est requis.",
+      "SPECIES_ALREADY_EXISTS": "Cette espèce existe déjà dans le catalogue."
+    }
   }
-
 }

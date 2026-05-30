@@ -131,6 +131,25 @@ public class User {
     @Column(name = "origin_trust_score", nullable = false)
     private Integer originTrustScore = 0;
 
+    /** Brand logo (full color) for storefront/shared item surfaces. */
+    @Column(name = "logo_url", length = 1000)
+    private String logoUrl;
+
+    /** Monochrome (black & white) variant composited onto QR labels. */
+    @Column(name = "logo_bw_url", length = 1000)
+    private String logoBwUrl;
+
+    @Column(name = "logo_uploaded_at")
+    private Instant logoUploadedAt;
+
+    /** True when an admin uploaded the logo on behalf of the account (mostly official partners). */
+    @Column(name = "logo_uploaded_by_admin", nullable = false)
+    private boolean logoUploadedByAdmin = false;
+
+    /** When true, labels composite the monochrome variant; otherwise the color logo. */
+    @Column(name = "logo_use_bw_on_labels", nullable = false)
+    private boolean logoUseBwOnLabels = true;
+
     /** Non-null when a vendor invite email is pending (user must accept before verified_breeder is set). */
     @Column(name = "vendor_invite_token", columnDefinition = "uuid")
     private UUID vendorInviteToken;
@@ -327,6 +346,16 @@ public class User {
     public void setVerifiedOriginKind(String verifiedOriginKind) { this.verifiedOriginKind = verifiedOriginKind; }
     public Integer getOriginTrustScore() { return originTrustScore; }
     public void setOriginTrustScore(Integer originTrustScore) { this.originTrustScore = originTrustScore; }
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
+    public String getLogoBwUrl() { return logoBwUrl; }
+    public void setLogoBwUrl(String logoBwUrl) { this.logoBwUrl = logoBwUrl; }
+    public Instant getLogoUploadedAt() { return logoUploadedAt; }
+    public void setLogoUploadedAt(Instant logoUploadedAt) { this.logoUploadedAt = logoUploadedAt; }
+    public boolean isLogoUploadedByAdmin() { return logoUploadedByAdmin; }
+    public void setLogoUploadedByAdmin(boolean logoUploadedByAdmin) { this.logoUploadedByAdmin = logoUploadedByAdmin; }
+    public boolean isLogoUseBwOnLabels() { return logoUseBwOnLabels; }
+    public void setLogoUseBwOnLabels(boolean logoUseBwOnLabels) { this.logoUseBwOnLabels = logoUseBwOnLabels; }
 
     public UUID getVendorInviteToken() { return vendorInviteToken; }
     public void setVendorInviteToken(UUID vendorInviteToken) { this.vendorInviteToken = vendorInviteToken; }

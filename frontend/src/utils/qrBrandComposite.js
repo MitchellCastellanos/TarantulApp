@@ -23,6 +23,10 @@ const SIMPLE = {
   speciesLineH: 18,
   maxTitleLines: 2,
   maxSpeciesLines: 3,
+  captionSize: 12,
+  captionLineH: 15,
+  maxCaptionLines: 2,
+  captionGapBefore: 5,
 }
 
 const CARE = {
@@ -38,6 +42,10 @@ const CARE = {
   factGapBefore: 5,
   maxTitleLines: 2,
   maxSpeciesLines: 2,
+  captionSize: 11,
+  captionLineH: 13,
+  maxCaptionLines: 2,
+  captionGapBefore: 4,
 }
 
 /** @deprecated — use SIMPLE_LABEL_QR_PX / layoutDims from buildFullLabelPngDataUrl */
@@ -84,16 +92,33 @@ export function qrCenterLogoOverlayStyles(qrSizePx, fraction = QR_CENTER_LOGO_FR
   }
 }
 
+/** True for absolute http(s) URLs pointing at a different origin (need CORS to stay canvas-safe). */
+function isCrossOrigin(src) {
+  if (typeof src !== 'string' || !/^https?:\/\//i.test(src)) return false
+  try {
+    return new URL(src, window.location.href).origin !== window.location.origin
+  } catch {
+    return false
+  }
+}
+
 export function loadImageElement(src) {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    // Remote brand logos (e.g. Cloudinary) must be CORS-loaded or canvas.toDataURL() taints.
+    if (isCrossOrigin(src)) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
     img.src = src
   })
 }
 
-export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction = QR_CENTER_LOGO_FRACTION) {
+export async function compositeQrPngDataUrl(
+  qrDataUrl,
+  rasterSize,
+  logoFraction = QR_CENTER_LOGO_FRACTION,
+  logoSrc = BRAND_LOGO_FOR_LIGHT_BG,
+) {
   const canvas = document.createElement('canvas')
   canvas.width = rasterSize
   canvas.height = rasterSize
@@ -102,9 +127,19 @@ export async function compositeQrPngDataUrl(qrDataUrl, rasterSize, logoFraction 
   ctx.drawImage(qrImg, 0, 0, rasterSize, rasterSize)
   let logo
   try {
-    logo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+    logo = await loadImageElement(logoSrc || BRAND_LOGO_FOR_LIGHT_BG)
   } catch {
-    return canvas.toDataURL('image/png')
+    // A custom brand logo that fails to load (e.g. CORS) should not drop the QR — fall back
+    // to the TarantulApp mark so the label still carries a center brand.
+    if (logoSrc && logoSrc !== BRAND_LOGO_FOR_LIGHT_BG) {
+      try {
+        logo = await loadImageElement(BRAND_LOGO_FOR_LIGHT_BG)
+      } catch {
+        return canvas.toDataURL('image/png')
+      }
+    } else {
+      return canvas.toDataURL('image/png')
+    }
   }
   const lw = Math.max(14, Math.round(rasterSize * logoFraction))
   const lx = (rasterSize - lw) / 2
@@ -163,25 +198,30 @@ export function wrapLinesToWidth(ctx, text, maxWidth) {
   return lines
 }
 
-function measureSimpleVertical(ctx, { nameLine, speciesLine, qrSize }) {
+function measureSimpleVertical(ctx, { nameLine, speciesLine, captionLine, qrSize }) {
   const S = SIMPLE
   const maxTextW = qrSize
   ctx.font = `bold ${S.titleSize}px sans-serif`
   const nameLines = wrapLinesToWidth(ctx, nameLine, maxTextW).slice(0, S.maxTitleLines)
   ctx.font = `italic ${S.speciesSize}px sans-serif`
   const speciesLines = wrapLinesToWidth(ctx, speciesLine, maxTextW).slice(0, S.maxSpeciesLines)
+  ctx.font = `${S.captionSize}px sans-serif`
+  const captionLines = captionLine
+    ? wrapLinesToWidth(ctx, captionLine, maxTextW).slice(0, S.maxCaptionLines)
+    : []
 
   let textBlockH = 0
   if (nameLines.length) textBlockH += nameLines.length * S.titleLineH + 4
   if (speciesLines.length) textBlockH += speciesLines.length * S.speciesLineH
+  if (captionLines.length) textBlockH += S.captionGapBefore + captionLines.length * S.captionLineH
 
   const W = qrSize + S.pad * 2
   const H = S.pad + qrSize + (textBlockH > 0 ? S.gapAfterQr + textBlockH : 0) + S.pad
 
-  return { W, H, nameLines, speciesLines, maxTextW }
+  return { W, H, nameLines, speciesLines, captionLines, maxTextW }
 }
 
-function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, qrSize }) {
+function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, captionLine, qrSize }) {
   const C = CARE
   const textW = C.textColW
 
@@ -196,16 +236,22 @@ function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, qrSize }
     factLineCount += wrapLinesToWidth(ctx, fact, textW).length
   }
 
+  ctx.font = `${C.captionSize}px sans-serif`
+  const captionLines = captionLine
+    ? wrapLinesToWidth(ctx, captionLine, textW).slice(0, C.maxCaptionLines)
+    : []
+
   let textH = 0
   if (titleLines.length) textH += titleLines.length * C.titleLineH + 3
   if (speciesLines.length) textH += speciesLines.length * C.speciesLineH
   if (factLineCount) textH += C.factGapBefore + factLineCount * C.factLineH
+  if (captionLines.length) textH += C.captionGapBefore + captionLines.length * C.captionLineH
 
   const bodyH = Math.max(qrSize, textH)
   const W = C.pad + qrSize + C.qrTextGap + textW + C.pad
   const H = C.pad + bodyH + C.pad
 
-  return { W, H, titleLines, speciesLines, factLines, textW, textH, bodyH }
+  return { W, H, titleLines, speciesLines, factLines, captionLines, textW, textH, bodyH }
 }
 
 function drawCenteredLines(ctx, cx, y, lines, lineH, font, color) {
@@ -234,7 +280,7 @@ function drawLeftLines(ctx, x, y, lines, lineH, font, color) {
   return cy
 }
 
-async function drawSimpleVerticalLabel(ctx, W, H, { composed, qrSize, nameLines, speciesLines }) {
+async function drawSimpleVerticalLabel(ctx, W, H, { composed, qrSize, nameLines, speciesLines, captionLines }) {
   const S = SIMPLE
   const qrX = (W - qrSize) / 2
   const qrY = S.qrTop
@@ -242,7 +288,8 @@ async function drawSimpleVerticalLabel(ctx, W, H, { composed, qrSize, nameLines,
   const qrImg = await loadImageElement(composed)
   ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
 
-  let y = qrY + qrSize + (nameLines.length || speciesLines.length ? S.gapAfterQr : 0)
+  const hasText = nameLines.length || speciesLines.length || (captionLines && captionLines.length)
+  let y = qrY + qrSize + (hasText ? S.gapAfterQr : 0)
   const cx = W / 2
 
   if (nameLines.length) {
@@ -258,7 +305,7 @@ async function drawSimpleVerticalLabel(ctx, W, H, { composed, qrSize, nameLines,
     y += 4
   }
   if (speciesLines.length) {
-    drawCenteredLines(
+    y = drawCenteredLines(
       ctx,
       cx,
       y,
@@ -268,6 +315,10 @@ async function drawSimpleVerticalLabel(ctx, W, H, { composed, qrSize, nameLines,
       '#444',
     )
   }
+  if (captionLines && captionLines.length) {
+    y += S.captionGapBefore
+    drawCenteredLines(ctx, cx, y, captionLines, S.captionLineH, `${S.captionSize}px sans-serif`, '#555')
+  }
 }
 
 async function drawCareHorizontalLabel(ctx, W, H, {
@@ -276,6 +327,7 @@ async function drawCareHorizontalLabel(ctx, W, H, {
   titleLines,
   speciesLines,
   factLines,
+  captionLines,
   textW,
   textH,
 }) {
@@ -312,6 +364,10 @@ async function drawCareHorizontalLabel(ctx, W, H, {
       y = drawLeftLines(ctx, textX, y, sub, C.factLineH, `${C.factSize}px sans-serif`, '#222')
     }
   }
+  if (captionLines && captionLines.length) {
+    y += C.captionGapBefore
+    drawLeftLines(ctx, textX, y, captionLines, C.captionLineH, `${C.captionSize}px sans-serif`, '#555')
+  }
 }
 
 function drawCutBorder(ctx, W, H) {
@@ -332,7 +388,9 @@ export async function buildFullLabelPngDataUrl({
   nameLine,
   speciesLine,
   factLines = null,
+  captionLine = null,
   normalizeHeight = null,
+  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
   shortIdLine: _shortIdLine,
   worldBadgeInfo: _worldBadgeInfo,
 }) {
@@ -345,7 +403,7 @@ export async function buildFullLabelPngDataUrl({
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
-  const composed = await compositeQrPngDataUrl(raw, qrSize)
+  const composed = await compositeQrPngDataUrl(raw, qrSize, QR_CENTER_LOGO_FRACTION, brandLogoSrc)
 
   const measureCanvas = document.createElement('canvas')
   const mctx = measureCanvas.getContext('2d')
@@ -355,19 +413,21 @@ export async function buildFullLabelPngDataUrl({
   let drawPayload
 
   if (!hasFacts) {
-    const m = measureSimpleVertical(mctx, { nameLine, speciesLine, qrSize })
+    const m = measureSimpleVertical(mctx, { nameLine, speciesLine, captionLine, qrSize })
     W = m.W
     H = m.H
     drawPayload = {
       mode: 'simple',
       nameLines: m.nameLines,
       speciesLines: m.speciesLines,
+      captionLines: m.captionLines,
     }
   } else {
     const m = measureCareHorizontal(mctx, {
       nameLine,
       speciesLine,
       factLines,
+      captionLine,
       qrSize,
     })
     W = m.W
@@ -377,6 +437,7 @@ export async function buildFullLabelPngDataUrl({
       titleLines: m.titleLines,
       speciesLines: m.speciesLines,
       factLines: m.factLines,
+      captionLines: m.captionLines,
       textW: m.textW,
       textH: m.textH,
     }
@@ -399,6 +460,7 @@ export async function buildFullLabelPngDataUrl({
         qrSize,
         nameLines: drawPayload.nameLines,
         speciesLines: drawPayload.speciesLines,
+        captionLines: drawPayload.captionLines,
       })
     } else {
       await drawCareHorizontalLabel(targetCtx, W, H, {
@@ -407,6 +469,7 @@ export async function buildFullLabelPngDataUrl({
         titleLines: drawPayload.titleLines,
         speciesLines: drawPayload.speciesLines,
         factLines: drawPayload.factLines,
+        captionLines: drawPayload.captionLines,
         textW: drawPayload.textW,
         textH: drawPayload.textH,
       })
@@ -438,7 +501,9 @@ export async function downloadBrandedQrPng({
   nameLine,
   speciesLine,
   factLines = null,
+  captionLine = null,
   filenameBase,
+  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
   shortIdLine,
   worldBadgeInfo,
 }) {
@@ -447,6 +512,8 @@ export async function downloadBrandedQrPng({
     nameLine,
     speciesLine,
     factLines,
+    captionLine,
+    brandLogoSrc,
     shortIdLine,
     worldBadgeInfo,
   })

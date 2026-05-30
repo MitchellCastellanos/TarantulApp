@@ -17,6 +17,8 @@ public class TarantulaResponse {
     private String notes;
     private Boolean isPublic;
     private String shortId;
+    /** True when this specimen is backed by a passport (eligible for email custody transfer). */
+    private boolean hasPassport;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private SpeciesDTO species;
@@ -50,6 +52,8 @@ public class TarantulaResponse {
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public String getShortId() { return shortId; }
     public void setShortId(String shortId) { this.shortId = shortId; }
+    public boolean isHasPassport() { return hasPassport; }
+    public void setHasPassport(boolean hasPassport) { this.hasPassport = hasPassport; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
