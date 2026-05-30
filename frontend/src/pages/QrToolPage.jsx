@@ -191,6 +191,7 @@ export default function QrToolPage() {
         sizeId: labelSizeId,
         docTitle: t('labelStudio.pdfDocTitle'),
         filename: `${filenameBase}-${labelSizeId}.pdf`,
+        brandLogoSrc,
       })
       await registerPrint()
     } finally {
@@ -430,6 +431,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitle'),
         footerNote: bulkFooterNote('qrBulk.docFooterNote'),
         labelAltText: t('qr.label.altText'),
+        brandLogoSrc,
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
       await marketplaceService.registerQrPrint().catch(() => {})
@@ -452,6 +454,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
         labelAltText: t('qr.label.altText'),
+        brandLogoSrc,
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')
       await marketplaceService.registerQrPrint().catch(() => {})
