@@ -167,6 +167,9 @@ public class SecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/public/**")).permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/billing/webhook").permitAll()
+                        // Usage analytics ingestion: anonymous + authenticated (JWT filter still
+                        // populates the SecurityContext when a Bearer is present). sendBeacon-friendly.
+                        .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/analytics/event")).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/species", "/api/species/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gbif/search", "/api/wsc/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gbif/**", "/api/wsc/**").permitAll()

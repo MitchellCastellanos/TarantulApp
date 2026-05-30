@@ -158,6 +158,8 @@ const adminService = {
     api.post('/admin/marketing/ad-studio/generate', payload).then((r) => r.data),
   adStudioTemplates: () =>
     api.get('/admin/marketing/ad-studio/templates').then((r) => r.data),
+  appAnalytics: (range = '30d') =>
+    api.get('/admin/analytics', { params: { range } }).then((r) => r.data),
   listSpeciesTradeNotes: () => api.get('/admin/species-trade-notes').then((r) => r.data),
   upsertSpeciesTradeNote: (payload) => api.put('/admin/species-trade-notes', payload).then((r) => r.data),
   deleteSpeciesTradeNote: (id) => api.delete(`/admin/species-trade-notes/${id}`),
