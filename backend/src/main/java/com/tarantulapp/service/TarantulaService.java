@@ -344,16 +344,17 @@ public class TarantulaService {
             if (passport.getTarantulaId() != null) {
                 Tarantula t = tarantulaRepository.findById(passport.getTarantulaId())
                         .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
-                return buildSpecimenPublicProfile(t, passport.getShortId());
+                return buildSpecimenPublicProfile(t, passport.getShortId(), passport);
             }
         }
 
         Tarantula t = tarantulaRepository.findByShortId(shortId)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
-        return buildSpecimenPublicProfile(t, t.getShortId());
+        return buildSpecimenPublicProfile(t, t.getShortId(), null);
     }
 
-    private PublicProfileDTO buildSpecimenPublicProfile(Tarantula t, String shortId) {
+    private PublicProfileDTO buildSpecimenPublicProfile(Tarantula t, String shortId,
+                                                        com.tarantulapp.entity.Passport passport) {
         boolean owner = isQrProfileOwner(t);
         if (!Boolean.TRUE.equals(t.getIsPublic()) && !owner) {
             throw new NotFoundException("Este perfil no es público");
@@ -369,8 +370,26 @@ public class TarantulaService {
                 .map(User::getPublicHandle)
                 .filter(h -> h != null && !h.isBlank())
                 .ifPresent(dto::setKeeperHandle);
-        userRepository.findById(t.getUserId())
-                .ifPresent(keeper -> dto.setOrigin(verifiedOriginService.resolvePublicOrigin(keeper)));
+        // Provenance: the origin (vendor/breeder) the specimen came from persists on the passport
+        // across claims and transfers, so resolve the badge from there rather than the current owner.
+        UUID originUserId = t.getUserId();
+        if (passport != null) {
+            if (passport.getOriginUserId() != null) {
+                originUserId = passport.getOriginUserId();
+            } else if (passport.getCreatedByUserId() != null) {
+                originUserId = passport.getCreatedByUserId();
+            }
+        }
+        userRepository.findById(originUserId).ifPresent(originUser -> {
+            com.tarantulapp.dto.PublicOriginDTO origin = verifiedOriginService.resolvePublicOrigin(originUser);
+            dto.setOrigin(origin);
+            if (originUser.getPublicHandle() != null && !originUser.getPublicHandle().isBlank()) {
+                dto.setOriginHandle(originUser.getPublicHandle());
+            }
+            if (origin != null) {
+                dto.setOriginName(origin.getDisplayName());
+            }
+        });
         dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());
@@ -720,6 +739,7 @@ public class TarantulaService {
         r.setNotes(t.getNotes());
         r.setIsPublic(t.getIsPublic());
         r.setShortId(t.getShortId());
+        r.setHasPassport(t.getPassportId() != null);
         r.setCreatedAt(t.getCreatedAt());
         r.setUpdatedAt(t.getUpdatedAt());
         r.setSpecies(SpeciesDTO.from(t.getSpecies()));
@@ -758,6 +778,7 @@ public class TarantulaService {
         r.setNotes(t.getNotes());
         r.setIsPublic(t.getIsPublic());
         r.setShortId(t.getShortId());
+        r.setHasPassport(t.getPassportId() != null);
         r.setCreatedAt(t.getCreatedAt());
         r.setUpdatedAt(t.getUpdatedAt());
         r.setSpecies(SpeciesDTO.from(t.getSpecies()));

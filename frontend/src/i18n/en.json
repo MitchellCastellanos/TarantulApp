@@ -2026,6 +2026,7 @@
     "reportError": "Could not send report."
   },
   "passport": {
+    "boughtFrom": "Bought from",
     "badge": "Digital passport",
     "unknownSpecies": "Tarantula specimen",
     "intro": "This label links to a digital passport for your specimen — species care info, provenance, and collection tools when you're ready.",
@@ -3542,6 +3543,44 @@
     "useBwOnLabels": "Use the black & white version on QR labels",
     "error": {
       "NOT_ELIGIBLE_FOR_BRANDING": "This account is not eligible for branding yet."
+    }
+  },
+  "transfers": {
+    "title": "Transfers",
+    "subtitle": "Move a specimen to another keeper, or accept one sent to you.",
+    "disclaimer": "A transfer is custody documentation only. It has no monetary value, cannot be undone once accepted, and does not replace any legal instrument.",
+    "loadError": "Could not load your transfers.",
+    "acceptError": "Could not accept the transfer.",
+    "cancelError": "Could not cancel the transfer.",
+    "initiateError": "Could not start the transfer.",
+    "incomingTitle": "Incoming",
+    "incomingEmpty": "No transfers waiting for you.",
+    "outgoingTitle": "Sent by you",
+    "outgoingEmpty": "You have no pending transfers.",
+    "fromLabel": "From",
+    "toLabel": "To",
+    "statusPending": "Pending",
+    "acceptCta": "Accept & add to my collection",
+    "cancelCta": "Cancel transfer",
+    "backToCollection": "Back to collection",
+    "transferCta": "Transfer",
+    "modalTitle": "Transfer {{name}}",
+    "modalWarning": "This moves the specimen to the recipient once they accept. No monetary value, and it cannot be undone. It does not replace any legal instrument.",
+    "recipientEmailLabel": "Recipient email",
+    "messageLabel": "Message (optional)",
+    "messagePlaceholder": "A note for the recipient",
+    "sendCta": "Send transfer",
+    "initiatedSuccess": "Transfer started. We emailed the recipient.",
+    "initiatedHint": "They sign in or create an account with that email to accept. You can cancel from your transfers page until they accept.",
+    "error": {
+      "NOT_OWNER": "You do not own this specimen.",
+      "NO_PASSPORT": "Only passport specimens can be transferred.",
+      "EMAIL_REQUIRED": "Enter the recipient email.",
+      "CANNOT_TRANSFER_TO_SELF": "You cannot transfer to your own account.",
+      "TRANSFER_ALREADY_PENDING": "There is already a pending transfer for this specimen.",
+      "EMAIL_MISMATCH": "This transfer was sent to a different email.",
+      "TRANSFER_NOT_PENDING": "This transfer is no longer pending.",
+      "SPECIMEN_NOT_FOUND": "Specimen not found."
     }
   }
 }

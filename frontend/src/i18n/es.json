@@ -2028,6 +2028,7 @@
     "reportError": "No se pudo enviar el reporte."
   },
   "passport": {
+    "boughtFrom": "Comprado de",
     "badge": "Pasaporte digital",
     "unknownSpecies": "Espécimen de tarántula",
     "intro": "Esta etiqueta enlaza a un pasaporte digital para tu espécimen: ficha de especie, procedencia y herramientas de colección cuando quieras.",
@@ -3521,6 +3522,44 @@
     "useBwOnLabels": "Usar la versión en blanco y negro en las etiquetas QR",
     "error": {
       "NOT_ELIGIBLE_FOR_BRANDING": "Esta cuenta aún no puede usar marca."
+    }
+  },
+  "transfers": {
+    "title": "Transferencias",
+    "subtitle": "Pasa un ejemplar a otro keeper, o acepta uno que te enviaron.",
+    "disclaimer": "Una transferencia es solo documentación de custodia. No tiene valor monetario, no se puede deshacer una vez aceptada y no sustituye ningún instrumento legal.",
+    "loadError": "No se pudieron cargar tus transferencias.",
+    "acceptError": "No se pudo aceptar la transferencia.",
+    "cancelError": "No se pudo cancelar la transferencia.",
+    "initiateError": "No se pudo iniciar la transferencia.",
+    "incomingTitle": "Entrantes",
+    "incomingEmpty": "No tienes transferencias esperando.",
+    "outgoingTitle": "Enviadas por ti",
+    "outgoingEmpty": "No tienes transferencias pendientes.",
+    "fromLabel": "De",
+    "toLabel": "Para",
+    "statusPending": "Pendiente",
+    "acceptCta": "Aceptar y agregar a mi colección",
+    "cancelCta": "Cancelar transferencia",
+    "backToCollection": "Volver a la colección",
+    "transferCta": "Transferir",
+    "modalTitle": "Transferir {{name}}",
+    "modalWarning": "Esto pasa el ejemplar al destinatario cuando lo acepte. Sin valor monetario y no se puede deshacer. No sustituye ningún instrumento legal.",
+    "recipientEmailLabel": "Correo del destinatario",
+    "messageLabel": "Mensaje (opcional)",
+    "messagePlaceholder": "Una nota para el destinatario",
+    "sendCta": "Enviar transferencia",
+    "initiatedSuccess": "Transferencia iniciada. Le enviamos un correo al destinatario.",
+    "initiatedHint": "Inicia sesión o crea una cuenta con ese correo para aceptar. Puedes cancelar desde tu página de transferencias hasta que la acepte.",
+    "error": {
+      "NOT_OWNER": "Este ejemplar no es tuyo.",
+      "NO_PASSPORT": "Solo se pueden transferir ejemplares con pasaporte.",
+      "EMAIL_REQUIRED": "Ingresa el correo del destinatario.",
+      "CANNOT_TRANSFER_TO_SELF": "No puedes transferir a tu propia cuenta.",
+      "TRANSFER_ALREADY_PENDING": "Ya hay una transferencia pendiente para este ejemplar.",
+      "EMAIL_MISMATCH": "Esta transferencia se envió a otro correo.",
+      "TRANSFER_NOT_PENDING": "Esta transferencia ya no está pendiente.",
+      "SPECIMEN_NOT_FOUND": "Ejemplar no encontrado."
     }
   }
 }

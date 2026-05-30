@@ -32,6 +32,7 @@ const TarantulaDetailPage = lazy(() => import('./pages/TarantulaDetailPage'))
 const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage'))
 const RemindersPage = lazy(() => import('./pages/RemindersPage'))
 const AccountPage = lazy(() => import('./pages/AccountPage'))
+const TransfersPage = lazy(() => import('./pages/TransfersPage'))
 const ProPage = lazy(() => import('./pages/ProPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
@@ -260,6 +261,7 @@ function AppRoutes() {
       <Route path="/insights" element={<PrivateRoute><InsightsPage /></PrivateRoute>} />
       <Route path="/tarantulas/qr-print" element={<PrivateRoute><Navigate to="/studio/labels?mode=bulk" replace /></PrivateRoute>} />
       <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+      <Route path="/transfers" element={<PrivateRoute><TransfersPage /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
       <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
       {/* Community paused: redirect legacy routes to the dashboard. */}

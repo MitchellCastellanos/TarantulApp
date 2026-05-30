@@ -18,6 +18,7 @@ import MoltGrowthChart from '../components/MoltGrowthChart'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import TaSegmentedControl from '../components/TaSegmentedControl'
 import tarantulaService from '../services/tarantulaService'
+import meTransfersService from '../services/meTransfersService'
 import logsService from '../services/logsService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
@@ -110,7 +111,12 @@ export default function TarantulaDetailPage() {
   const [molts, setMolts] = useState([])
   const [feedings, setFeedings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased'
+  const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased' | 'transfer'
+  const [transferEmail, setTransferEmail] = useState('')
+  const [transferMsg, setTransferMsg] = useState('')
+  const [transferBusy, setTransferBusy] = useState(false)
+  const [transferError, setTransferError] = useState('')
+  const [transferDone, setTransferDone] = useState(false)
   const [deceasedNotes, setDeceasedNotes] = useState('')
   const [deceasedDate, setDeceasedDate] = useState(new Date().toISOString().slice(0, 10))
   const [historyPageIndex, setHistoryPageIndex] = useState(0)
@@ -286,6 +292,35 @@ export default function TarantulaDetailPage() {
     navigate('/')
   }
 
+  const handleTransfer = async () => {
+    setTransferBusy(true)
+    setTransferError('')
+    try {
+      const data = await meTransfersService.initiate({
+        tarantulaId: id,
+        toEmail: transferEmail.trim(),
+        message: transferMsg.trim() || undefined,
+      })
+      if (data?.error) {
+        setTransferError(t(`transfers.error.${data.error}`, { defaultValue: t('transfers.initiateError') }))
+      } else {
+        setTransferDone(true)
+      }
+    } catch {
+      setTransferError(t('transfers.initiateError'))
+    } finally {
+      setTransferBusy(false)
+    }
+  }
+
+  const closeTransferModal = () => {
+    setModal(null)
+    setTransferEmail('')
+    setTransferMsg('')
+    setTransferError('')
+    setTransferDone(false)
+  }
+
   const handleMarkDeceased = async () => {
     const updated = await tarantulaService.markDeceased(id, {
       notes: deceasedNotes || null,
@@ -351,6 +386,68 @@ export default function TarantulaDetailPage() {
       {modal === 'molt'     && <MoltModal     tarantulaId={id} tarantula={tarantula} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'behavior' && <BehaviorModal tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'qr'       && <QRModal tarantula={tarantula}  onClose={() => setModal(null)} />}
+      {modal === 'transfer' && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{t('transfers.modalTitle', { name: tarantula.name })}</h5>
+                <button type="button" className="btn-close" onClick={closeTransferModal} />
+              </div>
+              <div className="modal-body">
+                {transferDone ? (
+                  <>
+                    <div className="alert alert-success small py-2">{t('transfers.initiatedSuccess')}</div>
+                    <p className="small text-muted mb-0">{t('transfers.initiatedHint')}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="alert alert-warning small py-2">{t('transfers.modalWarning')}</div>
+                    {transferError && <div className="alert alert-danger small py-2">{transferError}</div>}
+                    <label className="form-label small">{t('transfers.recipientEmailLabel')}</label>
+                    <input
+                      type="email"
+                      className="form-control form-control-sm mb-2"
+                      value={transferEmail}
+                      onChange={(e) => setTransferEmail(e.target.value)}
+                      placeholder="nombre@correo.com"
+                    />
+                    <label className="form-label small">{t('transfers.messageLabel')}</label>
+                    <textarea
+                      className="form-control form-control-sm"
+                      rows={2}
+                      value={transferMsg}
+                      onChange={(e) => setTransferMsg(e.target.value)}
+                      placeholder={t('transfers.messagePlaceholder')}
+                    />
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                {transferDone ? (
+                  <button type="button" className="btn btn-dark btn-sm" onClick={closeTransferModal}>
+                    {t('common.close')}
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={closeTransferModal}>
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-dark btn-sm"
+                      disabled={transferBusy || !transferEmail.trim()}
+                      onClick={handleTransfer}
+                    >
+                      {transferBusy ? t('common.loading') : t('transfers.sendCta')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal === 'deceased' && (
         <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.7)' }}
@@ -684,6 +781,17 @@ export default function TarantulaDetailPage() {
                         title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
                         {t('tarantula.markDeceased')}
                       </button>
+                      {tarantula.hasPassport && (
+                        <button
+                          type="button"
+                          className="btn btn-sm flex-fill btn-outline-secondary"
+                          style={{ borderColor: 'var(--ta-border-gold)', color: 'var(--ta-gold)' }}
+                          onClick={() => mayEdit && setModal('transfer')}
+                          disabled={!mayEdit}
+                          title={!mayEdit ? t('tarantula.lockedEditHint') : undefined}>
+                          🤝 {t('transfers.transferCta')}
+                        </button>
+                      )}
                     </>
                   )}
                   <button

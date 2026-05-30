@@ -277,6 +277,9 @@ export default function Navbar({ variant = 'app', hideLoginLink = false }) {
           <Link to="/account" onClick={onClick} className="ta-more__item">
             <i className="bi bi-gear" aria-hidden="true" /> {t('nav.accountSettings')}
           </Link>
+          <Link to="/transfers" onClick={onClick} className="ta-more__item">
+            <i className="bi bi-arrow-left-right" aria-hidden="true" /> {t('transfers.title')}
+          </Link>
           {capabilities?.officialPartner && (
             <Link to="/partner/hub" onClick={onClick} className="ta-more__item">
               <i className="bi bi-building" aria-hidden="true" /> {t('partnerHub.nav')}

@@ -732,4 +732,133 @@ public class EmailService {
             throw new RuntimeException("Newsletter send failed", e);
         }
     }
+
+    // ── Specimen transfer (Phase 2) ─────────────────────────────────────────
+
+    private static String transferLoc(String locale) {
+        String l = locale == null ? "" : locale.toLowerCase();
+        if (l.startsWith("es")) return "es";
+        if (l.startsWith("fr")) return "fr";
+        return "en";
+    }
+
+    /** Offer email to the recipient — they sign in / create an account with this email to accept. */
+    public void sendSpecimenTransferOffer(String toEmail, String fromName, String specimenName,
+                                          String acceptUrl, String locale) {
+        String loc = transferLoc(locale);
+        String name = (fromName == null || fromName.isBlank()) ? "A TarantulApp keeper" : fromName;
+        String subject;
+        String body;
+        switch (loc) {
+            case "es" -> {
+                subject = name + " quiere transferirte una tarántula en TarantulApp";
+                body = name + " quiere transferirte “" + specimenName + "”.\n\n"
+                        + "Esto es documentación de cambio de custodia: no tiene valor monetario y no se puede "
+                        + "deshacer una vez aceptada. No sustituye ningún instrumento legal.\n\n"
+                        + "Para aceptar, inicia sesión o crea una cuenta con este correo (" + toEmail
+                        + ") y abre tus transferencias:\n" + acceptUrl + "\n\n"
+                        + "Bienvenida/o: estás a punto de unirte a la primera comunidad + marketplace + "
+                        + "verificación de origen para criadores de tarántulas.\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            case "fr" -> {
+                subject = name + " souhaite vous transférer une mygale sur TarantulApp";
+                body = name + " souhaite vous transférer « " + specimenName + " ».\n\n"
+                        + "Il s'agit d'une documentation de changement de garde : sans valeur monétaire et "
+                        + "irréversible une fois acceptée. Cela ne remplace aucun instrument légal.\n\n"
+                        + "Pour accepter, connectez-vous ou créez un compte avec cette adresse (" + toEmail
+                        + ") et ouvrez vos transferts :\n" + acceptUrl + "\n\n"
+                        + "Bienvenue : vous êtes sur le point de rejoindre la première communauté + place de "
+                        + "marché + vérification d'origine pour les éleveurs de mygales.\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            default -> {
+                subject = name + " wants to transfer a tarantula to you on TarantulApp";
+                body = name + " wants to transfer “" + specimenName + "” to you.\n\n"
+                        + "This is custody-transfer documentation — it has no monetary value and cannot be "
+                        + "undone once accepted. It does not replace any legal instrument.\n\n"
+                        + "To accept, sign in or create an account with this email (" + toEmail
+                        + ") and open your transfers:\n" + acceptUrl + "\n\n"
+                        + "Welcome — you're about to join the first community + marketplace + origin verification "
+                        + "for tarantula keepers.\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+        }
+        try {
+            doSend(toEmail, subject, body);
+            log.info("Specimen transfer offer sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.warn("Specimen transfer offer failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    /** Receipt to the sender confirming a transfer was started. */
+    public void sendSpecimenTransferSenderReceipt(String toEmail, String specimenName, String recipientEmail,
+                                                  String manageUrl, String locale) {
+        String loc = transferLoc(locale);
+        String subject;
+        String body;
+        switch (loc) {
+            case "es" -> {
+                subject = "Transferencia iniciada: " + specimenName;
+                body = "Iniciaste la transferencia de “" + specimenName + "” a " + recipientEmail + ".\n\n"
+                        + "Pasará a su colección cuando la acepte. Puedes cancelarla antes de que la acepte "
+                        + "desde tu página de transferencias:\n" + manageUrl + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            case "fr" -> {
+                subject = "Transfert lancé : " + specimenName;
+                body = "Vous avez lancé le transfert de « " + specimenName + " » vers " + recipientEmail + ".\n\n"
+                        + "Il rejoindra sa collection dès qu'il/elle l'aura accepté. Vous pouvez l'annuler avant "
+                        + "l'acceptation depuis votre page de transferts :\n" + manageUrl + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            default -> {
+                subject = "Transfer started: " + specimenName;
+                body = "You started transferring “" + specimenName + "” to " + recipientEmail + ".\n\n"
+                        + "It will move to their collection once they accept. You can cancel it before they "
+                        + "accept from your transfers page:\n" + manageUrl + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+        }
+        try {
+            doSend(toEmail, subject, body);
+        } catch (Exception e) {
+            log.warn("Specimen transfer receipt failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    /** Completion email after a transfer is accepted. {@code toRecipient} picks the perspective. */
+    public void sendSpecimenTransferCompleted(String toEmail, String specimenName, String counterparty,
+                                              boolean toRecipient, String locale) {
+        String loc = transferLoc(locale);
+        String other = (counterparty == null || counterparty.isBlank()) ? "the other keeper" : counterparty;
+        String subject;
+        String body;
+        switch (loc) {
+            case "es" -> {
+                subject = toRecipient ? ("“" + specimenName + "” ya es tuya") : ("Transferencia completada: " + specimenName);
+                body = toRecipient
+                        ? ("“" + specimenName + "” ya está en tu colección. Es tu documentación de custodia; "
+                            + "no sustituye instrumentos legales.\n\n— TarantulApp\n" + baseUrl + "\n")
+                        : ("“" + specimenName + "” se transfirió a " + other + " y ya no está en tu colección.\n\n"
+                            + "— TarantulApp\n" + baseUrl + "\n");
+            }
+            case "fr" -> {
+                subject = toRecipient ? ("« " + specimenName + " » est maintenant à vous") : ("Transfert terminé : " + specimenName);
+                body = toRecipient
+                        ? ("« " + specimenName + " » est maintenant dans votre collection. C'est votre documentation "
+                            + "de garde ; elle ne remplace pas d'instrument légal.\n\n— TarantulApp\n" + baseUrl + "\n")
+                        : ("« " + specimenName + " » a été transférée à " + other + " et n'est plus dans votre "
+                            + "collection.\n\n— TarantulApp\n" + baseUrl + "\n");
+            }
+            default -> {
+                subject = toRecipient ? ("“" + specimenName + "” is now yours") : ("Transfer complete: " + specimenName);
+                body = toRecipient
+                        ? ("“" + specimenName + "” is now in your collection. This is your custody documentation; "
+                            + "it does not replace legal instruments.\n\n— TarantulApp\n" + baseUrl + "\n")
+                        : ("“" + specimenName + "” was transferred to " + other + " and is no longer in your "
+                            + "collection.\n\n— TarantulApp\n" + baseUrl + "\n");
+            }
+        }
+        try {
+            doSend(toEmail, subject, body);
+        } catch (Exception e) {
+            log.warn("Specimen transfer completion failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
 }

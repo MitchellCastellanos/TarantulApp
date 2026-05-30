@@ -312,6 +312,14 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
               <VerifiedOriginBadge origin={profile.origin} showTooltip />
             </div>
           )}
+          {profile?.originHandle && (
+            <p className="small text-muted mb-0 mt-2">
+              {t('passport.boughtFrom')}{' '}
+              <Link to={`/u/${profile.originHandle}`} className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
+                {profile.originName || `@${profile.originHandle}`}
+              </Link>
+            </p>
+          )}
         </FangPanel>
 
         <FangPanel className="mb-3">

@@ -1999,6 +1999,7 @@
     "reportError": "Impossible d'envoyer le signalement."
   },
   "passport": {
+    "boughtFrom": "Acheté chez",
     "badge": "Passeport numérique",
     "unknownSpecies": "Spécimen de tarantule",
     "intro": "Cette étiquette mène à un passeport numérique pour votre spécimen — fiche espèce, provenance et outils de collection quand vous le souhaitez.",
@@ -3481,6 +3482,44 @@
     "useBwOnLabels": "Utiliser la version noir et blanc sur les étiquettes QR",
     "error": {
       "NOT_ELIGIBLE_FOR_BRANDING": "Ce compte n'est pas encore éligible à la marque."
+    }
+  },
+  "transfers": {
+    "title": "Transferts",
+    "subtitle": "Transférez un spécimen à un autre éleveur, ou acceptez-en un.",
+    "disclaimer": "Un transfert est une simple documentation de garde. Sans valeur monétaire, irréversible une fois accepté, et ne remplace aucun instrument légal.",
+    "loadError": "Impossible de charger vos transferts.",
+    "acceptError": "Impossible d'accepter le transfert.",
+    "cancelError": "Impossible d'annuler le transfert.",
+    "initiateError": "Impossible de lancer le transfert.",
+    "incomingTitle": "Entrants",
+    "incomingEmpty": "Aucun transfert en attente.",
+    "outgoingTitle": "Envoyés par vous",
+    "outgoingEmpty": "Aucun transfert en attente.",
+    "fromLabel": "De",
+    "toLabel": "À",
+    "statusPending": "En attente",
+    "acceptCta": "Accepter et ajouter à ma collection",
+    "cancelCta": "Annuler le transfert",
+    "backToCollection": "Retour à la collection",
+    "transferCta": "Transférer",
+    "modalTitle": "Transférer {{name}}",
+    "modalWarning": "Le spécimen rejoindra le destinataire dès acceptation. Sans valeur monétaire et irréversible. Ne remplace aucun instrument légal.",
+    "recipientEmailLabel": "E-mail du destinataire",
+    "messageLabel": "Message (facultatif)",
+    "messagePlaceholder": "Un mot pour le destinataire",
+    "sendCta": "Envoyer le transfert",
+    "initiatedSuccess": "Transfert lancé. Nous avons envoyé un e-mail au destinataire.",
+    "initiatedHint": "Il/elle se connecte ou crée un compte avec cet e-mail pour accepter. Vous pouvez annuler depuis votre page de transferts jusqu'à l'acceptation.",
+    "error": {
+      "NOT_OWNER": "Ce spécimen ne vous appartient pas.",
+      "NO_PASSPORT": "Seuls les spécimens avec passeport peuvent être transférés.",
+      "EMAIL_REQUIRED": "Saisissez l'e-mail du destinataire.",
+      "CANNOT_TRANSFER_TO_SELF": "Vous ne pouvez pas transférer vers votre propre compte.",
+      "TRANSFER_ALREADY_PENDING": "Un transfert est déjà en attente pour ce spécimen.",
+      "EMAIL_MISMATCH": "Ce transfert a été envoyé à une autre adresse.",
+      "TRANSFER_NOT_PENDING": "Ce transfert n'est plus en attente.",
+      "SPECIMEN_NOT_FOUND": "Spécimen introuvable."
     }
   }
 }

@@ -49,6 +49,16 @@ public class PublicProfileDTO {
     /** Verified Origin of the passport creator or specimen keeper (public trust signal). */
     private PublicOriginDTO origin;
 
+    /** Provenance: public handle of the origin (vendor/breeder) the specimen came from. */
+    private String originHandle;
+    /** Provenance: display name of the origin the specimen came from. */
+    private String originName;
+
+    public String getOriginHandle() { return originHandle; }
+    public void setOriginHandle(String originHandle) { this.originHandle = originHandle; }
+    public String getOriginName() { return originName; }
+    public void setOriginName(String originName) { this.originName = originName; }
+
     public PageMode getPageMode() { return pageMode; }
     public void setPageMode(PageMode pageMode) { this.pageMode = pageMode; }
     public String getShortId() { return shortId; }
