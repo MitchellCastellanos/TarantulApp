@@ -69,6 +69,7 @@ const PartnerHubPage = lazy(() => import('./pages/PartnerHubPage'))
 const AdminPartnerOutreachPage = lazy(() => import('./pages/admin/AdminPartnerOutreachPage'))
 const AdminMarketingPage = lazy(() => import('./pages/admin/AdminMarketingPage'))
 const AdminSpeciesTradePage = lazy(() => import('./pages/admin/AdminSpeciesTradePage'))
+const AdminSpeciesPage = lazy(() => import('./pages/admin/AdminSpeciesPage'))
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
 const SexIdPage = lazy(() => import('./pages/SexIdPage'))
 const SexIdCasePublicPage = lazy(() => import('./pages/SexIdCasePublicPage'))
@@ -278,6 +279,7 @@ function AppRoutes() {
         <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="analytics" element={<AdminOnlyRoute><AdminAnalyticsPage /></AdminOnlyRoute>} />
         <Route path="trade" element={<AdminOnlyRoute><AdminSpeciesTradePage /></AdminOnlyRoute>} />
+        <Route path="species" element={<AdminOnlyRoute><AdminSpeciesPage /></AdminOnlyRoute>} />
         <Route path="beta" element={<AdminOnlyRoute><AdminBetaPage /></AdminOnlyRoute>} />
       </Route>
 

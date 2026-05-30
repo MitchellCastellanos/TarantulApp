@@ -627,6 +627,8 @@
     "schemaDescription": "Print terrarium and passport labels with QR codes linking to public specimen profiles."
   },
   "labelStudio": {
+    "consumerCaption": "Consumer caption",
+    "consumerCaptionOff": "None",
     "batchTab": "Batch labels",
     "collectionTab": "Collection labels",
     "backToBatch": "← Back to batch",
@@ -2027,6 +2029,9 @@
   },
   "passport": {
     "boughtFrom": "Bought from",
+    "originMeaningTitle": "Verified Origin.",
+    "originMeaning": "Our team carefully reviews this seller so the animals are well cared for and the origin is legitimate.",
+    "originUnverified": "Listed by this seller. Origin is not TarantulApp-verified.",
     "badge": "Digital passport",
     "unknownSpecies": "Tarantula specimen",
     "intro": "This label links to a digital passport for your specimen — species care info, provenance, and collection tools when you're ready.",
@@ -2579,6 +2584,7 @@
     "navVendors": "Vendors",
     "navMarketing": "Marketing",
     "navTrade": "Trade compliance",
+    "navSpecies": "Species",
     "navBeta": "Beta program",
     "titleGeneral": "General",
     "navAnalytics": "Analytics",
@@ -3581,6 +3587,35 @@
       "EMAIL_MISMATCH": "This transfer was sent to a different email.",
       "TRANSFER_NOT_PENDING": "This transfer is no longer pending.",
       "SPECIMEN_NOT_FOUND": "Specimen not found."
+    }
+  },
+  "adminSpecies": {
+    "title": "Species catalog",
+    "subtitle": "Add species manually and clear missing-species alerts from partner syncs.",
+    "gapsTitle": "Missing-species alerts",
+    "gapsEmpty": "No missing species right now.",
+    "colName": "Species",
+    "colSource": "Source",
+    "colSeen": "Seen",
+    "addCta": "Add",
+    "dismissCta": "Dismiss",
+    "createTitle": "Add a species",
+    "scientificName": "Scientific name",
+    "commonName": "Common name",
+    "originRegion": "Origin region",
+    "habitatType": "Habitat",
+    "hobbyWorld": "World",
+    "experienceLevel": "Experience level",
+    "growthRate": "Growth rate",
+    "temperament": "Temperament",
+    "careNotes": "Care notes",
+    "referencePhotoUrl": "Reference photo URL",
+    "createCta": "Create species",
+    "createSuccess": "Created {{name}}.",
+    "createError": "Could not create the species.",
+    "error": {
+      "SCIENTIFIC_NAME_REQUIRED": "Scientific name is required.",
+      "SPECIES_ALREADY_EXISTS": "That species already exists in the catalog."
     }
   }
 }

@@ -320,6 +320,14 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
               </Link>
             </p>
           )}
+          {profile?.origin?.verified ? (
+            <div className="small mt-2 p-2 rounded" style={{ background: 'rgba(212,175,55,0.10)', color: 'var(--ta-parchment)' }}>
+              <span className="fw-semibold">{t('passport.originMeaningTitle')}</span>{' '}
+              {t('passport.originMeaning')}
+            </div>
+          ) : profile?.originHandle ? (
+            <p className="small text-muted mt-2 mb-0">{t('passport.originUnverified')}</p>
+          ) : null}
         </FangPanel>
 
         <FangPanel className="mb-3">

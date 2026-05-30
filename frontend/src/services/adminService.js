@@ -174,6 +174,9 @@ const adminService = {
       .then((r) => r.data)
   },
   deleteUserLogo: (userId) => api.delete(`/admin/users/${userId}/branding/logo`).then((r) => r.data),
+  createSpecies: (payload) => api.post('/admin/species', payload).then((r) => r.data),
+  speciesGaps: () => api.get('/admin/species/gaps').then((r) => r.data),
+  dismissSpeciesGap: (id) => api.post(`/admin/species/gaps/${id}/dismiss`).then((r) => r.data),
 }
 
 export default adminService

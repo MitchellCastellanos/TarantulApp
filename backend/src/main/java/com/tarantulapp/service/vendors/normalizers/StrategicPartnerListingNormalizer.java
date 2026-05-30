@@ -4,6 +4,7 @@ import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.marketplace.MarketplaceListingCategories;
 import com.tarantulapp.repository.SpeciesRepository;
+import com.tarantulapp.service.SpeciesGapService;
 import com.tarantulapp.service.vendors.sources.StrategicVendorRawListing;
 import com.tarantulapp.service.vendors.sync.PartnerListingUpsertRequest;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,12 @@ import java.util.UUID;
 public class StrategicPartnerListingNormalizer {
 
     private final SpeciesRepository speciesRepository;
+    private final SpeciesGapService speciesGapService;
 
-    public StrategicPartnerListingNormalizer(SpeciesRepository speciesRepository) {
+    public StrategicPartnerListingNormalizer(SpeciesRepository speciesRepository,
+                                             SpeciesGapService speciesGapService) {
         this.speciesRepository = speciesRepository;
+        this.speciesGapService = speciesGapService;
     }
 
     public PartnerListingUpsertRequest normalize(UUID officialVendorId, StrategicVendorRawListing raw) {
@@ -31,6 +35,10 @@ public class StrategicPartnerListingNormalizer {
                 .findByScientificNameIgnoreCase(speciesNormalized)
                 .map(s -> s.getId())
                 .orElse(null);
+        // Alert admins when the catalog is missing a species a partner is actually selling.
+        if (speciesNormalized != null && speciesId == null) {
+            speciesGapService.report(speciesNormalized, raw.speciesNameRaw(), "partner_sync");
+        }
 
         Integer stock = raw.stockQuantity();
         PartnerListingAvailability availability = PartnerListingAvailability.UNKNOWN;

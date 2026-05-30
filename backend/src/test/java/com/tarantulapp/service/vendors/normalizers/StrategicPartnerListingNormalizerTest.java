@@ -2,6 +2,7 @@ package com.tarantulapp.service.vendors.normalizers;
 
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.repository.SpeciesRepository;
+import com.tarantulapp.service.SpeciesGapService;
 import com.tarantulapp.service.vendors.sources.StrategicVendorRawListing;
 import com.tarantulapp.service.vendors.sync.PartnerListingUpsertRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,11 +25,14 @@ class StrategicPartnerListingNormalizerTest {
     @Mock
     private SpeciesRepository speciesRepository;
 
+    @Mock
+    private SpeciesGapService speciesGapService;
+
     private StrategicPartnerListingNormalizer normalizer;
 
     @BeforeEach
     void setUp() {
-        normalizer = new StrategicPartnerListingNormalizer(speciesRepository);
+        normalizer = new StrategicPartnerListingNormalizer(speciesRepository, speciesGapService);
     }
 
     @Test

@@ -623,6 +623,8 @@
     "schemaDescription": "Étiquettes terrarium et passeports avec QR vers les fiches publiques."
   },
   "labelStudio": {
+    "consumerCaption": "Légende pour le consommateur",
+    "consumerCaptionOff": "Aucune",
     "batchTab": "Étiquettes du lot",
     "collectionTab": "Étiquettes collection",
     "backToBatch": "← Retour au lot",
@@ -2000,6 +2002,9 @@
   },
   "passport": {
     "boughtFrom": "Acheté chez",
+    "originMeaningTitle": "Origine vérifiée.",
+    "originMeaning": "Notre équipe examine attentivement ce vendeur afin que les animaux soient bien soignés et que l'origine soit légitime.",
+    "originUnverified": "Publié par ce vendeur. L'origine n'est pas vérifiée par TarantulApp.",
     "badge": "Passeport numérique",
     "unknownSpecies": "Spécimen de tarantule",
     "intro": "Cette étiquette mène à un passeport numérique pour votre spécimen — fiche espèce, provenance et outils de collection quand vous le souhaitez.",
@@ -2542,6 +2547,7 @@
     "navVendors": "Vendeurs",
     "navMarketing": "Marketing",
     "navTrade": "Conformité commerce",
+    "navSpecies": "Espèces",
     "navBeta": "Programme bêta",
     "titleGeneral": "Général",
     "navAnalytics": "Analytiques",
@@ -3520,6 +3526,35 @@
       "EMAIL_MISMATCH": "Ce transfert a été envoyé à une autre adresse.",
       "TRANSFER_NOT_PENDING": "Ce transfert n'est plus en attente.",
       "SPECIMEN_NOT_FOUND": "Spécimen introuvable."
+    }
+  },
+  "adminSpecies": {
+    "title": "Catalogue d'espèces",
+    "subtitle": "Ajoutez des espèces manuellement et traitez les alertes d'espèces manquantes des syncs partenaires.",
+    "gapsTitle": "Alertes d'espèces manquantes",
+    "gapsEmpty": "Aucune espèce manquante pour le moment.",
+    "colName": "Espèce",
+    "colSource": "Source",
+    "colSeen": "Vues",
+    "addCta": "Ajouter",
+    "dismissCta": "Ignorer",
+    "createTitle": "Ajouter une espèce",
+    "scientificName": "Nom scientifique",
+    "commonName": "Nom commun",
+    "originRegion": "Région d'origine",
+    "habitatType": "Habitat",
+    "hobbyWorld": "Monde",
+    "experienceLevel": "Niveau d'expérience",
+    "growthRate": "Vitesse de croissance",
+    "temperament": "Tempérament",
+    "careNotes": "Notes d'entretien",
+    "referencePhotoUrl": "URL de photo de référence",
+    "createCta": "Créer l'espèce",
+    "createSuccess": "{{name}} créée.",
+    "createError": "Impossible de créer l'espèce.",
+    "error": {
+      "SCIENTIFIC_NAME_REQUIRED": "Le nom scientifique est requis.",
+      "SPECIES_ALREADY_EXISTS": "Cette espèce existe déjà dans le catalogue."
     }
   }
 }
