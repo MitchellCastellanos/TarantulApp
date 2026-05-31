@@ -6,9 +6,11 @@ export const QR_TARGET_STORAGE_KEY = 'ta.qr.target'
 
 export function readQrCareFactsEnabled() {
   try {
-    return localStorage.getItem(QR_CARE_FACTS_STORAGE_KEY) === '1'
+    const v = localStorage.getItem(QR_CARE_FACTS_STORAGE_KEY)
+    if (v === null) return true
+    return v === '1'
   } catch {
-    return false
+    return true
   }
 }
 
@@ -117,7 +119,7 @@ export function buildPassportLabelItem({ passport, batch, t, careFactsOn, locale
   const factFromNotes = notes ? [notes] : null
   const { factLines: careFacts } = buildQrLabelExtras(species, t, locale, careFactsOn && species?.id != null)
   const factLines = careFactsOn
-    ? [...(careFacts || []), ...(factFromNotes || [])].filter(Boolean).slice(0, 4) || null
+    ? [...(careFacts || []), ...(factFromNotes || [])].filter(Boolean).slice(0, 8) || null
     : factFromNotes
 
   return {

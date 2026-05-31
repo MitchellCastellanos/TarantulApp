@@ -1,10 +1,23 @@
+import { getSpeciesCatalogOverride } from '../data/speciesCatalogTranslations'
 import { pickSpeciesNarrativeFieldForLocale } from './speciesNarrative.js'
+import { toSpeciesSlug } from './speciesSlug'
 
 const SEP = ' · '
 
+function num(v) {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function catalogFor(species, locale) {
+  const slug = toSpeciesSlug(species?.scientificName)
+  if (!slug) return null
+  return getSpeciesCatalogOverride(slug, locale) || getSpeciesCatalogOverride(slug, 'en')
+}
+
 /**
- * Approximate hobby temperature ranges (°C).
- * TODO: prefer species.temperatureMin/Max when they exist in the API.
+ * Approximate hobby temperature ranges (°C) when DB has no explicit range.
  */
 export function deriveTempRangeC(species) {
   const world = (species?.hobbyWorld || '').toLowerCase()
@@ -17,6 +30,17 @@ export function deriveTempRangeC(species) {
       : { min: 24, max: 26, approx: true }
   }
   return { min: 24, max: 26, approx: true }
+}
+
+export function deriveHumidityRange(species) {
+  const min = num(species?.humidityMin)
+  const max = num(species?.humidityMax)
+  if (min != null && max != null) return { min, max, approx: false }
+  const habitat = (species?.habitatType || '').toLowerCase()
+  if (habitat === 'arboreal') return { min: 65, max: 80, approx: true }
+  if (habitat === 'fossorial') return { min: 60, max: 75, approx: true }
+  if (habitat === 'terrestrial') return { min: 55, max: 70, approx: true }
+  return { min: 60, max: 70, approx: true }
 }
 
 function stripEmoji(text) {
@@ -38,11 +62,6 @@ function translateEnum(t, keys, fallback) {
   return stripEmoji(raw)
 }
 
-function isCatalogProse(text) {
-  const s = String(text ?? '').trim()
-  return s.length > 36 || /[,;]/.test(s)
-}
-
 const SUBSTRATE_PLACEHOLDER = /^(species|unknown|n\/a|na|—|-|\?)$/i
 
 function isUsableSubstrateValue(value) {
@@ -50,38 +69,24 @@ function isUsableSubstrateValue(value) {
   return Boolean(s) && !SUBSTRATE_PLACEHOLDER.test(s)
 }
 
-function compactLabelSnippet(text, maxLen = 50) {
+function compactLabelSnippet(text, maxLen = 72) {
   const s = stripEmoji(String(text ?? '').trim())
   if (!s || SUBSTRATE_PLACEHOLDER.test(s)) return null
   return s.length > maxLen ? `${s.slice(0, maxLen - 1)}…` : s
 }
 
-function substrateLabel(species, locale) {
-  const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'substrate', locale)
-  if (narrative && isUsableSubstrateValue(narrative)) return compactLabelSnippet(narrative)
-
-  const raw = species?.substrateType?.trim()
-  if (!isUsableSubstrateValue(raw)) return null
-  if (isCatalogProse(raw)) {
-    const base = (locale || 'en').split('-')[0]
-    if (base !== 'es') return null
-    return compactLabelSnippet(raw)
-  }
-  return stripEmoji(raw)
-}
-
 function temperamentLabel(species, t, locale) {
+  const catalog = catalogFor(species, locale)
+  if (catalog?.temperament) return compactLabelSnippet(catalog.temperament, 56)
+
   const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'temperament', locale)
-  if (narrative) return narrative
+  if (narrative) return compactLabelSnippet(narrative, 56)
 
   const raw = species?.temperament
   if (!raw) return null
   const trimmed = String(raw).trim()
-
-  if (isCatalogProse(trimmed)) {
-    const base = (locale || 'en').split('-')[0]
-    if (base !== 'es') return null
-    return trimmed.length > 72 ? `${trimmed.slice(0, 69)}…` : trimmed
+  if (trimmed.length > 36 || /[,;]/.test(trimmed)) {
+    return compactLabelSnippet(trimmed, 56)
   }
 
   const slug = trimmed.toLowerCase().replace(/\s+/g, '_')
@@ -131,6 +136,30 @@ function hobbyWorldLabel(species, t) {
   return null
 }
 
+function substrateLabel(species, locale) {
+  const catalog = catalogFor(species, locale)
+  if (catalog?.substrate) return compactLabelSnippet(catalog.substrate, 56)
+
+  const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'substrate', locale)
+  if (narrative && isUsableSubstrateValue(narrative)) return compactLabelSnippet(narrative, 56)
+
+  const raw = species?.substrateType?.trim()
+  if (!isUsableSubstrateValue(raw)) return null
+  if (raw.length > 36 || /[,;]/.test(raw)) return compactLabelSnippet(raw, 56)
+  return stripEmoji(raw)
+}
+
+function careNotesLabel(species, locale) {
+  const catalog = catalogFor(species, locale)
+  if (catalog?.careNotes) return compactLabelSnippet(catalog.careNotes, 88)
+
+  const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'careNotes', locale)
+  if (narrative) return compactLabelSnippet(narrative, 88)
+
+  const raw = species?.careNotes?.trim()
+  return raw ? compactLabelSnippet(raw, 88) : null
+}
+
 function joinParts(parts) {
   const usable = parts.filter(Boolean)
   return usable.length ? usable.join(SEP) : null
@@ -168,17 +197,19 @@ export function buildCareFactLines(species, t, locale) {
   }
 
   const temp = deriveTempRangeC(species)
-  const humMin = species?.humidityMin
-  const humMax = species?.humidityMax
   if (temp?.min != null && temp?.max != null) {
-    lines.push(`${t('qr.facts.temp')}: ~${temp.min}–${temp.max} °C`)
-  }
-  if (humMin != null && humMax != null) {
-    lines.push(`${t('qr.facts.humidity')}: ${humMin}–${humMax}%`)
+    const prefix = temp.approx ? '~' : ''
+    lines.push(`${t('qr.facts.temp')}: ${prefix}${temp.min}–${temp.max} °C`)
   }
 
-  const sizeMin = species?.adultSizeCmMin
-  const sizeMax = species?.adultSizeCmMax
+  const humidity = deriveHumidityRange(species)
+  if (humidity?.min != null && humidity?.max != null) {
+    const prefix = humidity.approx ? '~' : ''
+    lines.push(`${t('qr.facts.humidity')}: ${prefix}${humidity.min}–${humidity.max}%`)
+  }
+
+  const sizeMin = num(species?.adultSizeCmMin)
+  const sizeMax = num(species?.adultSizeCmMax)
   const sizePart =
     sizeMin != null || sizeMax != null
       ? `${t('qr.facts.size')}: ~${sizeMin ?? '?'}–${sizeMax ?? '?'} cm`
@@ -197,6 +228,11 @@ export function buildCareFactLines(species, t, locale) {
   const origin = species?.originRegion?.trim()
   if (origin) {
     lines.push(`${t('qr.facts.origin')}: ${origin}`)
+  }
+
+  const notes = careNotesLabel(species, locale)
+  if (notes && !lines.some((ln) => ln.includes(notes.slice(0, 24)))) {
+    lines.push(notes)
   }
 
   return lines.slice(0, 8)

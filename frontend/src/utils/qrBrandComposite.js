@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { imgUrl } from '../services/api'
 import { sanitizeFilename, shareOrDownloadDataUrl } from './shareOrDownloadBlob'
 
 /** Logo sobre fondo claro (QR / Excel / Word en blanco). */
@@ -384,10 +385,10 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
   const src =
     partnerLogoSrc && partnerLogoSrc !== BRAND_LOGO_FOR_LIGHT_BG ? String(partnerLogoSrc).trim() : ''
   if (!src) return
-  const maxSide = Math.max(28, Math.round(Math.min(canvasW, canvasH) * 0.14))
+  const maxSide = Math.max(44, Math.round(Math.min(canvasW, canvasH) * 0.24))
   const pad = 6
   try {
-    const logo = await loadImageElement(src)
+    const logo = await loadImageElement(imgUrl(src) || src)
     const scale = Math.min(maxSide / logo.width, maxSide / logo.height, 1)
     const w = Math.max(1, Math.round(logo.width * scale))
     const h = Math.max(1, Math.round(logo.height * scale))

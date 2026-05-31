@@ -108,7 +108,7 @@ export default function SpeciesProfileCard({
   const badgeColor = LEVEL_COLOR[species.experienceLevel] ?? 'secondary'
 
   const showPhotoSection =
-    !tarantula.profilePhoto &&
+    !tarantula?.profilePhoto &&
     (Boolean(species.referencePhotoUrl?.trim()) || Boolean(fallbackPhoto?.url))
 
   const showThinSheetBanner = !hasKeeperGradeSignal(species)

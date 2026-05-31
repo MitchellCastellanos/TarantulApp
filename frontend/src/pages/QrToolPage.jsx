@@ -12,7 +12,9 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
 import studioService from '../services/studioService'
+import speciesService from '../services/speciesService'
 import meBrandingService from '../services/meBrandingService'
+import { imgUrl } from '../services/api'
 import QrLabelOptionsPanel from '../components/QrLabelOptionsPanel'
 import QrLabelPreview from '../components/QrLabelPreview'
 import {
@@ -86,7 +88,7 @@ export default function QrToolPage() {
   })
   const partnerLogoSrc = useMemo(() => {
     if (!branding?.logoUrl) return null
-    return branding.useBwOnLabels && branding.logoBwUrl ? branding.logoBwUrl : branding.logoUrl
+    return imgUrl(branding.logoUrl) || branding.logoUrl
   }, [branding])
 
   // Optional consumer-facing caption printed on the label, in the buyer's language (EN/FR).
@@ -148,6 +150,16 @@ export default function QrToolPage() {
     enabled: Boolean(token && batchId),
   })
 
+  const { data: batchSpeciesFull } = useQuery({
+    queryKey: ['species', 'catalog-view', batchData?.speciesId],
+    queryFn: async () => {
+      const view = await speciesService.getDiscoverSpeciesView(batchData.speciesId)
+      return view?.species || null
+    },
+    enabled: Boolean(token && batchData?.speciesId),
+    staleTime: 300_000,
+  })
+
   const { data: batchPassports = [] } = useQuery({
     queryKey: ['studio', 'batch', batchId, 'passports'],
     queryFn: () => studioService.listPassports(batchId),
@@ -162,19 +174,28 @@ export default function QrToolPage() {
     setBatchSelected(new Set(batchPassports.map((p) => p.id)))
   }, [batchPassports])
 
+  useEffect(() => {
+    if (!batchId) return
+    setCareFactsOn(true)
+    writeQrCareFactsEnabled(true)
+  }, [batchId])
+
   const batchSelectedList = useMemo(
     () => batchPassports.filter((p) => batchSelected.has(p.id)),
     [batchPassports, batchSelected],
   )
 
   const batchSpecies = useMemo(() => {
+    if (batchSpeciesFull) return batchSpeciesFull
     if (!batchData) return null
     return {
       id: batchData.speciesId,
       scientificName: batchData.scientificName,
       commonName: batchData.commonName,
     }
-  }, [batchData])
+  }, [batchData, batchSpeciesFull])
+
+  const batchSpeciesReady = !batchData?.speciesId || Boolean(batchSpeciesFull)
 
   const buildBatchItems = () =>
     buildBatchPassportItems(batchSelectedList.slice(0, LABEL_BULK_MAX), batchData, {
@@ -857,7 +878,7 @@ export default function QrToolPage() {
                               <button
                                 type="button"
                                 className="btn btn-dark"
-                                disabled={!batchSelectedList.length || busy}
+                                disabled={!batchSelectedList.length || busy || !batchSpeciesReady}
                                 onClick={downloadBatchBulkPdf}
                               >
                                 {busy && busyKind === 'pdf' ? t('qrBulk.generating') : t('labelStudio.downloadPdf')}

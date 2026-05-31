@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import billingService from '../services/billingService'
 import passportService from '../services/passportService'
 import reminderService from '../services/reminderService'
+import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 
 const HABITAT_ICON = { terrestrial: '🌎', arboreal: '🌳', fossorial: '🕳️' }
@@ -304,7 +305,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
               {profile.origin.logoUrl && (
                 <img
-                  src={profile.origin.logoUrl}
+                  src={imgUrl(profile.origin.logoUrl) || profile.origin.logoUrl}
                   alt={profile.origin.displayName || 'origin logo'}
                   style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }}
                 />

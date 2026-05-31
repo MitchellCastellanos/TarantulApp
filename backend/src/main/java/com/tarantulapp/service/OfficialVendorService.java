@@ -1099,7 +1099,6 @@ public class OfficialVendorService {
     private Map<String, Object> vendorBrandingMap(OfficialVendor vendor) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("logoUrl", resolveVendorLogoUrl(vendor));
-        out.put("logoBwUrl", vendor.getLogoBwUrl());
         return out;
     }
 

@@ -73,6 +73,7 @@ export default function PublicProfilePage() {
   const [behav, setBehav] = useState({ mood: 'active', notes: '' })
 
   const load = () => {
+    setError('')
     api.get(`/public/t/${shortId}`)
        .then(r => {
          setProfile(r.data)

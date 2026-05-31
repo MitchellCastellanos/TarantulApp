@@ -134,7 +134,6 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
               </div>
               <div className="col-12">
                 <LogoUploader
-                  allowPreferences={false}
                   service={{
                     get: () => adminService.officialVendorBranding(vendor.id),
                     uploadLogo: (file) => adminService.uploadOfficialVendorLogo(vendor.id, file),

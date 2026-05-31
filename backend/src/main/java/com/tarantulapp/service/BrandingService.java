@@ -1,5 +1,6 @@
 package com.tarantulapp.service;
 
+import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
@@ -123,12 +124,29 @@ public class BrandingService {
     private Map<String, Object> toMap(User user) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("canUploadLogo", canBrand(user, officialVendorRepository));
-        out.put("logoUrl", user.getLogoUrl());
-        out.put("logoBwUrl", user.getLogoBwUrl());
-        out.put("useBwOnLabels", user.isLogoUseBwOnLabels());
+        String logoUrl = user.getLogoUrl();
+        if (logoUrl == null || logoUrl.isBlank()) {
+            OfficialVendor vendor = findOfficialPartnerVendor(user).orElse(null);
+            if (vendor != null && vendor.getLogoUrl() != null && !vendor.getLogoUrl().isBlank()) {
+                logoUrl = vendor.getLogoUrl();
+            }
+        }
+        out.put("logoUrl", logoUrl);
         out.put("uploadedAt", user.getLogoUploadedAt());
         out.put("uploadedByAdmin", user.isLogoUploadedByAdmin());
         return out;
+    }
+
+    private java.util.Optional<OfficialVendor> findOfficialPartnerVendor(User user) {
+        if (user == null || user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return officialVendorRepository.findBySlug(user.getPublicHandle().trim())
+                .filter(v -> Boolean.TRUE.equals(v.getEnabled()))
+                .filter(v -> {
+                    PartnerProgramTier tier = v.getPartnerProgramTier();
+                    return tier != null && tier.isOfficialPartner();
+                });
     }
 
     private User requireUser(UUID userId) {

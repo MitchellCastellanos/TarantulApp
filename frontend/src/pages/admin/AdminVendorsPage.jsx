@@ -624,7 +624,6 @@ export default function AdminVendorsPage() {
             </div>
             <LogoUploader
               key={String(lookupSummary.id)}
-              allowPreferences={false}
               service={{
                 get: () => adminService.userBranding(lookupSummary.id),
                 uploadLogo: (file) => adminService.uploadUserLogo(lookupSummary.id, file),
