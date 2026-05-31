@@ -37,9 +37,11 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
   const commonName = profile?.commonName || ''
   const habitat = profile?.habitatType
   const proGiftDays = profile?.proGiftDays || 30
-  const creatorLabel = profile?.creatorHandle
-    ? `@${profile.creatorHandle}`
-    : (profile?.creatorDisplayName || null)
+  const originName =
+    profile?.origin?.displayName ||
+    profile?.creatorDisplayName ||
+    null
+  const shopHandle = profile?.creatorHandle || profile?.originHandle || null
 
   const defaultName = useMemo(() => {
     if (commonName) return commonName
@@ -289,46 +291,42 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             </p>
           )}
 
-          {creatorLabel && (
-            <p className="small mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.8 }}>
-              {t('passport.fromCreator')}{' '}
-              {profile?.creatorHandle ? (
-                <Link to={`/u/${profile.creatorHandle}`} className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
-                  {creatorLabel}
-                </Link>
-              ) : (
-                <span style={{ color: 'var(--ta-gold)' }}>{creatorLabel}</span>
+          {originName && (
+            <div className="mb-3">
+              <p className="small mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
+                {t('passport.fromCreator')}{' '}
+                {shopHandle ? (
+                  <Link
+                    to={`/shop/${encodeURIComponent(shopHandle)}`}
+                    className="text-decoration-none fw-semibold"
+                    style={{ color: 'var(--ta-gold)' }}
+                  >
+                    {originName}
+                  </Link>
+                ) : (
+                  <span className="fw-semibold" style={{ color: 'var(--ta-gold)' }}>{originName}</span>
+                )}
+              </p>
+              {profile?.origin?.verified && (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  {profile.origin.logoUrl && (
+                    <img
+                      src={imgUrl(profile.origin.logoUrl) || profile.origin.logoUrl}
+                      alt={profile.origin.displayName || 'origin logo'}
+                      style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }}
+                    />
+                  )}
+                  <VerifiedOriginBadge origin={profile.origin} showTooltip />
+                </div>
               )}
-            </p>
-          )}
-          {profile?.origin?.verified && (
-            <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
-              {profile.origin.logoUrl && (
-                <img
-                  src={imgUrl(profile.origin.logoUrl) || profile.origin.logoUrl}
-                  alt={profile.origin.displayName || 'origin logo'}
-                  style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }}
-                />
-              )}
-              <VerifiedOriginBadge origin={profile.origin} showTooltip />
+              {profile?.origin?.verified ? (
+                <div className="small mt-2 p-2 rounded" style={{ background: 'rgba(212,175,55,0.10)', color: 'var(--ta-parchment)' }}>
+                  <span className="fw-semibold">{t('passport.originMeaningTitle')}</span>{' '}
+                  {t('passport.originMeaning')}
+                </div>
+              ) : null}
             </div>
           )}
-          {profile?.originHandle && (
-            <p className="small text-muted mb-0 mt-2">
-              {t('passport.boughtFrom')}{' '}
-              <Link to={`/u/${profile.originHandle}`} className="text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
-                {profile.originName || `@${profile.originHandle}`}
-              </Link>
-            </p>
-          )}
-          {profile?.origin?.verified ? (
-            <div className="small mt-2 p-2 rounded" style={{ background: 'rgba(212,175,55,0.10)', color: 'var(--ta-parchment)' }}>
-              <span className="fw-semibold">{t('passport.originMeaningTitle')}</span>{' '}
-              {t('passport.originMeaning')}
-            </div>
-          ) : profile?.originHandle ? (
-            <p className="small text-muted mt-2 mb-0">{t('passport.originUnverified')}</p>
-          ) : null}
         </FangPanel>
 
         <FangPanel className="mb-3">

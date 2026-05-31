@@ -222,9 +222,9 @@ function measureSimpleVertical(ctx, { nameLine, speciesLine, captionLine, qrSize
   return { W, H, nameLines, speciesLines, captionLines, maxTextW }
 }
 
-function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, captionLine, qrSize }) {
+function measureCareHorizontal(ctx, { nameLine, speciesLine, factLines, captionLine, qrSize, partnerLogoReserve = 0 }) {
   const C = CARE
-  const textW = C.textColW
+  const textW = Math.max(120, C.textColW - partnerLogoReserve)
 
   ctx.font = `bold ${C.titleSize}px sans-serif`
   const titleLines = wrapLinesToWidth(ctx, nameLine, textW).slice(0, C.maxTitleLines)
@@ -385,9 +385,9 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
   const src =
     partnerLogoSrc && partnerLogoSrc !== BRAND_LOGO_FOR_LIGHT_BG ? String(partnerLogoSrc).trim() : ''
   if (!src) return
-  const pad = 8
-  const maxW = Math.round(canvasW * 0.24)
-  const maxH = Math.round(canvasH * 0.46)
+  const pad = 6
+  const maxW = 44
+  const maxH = Math.max(28, Math.round(canvasH * 0.2))
   try {
     const logo = await loadImageElement(imgUrl(src) || src)
     const scale = Math.min(maxW / logo.width, maxH / logo.height)
@@ -395,17 +395,13 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
     const h = Math.max(1, Math.round(logo.height * scale))
     const x = canvasW - pad - w
     const y = pad
-    const bgPad = 5
-    const bx = x - bgPad
-    const by = y - bgPad
-    const bw = w + bgPad * 2
-    const bh = h + bgPad * 2
+    const bgPad = 3
     ctx.save()
     ctx.fillStyle = '#ffffff'
-    ctx.strokeStyle = 'rgba(0,0,0,0.14)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)'
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.roundRect(bx, by, bw, bh, 6)
+    ctx.roundRect(x - bgPad, y - bgPad, w + bgPad * 2, h + bgPad * 2, 4)
     ctx.fill()
     ctx.stroke()
     ctx.drawImage(logo, x, y, w, h)
@@ -413,6 +409,13 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
   } catch {
     /* partner logo is optional decoration */
   }
+}
+
+/** Width reserved in the care-facts text column so the corner logo does not overlap copy. */
+export function partnerLogoTextReserve(partnerLogoSrc) {
+  const src =
+    partnerLogoSrc && partnerLogoSrc !== BRAND_LOGO_FOR_LIGHT_BG ? String(partnerLogoSrc).trim() : ''
+  return src ? 52 : 0
 }
 
 /**
@@ -432,6 +435,7 @@ export async function buildFullLabelPngDataUrl({
   worldBadgeInfo: _worldBadgeInfo,
 }) {
   const partnerLogo = partnerLogoSrc ?? brandLogoSrc
+  const logoReserve = partnerLogoTextReserve(partnerLogo)
   const hasFacts = Array.isArray(factLines) && factLines.length > 0
   const qrSize = hasFacts ? CARE_LABEL_QR_PX : SIMPLE_LABEL_QR_PX
 
@@ -467,6 +471,7 @@ export async function buildFullLabelPngDataUrl({
       factLines,
       captionLine,
       qrSize,
+      partnerLogoReserve: logoReserve,
     })
     W = m.W
     H = m.H

@@ -4,6 +4,7 @@ import com.tarantulapp.dto.AdminCreatePassportRequest;
 import com.tarantulapp.dto.AdminCreatePassportResponse;
 import com.tarantulapp.dto.PassportClaimRequest;
 import com.tarantulapp.dto.PassportClaimResponse;
+import com.tarantulapp.dto.PublicOriginDTO;
 import com.tarantulapp.dto.PublicProfileDTO;
 import com.tarantulapp.entity.Passport;
 import com.tarantulapp.entity.PassportClaimEvent;
@@ -284,7 +285,16 @@ public class PassportService {
     }
 
     private void populateCreatorFields(PublicProfileDTO dto, User creator) {
-        dto.setCreatorDisplayName(creator.getDisplayName());
+        PublicOriginDTO originDto = verifiedOriginService.resolvePublicOrigin(creator);
+        String label = null;
+        if (originDto != null && originDto.getDisplayName() != null && !originDto.getDisplayName().isBlank()) {
+            label = originDto.getDisplayName().trim();
+        } else if (creator.getStorefrontName() != null && !creator.getStorefrontName().isBlank()) {
+            label = creator.getStorefrontName().trim();
+        } else if (creator.getDisplayName() != null && !creator.getDisplayName().isBlank()) {
+            label = creator.getDisplayName().trim();
+        }
+        dto.setCreatorDisplayName(label);
         String handle = creator.getPublicHandle();
         if (handle != null && !handle.isBlank()) {
             dto.setCreatorHandle(handle.trim());
