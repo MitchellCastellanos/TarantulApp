@@ -10,6 +10,7 @@ import com.tarantulapp.entity.SellerReview;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.util.PartnerCheckoutConfig;
 import com.tarantulapp.util.RegionPolicy;
 import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
@@ -1305,6 +1306,9 @@ public class MarketplaceService {
             vendorMeta.put("isFoundingPartner", founding);
             vendorMeta.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
             vendorMeta.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
+            Map<String, Object> vendorCheckout = new LinkedHashMap<>();
+            vendorCheckout.put("inAppAvailable", PartnerCheckoutConfig.fromVendor(vendor).usesInAppCheckout());
+            vendorMeta.put("checkout", vendorCheckout);
             out.put("officialVendor", vendorMeta);
         }
         out.put("availability", listing.getAvailability() == null ? "unknown" : listing.getAvailability().name().toLowerCase());

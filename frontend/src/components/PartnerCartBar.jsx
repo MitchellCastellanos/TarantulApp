@@ -9,6 +9,7 @@ import {
 } from '../utils/partnerCart'
 import { decodeListingTitle } from '../utils/listingDisplay'
 import { openPartnerCartHandoff } from '../utils/partnerCartHandoff'
+import InAppPaymentsBadge from './InAppPaymentsBadge'
 
 const BAR_STATE_KEY = 'tarantulapp.partnerCartBar.state'
 
@@ -218,14 +219,20 @@ export default function PartnerCartBar() {
             ))}
           </ul>
           {inAppAvailable && (
-            <button
-              type="button"
-              className="btn btn-success btn-sm w-100 fw-semibold mb-2 ta-partner-cart-pay-inapp"
-              disabled={payingInApp || cart.lines.length === 0}
-              onClick={payInApp}
-            >
-              {payingInApp ? t('common.loading') : t('marketplace.partnerCartPayInApp')}
-            </button>
+            <>
+              <div className="mb-2 d-flex align-items-center gap-2 flex-wrap">
+                <InAppPaymentsBadge size="sm" />
+                <span className="small text-muted">{t('marketplace.inAppPaymentsFlexibleOptions')}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-success btn-sm w-100 fw-semibold mb-2 ta-partner-cart-pay-inapp"
+                disabled={payingInApp || cart.lines.length === 0}
+                onClick={payInApp}
+              >
+                {payingInApp ? t('common.loading') : t('marketplace.partnerCartPayInApp')}
+              </button>
+            </>
           )}
           <div className="d-flex gap-2 mb-2">
             <button

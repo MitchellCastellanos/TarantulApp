@@ -16,6 +16,7 @@ import {
   partnerListingImageUrl,
 } from '../utils/listingDisplay'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import InAppPaymentsBadge from '../components/InAppPaymentsBadge'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
@@ -549,6 +550,12 @@ export default function MarketplaceListingDetailPage() {
                           </span>
                         )}
                       </h3>
+                      {listing.officialVendor?.checkout?.inAppAvailable && (
+                        <div className="mb-2">
+                          <InAppPaymentsBadge withSub />
+                          <div className="small text-muted mt-1">{t('marketplace.inAppPaymentsListingLine')}</div>
+                        </div>
+                      )}
                       <button
                         type="button"
                         className="btn btn-warning btn-sm w-100 mb-2"
