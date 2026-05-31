@@ -385,18 +385,29 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
   const src =
     partnerLogoSrc && partnerLogoSrc !== BRAND_LOGO_FOR_LIGHT_BG ? String(partnerLogoSrc).trim() : ''
   if (!src) return
-  const maxSide = Math.max(44, Math.round(Math.min(canvasW, canvasH) * 0.24))
-  const pad = 6
+  const pad = 8
+  const maxW = Math.round(canvasW * 0.24)
+  const maxH = Math.round(canvasH * 0.46)
   try {
     const logo = await loadImageElement(imgUrl(src) || src)
-    const scale = Math.min(maxSide / logo.width, maxSide / logo.height, 1)
+    const scale = Math.min(maxW / logo.width, maxH / logo.height)
     const w = Math.max(1, Math.round(logo.width * scale))
     const h = Math.max(1, Math.round(logo.height * scale))
     const x = canvasW - pad - w
     const y = pad
+    const bgPad = 5
+    const bx = x - bgPad
+    const by = y - bgPad
+    const bw = w + bgPad * 2
+    const bh = h + bgPad * 2
     ctx.save()
     ctx.fillStyle = '#ffffff'
-    ctx.fillRect(x - 2, y - 2, w + 4, h + 4)
+    ctx.strokeStyle = 'rgba(0,0,0,0.14)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.roundRect(bx, by, bw, bh, 6)
+    ctx.fill()
+    ctx.stroke()
     ctx.drawImage(logo, x, y, w, h)
     ctx.restore()
   } catch {

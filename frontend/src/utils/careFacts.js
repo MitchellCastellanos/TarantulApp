@@ -149,15 +149,22 @@ function substrateLabel(species, locale) {
   return stripEmoji(raw)
 }
 
+function isGbifImportBoilerplate(text) {
+  return /imported from gbif|importado desde gbif|importé depuis gbif/i.test(String(text ?? ''))
+}
+
 function careNotesLabel(species, locale) {
   const catalog = catalogFor(species, locale)
-  if (catalog?.careNotes) return compactLabelSnippet(catalog.careNotes, 88)
+  if (catalog?.careNotes && !isGbifImportBoilerplate(catalog.careNotes)) {
+    return compactLabelSnippet(catalog.careNotes, 88)
+  }
 
   const narrative = pickSpeciesNarrativeFieldForLocale(species?.narrativeI18n, 'careNotes', locale)
-  if (narrative) return compactLabelSnippet(narrative, 88)
+  if (narrative && !isGbifImportBoilerplate(narrative)) return compactLabelSnippet(narrative, 88)
 
   const raw = species?.careNotes?.trim()
-  return raw ? compactLabelSnippet(raw, 88) : null
+  if (!raw || isGbifImportBoilerplate(raw)) return null
+  return compactLabelSnippet(raw, 88)
 }
 
 function joinParts(parts) {

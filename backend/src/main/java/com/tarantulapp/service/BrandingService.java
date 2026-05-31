@@ -124,17 +124,25 @@ public class BrandingService {
     private Map<String, Object> toMap(User user) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("canUploadLogo", canBrand(user, officialVendorRepository));
-        String logoUrl = user.getLogoUrl();
-        if (logoUrl == null || logoUrl.isBlank()) {
-            OfficialVendor vendor = findOfficialPartnerVendor(user).orElse(null);
-            if (vendor != null && vendor.getLogoUrl() != null && !vendor.getLogoUrl().isBlank()) {
-                logoUrl = vendor.getLogoUrl();
-            }
-        }
-        out.put("logoUrl", logoUrl);
+        out.put("logoUrl", resolveColorLogoUrl(user));
         out.put("uploadedAt", user.getLogoUploadedAt());
         out.put("uploadedByAdmin", user.isLogoUploadedByAdmin());
         return out;
+    }
+
+    /** Always expose the full-color logo for storefronts and labels. */
+    private String resolveColorLogoUrl(User user) {
+        String color = user.getLogoUrl();
+        String bw = user.getLogoBwUrl();
+        if (color != null && !color.isBlank()) {
+            if (bw == null || bw.isBlank() || !color.trim().equals(bw.trim())) {
+                return color;
+            }
+        }
+        return findOfficialPartnerVendor(user)
+                .map(OfficialVendor::getLogoUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .orElse(color);
     }
 
     private java.util.Optional<OfficialVendor> findOfficialPartnerVendor(User user) {
