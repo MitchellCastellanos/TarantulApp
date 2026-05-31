@@ -16,6 +16,7 @@ export default function PartnerHubPage() {
   const [hub, setHub] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [savingMode, setSavingMode] = useState(false)
 
   useEffect(() => {
     if (!capabilities?.officialPartner) {
@@ -55,6 +56,20 @@ export default function PartnerHubPage() {
   const vendor = hub.vendor || {}
   const ops = vendor.opsSummary || {}
   const founding = isFoundingPartnerTier(vendor)
+  const checkout = vendor.checkout || {}
+
+  const changeCheckoutMode = async (mode) => {
+    setSavingMode(true)
+    setError('')
+    try {
+      const next = await mePartnerService.setCheckoutMode(mode)
+      setHub(next)
+    } catch {
+      setError(t('partnerHub.checkoutModeError'))
+    } finally {
+      setSavingMode(false)
+    }
+  }
 
   return (
     <div>
@@ -117,6 +132,31 @@ export default function PartnerHubPage() {
           </div>
           <p className="small text-muted mt-3 mb-0">{t('partnerHub.adminSyncHint')}</p>
         </FangPanel>
+
+        {checkout.inAppEligible && (
+          <FangPanel className="mb-3">
+            <h2 className="h6 mb-2">{t('partnerHub.checkoutModeTitle')}</h2>
+            <p className="small text-muted mb-2">{t('partnerHub.checkoutModeHint')}</p>
+            <div className="btn-group" role="group" aria-label={t('partnerHub.checkoutModeTitle')}>
+              <button
+                type="button"
+                className={`btn btn-sm ${checkout.preferredMode === 'tarantulapp' ? 'btn-outline-secondary' : 'btn-dark'}`}
+                disabled={savingMode}
+                onClick={() => changeCheckoutMode('website')}
+              >
+                {t('partnerHub.checkoutModeWebsite')}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${checkout.preferredMode === 'tarantulapp' ? 'btn-success' : 'btn-outline-secondary'}`}
+                disabled={savingMode}
+                onClick={() => changeCheckoutMode('tarantulapp')}
+              >
+                {t('partnerHub.checkoutModeInApp')}
+              </button>
+            </div>
+          </FangPanel>
+        )}
 
         {capabilities?.branding && (
           <FangPanel className="mt-3">

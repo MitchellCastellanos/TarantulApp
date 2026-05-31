@@ -15,6 +15,10 @@ const marketplaceService = {
     publicApi.get('/public/marketplace/top-vendors', { params: { limit } }).then((r) => r.data),
   getPartnerCatalog: (params = {}) => publicApi.get('/public/marketplace/partner-catalog', { params }).then((r) => r.data),
   partnerCartHandoff: (payload) => publicApi.post('/public/marketplace/partner-cart/handoff', payload).then((r) => r.data),
+  partnerCartPaymentOptions: (vendorSlug) =>
+    publicApi.get('/public/marketplace/partner-cart/payment-options', { params: { vendorSlug } }).then((r) => r.data),
+  partnerCartCheckout: (payload) =>
+    publicApi.post('/public/marketplace/partner-cart/checkout', payload).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),
   // Optional on Marketplace landing: if session token is stale, keep public page usable.
   listMine: () => api.get('/marketplace/listings/me', { skipAuthRedirect: true }).then((r) => r.data),

@@ -13,6 +13,7 @@ import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { useViewerRegion } from '../hooks/useViewerRegion'
 import PartnerCartBar from '../components/PartnerCartBar'
 import MarketplaceFilterBar from '../components/MarketplaceFilterBar'
 import { addPartnerCartLine } from '../utils/partnerCart'
@@ -69,6 +70,7 @@ function getOfficialStripScrollStep(el) {
 export default function MarketplacePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const viewerRegion = useViewerRegion()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCategory = MARKETPLACE_CATEGORIES.includes(searchParams.get('category') || '')
@@ -220,7 +222,8 @@ export default function MarketplacePage() {
       const data = await marketplaceService.listPublic({
         q: query || undefined,
         listingCategory,
-        country: filters.country || undefined,
+        // Localized regions (MX/US/CA) only see their own country; INT browses everything.
+        country: viewerRegion.supported ? viewerRegion.country : (filters.country || undefined),
         state: filters.state || undefined,
         city: filters.city || undefined,
         nearCountry,
@@ -246,7 +249,7 @@ export default function MarketplacePage() {
   const loadOfficialVendors = async () => {
     const data = await marketplaceService.listOfficialVendors({
       q: query || undefined,
-      country: filters.country || undefined,
+      country: viewerRegion.supported ? viewerRegion.country : (filters.country || undefined),
       state: filters.state || undefined,
       city: filters.city || undefined,
       nearCountry,
@@ -326,7 +329,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     Promise.all([loadPublicListings(), loadOfficialVendors()]).catch(() => {})
-  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city])
+  }, [filters, listingCategory, query, myProfile.country, myProfile.state, myProfile.city, viewerRegion.country, viewerRegion.supported])
 
   useEffect(() => {
     const urlCat = searchParams.get('category') || DEFAULT_MARKETPLACE_CATEGORY
@@ -491,6 +494,12 @@ export default function MarketplacePage() {
         <p className="small text-muted mb-3" style={{ maxWidth: 720, lineHeight: 1.5 }}>
           {t('marketplace.marketplaceHeroSub')}
         </p>
+
+        {!viewerRegion.supported && (
+          <div className="alert alert-warning py-2 px-3 small mb-3" role="status">
+            {t('marketplace.comingSoonRegion')}
+          </div>
+        )}
 
         {listingCategory !== DEFAULT_MARKETPLACE_CATEGORY && (
           <p className="small fw-semibold mb-2 ta-marketplace-category-nav__label" style={{ color: 'var(--ta-gold-classic)' }}>
@@ -690,6 +699,7 @@ export default function MarketplacePage() {
           setFilters={setFilters}
           onSaveFilters={saveCurrentFilters}
           onLoadFilters={restoreSavedFilters}
+          lockedCountry={viewerRegion.supported ? viewerRegion.country : null}
         />
 
         {!user && (

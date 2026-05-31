@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS } from '../constants/locations'
+import { STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS, currencyForCountry } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import VendorVerificationCard from '../components/VendorVerificationCard'
@@ -154,7 +154,10 @@ export default function MarketplaceSellerPage() {
   const boostCheckoutAvailable = listingBoostAvailable
   const boostOfferAvailable = boostCheckoutAvailable || vendorBoostCredits > 0
 
-  const listingStates = STATES_BY_COUNTRY[listingForm.country || 'Mexico'] || []
+  // Single-country marketplace: you sell only in your own country + currency (no picker).
+  const sellerCountry = myProfile.country || 'Mexico'
+  const sellerCurrency = currencyForCountry(sellerCountry)
+  const listingStates = STATES_BY_COUNTRY[sellerCountry] || []
   const storeStates = STATES_BY_COUNTRY[myProfile.country || 'Mexico'] || []
   const listingCities = CITIES_BY_STATE[listingForm.state] || []
 
@@ -198,6 +201,9 @@ export default function MarketplaceSellerPage() {
       const isoRaw = listingForm.captureOriginCountryIso || ''
       const data = await marketplaceService.createListing({
         ...rest,
+        // Country + currency are locked to the seller's profile (backend enforces this too).
+        country: sellerCountry,
+        currency: sellerCurrency,
         captureOriginCountryIso: listingForm.wildCaught ? isoRaw.trim().toUpperCase().slice(0, 2) : null,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
         requestListingBoost: !!requestBoost,
@@ -608,15 +614,14 @@ export default function MarketplaceSellerPage() {
                         value={listingForm.priceAmount} onChange={(e) => setListingForm((f) => ({ ...f, priceAmount: e.target.value }))} />
                     </div>
                     <div className="col-6">
-                      <input className="form-control form-control-sm"
-                        placeholder={t('marketplace.fieldCurrency')}
-                        value={listingForm.currency} onChange={(e) => setListingForm((f) => ({ ...f, currency: e.target.value }))} />
+                      <input className="form-control form-control-sm" value={sellerCurrency} readOnly disabled
+                        aria-label={t('marketplace.fieldCurrency')}
+                        title={t('marketplace.sellCountryLockedHint', { country: sellerCountry, currency: sellerCurrency })} />
                     </div>
                   </div>
-                  <select className="form-select form-select-sm mb-2"
-                    value={listingForm.country} onChange={(e) => setListingForm((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}>
-                    {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <p className="small text-muted mb-2">
+                    {t('marketplace.sellCountryLockedHint', { country: sellerCountry, currency: sellerCurrency })}
+                  </p>
                   <select className="form-select form-select-sm mb-2"
                     value={listingForm.state} onChange={(e) => setListingForm((f) => ({ ...f, state: e.target.value, city: '' }))}>
                     <option value="">{t('marketplace.fieldState')}</option>
