@@ -21,6 +21,22 @@ const EMPTY_CREATE_VENDOR = {
   note: '',
 }
 
+const EMPTY_PICKUP_POINT = {
+  name: '',
+  country: 'Canada',
+  state: 'Quebec',
+  city: 'Montreal',
+  addressLine1: '',
+  postalCode: '',
+  timezone: 'America/Toronto',
+  holdDays: 3,
+  publicInstructions: '',
+  contactPhone: '',
+  contactEmail: '',
+  adminNotes: '',
+  active: true,
+}
+
 export default function AdminPartnerDashboardPage() {
   const { t } = useTranslation()
   const [error, setError] = useState('')
@@ -30,6 +46,7 @@ export default function AdminPartnerDashboardPage() {
   const [closureStatus, setClosureStatus] = useState(null)
   const [officialVendors, setOfficialVendors] = useState([])
   const [officialLeads, setOfficialLeads] = useState([])
+  const [featureRequests, setFeatureRequests] = useState([])
   const [syncRuns, setSyncRuns] = useState([])
   const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
   const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
@@ -42,19 +59,26 @@ export default function AdminPartnerDashboardPage() {
   const [createVendorForm, setCreateVendorForm] = useState(EMPTY_CREATE_VENDOR)
   const [createVendorBusy, setCreateVendorBusy] = useState(false)
   const [showCreateVendor, setShowCreateVendor] = useState(false)
+  const [pickupPoints, setPickupPoints] = useState([])
+  const [pickupPointForm, setPickupPointForm] = useState(EMPTY_PICKUP_POINT)
+  const [pickupPointBusy, setPickupPointBusy] = useState(false)
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
     try {
-      const [dashboard, leads] = await Promise.all([
+      const [dashboard, leads, pickups, requests] = await Promise.all([
         adminService.partnerDashboard(),
         adminService.officialVendorLeads(),
+        adminService.pickupPoints().catch(() => []),
+        adminService.partnerFeatureRequests().catch(() => []),
       ])
       setSummary(dashboard?.summary ?? null)
       setClosureStatus(dashboard?.closureStatus ?? null)
       setOfficialVendors(Array.isArray(dashboard?.vendors) ? dashboard.vendors : [])
       setSyncRuns(Array.isArray(dashboard?.recentSyncRuns) ? dashboard.recentSyncRuns : [])
       setOfficialLeads(Array.isArray(leads) ? leads : [])
+      setPickupPoints(Array.isArray(pickups) ? pickups : [])
+      setFeatureRequests(Array.isArray(requests) ? requests : [])
       setError('')
     } catch {
       setError(t('admin.loadError'))
@@ -242,6 +266,49 @@ export default function AdminPartnerDashboardPage() {
     }
   }
 
+  const createPickupPoint = async (e) => {
+    e.preventDefault()
+    setPickupPointBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const created = await adminService.createPickupPoint({
+        ...pickupPointForm,
+        holdDays: Number(pickupPointForm.holdDays) || 3,
+      })
+      setPickupPoints((prev) => [created, ...prev])
+      setPickupPointForm(EMPTY_PICKUP_POINT)
+      setSuccess(t('admin.pickupPointCreated'))
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.resolveError'))
+    } finally {
+      setPickupPointBusy(false)
+    }
+  }
+
+  const reviewFeatureRequest = async (request, action) => {
+    const defaults = {
+      approved: t('admin.partnerFeatureApprovedDefault'),
+      needs_info: t('admin.partnerFeatureNeedsInfoDefault'),
+      waitlisted: t('admin.partnerFeatureWaitlistedDefault'),
+    }
+    const responseMessage = window.prompt(t('admin.partnerFeatureResponsePrompt'), defaults[action] || '')
+    if (responseMessage == null) return
+    const adminNote = window.prompt(t('admin.partnerFeatureAdminNotePrompt'), '') ?? ''
+    try {
+      const updated = await adminService.reviewPartnerFeatureRequest(request.id, {
+        action,
+        adminNote,
+        responseMessage,
+      })
+      setFeatureRequests((prev) => prev.map((r) => (r.id === request.id ? updated : r)))
+      setSuccess(t('admin.partnerFeatureReviewed'))
+      await loadDashboard()
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.resolveError'))
+    }
+  }
+
   const savePartnerBadge = async (vendor, badge) => {
     await patchVendorStrategic(vendor.id, { badge: String(badge || '').trim() })
   }
@@ -360,6 +427,170 @@ export default function AdminPartnerDashboardPage() {
           )}
         </section>
       )}
+
+      <section className="card p-3 mb-4" id="pickup-points">
+        <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+          <div>
+            <h3 className="h6 mb-1">{t('admin.pickupPointsTitle')}</h3>
+            <p className="small text-muted mb-0">{t('admin.pickupPointsHint')}</p>
+          </div>
+        </div>
+        <form className="border rounded p-3 mb-3" onSubmit={createPickupPoint}>
+          <div className="row g-2">
+            <div className="col-md-4">
+              <label className="form-label small">{t('admin.pickupPointName')}</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                value={pickupPointForm.name}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small">{t('partners.fieldCountry')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.country}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, country: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small">{t('partners.fieldState')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.state}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, state: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small">{t('partners.fieldCity')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.city}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, city: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small">{t('admin.pickupPointHoldDays')}</label>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                className="form-control form-control-sm"
+                value={pickupPointForm.holdDays}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, holdDays: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-5">
+              <label className="form-label small">{t('admin.pickupPointAddress')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.addressLine1}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, addressLine1: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small">{t('admin.pickupPointPostalCode')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.postalCode}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, postalCode: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-5">
+              <label className="form-label small">{t('admin.pickupPointInstructions')}</label>
+              <input
+                className="form-control form-control-sm"
+                value={pickupPointForm.publicInstructions}
+                onChange={(e) => setPickupPointForm((f) => ({ ...f, publicInstructions: e.target.value }))}
+              />
+            </div>
+          </div>
+          <button type="submit" className="btn btn-sm btn-dark mt-3" disabled={pickupPointBusy}>
+            {pickupPointBusy ? t('common.loading') : t('admin.pickupPointCreate')}
+          </button>
+        </form>
+        {pickupPoints.length === 0 ? (
+          <p className="text-muted small mb-0">{t('admin.pickupPointsEmpty')}</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{t('admin.pickupPointName')}</th>
+                  <th>{t('admin.officialVendorsColLocation')}</th>
+                  <th>{t('admin.pickupPointHoldDays')}</th>
+                  <th>{t('admin.officialVendorsColStatus')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pickupPoints.map((point) => (
+                  <tr key={point.id}>
+                    <td>
+                      <div className="fw-semibold">{point.name}</div>
+                      <div className="small text-muted">{point.addressLine1 || '-'}</div>
+                    </td>
+                    <td>{[point.city, point.state, point.country].filter(Boolean).join(' · ') || '-'}</td>
+                    <td>{point.holdDays ?? 3}</td>
+                    <td>{point.active ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card p-3 mb-4" id="partner-feature-requests">
+        <h3 className="h6 mb-2">{t('admin.partnerFeatureRequestsTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.partnerFeatureRequestsHint')}</p>
+        {featureRequests.length === 0 ? (
+          <p className="text-muted small mb-0">{t('admin.partnerFeatureRequestsEmpty')}</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{t('admin.officialVendorsColBrand')}</th>
+                  <th>{t('admin.partnerFeatureType')}</th>
+                  <th>{t('admin.officialLeadsColNotes')}</th>
+                  <th>{t('admin.officialVendorsColStatus')}</th>
+                  <th>{t('admin.officialLeadsColActions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>
+                      <div className="fw-semibold">{request.vendorName || request.vendorSlug}</div>
+                      <div className="small text-muted">{request.vendorCountry || ''}</div>
+                    </td>
+                    <td>{t(`admin.partnerFeature.${request.requestType}`, { defaultValue: request.requestType })}</td>
+                    <td className="small">
+                      <div>{request.message || '-'}</div>
+                      {request.responseMessage ? <div className="text-muted mt-1">{request.responseMessage}</div> : null}
+                    </td>
+                    <td><span className="badge text-bg-secondary">{request.status}</span></td>
+                    <td>
+                      <div className="d-flex flex-column gap-1">
+                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => reviewFeatureRequest(request, 'approved')}>
+                          {t('admin.partnerFeatureApprove')}
+                        </button>
+                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => reviewFeatureRequest(request, 'needs_info')}>
+                          {t('admin.partnerFeatureNeedsInfo')}
+                        </button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => reviewFeatureRequest(request, 'waitlisted')}>
+                          {t('admin.partnerFeatureWaitlist')}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section className="card p-3 mb-4 border-warning">
         <h3 className="h6 mb-2">{t('admin.strategicPartnerSectionTitle')}</h3>

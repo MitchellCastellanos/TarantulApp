@@ -32,6 +32,10 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [commissionPercent, setCommissionPercent] = useState('0')
   const [commissionWaived, setCommissionWaived] = useState(false)
   const [stripeAccountId, setStripeAccountId] = useState('')
+  const [pickupConfig, setPickupConfig] = useState(null)
+  const [assignedPickupIds, setAssignedPickupIds] = useState([])
+  const [defaultPickupId, setDefaultPickupId] = useState('')
+  const [listingPickupIds, setListingPickupIds] = useState({})
 
   const inAppCountryOk = !!vendor?.checkout?.inAppCheckoutCountry
 
@@ -52,6 +56,25 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     setCommissionPercent(String(inApp.commissionPercent ?? 0))
     setCommissionWaived(!!inApp.commissionWaived)
     setStripeAccountId(inApp.stripeAccountId || '')
+    setPickupConfig(null)
+    setAssignedPickupIds([])
+    setDefaultPickupId('')
+    setListingPickupIds({})
+    adminService.officialVendorPickupPoints(vendor.id)
+      .then((cfg) => {
+        setPickupConfig(cfg)
+        const ids = Array.isArray(cfg?.assignedPickupPointIds) ? cfg.assignedPickupPointIds.map(String) : []
+        setAssignedPickupIds(ids)
+        setDefaultPickupId(cfg?.defaultPickupPointId ? String(cfg.defaultPickupPointId) : '')
+        const listingMap = {}
+        ;(Array.isArray(cfg?.activeListings) ? cfg.activeListings : []).forEach((listing) => {
+          listingMap[String(listing.id)] = Array.isArray(listing.pickupPointIds)
+            ? listing.pickupPointIds.map(String)
+            : []
+        })
+        setListingPickupIds(listingMap)
+      })
+      .catch(() => setPickupConfig(null))
   }, [vendor])
 
   if (!vendor) return null
@@ -66,7 +89,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setJsonError('')
     let feedConfig
@@ -85,6 +108,17 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
       commissionPercent: Number(commissionPercent) || 0,
       commissionWaived,
       providers: ['stripe', 'paypal', 'klarna'],
+    }
+    if (pickupConfig) {
+      await adminService.setOfficialVendorPickupPoints(vendor.id, {
+        pickupPointIds: assignedPickupIds,
+        defaultPickupPointId: assignedPickupIds.includes(defaultPickupId) ? defaultPickupId : null,
+      })
+      await Promise.all(Object.entries(listingPickupIds).map(([listingId, ids]) =>
+        adminService.setPartnerListingPickupPoints(listingId, {
+          pickupPointIds: (ids || []).filter((id) => assignedPickupIds.includes(id)),
+        }),
+      ))
     }
     onSave({
       partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
@@ -216,6 +250,109 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 ) : (
                   <p className="small text-muted mb-0">{t('admin.partnerInAppCanadaOnly')}</p>
                 )}
+              </div>
+              <div className="col-12">
+                <hr className="my-2" />
+                <h4 className="h6 mb-1">{t('admin.pickupPartnerSection')}</h4>
+                <p className="small text-muted mb-2">
+                  {pickupConfig?.pickupAuthorized ? t('admin.pickupPartnerAuthorized') : t('admin.pickupPartnerNeedsAuthorization')}
+                </p>
+                {Array.isArray(pickupConfig?.pickupPoints) && pickupConfig.pickupPoints.length > 0 ? (
+                  <div className="row g-2">
+                    {pickupConfig.pickupPoints.map((point) => {
+                      const checked = assignedPickupIds.includes(String(point.id))
+                      return (
+                        <div className="col-md-6" key={point.id}>
+                          <div className="border rounded p-2 h-100">
+                            <div className="form-check">
+                              <input
+                                id={`pickup-${point.id}`}
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  const id = String(point.id)
+                                  setAssignedPickupIds((prev) =>
+                                    e.target.checked ? [...new Set([...prev, id])] : prev.filter((v) => v !== id),
+                                  )
+                                  if (!e.target.checked && defaultPickupId === id) setDefaultPickupId('')
+                                }}
+                              />
+                              <label className="form-check-label small fw-semibold" htmlFor={`pickup-${point.id}`}>
+                                {point.name}
+                              </label>
+                            </div>
+                            <div className="small text-muted">
+                              {[point.city, point.state, point.country].filter(Boolean).join(' · ')}
+                              {' · '}
+                              {t('marketplace.partnerCartPickupHoldDays', { count: point.holdDays || 3 })}
+                            </div>
+                            {checked && (
+                              <div className="form-check mt-1">
+                                <input
+                                  id={`pickup-default-${point.id}`}
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="defaultPickup"
+                                  checked={defaultPickupId === String(point.id)}
+                                  onChange={() => setDefaultPickupId(String(point.id))}
+                                />
+                                <label className="form-check-label small" htmlFor={`pickup-default-${point.id}`}>
+                                  {t('admin.pickupPartnerDefault')}
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="small text-muted mb-0">{t('admin.pickupPointsEmpty')}</p>
+                )}
+                {Array.isArray(pickupConfig?.activeListings) && pickupConfig.activeListings.length > 0 && assignedPickupIds.length > 0 ? (
+                  <div className="mt-3">
+                    <h5 className="small fw-semibold mb-2">{t('admin.pickupListingSection')}</h5>
+                    <div className="border rounded" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                      {pickupConfig.activeListings.map((listing) => (
+                        <div className="p-2 border-bottom" key={listing.id}>
+                          <div className="small fw-semibold">{listing.title || listing.externalId}</div>
+                          <div className="d-flex flex-wrap gap-3 mt-1">
+                            {pickupConfig.pickupPoints
+                              .filter((point) => assignedPickupIds.includes(String(point.id)))
+                              .map((point) => {
+                                const listingId = String(listing.id)
+                                const pointId = String(point.id)
+                                const checked = (listingPickupIds[listingId] || []).includes(pointId)
+                                return (
+                                  <div className="form-check" key={`${listing.id}:${point.id}`}>
+                                    <input
+                                      id={`listing-pickup-${listing.id}-${point.id}`}
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => setListingPickupIds((prev) => {
+                                        const current = prev[listingId] || []
+                                        return {
+                                          ...prev,
+                                          [listingId]: e.target.checked
+                                            ? [...new Set([...current, pointId])]
+                                            : current.filter((id) => id !== pointId),
+                                        }
+                                      })}
+                                    />
+                                    <label className="form-check-label small" htmlFor={`listing-pickup-${listing.id}-${point.id}`}>
+                                      {point.name}
+                                    </label>
+                                  </div>
+                                )
+                              })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <div className="col-12">
                 <LogoUploader

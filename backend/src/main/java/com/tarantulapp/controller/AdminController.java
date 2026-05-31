@@ -23,6 +23,7 @@ import com.tarantulapp.service.GoogleGroupSyncAsyncInvoker;
 import com.tarantulapp.service.EmailService;
 import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.PlanAccessService;
+import com.tarantulapp.service.PickupPointService;
 import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.service.PassportService;
 import com.tarantulapp.service.OfficialVendorService;
@@ -55,6 +56,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -113,6 +115,7 @@ public class AdminController {
     private final VendorBoostCreditService vendorBoostCreditService;
     private final VerifiedOriginService verifiedOriginService;
     private final PartnerDashboardService partnerDashboardService;
+    private final PickupPointService pickupPointService;
 
     @Value("${spring.mail.host:}")
     private String springMailHost;
@@ -159,7 +162,8 @@ public class AdminController {
                            UserCapabilitiesService userCapabilitiesService,
                            VendorBoostCreditService vendorBoostCreditService,
                            VerifiedOriginService verifiedOriginService,
-                           PartnerDashboardService partnerDashboardService) {
+                           PartnerDashboardService partnerDashboardService,
+                           PickupPointService pickupPointService) {
         this.adminAccessService = adminAccessService;
         this.userRepository = userRepository;
         this.tarantulaRepository = tarantulaRepository;
@@ -194,6 +198,7 @@ public class AdminController {
         this.vendorBoostCreditService = vendorBoostCreditService;
         this.verifiedOriginService = verifiedOriginService;
         this.partnerDashboardService = partnerDashboardService;
+        this.pickupPointService = pickupPointService;
     }
 
     @PostMapping("/passports")
@@ -232,8 +237,11 @@ public class AdminController {
                                        Boolean enabled,
                                        Boolean enableImport,
                                        String badge,
-                                       Integer influenceScore,
-                                       String note) {}
+                                        Integer influenceScore,
+                                        String note) {}
+    record VendorPickupPointsRequest(List<UUID> pickupPointIds, UUID defaultPickupPointId) {}
+    record ListingPickupPointsRequest(List<UUID> pickupPointIds) {}
+    record PartnerFeatureReviewRequest(String action, String adminNote, String responseMessage) {}
     record PromoteUserOfficialPartnerRequest(String partnerProgramTier,
                                              Boolean enabled,
                                              Boolean enableImport,
@@ -254,6 +262,7 @@ public class AdminController {
     ) {}
 
     record SetStorefrontVerifiedRequest(Boolean storefrontVerified, Boolean sendEmail, String locale) {}
+    record SetPickupAuthorizedRequest(Boolean pickupAuthorized, Boolean sendEmail, String locale, String note) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
      * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
@@ -365,6 +374,28 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> officialVendorLeads() {
         adminAccessService.assertCurrentUserCanUseMarketingTools();
         return ResponseEntity.ok(officialVendorService.adminListLeads());
+    }
+
+    @GetMapping("/partner-feature-requests")
+    public ResponseEntity<List<Map<String, Object>>> partnerFeatureRequests() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminListFeatureRequests());
+    }
+
+    @PatchMapping("/partner-feature-requests/{id}")
+    public ResponseEntity<Map<String, Object>> reviewPartnerFeatureRequest(
+            @PathVariable UUID id,
+            @RequestBody PartnerFeatureReviewRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminReviewFeatureRequest(
+                    id,
+                    req == null ? null : req.action(),
+                    req == null ? null : req.adminNote(),
+                    req == null ? null : req.responseMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     record AdminUpsertOutreachLeadRequest(
@@ -601,6 +632,68 @@ public class AdminController {
                     req.badge(),
                     req.influenceScore(),
                     req.note()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/pickup-points")
+    public ResponseEntity<List<Map<String, Object>>> pickupPoints() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(pickupPointService.adminListPickupPoints());
+    }
+
+    @PostMapping("/pickup-points")
+    public ResponseEntity<Map<String, Object>> createPickupPoint(@RequestBody Map<String, Object> req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(pickupPointService.adminCreatePickupPoint(req));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/pickup-points/{id}")
+    public ResponseEntity<Map<String, Object>> updatePickupPoint(@PathVariable UUID id,
+                                                                 @RequestBody Map<String, Object> req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(pickupPointService.adminUpdatePickupPoint(id, req));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/official-vendors/{id}/pickup-points")
+    public ResponseEntity<Map<String, Object>> officialVendorPickupPoints(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(pickupPointService.adminVendorPickupConfig(id));
+    }
+
+    @PutMapping("/official-vendors/{id}/pickup-points")
+    public ResponseEntity<Map<String, Object>> setOfficialVendorPickupPoints(
+            @PathVariable UUID id,
+            @RequestBody(required = false) VendorPickupPointsRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(pickupPointService.adminSetVendorPickupPoints(
+                    id,
+                    req == null ? List.of() : req.pickupPointIds(),
+                    req == null ? null : req.defaultPickupPointId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/partner-listings/{id}/pickup-points")
+    public ResponseEntity<Map<String, Object>> setPartnerListingPickupPoints(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ListingPickupPointsRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(pickupPointService.adminSetListingPickupPoints(
+                    id,
+                    req == null ? List.of() : req.pickupPointIds()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -1027,7 +1120,7 @@ public class AdminController {
     /** Admin: grant or revoke "Tienda verificada" trust badge (after live call or approved self-verification). */
     @PatchMapping("/users/{id}/storefront-verified")
     public ResponseEntity<Map<String, Object>> setUserStorefrontVerified(@PathVariable UUID id,
-                                                                          @RequestBody(required = false) SetStorefrontVerifiedRequest req) {
+                                                                         @RequestBody(required = false) SetStorefrontVerifiedRequest req) {
         adminAccessService.assertCurrentUserIsAdmin();
         User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
         boolean verified = req != null && Boolean.TRUE.equals(req.storefrontVerified());
@@ -1045,6 +1138,31 @@ public class AdminController {
                     user.getEmail(),
                     user.getDisplayName(),
                     resolveUserLocale(user, req != null ? req.locale() : null));
+        }
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    @PatchMapping("/users/{id}/pickup-authorization")
+    public ResponseEntity<Map<String, Object>> setUserPickupAuthorization(@PathVariable UUID id,
+                                                                          @RequestBody(required = false) SetPickupAuthorizedRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        boolean authorized = req != null && Boolean.TRUE.equals(req.pickupAuthorized());
+        if (authorized && !Boolean.TRUE.equals(user.getVerifiedBreeder()) && !officialVendorService.isUserOfficialPartner(user)) {
+            throw new IllegalArgumentException("VENDOR_OR_OFFICIAL_PARTNER_REQUIRED");
+        }
+        user.setPickupAuthorizedAt(authorized ? Instant.now() : null);
+        user.setPickupAuthorizationNote(authorized ? trim(req != null ? req.note() : null, 500) : null);
+        userRepository.save(user);
+        if (authorized && (req == null || req.sendEmail() == null || Boolean.TRUE.equals(req.sendEmail()))) {
+            emailService.sendAdminCapabilityGrantEmail(
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    resolveUserLocale(user, req != null ? req.locale() : null),
+                    "pickup",
+                    vendorBoostCreditService.countAvailable(user.getId()));
         }
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
@@ -1760,6 +1878,9 @@ public class AdminController {
         out.put("storefrontVerifiedAt", storefrontVerified
                 ? (u.getVerifiedOriginAt() != null ? u.getVerifiedOriginAt() : u.getStorefrontVerifiedAt())
                 : null);
+        out.put("pickupAuthorized", u.getPickupAuthorizedAt() != null);
+        out.put("pickupAuthorizedAt", u.getPickupAuthorizedAt());
+        out.put("pickupAuthorizationNote", u.getPickupAuthorizationNote() == null ? "" : u.getPickupAuthorizationNote());
         out.put("vendorInviteSentAt", u.getVendorInviteSentAt());
         out.put("vendorInviteExpiresAt", u.getVendorInviteExpiresAt());
         boolean invitePending = u.getVendorInviteToken() != null

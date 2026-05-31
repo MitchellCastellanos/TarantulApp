@@ -133,6 +133,28 @@ export default function AdminVendorsPage() {
     }
   }
 
+  const setPickupAuthorization = async (user, nextValue, locale = 'es') => {
+    setBusyVendorId(user.id)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.setUserPickupAuthorization(user.id, nextValue, {
+        sendEmail: nextValue,
+        locale,
+      })
+      setSuccess(nextValue ? t('admin.pickupAuthorizedOn') : t('admin.pickupAuthorizedOff'))
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(updated.id)) {
+        setLookupResult(updated)
+      }
+    } catch (err) {
+      const code = err?.response?.data?.error || err?.response?.data?.message
+      setError(typeof code === 'string' ? code : t('admin.loadError'))
+    } finally {
+      setBusyVendorId(null)
+    }
+  }
+
   const setVendor = async (user, nextValue, locale = 'es') => {
     setBusyVendorId(user.id)
     setError('')
@@ -464,6 +486,9 @@ export default function AdminVendorsPage() {
                   {lookupSummary.storefrontVerified ? (
                     <span className="badge text-bg-success">{t('admin.storefrontVerifiedBadge')}</span>
                   ) : null}
+                  {lookupSummary.pickupAuthorized ? (
+                    <span className="badge text-bg-primary">{t('admin.pickupAuthorizedBadge')}</span>
+                  ) : null}
                   {lookupSummary.officialPartner ? (
                     <span className="badge text-bg-warning text-dark">{t('admin.officialPartnerBadge')}</span>
                   ) : null}
@@ -603,6 +628,19 @@ export default function AdminVendorsPage() {
                         ? t('admin.revokeStorefrontVerified')
                         : t('admin.grantStorefrontVerified')}
                   </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm w-100 ${lookupSummary.pickupAuthorized ? 'btn-outline-primary' : 'btn-primary'}`}
+                    disabled={busyVendorId === lookupSummary.id}
+                    onClick={() => setPickupAuthorization(lookupSummary, !lookupSummary.pickupAuthorized)}
+                    title={t('admin.pickupAuthorizedHint')}
+                  >
+                    {busyVendorId === lookupSummary.id
+                      ? t('common.loading')
+                      : lookupSummary.pickupAuthorized
+                        ? t('admin.revokePickupAuthorized')
+                        : t('admin.grantPickupAuthorized')}
+                  </button>
                   <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.sendVendorWelcomeHint')}>
                     {WELCOME_LOCALES.map((loc) => (
                       <button
@@ -619,6 +657,21 @@ export default function AdminVendorsPage() {
                     ))}
                   </div>
                   </>
+                )}
+                {!lookupSummary.verifiedBreeder && lookupSummary.officialPartner && (
+                  <button
+                    type="button"
+                    className={`btn btn-sm w-100 ${lookupSummary.pickupAuthorized ? 'btn-outline-primary' : 'btn-primary'}`}
+                    disabled={busyVendorId === lookupSummary.id}
+                    onClick={() => setPickupAuthorization(lookupSummary, !lookupSummary.pickupAuthorized)}
+                    title={t('admin.pickupAuthorizedHint')}
+                  >
+                    {busyVendorId === lookupSummary.id
+                      ? t('common.loading')
+                      : lookupSummary.pickupAuthorized
+                        ? t('admin.revokePickupAuthorized')
+                        : t('admin.grantPickupAuthorized')}
+                  </button>
                 )}
               </div>
             </div>
@@ -731,6 +784,7 @@ export default function AdminVendorsPage() {
                   <th>{t('admin.vendorsColMix')}</th>
                   <th>{t('admin.vendorsColHints')}</th>
                   <th>{t('admin.vendorsVerifiedSince')}</th>
+                  <th>{t('admin.pickupAuthorizedShort')}</th>
                   <th>{t('admin.actions')}</th>
                 </tr>
               </thead>
@@ -768,6 +822,18 @@ export default function AdminVendorsPage() {
                     </td>
                     <td>{formatDate(u.verifiedBreederAt)}</td>
                     <td>
+                      {u.pickupAuthorized ? (
+                        <span className="badge text-bg-primary">{t('admin.pickupAuthorizedBadge')}</span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                      {u.pickupAuthorizationNote ? (
+                        <div className="small text-muted text-break" style={{ maxWidth: 160 }}>
+                          {u.pickupAuthorizationNote}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td>
                       <div className="d-flex flex-column gap-1" style={{ minWidth: 200 }}>
                         <button
                           type="button"
@@ -788,6 +854,19 @@ export default function AdminVendorsPage() {
                             : u.storefrontVerified
                               ? t('admin.revokeStorefrontVerified')
                               : t('admin.grantStorefrontVerified')}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${u.pickupAuthorized ? 'btn-outline-primary' : 'btn-primary'}`}
+                          disabled={busyVendorId === u.id}
+                          onClick={() => setPickupAuthorization(u, !u.pickupAuthorized)}
+                          title={t('admin.pickupAuthorizedHint')}
+                        >
+                          {busyVendorId === u.id
+                            ? t('common.loading')
+                            : u.pickupAuthorized
+                              ? t('admin.revokePickupAuthorized')
+                              : t('admin.grantPickupAuthorized')}
                         </button>
                         <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.grantBoostCreditsHint')}>
                           {[1, 5].map((count) => (

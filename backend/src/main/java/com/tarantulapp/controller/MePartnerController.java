@@ -42,6 +42,8 @@ public class MePartnerController {
     }
 
     record CheckoutModeRequest(String mode) {}
+    record ShippingProfileRequest(Map<String, Object> shippingProfile) {}
+    record FeatureRequestBody(String requestType, String message, Map<String, Object> payload) {}
 
     /** Partner self-service: choose whether checkout happens on their website or in the TarantulApp cart. */
     @PutMapping("/checkout-mode")
@@ -49,6 +51,23 @@ public class MePartnerController {
         UUID userId = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(officialVendorService.mePartnerSetCheckoutMode(
                 userId, req == null ? null : req.mode()));
+    }
+
+    @PutMapping("/shipping-profile")
+    public ResponseEntity<Map<String, Object>> updateShippingProfile(@RequestBody ShippingProfileRequest req) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(officialVendorService.mePartnerUpdateShippingProfile(
+                userId, req == null ? null : req.shippingProfile()));
+    }
+
+    @PostMapping("/feature-requests")
+    public ResponseEntity<Map<String, Object>> createFeatureRequest(@RequestBody FeatureRequestBody req) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(officialVendorService.mePartnerCreateFeatureRequest(
+                userId,
+                req == null ? null : req.requestType(),
+                req == null ? null : req.message(),
+                req == null ? null : req.payload()));
     }
 
     /** Recent in-app TarantulApp orders for the partner. */
