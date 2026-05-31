@@ -56,6 +56,15 @@ const adminService = {
     api.post(`/admin/official-vendor-leads/${leadId}/promote`, payload).then((r) => r.data),
   createOfficialVendor: (payload) =>
     api.post('/admin/official-vendors', payload).then((r) => r.data),
+  pickupPoints: () => api.get('/admin/pickup-points').then((r) => r.data),
+  createPickupPoint: (payload) => api.post('/admin/pickup-points', payload).then((r) => r.data),
+  updatePickupPoint: (id, payload) => api.patch(`/admin/pickup-points/${id}`, payload).then((r) => r.data),
+  officialVendorPickupPoints: (vendorId) =>
+    api.get(`/admin/official-vendors/${vendorId}/pickup-points`).then((r) => r.data),
+  setOfficialVendorPickupPoints: (vendorId, payload) =>
+    api.put(`/admin/official-vendors/${vendorId}/pickup-points`, payload).then((r) => r.data),
+  setPartnerListingPickupPoints: (listingId, payload) =>
+    api.put(`/admin/partner-listings/${listingId}/pickup-points`, payload).then((r) => r.data),
   officialVendorBranding: (vendorId) =>
     api.get(`/admin/official-vendors/${vendorId}/branding`).then((r) => r.data),
   uploadOfficialVendorLogo: (vendorId, file) => {
@@ -141,6 +150,8 @@ const adminService = {
     api.post('/admin/marketing/provision-team-member', payload).then((r) => r.data),
   setUserStorefrontVerified: (id, storefrontVerified, options = {}) =>
     api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified, ...options }).then((r) => r.data),
+  setUserPickupAuthorization: (id, pickupAuthorized, options = {}) =>
+    api.patch(`/admin/users/${id}/pickup-authorization`, { pickupAuthorized, ...options }).then((r) => r.data),
   setVerifiedBreeder: (id, verifiedBreeder, options = {}) =>
     api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder, ...options }).then((r) => r.data),
   grantBoostCredits: (id, payload = {}) =>

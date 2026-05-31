@@ -58,6 +58,19 @@ class UserCapabilitiesServiceTest {
     }
 
     @Test
+    void pickupAuthorizationFlagEnablesPickupAccess() {
+        User user = new User();
+        user.setPickupAuthorizedAt(Instant.now());
+        assertTrue(service.canUsePickupPoints(user));
+    }
+
+    @Test
+    void regularKeeperCannotUsePickupPoints() {
+        User user = new User();
+        assertFalse(service.canUsePickupPoints(user));
+    }
+
+    @Test
     void activateStudioSetsFlag() {
         UUID userId = UUID.randomUUID();
         User user = new User();

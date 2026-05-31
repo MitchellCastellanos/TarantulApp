@@ -37,6 +37,8 @@ export default function PartnerCartBar() {
   const [checkingOut, setCheckingOut] = useState(false)
   const [payingInApp, setPayingInApp] = useState(false)
   const [paymentOptions, setPaymentOptions] = useState(null)
+  const [fulfillmentOptions, setFulfillmentOptions] = useState(null)
+  const [selectedPickupPointId, setSelectedPickupPointId] = useState('')
   const [message, setMessage] = useState('')
   const prevCountRef = useRef(partnerCartCount(readPartnerCart()))
 
@@ -72,6 +74,36 @@ export default function PartnerCartBar() {
       .catch(() => { if (!cancelled) setPaymentOptions(null) })
     return () => { cancelled = true }
   }, [cart.vendorSlug])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!cart.vendorSlug || cart.lines.length === 0) {
+      setFulfillmentOptions(null)
+      setSelectedPickupPointId('')
+      return undefined
+    }
+    marketplaceService
+      .partnerCartFulfillmentOptions({
+        vendorSlug: cart.vendorSlug,
+        lines: cart.lines.map((l) => ({
+          externalProductId: l.externalProductId,
+          quantity: l.quantity || 1,
+        })),
+      })
+      .then((opts) => {
+        if (cancelled) return
+        setFulfillmentOptions(opts)
+        const ids = Array.isArray(opts?.pickupPoints) ? opts.pickupPoints.map((p) => String(p.id)) : []
+        setSelectedPickupPointId((prev) => (ids.includes(prev) ? prev : ids[0] || ''))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFulfillmentOptions(null)
+          setSelectedPickupPointId('')
+        }
+      })
+    return () => { cancelled = true }
+  }, [cart.vendorSlug, cart.lines])
 
   useEffect(() => {
     if (count === 0) {
@@ -127,6 +159,8 @@ export default function PartnerCartBar() {
     try {
       const res = await marketplaceService.partnerCartCheckout({
         vendorSlug: cart.vendorSlug,
+        fulfillmentMethod: selectedPickupPointId ? 'pickup_point' : 'partner_site',
+        pickupPointId: selectedPickupPointId || undefined,
         lines: cart.lines.map((l) => ({
           externalProductId: l.externalProductId,
           quantity: l.quantity || 1,
@@ -146,6 +180,7 @@ export default function PartnerCartBar() {
   }
 
   const inAppAvailable = !!paymentOptions?.inAppAvailable
+  const pickupPoints = Array.isArray(fulfillmentOptions?.pickupPoints) ? fulfillmentOptions.pickupPoints : []
 
   if (barState === 'minimized') {
     return (
@@ -217,6 +252,29 @@ export default function PartnerCartBar() {
               </li>
             ))}
           </ul>
+          {inAppAvailable && pickupPoints.length > 0 && (
+            <div className="mb-2">
+              <label className="form-label small mb-1" htmlFor="partner-cart-pickup">
+                {t('marketplace.partnerCartPickupLabel')}
+              </label>
+              <select
+                id="partner-cart-pickup"
+                className="form-select form-select-sm"
+                value={selectedPickupPointId}
+                onChange={(e) => setSelectedPickupPointId(e.target.value)}
+              >
+                <option value="">{t('marketplace.partnerCartPickupNone')}</option>
+                {pickupPoints.map((point) => (
+                  <option key={point.id} value={point.id}>
+                    {point.name} · {point.city || point.state || point.country} · {t('marketplace.partnerCartPickupHoldDays', { count: point.holdDays || 3 })}
+                  </option>
+                ))}
+              </select>
+              {selectedPickupPointId ? (
+                <p className="small text-muted mb-0 mt-1">{t('marketplace.partnerCartPickupFootnote')}</p>
+              ) : null}
+            </div>
+          )}
           {inAppAvailable && (
             <button
               type="button"

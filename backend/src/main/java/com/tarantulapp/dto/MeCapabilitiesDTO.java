@@ -9,6 +9,7 @@ public class MeCapabilitiesDTO {
     private boolean marketplace = true;
     private boolean verifiedBreeder;
     private boolean branding;
+    private boolean pickupAuthorized;
 
     public boolean isCollection() { return collection; }
     public void setCollection(boolean collection) { this.collection = collection; }
@@ -26,4 +27,6 @@ public class MeCapabilitiesDTO {
     public void setVerifiedBreeder(boolean verifiedBreeder) { this.verifiedBreeder = verifiedBreeder; }
     public boolean isBranding() { return branding; }
     public void setBranding(boolean branding) { this.branding = branding; }
+    public boolean isPickupAuthorized() { return pickupAuthorized; }
+    public void setPickupAuthorized(boolean pickupAuthorized) { this.pickupAuthorized = pickupAuthorized; }
 }
