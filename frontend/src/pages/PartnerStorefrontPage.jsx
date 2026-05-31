@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
+import InAppPaymentsBadge from '../components/InAppPaymentsBadge'
 import PartnerCartBar from '../components/PartnerCartBar'
 import StorefrontShareKit from '../components/StorefrontShareKit'
 import marketplaceService from '../services/marketplaceService'
@@ -221,6 +222,12 @@ export default function PartnerStorefrontPage() {
                       )}
                     </h1>
                     {location && <div className="small text-muted mb-2">{location}</div>}
+                    {vendor.checkout?.inAppAvailable && (
+                      <div className="mb-2">
+                        <InAppPaymentsBadge withSub />
+                        <div className="small text-muted mt-1">{t('marketplace.inAppPaymentsStorefrontLine')}</div>
+                      </div>
+                    )}
                     {vendor.note ? (
                       <p className="small mb-2 mb-md-0" style={{ lineHeight: 1.55, maxWidth: '42rem' }}>
                         {vendor.note}

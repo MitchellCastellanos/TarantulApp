@@ -14,6 +14,7 @@ import VerifiedVendorBadge from '../components/VerifiedVendorBadge'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { useViewerRegion } from '../hooks/useViewerRegion'
+import InAppPaymentsBadge from '../components/InAppPaymentsBadge'
 import PartnerCartBar from '../components/PartnerCartBar'
 import MarketplaceFilterBar from '../components/MarketplaceFilterBar'
 import { addPartnerCartLine } from '../utils/partnerCart'
@@ -636,6 +637,11 @@ export default function MarketplacePage() {
                         <div className="small text-muted" style={{ fontSize: '0.7rem' }}>
                           {vendor.nationalShipping ? t('marketplace.nationalShipping') : t('marketplace.regionalShipping')}
                         </div>
+                        {vendor.checkout?.inAppAvailable && (
+                          <div className="mt-2">
+                            <InAppPaymentsBadge size="sm" />
+                          </div>
+                        )}
                       </div>
                       <div className="mt-auto pt-2 w-100 d-flex flex-column gap-1">
                         {vendorHasInAppStorefront(vendor) && partnerStorefrontPath(vendor.slug) ? (
