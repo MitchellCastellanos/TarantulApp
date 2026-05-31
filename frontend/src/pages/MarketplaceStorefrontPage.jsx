@@ -69,6 +69,11 @@ export default function MarketplaceStorefrontPage() {
     [profile?.city, profile?.country, profile?.state],
   )
 
+  const officialPartner = profile?.officialPartner === true
+  const storefrontLogo = profile?.storefrontLogoUrl || profile?.origin?.logoUrl || null
+  const avatarSrc = imgUrl(storefrontLogo) || imgUrl(profile?.profilePhoto) || '/spider-default.png'
+  const hasBrandLogo = !!storefrontLogo
+
   return (
     <div className="ta-premium-page">
       <Navbar />
@@ -91,19 +96,21 @@ export default function MarketplaceStorefrontPage() {
               <div className="card-body">
                 <div className="d-flex align-items-start gap-3 mb-2">
                   <img
-                    src={profile?.origin?.logoUrl || imgUrl(profile?.profilePhoto) || '/spider-default.png'}
-                    alt={`@${payload?.storefrontHandle || handle || 'keeper'}`}
+                    src={avatarSrc}
+                    alt={storefrontTitle}
                     style={{
                       width: 72,
                       height: 72,
-                      borderRadius: profile?.origin?.logoUrl ? 12 : 999,
-                      objectFit: profile?.origin?.logoUrl ? 'contain' : 'cover',
-                      background: profile?.origin?.logoUrl ? '#fff' : undefined,
+                      borderRadius: hasBrandLogo ? 12 : 999,
+                      objectFit: hasBrandLogo ? 'contain' : 'cover',
+                      background: hasBrandLogo ? '#fff' : undefined,
                     }}
                   />
                   <div className="min-w-0 flex-grow-1">
                     <div className="h5 fw-bold mb-0">{storefrontTitle}</div>
-                    <div className="small text-muted">@{payload?.storefrontHandle || handle || 'keeper'}</div>
+                    {!officialPartner && (
+                      <div className="small text-muted">@{payload?.storefrontHandle || handle || 'keeper'}</div>
+                    )}
                     {(profile?.origin?.verified || profile?.storefrontVerified) ? (
                       <div className="mt-1">
                         <VerifiedVendorBadge origin={profile?.origin} showTooltip />

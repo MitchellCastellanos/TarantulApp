@@ -77,16 +77,15 @@ export default function QrToolPage() {
   const hasProFeatures = user?.hasProFeatures === true
   const [consumerCaptionLang, setConsumerCaptionLang] = useState('') // '' = off, 'en', 'fr'
 
-  // Verified-origin / breeder accounts brand their labels with their own logo (monochrome by
-  // default). Falls back to the TarantulApp mark when no custom logo is set.
+  // Partner/account logo on the label corner (monochrome by default). QR center stays TarantulApp.
   const { data: branding } = useQuery({
     queryKey: ['me', 'branding'],
     queryFn: () => meBrandingService.get(),
     enabled: Boolean(token),
     staleTime: 60_000,
   })
-  const brandLogoSrc = useMemo(() => {
-    if (!branding?.logoUrl) return BRAND_LOGO_FOR_LIGHT_BG
+  const partnerLogoSrc = useMemo(() => {
+    if (!branding?.logoUrl) return null
     return branding.useBwOnLabels && branding.logoBwUrl ? branding.logoBwUrl : branding.logoUrl
   }, [branding])
 
@@ -212,7 +211,7 @@ export default function QrToolPage() {
         sizeId: labelSizeId,
         docTitle: t('labelStudio.pdfDocTitle'),
         filename: `${filenameBase}-${labelSizeId}.pdf`,
-        brandLogoSrc,
+        partnerLogoSrc,
         captionLine,
       })
       await registerPrint()
@@ -276,7 +275,7 @@ export default function QrToolPage() {
       speciesLine: labelLines.titleLine2,
       factLines: labelExtras.factLines,
       captionLine,
-      brandLogoSrc,
+      partnerLogoSrc,
     })
       .then(({ dataUrl }) => {
         if (!cancelled) setLabelPreviewUrl(dataUrl)
@@ -290,7 +289,7 @@ export default function QrToolPage() {
     return () => {
       cancelled = true
     }
-  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode, brandLogoSrc, captionLine])
+  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode, partnerLogoSrc, captionLine])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -385,7 +384,7 @@ export default function QrToolPage() {
         factLines: labelExtras.factLines,
         filenameBase: labelLines.filenameBase,
         captionLine,
-        brandLogoSrc,
+        partnerLogoSrc,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
@@ -455,7 +454,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitle'),
         footerNote: bulkFooterNote('qrBulk.docFooterNote'),
         labelAltText: t('qr.label.altText'),
-        brandLogoSrc,
+        partnerLogoSrc,
         captionLine,
       })
       await triggerDocxDownload(blob, `tarantulapp-qr-fixed-${sizeCm}cm.docx`)
@@ -479,7 +478,7 @@ export default function QrToolPage() {
         docTitle: t('qrBulk.docTitleFlex'),
         footerNote: bulkFooterNote('qrBulk.docFooterNoteFlex'),
         labelAltText: t('qr.label.altText'),
-        brandLogoSrc,
+        partnerLogoSrc,
         captionLine,
       })
       await triggerDocxDownload(blob, 'tarantulapp-qr-flex.docx')

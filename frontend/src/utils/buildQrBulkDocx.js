@@ -87,7 +87,7 @@ async function tryBrandLogoBytes() {
   }
 }
 
-async function renderLabelPng(item, normalizeHeight, brandLogoSrc, captionLine) {
+async function renderLabelPng(item, normalizeHeight, partnerLogoSrc, captionLine) {
   return buildFullLabelPngDataUrl({
     url: item.url,
     nameLine: item.titleLine1,
@@ -95,17 +95,17 @@ async function renderLabelPng(item, normalizeHeight, brandLogoSrc, captionLine) 
     factLines: item.factLines ?? null,
     captionLine: captionLine ?? null,
     normalizeHeight,
-    brandLogoSrc,
+    partnerLogoSrc,
   })
 }
 
-async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText, brandLogoSrc, captionLine) {
+async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText, partnerLogoSrc, captionLine) {
   const columnCount = resolveColumnCount(layout, items)
   const maxWidthPx = docxColumnMaxWidthPx(columnCount)
 
   const rendered = []
   for (const item of items) {
-    rendered.push(await renderLabelPng(item, null, brandLogoSrc, captionLine))
+    rendered.push(await renderLabelPng(item, null, partnerLogoSrc, captionLine))
   }
 
   let normalizeHeight = null
@@ -114,7 +114,7 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText, br
     const needsNormalize = rendered.some((r) => r.height < normalizeHeight)
     if (needsNormalize) {
       for (let i = 0; i < items.length; i++) {
-        rendered[i] = await renderLabelPng(items[i], normalizeHeight, brandLogoSrc, captionLine)
+        rendered[i] = await renderLabelPng(items[i], normalizeHeight, partnerLogoSrc, captionLine)
       }
     }
   }
@@ -152,8 +152,9 @@ async function buildLabelParagraphs(items, displayQrPx, layout, labelAltText, br
  * @param {string} [opts.footerNote]
  * @param {string} [opts.labelAltText] — texto accesible de la imagen (i18n)
  */
-export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote, labelAltText = 'QR label', brandLogoSrc, captionLine }) {
+export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle, footerNote, labelAltText = 'QR label', brandLogoSrc, partnerLogoSrc, captionLine }) {
   const displayQrPx = cmToDocxDisplayPx(sizeCm)
+  const logo = partnerLogoSrc ?? brandLogoSrc
 
   const intro = []
   const logoBytes = await tryBrandLogoBytes()
@@ -196,7 +197,7 @@ export async function buildQrBulkDocxBlob({ items, layout, sizeCm = 5, docTitle,
     displayQrPx,
     layout,
     labelAltText,
-    brandLogoSrc,
+    logo,
     captionLine,
   )
   const columnOpts = {

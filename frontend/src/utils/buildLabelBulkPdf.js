@@ -12,7 +12,7 @@ const MARGIN_PT = 18
 const ROW_GAP_PT = 8
 const COL_GAP_PT = 10
 
-async function renderLabelDataUrl(item, normalizeHeight, brandLogoSrc, captionLine) {
+async function renderLabelDataUrl(item, normalizeHeight, partnerLogoSrc, captionLine) {
   return buildFullLabelPngDataUrl({
     url: item.url,
     nameLine: item.titleLine1,
@@ -20,7 +20,7 @@ async function renderLabelDataUrl(item, normalizeHeight, brandLogoSrc, captionLi
     factLines: item.factLines ?? null,
     captionLine: captionLine ?? null,
     normalizeHeight,
-    brandLogoSrc,
+    partnerLogoSrc,
   })
 }
 
@@ -38,14 +38,15 @@ function labelDisplayPt(rendered, targetQrPt) {
  * @param {string} [opts.docTitle]
  * @param {string} [opts.filename]
  */
-export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle, filename, brandLogoSrc, captionLine }) {
+export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle, filename, brandLogoSrc, partnerLogoSrc, captionLine }) {
   const preset = resolveLabelSizePreset(sizeId)
   const columns = preset.columns
   const targetQrPt = cmToPdfPt(preset.cm)
+  const logo = partnerLogoSrc ?? brandLogoSrc
 
   const rendered = []
   for (const item of items) {
-    rendered.push(await renderLabelDataUrl(item, null, brandLogoSrc, captionLine))
+    rendered.push(await renderLabelDataUrl(item, null, logo, captionLine))
   }
 
   const normalizeHeight = rendered.length
@@ -54,7 +55,7 @@ export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle
   if (normalizeHeight) {
     for (let i = 0; i < items.length; i++) {
       if (rendered[i].height < normalizeHeight) {
-        rendered[i] = await renderLabelDataUrl(items[i], normalizeHeight, brandLogoSrc, captionLine)
+        rendered[i] = await renderLabelDataUrl(items[i], normalizeHeight, logo, captionLine)
       }
     }
   }
@@ -112,7 +113,7 @@ export async function buildLabelBulkPdfBlob({ items, sizeId = 'medium', docTitle
 }
 
 export async function triggerLabelPdfDownload(opts) {
-  // opts may include brandLogoSrc — forwarded through buildLabelBulkPdfBlob.
+  // opts may include partnerLogoSrc (or legacy brandLogoSrc) — forwarded through buildLabelBulkPdfBlob.
   const { blob, filename } = await buildLabelBulkPdfBlob(opts)
   await shareOrDownloadBlob({
     blob,

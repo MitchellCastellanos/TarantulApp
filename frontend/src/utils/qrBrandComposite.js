@@ -380,8 +380,32 @@ function drawCutBorder(ctx, W, H) {
   ctx.restore()
 }
 
+async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
+  const src =
+    partnerLogoSrc && partnerLogoSrc !== BRAND_LOGO_FOR_LIGHT_BG ? String(partnerLogoSrc).trim() : ''
+  if (!src) return
+  const maxSide = Math.max(28, Math.round(Math.min(canvasW, canvasH) * 0.14))
+  const pad = 6
+  try {
+    const logo = await loadImageElement(src)
+    const scale = Math.min(maxSide / logo.width, maxSide / logo.height, 1)
+    const w = Math.max(1, Math.round(logo.width * scale))
+    const h = Math.max(1, Math.round(logo.height * scale))
+    const x = canvasW - pad - w
+    const y = pad
+    ctx.save()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(x - 2, y - 2, w + 4, h + 4)
+    ctx.drawImage(logo, x, y, w, h)
+    ctx.restore()
+  } catch {
+    /* partner logo is optional decoration */
+  }
+}
+
 /**
  * PNG de etiqueta: vertical centrada (solo QR) u horizontal (con care facts).
+ * TarantulApp logo always sits in the QR center; optional partnerLogoSrc renders top-right.
  */
 export async function buildFullLabelPngDataUrl({
   url,
@@ -390,10 +414,12 @@ export async function buildFullLabelPngDataUrl({
   factLines = null,
   captionLine = null,
   normalizeHeight = null,
-  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
+  brandLogoSrc = null,
+  partnerLogoSrc = null,
   shortIdLine: _shortIdLine,
   worldBadgeInfo: _worldBadgeInfo,
 }) {
+  const partnerLogo = partnerLogoSrc ?? brandLogoSrc
   const hasFacts = Array.isArray(factLines) && factLines.length > 0
   const qrSize = hasFacts ? CARE_LABEL_QR_PX : SIMPLE_LABEL_QR_PX
 
@@ -403,7 +429,7 @@ export async function buildFullLabelPngDataUrl({
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   })
-  const composed = await compositeQrPngDataUrl(raw, qrSize, QR_CENTER_LOGO_FRACTION, brandLogoSrc)
+  const composed = await compositeQrPngDataUrl(raw, qrSize, QR_CENTER_LOGO_FRACTION, BRAND_LOGO_FOR_LIGHT_BG)
 
   const measureCanvas = document.createElement('canvas')
   const mctx = measureCanvas.getContext('2d')
@@ -486,6 +512,8 @@ export async function buildFullLabelPngDataUrl({
     await renderLabel(ctx)
   }
 
+  await drawPartnerLogoCorner(ctx, W, targetH, partnerLogo)
+
   drawCutBorder(ctx, W, targetH)
 
   return {
@@ -503,7 +531,8 @@ export async function downloadBrandedQrPng({
   factLines = null,
   captionLine = null,
   filenameBase,
-  brandLogoSrc = BRAND_LOGO_FOR_LIGHT_BG,
+  brandLogoSrc = null,
+  partnerLogoSrc = null,
   shortIdLine,
   worldBadgeInfo,
 }) {
@@ -514,6 +543,7 @@ export async function downloadBrandedQrPng({
     factLines,
     captionLine,
     brandLogoSrc,
+    partnerLogoSrc,
     shortIdLine,
     worldBadgeInfo,
   })

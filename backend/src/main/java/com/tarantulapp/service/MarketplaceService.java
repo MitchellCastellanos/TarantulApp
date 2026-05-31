@@ -1334,6 +1334,9 @@ public class MarketplaceService {
         out.put("city", p.getProfileCity() == null ? "" : p.getProfileCity());
         out.put("shipsTo", parseShipsToList(p.getShipsTo()));
         out.put("profilePhoto", p.getProfilePhoto() == null ? "" : p.getProfilePhoto());
+        Optional<OfficialVendor> officialPartnerVendor = findEnabledOfficialPartnerVendor(p);
+        out.put("officialPartner", officialPartnerVendor.isPresent());
+        out.put("storefrontLogoUrl", resolveStorefrontLogoUrl(p, officialPartnerVendor.orElse(null)));
         out.put("searchVisible", p.getSearchVisible() == null || p.getSearchVisible());
         out.put("communityProfileVisibility", normalizeCommunityProfileVisibility(p.getCommunityProfileVisibility()));
         out.put("defaultTarantulaPublic", Boolean.TRUE.equals(p.getDefaultTarantulaPublic()));
@@ -1341,6 +1344,29 @@ public class MarketplaceService {
         out.put("avgResponseHours", responseStats.get("avgResponseHours"));
         out.put("responseBadge", responseStats.get("responseBadge"));
         return out;
+    }
+
+    private Optional<OfficialVendor> findEnabledOfficialPartnerVendor(User user) {
+        if (user == null || user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            return Optional.empty();
+        }
+        return officialVendorRepository.findBySlug(user.getPublicHandle().trim())
+                .filter(v -> Boolean.TRUE.equals(v.getEnabled()))
+                .filter(v -> {
+                    PartnerProgramTier tier = v.getPartnerProgramTier();
+                    return tier != null && tier.isOfficialPartner();
+                });
+    }
+
+    /** Full-color logo for public storefronts — never the monochrome label variant. */
+    private String resolveStorefrontLogoUrl(User user, OfficialVendor vendor) {
+        if (vendor != null && vendor.getLogoUrl() != null && !vendor.getLogoUrl().isBlank()) {
+            return vendor.getLogoUrl();
+        }
+        if (user != null && user.getLogoUrl() != null && !user.getLogoUrl().isBlank()) {
+            return user.getLogoUrl();
+        }
+        return null;
     }
 
     private Map<String, Object> computeResponseStats(UUID sellerUserId) {
