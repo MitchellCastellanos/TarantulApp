@@ -773,6 +773,7 @@
       "ctaMarketplace": "Place de marché",
       "ctaBecomePartner": "Devenir partenaire",
       "ctaFoundingExample": "Vitrine Monarch",
+      "sellerInAppNote": "Vous vendez dans votre pays et votre devise. Nouveau (bêta, Canada) : les partenaires officiels peuvent encaisser dans TarantulApp.",
       "featuredPartnersTitle": "Acheter chez les partenaires fondateurs et officiels",
       "featuredPartnersLead": "Partenaires fondateurs et officiels — avec ou sans catalogue synchronisé.",
       "featuredPartnersApply": "Postuler comme partenaire officiel",
@@ -2135,6 +2136,18 @@
     "checkoutModeWebsite": "Encaisser sur mon site",
     "checkoutModeInApp": "Encaisser dans TarantulApp",
     "checkoutModeError": "Impossible d'enregistrer votre préférence de paiement. Réessayez.",
+    "stripeConnectHint": "Pour recevoir vos paiements sur votre propre compte Stripe (nous ne prenons que la commission), connectez Stripe.",
+    "stripeConnectStart": "Connecter Stripe pour les paiements",
+    "stripeConnectManage": "Mettre à jour la connexion Stripe",
+    "stripeConnectLinked": "Stripe connecté ✓",
+    "stripeConnectError": "Impossible de démarrer la connexion Stripe. Réessayez.",
+    "ordersTitle": "Commandes TarantulApp",
+    "ordersColDate": "Date",
+    "ordersColItems": "Articles",
+    "ordersColTotal": "Total",
+    "ordersColPayout": "Votre versement",
+    "ordersColStatus": "Statut",
+    "ordersPayoutPlatform": "Plateforme",
     "loadError": "Impossible de charger le hub partenaire."
   },
   "verifiedOrigin": {
@@ -2447,7 +2460,24 @@
           ]
         },
         {
-          "title": "4. Responsabilité et garanties",
+          "title": "4. Paiement dans TarantulApp (bêta)",
+          "bullets": [
+            "Bêta limitée au Canada : certains partenaires officiels peuvent accepter le paiement dans TarantulApp. Dans ce cas, TarantulApp facilite l'encaissement via un prestataire de paiement (par exemple Stripe) et n'agit pas comme vendeur des produits.",
+            "TarantulApp peut prélever une commission sur ces transactions, qui peut être exonérée au cas par cas.",
+            "Les fonds sont réglés soit à la plateforme (boutiques exploitées par TarantulApp), soit au partenaire via le prestataire de paiement. Le partenaire reste responsable de l'envoi, des garanties et de l'exécution de la vente.",
+            "Ces encaissements sont aussi régis par les conditions du prestataire de paiement affichées au moment du paiement."
+          ]
+        },
+        {
+          "title": "5. Disponibilité par pays et devise",
+          "bullets": [
+            "Le marketplace est localisé au Mexique, aux États-Unis et au Canada ; dans ces pays, vous voyez les annonces et partenaires de votre propre pays.",
+            "Si vous vous connectez depuis une autre région, vous pouvez parcourir le contenu global pendant que nous activons votre pays (« bientôt dans votre pays »).",
+            "Lors de la publication, votre pays et votre devise sont fixés selon votre profil (MXN, USD ou CAD) et non modifiables par annonce."
+          ]
+        },
+        {
+          "title": "6. Responsabilité et garanties",
           "bullets": [
             "Chaque vendeur est responsable de ses garanties et du résultat de ses transactions.",
             "TarantulApp fournit découverte, messagerie et outils transactionnels, mais ne remplace pas les obligations légales de l'acheteur ou du vendeur.",
@@ -2455,7 +2485,7 @@
           ]
         },
         {
-          "title": "5. Mises à jour de politique",
+          "title": "7. Mises à jour de politique",
           "body": "Nous pouvons mettre à jour ces conditions selon les évolutions légales et produit. L'usage continu vaut acceptation de la version en vigueur."
         }
       ]

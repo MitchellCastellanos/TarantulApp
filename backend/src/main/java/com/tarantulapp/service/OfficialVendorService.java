@@ -599,6 +599,7 @@ public class OfficialVendorService {
             checkout.put("commissionPercent", cfg.commissionPercent());
             checkout.put("commissionWaived", cfg.commissionWaived());
             checkout.put("providers", cfg.providers());
+            checkout.put("stripeAccountLinked", cfg.stripeAccountId() != null && !cfg.stripeAccountId().isBlank());
         }
         return out;
     }

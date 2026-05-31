@@ -784,6 +784,7 @@
       "ctaMarketplace": "Marketplace",
       "ctaBecomePartner": "Ser socio oficial",
       "ctaFoundingExample": "Vitrina Monarch",
+      "sellerInAppNote": "Vendes en tu país y divisa. Nuevo (beta, Canadá): socios oficiales pueden cobrar dentro de TarantulApp.",
       "featuredPartnersTitle": "Compra con socios fundadores y oficiales",
       "featuredPartnersLead": "Socios fundadores y oficiales — con o sin catálogo sincronizado.",
       "featuredPartnersApply": "Aplicar como socio oficial",
@@ -2164,6 +2165,18 @@
     "checkoutModeWebsite": "Cobrar en mi sitio",
     "checkoutModeInApp": "Cobrar en TarantulApp",
     "checkoutModeError": "No pudimos guardar tu preferencia de cobro. Intenta de nuevo.",
+    "stripeConnectHint": "Para recibir tus pagos en tu propia cuenta Stripe (nosotros tomamos solo la comisión), conecta Stripe.",
+    "stripeConnectStart": "Conectar Stripe para cobros",
+    "stripeConnectManage": "Actualizar conexión Stripe",
+    "stripeConnectLinked": "Stripe conectado ✓",
+    "stripeConnectError": "No pudimos iniciar la conexión con Stripe. Intenta de nuevo.",
+    "ordersTitle": "Pedidos en TarantulApp",
+    "ordersColDate": "Fecha",
+    "ordersColItems": "Artículos",
+    "ordersColTotal": "Total",
+    "ordersColPayout": "Tu liquidación",
+    "ordersColStatus": "Estado",
+    "ordersPayoutPlatform": "Plataforma",
     "loadError": "No se pudo cargar el hub de socio."
   },
   "verifiedOrigin": {
@@ -2475,7 +2488,24 @@
           ]
         },
         {
-          "title": "4. Responsabilidad y garantías",
+          "title": "4. Cobro dentro de TarantulApp (beta)",
+          "bullets": [
+            "Beta limitada a Canadá: algunos partners oficiales pueden aceptar el pago dentro de TarantulApp. En esos casos, TarantulApp facilita el cobro mediante un proveedor de pagos (por ejemplo Stripe) y no actúa como vendedor de los productos.",
+            "TarantulApp puede cobrar una comisión sobre estas transacciones, la cual puede ser exentada caso por caso.",
+            "Los fondos se liquidan a la plataforma (tiendas operadas por TarantulApp) o al partner a través del proveedor de pagos. El partner es responsable del envío, las garantías y el cumplimiento de su venta.",
+            "Estos cobros se rigen además por los términos del proveedor de pagos mostrados al momento de pagar."
+          ]
+        },
+        {
+          "title": "5. Disponibilidad por país y divisa",
+          "bullets": [
+            "El marketplace está disponible de forma localizada en México, Estados Unidos y Canadá; en esos países ves anuncios y partners de tu propio país.",
+            "Si te conectas desde otra región, puedes explorar contenido global mientras habilitamos tu país ('pronto en tu país').",
+            "Al publicar, tu país y divisa se fijan según tu perfil (MXN, USD o CAD) y no son editables por anuncio."
+          ]
+        },
+        {
+          "title": "6. Responsabilidad y garantías",
           "bullets": [
             "Cada vendedor es responsable de sus garantías y del resultado de sus transacciones.",
             "TarantulApp ofrece descubrimiento, mensajería y herramientas de transacción, pero no sustituye el deber legal de comprador y vendedor.",
@@ -2483,7 +2513,7 @@
           ]
         },
         {
-          "title": "5. Actualizaciones de política",
+          "title": "7. Actualizaciones de política",
           "body": "Podemos actualizar estos términos según cambios legales y del producto. El uso continuo implica aceptación de la versión vigente."
         }
       ]

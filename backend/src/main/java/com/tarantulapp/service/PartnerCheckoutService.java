@@ -236,6 +236,39 @@ public class PartnerCheckoutService {
         }
     }
 
+    /** Recent in-app orders for the partner that owns the caller's public handle. */
+    public List<Map<String, Object>> recentOrdersForUser(UUID userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            return List.of();
+        }
+        OfficialVendor vendor = officialVendorRepository.findBySlug(user.getPublicHandle().trim()).orElse(null);
+        if (vendor == null) {
+            return List.of();
+        }
+        return partnerCartOrderRepository.findTop50ByVendorIdOrderByCreatedAtDesc(vendor.getId())
+                .stream().map(this::mapOrder).toList();
+    }
+
+    private Map<String, Object> mapOrder(PartnerCartOrder order) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", order.getId().toString());
+        out.put("status", order.getStatus());
+        out.put("currency", order.getCurrency());
+        out.put("subtotal", order.getSubtotal());
+        out.put("commissionAmount", order.getCommissionAmount());
+        out.put("partnerPayoutAmount", order.getPartnerPayoutAmount());
+        out.put("payoutMode", order.getPayoutMode());
+        out.put("provider", order.getProvider());
+        out.put("itemCount", order.getLines().stream()
+                .mapToInt(l -> {
+                    Object q = l.get("quantity");
+                    return q instanceof Number n ? n.intValue() : 1;
+                }).sum());
+        out.put("createdAt", order.getCreatedAt());
+        return out;
+    }
+
     private Optional<String> partnerEmail(String vendorSlug) {
         if (vendorSlug == null || vendorSlug.isBlank()) {
             return Optional.empty();

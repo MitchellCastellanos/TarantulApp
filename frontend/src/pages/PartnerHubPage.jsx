@@ -17,6 +17,8 @@ export default function PartnerHubPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingMode, setSavingMode] = useState(false)
+  const [orders, setOrders] = useState([])
+  const [connecting, setConnecting] = useState(false)
 
   useEffect(() => {
     if (!capabilities?.officialPartner) {
@@ -39,6 +41,17 @@ export default function PartnerHubPage() {
       cancelled = true
     }
   }, [capabilities?.officialPartner, t])
+
+  // Load in-app orders once we know this partner has in-app checkout enabled.
+  useEffect(() => {
+    if (!hub?.vendor?.checkout?.inAppEligible) return undefined
+    let cancelled = false
+    mePartnerService
+      .orders()
+      .then((data) => { if (!cancelled) setOrders(Array.isArray(data) ? data : []) })
+      .catch(() => { if (!cancelled) setOrders([]) })
+    return () => { cancelled = true }
+  }, [hub?.vendor?.checkout?.inAppEligible])
 
   if (capsLoading || loading) {
     return (
@@ -70,6 +83,26 @@ export default function PartnerHubPage() {
       setSavingMode(false)
     }
   }
+
+  const startStripeConnect = async () => {
+    setConnecting(true)
+    setError('')
+    try {
+      const res = await mePartnerService.stripeConnectOnboard()
+      if (res?.onboardingUrl) {
+        window.location.assign(res.onboardingUrl)
+        return
+      }
+      setError(t('partnerHub.stripeConnectError'))
+    } catch {
+      setError(t('partnerHub.stripeConnectError'))
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  const fmt = (amount, currency) =>
+    `${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency || ''}`.trim()
 
   return (
     <div>
@@ -154,6 +187,54 @@ export default function PartnerHubPage() {
               >
                 {t('partnerHub.checkoutModeInApp')}
               </button>
+            </div>
+
+            {checkout.payoutMode === 'connect' && (
+              <div className="mt-3">
+                <p className="small text-muted mb-2">{t('partnerHub.stripeConnectHint')}</p>
+                {checkout.stripeAccountLinked ? (
+                  <p className="small mb-2 text-success">{t('partnerHub.stripeConnectLinked')}</p>
+                ) : null}
+                <button type="button" className="btn btn-sm btn-outline-primary" disabled={connecting} onClick={startStripeConnect}>
+                  {connecting
+                    ? t('common.loading')
+                    : checkout.stripeAccountLinked
+                      ? t('partnerHub.stripeConnectManage')
+                      : t('partnerHub.stripeConnectStart')}
+                </button>
+              </div>
+            )}
+          </FangPanel>
+        )}
+
+        {checkout.inAppEligible && orders.length > 0 && (
+          <FangPanel className="mb-3">
+            <h2 className="h6 mb-2">{t('partnerHub.ordersTitle')}</h2>
+            <div className="table-responsive">
+              <table className="table table-sm small mb-0 align-middle">
+                <thead>
+                  <tr>
+                    <th>{t('partnerHub.ordersColDate')}</th>
+                    <th>{t('partnerHub.ordersColItems')}</th>
+                    <th>{t('partnerHub.ordersColTotal')}</th>
+                    <th>{t('partnerHub.ordersColPayout')}</th>
+                    <th>{t('partnerHub.ordersColStatus')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id}>
+                      <td>{o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
+                      <td>{o.itemCount}</td>
+                      <td>{fmt(o.subtotal, o.currency)}</td>
+                      <td>{o.payoutMode === 'platform' ? t('partnerHub.ordersPayoutPlatform') : fmt(o.partnerPayoutAmount, o.currency)}</td>
+                      <td>
+                        <span className={`badge ${o.status === 'paid' ? 'bg-success' : 'bg-secondary'}`}>{o.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </FangPanel>
         )}

@@ -777,6 +777,7 @@
       "ctaMarketplace": "Marketplace",
       "ctaBecomePartner": "Become a partner",
       "ctaFoundingExample": "Monarch storefront",
+      "sellerInAppNote": "You sell in your own country and currency. New (beta, Canada): official partners can get paid inside TarantulApp.",
       "featuredPartnersTitle": "Shop founding & official partners",
       "featuredPartnersLead": "Founding & official partners — with or without a synced catalog.",
       "featuredPartnersApply": "Apply as official partner",
@@ -2162,6 +2163,18 @@
     "checkoutModeWebsite": "Charge on my site",
     "checkoutModeInApp": "Charge in TarantulApp",
     "checkoutModeError": "We couldn't save your checkout preference. Try again.",
+    "stripeConnectHint": "To receive payouts in your own Stripe account (we only take the commission), connect Stripe.",
+    "stripeConnectStart": "Connect Stripe for payouts",
+    "stripeConnectManage": "Update Stripe connection",
+    "stripeConnectLinked": "Stripe connected ✓",
+    "stripeConnectError": "We couldn't start the Stripe connection. Try again.",
+    "ordersTitle": "TarantulApp orders",
+    "ordersColDate": "Date",
+    "ordersColItems": "Items",
+    "ordersColTotal": "Total",
+    "ordersColPayout": "Your payout",
+    "ordersColStatus": "Status",
+    "ordersPayoutPlatform": "Platform",
     "loadError": "Could not load partner hub."
   },
   "verifiedOrigin": {
@@ -2484,7 +2497,24 @@
           ]
         },
         {
-          "title": "4. Liability and guarantees",
+          "title": "4. In-app TarantulApp checkout (beta)",
+          "bullets": [
+            "Beta limited to Canada: some official partners may accept payment inside TarantulApp. In those cases TarantulApp facilitates the charge through a payment provider (for example Stripe) and does not act as the seller of the goods.",
+            "TarantulApp may charge a commission on these transactions, which can be waived case by case.",
+            "Funds settle either to the platform (TarantulApp-operated stores) or to the partner through the payment provider. The partner remains responsible for shipping, guarantees, and fulfilling the sale.",
+            "These charges are also governed by the payment provider's terms shown at the time of payment."
+          ]
+        },
+        {
+          "title": "5. Country availability and currency",
+          "bullets": [
+            "The marketplace is localized in Mexico, the United States, and Canada; in those countries you see listings and partners from your own country.",
+            "If you connect from another region you can browse global content while we enable your country ('coming soon to your country').",
+            "When you publish, your country and currency are fixed from your profile (MXN, USD, or CAD) and are not editable per listing."
+          ]
+        },
+        {
+          "title": "6. Liability and guarantees",
           "bullets": [
             "Each seller is responsible for their guarantees and transaction outcomes.",
             "TarantulApp provides discovery, messaging, and transaction tooling but does not replace legal compliance duties of buyer or seller.",
@@ -2492,7 +2522,7 @@
           ]
         },
         {
-          "title": "5. Policy updates",
+          "title": "7. Policy updates",
           "body": "We may update these terms as legal and product requirements evolve. Continued use means acceptance of the latest version."
         }
       ]
