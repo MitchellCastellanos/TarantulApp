@@ -1233,6 +1233,8 @@
     "inAppPaymentsFlexible": "pagos flexibles",
     "inAppPaymentsBadgeTooltip": "Esta tienda acepta pago directo dentro de TarantulApp — rápido, seguro y con métodos flexibles.",
     "inAppPaymentsStorefrontLine": "Paga aquí mismo en TarantulApp, sin salir a otro sitio. Métodos flexibles (tarjeta y más).",
+    "inAppPaymentsListingLine": "Esta tienda acepta pago dentro de TarantulApp con opciones de pago flexibles.",
+    "inAppPaymentsFlexibleOptions": "Opciones de pago flexibles",
     "sellCountryLockedHint": "Vendes solo en {{country}} y en {{currency}}.",
     "comingSoonRegion": "Tu país aún no tiene marketplace local — por ahora ves anuncios y partners de todas las regiones. ¡Pronto en tu país!",
     "countryLockedToRegion": "Mostrando solo {{country}} según tu país.",
