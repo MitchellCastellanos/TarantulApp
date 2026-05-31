@@ -598,13 +598,23 @@ export default function MarketplacePage() {
                     <div className="official-vendor-card__inner d-flex flex-column flex-grow-1">
                       <div className="flex-grow-1 min-h-0">
                         <div className="d-flex justify-content-between align-items-start gap-2">
-                          <div className="min-w-0">
-                            <div className="fw-semibold small d-flex align-items-center gap-1">
-                              {isFoundingPartnerTier(vendor) && <OfficialPartnerShield width={18} height={20} />}
-                              <span>{vendor.name}</span>
-                            </div>
-                            <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
-                              {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
+                          <div className="min-w-0 d-flex align-items-start gap-2">
+                            {imgUrl(vendor.logoUrl) ? (
+                              <img
+                                src={imgUrl(vendor.logoUrl)}
+                                alt=""
+                                className="flex-shrink-0 rounded"
+                                style={{ width: 36, height: 36, objectFit: 'contain', background: 'rgba(255,255,255,0.92)' }}
+                              />
+                            ) : null}
+                            <div className="min-w-0">
+                              <div className="fw-semibold small d-flex align-items-center gap-1">
+                                {isFoundingPartnerTier(vendor) && <OfficialPartnerShield width={18} height={20} />}
+                                <span>{vendor.name}</span>
+                              </div>
+                              <div className="small text-muted" style={{ fontSize: '0.72rem' }}>
+                                {[vendor.city, vendor.state, vendor.country].filter(Boolean).join(' · ')}
+                              </div>
                             </div>
                           </div>
                           <span className={`official-vendor-card__ribbon flex-shrink-0${isFoundingPartnerTier(vendor) ? ' bg-warning text-dark' : ''}`} style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
@@ -616,9 +626,6 @@ export default function MarketplacePage() {
                         <p className="small mt-2 mb-2 ta-marketplace-official-strip__note">{vendor.note || '—'}</p>
                         <div className="small text-muted" style={{ fontSize: '0.7rem' }}>
                           {vendor.nationalShipping ? t('marketplace.nationalShipping') : t('marketplace.regionalShipping')}
-                          {(vendor.shipsToCountries || []).length > 0 && (
-                            <span className="d-block mt-1">{t('marketplace.shipsTo')}: {(vendor.shipsToCountries || []).join(', ')}</span>
-                          )}
                         </div>
                       </div>
                       <div className="mt-auto pt-2 w-100 d-flex flex-column gap-1">

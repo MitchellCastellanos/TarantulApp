@@ -4,15 +4,21 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import marketplaceService from '../services/marketplaceService'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
+import { STORE_COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../constants/locations'
 import { usePageSeo } from '../hooks/usePageSeo'
+
+const DELIVERY_SCOPE_OPTIONS = [
+  { value: 'National', labelKey: 'marketplace.nationalShipping' },
+  { value: 'Regional', labelKey: 'marketplace.regionalShipping' },
+  { value: 'Local pickup', labelKey: 'marketplace.shippingLocal' },
+]
 
 const EMPTY_LEAD = {
   businessName: '',
   contactName: '',
   contactEmail: '',
   websiteUrl: '',
-  country: 'United States',
+  country: 'Mexico',
   state: '',
   city: '',
   shippingScope: 'National',
@@ -24,6 +30,7 @@ export default function BecomePartnerPage() {
   const [form, setForm] = useState(EMPTY_LEAD)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageKind, setMessageKind] = useState('info')
 
   usePageSeo({
     title: t('partners.pageTitle'),
@@ -37,8 +44,10 @@ export default function BecomePartnerPage() {
     try {
       await marketplaceService.submitOfficialVendorLead(form)
       setForm(EMPTY_LEAD)
+      setMessageKind('success')
       setMessage(t('partners.leadSuccess'))
     } catch (err) {
+      setMessageKind('danger')
       setMessage(err?.response?.data?.error || t('partners.leadError'))
     } finally {
       setBusy(false)
@@ -78,7 +87,11 @@ export default function BecomePartnerPage() {
             <div className="card border-0 shadow-sm">
               <div className="card-body p-4">
                 <h2 className="h6 fw-bold mb-3">{t('partners.applyTitle')}</h2>
-                {message && <div className="alert alert-info small py-2">{message}</div>}
+                {message && (
+                  <div className={`alert alert-${messageKind === 'success' ? 'success' : messageKind === 'danger' ? 'danger' : 'info'} small py-2`}>
+                    {message}
+                  </div>
+                )}
                 <form onSubmit={submit} className="row g-2">
                   <div className="col-md-6">
                     <label className="form-label small">{t('partners.fieldBusiness')}</label>
@@ -125,8 +138,8 @@ export default function BecomePartnerPage() {
                       value={form.country}
                       onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}
                     >
-                      {COUNTRY_OPTIONS.map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                      {STORE_COUNTRY_OPTIONS.map((opt) => (
+                        <option key={opt.iso} value={opt.name}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
@@ -163,10 +176,11 @@ export default function BecomePartnerPage() {
                       value={form.shippingScope}
                       onChange={(e) => setForm((f) => ({ ...f, shippingScope: e.target.value }))}
                     >
-                      {SHIPS_TO_OPTIONS.map((o) => (
-                        <option key={o} value={o}>{o}</option>
+                      {DELIVERY_SCOPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                       ))}
                     </select>
+                    <p className="small text-muted mb-0 mt-1">{t('partners.fieldShippingHint')}</p>
                   </div>
                   <div className="col-12">
                     <label className="form-label small">{t('partners.fieldNote')}</label>

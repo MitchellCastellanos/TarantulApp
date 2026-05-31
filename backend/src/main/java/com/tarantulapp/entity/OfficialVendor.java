@@ -60,6 +60,12 @@ public class OfficialVendor {
     @Column(length = 80)
     private String badge;
 
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "logo_bw_url")
+    private String logoBwUrl;
+
     @Column(nullable = false)
     private Boolean enabled = true;
 
@@ -133,6 +139,10 @@ public class OfficialVendor {
     public void setNote(String note) { this.note = note; }
     public String getBadge() { return badge; }
     public void setBadge(String badge) { this.badge = badge; }
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
+    public String getLogoBwUrl() { return logoBwUrl; }
+    public void setLogoBwUrl(String logoBwUrl) { this.logoBwUrl = logoBwUrl; }
     public Boolean getEnabled() { return enabled; }
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
     public PartnerProgramTier getPartnerProgramTier() { return partnerProgramTier; }

@@ -6,6 +6,8 @@ import FangPanel from '../components/FangPanel'
 import OfficialPartnerShield from '../components/OfficialPartnerShield'
 import { useCapabilities } from '../hooks/useCapabilities'
 import mePartnerService from '../services/mePartnerService'
+import meBrandingService from '../services/meBrandingService'
+import LogoUploader from '../components/LogoUploader'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
 
 export default function PartnerHubPage() {
@@ -115,6 +117,12 @@ export default function PartnerHubPage() {
           </div>
           <p className="small text-muted mt-3 mb-0">{t('partnerHub.adminSyncHint')}</p>
         </FangPanel>
+
+        {capabilities?.branding && (
+          <FangPanel className="mt-3">
+            <LogoUploader service={meBrandingService} />
+          </FangPanel>
+        )}
       </div>
     </div>
   )

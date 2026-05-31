@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
+import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS } from '../constants/locations'
 
 function FilterPill({ active, onClick, children, id }) {
   return (
@@ -121,17 +121,17 @@ export default function MarketplaceFilterBar({
                 </select>
               </div>
               <div className="col-md-4">
-                <label className="small text-muted mb-1 d-block">{t('marketplace.shipsToFilterLabel')}</label>
+                <label className="small text-muted mb-1 d-block">{t('marketplace.storeCountryFilterLabel')}</label>
                 <select
                   className="form-select form-select-sm"
                   value={filters.shipsToCountry || ''}
                   onChange={(e) => setFilters((f) => ({ ...f, shipsToCountry: e.target.value }))}
-                  aria-label={t('marketplace.shipsToFilterLabel')}
+                  aria-label={t('marketplace.storeCountryFilterLabel')}
                 >
-                  <option value="">{t('marketplace.shipsToFilterAny')}</option>
-                  {SHIPS_TO_OPTIONS.map((opt) => (
-                    <option key={opt.code} value={opt.code}>
-                      {t('marketplace.shipsToFilterTo', { country: opt.label })}
+                  <option value="">{t('marketplace.storeCountryFilterAny')}</option>
+                  {STORE_COUNTRY_OPTIONS.map((opt) => (
+                    <option key={opt.iso} value={opt.iso}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>

@@ -275,6 +275,45 @@ export default function AdminVendorsPage() {
     }
   }
 
+  const promoteToOfficialPartner = async (user) => {
+    const handle = String(user?.publicHandle || user?.handle || '').trim()
+    if (!handle) {
+      setError(t('admin.promoteOfficialNeedsHandle'))
+      return
+    }
+    const tierRaw = window.prompt(t('admin.partnerPromoteTierPrompt'), 'official')
+    if (tierRaw == null) return
+    const tier = String(tierRaw).trim().toLowerCase()
+    const isFounding = tier === 'founding' || tier === 'founder'
+    const defaultSite = typeof window !== 'undefined'
+      ? `${window.location.origin}/shop/${encodeURIComponent(handle)}`
+      : `https://tarantulapp.com/shop/${encodeURIComponent(handle)}`
+    const websiteUrl = window.prompt(t('admin.promoteOfficialWebsitePrompt'), defaultSite)
+    if (websiteUrl == null) return
+    setBusyVendorId(user.id)
+    setError('')
+    setSuccess('')
+    try {
+      const result = await adminService.promoteUserToOfficialPartner(user.id, {
+        partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
+        enabled: true,
+        enableImport: false,
+        badge: isFounding ? 'Founding partner' : 'Official partner',
+        websiteUrl: websiteUrl.trim() || defaultSite,
+      })
+      const updated = { ...user, officialPartner: true }
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(user.id)) {
+        setLookupResult(updated)
+      }
+      setSuccess(t('admin.promoteOfficialSuccess', { slug: result?.vendor?.slug || handle }))
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.promoteOfficialError'))
+    } finally {
+      setBusyVendorId(null)
+    }
+  }
+
   const storefrontUrl = (handle) => {
     if (!handle) return ''
     return `/shop/${encodeURIComponent(handle)}`
@@ -428,6 +467,9 @@ export default function AdminVendorsPage() {
                   {lookupSummary.storefrontVerified ? (
                     <span className="badge text-bg-success">{t('admin.storefrontVerifiedBadge')}</span>
                   ) : null}
+                  {lookupSummary.officialPartner ? (
+                    <span className="badge text-bg-warning text-dark">{t('admin.officialPartnerBadge')}</span>
+                  ) : null}
                   <span className="badge text-bg-light text-dark border">{listingsCell(lookupSummary)} listings</span>
                 </div>
                 {Array.isArray(lookupSummary.opportunityHints) && lookupSummary.opportunityHints.length > 0 && (
@@ -491,6 +533,16 @@ export default function AdminVendorsPage() {
                 >
                   {grantBusyKey === `${String(lookupSummary.id)}:pro` ? t('common.loading') : t('admin.grantPro')}
                 </button>
+                {!lookupSummary.officialPartner && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-warning fw-semibold text-dark"
+                    disabled={busyVendorId === lookupSummary.id || !lookupSummary.handle}
+                    onClick={() => promoteToOfficialPartner(lookupSummary)}
+                  >
+                    {busyVendorId === lookupSummary.id ? t('common.loading') : t('admin.promoteOfficialPartnerCta')}
+                  </button>
+                )}
                 <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.grantBoostCreditsHint')}>
                   {[1, 5, 10].map((count) => (
                     <button

@@ -3,7 +3,24 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import PartnerVendorConfigModal from '../../components/admin/PartnerVendorConfigModal'
+import LogoUploader from '../../components/LogoUploader'
 import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
+import { STORE_COUNTRY_OPTIONS } from '../../constants/locations'
+
+const EMPTY_CREATE_VENDOR = {
+  name: '',
+  slug: '',
+  country: 'Mexico',
+  state: '',
+  city: '',
+  websiteUrl: '',
+  partnerProgramTier: 'OFFICIAL_PARTNER',
+  enabled: true,
+  enableImport: false,
+  badge: 'Official partner',
+  influenceScore: 50,
+  note: '',
+}
 
 export default function AdminPartnerDashboardPage() {
   const { t } = useTranslation()
@@ -23,6 +40,9 @@ export default function AdminPartnerDashboardPage() {
   const [partnerConfigBusyId, setPartnerConfigBusyId] = useState(null)
   const [partnerConfigModalVendor, setPartnerConfigModalVendor] = useState(null)
   const [partnerSyncVendorBusyId, setPartnerSyncVendorBusyId] = useState(null)
+  const [createVendorForm, setCreateVendorForm] = useState(EMPTY_CREATE_VENDOR)
+  const [createVendorBusy, setCreateVendorBusy] = useState(false)
+  const [showCreateVendor, setShowCreateVendor] = useState(false)
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -188,6 +208,32 @@ export default function AdminPartnerDashboardPage() {
         boostLevel: isFounding ? 2 : 1,
       },
     })
+  }
+
+  const createOfficialVendor = async (e) => {
+    e.preventDefault()
+    setCreateVendorBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const result = await adminService.createOfficialVendor({
+        ...createVendorForm,
+        slug: createVendorForm.slug.trim() || undefined,
+        influenceScore: Number(createVendorForm.influenceScore) || 50,
+      })
+      const vendor = result?.vendor
+      if (vendor) {
+        setOfficialVendors((prev) => [vendor, ...prev])
+      }
+      setCreateVendorForm(EMPTY_CREATE_VENDOR)
+      setShowCreateVendor(false)
+      setSuccess(t('admin.createOfficialVendorSuccess', { slug: vendor?.slug || '' }))
+      await loadDashboard()
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.createOfficialVendorError'))
+    } finally {
+      setCreateVendorBusy(false)
+    }
   }
 
   const savePartnerBadge = async (vendor, badge) => {
@@ -359,8 +405,144 @@ export default function AdminPartnerDashboardPage() {
       </section>
 
       <section className="card p-3 mb-4" id="badges-partners">
-        <h3 className="h6 mb-3">{t('admin.officialVendorsTitle')}</h3>
-        <p className="small text-muted mb-3">{t('admin.officialVendorsSyncHint')}</p>
+        <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+          <div>
+            <h3 className="h6 mb-1">{t('admin.officialVendorsTitle')}</h3>
+            <p className="small text-muted mb-0">{t('admin.officialVendorsSyncHint')}</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-sm btn-dark"
+            onClick={() => setShowCreateVendor((v) => !v)}
+          >
+            {showCreateVendor ? t('common.cancel') : t('admin.createOfficialVendorCta')}
+          </button>
+        </div>
+
+        {showCreateVendor && (
+          <form className="border rounded p-3 mb-3" onSubmit={createOfficialVendor}>
+            <p className="small text-muted mb-3">{t('admin.createOfficialVendorHint')}</p>
+            <div className="row g-2">
+              <div className="col-md-6">
+                <label className="form-label small">{t('partners.fieldBusiness')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  required
+                  value={createVendorForm.name}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label small">{t('admin.createOfficialVendorSlug')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  placeholder={t('admin.createOfficialVendorSlugHint')}
+                  value={createVendorForm.slug}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, slug: e.target.value }))}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label small">{t('partners.fieldWebsite')}</label>
+                <input
+                  type="url"
+                  className="form-control form-control-sm"
+                  required
+                  placeholder="https://"
+                  value={createVendorForm.websiteUrl}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, websiteUrl: e.target.value }))}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">{t('partners.fieldCountry')}</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={createVendorForm.country}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, country: e.target.value }))}
+                >
+                  {STORE_COUNTRY_OPTIONS.map((opt) => (
+                    <option key={opt.iso} value={opt.name}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">{t('admin.officialVendorsColTier')}</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={createVendorForm.partnerProgramTier}
+                  onChange={(e) => {
+                    const tier = e.target.value
+                    setCreateVendorForm((f) => ({
+                      ...f,
+                      partnerProgramTier: tier,
+                      badge: tier === 'FOUNDING_PARTNER' ? 'Founding partner' : 'Official partner',
+                    }))
+                  }}
+                >
+                  <option value="OFFICIAL_PARTNER">{t('admin.partnerTierOfficial')}</option>
+                  <option value="FOUNDING_PARTNER">{t('admin.partnerTierFounding')}</option>
+                </select>
+              </div>
+              <div className="col-md-4">
+                <label className="form-label small">{t('admin.officialVendorsColBadge')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  value={createVendorForm.badge}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, badge: e.target.value }))}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label small">{t('admin.officialVendorsColScore')}</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={1000}
+                  className="form-control form-control-sm"
+                  value={createVendorForm.influenceScore}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, influenceScore: e.target.value }))}
+                />
+              </div>
+              <div className="col-md-4 d-flex align-items-end gap-3 pb-1">
+                <div className="form-check">
+                  <input
+                    id="create-vendor-enabled"
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={createVendorForm.enabled}
+                    onChange={(e) => setCreateVendorForm((f) => ({ ...f, enabled: e.target.checked }))}
+                  />
+                  <label htmlFor="create-vendor-enabled" className="form-check-label small">
+                    {t('admin.officialVendorsActive')}
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    id="create-vendor-import"
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={createVendorForm.enableImport}
+                    onChange={(e) => setCreateVendorForm((f) => ({ ...f, enableImport: e.target.checked }))}
+                  />
+                  <label htmlFor="create-vendor-import" className="form-check-label small">
+                    {t('admin.officialVendorsColImport')}
+                  </label>
+                </div>
+              </div>
+              <div className="col-12">
+                <label className="form-label small">{t('partners.fieldNote')}</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows={2}
+                  value={createVendorForm.note}
+                  onChange={(e) => setCreateVendorForm((f) => ({ ...f, note: e.target.value }))}
+                />
+              </div>
+            </div>
+            <button type="submit" className="btn btn-sm btn-dark mt-3" disabled={createVendorBusy}>
+              {createVendorBusy ? t('common.loading') : t('admin.createOfficialVendorSubmit')}
+            </button>
+          </form>
+        )}
+
         {loading ? (
           <p className="text-muted small mb-0">{t('common.loading')}</p>
         ) : officialVendors.length === 0 ? (

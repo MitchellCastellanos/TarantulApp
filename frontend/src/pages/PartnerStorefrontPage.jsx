@@ -228,11 +228,6 @@ export default function PartnerStorefrontPage() {
                     ) : null}
                     <div className="small text-muted mt-2">
                       {vendor.nationalShipping ? t('marketplace.nationalShipping') : t('marketplace.regionalShipping')}
-                      {(vendor.shipsToCountries || []).length > 0 && (
-                        <span className="d-block mt-1">
-                          {t('marketplace.shipsTo')}: {(vendor.shipsToCountries || []).join(', ')}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="ta-partner-storefront-hero__aside flex-shrink-0">

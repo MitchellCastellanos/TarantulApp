@@ -7,6 +7,7 @@ import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.util.BetaMailBodies;
+import com.tarantulapp.util.FileStorageService;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
@@ -22,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -52,6 +56,7 @@ public class OfficialVendorService {
     private final PartnerReadinessReportService partnerReadinessReportService;
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
     private final String appBaseUrl;
     private final boolean seedOnStartup;
 
@@ -63,6 +68,7 @@ public class OfficialVendorService {
                                  PartnerReadinessReportService partnerReadinessReportService,
                                  EmailService emailService,
                                  UserRepository userRepository,
+                                 FileStorageService fileStorageService,
                                  @Value("${app.base-url:http://localhost:5173}") String appBaseUrl,
                                  @Value("${app.official-vendors.seed-on-startup:false}") boolean seedOnStartup) {
         this.officialVendorRepository = officialVendorRepository;
@@ -73,6 +79,7 @@ public class OfficialVendorService {
         this.partnerReadinessReportService = partnerReadinessReportService;
         this.emailService = emailService;
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
         this.appBaseUrl = trimTrailingSlash(appBaseUrl);
         this.seedOnStartup = seedOnStartup;
     }
@@ -626,6 +633,10 @@ public class OfficialVendorService {
         out.put("influenceScore", vendor.getInfluenceScore() == null ? 0 : vendor.getInfluenceScore());
         out.put("badge", vendor.getBadge() == null ? "Official partner" : vendor.getBadge());
         out.put("note", vendor.getNote() == null ? "" : vendor.getNote());
+        String logoUrl = resolveVendorLogoUrl(vendor);
+        if (logoUrl != null) {
+            out.put("logoUrl", logoUrl);
+        }
         out.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
         out.put("partnerProgramTier", vendor.getPartnerProgramTier() == null ? null : vendor.getPartnerProgramTier().name());
         out.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
@@ -662,6 +673,182 @@ public class OfficialVendorService {
     }
 
     /**
+     * Creates an official vendor directly from admin (no /partners lead required).
+     */
+    @Transactional
+    public Map<String, Object> adminCreateOfficialVendor(String name,
+                                                         String slug,
+                                                         String country,
+                                                         String state,
+                                                         String city,
+                                                         String websiteUrl,
+                                                         String partnerProgramTier,
+                                                         Boolean enabled,
+                                                         Boolean enableImport,
+                                                         String badge,
+                                                         Integer influenceScore,
+                                                         String note) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("NAME_REQUIRED");
+        }
+        String website = websiteUrl == null ? "" : websiteUrl.trim();
+        if (website.isBlank()) {
+            throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+        }
+        String normalizedSlug = resolveUniqueSlug(slug, name);
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setSlug(normalizedSlug);
+        vendor.setName(name.trim());
+        vendor.setCountry(country == null || country.isBlank() ? "International" : country.trim());
+        vendor.setState(cleanText(state, 80));
+        vendor.setCity(cleanText(city, 80));
+        vendor.setWebsiteUrl(website);
+        vendor.setNationalShipping(true);
+        vendor.setShipsToCountries(MarketplaceService.countryNameToIso(vendor.getCountry()));
+        vendor.setInfluenceScore(influenceScore == null ? 50 : Math.max(0, Math.min(1000, influenceScore)));
+        vendor.setNote(cleanText(note, 1200));
+        vendor.setBadge(cleanText(badge, 80) == null ? "Official partner" : cleanText(badge, 80));
+        vendor.setEnabled(Boolean.TRUE.equals(enabled));
+        PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, null, PartnerProgramTier.OFFICIAL_PARTNER);
+        vendor.setPartnerProgramTier(tier == null ? PartnerProgramTier.OFFICIAL_PARTNER : tier);
+        vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
+        vendor.setIsDemo(false);
+        vendor.setFeedBaseUrl(trimTrailingSlash(website));
+        vendor.setFeedType(cleanFeedType(guessFeedType(website)));
+        vendor.setFeedConfig(sanitizeFeedConfig(null, vendor.getPartnerProgramTier()));
+        officialVendorRepository.save(vendor);
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        Map<UUID, Map<String, Object>> handoffs30d = partnerHandoffAnalyticsService.adminHandoffByVendorSince(since30d);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("vendor", mapVendorAdmin(vendor, handoffs30d));
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isUserOfficialPartner(User user) {
+        if (user == null || user.getPublicHandle() == null || user.getPublicHandle().isBlank()) {
+            return false;
+        }
+        return officialVendorRepository.findBySlug(user.getPublicHandle().trim())
+                .filter(v -> Boolean.TRUE.equals(v.getEnabled()))
+                .map(v -> {
+                    PartnerProgramTier tier = v.getPartnerProgramTier();
+                    return tier != null && tier.isOfficialPartner();
+                })
+                .orElse(false);
+    }
+
+    /**
+     * Promotes a community seller account to official partner using their public handle as slug.
+     * Creates or upgrades the matching {@link OfficialVendor} row.
+     */
+    @Transactional
+    public Map<String, Object> adminPromoteUserToOfficialPartner(UUID userId,
+                                                                 String partnerProgramTier,
+                                                                 Boolean enabled,
+                                                                 Boolean enableImport,
+                                                                 String badge,
+                                                                 String websiteUrl,
+                                                                 String note) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        String handle = user.getPublicHandle();
+        if (handle == null || handle.isBlank()) {
+            throw new IllegalArgumentException("PUBLIC_HANDLE_REQUIRED");
+        }
+        String slug = slugify(handle);
+        if (slug.isBlank()) {
+            throw new IllegalArgumentException("INVALID_PUBLIC_HANDLE");
+        }
+        PartnerProgramTier tier = resolvePartnerProgramTier(partnerProgramTier, null, PartnerProgramTier.OFFICIAL_PARTNER);
+        if (tier == null) {
+            tier = PartnerProgramTier.OFFICIAL_PARTNER;
+        }
+        String defaultWebsite = appBaseUrl + "/shop/" + slug;
+        String website = websiteUrl == null || websiteUrl.isBlank() ? defaultWebsite : websiteUrl.trim();
+        String displayName = user.getStorefrontName();
+        if (displayName == null || displayName.isBlank()) {
+            displayName = user.getDisplayName();
+        }
+        if (displayName == null || displayName.isBlank()) {
+            displayName = handle.trim();
+        }
+        boolean activate = enabled == null || enabled;
+        String badgeText = cleanText(badge, 80);
+        if (badgeText == null) {
+            badgeText = tier.isFoundingPartner() ? "Founding partner" : "Official partner";
+        }
+
+        OfficialVendor vendor = officialVendorRepository.findBySlug(slug).orElse(null);
+        boolean created = vendor == null;
+        if (vendor == null) {
+            vendor = new OfficialVendor();
+            vendor.setSlug(slug);
+            vendor.setIsDemo(false);
+            vendor.setInfluenceScore(50);
+            vendor.setFeedType(cleanFeedType(guessFeedType(website)));
+            vendor.setFeedBaseUrl(trimTrailingSlash(website));
+        }
+        vendor.setName(displayName.trim());
+        vendor.setWebsiteUrl(website);
+        vendor.setCountry(user.getProfileCountry() == null || user.getProfileCountry().isBlank()
+                ? "International" : user.getProfileCountry().trim());
+        vendor.setState(user.getProfileState());
+        vendor.setCity(user.getProfileCity());
+        vendor.setNationalShipping(true);
+        vendor.setShipsToCountries(MarketplaceService.countryNameToIso(vendor.getCountry()));
+        vendor.setPartnerProgramTier(tier);
+        vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
+        vendor.setEnabled(activate);
+        vendor.setBadge(badgeText);
+        if (note != null) {
+            vendor.setNote(cleanText(note, 1200));
+        } else if (created && vendor.getNote() == null) {
+            vendor.setNote("Promoted from community seller account.");
+        }
+        vendor.setFeedConfig(sanitizeFeedConfig(vendor.getFeedConfig(), tier));
+        officialVendorRepository.save(vendor);
+
+        Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
+        Map<UUID, Map<String, Object>> handoffs30d = partnerHandoffAnalyticsService.adminHandoffByVendorSince(since30d);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("created", created);
+        out.put("vendor", mapVendorAdmin(vendor, handoffs30d));
+        out.put("officialPartner", true);
+        return out;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminVendorBranding(UUID vendorId) {
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
+        return vendorBrandingMap(vendor);
+    }
+
+    @Transactional
+    public Map<String, Object> adminUploadVendorLogo(UUID vendorId, MultipartFile file) throws IOException {
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
+        FileStorageService.LogoVariants variants = fileStorageService.saveLogoWithMonochrome(file, "vendor-logos");
+        deletePreviousVendorLogoAssets(vendor);
+        vendor.setLogoUrl(variants.colorPath());
+        vendor.setLogoBwUrl(variants.bwPath());
+        officialVendorRepository.save(vendor);
+        return vendorBrandingMap(vendor);
+    }
+
+    @Transactional
+    public Map<String, Object> adminDeleteVendorLogo(UUID vendorId) {
+        OfficialVendor vendor = officialVendorRepository.findById(vendorId)
+                .orElseThrow(() -> new NotFoundException("Vendor oficial no encontrado"));
+        deletePreviousVendorLogoAssets(vendor);
+        vendor.setLogoUrl(null);
+        vendor.setLogoBwUrl(null);
+        officialVendorRepository.save(vendor);
+        return vendorBrandingMap(vendor);
+    }
+
+    /**
      * Creates an {@link OfficialVendor} from a submitted lead and marks the lead converted.
      * Defaults: OFFICIAL_PARTNER, import off, vendor disabled until ops review.
      */
@@ -694,7 +881,7 @@ public class OfficialVendorService {
         vendor.setCity(lead.getCity());
         vendor.setWebsiteUrl(website);
         vendor.setNationalShipping(true);
-        vendor.setShipsToCountries(lead.getShippingScope() == null ? lead.getCountry() : lead.getShippingScope());
+        vendor.setShipsToCountries(MarketplaceService.countryNameToIso(vendor.getCountry()));
         vendor.setInfluenceScore(influenceScore == null ? 50 : Math.max(0, Math.min(1000, influenceScore)));
         vendor.setNote(lead.getNote());
         vendor.setBadge(cleanText(badge, 80) == null ? "Official partner" : cleanText(badge, 80));
@@ -858,7 +1045,14 @@ public class OfficialVendorService {
     }
 
     private String uniqueSlugFromBusinessName(String businessName) {
-        String base = slugify(businessName);
+        return resolveUniqueSlug(null, businessName);
+    }
+
+    private String resolveUniqueSlug(String requestedSlug, String fallbackName) {
+        String base = slugify(requestedSlug);
+        if (base.isBlank()) {
+            base = slugify(fallbackName);
+        }
         if (base.isBlank()) {
             base = "partner";
         }
@@ -869,6 +1063,35 @@ public class OfficialVendorService {
             n++;
         }
         return candidate;
+    }
+
+    private String resolveVendorLogoUrl(OfficialVendor vendor) {
+        if (vendor.getLogoUrl() != null && !vendor.getLogoUrl().isBlank()) {
+            return vendor.getLogoUrl();
+        }
+        if (vendor.getSlug() == null || vendor.getSlug().isBlank()) {
+            return null;
+        }
+        return userRepository.findByPublicHandleIgnoreCase(vendor.getSlug().trim())
+                .map(User::getLogoUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .orElse(null);
+    }
+
+    private Map<String, Object> vendorBrandingMap(OfficialVendor vendor) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("logoUrl", resolveVendorLogoUrl(vendor));
+        out.put("logoBwUrl", vendor.getLogoBwUrl());
+        return out;
+    }
+
+    private void deletePreviousVendorLogoAssets(OfficialVendor vendor) {
+        if (vendor.getLogoUrl() != null) {
+            fileStorageService.deleteFile(vendor.getLogoUrl());
+        }
+        if (vendor.getLogoBwUrl() != null && !vendor.getLogoBwUrl().equals(vendor.getLogoUrl())) {
+            fileStorageService.deleteFile(vendor.getLogoBwUrl());
+        }
     }
 
     private static String slugify(String raw) {

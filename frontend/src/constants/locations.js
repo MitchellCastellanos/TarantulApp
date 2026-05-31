@@ -19,13 +19,29 @@ export const SHIPS_TO_OPTIONS = [
   { code: 'CR', label: 'Costa Rica' },
 ]
 
+/** Single-country store locations (no cross-border shipping). */
+export const STORE_COUNTRY_OPTIONS = [
+  { name: 'Mexico', iso: 'MX', label: 'México' },
+  { name: 'United States', iso: 'US', label: 'United States' },
+  { name: 'Canada', iso: 'CA', label: 'Canada' },
+  { name: 'Colombia', iso: 'CO', label: 'Colombia' },
+  { name: 'Brazil', iso: 'BR', label: 'Brasil' },
+  { name: 'Argentina', iso: 'AR', label: 'Argentina' },
+  { name: 'Chile', iso: 'CL', label: 'Chile' },
+  { name: 'Peru', iso: 'PE', label: 'Perú' },
+  { name: 'Ecuador', iso: 'EC', label: 'Ecuador' },
+  { name: 'Spain', iso: 'ES', label: 'España' },
+  { name: 'Uruguay', iso: 'UY', label: 'Uruguay' },
+  { name: 'Costa Rica', iso: 'CR', label: 'Costa Rica' },
+]
+
 /** Returns the country ISO code matching the (legacy long-form) country name in COUNTRY_OPTIONS. */
-export const COUNTRY_NAME_TO_ISO = {
-  Mexico: 'MX',
-  'United States': 'US',
-  Canada: 'CA',
-  México: 'MX',
-}
+export const COUNTRY_NAME_TO_ISO = Object.fromEntries(
+  STORE_COUNTRY_OPTIONS.flatMap(({ name, iso, label }) => [
+    [name, iso],
+    [label, iso],
+  ]),
+)
 
 export const STATES_BY_COUNTRY = {
   Mexico: [

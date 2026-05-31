@@ -12,9 +12,27 @@ export function partnerStorefrontPath(slug) {
   return `/partner/${encodeURIComponent(s)}`
 }
 
-export function vendorHasInAppStorefront(vendor) {
-  if (!vendor || vendor.enabled === false) return false
-  if (!vendor.listingImportEnabled) return false
+/** Enabled official/founding partner (sync not required). */
+export function vendorIsFeaturedOfficialPartner(vendor) {
+  if (!vendor || vendor.enabled === false || vendor.isDemo) return false
   const tier = vendor.partnerProgramTier
   return vendor.isFoundingPartner === true || (tier && SYNC_PARTNER_TIERS.has(tier))
+}
+
+export function vendorHasInAppStorefront(vendor) {
+  if (!vendorIsFeaturedOfficialPartner(vendor)) return false
+  if (!vendor.listingImportEnabled) return false
+  return true
+}
+
+/** Primary CTA for a partner card: in-app storefront when synced, else external site. */
+export function partnerFeaturedHref(vendor) {
+  if (vendorHasInAppStorefront(vendor)) {
+    const path = partnerStorefrontPath(vendor.slug)
+    if (path) return { href: path, external: false }
+  }
+  const site = String(vendor?.websiteUrl || '').trim()
+  if (site) return { href: site, external: true }
+  const path = partnerStorefrontPath(vendor.slug)
+  return path ? { href: path, external: false } : null
 }

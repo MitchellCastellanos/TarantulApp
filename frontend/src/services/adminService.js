@@ -54,6 +54,21 @@ const adminService = {
     api.post(`/admin/official-vendor-leads/${leadId}/send-outreach-email`, payload).then((r) => r.data),
   promoteOfficialVendorLead: (leadId, payload = {}) =>
     api.post(`/admin/official-vendor-leads/${leadId}/promote`, payload).then((r) => r.data),
+  createOfficialVendor: (payload) =>
+    api.post('/admin/official-vendors', payload).then((r) => r.data),
+  officialVendorBranding: (vendorId) =>
+    api.get(`/admin/official-vendors/${vendorId}/branding`).then((r) => r.data),
+  uploadOfficialVendorLogo: (vendorId, file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api
+      .post(`/admin/official-vendors/${vendorId}/logo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data)
+  },
+  deleteOfficialVendorLogo: (vendorId) =>
+    api.delete(`/admin/official-vendors/${vendorId}/logo`).then((r) => r.data),
+  promoteUserToOfficialPartner: (userId, payload = {}) =>
+    api.post(`/admin/users/${userId}/promote-official-partner`, payload).then((r) => r.data),
   vendorVerifications: (status) =>
     api.get('/admin/vendor-verifications', { params: status ? { status } : {} }).then((r) => r.data),
   reviewVendorVerification: (id, payload) =>

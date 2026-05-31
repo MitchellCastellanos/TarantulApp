@@ -52,6 +52,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -221,6 +222,24 @@ public class AdminController {
                                             Map<String, Object> feedConfig,
                                             String badge,
                                             Integer influenceScore) {}
+    record CreateOfficialVendorRequest(String name,
+                                       String slug,
+                                       String country,
+                                       String state,
+                                       String city,
+                                       String websiteUrl,
+                                       String partnerProgramTier,
+                                       Boolean enabled,
+                                       Boolean enableImport,
+                                       String badge,
+                                       Integer influenceScore,
+                                       String note) {}
+    record PromoteUserOfficialPartnerRequest(String partnerProgramTier,
+                                             Boolean enabled,
+                                             Boolean enableImport,
+                                             String badge,
+                                             String websiteUrl,
+                                             String note) {}
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
@@ -556,6 +575,71 @@ public class AdminController {
                     req == null ? null : req.feedConfig(),
                     req == null ? null : req.badge(),
                     req == null ? null : req.influenceScore()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/official-vendors")
+    public ResponseEntity<Map<String, Object>> createOfficialVendor(
+            @RequestBody CreateOfficialVendorRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        if (req == null || req.name() == null || req.name().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "NAME_REQUIRED"));
+        }
+        try {
+            return ResponseEntity.ok(officialVendorService.adminCreateOfficialVendor(
+                    req.name(),
+                    req.slug(),
+                    req.country(),
+                    req.state(),
+                    req.city(),
+                    req.websiteUrl(),
+                    req.partnerProgramTier(),
+                    req.enabled(),
+                    req.enableImport(),
+                    req.badge(),
+                    req.influenceScore(),
+                    req.note()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/official-vendors/{id}/branding")
+    public ResponseEntity<Map<String, Object>> officialVendorBranding(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminVendorBranding(id));
+    }
+
+    @PostMapping(value = "/official-vendors/{id}/logo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> uploadOfficialVendorLogo(@PathVariable UUID id,
+                                                                         @RequestParam("file") org.springframework.web.multipart.MultipartFile file)
+            throws java.io.IOException {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminUploadVendorLogo(id, file));
+    }
+
+    @DeleteMapping("/official-vendors/{id}/logo")
+    public ResponseEntity<Map<String, Object>> deleteOfficialVendorLogo(@PathVariable UUID id) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminDeleteVendorLogo(id));
+    }
+
+    @PostMapping("/users/{id}/promote-official-partner")
+    public ResponseEntity<Map<String, Object>> promoteUserToOfficialPartner(
+            @PathVariable UUID id,
+            @RequestBody(required = false) PromoteUserOfficialPartnerRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminPromoteUserToOfficialPartner(
+                    id,
+                    req == null ? null : req.partnerProgramTier(),
+                    req == null ? null : req.enabled(),
+                    req == null ? null : req.enableImport(),
+                    req == null ? null : req.badge(),
+                    req == null ? null : req.websiteUrl(),
+                    req == null ? null : req.note()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -1683,6 +1767,7 @@ public class AdminController {
                 && u.getVendorInviteExpiresAt() != null
                 && u.getVendorInviteExpiresAt().isAfter(Instant.now());
         out.put("vendorInvitePending", invitePending);
+        out.put("officialPartner", officialVendorService.isUserOfficialPartner(u));
         out.put("tarantulasCount", spiderCounts.getOrDefault(u.getId(), 0L));
         out.put("createdAt", u.getCreatedAt());
         out.put("lastActivityAt", u.getLastActivityAt());

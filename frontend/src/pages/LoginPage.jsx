@@ -252,14 +252,17 @@ export default function LoginPage() {
   const loginFeatureBlocks = useMemo(() => {
     const blocks = {
       discover: {
+        to: '/discover',
         title: t('auth.loginPage.featureDiscoverTitle'),
         bullets: [t('auth.loginPage.featureDiscoverB1'), t('auth.loginPage.featureDiscoverB2')],
       },
       collection: {
+        to: '/login',
         title: t('auth.loginPage.featureCollectionTitle'),
         bullets: [t('auth.loginPage.featureCollectionB1'), t('auth.loginPage.featureCollectionB2')],
       },
       marketplace: {
+        to: '/marketplace',
         title: t('auth.loginPage.featureMarketplaceTitle'),
         bullets: [t('auth.loginPage.featureMarketplaceB1'), t('auth.loginPage.featureMarketplaceB2')],
       },
@@ -267,7 +270,7 @@ export default function LoginPage() {
     const order = loginAudience === 'seller'
       ? ['marketplace', 'collection', 'discover']
       : ['discover', 'collection', 'marketplace']
-    return order.map((k) => blocks[k])
+    return order.map((k) => ({ key: k, ...blocks[k] }))
   }, [t, loginAudience])
 
   const billingRegion = useMemo(() => inferBillingRegion(), [])
@@ -586,19 +589,22 @@ export default function LoginPage() {
           <section className="w-100">
             <div className="row g-3 mb-3">
               {loginFeatureBlocks.map((block) => (
-                <div className="col-12 col-md-6" key={block.title}>
-                  <div
-                    className="h-100 rounded-3 p-3"
+                <div className="col-12 col-md-6" key={block.key}>
+                  <Link
+                    to={block.to}
+                    className="d-block h-100 rounded-3 p-3 text-decoration-none ta-login-feature-card"
                     style={{
                       border: '1px solid var(--ta-border)',
                       background: isLight ? 'rgba(255,250,240,0.9)' : 'rgba(26,22,17,0.78)',
+                      color: 'inherit',
+                      transition: 'border-color 0.15s ease, transform 0.15s ease',
                     }}
                   >
                     <h3 className="h6 fw-bold mb-2" style={{ color: 'var(--ta-gold)' }}>{block.title}</h3>
                     <ul className="small mb-0 ps-3" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
                       {block.bullets.map((b) => <li key={b}>{b}</li>)}
                     </ul>
-                  </div>
+                  </Link>
                 </div>
               ))}
             </div>

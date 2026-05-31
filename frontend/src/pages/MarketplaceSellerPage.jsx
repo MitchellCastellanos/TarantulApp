@@ -6,10 +6,13 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
-import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, SHIPS_TO_OPTIONS } from '../constants/locations'
+import { COUNTRY_OPTIONS, STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS } from '../constants/locations'
 import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import VendorVerificationCard from '../components/VendorVerificationCard'
+import LogoUploader from '../components/LogoUploader'
+import meBrandingService from '../services/meBrandingService'
+import { useCapabilities } from '../hooks/useCapabilities'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { inferBillingRegion, isVendorDynamicTierRegion } from '../utils/inferBillingRegion'
 
@@ -41,6 +44,7 @@ const FILTERS = ['all', 'active', 'sold', 'hidden']
 export default function MarketplaceSellerPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const { data: capabilities } = useCapabilities()
   const queryClient = useQueryClient()
   const [myListings, setMyListings] = useState([])
   const [myProfile, setMyProfile] = useState({
@@ -55,7 +59,6 @@ export default function MarketplaceSellerPage() {
     storefrontLagPolicy: '',
     contactWhatsapp: '',
     contactInstagram: '',
-    shipsTo: [],
   })
   const [sellerProgram, setSellerProgram] = useState({
     tier: 'community',
@@ -120,7 +123,6 @@ export default function MarketplaceSellerPage() {
       storefrontLagPolicy: profile?.storefrontLagPolicy || '',
       contactWhatsapp: profile?.contactWhatsapp || '',
       contactInstagram: profile?.contactInstagram || '',
-      shipsTo: Array.isArray(profile?.shipsTo) ? profile.shipsTo : [],
     })
     setSellerProgram({
       tier: profile?.sellerProgram?.tier || 'community',
@@ -153,6 +155,7 @@ export default function MarketplaceSellerPage() {
   const boostOfferAvailable = boostCheckoutAvailable || vendorBoostCredits > 0
 
   const listingStates = STATES_BY_COUNTRY[listingForm.country || 'Mexico'] || []
+  const storeStates = STATES_BY_COUNTRY[myProfile.country || 'Mexico'] || []
   const listingCities = CITIES_BY_STATE[listingForm.state] || []
 
   const onListingImageFile = useCallback(
@@ -297,7 +300,6 @@ export default function MarketplaceSellerPage() {
         storefrontTagline: myProfile.storefrontTagline || null,
         storefrontShippingPolicy: myProfile.storefrontShippingPolicy || null,
         storefrontLagPolicy: myProfile.storefrontLagPolicy || null,
-        shipsTo: Array.isArray(myProfile.shipsTo) ? myProfile.shipsTo : [],
       })
       await loadMine()
       setMessage(t('marketplace.profileSaved'))
@@ -476,33 +478,53 @@ export default function MarketplaceSellerPage() {
               </div>
 
               <div className="row g-2 mt-1">
-                <div className="col-12">
+                <div className="col-md-4">
                   <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
-                    {t('marketplace.shipsToLabel')}
+                    {t('marketplace.storeCountryLabel')}
                   </label>
-                  <div className="d-flex flex-wrap gap-2">
-                    {SHIPS_TO_OPTIONS.map((opt) => {
-                      const selected = Array.isArray(myProfile.shipsTo) && myProfile.shipsTo.includes(opt.code)
-                      return (
-                        <button
-                          key={opt.code}
-                          type="button"
-                          className={`btn btn-sm ${selected ? 'btn-dark' : 'btn-outline-secondary'}`}
-                          onClick={() => setMyProfile((p) => {
-                            const current = Array.isArray(p.shipsTo) ? p.shipsTo : []
-                            const next = current.includes(opt.code)
-                              ? current.filter((c) => c !== opt.code)
-                              : [...current, opt.code]
-                            return { ...p, shipsTo: next }
-                          })}
-                          aria-pressed={selected}
-                        >
-                          {opt.code} · {opt.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="small text-muted mb-0 mt-1">{t('marketplace.shipsToHint')}</p>
+                  <select
+                    className="form-select form-select-sm"
+                    required
+                    value={myProfile.country}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, country: e.target.value, state: '', city: '' }))}
+                  >
+                    {STORE_COUNTRY_OPTIONS.map((opt) => (
+                      <option key={opt.iso} value={opt.name}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                    {t('marketplace.fieldState')}
+                  </label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={myProfile.state}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, state: e.target.value, city: '' }))}
+                  >
+                    <option value="">—</option>
+                    {storeStates.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label small mb-1" style={{ color: 'var(--ta-text-muted)' }}>
+                    {t('marketplace.fieldCity')}
+                  </label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={myProfile.city}
+                    onChange={(e) => setMyProfile((p) => ({ ...p, city: e.target.value }))}
+                  >
+                    <option value="">—</option>
+                    {(CITIES_BY_STATE[myProfile.state] || []).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-12">
+                  <p className="small text-muted mb-0">{t('marketplace.storeCountryHint')}</p>
                 </div>
               </div>
 
@@ -528,6 +550,9 @@ export default function MarketplaceSellerPage() {
                 {savingProfile ? t('common.saving') : t('marketplace.saveProfile')}
               </button>
             </form>
+            {capabilities?.branding && (
+              <LogoUploader service={meBrandingService} />
+            )}
           </div>
         </div>
 

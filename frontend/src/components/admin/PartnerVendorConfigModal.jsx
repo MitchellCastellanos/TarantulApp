@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
+import LogoUploader from '../LogoUploader'
+import adminService from '../../services/adminService'
 
 const DEFAULT_WOO_FEED_JSON = `{
   "allowedCategories": ["tarantulas", "terrariums", "substrates", "live_food", "supplies"],
@@ -127,6 +129,16 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 />
                 {jsonError ? <div className="invalid-feedback d-block">{jsonError}</div> : null}
                 <p className="small text-muted mb-0 mt-1">{t('admin.partnerFeedConfigJsonHint')}</p>
+              </div>
+              <div className="col-12">
+                <LogoUploader
+                  allowPreferences={false}
+                  service={{
+                    get: () => adminService.officialVendorBranding(vendor.id),
+                    uploadLogo: (file) => adminService.uploadOfficialVendorLogo(vendor.id, file),
+                    deleteLogo: () => adminService.deleteOfficialVendorLogo(vendor.id),
+                  }}
+                />
               </div>
             </div>
           </div>

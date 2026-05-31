@@ -193,7 +193,7 @@ public class MarketplaceService {
         profile.setStorefrontTagline(cleanText(storefrontTagline, 180));
         profile.setStorefrontShippingPolicy(cleanText(storefrontShippingPolicy, 1000));
         profile.setStorefrontLagPolicy(cleanText(storefrontLagPolicy, 1000));
-        profile.setShipsTo(normalizeShipsToCsv(shipsTo));
+        profile.setShipsTo(countryNameToIso(profile.getProfileCountry()));
         return mapUserProfile(userRepository.save(profile));
     }
 
@@ -1764,6 +1764,36 @@ public class MarketplaceService {
         return out.length() > maxLen ? out.substring(0, maxLen) : out;
     }
 
+    /** Maps a store country name/label to ISO-3166-1 alpha-2; null when unknown. */
+    static String countryNameToIso(String country) {
+        if (country == null || country.isBlank()) return null;
+        String norm = country.trim();
+        java.util.Map<String, String> map = java.util.Map.ofEntries(
+                java.util.Map.entry("Mexico", "MX"),
+                java.util.Map.entry("México", "MX"),
+                java.util.Map.entry("United States", "US"),
+                java.util.Map.entry("Canada", "CA"),
+                java.util.Map.entry("Colombia", "CO"),
+                java.util.Map.entry("Brazil", "BR"),
+                java.util.Map.entry("Brasil", "BR"),
+                java.util.Map.entry("Argentina", "AR"),
+                java.util.Map.entry("Chile", "CL"),
+                java.util.Map.entry("Peru", "PE"),
+                java.util.Map.entry("Perú", "PE"),
+                java.util.Map.entry("Ecuador", "EC"),
+                java.util.Map.entry("Spain", "ES"),
+                java.util.Map.entry("España", "ES"),
+                java.util.Map.entry("Uruguay", "UY"),
+                java.util.Map.entry("Costa Rica", "CR")
+        );
+        String iso = map.get(norm);
+        if (iso != null) return iso;
+        if (norm.length() == 2 && norm.matches("[A-Za-z]{2}")) {
+            return norm.toUpperCase(java.util.Locale.ROOT);
+        }
+        return null;
+    }
+
     /** Normalizes a ships-to list into a CSV of upper-case ISO codes (dedup, max 64 entries, max 512 chars). */
     static String normalizeShipsToCsv(java.util.List<String> shipsTo) {
         if (shipsTo == null || shipsTo.isEmpty()) return null;
@@ -1792,11 +1822,11 @@ public class MarketplaceService {
         return out;
     }
 
-    /** True if the seller's ships-to list is unset (treat as "shows in all queries") or includes the country. */
+    /** True if the seller's store country matches the filter (unset store country → excluded from country filter only). */
     static boolean shipsToCountryAllowed(String shipsToCsv, String country) {
         if (country == null || country.isBlank()) return true;
         java.util.List<String> list = parseShipsToList(shipsToCsv);
-        if (list.isEmpty()) return true;
+        if (list.isEmpty()) return false;
         String want = country.trim().toUpperCase(java.util.Locale.ROOT);
         return list.contains(want);
     }
