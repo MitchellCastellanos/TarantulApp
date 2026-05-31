@@ -43,6 +43,19 @@ export const COUNTRY_NAME_TO_ISO = Object.fromEntries(
   ]),
 )
 
+/** ISO-4217 currency each supported country sells in. Keep in sync with backend RegionPolicy. */
+export const CURRENCY_BY_COUNTRY = {
+  Mexico: 'MXN',
+  'United States': 'USD',
+  Canada: 'CAD',
+  Colombia: 'COP',
+}
+
+/** Currency a seller in this country must price in. Defaults to USD (international). */
+export function currencyForCountry(country) {
+  return CURRENCY_BY_COUNTRY[country] || 'USD'
+}
+
 export const STATES_BY_COUNTRY = {
   Mexico: [
     'CDMX',

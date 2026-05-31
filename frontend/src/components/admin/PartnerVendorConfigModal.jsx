@@ -25,6 +25,15 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [feedType, setFeedType] = useState('')
   const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_WOO_FEED_JSON)
   const [jsonError, setJsonError] = useState('')
+  // In-app TarantulApp checkout (beta, Canada only).
+  const [inAppEnabled, setInAppEnabled] = useState(false)
+  const [checkoutMode, setCheckoutMode] = useState('website')
+  const [payoutMode, setPayoutMode] = useState('platform')
+  const [commissionPercent, setCommissionPercent] = useState('0')
+  const [commissionWaived, setCommissionWaived] = useState(false)
+  const [stripeAccountId, setStripeAccountId] = useState('')
+
+  const inAppCountryOk = !!vendor?.checkout?.inAppCheckoutCountry
 
   useEffect(() => {
     if (!vendor) return
@@ -36,6 +45,13 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     const fc = vendor.feedConfig && Object.keys(vendor.feedConfig).length > 0 ? vendor.feedConfig : null
     setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : defaultFeedJsonForType(vendor.feedType))
     setJsonError('')
+    const inApp = (vendor.feedConfig && vendor.feedConfig.inAppCheckout) || {}
+    setInAppEnabled(!!inApp.enabled)
+    setCheckoutMode(vendor.feedConfig?.checkoutMode === 'tarantulapp' ? 'tarantulapp' : 'website')
+    setPayoutMode(inApp.payoutMode === 'connect' ? 'connect' : 'platform')
+    setCommissionPercent(String(inApp.commissionPercent ?? 0))
+    setCommissionWaived(!!inApp.commissionWaived)
+    setStripeAccountId(inApp.stripeAccountId || '')
   }, [vendor])
 
   if (!vendor) return null
@@ -61,6 +77,15 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
       return
     }
     const isFounding = tier === 'founding'
+    // In-app checkout is Canada-only; never persist it enabled for ineligible vendors.
+    const inApp = {
+      enabled: inAppCountryOk && inAppEnabled,
+      payoutMode,
+      stripeAccountId: stripeAccountId.trim(),
+      commissionPercent: Number(commissionPercent) || 0,
+      commissionWaived,
+      providers: ['stripe', 'paypal', 'klarna'],
+    }
     onSave({
       partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
       strategicFounder: isFounding,
@@ -72,6 +97,8 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
         ...feedConfig,
         partnerTier: isFounding ? 'founding' : 'official',
         boostLevel: isFounding ? 2 : 1,
+        checkoutMode: inAppCountryOk && inAppEnabled ? checkoutMode : 'website',
+        inAppCheckout: inApp,
       },
     })
   }
@@ -131,6 +158,64 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 {jsonError ? <div className="invalid-feedback d-block">{jsonError}</div> : null}
                 <p className="small text-muted mb-0 mt-1">{t('admin.partnerFeedConfigJsonHint')}</p>
                 <p className="small text-muted mb-0">{t('admin.partnerFeedSyncOptionalHint')}</p>
+              </div>
+              <div className="col-12">
+                <hr className="my-2" />
+                <h4 className="h6 mb-1">{t('admin.partnerCheckoutSection')}</h4>
+                {inAppCountryOk ? (
+                  <div className="row g-2">
+                    <div className="col-12 form-check ms-2">
+                      <input className="form-check-input" type="checkbox" id="inAppEnabled"
+                        checked={inAppEnabled} onChange={(e) => setInAppEnabled(e.target.checked)} />
+                      <label className="form-check-label small" htmlFor="inAppEnabled">
+                        {t('admin.partnerInAppEnableLabel')}
+                      </label>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small">{t('admin.partnerCheckoutModeLabel')}</label>
+                      <select className="form-select form-select-sm" value={checkoutMode}
+                        disabled={!inAppEnabled} onChange={(e) => setCheckoutMode(e.target.value)}>
+                        <option value="website">{t('admin.partnerCheckoutModeWebsite')}</option>
+                        <option value="tarantulapp">{t('admin.partnerCheckoutModeInApp')}</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small">{t('admin.partnerPayoutModeLabel')}</label>
+                      <select className="form-select form-select-sm" value={payoutMode}
+                        disabled={!inAppEnabled} onChange={(e) => setPayoutMode(e.target.value)}>
+                        <option value="platform">{t('admin.partnerPayoutPlatform')}</option>
+                        <option value="connect">{t('admin.partnerPayoutConnect')}</option>
+                      </select>
+                    </div>
+                    {payoutMode === 'connect' && (
+                      <div className="col-12">
+                        <label className="form-label small">{t('admin.partnerStripeAccountLabel')}</label>
+                        <input className="form-control form-control-sm" value={stripeAccountId}
+                          placeholder="acct_..." disabled={!inAppEnabled}
+                          onChange={(e) => setStripeAccountId(e.target.value)} />
+                      </div>
+                    )}
+                    <div className="col-md-6">
+                      <label className="form-label small">{t('admin.partnerCommissionPercentLabel')}</label>
+                      <input className="form-control form-control-sm" type="number" min="0" max="100" step="0.1"
+                        value={commissionPercent} disabled={!inAppEnabled}
+                        onChange={(e) => setCommissionPercent(e.target.value)} />
+                    </div>
+                    <div className="col-md-6 d-flex align-items-end">
+                      <div className="form-check ms-1 mb-1">
+                        <input className="form-check-input" type="checkbox" id="commissionWaived"
+                          checked={commissionWaived} disabled={!inAppEnabled}
+                          onChange={(e) => setCommissionWaived(e.target.checked)} />
+                        <label className="form-check-label small" htmlFor="commissionWaived">
+                          {t('admin.partnerCommissionWaivedLabel')}
+                        </label>
+                      </div>
+                    </div>
+                    <p className="small text-muted mb-0">{t('admin.partnerCheckoutHint')}</p>
+                  </div>
+                ) : (
+                  <p className="small text-muted mb-0">{t('admin.partnerInAppCanadaOnly')}</p>
+                )}
               </div>
               <div className="col-12">
                 <LogoUploader

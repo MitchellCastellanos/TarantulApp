@@ -23,11 +23,12 @@ export default function MarketplaceFilterBar({
   setFilters,
   onSaveFilters,
   onLoadFilters,
+  lockedCountry = null,
 }) {
   const { t } = useTranslation()
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
-  const availableStates = STATES_BY_COUNTRY[filters.country || 'Mexico'] || []
+  const availableStates = STATES_BY_COUNTRY[lockedCountry || filters.country || 'Mexico'] || []
   const filterCities = CITIES_BY_STATE[filters.state] || []
 
   const activeAdvancedCount = [
@@ -87,17 +88,25 @@ export default function MarketplaceFilterBar({
         {advancedOpen && (
           <div id="marketplace-advanced-filters" className="ta-marketplace-filter-bar__advanced mt-3 pt-3">
             <div className="row g-2 g-md-3">
-              <div className="col-md-4">
-                <label className="small text-muted mb-1 d-block">{t('marketplace.anyCountry')}</label>
-                <select
-                  className="form-select form-select-sm"
-                  value={filters.country}
-                  onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}
-                >
-                  <option value="">{t('marketplace.anyCountry')}</option>
-                  {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
+              {lockedCountry ? (
+                <div className="col-md-4">
+                  <label className="small text-muted mb-1 d-block">{t('marketplace.anyCountry')}</label>
+                  <input className="form-select form-select-sm" value={lockedCountry} readOnly disabled
+                    title={t('marketplace.countryLockedToRegion', { country: lockedCountry })} />
+                </div>
+              ) : (
+                <div className="col-md-4">
+                  <label className="small text-muted mb-1 d-block">{t('marketplace.anyCountry')}</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={filters.country}
+                    onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, state: '', city: '' }))}
+                  >
+                    <option value="">{t('marketplace.anyCountry')}</option>
+                    {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="col-md-4">
                 <label className="small text-muted mb-1 d-block">{t('marketplace.anyState')}</label>
                 <select

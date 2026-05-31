@@ -5,6 +5,7 @@ import com.tarantulapp.service.ListingEventService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.OfficialVendorService;
 import com.tarantulapp.service.PartnerCartHandoffService;
+import com.tarantulapp.service.PartnerCheckoutService;
 import com.tarantulapp.service.PartnerHandoffAnalyticsService;
 import com.tarantulapp.service.PartnerListingImageProxyService;
 import com.tarantulapp.service.SpeciesTradeNoteService;
@@ -33,6 +34,7 @@ public class PublicMarketplaceController {
     private final MarketplaceService marketplaceService;
     private final OfficialVendorService officialVendorService;
     private final PartnerCartHandoffService partnerCartHandoffService;
+    private final PartnerCheckoutService partnerCheckoutService;
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final PartnerListingImageProxyService partnerListingImageProxyService;
     private final ListingEventService listingEventService;
@@ -57,6 +59,7 @@ public class PublicMarketplaceController {
     public PublicMarketplaceController(MarketplaceService marketplaceService,
                                        OfficialVendorService officialVendorService,
                                        PartnerCartHandoffService partnerCartHandoffService,
+                                       PartnerCheckoutService partnerCheckoutService,
                                        PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                        PartnerListingImageProxyService partnerListingImageProxyService,
                                        ListingEventService listingEventService,
@@ -68,6 +71,7 @@ public class PublicMarketplaceController {
         this.marketplaceService = marketplaceService;
         this.officialVendorService = officialVendorService;
         this.partnerCartHandoffService = partnerCartHandoffService;
+        this.partnerCheckoutService = partnerCheckoutService;
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.partnerListingImageProxyService = partnerListingImageProxyService;
         this.listingEventService = listingEventService;
@@ -211,6 +215,31 @@ public class PublicMarketplaceController {
                         l.externalProductId(), l.quantity(), l.title(), l.canonicalUrl()))
                 .toList();
         return ResponseEntity.ok(partnerCartHandoffService.buildHandoff(req.vendorSlug(), lines));
+    }
+
+    /** Tells the cart whether to offer "Pay in TarantulApp" for this partner and which rails are live. */
+    @GetMapping("/partner-cart/payment-options")
+    public ResponseEntity<Map<String, Object>> partnerCartPaymentOptions(@RequestParam String vendorSlug) {
+        return ResponseEntity.ok(partnerCheckoutService.paymentOptions(vendorSlug));
+    }
+
+    record PartnerCartCheckoutRequest(
+            @NotBlank String vendorSlug,
+            String provider,
+            String buyerEmail,
+            List<PartnerCartHandoffLine> lines
+    ) {}
+
+    /** Beta in-app checkout: creates the order + hosted payment session, or explains why it's unavailable. */
+    @PostMapping("/partner-cart/checkout")
+    public ResponseEntity<Map<String, Object>> partnerCartCheckout(@Valid @RequestBody PartnerCartCheckoutRequest req) {
+        List<PartnerCheckoutService.CartLineRequest> lines = req.lines() == null
+                ? List.of()
+                : req.lines().stream()
+                .map(l -> new PartnerCheckoutService.CartLineRequest(l.externalProductId(), l.quantity()))
+                .toList();
+        return ResponseEntity.ok(partnerCheckoutService.startCheckout(
+                req.vendorSlug(), req.provider(), lines, req.buyerEmail(), null));
     }
 
     record ListingEventRequest(

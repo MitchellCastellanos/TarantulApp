@@ -35,6 +35,8 @@ export default function PartnerCartBar() {
   const [cart, setCart] = useState(() => readPartnerCart())
   const [barState, setBarState] = useState(readBarState)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [payingInApp, setPayingInApp] = useState(false)
+  const [paymentOptions, setPaymentOptions] = useState(null)
   const [message, setMessage] = useState('')
   const prevCountRef = useRef(partnerCartCount(readPartnerCart()))
 
@@ -56,6 +58,20 @@ export default function PartnerCartBar() {
   }, [refresh])
 
   const count = partnerCartCount(cart)
+
+  // Ask the backend whether this partner accepts in-app TarantulApp payment (beta, Canada).
+  useEffect(() => {
+    let cancelled = false
+    if (!cart.vendorSlug) {
+      setPaymentOptions(null)
+      return undefined
+    }
+    marketplaceService
+      .partnerCartPaymentOptions(cart.vendorSlug)
+      .then((opts) => { if (!cancelled) setPaymentOptions(opts) })
+      .catch(() => { if (!cancelled) setPaymentOptions(null) })
+    return () => { cancelled = true }
+  }, [cart.vendorSlug])
 
   useEffect(() => {
     if (count === 0) {
@@ -104,6 +120,32 @@ export default function PartnerCartBar() {
       setCheckingOut(false)
     }
   }
+
+  const payInApp = async () => {
+    setPayingInApp(true)
+    setMessage('')
+    try {
+      const res = await marketplaceService.partnerCartCheckout({
+        vendorSlug: cart.vendorSlug,
+        lines: cart.lines.map((l) => ({
+          externalProductId: l.externalProductId,
+          quantity: l.quantity || 1,
+        })),
+      })
+      if (res?.status === 'READY' && res.checkoutUrl) {
+        window.location.assign(res.checkoutUrl)
+        return
+      }
+      // Not live yet / unavailable → keep the website handoff as the fallback.
+      setMessage(res?.message || t('marketplace.partnerCartInAppUnavailable'))
+    } catch {
+      setMessage(t('marketplace.partnerCartHandoffError'))
+    } finally {
+      setPayingInApp(false)
+    }
+  }
+
+  const inAppAvailable = !!paymentOptions?.inAppAvailable
 
   if (barState === 'minimized') {
     return (
@@ -175,6 +217,16 @@ export default function PartnerCartBar() {
               </li>
             ))}
           </ul>
+          {inAppAvailable && (
+            <button
+              type="button"
+              className="btn btn-success btn-sm w-100 fw-semibold mb-2 ta-partner-cart-pay-inapp"
+              disabled={payingInApp || cart.lines.length === 0}
+              onClick={payInApp}
+            >
+              {payingInApp ? t('common.loading') : t('marketplace.partnerCartPayInApp')}
+            </button>
+          )}
           <div className="d-flex gap-2 mb-2">
             <button
               type="button"
@@ -185,15 +237,17 @@ export default function PartnerCartBar() {
             </button>
             <button
               type="button"
-              className="btn btn-warning text-dark btn-sm flex-grow-1 fw-semibold ta-partner-cart-checkout"
+              className={`btn btn-sm flex-grow-1 fw-semibold ta-partner-cart-checkout ${inAppAvailable ? 'btn-outline-warning' : 'btn-warning text-dark'}`}
               disabled={checkingOut || cart.lines.length === 0}
               onClick={checkout}
             >
-              {checkingOut ? t('common.loading') : t('marketplace.partnerCartCheckout')}
+              {checkingOut ? t('common.loading') : (inAppAvailable ? t('marketplace.partnerCartCheckoutWebsite') : t('marketplace.partnerCartCheckout'))}
             </button>
           </div>
           {message && <p className="small text-success mb-0 mt-2">{message}</p>}
-          <p className="small text-muted mb-0 mt-2">{t('marketplace.partnerCartFootnote')}</p>
+          <p className="small text-muted mb-0 mt-2">
+            {inAppAvailable ? t('marketplace.partnerCartInAppFootnote') : t('marketplace.partnerCartFootnote')}
+          </p>
         </div>
       </div>
     </div>

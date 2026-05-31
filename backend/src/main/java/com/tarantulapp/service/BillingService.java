@@ -158,6 +158,7 @@ public class BillingService {
 
     private final GooglePlayBillingClient googlePlayBillingClient;
     private final VendorActivationService vendorActivationService;
+    private final PartnerCheckoutService partnerCheckoutService;
 
     /** Falls back to {@code spring.profiles.active} so existing deployments keep working. */
     @Value("${app.environment:${spring.profiles.active:development}}")
@@ -175,7 +176,8 @@ public class BillingService {
                           MarketplaceOrderRepository marketplaceOrderRepository,
                           MarketplaceOrderAuditService marketplaceOrderAuditService,
                           GooglePlayBillingClient googlePlayBillingClient,
-                          VendorActivationService vendorActivationService) {
+                          VendorActivationService vendorActivationService,
+                          PartnerCheckoutService partnerCheckoutService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.objectMapper = objectMapper;
@@ -189,6 +191,7 @@ public class BillingService {
         this.marketplaceOrderAuditService = marketplaceOrderAuditService;
         this.googlePlayBillingClient = googlePlayBillingClient;
         this.vendorActivationService = vendorActivationService;
+        this.partnerCheckoutService = partnerCheckoutService;
     }
 
     @Transactional(readOnly = true)
@@ -594,6 +597,20 @@ public class BillingService {
                 String userIdRaw = checkout.path("metadata").path("userId").asText("");
                 if (!orderIdRaw.isBlank() && !userIdRaw.isBlank()) {
                     applyMarketplaceOrderPayment(UUID.fromString(orderIdRaw), UUID.fromString(userIdRaw), checkout);
+                }
+            }
+            if ("partner_cart_order".equals(purpose)) {
+                String orderIdRaw = checkout.path("metadata").path("orderId").asText("");
+                if (!orderIdRaw.isBlank()) {
+                    String paymentIntent = checkout.path("payment_intent").asText("");
+                    String sessionId = checkout.path("id").asText("");
+                    long amountTotal = checkout.path("amount_total").asLong(0L);
+                    String currency = checkout.path("currency").asText("");
+                    partnerCheckoutService.applyPaidWebhook(
+                            UUID.fromString(orderIdRaw),
+                            paymentIntent.isBlank() ? sessionId : paymentIntent,
+                            amountTotal,
+                            currency);
                 }
             }
             return;

@@ -360,6 +360,11 @@ export default function LoginPage() {
                       <Link to="/pro" className="btn btn-sm btn-outline-secondary">{t('publicBetaHome.ctaPro')}</Link>
                     </div>
                   )}
+                  {!inviteOnly && loginAudience === 'seller' && (
+                    <p className="small mt-3 mb-0" style={{ color: 'var(--ta-text-muted)', lineHeight: 1.5 }}>
+                      {t('auth.loginPage.sellerInAppNote')}
+                    </p>
+                  )}
                   {!inviteOnly && loginAudience === 'seller' && <LoginFeaturedPartners compact />}
                 </section>
               </div>

@@ -8,6 +8,8 @@ import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.exception.NotFoundException;
 import com.tarantulapp.util.BetaMailBodies;
 import com.tarantulapp.util.FileStorageService;
+import com.tarantulapp.util.PartnerCheckoutConfig;
+import com.tarantulapp.util.RegionPolicy;
 import com.tarantulapp.entity.PartnerListingSyncRun;
 import com.tarantulapp.entity.PartnerListingSyncRunStatus;
 import com.tarantulapp.repository.OfficialVendorLeadRepository;
@@ -585,7 +587,52 @@ public class OfficialVendorService {
     private Map<String, Object> mapVendorAdmin(OfficialVendor vendor, Map<UUID, Map<String, Object>> handoffs30d) {
         Map<String, Object> out = mapVendor(vendor);
         out.put("opsSummary", buildOpsSummary(vendor.getId(), handoffs30d));
+        // Admin/partner-only checkout detail (commission, payout, eligibility) — never exposed publicly.
+        PartnerCheckoutConfig cfg = PartnerCheckoutConfig.fromVendor(vendor);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> checkout = (Map<String, Object>) out.get("checkout");
+        if (checkout != null) {
+            checkout.put("preferredMode", cfg.preferredMode());
+            checkout.put("inAppEligible", cfg.inAppAvailable());
+            checkout.put("inAppCheckoutCountry", RegionPolicy.isInAppCheckoutCountry(vendor.getCountry()));
+            checkout.put("payoutMode", cfg.payoutMode());
+            checkout.put("commissionPercent", cfg.commissionPercent());
+            checkout.put("commissionWaived", cfg.commissionWaived());
+            checkout.put("providers", cfg.providers());
+            checkout.put("stripeAccountLinked", cfg.stripeAccountId() != null && !cfg.stripeAccountId().isBlank());
+        }
         return out;
+    }
+
+    /**
+     * Partner self-service: switch the preferred checkout channel between their
+     * website and the in-app TarantulApp cart. Only allowed when an admin has
+     * already enabled in-app checkout for an eligible (Canada, official) vendor.
+     */
+    @Transactional
+    public Map<String, Object> mePartnerSetCheckoutMode(UUID userId, String mode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        String handle = user.getPublicHandle();
+        if (handle == null || handle.isBlank()) {
+            throw new NotFoundException("Partner no encontrado");
+        }
+        OfficialVendor vendor = officialVendorRepository.findBySlug(handle.trim())
+                .orElseThrow(() -> new NotFoundException("Partner no encontrado"));
+        PartnerCheckoutConfig cfg = PartnerCheckoutConfig.fromVendor(vendor);
+        String requested = PartnerCheckoutConfig.MODE_IN_APP.equalsIgnoreCase(mode)
+                ? PartnerCheckoutConfig.MODE_IN_APP
+                : PartnerCheckoutConfig.MODE_WEBSITE;
+        if (PartnerCheckoutConfig.MODE_IN_APP.equals(requested) && !cfg.inAppAvailable()) {
+            throw new IllegalArgumentException("IN_APP_CHECKOUT_NOT_ENABLED");
+        }
+        Map<String, Object> feed = vendor.getFeedConfig() == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(vendor.getFeedConfig());
+        feed.put("checkoutMode", requested);
+        vendor.setFeedConfig(feed);
+        officialVendorRepository.save(vendor);
+        return mePartnerHub(userId);
     }
 
     private Map<String, Object> buildOpsSummary(UUID vendorId, Map<UUID, Map<String, Object>> handoffs30d) {
@@ -642,6 +689,12 @@ public class OfficialVendorService {
         out.put("feedBaseUrl", vendor.getFeedBaseUrl() == null ? "" : vendor.getFeedBaseUrl());
         out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
         out.put("feedConfig", vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig());
+        // Public-safe checkout summary: only whether in-app pay is live + the effective channel.
+        PartnerCheckoutConfig checkoutConfig = PartnerCheckoutConfig.fromVendor(vendor);
+        Map<String, Object> checkout = new LinkedHashMap<>();
+        checkout.put("inAppAvailable", checkoutConfig.usesInAppCheckout());
+        checkout.put("mode", checkoutConfig.effectiveMode());
+        out.put("checkout", checkout);
         out.put("createdAt", vendor.getCreatedAt());
         long catalogTotal = resolvePublicCatalogTotal(vendor);
         out.put("catalogTotal", catalogTotal);

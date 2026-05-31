@@ -449,6 +449,59 @@ public class EmailService {
         }
     }
 
+    /** Buyer-facing confirmation for an in-app partner cart order paid inside TarantulApp. */
+    public void sendPartnerCartOrderConfirmation(String toEmail, String partnerName, long amountCents,
+                                                 String currency, int itemCount, String receiptUrl) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        String normalizedCurrency = (currency == null || currency.isBlank()) ? "CAD" : currency.toUpperCase();
+        String amountText = String.format("%.2f %s", amountCents / 100.0, normalizedCurrency);
+        String receiptLine = (receiptUrl != null && !receiptUrl.isBlank())
+                ? "\nRecibo: " + receiptUrl + "\n"
+                : "\n";
+        try {
+            doSend(toEmail,
+                "Tu compra en " + safe(partnerName) + " — TarantulApp",
+                "Gracias por tu compra a través de TarantulApp.\n\n" +
+                "Tienda: " + safe(partnerName) + "\n" +
+                "Artículos: " + itemCount + "\n" +
+                "Total: " + amountText + "\n" +
+                receiptLine +
+                "El vendedor coordinará el envío contigo. Si tienes dudas, responde este correo.\n\n" +
+                "- TarantulApp Team"
+            );
+            log.info("Partner cart order confirmation sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.error("Failed to send partner cart order confirmation to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    /** Partner-facing notification that a buyer paid for their cart inside TarantulApp. */
+    public void sendPartnerCartOrderPaid(String toEmail, String partnerName, long amountCents, String currency,
+                                         int itemCount, long payoutCents, boolean platformPayout) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        String normalizedCurrency = (currency == null || currency.isBlank()) ? "CAD" : currency.toUpperCase();
+        String amountText = String.format("%.2f %s", amountCents / 100.0, normalizedCurrency);
+        String payoutLine = platformPayout
+                ? "Cobrado por TarantulApp (tienda operada por la app).\n"
+                : "Tu liquidación estimada: " + String.format("%.2f %s", payoutCents / 100.0, normalizedCurrency)
+                        + " (neto de comisión).\n";
+        try {
+            doSend(toEmail,
+                "Nueva venta en TarantulApp — " + safe(partnerName),
+                "Recibiste una venta pagada dentro de TarantulApp.\n\n" +
+                "Tienda: " + safe(partnerName) + "\n" +
+                "Artículos: " + itemCount + "\n" +
+                "Total cobrado: " + amountText + "\n" +
+                payoutLine +
+                "Revisa el pedido en tu Partner Hub y coordina el envío.\n\n" +
+                "- TarantulApp Team"
+            );
+            log.info("Partner cart order paid notification sent to {}", LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.error("Failed to send partner cart order paid notification to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
     public void sendAdminBugReportNotification(
             UUID reportId,
             String reporterEmail,

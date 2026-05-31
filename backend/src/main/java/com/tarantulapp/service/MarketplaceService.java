@@ -10,6 +10,7 @@ import com.tarantulapp.entity.SellerReview;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.UserPlan;
 import com.tarantulapp.exception.NotFoundException;
+import com.tarantulapp.util.RegionPolicy;
 import com.tarantulapp.repository.ListingEventRepository;
 import com.tarantulapp.repository.MarketplaceListingRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
@@ -259,10 +260,17 @@ public class MarketplaceService {
         listing.setStage(cleanText(stage, 30));
         listing.setSex(cleanText(sex, 20));
         listing.setPriceAmount(priceAmount == null ? null : priceAmount.setScale(2, RoundingMode.HALF_UP));
-        listing.setCurrency(cleanCurrency(currency));
+        // Single-country marketplace: a seller only sells in their own country and currency.
+        // The country/currency the client sends are ignored — both are derived from the seller profile.
+        String sellerCountry = seller.getProfileCountry();
+        if (sellerCountry == null || sellerCountry.isBlank()) {
+            sellerCountry = country; // legacy fallback for profiles created before country was required
+        }
+        String lockedCountry = cleanText(sellerCountry, 80);
+        listing.setCountry(lockedCountry);
+        listing.setCurrency(RegionPolicy.currencyForCountry(lockedCountry));
         listing.setCity(cleanText(city, 80));
         listing.setState(cleanText(state, 80));
-        listing.setCountry(cleanText(country, 80));
         listing.setImageUrl(cleanText(imageUrl, 350));
         listing.setPedigreeRef(cleanText(pedigreeRef, 180));
         listing.setWildCaught(wildCaught);
