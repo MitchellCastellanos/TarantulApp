@@ -42,7 +42,7 @@ public class OfficialVendor {
     @Column(length = 80)
     private String city;
 
-    @Column(name = "website_url", nullable = false, length = 350)
+    @Column(name = "website_url", length = 350)
     private String websiteUrl;
 
     @Column(name = "national_shipping", nullable = false)

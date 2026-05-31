@@ -646,9 +646,7 @@ export default function MarketplacePage() {
                           >
                             {t('marketplace.visitSite')}
                           </a>
-                        ) : (
-                          <span className="btn btn-sm btn-outline-secondary w-100 disabled">{t('marketplace.visitSite')}</span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>

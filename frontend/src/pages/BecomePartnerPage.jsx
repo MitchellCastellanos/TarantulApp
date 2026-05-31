@@ -125,11 +125,11 @@ export default function BecomePartnerPage() {
                     <input
                       type="url"
                       className="form-control form-control-sm"
-                      required
                       placeholder="https://"
                       value={form.websiteUrl}
                       onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
                     />
+                    <p className="small text-muted mb-0 mt-1">{t('partners.fieldWebsiteOptionalHint')}</p>
                   </div>
                   <div className="col-md-4">
                     <label className="form-label small">{t('partners.fieldCountry')}</label>

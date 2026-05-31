@@ -141,7 +141,9 @@ export default function LoginFeaturedPartners({ compact = false }) {
                     <div className="small mt-1" style={{ color: 'var(--ta-text-muted)', fontSize: '0.68rem' }}>
                       {hasStorefront
                         ? t('marketplace.partnerVendorListingCount', { count })
-                        : t('auth.loginPage.featuredPartnerVisitSite')}
+                        : vendor.websiteUrl
+                          ? t('auth.loginPage.featuredPartnerVisitSite')
+                          : t('auth.loginPage.featuredPartnerBadgeOnly')}
                     </div>
                   </div>
                 </div>

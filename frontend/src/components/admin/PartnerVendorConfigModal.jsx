@@ -22,7 +22,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [badge, setBadge] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [feedBaseUrl, setFeedBaseUrl] = useState('')
-  const [feedType, setFeedType] = useState('woocommerce')
+  const [feedType, setFeedType] = useState('')
   const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_WOO_FEED_JSON)
   const [jsonError, setJsonError] = useState('')
 
@@ -32,7 +32,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     setBadge(vendor.badge || (isFoundingPartnerTier(vendor) ? 'Founding partner' : 'Official partner'))
     setWebsiteUrl(vendor.websiteUrl || '')
     setFeedBaseUrl(vendor.feedBaseUrl || vendor.websiteUrl || '')
-    setFeedType(vendor.feedType || 'woocommerce')
+    setFeedType(vendor.feedType || '')
     const fc = vendor.feedConfig && Object.keys(vendor.feedConfig).length > 0 ? vendor.feedConfig : null
     setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : defaultFeedJsonForType(vendor.feedType))
     setJsonError('')
@@ -67,7 +67,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
       badge: badge.trim(),
       websiteUrl: websiteUrl.trim(),
       feedBaseUrl: feedBaseUrl.trim(),
-      feedType: feedType.trim() || 'woocommerce',
+      feedType: feedType.trim() || null,
       feedConfig: {
         ...feedConfig,
         partnerTier: isFounding ? 'founding' : 'official',
@@ -112,6 +112,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                   value={feedType}
                   onChange={(e) => onFeedTypeChange(e.target.value)}
                 >
+                  <option value="">{t('admin.partnerFeedTypeNone')}</option>
                   <option value="woocommerce">woocommerce</option>
                   <option value="csv">csv</option>
                   <option value="static">static</option>
@@ -129,6 +130,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 />
                 {jsonError ? <div className="invalid-feedback d-block">{jsonError}</div> : null}
                 <p className="small text-muted mb-0 mt-1">{t('admin.partnerFeedConfigJsonHint')}</p>
+                <p className="small text-muted mb-0">{t('admin.partnerFeedSyncOptionalHint')}</p>
               </div>
               <div className="col-12">
                 <LogoUploader

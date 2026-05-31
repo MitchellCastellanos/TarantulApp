@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 import PartnerVendorConfigModal from '../../components/admin/PartnerVendorConfigModal'
-import LogoUploader from '../../components/LogoUploader'
 import { isFoundingPartnerTier } from '../../utils/partnerProgramTier'
 import { STORE_COUNTRY_OPTIONS } from '../../constants/locations'
 
@@ -108,17 +107,23 @@ export default function AdminPartnerDashboardPage() {
 
   const promoteLead = async (lead) => {
     if (!lead?.id || lead.status === 'converted') return
-    if (!lead.websiteUrl?.trim()) {
-      setError(t('admin.promoteLeadNeedsWebsite'))
-      return
-    }
     const tierRaw = window.prompt(t('admin.partnerPromoteTierPrompt'), 'official')
     if (tierRaw == null) return
     const tier = String(tierRaw).trim().toLowerCase()
     const isFounding = tier === 'founding' || tier === 'founder'
     const enableImport = window.confirm(t('admin.partnerPromoteImportConfirm'))
-    const feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), lead.websiteUrl || '')
-    if (feedBaseUrl == null) return
+    let feedBaseUrl = ''
+    let feedType = ''
+    if (enableImport) {
+      feedBaseUrl = window.prompt(t('admin.partnerFeedBaseUrlPrompt'), lead.websiteUrl || '') ?? ''
+      if (feedBaseUrl === null) return
+      if (!feedBaseUrl.trim() && !lead.websiteUrl?.trim()) {
+        setError(t('admin.promoteLeadNeedsWebsiteOrFeed'))
+        return
+      }
+      feedType = window.prompt(t('admin.partnerFeedTypePromptOptional'), 'woocommerce') ?? ''
+      if (feedType === null) return
+    }
     const badge = window.prompt(
       t('admin.partnerBadgePrompt'),
       isFounding ? 'Founding partner' : 'Official partner',
@@ -132,8 +137,8 @@ export default function AdminPartnerDashboardPage() {
         enableImport,
         strategicFounder: isFounding,
         partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
-        feedType: 'woocommerce',
-        feedBaseUrl,
+        feedType: feedType.trim() || undefined,
+        feedBaseUrl: feedBaseUrl.trim() || undefined,
         badge,
       })
       const vendor = result?.vendor
@@ -219,6 +224,7 @@ export default function AdminPartnerDashboardPage() {
       const result = await adminService.createOfficialVendor({
         ...createVendorForm,
         slug: createVendorForm.slug.trim() || undefined,
+        websiteUrl: createVendorForm.websiteUrl.trim() || undefined,
         influenceScore: Number(createVendorForm.influenceScore) || 50,
       })
       const vendor = result?.vendor
@@ -446,11 +452,11 @@ export default function AdminPartnerDashboardPage() {
                 <input
                   type="url"
                   className="form-control form-control-sm"
-                  required
                   placeholder="https://"
                   value={createVendorForm.websiteUrl}
                   onChange={(e) => setCreateVendorForm((f) => ({ ...f, websiteUrl: e.target.value }))}
                 />
+                <p className="small text-muted mb-0 mt-1">{t('partners.fieldWebsiteOptionalHint')}</p>
               </div>
               <div className="col-md-3">
                 <label className="form-label small">{t('partners.fieldCountry')}</label>
@@ -568,7 +574,7 @@ export default function AdminPartnerDashboardPage() {
                   <tr key={v.id}>
                     <td>
                       <div className="fw-semibold">{v.name}</div>
-                      <div className="small text-muted">{v.websiteUrl}</div>
+                      <div className="small text-muted">{v.websiteUrl || t('admin.partnerNoWebsite')}</div>
                       <div className="small d-flex flex-wrap gap-1 mt-1">
                         {v.feedType && <span className="badge text-bg-secondary">{v.feedType}</span>}
                         {v.feedBaseUrl && <span className="text-muted">{v.feedBaseUrl}</span>}

@@ -285,11 +285,8 @@ export default function AdminVendorsPage() {
     if (tierRaw == null) return
     const tier = String(tierRaw).trim().toLowerCase()
     const isFounding = tier === 'founding' || tier === 'founder'
-    const defaultSite = typeof window !== 'undefined'
-      ? `${window.location.origin}/shop/${encodeURIComponent(handle)}`
-      : `https://tarantulapp.com/shop/${encodeURIComponent(handle)}`
-    const websiteUrl = window.prompt(t('admin.promoteOfficialWebsitePrompt'), defaultSite)
-    if (websiteUrl == null) return
+    const websiteRaw = window.prompt(t('admin.promoteOfficialWebsitePromptOptional'), '')
+    if (websiteRaw == null) return
     setBusyVendorId(user.id)
     setError('')
     setSuccess('')
@@ -299,7 +296,7 @@ export default function AdminVendorsPage() {
         enabled: true,
         enableImport: false,
         badge: isFounding ? 'Founding partner' : 'Official partner',
-        websiteUrl: websiteUrl.trim() || defaultSite,
+        websiteUrl: websiteRaw.trim() || undefined,
       })
       const updated = { ...user, officialPartner: true }
       mergeUpdatedUser(updated)

@@ -75,6 +75,7 @@ export default function QrToolPage() {
   const labelsBase = inStudio || token ? '/studio/labels' : '/tools/qr'
   const svgRef = useRef(null)
   const hasProFeatures = user?.hasProFeatures === true
+  const [consumerCaptionLang, setConsumerCaptionLang] = useState('') // '' = off, 'en', 'fr'
 
   // Verified-origin / breeder accounts brand their labels with their own logo (monochrome by
   // default). Falls back to the TarantulApp mark when no custom logo is set.
@@ -130,7 +131,6 @@ export default function QrToolPage() {
   const [busyKind, setBusyKind] = useState('')
   const [batchSelected, setBatchSelected] = useState(() => new Set())
   const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
-  const [consumerCaptionLang, setConsumerCaptionLang] = useState('') // '' = off, 'en', 'fr'
   const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
   const [labelPreviewUrl, setLabelPreviewUrl] = useState('')
   const [labelPreviewBusy, setLabelPreviewBusy] = useState(false)

@@ -538,11 +538,7 @@ public class OfficialVendorService {
             vendor.setBadge(cleanText(badge, 80));
         }
         if (websiteUrl != null) {
-            String cleanedWebsite = trimTrailingSlash(websiteUrl);
-            if (cleanedWebsite == null || cleanedWebsite.isBlank()) {
-                throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
-            }
-            vendor.setWebsiteUrl(cleanedWebsite);
+            vendor.setWebsiteUrl(optionalWebsite(websiteUrl));
         }
         if (influenceScore != null) {
             vendor.setInfluenceScore(Math.max(0, Math.min(1000, influenceScore)));
@@ -691,9 +687,9 @@ public class OfficialVendorService {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("NAME_REQUIRED");
         }
-        String website = websiteUrl == null ? "" : websiteUrl.trim();
-        if (website.isBlank()) {
-            throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+        String website = optionalWebsite(websiteUrl);
+        if (Boolean.TRUE.equals(enableImport) && website == null) {
+            throw new IllegalArgumentException("WEBSITE_OR_FEED_REQUIRED_FOR_IMPORT");
         }
         String normalizedSlug = resolveUniqueSlug(slug, name);
         OfficialVendor vendor = new OfficialVendor();
@@ -713,8 +709,7 @@ public class OfficialVendorService {
         vendor.setPartnerProgramTier(tier == null ? PartnerProgramTier.OFFICIAL_PARTNER : tier);
         vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
         vendor.setIsDemo(false);
-        vendor.setFeedBaseUrl(trimTrailingSlash(website));
-        vendor.setFeedType(cleanFeedType(guessFeedType(website)));
+        applyFeedDefaultsForImport(vendor, website, null, null, null);
         vendor.setFeedConfig(sanitizeFeedConfig(null, vendor.getPartnerProgramTier()));
         officialVendorRepository.save(vendor);
         Instant since30d = Instant.now().minus(30, ChronoUnit.DAYS);
@@ -764,8 +759,7 @@ public class OfficialVendorService {
         if (tier == null) {
             tier = PartnerProgramTier.OFFICIAL_PARTNER;
         }
-        String defaultWebsite = appBaseUrl + "/shop/" + slug;
-        String website = websiteUrl == null || websiteUrl.isBlank() ? defaultWebsite : websiteUrl.trim();
+        String website = optionalWebsite(websiteUrl);
         String displayName = user.getStorefrontName();
         if (displayName == null || displayName.isBlank()) {
             displayName = user.getDisplayName();
@@ -786,11 +780,12 @@ public class OfficialVendorService {
             vendor.setSlug(slug);
             vendor.setIsDemo(false);
             vendor.setInfluenceScore(50);
-            vendor.setFeedType(cleanFeedType(guessFeedType(website)));
-            vendor.setFeedBaseUrl(trimTrailingSlash(website));
         }
         vendor.setName(displayName.trim());
         vendor.setWebsiteUrl(website);
+        if (Boolean.TRUE.equals(enableImport)) {
+            applyFeedDefaultsForImport(vendor, website, null, null, null);
+        }
         vendor.setCountry(user.getProfileCountry() == null || user.getProfileCountry().isBlank()
                 ? "International" : user.getProfileCountry().trim());
         vendor.setState(user.getProfileState());
@@ -868,9 +863,10 @@ public class OfficialVendorService {
             throw new IllegalArgumentException("LEAD_ALREADY_CONVERTED");
         }
         String slug = uniqueSlugFromBusinessName(lead.getBusinessName());
-        String website = lead.getWebsiteUrl() == null ? "" : lead.getWebsiteUrl().trim();
-        if (website.isBlank()) {
-            throw new IllegalArgumentException("WEBSITE_URL_REQUIRED");
+        String website = optionalWebsite(lead.getWebsiteUrl());
+        String resolvedFeedBase = trimTrailingSlash(feedBaseUrl == null || feedBaseUrl.isBlank() ? website : feedBaseUrl);
+        if (Boolean.TRUE.equals(enableImport) && website == null && resolvedFeedBase == null) {
+            throw new IllegalArgumentException("WEBSITE_OR_FEED_REQUIRED_FOR_IMPORT");
         }
 
         OfficialVendor vendor = new OfficialVendor();
@@ -890,8 +886,7 @@ public class OfficialVendorService {
         vendor.setPartnerProgramTier(tier == null ? PartnerProgramTier.OFFICIAL_PARTNER : tier);
         vendor.setListingImportEnabled(Boolean.TRUE.equals(enableImport));
         vendor.setIsDemo(false);
-        vendor.setFeedBaseUrl(trimTrailingSlash(feedBaseUrl == null || feedBaseUrl.isBlank() ? website : feedBaseUrl));
-        vendor.setFeedType(cleanFeedType(feedType == null || feedType.isBlank() ? guessFeedType(website) : feedType));
+        applyFeedDefaultsForImport(vendor, website, resolvedFeedBase, feedType, enableImport);
         vendor.setFeedConfig(sanitizeFeedConfig(feedConfig, vendor.getPartnerProgramTier()));
 
         officialVendorRepository.save(vendor);
@@ -972,15 +967,38 @@ public class OfficialVendorService {
                 .orElse("");
     }
 
+    private static String optionalWebsite(String websiteUrl) {
+        return trimTrailingSlash(websiteUrl);
+    }
+
+    /**
+     * Catalog sync is optional. Only configure feed fields when import is enabled.
+     */
+    private static void applyFeedDefaultsForImport(OfficialVendor vendor,
+                                                   String website,
+                                                   String feedBaseUrl,
+                                                   String feedType,
+                                                   Boolean enableImport) {
+        if (!Boolean.TRUE.equals(enableImport)) {
+            vendor.setFeedBaseUrl(null);
+            vendor.setFeedType(null);
+            return;
+        }
+        String base = feedBaseUrl != null && !feedBaseUrl.isBlank() ? feedBaseUrl : website;
+        vendor.setFeedBaseUrl(trimTrailingSlash(base));
+        String guessed = feedType == null || feedType.isBlank() ? guessFeedType(base) : feedType.trim();
+        vendor.setFeedType(guessed == null || guessed.isBlank() ? null : cleanFeedType(guessed));
+    }
+
     private static String guessFeedType(String websiteUrl) {
-        if (websiteUrl == null) {
-            return "";
+        if (websiteUrl == null || websiteUrl.isBlank()) {
+            return null;
         }
         String u = websiteUrl.toLowerCase(Locale.ROOT);
         if (u.contains("woocommerce") || u.contains("/product") || u.contains("wp-json")) {
             return "woocommerce";
         }
-        return "woocommerce";
+        return null;
     }
 
     private static PartnerProgramTier resolvePartnerProgramTier(String raw,
