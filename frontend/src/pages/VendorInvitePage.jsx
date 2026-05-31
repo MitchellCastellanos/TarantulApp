@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import publicApi from '../services/publicApi'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { capabilitiesKeys } from '../hooks/useCapabilities'
+import { keeperProfileKeys } from '../query/keeperProfileKeys'
 import Navbar from '../components/Navbar'
 import ChitinCardFrame from '../components/ChitinCardFrame'
 
@@ -11,6 +14,7 @@ export default function VendorInvitePage() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { token } = useAuth()
   const inviteToken = searchParams.get('token') || ''
 
@@ -60,6 +64,8 @@ export default function VendorInvitePage() {
     try {
       const { data } = await api.post('/auth/vendor-invite/accept', { token: inviteToken })
       const next = typeof data?.nextPath === 'string' && data.nextPath.startsWith('/') ? data.nextPath : '/marketplace/sell'
+      queryClient.invalidateQueries({ queryKey: capabilitiesKeys.all })
+      queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       navigate(next, { replace: true })
     } catch (err) {
       const code = err?.response?.data?.error

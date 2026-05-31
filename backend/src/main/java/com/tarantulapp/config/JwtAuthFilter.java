@@ -63,6 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 && !"/api/auth/change-password".equals(uri)
                 && !"/api/auth/beta-agreement".equals(uri)
                 && !"/api/auth/delete-account".equals(uri)
+                && !"/api/auth/vendor-invite/accept".equals(uri)
                 && !"/api/auth/logout".equals(uri)) {
             return true;
         }
