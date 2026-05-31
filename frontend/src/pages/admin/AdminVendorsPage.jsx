@@ -4,6 +4,7 @@ import adminService from '../../services/adminService'
 import LogoUploader from '../../components/LogoUploader'
 
 const WELCOME_LOCALES = ['es', 'en', 'fr']
+const ORIGIN_KINDS = ['seller', 'vendor', 'store', 'breeder']
 
 export default function AdminVendorsPage() {
   const { t } = useTranslation()
@@ -21,6 +22,7 @@ export default function AdminVendorsPage() {
   const [busyVendorId, setBusyVendorId] = useState(null)
   const [outreachBusyKey, setOutreachBusyKey] = useState(null)
   const [inviteBusyKey, setInviteBusyKey] = useState(null)
+  const [grantBusyKey, setGrantBusyKey] = useState(null)
 
   const reloadVendors = () => {
     setVendorsLoading(true)
@@ -110,12 +112,15 @@ export default function AdminVendorsPage() {
     }
   }
 
-  const setStorefrontVerified = async (user, nextValue) => {
+  const setStorefrontVerified = async (user, nextValue, locale = 'es') => {
     setBusyVendorId(user.id)
     setError('')
     setSuccess('')
     try {
-      const updated = await adminService.setUserStorefrontVerified(user.id, nextValue)
+      const updated = await adminService.setUserStorefrontVerified(user.id, nextValue, {
+        sendEmail: nextValue,
+        locale,
+      })
       setSuccess(nextValue ? t('admin.storefrontVerifiedOn') : t('admin.storefrontVerifiedOff'))
       mergeUpdatedUser(updated)
       if (lookupResult && String(lookupResult.id) === String(updated.id)) {
@@ -128,12 +133,15 @@ export default function AdminVendorsPage() {
     }
   }
 
-  const setVendor = async (user, nextValue) => {
+  const setVendor = async (user, nextValue, locale = 'es') => {
     setBusyVendorId(user.id)
     setError('')
     setSuccess('')
     try {
-      const updated = await adminService.setUserVerifiedBreeder(user.id, nextValue)
+      const updated = await adminService.setUserVerifiedBreeder(user.id, nextValue, {
+        sendEmail: nextValue,
+        locale,
+      })
       setSuccess(nextValue ? t('admin.vendorActivated') : t('admin.vendorRemoved'))
       mergeUpdatedUser(updated)
       if (lookupResult && String(lookupResult.id) === String(updated.id)) {
@@ -143,6 +151,66 @@ export default function AdminVendorsPage() {
       setError(t('admin.planUpdateError'))
     } finally {
       setBusyVendorId(null)
+    }
+  }
+
+  const setPro = async (user) => {
+    const busy = `${String(user.id)}:pro`
+    setGrantBusyKey(busy)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.patchUserPlan(user.id, { plan: 'PRO' })
+      setSuccess(t('admin.proGranted'))
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(updated.id)) {
+        setLookupResult(updated)
+      }
+    } catch {
+      setError(t('admin.planUpdateError'))
+    } finally {
+      setGrantBusyKey(null)
+    }
+  }
+
+  const grantBoostCredits = async (user, count = 1, locale = 'es') => {
+    const busy = `${String(user.id)}:boost:${count}`
+    setGrantBusyKey(busy)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.grantBoostCredits(user.id, { count, sendEmail: true, locale })
+      setSuccess(t('admin.boostCreditsGranted', { count }))
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(updated.id)) {
+        setLookupResult(updated)
+      }
+    } catch {
+      setError(t('admin.planUpdateError'))
+    } finally {
+      setGrantBusyKey(null)
+    }
+  }
+
+  const grantVerifiedOrigin = async (user, kind = 'seller', locale = 'es') => {
+    const busy = `${String(user.id)}:origin:${kind}`
+    setGrantBusyKey(busy)
+    setError('')
+    setSuccess('')
+    try {
+      const updated = await adminService.setUserVerifiedOrigin(user.id, true, kind, {
+        sendEmail: true,
+        locale,
+      })
+      setSuccess(t('admin.verifiedOriginGranted'))
+      mergeUpdatedUser(updated)
+      if (lookupResult && String(lookupResult.id) === String(updated.id)) {
+        setLookupResult(updated)
+      }
+    } catch {
+      setError(t('admin.planUpdateError'))
+    } finally {
+      setGrantBusyKey(null)
     }
   }
 
@@ -273,6 +341,36 @@ export default function AdminVendorsPage() {
       </div>
 
       <div className="card p-3 mb-3">
+        <h3 className="h6 mb-2">{t('admin.adminGrantsTitle')}</h3>
+        <div className="row g-2 small">
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionProTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionProBody')}</p>
+          </div>
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionVendorTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionVendorBody')}</p>
+          </div>
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionVerifiedShopTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionVerifiedShopBody')}</p>
+          </div>
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionOriginTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionOriginBody')}</p>
+          </div>
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionBoostTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionBoostBody')}</p>
+          </div>
+          <div className="col-md-6 col-xl-4">
+            <strong>{t('admin.grantDefinitionOfficialPartnerTitle')}</strong>
+            <p className="text-muted mb-0">{t('admin.grantDefinitionOfficialPartnerBody')}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card p-3 mb-3">
         <h3 className="h6 mb-2">{t('admin.vendorsLookupTitle')}</h3>
         <p className="small text-muted mb-2">{t('admin.vendorsLookupHint')}</p>
         <form className="d-flex flex-wrap gap-2 align-items-end mb-2" onSubmit={lookupUser}>
@@ -321,6 +419,12 @@ export default function AdminVendorsPage() {
                   <span className="badge text-bg-light text-dark border">
                     {t('admin.vendorsColPlan')}: {lookupSummary.plan || '—'}
                   </span>
+                  <span className="badge text-bg-light text-dark border">
+                    {t('admin.boostCredits')}: {lookupSummary.vendorBoostCreditsAvailable ?? 0}
+                  </span>
+                  {lookupSummary.verifiedOrigin ? (
+                    <span className="badge text-bg-info text-dark">{t('admin.verifiedOriginBadge')}</span>
+                  ) : null}
                   {lookupSummary.storefrontVerified ? (
                     <span className="badge text-bg-success">{t('admin.storefrontVerifiedBadge')}</span>
                   ) : null}
@@ -364,16 +468,68 @@ export default function AdminVendorsPage() {
                         {busyVendorId === lookupSummary.id ? t('common.loading') : t('admin.revokeVendorInvite')}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      disabled={busyVendorId === lookupSummary.id}
-                      onClick={() => setVendor(lookupSummary, true)}
-                    >
-                      {busyVendorId === lookupSummary.id ? t('common.loading') : t('admin.forceActivateVendor')}
-                    </button>
+                    <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.forceActivateVendorHint')}>
+                      {WELCOME_LOCALES.map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          disabled={busyVendorId === lookupSummary.id}
+                          onClick={() => setVendor(lookupSummary, true, loc)}
+                        >
+                          {busyVendorId === lookupSummary.id ? t('common.loading') : loc.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
                   </>
                 )}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-dark"
+                  disabled={grantBusyKey === `${String(lookupSummary.id)}:pro` || lookupSummary.plan === 'PRO'}
+                  onClick={() => setPro(lookupSummary)}
+                >
+                  {grantBusyKey === `${String(lookupSummary.id)}:pro` ? t('common.loading') : t('admin.grantPro')}
+                </button>
+                <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.grantBoostCreditsHint')}>
+                  {[1, 5, 10].map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      className="btn btn-outline-success"
+                      disabled={grantBusyKey === `${String(lookupSummary.id)}:boost:${count}`}
+                      onClick={() => grantBoostCredits(lookupSummary, count)}
+                    >
+                      {grantBusyKey === `${String(lookupSummary.id)}:boost:${count}`
+                        ? t('common.loading')
+                        : t('admin.grantBoostCreditsShort', { count })}
+                    </button>
+                  ))}
+                </div>
+                <div className="dropdown">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-info dropdown-toggle w-100"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    {t('admin.grantVerifiedOrigin')}
+                  </button>
+                  <ul className="dropdown-menu">
+                    {ORIGIN_KINDS.map((kind) => (
+                      <li key={kind}>
+                        <button
+                          type="button"
+                          className="dropdown-item"
+                          disabled={grantBusyKey === `${String(lookupSummary.id)}:origin:${kind}`}
+                          onClick={() => grantVerifiedOrigin(lookupSummary, kind)}
+                        >
+                          {t(`verifiedOrigin.kind.${kind}`, kind)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 {lookupSummary.verifiedBreeder && (
                   <button
                     type="button"
@@ -522,6 +678,7 @@ export default function AdminVendorsPage() {
                   <th>{t('admin.vendorsColListings')}</th>
                   <th>{t('admin.vendorsColSold')}</th>
                   <th>{t('admin.vendorsColPlan')}</th>
+                  <th>{t('admin.boostCredits')}</th>
                   <th>{t('admin.vendorsColStripe')}</th>
                   <th>{t('admin.vendorsColMix')}</th>
                   <th>{t('admin.vendorsColHints')}</th>
@@ -545,6 +702,7 @@ export default function AdminVendorsPage() {
                     <td>{listingsCell(u)}</td>
                     <td>{u?.marketplaceListingTotals?.sold ?? '—'}</td>
                     <td>{u.plan || '—'}</td>
+                    <td>{u.vendorBoostCreditsAvailable ?? 0}</td>
                     <td>{subscriptionSummary(u)}</td>
                     <td style={{ maxWidth: 140 }} className="small text-break">
                       {u.inventoryMix || '—'}
@@ -583,6 +741,21 @@ export default function AdminVendorsPage() {
                               ? t('admin.revokeStorefrontVerified')
                               : t('admin.grantStorefrontVerified')}
                         </button>
+                        <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.grantBoostCreditsHint')}>
+                          {[1, 5].map((count) => (
+                            <button
+                              key={count}
+                              type="button"
+                              className="btn btn-outline-success"
+                              disabled={grantBusyKey === `${String(u.id)}:boost:${count}`}
+                              onClick={() => grantBoostCredits(u, count)}
+                            >
+                              {grantBusyKey === `${String(u.id)}:boost:${count}`
+                                ? t('common.loading')
+                                : t('admin.grantBoostCreditsShort', { count })}
+                            </button>
+                          ))}
+                        </div>
                         <div className="small text-muted">{t('admin.sendVendorWelcomeLabel')}</div>
                         <div className="btn-group btn-group-sm w-100" role="group" title={t('admin.sendVendorWelcomeHint')}>
                           {WELCOME_LOCALES.map((loc) => (

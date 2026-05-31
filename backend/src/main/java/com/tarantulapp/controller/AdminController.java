@@ -33,6 +33,7 @@ import com.tarantulapp.service.TaxonomySyncService;
 import com.tarantulapp.service.VendorInviteService;
 import com.tarantulapp.service.MarketplaceService;
 import com.tarantulapp.service.UserCapabilitiesService;
+import com.tarantulapp.service.VendorBoostCreditService;
 import com.tarantulapp.service.VerifiedOriginService;
 import com.tarantulapp.entity.VerifiedOriginKind;
 import com.tarantulapp.service.VendorVerificationService;
@@ -108,6 +109,7 @@ public class AdminController {
     private final MarketplaceService marketplaceService;
     private final PassportService passportService;
     private final UserCapabilitiesService userCapabilitiesService;
+    private final VendorBoostCreditService vendorBoostCreditService;
     private final VerifiedOriginService verifiedOriginService;
     private final PartnerDashboardService partnerDashboardService;
 
@@ -154,6 +156,7 @@ public class AdminController {
                            MarketplaceService marketplaceService,
                            PassportService passportService,
                            UserCapabilitiesService userCapabilitiesService,
+                           VendorBoostCreditService vendorBoostCreditService,
                            VerifiedOriginService verifiedOriginService,
                            PartnerDashboardService partnerDashboardService) {
         this.adminAccessService = adminAccessService;
@@ -187,6 +190,7 @@ public class AdminController {
         this.marketplaceService = marketplaceService;
         this.passportService = passportService;
         this.userCapabilitiesService = userCapabilitiesService;
+        this.vendorBoostCreditService = vendorBoostCreditService;
         this.verifiedOriginService = verifiedOriginService;
         this.partnerDashboardService = partnerDashboardService;
     }
@@ -220,7 +224,7 @@ public class AdminController {
     record ResolveBugReportRequest(String status, String note) {}
     record SetBetaTesterRequest(Boolean isBetaTester, String cohort, String country, String experienceLevel,
                                 String preferredLocale) {}
-    record SetVerifiedBreederRequest(Boolean verifiedBreeder) {}
+    record SetVerifiedBreederRequest(Boolean verifiedBreeder, Boolean sendEmail, String locale) {}
     record SetMarketingOpsRequest(Boolean marketingOps) {}
 
     record ProvisionMarketingTeamRequest(
@@ -230,7 +234,7 @@ public class AdminController {
             Boolean resetPassword
     ) {}
 
-    record SetStorefrontVerifiedRequest(Boolean storefrontVerified) {}
+    record SetStorefrontVerifiedRequest(Boolean storefrontVerified, Boolean sendEmail, String locale) {}
     /**
      * {@code generatePassword}: when {@code null} or true, a password is generated on approve (default).
      * {@code sendWelcomeEmail}: when true and a new plain password was produced, sends SMTP welcome (same copy as admin templates).
@@ -253,6 +257,7 @@ public class AdminController {
     record SendOutreachEmailRequest(@NotBlank String templateKey, String locale) {}
 
     record VendorInviteSendRequest(String locale) {}
+    record GrantBoostCreditsRequest(Integer count, Boolean sendEmail, String locale) {}
 
     /**
      * {@code plan}: {@code FREE} | {@code PRO}. {@code extendTrialDays}: optional extra trial window from max(now, current trial end).
@@ -847,6 +852,14 @@ public class AdminController {
         userRepository.save(user);
         if (verified) {
             newsletterService.ensureSubscribedOnVerified(user.getId());
+            if (req == null || req.sendEmail() == null || Boolean.TRUE.equals(req.sendEmail())) {
+                emailService.sendAdminCapabilityGrantEmail(
+                        user.getEmail(),
+                        user.getDisplayName(),
+                        resolveUserLocale(user, req != null ? req.locale() : null),
+                        "vendor",
+                        vendorBoostCreditService.countAvailable(user.getId()));
+            }
         }
         referralService.ensureReferralCodeForUser(user.getId());
         referralService.syncVendorReferralCodeFlag(user.getId());
@@ -943,6 +956,12 @@ public class AdminController {
             verifiedOriginService.revokeVerifiedOrigin(id);
         }
         user = userRepository.findById(id).orElseThrow();
+        if (verified && (req == null || req.sendEmail() == null || Boolean.TRUE.equals(req.sendEmail()))) {
+            emailService.sendVendorVerificationApproved(
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    resolveUserLocale(user, req != null ? req.locale() : null));
+        }
         Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
         VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
         return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
@@ -967,7 +986,7 @@ public class AdminController {
         ));
     }
 
-    record SetVerifiedOriginRequest(Boolean verified, String kind) {}
+    record SetVerifiedOriginRequest(Boolean verified, String kind, Boolean sendEmail, String locale) {}
 
     @PatchMapping("/users/{id}/verified-origin")
     public ResponseEntity<Map<String, Object>> setUserVerifiedOrigin(@PathVariable UUID id,
@@ -982,11 +1001,37 @@ public class AdminController {
             verifiedOriginService.revokeVerifiedOrigin(id);
         }
         User user = userRepository.findById(id).orElseThrow();
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("userId", user.getId());
-        out.put("verifiedOrigin", VerifiedOriginService.isVerified(user));
-        out.put("origin", verifiedOriginService.toPublicMap(user));
-        return ResponseEntity.ok(out);
+        if (verified && (req == null || req.sendEmail() == null || Boolean.TRUE.equals(req.sendEmail()))) {
+            emailService.sendAdminCapabilityGrantEmail(
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    resolveUserLocale(user, req != null ? req.locale() : null),
+                    "origin",
+                    vendorBoostCreditService.countAvailable(user.getId()));
+        }
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
+    }
+
+    @PostMapping("/users/{id}/boost-credits")
+    public ResponseEntity<Map<String, Object>> grantUserBoostCredits(@PathVariable UUID id,
+                                                                     @RequestBody(required = false) GrantBoostCreditsRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        int count = req != null && req.count() != null ? req.count() : 1;
+        long available = vendorBoostCreditService.grantAdminCredits(user.getId(), count);
+        if (req == null || req.sendEmail() == null || Boolean.TRUE.equals(req.sendEmail())) {
+            emailService.sendAdminCapabilityGrantEmail(
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    resolveUserLocale(user, req != null ? req.locale() : null),
+                    "boost",
+                    available);
+        }
+        Map<UUID, Long> counts = loadTarantulaCountsForUsers(List.of(user.getId()));
+        VendorRosterStats stats = loadVendorRosterStats(List.of(user.getId()));
+        return ResponseEntity.ok(mapVendorDirectoryUser(user, counts, stats));
     }
 
     @GetMapping("/origin-verifications")
@@ -1476,10 +1521,11 @@ public class AdminController {
     private record VendorRosterStats(
             Map<UUID, Map<String, Long>> listingCountsByStatusLower,
             Map<UUID, Map<String, Long>> activeListingCountsByCategory,
-            Map<UUID, Subscription> latestSubscriptionByUserId
+            Map<UUID, Subscription> latestSubscriptionByUserId,
+            Map<UUID, Long> boostCreditCountsByUserId
     ) {
         static VendorRosterStats empty() {
-            return new VendorRosterStats(Map.of(), Map.of(), Map.of());
+            return new VendorRosterStats(Map.of(), Map.of(), Map.of(), Map.of());
         }
     }
 
@@ -1522,11 +1568,13 @@ public class AdminController {
                 return ac.isAfter(bc) ? a : b;
             });
         }
-        return new VendorRosterStats(byStatus, byCat, latestSub);
+        Map<UUID, Long> boostCredits = vendorBoostCreditService.countAvailable(ids);
+        return new VendorRosterStats(byStatus, byCat, latestSub, boostCredits);
     }
 
     private Map<String, Object> mapVendorDirectoryUser(User u, Map<UUID, Long> spiderCounts, VendorRosterStats stats) {
         Map<String, Object> out = mapUser(u, spiderCounts);
+        out.put("vendorBoostCreditsAvailable", stats.boostCreditCountsByUserId().getOrDefault(u.getId(), 0L));
         putVendorDirectoryMetrics(out, u, stats);
         return out;
     }
@@ -1621,8 +1669,13 @@ public class AdminController {
         out.put("marketingOps", Boolean.TRUE.equals(u.getIsMarketingOps()));
         out.put("verifiedBreeder", Boolean.TRUE.equals(u.getVerifiedBreeder()));
         out.put("verifiedBreederAt", u.getVerifiedBreederAt());
-        out.put("storefrontVerified", u.getStorefrontVerifiedAt() != null);
-        out.put("storefrontVerifiedAt", u.getStorefrontVerifiedAt());
+        boolean storefrontVerified = isStorefrontVerified(u);
+        out.put("verifiedOrigin", VerifiedOriginService.isVerified(u));
+        out.put("origin", verifiedOriginService.toPublicMap(u));
+        out.put("storefrontVerified", storefrontVerified);
+        out.put("storefrontVerifiedAt", storefrontVerified
+                ? (u.getVerifiedOriginAt() != null ? u.getVerifiedOriginAt() : u.getStorefrontVerifiedAt())
+                : null);
         out.put("vendorInviteSentAt", u.getVendorInviteSentAt());
         out.put("vendorInviteExpiresAt", u.getVendorInviteExpiresAt());
         boolean invitePending = u.getVendorInviteToken() != null
@@ -1636,6 +1689,37 @@ public class AdminController {
         out.put("googleGroupSyncStatus", u.getGoogleGroupSyncStatus() == null ? "" : u.getGoogleGroupSyncStatus());
         out.put("googleGroupSyncLastError", u.getGoogleGroupSyncLastError() == null ? "" : u.getGoogleGroupSyncLastError());
         return out;
+    }
+
+    private static boolean isStorefrontVerified(User user) {
+        if (user == null) {
+            return false;
+        }
+        if (user.getStorefrontVerifiedAt() != null) {
+            return true;
+        }
+        if (user.getVerifiedOriginAt() == null || user.getVerifiedOriginKind() == null) {
+            return false;
+        }
+        try {
+            VerifiedOriginKind kind = VerifiedOriginKind.fromString(user.getVerifiedOriginKind());
+            return kind == VerifiedOriginKind.VENDOR || kind == VerifiedOriginKind.STORE;
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static String resolveUserLocale(User user, String requestedLocale) {
+        if (requestedLocale != null && !requestedLocale.isBlank()) {
+            return BetaMailBodies.normalizeLocale(requestedLocale);
+        }
+        if (user != null && user.getPreferredLocale() != null && !user.getPreferredLocale().isBlank()) {
+            return BetaMailBodies.normalizeLocale(user.getPreferredLocale());
+        }
+        if (user != null && user.getBetaPreferredLocale() != null && !user.getBetaPreferredLocale().isBlank()) {
+            return BetaMailBodies.normalizeLocale(user.getBetaPreferredLocale());
+        }
+        return "es";
     }
 
     /** One round-trip for admin lists; native SQL counts rows in {@code tarantulas} per owner. */

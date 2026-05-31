@@ -650,6 +650,98 @@ public class EmailService {
         }
     }
 
+    public void sendAdminCapabilityGrantEmail(String toEmail, String displayName, String locale,
+                                              String grantType, long boostCreditsAvailable) {
+        String loc = BetaMailBodies.normalizeLocale(locale);
+        String name = displayName == null || displayName.isBlank() ? toEmail : displayName.trim();
+        String appUrl = baseUrl == null || baseUrl.isBlank() ? BetaMailBodies.DEFAULT_APP_URL : baseUrl.trim();
+        String type = grantType == null ? "" : grantType.trim().toLowerCase();
+        String subject;
+        String body;
+        switch (type) {
+            case "vendor" -> {
+                subject = switch (loc) {
+                    case "en" -> "TarantulApp Marketplace - Vendor tools activated";
+                    case "fr" -> "TarantulApp Marketplace - Outils Vendor actives";
+                    default -> "TarantulApp Marketplace - Herramientas Vendor activadas";
+                };
+                body = switch (loc) {
+                    case "en" -> "Hi " + name + ",\n\n"
+                            + "Vendor tools are active on your TarantulApp account. You can publish higher-volume inventory, use all marketplace categories, configure your storefront, and use listing boosts.\n\n"
+                            + "Next steps:\n"
+                            + "1. Open Seller hub and complete storefront name, handle, shipping policy, LAG/handling policy, and contact method.\n"
+                            + "2. Publish or review your listings.\n"
+                            + "3. Submit selfie + inventory media from Seller hub when you want the Verified Shop badge.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    case "fr" -> "Bonjour " + name + ",\n\n"
+                            + "Les outils Vendor sont actifs sur votre compte TarantulApp. Vous pouvez publier plus d'inventaire, utiliser toutes les categories marketplace, configurer votre vitrine et utiliser les boosts.\n\n"
+                            + "Prochaines etapes:\n"
+                            + "1. Ouvrez le hub vendeur et completez nom de boutique, handle, livraison, politique LAG/manutention et contact.\n"
+                            + "2. Publiez ou verifiez vos annonces.\n"
+                            + "3. Envoyez selfie + media inventaire depuis le hub pour demander le badge Boutique verifiee.\n\n"
+                            + "Hub vendeur: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    default -> "Hola " + name + ",\n\n"
+                            + "Ya tienes activas las herramientas Vendor en TarantulApp. Puedes publicar inventario de mayor volumen, usar todas las categorias del marketplace, configurar tu tienda y usar listing boosts.\n\n"
+                            + "Siguientes pasos:\n"
+                            + "1. Abre Seller hub y completa nombre de tienda, handle, politica de envio, politica LAG/manejo y contacto.\n"
+                            + "2. Publica o revisa tus anuncios.\n"
+                            + "3. Sube selfie + material de inventario desde Seller hub cuando quieras el badge Tienda verificada.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                };
+            }
+            case "origin" -> {
+                subject = switch (loc) {
+                    case "en" -> "TarantulApp - Verified Origin approved";
+                    case "fr" -> "TarantulApp - Verified Origin approuve";
+                    default -> "TarantulApp - Verified Origin aprobado";
+                };
+                body = switch (loc) {
+                    case "en" -> "Hi " + name + ",\n\n"
+                            + "Your Verified Origin badge is active. It tells buyers and keepers that TarantulApp reviewed the source behind your animals, passports, or storefront.\n\n"
+                            + "Use it by keeping origin notes, locality/captive-bred details, and any permit references accurate on listings and passports.\n\n"
+                            + "Open TarantulApp: " + appUrl + "\n\n- TarantulApp\n";
+                    case "fr" -> "Bonjour " + name + ",\n\n"
+                            + "Votre badge Verified Origin est actif. Il indique que TarantulApp a verifie la source derriere vos animaux, passports ou vitrine.\n\n"
+                            + "Gardez les notes d'origine, details captive-bred/localite et references de permis exacts dans les annonces et passports.\n\n"
+                            + "Ouvrir TarantulApp: " + appUrl + "\n\n- TarantulApp\n";
+                    default -> "Hola " + name + ",\n\n"
+                            + "Tu badge Verified Origin ya esta activo. Le comunica a compradores y keepers que TarantulApp reviso la fuente detras de tus animales, passports o tienda.\n\n"
+                            + "Usalo manteniendo correctas las notas de origen, detalles captive-bred/localidad y referencias de permisos en listings y passports.\n\n"
+                            + "Abrir TarantulApp: " + appUrl + "\n\n- TarantulApp\n";
+                };
+            }
+            case "boost" -> {
+                subject = switch (loc) {
+                    case "en" -> "TarantulApp Marketplace - Listing boost credits added";
+                    case "fr" -> "TarantulApp Marketplace - Credits boost ajoutes";
+                    default -> "TarantulApp Marketplace - Creditos de boost agregados";
+                };
+                body = switch (loc) {
+                    case "en" -> "Hi " + name + ",\n\n"
+                            + "We added listing boost credits to your account. Available credits now: " + boostCreditsAvailable + ".\n\n"
+                            + "Use one when publishing from Seller hub to highlight a listing for 7 days without a Stripe checkout.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    case "fr" -> "Bonjour " + name + ",\n\n"
+                            + "Nous avons ajoute des credits boost a votre compte. Credits disponibles: " + boostCreditsAvailable + ".\n\n"
+                            + "Utilisez-en un lors de la publication depuis le hub vendeur pour mettre une annonce en avant pendant 7 jours sans paiement Stripe.\n\n"
+                            + "Hub vendeur: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    default -> "Hola " + name + ",\n\n"
+                            + "Agregamos creditos de listing boost a tu cuenta. Creditos disponibles ahora: " + boostCreditsAvailable + ".\n\n"
+                            + "Usa uno al publicar desde Seller hub para resaltar un anuncio por 7 dias sin pasar por Stripe.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                };
+            }
+            default -> throw new IllegalArgumentException("INVALID_GRANT_EMAIL_TYPE");
+        }
+        try {
+            doSend(toEmail, subject, body);
+            log.info("Admin capability grant email type={} sent to {}", type, LogSafe.maskEmail(toEmail));
+        } catch (Exception e) {
+            log.error("Admin capability grant email type={} failed for {}: {}", type, LogSafe.maskEmail(toEmail), e.getMessage(), e);
+            throw new RuntimeException("Could not send grant email: " + e.getMessage());
+        }
+    }
+
     public void sendVendorVerificationRejected(String toEmail, String displayName, String locale, String reviewerNote) {
         String loc = BetaMailBodies.normalizeLocale(locale);
         try {

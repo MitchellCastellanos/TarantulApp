@@ -62,8 +62,8 @@ const adminService = {
     api.get('/admin/origin-verifications', { params: status ? { status } : {} }).then((r) => r.data),
   reviewOriginVerification: (id, payload) =>
     api.patch(`/admin/origin-verifications/${id}`, payload).then((r) => r.data),
-  setUserVerifiedOrigin: (id, verified, kind) =>
-    api.patch(`/admin/users/${id}/verified-origin`, { verified, kind }).then((r) => r.data),
+  setUserVerifiedOrigin: (id, verified, kind, options = {}) =>
+    api.patch(`/admin/users/${id}/verified-origin`, { verified, kind, ...options }).then((r) => r.data),
   setOfficialVendorStatus: (id, enabled) =>
     api.patch(`/admin/official-vendors/${id}/status`, { enabled }).then((r) => r.data),
   updateOfficialVendorStrategicProgram: (id, payload) =>
@@ -118,16 +118,18 @@ const adminService = {
   revokeVendorInvite: (id) => api.post(`/admin/users/${id}/vendor-invite/revoke`).then((r) => r.data),
   userLookupByEmail: (email) =>
     api.get('/admin/user-lookup', { params: { email } }).then((r) => r.data),
-  setUserVerifiedBreeder: (id, verifiedBreeder) =>
-    api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  setUserVerifiedBreeder: (id, verifiedBreeder, options = {}) =>
+    api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder, ...options }).then((r) => r.data),
   setUserMarketingOps: (id, marketingOps) =>
     api.patch(`/admin/users/${id}/marketing-ops`, { marketingOps }).then((r) => r.data),
   provisionMarketingTeamMember: (payload) =>
     api.post('/admin/marketing/provision-team-member', payload).then((r) => r.data),
-  setUserStorefrontVerified: (id, storefrontVerified) =>
-    api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified }).then((r) => r.data),
-  setVerifiedBreeder: (id, verifiedBreeder) =>
-    api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder }).then((r) => r.data),
+  setUserStorefrontVerified: (id, storefrontVerified, options = {}) =>
+    api.patch(`/admin/users/${id}/storefront-verified`, { storefrontVerified, ...options }).then((r) => r.data),
+  setVerifiedBreeder: (id, verifiedBreeder, options = {}) =>
+    api.patch(`/admin/users/${id}/verified-breeder`, { verifiedBreeder, ...options }).then((r) => r.data),
+  grantBoostCredits: (id, payload = {}) =>
+    api.post(`/admin/users/${id}/boost-credits`, payload).then((r) => r.data),
   marketplaceSellers: (params = {}) =>
     api.get('/admin/marketplace/sellers', { params }).then((r) => r.data),
   sendOfficialVendorPartnerCatalogEmail: (vendorId, payload) =>

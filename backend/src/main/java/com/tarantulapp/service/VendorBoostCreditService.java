@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -18,6 +21,7 @@ public class VendorBoostCreditService {
 
     private static final Logger log = LoggerFactory.getLogger(VendorBoostCreditService.class);
     public static final String SOURCE_VENDOR_REFERRAL_SIGNUP = "vendor_referral_signup";
+    public static final String SOURCE_ADMIN_GRANT = "admin_grant";
     private static final int BOOST_DAYS = 7;
 
     private final VendorBoostCreditRepository vendorBoostCreditRepository;
@@ -37,6 +41,22 @@ public class VendorBoostCreditService {
         return vendorBoostCreditRepository.countByUserIdAndConsumedAtIsNull(userId);
     }
 
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> countAvailable(Collection<UUID> userIds) {
+        Map<UUID, Long> out = new HashMap<>();
+        if (userIds == null || userIds.isEmpty()) {
+            return out;
+        }
+        for (Object[] row : vendorBoostCreditRepository.countAvailableByUserIds(userIds)) {
+            if (row == null || row.length < 2 || !(row[0] instanceof UUID uid)) {
+                continue;
+            }
+            long n = row[1] instanceof Number num ? num.longValue() : 0L;
+            out.put(uid, n);
+        }
+        return out;
+    }
+
     @Transactional
     public void grantFromVendorReferral(UUID vendorUserId, UUID referralRedemptionId) {
         if (vendorUserId == null || referralRedemptionId == null) {
@@ -51,6 +71,22 @@ public class VendorBoostCreditService {
         credit.setReferralRedemptionId(referralRedemptionId);
         vendorBoostCreditRepository.save(credit);
         log.info("Vendor boost credit granted vendor={} redemption={}", vendorUserId, referralRedemptionId);
+    }
+
+    @Transactional
+    public long grantAdminCredits(UUID userId, int count) {
+        if (userId == null) {
+            throw new IllegalArgumentException("USER_NOT_FOUND");
+        }
+        int n = Math.min(Math.max(count, 1), 100);
+        for (int i = 0; i < n; i++) {
+            VendorBoostCredit credit = new VendorBoostCredit();
+            credit.setUserId(userId);
+            credit.setSource(SOURCE_ADMIN_GRANT);
+            vendorBoostCreditRepository.save(credit);
+        }
+        log.info("Vendor boost credits admin-granted user={} count={}", userId, n);
+        return countAvailable(userId);
     }
 
     @Transactional
