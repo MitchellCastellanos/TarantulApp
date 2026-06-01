@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
 import studioService from '../services/studioService'
+import speciesService from '../services/speciesService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS, currencyForCountry } from '../constants/locations'
 import { imgUrl } from '../services/api'
@@ -39,8 +40,11 @@ const EMPTY_LISTING_FORM = {
   captureOriginCountryIso: '',
   regulatoryPermitRefs: '',
   addToInventory: false,
+  inventoryMode: 'existing',
   inventoryBatchId: '',
   inventoryLabelCount: '',
+  newBatchName: '',
+  newBatchSpeciesId: null,
 }
 
 const FILTERS = ['all', 'active', 'reserved', 'sold', 'hidden']
@@ -76,6 +80,11 @@ export default function MarketplaceSellerPage() {
   })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
   const [studioBatches, setStudioBatches] = useState([])
+  const [speciesQuery, setSpeciesQuery] = useState('')
+  const [speciesSuggestions, setSpeciesSuggestions] = useState([])
+  const [showSpeciesSuggest, setShowSpeciesSuggest] = useState(false)
+  const speciesDebounceRef = useRef(null)
+  const speciesGenRef = useRef(0)
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
   const [uploadingListingImage, setUploadingListingImage] = useState(false)
@@ -165,6 +174,38 @@ export default function MarketplaceSellerPage() {
       .catch(() => setStudioBatches([]))
   }, [user])
 
+  // Debounced local species search for creating a batch inline from the listing form.
+  useEffect(() => {
+    clearTimeout(speciesDebounceRef.current)
+    const q = speciesQuery.trim()
+    if (q.length < 2) {
+      setSpeciesSuggestions([])
+      return
+    }
+    speciesDebounceRef.current = setTimeout(() => {
+      const gen = ++speciesGenRef.current
+      speciesService
+        .search(q)
+        .then((rows) => {
+          if (gen !== speciesGenRef.current) return
+          setSpeciesSuggestions(Array.isArray(rows) ? rows.slice(0, 8) : [])
+        })
+        .catch(() => {
+          if (gen !== speciesGenRef.current) return
+          setSpeciesSuggestions([])
+        })
+    }, 300)
+    return () => clearTimeout(speciesDebounceRef.current)
+  }, [speciesQuery])
+
+  const selectNewBatchSpecies = useCallback((sp) => {
+    speciesGenRef.current += 1
+    setListingForm((f) => ({ ...f, newBatchSpeciesId: sp.id }))
+    setSpeciesQuery(sp.scientificName || sp.commonName || '')
+    setShowSpeciesSuggest(false)
+    setSpeciesSuggestions([])
+  }, [])
+
   const vendorBoostCredits = Number(sellerProgram.vendorBoostCreditsAvailable || 0)
   const boostCheckoutAvailable = listingBoostAvailable
   const boostOfferAvailable = boostCheckoutAvailable || vendorBoostCredits > 0
@@ -212,10 +253,47 @@ export default function MarketplaceSellerPage() {
         setSavingListing(false)
         return
       }
-      const { requestBoost, addToInventory, inventoryBatchId, inventoryLabelCount, ...rest } = listingForm
+      const {
+        requestBoost,
+        addToInventory,
+        inventoryMode,
+        inventoryBatchId,
+        inventoryLabelCount,
+        newBatchName,
+        newBatchSpeciesId,
+        ...rest
+      } = listingForm
       const isoRaw = listingForm.captureOriginCountryIso || ''
-      const attachInventory = !!addToInventory && !!inventoryBatchId
-      const labelCount = attachInventory && inventoryLabelCount ? Number(inventoryLabelCount) : null
+
+      // Resolve which batch to attach. In "new" mode we create the batch inline first
+      // (needs a valid species from the catalog), then reuse its id for the listing.
+      let effectiveBatchId = null
+      if (addToInventory) {
+        if (inventoryMode === 'new') {
+          if (!newBatchSpeciesId) {
+            setMessage(t('marketplace.inventorySpeciesRequired'))
+            setSavingListing(false)
+            return
+          }
+          if (!String(newBatchName || '').trim()) {
+            setMessage(t('marketplace.inventoryBatchNameRequired'))
+            setSavingListing(false)
+            return
+          }
+          const created = await studioService.createBatch({
+            speciesId: Number(newBatchSpeciesId),
+            name: String(newBatchName).trim(),
+            quantityTotal: 0,
+          })
+          effectiveBatchId = created?.id || null
+          if (created?.id) {
+            setStudioBatches((prev) => [created, ...prev])
+          }
+        } else if (inventoryBatchId) {
+          effectiveBatchId = inventoryBatchId
+        }
+      }
+      const labelCount = effectiveBatchId && inventoryLabelCount ? Number(inventoryLabelCount) : null
       const data = await marketplaceService.createListing({
         ...rest,
         // Country + currency are locked to the seller's profile (backend enforces this too).
@@ -224,7 +302,7 @@ export default function MarketplaceSellerPage() {
         captureOriginCountryIso: listingForm.wildCaught ? isoRaw.trim().toUpperCase().slice(0, 2) : null,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
         requestListingBoost: !!requestBoost,
-        inventoryBatchId: attachInventory ? inventoryBatchId : null,
+        inventoryBatchId: effectiveBatchId,
         inventoryLabelCount: labelCount && labelCount > 0 ? labelCount : null,
       })
       if (data?.boostCheckoutUrl) {
@@ -232,6 +310,8 @@ export default function MarketplaceSellerPage() {
         return
       }
       setListingForm(EMPTY_LISTING_FORM)
+      setSpeciesQuery('')
+      setSpeciesSuggestions([])
       await loadMine()
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
       const generatedCount = Array.isArray(data?.generatedLabels) ? data.generatedLabels.length : 0
@@ -761,7 +841,7 @@ export default function MarketplaceSellerPage() {
                       {t('marketplace.boostLockedHint')}
                     </div>
                   )}
-                  {studioBatches.length > 0 && (
+                  {capabilities?.passportCreator && (
                     <div className="border rounded p-2 mb-2">
                       <div className="form-check mb-1">
                         <input
@@ -770,7 +850,12 @@ export default function MarketplaceSellerPage() {
                           id="seller-listing-add-inventory"
                           checked={!!listingForm.addToInventory}
                           onChange={(e) =>
-                            setListingForm((f) => ({ ...f, addToInventory: e.target.checked }))
+                            setListingForm((f) => ({
+                              ...f,
+                              addToInventory: e.target.checked,
+                              // Default to "create new" when the seller has no batches yet.
+                              inventoryMode: studioBatches.length > 0 ? f.inventoryMode : 'new',
+                            }))
                           }
                         />
                         <label className="form-check-label fw-semibold" htmlFor="seller-listing-add-inventory" style={{ cursor: 'pointer' }}>
@@ -780,24 +865,100 @@ export default function MarketplaceSellerPage() {
                       <div className="small text-muted mb-2">{t('marketplace.inventoryLabelsHint')}</div>
                       {listingForm.addToInventory && (
                         <div className="d-flex flex-column gap-2">
-                          <div>
-                            <label className="form-label small mb-1">{t('marketplace.inventoryBatchSelect')}</label>
-                            <select
-                              className="form-select form-select-sm"
-                              value={listingForm.inventoryBatchId}
-                              onChange={(e) =>
-                                setListingForm((f) => ({ ...f, inventoryBatchId: e.target.value }))
-                              }
-                            >
-                              <option value="">{t('marketplace.inventoryBatchNone')}</option>
-                              {studioBatches.map((b) => (
-                                <option key={b.id} value={b.id}>
-                                  {b.name}
-                                  {b.scientificName ? ` · ${b.scientificName}` : ''}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          {studioBatches.length > 0 && (
+                            <div className="btn-group btn-group-sm w-100" role="group">
+                              <button
+                                type="button"
+                                className={`btn ${listingForm.inventoryMode !== 'new' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                                onClick={() => setListingForm((f) => ({ ...f, inventoryMode: 'existing' }))}
+                              >
+                                {t('marketplace.inventoryUseExisting')}
+                              </button>
+                              <button
+                                type="button"
+                                className={`btn ${listingForm.inventoryMode === 'new' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                                onClick={() => setListingForm((f) => ({ ...f, inventoryMode: 'new' }))}
+                              >
+                                {t('marketplace.inventoryCreateNew')}
+                              </button>
+                            </div>
+                          )}
+
+                          {listingForm.inventoryMode !== 'new' && studioBatches.length > 0 && (
+                            <div>
+                              <label className="form-label small mb-1">{t('marketplace.inventoryBatchSelect')}</label>
+                              <select
+                                className="form-select form-select-sm"
+                                value={listingForm.inventoryBatchId}
+                                onChange={(e) =>
+                                  setListingForm((f) => ({ ...f, inventoryBatchId: e.target.value }))
+                                }
+                              >
+                                <option value="">{t('marketplace.inventoryBatchNone')}</option>
+                                {studioBatches.map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.name}
+                                    {b.scientificName ? ` · ${b.scientificName}` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {listingForm.inventoryMode === 'new' && (
+                            <>
+                              <div className="position-relative">
+                                <label className="form-label small mb-1">{t('marketplace.inventorySpecies')}</label>
+                                <input
+                                  className="form-control form-control-sm"
+                                  type="text"
+                                  autoComplete="off"
+                                  placeholder={t('marketplace.inventorySpeciesSearchPlaceholder')}
+                                  value={speciesQuery}
+                                  onChange={(e) => {
+                                    setSpeciesQuery(e.target.value)
+                                    setShowSpeciesSuggest(true)
+                                    setListingForm((f) => ({ ...f, newBatchSpeciesId: null }))
+                                  }}
+                                  onFocus={() => setShowSpeciesSuggest(true)}
+                                />
+                                {showSpeciesSuggest && speciesSuggestions.length > 0 && (
+                                  <div
+                                    className="list-group position-absolute w-100 shadow-sm"
+                                    style={{ zIndex: 5, maxHeight: 220, overflowY: 'auto' }}
+                                  >
+                                    {speciesSuggestions.map((sp) => (
+                                      <button
+                                        key={sp.id}
+                                        type="button"
+                                        className="list-group-item list-group-item-action py-1 small text-start"
+                                        onClick={() => selectNewBatchSpecies(sp)}
+                                      >
+                                        <span className="fst-italic">{sp.scientificName}</span>
+                                        {sp.commonName ? <span className="text-muted"> · {sp.commonName}</span> : null}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {listingForm.newBatchSpeciesId && (
+                                  <div className="small text-success mt-1">✓ {speciesQuery}</div>
+                                )}
+                              </div>
+                              <div>
+                                <label className="form-label small mb-1">{t('marketplace.inventoryBatchName')}</label>
+                                <input
+                                  className="form-control form-control-sm"
+                                  type="text"
+                                  maxLength={120}
+                                  value={listingForm.newBatchName}
+                                  onChange={(e) =>
+                                    setListingForm((f) => ({ ...f, newBatchName: e.target.value }))
+                                  }
+                                />
+                              </div>
+                            </>
+                          )}
+
                           <div>
                             <label className="form-label small mb-1">{t('marketplace.inventoryLabelCount')}</label>
                             <input
