@@ -156,19 +156,48 @@ public class FileStorageService {
      */
     public LogoVariants saveLogoWithMonochrome(MultipartFile file, String subfolder) throws IOException {
         DetectedImage img = validateImageOrThrow(file);
-        String colorPath = isCloudinaryConfigured()
-                ? uploadToCloudinary(file, subfolder, "image")
-                : saveToLocal(file, subfolder, img.extension);
+        byte[] bytes = file.getBytes();
+        java.awt.image.BufferedImage src = null;
+        try {
+            src = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));
+        } catch (Exception ignore) {
+            // Some accepted formats (e.g. certain WEBP) are not decodable by ImageIO; handled below.
+        }
+
+        // Color variant: a transparent PNG would show whatever is behind it. Flatten it onto white so the
+        // logo blends with the white of labels (and other light surfaces). Opaque images are stored as-is.
+        String colorPath;
+        if (src != null && src.getColorModel().hasAlpha()) {
+            try {
+                colorPath = saveImageBytes(flattenOntoWhitePng(src, false), subfolder);
+            } catch (Exception e) {
+                log.warn("Logo color white-flatten failed ({}): storing original", e.toString());
+                colorPath = storeOriginalColor(file, subfolder, img);
+            }
+        } else {
+            colorPath = storeOriginalColor(file, subfolder, img);
+        }
+
         String bwPath;
         try {
-            byte[] mono = toMonochromePng(file.getBytes());
-            bwPath = saveImageBytes(mono, subfolder);
+            java.awt.image.BufferedImage forMono = src != null ? src
+                    : javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));
+            if (forMono == null) {
+                throw new IOException("UNDECODABLE_IMAGE");
+            }
+            bwPath = saveImageBytes(flattenOntoWhitePng(forMono, true), subfolder);
         } catch (Exception e) {
             // ImageIO cannot decode every accepted format (e.g. some WEBP); fall back to color.
             log.warn("Logo monochrome generation failed ({}): falling back to color variant", e.toString());
             bwPath = colorPath;
         }
         return new LogoVariants(colorPath, bwPath);
+    }
+
+    private String storeOriginalColor(MultipartFile file, String subfolder, DetectedImage img) throws IOException {
+        return isCloudinaryConfigured()
+                ? uploadToCloudinary(file, subfolder, "image")
+                : saveToLocal(file, subfolder, img.extension);
     }
 
     public record LogoVariants(String colorPath, String bwPath) {}
@@ -195,9 +224,12 @@ public class FileStorageService {
         return safeSub + "/" + filename;
     }
 
-    /** Convert an image to a grayscale PNG flattened onto a white background, capped at 1024px. */
-    private byte[] toMonochromePng(byte[] source) throws IOException {
-        java.awt.image.BufferedImage src = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(source));
+    /**
+     * Flatten an image onto an opaque white background and encode it as PNG, capped at 1024px. With
+     * {@code grayscale=true} the output is monochrome; otherwise full color. Flattening drops any alpha
+     * channel, so transparent logos print/render cleanly on white surfaces.
+     */
+    private byte[] flattenOntoWhitePng(java.awt.image.BufferedImage src, boolean grayscale) throws IOException {
         if (src == null) {
             throw new IOException("UNDECODABLE_IMAGE");
         }
@@ -209,9 +241,11 @@ public class FileStorageService {
             w = Math.max(1, (int) Math.round(w * scale));
             h = Math.max(1, (int) Math.round(h * scale));
         }
-        java.awt.image.BufferedImage gray =
-                new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
-        java.awt.Graphics2D g = gray.createGraphics();
+        int type = grayscale
+                ? java.awt.image.BufferedImage.TYPE_BYTE_GRAY
+                : java.awt.image.BufferedImage.TYPE_INT_RGB;
+        java.awt.image.BufferedImage flat = new java.awt.image.BufferedImage(w, h, type);
+        java.awt.Graphics2D g = flat.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
                 java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.setColor(java.awt.Color.WHITE);
@@ -219,7 +253,7 @@ public class FileStorageService {
         g.drawImage(src, 0, 0, w, h, null);
         g.dispose();
         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-        javax.imageio.ImageIO.write(gray, "png", out);
+        javax.imageio.ImageIO.write(flat, "png", out);
         return out.toByteArray();
     }
 
