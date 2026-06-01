@@ -58,6 +58,10 @@ public class Passport {
     @Column(name = "tarantula_id", columnDefinition = "uuid")
     private UUID tarantulaId;
 
+    /** Anti-abuse: set the first (and only) time this passport pays out a Pro grant. */
+    @Column(name = "pro_granted_at")
+    private Instant proGrantedAt;
+
     @Column(name = "batch_id", columnDefinition = "uuid")
     private UUID batchId;
 
@@ -106,6 +110,8 @@ public class Passport {
     public void setProGiftDays(Integer proGiftDays) { this.proGiftDays = proGiftDays; }
     public String getLabelNotes() { return labelNotes; }
     public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
+    public Instant getProGrantedAt() { return proGrantedAt; }
+    public void setProGrantedAt(Instant proGrantedAt) { this.proGrantedAt = proGrantedAt; }
     public Instant getClaimedAt() { return claimedAt; }
     public void setClaimedAt(Instant claimedAt) { this.claimedAt = claimedAt; }
     public UUID getClaimedByUserId() { return claimedByUserId; }

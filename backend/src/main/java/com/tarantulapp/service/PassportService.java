@@ -37,6 +37,11 @@ import java.util.UUID;
 public class PassportService {
 
     private final PassportRepository passportRepository;
+    /** Pro days rewarded for a keeper's first claimed specimen. */
+    static final int FIRST_CLAIM_PRO_DAYS = 30;
+    /** Pro days rewarded for each specimen claimed after the first. */
+    static final int SUBSEQUENT_CLAIM_PRO_DAYS = 7;
+
     private final SpeciesRepository speciesRepository;
     private final UserRepository userRepository;
     private final ShortIdService shortIdService;
@@ -189,17 +194,31 @@ public class PassportService {
         }
         Tarantula saved = tarantulaRepository.save(tarantula);
 
-        passport.setClaimedAt(Instant.now());
+        // Pro reward rule: 30 days for the keeper's first claimed specimen, 7 days for each one after.
+        // Anti-abuse: a passport pays out at most once (guards re-claim/transfer farming).
+        boolean shouldGrant = passport.getProGrantedAt() == null;
+        int giftDays = 0;
+        if (shouldGrant) {
+            boolean firstClaim = !proDayGrantService.hasGrantOfSource(
+                    userId, ProDayGrantSource.PASSPORT_CLAIM);
+            giftDays = firstClaim ? FIRST_CLAIM_PRO_DAYS : SUBSEQUENT_CLAIM_PRO_DAYS;
+        }
+
+        Instant now = Instant.now();
+        passport.setClaimedAt(now);
         passport.setClaimedByUserId(userId);
         passport.setTarantulaId(saved.getId());
+        if (shouldGrant) {
+            passport.setProGrantedAt(now);
+        }
         passportRepository.save(passport);
 
         saved.setPassportId(passport.getId());
         tarantulaRepository.save(saved);
 
-        int giftDays = passport.getProGiftDays() != null ? passport.getProGiftDays() : 30;
-        ProDayGrant grant = proDayGrantService.recordGrant(
-                user, giftDays, ProDayGrantSource.PASSPORT_CLAIM, null, null);
+        ProDayGrant grant = shouldGrant
+                ? proDayGrantService.recordGrant(user, giftDays, ProDayGrantSource.PASSPORT_CLAIM, null, null)
+                : null;
 
         boolean reminderCreated = false;
         if (req.getSetupFeedingReminder() == null || Boolean.TRUE.equals(req.getSetupFeedingReminder())) {
@@ -209,7 +228,7 @@ public class PassportService {
         PassportClaimEvent event = new PassportClaimEvent();
         event.setPassportId(passport.getId());
         event.setClaimedByUserId(userId);
-        event.setProGrantId(grant.getId());
+        event.setProGrantId(grant != null ? grant.getId() : null);
         event.setFeedingReminderCreated(reminderCreated);
         passportClaimEventRepository.save(event);
 
@@ -218,7 +237,7 @@ public class PassportService {
         response.setShortId(passport.getShortId());
         response.setName(saved.getName());
         response.setProGiftDays(giftDays);
-        response.setProGrantId(grant.getId());
+        response.setProGrantId(grant != null ? grant.getId() : null);
         response.setFeedingReminderCreated(reminderCreated);
         response.setPageMode(PublicProfileDTO.PageMode.SPECIMEN);
         return response;

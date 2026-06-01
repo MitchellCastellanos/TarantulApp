@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import StatusBadge from './StatusBadge'
 import FangPanel from './FangPanel'
+import QRModal from './QRModal'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 import { useUnitSystem } from '../hooks/useUnitSystem'
@@ -16,13 +18,21 @@ export default function TarantulaCard({ tarantula }) {
   const { t } = useTranslation()
   const { system } = useUnitSystem()
   const { id, name, species, stage, sex, currentSizeCm, profilePhoto, status, locked } = tarantula
+  const [qrOpen, setQrOpen] = useState(false)
   const placeholder = publicUrl('spider-default.png')
+
+  const openQr = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setQrOpen(true)
+  }
   // Own upload first, then species reference (DB / iNat URL), then placeholder; broken URLs fall back on error.
   const primarySrc = profilePhoto
     ? imgUrl(profilePhoto)
     : imgUrl(species?.referencePhotoUrl) || placeholder
 
   return (
+    <>
     <Link to={`/tarantulas/${id}`} className="text-decoration-none">
       <FangPanel className="h-100 ta-tarantula-fang-card" cornerOffset={10}>
       <div className="card h-100 shadow-sm border-0 tarantula-card ta-premium-tarantula-card">
@@ -45,6 +55,16 @@ export default function TarantulaCard({ tarantula }) {
               <span aria-hidden="true">📷</span>
             </span>
           )}
+          <button
+            type="button"
+            className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+            style={{ width: 32, height: 32, padding: 0, zIndex: 2 }}
+            onClick={openQr}
+            title={t('tarantula.qrCode')}
+            aria-label={t('tarantula.qrCode')}
+          >
+            <span aria-hidden="true">📱</span>
+          </button>
           <div className="ta-premium-card-meta">
             <div className="d-flex justify-content-between align-items-start gap-2">
               <div className="min-w-0 flex-grow-1">
@@ -93,5 +113,7 @@ export default function TarantulaCard({ tarantula }) {
       </div>
       </FangPanel>
     </Link>
+    {qrOpen && <QRModal tarantula={tarantula} onClose={() => setQrOpen(false)} />}
+    </>
   )
 }

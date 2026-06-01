@@ -185,4 +185,85 @@ class PassportServiceTest {
         verify(reminderRepository).save(any());
         verify(passportClaimEventRepository).save(any());
     }
+
+    @Test
+    void claimPassportGrantsSevenDaysForSubsequentClaim() {
+        UUID userId = UUID.randomUUID();
+        Species species = new Species();
+        species.setCommonName("Pink toe");
+
+        Passport passport = new Passport();
+        passport.setId(UUID.randomUUID());
+        passport.setShortId("claimme2");
+        passport.setSpecies(species);
+        passport.setStage("sling");
+
+        User user = new User();
+        user.setId(userId);
+
+        ProDayGrant grant = new ProDayGrant();
+        grant.setId(UUID.randomUUID());
+
+        when(passportRepository.findByShortId("claimme2")).thenReturn(Optional.of(passport));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(planAccessService.hasProFeatures(user)).thenReturn(false);
+        when(tarantulaRepository.countByUserId(userId)).thenReturn(3L);
+        when(tarantulaRepository.save(any(Tarantula.class))).thenAnswer(inv -> {
+            Tarantula t = inv.getArgument(0);
+            t.setId(UUID.randomUUID());
+            return t;
+        });
+        // The keeper already claimed before, so this specimen pays out the reduced reward.
+        when(proDayGrantService.hasGrantOfSource(userId, ProDayGrantSource.PASSPORT_CLAIM)).thenReturn(true);
+        when(proDayGrantService.recordGrant(eq(user), eq(7), eq(ProDayGrantSource.PASSPORT_CLAIM), eq(null), eq(null)))
+                .thenReturn(grant);
+
+        PassportClaimRequest req = new PassportClaimRequest();
+        req.setName("Webster");
+        req.setSetupFeedingReminder(false);
+
+        PassportClaimResponse response = service.claimPassport("claimme2", req, userId);
+
+        assertEquals(7, response.getProGiftDays());
+        verify(proDayGrantService).recordGrant(eq(user), eq(7), eq(ProDayGrantSource.PASSPORT_CLAIM), eq(null), eq(null));
+    }
+
+    @Test
+    void claimPassportDoesNotRegrantWhenAlreadyPaidOut() {
+        UUID userId = UUID.randomUUID();
+        Species species = new Species();
+        species.setCommonName("Pink toe");
+
+        Passport passport = new Passport();
+        passport.setId(UUID.randomUUID());
+        passport.setShortId("claimme3");
+        passport.setSpecies(species);
+        passport.setStage("sling");
+        // Anti-abuse: this passport has already rewarded Pro days once.
+        passport.setProGrantedAt(java.time.Instant.now());
+
+        User user = new User();
+        user.setId(userId);
+
+        when(passportRepository.findByShortId("claimme3")).thenReturn(Optional.of(passport));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(planAccessService.hasProFeatures(user)).thenReturn(false);
+        when(tarantulaRepository.countByUserId(userId)).thenReturn(0L);
+        when(tarantulaRepository.save(any(Tarantula.class))).thenAnswer(inv -> {
+            Tarantula t = inv.getArgument(0);
+            t.setId(UUID.randomUUID());
+            return t;
+        });
+
+        PassportClaimRequest req = new PassportClaimRequest();
+        req.setName("Ghost");
+        req.setSetupFeedingReminder(false);
+
+        PassportClaimResponse response = service.claimPassport("claimme3", req, userId);
+
+        assertEquals(0, response.getProGiftDays());
+        assertNull(response.getProGrantId());
+        verify(proDayGrantService, org.mockito.Mockito.never())
+                .recordGrant(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+    }
 }
