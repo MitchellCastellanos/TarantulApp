@@ -41,6 +41,7 @@ public class UserCapabilitiesService {
         dto.setVerifiedOrigin(VerifiedOriginService.isVerified(user));
         dto.setOfficialPartner(isOfficialPartner(user));
         dto.setBranding(BrandingService.canBrand(user, officialVendorRepository));
+        dto.setPickupAuthorized(canUsePickupPoints(user));
         return dto;
     }
 
@@ -82,6 +83,21 @@ public class UserCapabilitiesService {
 
     public void ensureStudioAccess(UUID userId) {
         ensurePassportCreator(userId);
+    }
+
+    public boolean canUsePickupPoints(User user) {
+        if (user == null) return false;
+        if (Boolean.TRUE.equals(user.getIsAdmin()) || adminAccessService.shouldBootstrapAdmin(user)) {
+            return true;
+        }
+        return user.getPickupAuthorizedAt() != null;
+    }
+
+    public void ensurePickupAuthorized(UUID userId) {
+        User user = requireUser(userId);
+        if (!canUsePickupPoints(user)) {
+            throw new IllegalArgumentException("PICKUP_AUTHORIZATION_REQUIRED");
+        }
     }
 
     private User requireUser(UUID userId) {

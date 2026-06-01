@@ -8,6 +8,7 @@ import com.tarantulapp.service.PartnerCartHandoffService;
 import com.tarantulapp.service.PartnerCheckoutService;
 import com.tarantulapp.service.PartnerHandoffAnalyticsService;
 import com.tarantulapp.service.PartnerListingImageProxyService;
+import com.tarantulapp.service.PickupPointService;
 import com.tarantulapp.service.SpeciesTradeNoteService;
 import com.tarantulapp.service.TopVendorService;
 import jakarta.validation.Valid;
@@ -37,6 +38,7 @@ public class PublicMarketplaceController {
     private final PartnerCheckoutService partnerCheckoutService;
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final PartnerListingImageProxyService partnerListingImageProxyService;
+    private final PickupPointService pickupPointService;
     private final ListingEventService listingEventService;
     private final TopVendorService topVendorService;
     private final SpeciesTradeNoteService speciesTradeNoteService;
@@ -62,6 +64,7 @@ public class PublicMarketplaceController {
                                        PartnerCheckoutService partnerCheckoutService,
                                        PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                        PartnerListingImageProxyService partnerListingImageProxyService,
+                                       PickupPointService pickupPointService,
                                        ListingEventService listingEventService,
                                        TopVendorService topVendorService,
                                        SpeciesTradeNoteService speciesTradeNoteService,
@@ -74,6 +77,7 @@ public class PublicMarketplaceController {
         this.partnerCheckoutService = partnerCheckoutService;
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.partnerListingImageProxyService = partnerListingImageProxyService;
+        this.pickupPointService = pickupPointService;
         this.listingEventService = listingEventService;
         this.topVendorService = topVendorService;
         this.speciesTradeNoteService = speciesTradeNoteService;
@@ -227,8 +231,24 @@ public class PublicMarketplaceController {
             @NotBlank String vendorSlug,
             String provider,
             String buyerEmail,
+            String fulfillmentMethod,
+            UUID pickupPointId,
             List<PartnerCartHandoffLine> lines
     ) {}
+
+    record PartnerCartFulfillmentOptionsRequest(
+            @NotBlank String vendorSlug,
+            List<PartnerCartHandoffLine> lines
+    ) {}
+
+    @PostMapping("/partner-cart/fulfillment-options")
+    public ResponseEntity<Map<String, Object>> partnerCartFulfillmentOptions(
+            @Valid @RequestBody PartnerCartFulfillmentOptionsRequest req) {
+        List<String> externalIds = req.lines() == null
+                ? List.of()
+                : req.lines().stream().map(PartnerCartHandoffLine::externalProductId).toList();
+        return ResponseEntity.ok(pickupPointService.fulfillmentOptions(req.vendorSlug(), externalIds));
+    }
 
     /** Beta in-app checkout: creates the order + hosted payment session, or explains why it's unavailable. */
     @PostMapping("/partner-cart/checkout")
@@ -239,7 +259,8 @@ public class PublicMarketplaceController {
                 .map(l -> new PartnerCheckoutService.CartLineRequest(l.externalProductId(), l.quantity()))
                 .toList();
         return ResponseEntity.ok(partnerCheckoutService.startCheckout(
-                req.vendorSlug(), req.provider(), lines, req.buyerEmail(), null));
+                req.vendorSlug(), req.provider(), lines, req.buyerEmail(), null,
+                req.fulfillmentMethod(), req.pickupPointId()));
     }
 
     record ListingEventRequest(

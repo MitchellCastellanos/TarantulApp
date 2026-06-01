@@ -64,6 +64,19 @@ public class PartnerCartOrder {
     @Column(name = "payout_mode", nullable = false, length = 16)
     private String payoutMode = "platform";
 
+    @Column(name = "fulfillment_method", nullable = false, length = 32)
+    private String fulfillmentMethod = "partner_site";
+
+    @Column(name = "pickup_point_id", columnDefinition = "uuid")
+    private UUID pickupPointId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "pickup_snapshot", columnDefinition = "jsonb")
+    private Map<String, Object> pickupSnapshot;
+
+    @Column(name = "pickup_hold_until")
+    private Instant pickupHoldUntil;
+
     @Column(nullable = false, length = 32)
     private String provider;
 
@@ -91,6 +104,9 @@ public class PartnerCartOrder {
         if (lines == null) {
             lines = new ArrayList<>();
         }
+        if (fulfillmentMethod == null || fulfillmentMethod.isBlank()) {
+            fulfillmentMethod = "partner_site";
+        }
     }
 
     @PreUpdate
@@ -98,6 +114,9 @@ public class PartnerCartOrder {
         updatedAt = Instant.now();
         if (lines == null) {
             lines = new ArrayList<>();
+        }
+        if (fulfillmentMethod == null || fulfillmentMethod.isBlank()) {
+            fulfillmentMethod = "partner_site";
         }
     }
 
@@ -133,6 +152,14 @@ public class PartnerCartOrder {
     public void setPartnerPayoutAmount(BigDecimal partnerPayoutAmount) { this.partnerPayoutAmount = partnerPayoutAmount; }
     public String getPayoutMode() { return payoutMode; }
     public void setPayoutMode(String payoutMode) { this.payoutMode = payoutMode; }
+    public String getFulfillmentMethod() { return fulfillmentMethod; }
+    public void setFulfillmentMethod(String fulfillmentMethod) { this.fulfillmentMethod = fulfillmentMethod; }
+    public UUID getPickupPointId() { return pickupPointId; }
+    public void setPickupPointId(UUID pickupPointId) { this.pickupPointId = pickupPointId; }
+    public Map<String, Object> getPickupSnapshot() { return pickupSnapshot; }
+    public void setPickupSnapshot(Map<String, Object> pickupSnapshot) { this.pickupSnapshot = pickupSnapshot; }
+    public Instant getPickupHoldUntil() { return pickupHoldUntil; }
+    public void setPickupHoldUntil(Instant pickupHoldUntil) { this.pickupHoldUntil = pickupHoldUntil; }
     public String getProvider() { return provider; }
     public void setProvider(String provider) { this.provider = provider; }
     public String getProviderRef() { return providerRef; }

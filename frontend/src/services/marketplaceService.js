@@ -17,6 +17,8 @@ const marketplaceService = {
   partnerCartHandoff: (payload) => publicApi.post('/public/marketplace/partner-cart/handoff', payload).then((r) => r.data),
   partnerCartPaymentOptions: (vendorSlug) =>
     publicApi.get('/public/marketplace/partner-cart/payment-options', { params: { vendorSlug } }).then((r) => r.data),
+  partnerCartFulfillmentOptions: (payload) =>
+    publicApi.post('/public/marketplace/partner-cart/fulfillment-options', payload).then((r) => r.data),
   partnerCartCheckout: (payload) =>
     publicApi.post('/public/marketplace/partner-cart/checkout', payload).then((r) => r.data),
   submitOfficialVendorLead: (payload) => publicApi.post('/public/marketplace/official-vendors/lead', payload).then((r) => r.data),

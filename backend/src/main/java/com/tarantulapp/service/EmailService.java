@@ -21,6 +21,9 @@ import jakarta.mail.internet.MimeMessage;
 import java.net.SocketTimeoutException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -452,12 +455,20 @@ public class EmailService {
     /** Buyer-facing confirmation for an in-app partner cart order paid inside TarantulApp. */
     public void sendPartnerCartOrderConfirmation(String toEmail, String partnerName, long amountCents,
                                                  String currency, int itemCount, String receiptUrl) {
+        sendPartnerCartOrderConfirmation(toEmail, partnerName, amountCents, currency, itemCount, receiptUrl, null, null);
+    }
+
+    /** Buyer-facing confirmation for an in-app partner cart order paid inside TarantulApp. */
+    public void sendPartnerCartOrderConfirmation(String toEmail, String partnerName, long amountCents,
+                                                 String currency, int itemCount, String receiptUrl,
+                                                 Map<String, Object> pickupSnapshot, Instant pickupHoldUntil) {
         if (toEmail == null || toEmail.isBlank()) return;
         String normalizedCurrency = (currency == null || currency.isBlank()) ? "CAD" : currency.toUpperCase();
         String amountText = String.format("%.2f %s", amountCents / 100.0, normalizedCurrency);
         String receiptLine = (receiptUrl != null && !receiptUrl.isBlank())
                 ? "\nRecibo: " + receiptUrl + "\n"
                 : "\n";
+        String pickupLine = pickupEmailBlock(pickupSnapshot, pickupHoldUntil, false);
         try {
             doSend(toEmail,
                 "Tu compra en " + safe(partnerName) + " — TarantulApp",
@@ -466,7 +477,10 @@ public class EmailService {
                 "Artículos: " + itemCount + "\n" +
                 "Total: " + amountText + "\n" +
                 receiptLine +
-                "El vendedor coordinará el envío contigo. Si tienes dudas, responde este correo.\n\n" +
+                pickupLine +
+                (pickupLine.isBlank()
+                        ? "El vendedor coordinará el envío contigo. Si tienes dudas, responde este correo.\n\n"
+                        : "Si tienes dudas, responde este correo.\n\n") +
                 "- TarantulApp Team"
             );
             log.info("Partner cart order confirmation sent to {}", LogSafe.maskEmail(toEmail));
@@ -478,6 +492,13 @@ public class EmailService {
     /** Partner-facing notification that a buyer paid for their cart inside TarantulApp. */
     public void sendPartnerCartOrderPaid(String toEmail, String partnerName, long amountCents, String currency,
                                          int itemCount, long payoutCents, boolean platformPayout) {
+        sendPartnerCartOrderPaid(toEmail, partnerName, amountCents, currency, itemCount, payoutCents, platformPayout, null, null);
+    }
+
+    /** Partner-facing notification that a buyer paid for their cart inside TarantulApp. */
+    public void sendPartnerCartOrderPaid(String toEmail, String partnerName, long amountCents, String currency,
+                                         int itemCount, long payoutCents, boolean platformPayout,
+                                         Map<String, Object> pickupSnapshot, Instant pickupHoldUntil) {
         if (toEmail == null || toEmail.isBlank()) return;
         String normalizedCurrency = (currency == null || currency.isBlank()) ? "CAD" : currency.toUpperCase();
         String amountText = String.format("%.2f %s", amountCents / 100.0, normalizedCurrency);
@@ -493,13 +514,47 @@ public class EmailService {
                 "Artículos: " + itemCount + "\n" +
                 "Total cobrado: " + amountText + "\n" +
                 payoutLine +
-                "Revisa el pedido en tu Partner Hub y coordina el envío.\n\n" +
+                pickupEmailBlock(pickupSnapshot, pickupHoldUntil, true) +
+                "Revisa el pedido en tu Partner Hub y coordina el envío o pickup.\n\n" +
                 "- TarantulApp Team"
             );
             log.info("Partner cart order paid notification sent to {}", LogSafe.maskEmail(toEmail));
         } catch (Exception e) {
             log.error("Failed to send partner cart order paid notification to {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
         }
+    }
+
+    private String pickupEmailBlock(Map<String, Object> pickupSnapshot, Instant pickupHoldUntil, boolean partnerFacing) {
+        if (pickupSnapshot == null || pickupSnapshot.isEmpty()) {
+            return "";
+        }
+        String hold = pickupHoldUntil == null ? "" : "\nRetener hasta: " + pickupHoldUntil;
+        String prefix = partnerFacing
+                ? "Pickup point seleccionado. El seller/partner sigue siendo responsable si el buyer no llega dentro de la ventana.\n"
+                : "Pickup point seleccionado:\n";
+        return prefix +
+                "Nombre: " + pickupSafe(pickupSnapshot.get("name")) + "\n" +
+                "Direccion: " + pickupAddress(pickupSnapshot) + "\n" +
+                "Ventana de retencion: " + pickupSafe(pickupSnapshot.get("holdDays")) + " dias" + hold + "\n" +
+                (pickupSnapshot.get("publicInstructions") == null ? "" : "Instrucciones: " + pickupSafe(pickupSnapshot.get("publicInstructions")) + "\n") +
+                "\n";
+    }
+
+    private String pickupAddress(Map<String, Object> pickupSnapshot) {
+        return java.util.stream.Stream.of(
+                        pickupSnapshot.get("addressLine1"),
+                        pickupSnapshot.get("city"),
+                        pickupSnapshot.get("state"),
+                        pickupSnapshot.get("postalCode"),
+                        pickupSnapshot.get("country"))
+                .filter(Objects::nonNull)
+                .map(this::pickupSafe)
+                .filter(s -> !s.isBlank())
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    private String pickupSafe(Object value) {
+        return value == null ? "" : safe(String.valueOf(value));
     }
 
     public void sendAdminBugReportNotification(
@@ -781,6 +836,27 @@ public class EmailService {
                     default -> "Hola " + name + ",\n\n"
                             + "Agregamos creditos de listing boost a tu cuenta. Creditos disponibles ahora: " + boostCreditsAvailable + ".\n\n"
                             + "Usa uno al publicar desde Seller hub para resaltar un anuncio por 7 dias sin pasar por Stripe.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                };
+            }
+            case "pickup" -> {
+                subject = switch (loc) {
+                    case "en" -> "TarantulApp Marketplace - Pickup-point access approved";
+                    case "fr" -> "TarantulApp Marketplace - Acces aux points de cueillette approuve";
+                    default -> "TarantulApp Marketplace - Acceso a pickup points aprobado";
+                };
+                body = switch (loc) {
+                    case "en" -> "Hi " + name + ",\n\n"
+                            + "TarantulApp approved your account to use pickup-point fulfillment when it is available for your listings.\n\n"
+                            + "Pickup hosts rely on this approval: if a buyer does not collect within the hold window set by that pickup partner, you remain responsible for taking the animal back and coordinating next steps.\n\n"
+                            + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    case "fr" -> "Bonjour " + name + ",\n\n"
+                            + "TarantulApp a approuve votre compte pour utiliser les points de cueillette lorsqu'ils sont disponibles pour vos annonces.\n\n"
+                            + "Les points de cueillette s'appuient sur cette approbation: si l'acheteur ne recupere pas l'animal dans la fenetre de garde definie par ce partenaire, vous restez responsable de le reprendre et de coordonner la suite.\n\n"
+                            + "Hub vendeur: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
+                    default -> "Hola " + name + ",\n\n"
+                            + "TarantulApp aprobo tu cuenta para usar pickup points cuando esten disponibles en tus listings.\n\n"
+                            + "Los pickup hosts confian en esta autorizacion: si el comprador no recoge dentro de la ventana definida por ese pickup partner, tu sigues siendo responsable de pasar por el animalito y coordinar el siguiente paso.\n\n"
                             + "Seller hub: " + appUrl + "/marketplace/sell\n\n- TarantulApp\n";
                 };
             }

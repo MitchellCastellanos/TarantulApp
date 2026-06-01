@@ -199,6 +199,16 @@ public class User {
     @Column(name = "passport_creator_enabled_at")
     private Instant passportCreatorEnabledAt;
 
+    /**
+     * Internal trust gate for pickup-point fulfillment. Admins enable this only
+     * for sellers/partners TarantulApp is willing to vouch for with pickup hosts.
+     */
+    @Column(name = "pickup_authorized_at")
+    private Instant pickupAuthorizedAt;
+
+    @Column(name = "pickup_authorization_note", length = 500)
+    private String pickupAuthorizationNote;
+
     /** Studio appears in primary navigation when set. */
     @Column(name = "studio_activated_at")
     private Instant studioActivatedAt;
@@ -397,6 +407,12 @@ public class User {
 
     public Instant getPassportCreatorEnabledAt() { return passportCreatorEnabledAt; }
     public void setPassportCreatorEnabledAt(Instant passportCreatorEnabledAt) { this.passportCreatorEnabledAt = passportCreatorEnabledAt; }
+
+    public Instant getPickupAuthorizedAt() { return pickupAuthorizedAt; }
+    public void setPickupAuthorizedAt(Instant pickupAuthorizedAt) { this.pickupAuthorizedAt = pickupAuthorizedAt; }
+
+    public String getPickupAuthorizationNote() { return pickupAuthorizationNote; }
+    public void setPickupAuthorizationNote(String pickupAuthorizationNote) { this.pickupAuthorizationNote = pickupAuthorizationNote; }
 
     public Instant getStudioActivatedAt() { return studioActivatedAt; }
     public void setStudioActivatedAt(Instant studioActivatedAt) { this.studioActivatedAt = studioActivatedAt; }

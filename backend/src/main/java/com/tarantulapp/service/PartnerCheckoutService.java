@@ -21,11 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -43,6 +45,7 @@ public class PartnerCheckoutService {
     private final PartnerCartOrderRepository partnerCartOrderRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final PickupPointService pickupPointService;
     private final List<PartnerPaymentProvider> providers;
 
     @Value("${app.base-url:http://localhost:5173}")
@@ -53,12 +56,14 @@ public class PartnerCheckoutService {
                                   PartnerCartOrderRepository partnerCartOrderRepository,
                                   UserRepository userRepository,
                                   EmailService emailService,
+                                  PickupPointService pickupPointService,
                                   List<PartnerPaymentProvider> providers) {
         this.officialVendorRepository = officialVendorRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.partnerCartOrderRepository = partnerCartOrderRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.pickupPointService = pickupPointService;
         this.providers = providers;
     }
 
@@ -102,6 +107,13 @@ public class PartnerCheckoutService {
     @Transactional
     public Map<String, Object> startCheckout(String vendorSlug, String providerKey, List<CartLineRequest> lines,
                                              String buyerEmail, UUID buyerUserId) {
+        return startCheckout(vendorSlug, providerKey, lines, buyerEmail, buyerUserId, null, null);
+    }
+
+    @Transactional
+    public Map<String, Object> startCheckout(String vendorSlug, String providerKey, List<CartLineRequest> lines,
+                                             String buyerEmail, UUID buyerUserId, String fulfillmentMethod,
+                                             UUID pickupPointId) {
         OfficialVendor vendor = officialVendorRepository.findBySlug(vendorSlug)
                 .orElseThrow(() -> new NotFoundException("Partner no encontrado"));
         PartnerCheckoutConfig config = PartnerCheckoutConfig.fromVendor(vendor);
@@ -115,6 +127,8 @@ public class PartnerCheckoutService {
         }
 
         List<Map<String, Object>> orderLines = new ArrayList<>();
+        List<PartnerListing> pricedListings = new ArrayList<>();
+        Set<UUID> pricedListingIds = new HashSet<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         String currency = null;
         int itemCount = 0;
@@ -137,12 +151,21 @@ public class PartnerCheckoutService {
                 currency = listing.getCurrency() == null ? "CAD" : listing.getCurrency().toUpperCase();
             }
             orderLines.add(PartnerCartOrder.line(listing.getExternalId(), listing.getTitle(), qty, unit));
+            if (pricedListingIds.add(listing.getId())) {
+                pricedListings.add(listing);
+            }
         }
         if (orderLines.isEmpty() || subtotal.signum() <= 0) {
             throw new IllegalArgumentException("No hay artículos válidos con precio en el carrito");
         }
         if (currency == null) {
             currency = "CAD";
+        }
+        PickupPointService.PickupSelection pickup = null;
+        boolean wantsPickup = PickupPointService.FULFILLMENT_PICKUP_POINT.equalsIgnoreCase(
+                fulfillmentMethod == null ? "" : fulfillmentMethod.trim());
+        if (wantsPickup) {
+            pickup = pickupPointService.validatePickupSelection(vendor, pricedListings, pickupPointId);
         }
 
         BigDecimal commissionRate = config.effectiveCommissionRate();
@@ -168,6 +191,12 @@ public class PartnerCheckoutService {
         order.setCommissionAmount(commissionAmount);
         order.setPartnerPayoutAmount(payout);
         order.setPayoutMode(platform ? "platform" : "connect");
+        order.setFulfillmentMethod(wantsPickup ? PickupPointService.FULFILLMENT_PICKUP_POINT : PickupPointService.FULFILLMENT_PARTNER_SITE);
+        if (pickup != null) {
+            order.setPickupPointId(pickup.point().getId());
+            order.setPickupSnapshot(pickup.snapshot());
+            order.setPickupHoldUntil(pickup.holdUntil());
+        }
         order.setProvider(provider.key());
         order.setStatus("payment_pending");
         order.setLines(orderLines);
@@ -224,13 +253,15 @@ public class PartnerCheckoutService {
         String vendorName = vendor == null ? order.getVendorSlug() : vendor.getName();
 
         try {
-            emailService.sendPartnerCartOrderConfirmation(order.getBuyerEmail(), vendorName, amountCents, cur, itemCount, null);
+            emailService.sendPartnerCartOrderConfirmation(order.getBuyerEmail(), vendorName, amountCents, cur, itemCount, null,
+                    order.getPickupSnapshot(), order.getPickupHoldUntil());
         } catch (RuntimeException e) {
             log.warn("Buyer confirmation email failed for partner order {}: {}", order.getId(), e.getMessage());
         }
         try {
             partnerEmail(order.getVendorSlug()).ifPresent(email ->
-                    emailService.sendPartnerCartOrderPaid(email, vendorName, amountCents, cur, itemCount, payoutCents, platform));
+                    emailService.sendPartnerCartOrderPaid(email, vendorName, amountCents, cur, itemCount, payoutCents, platform,
+                            order.getPickupSnapshot(), order.getPickupHoldUntil()));
         } catch (RuntimeException e) {
             log.warn("Partner paid email failed for partner order {}: {}", order.getId(), e.getMessage());
         }
@@ -259,6 +290,9 @@ public class PartnerCheckoutService {
         out.put("commissionAmount", order.getCommissionAmount());
         out.put("partnerPayoutAmount", order.getPartnerPayoutAmount());
         out.put("payoutMode", order.getPayoutMode());
+        out.put("fulfillmentMethod", order.getFulfillmentMethod());
+        out.put("pickupPoint", order.getPickupSnapshot());
+        out.put("pickupHoldUntil", order.getPickupHoldUntil());
         out.put("provider", order.getProvider());
         out.put("itemCount", order.getLines().stream()
                 .mapToInt(l -> {
