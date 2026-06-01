@@ -23,6 +23,9 @@ const adminService = {
     api.patch(`/admin/reports/${id}/resolve`, { action, note }).then((r) => r.data),
   officialVendors: () => api.get('/admin/official-vendors').then((r) => r.data),
   officialVendorLeads: () => api.get('/admin/official-vendor-leads').then((r) => r.data),
+  partnerFeatureRequests: () => api.get('/admin/partner-feature-requests').then((r) => r.data),
+  reviewPartnerFeatureRequest: (id, payload) =>
+    api.patch(`/admin/partner-feature-requests/${id}`, payload).then((r) => r.data),
   upsertOfficialVendorOutreachLead: (payload) =>
     api.post('/admin/official-vendor-leads/outreach', payload).then((r) => r.data),
   patchOfficialVendorLeadOutreach: (leadId, payload) =>

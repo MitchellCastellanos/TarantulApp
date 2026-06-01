@@ -46,6 +46,7 @@ export default function AdminPartnerDashboardPage() {
   const [closureStatus, setClosureStatus] = useState(null)
   const [officialVendors, setOfficialVendors] = useState([])
   const [officialLeads, setOfficialLeads] = useState([])
+  const [featureRequests, setFeatureRequests] = useState([])
   const [syncRuns, setSyncRuns] = useState([])
   const [partnerSyncLoading, setPartnerSyncLoading] = useState(false)
   const [partnerSyncMessage, setPartnerSyncMessage] = useState('')
@@ -65,10 +66,11 @@ export default function AdminPartnerDashboardPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true)
     try {
-      const [dashboard, leads, pickups] = await Promise.all([
+      const [dashboard, leads, pickups, requests] = await Promise.all([
         adminService.partnerDashboard(),
         adminService.officialVendorLeads(),
         adminService.pickupPoints().catch(() => []),
+        adminService.partnerFeatureRequests().catch(() => []),
       ])
       setSummary(dashboard?.summary ?? null)
       setClosureStatus(dashboard?.closureStatus ?? null)
@@ -76,6 +78,7 @@ export default function AdminPartnerDashboardPage() {
       setSyncRuns(Array.isArray(dashboard?.recentSyncRuns) ? dashboard.recentSyncRuns : [])
       setOfficialLeads(Array.isArray(leads) ? leads : [])
       setPickupPoints(Array.isArray(pickups) ? pickups : [])
+      setFeatureRequests(Array.isArray(requests) ? requests : [])
       setError('')
     } catch {
       setError(t('admin.loadError'))
@@ -280,6 +283,29 @@ export default function AdminPartnerDashboardPage() {
       setError(err?.response?.data?.error || t('admin.resolveError'))
     } finally {
       setPickupPointBusy(false)
+    }
+  }
+
+  const reviewFeatureRequest = async (request, action) => {
+    const defaults = {
+      approved: t('admin.partnerFeatureApprovedDefault'),
+      needs_info: t('admin.partnerFeatureNeedsInfoDefault'),
+      waitlisted: t('admin.partnerFeatureWaitlistedDefault'),
+    }
+    const responseMessage = window.prompt(t('admin.partnerFeatureResponsePrompt'), defaults[action] || '')
+    if (responseMessage == null) return
+    const adminNote = window.prompt(t('admin.partnerFeatureAdminNotePrompt'), '') ?? ''
+    try {
+      const updated = await adminService.reviewPartnerFeatureRequest(request.id, {
+        action,
+        adminNote,
+        responseMessage,
+      })
+      setFeatureRequests((prev) => prev.map((r) => (r.id === request.id ? updated : r)))
+      setSuccess(t('admin.partnerFeatureReviewed'))
+      await loadDashboard()
+    } catch (err) {
+      setError(err?.response?.data?.error || t('admin.resolveError'))
     }
   }
 
@@ -507,6 +533,57 @@ export default function AdminPartnerDashboardPage() {
                     <td>{[point.city, point.state, point.country].filter(Boolean).join(' · ') || '-'}</td>
                     <td>{point.holdDays ?? 3}</td>
                     <td>{point.active ? t('admin.officialVendorsActive') : t('admin.officialVendorsHidden')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card p-3 mb-4" id="partner-feature-requests">
+        <h3 className="h6 mb-2">{t('admin.partnerFeatureRequestsTitle')}</h3>
+        <p className="small text-muted mb-3">{t('admin.partnerFeatureRequestsHint')}</p>
+        {featureRequests.length === 0 ? (
+          <p className="text-muted small mb-0">{t('admin.partnerFeatureRequestsEmpty')}</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{t('admin.officialVendorsColBrand')}</th>
+                  <th>{t('admin.partnerFeatureType')}</th>
+                  <th>{t('admin.officialLeadsColNotes')}</th>
+                  <th>{t('admin.officialVendorsColStatus')}</th>
+                  <th>{t('admin.officialLeadsColActions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>
+                      <div className="fw-semibold">{request.vendorName || request.vendorSlug}</div>
+                      <div className="small text-muted">{request.vendorCountry || ''}</div>
+                    </td>
+                    <td>{t(`admin.partnerFeature.${request.requestType}`, { defaultValue: request.requestType })}</td>
+                    <td className="small">
+                      <div>{request.message || '-'}</div>
+                      {request.responseMessage ? <div className="text-muted mt-1">{request.responseMessage}</div> : null}
+                    </td>
+                    <td><span className="badge text-bg-secondary">{request.status}</span></td>
+                    <td>
+                      <div className="d-flex flex-column gap-1">
+                        <button type="button" className="btn btn-sm btn-outline-success" onClick={() => reviewFeatureRequest(request, 'approved')}>
+                          {t('admin.partnerFeatureApprove')}
+                        </button>
+                        <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => reviewFeatureRequest(request, 'needs_info')}>
+                          {t('admin.partnerFeatureNeedsInfo')}
+                        </button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => reviewFeatureRequest(request, 'waitlisted')}>
+                          {t('admin.partnerFeatureWaitlist')}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
