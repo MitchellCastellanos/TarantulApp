@@ -195,10 +195,34 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             <p className="small fw-bold text-uppercase mb-2" style={{ color: 'var(--ta-gold)' }}>
               {t('passport.giftTitle')}
             </p>
-            <p className="mb-0" style={{ color: 'var(--ta-parchment)' }}>
+            <p className="mb-2" style={{ color: 'var(--ta-parchment)' }}>
               {t('passport.giftActivated', { days: claimResult.proGiftDays || proGiftDays })}
             </p>
+            <Link to="/pro" className="small text-decoration-none" style={{ color: 'var(--ta-gold)' }}>
+              {t('passport.claimProSeeAll')} →
+            </Link>
           </FangPanel>
+
+          {profile?.origin?.verified && (
+            <FangPanel className="mb-3">
+              <p className="small fw-bold text-uppercase mb-2" style={{ color: 'var(--ta-gold)' }}>
+                {t('passport.claimOriginTitle')}
+              </p>
+              <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                {profile.origin.logoUrl && (
+                  <img
+                    src={imgUrl(profile.origin.logoUrl) || profile.origin.logoUrl}
+                    alt={profile.origin.displayName || 'origin'}
+                    style={{ height: 28, width: 'auto', borderRadius: 4, background: '#fff', padding: 2 }}
+                  />
+                )}
+                <VerifiedOriginBadge origin={profile.origin} />
+              </div>
+              <p className="small mb-0" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
+                {t('passport.claimOriginVerifiedDesc')}
+              </p>
+            </FangPanel>
+          )}
 
           {claimResult.feedingReminderCreated && (
             <FangPanel className="mb-3">
@@ -217,30 +241,32 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
           )}
 
           <div className="d-grid gap-2">
-            <button
-              type="button"
-              className="btn btn-lg"
-              style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
-              onClick={() => window.location.reload()}
-            >
-              {t('passport.viewSpecimenCard')}
-            </button>
             {user?.publicHandle ? (
               <Link
                 to={`/tarantulas/${claimResult.tarantulaId}`}
-                className="btn btn-outline-light"
+                state={{ onboarding: true }}
+                className="btn btn-lg"
+                style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
               >
-                {t('passport.openInCollection')}
+                {t('passport.openFicheCta')}
               </Link>
             ) : (
               <Link
                 to="/onboarding/handle"
-                state={{ redirectAfterAuth: `/tarantulas/${claimResult.tarantulaId}` }}
-                className="btn btn-outline-light"
+                state={{ redirectAfterAuth: `/tarantulas/${claimResult.tarantulaId}`, onboarding: true }}
+                className="btn btn-lg"
+                style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
               >
                 {t('passport.setupKeeperProfile')}
               </Link>
             )}
+            <button
+              type="button"
+              className="btn btn-outline-light"
+              onClick={() => window.location.reload()}
+            >
+              {t('passport.viewSpecimenCard')}
+            </button>
           </div>
         </div>
       </div>
