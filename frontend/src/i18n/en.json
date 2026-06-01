@@ -3559,6 +3559,7 @@
       "profile": "Profile",
       "subscription": "Subscription",
       "security": "Security",
+      "phone": "Phone",
       "preferences": "Preferences",
       "links": "Links",
       "legal": "Legal",
@@ -3566,6 +3567,7 @@
       "about": "About",
       "danger": "Delete account"
     },
+    "phoneHint": "Verify your phone to issue branded labels in batch. We only use it for verification — not marketing.",
     "delete": {
       "intro": "Permanently delete your account and associated data (collection, posts, marketplace listings, messages). This cannot be undone.",
       "passwordLabel": "Confirm with your current password",

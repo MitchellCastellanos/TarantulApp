@@ -17,6 +17,7 @@ import { appLangBase } from '../utils/appLanguage'
 import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
 import { getStoredTheme, setStoredTheme } from '../utils/themePreference'
 import ThemeToggleButton from '../components/ThemeToggleButton'
+import PhoneVerificationCard from '../components/PhoneVerificationCard'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
@@ -654,6 +655,13 @@ export default function AccountPage() {
                 {passwordSubmitting ? t('common.saving') : t('account.password.submit')}
               </button>
             </form>
+          </section>
+
+          <section className="ta-premium-section-block">
+            <h2 className="h6 fw-bold text-uppercase mb-3" style={{ color: 'var(--ta-gold)', letterSpacing: '0.06em' }}>
+              {t('account.sections.phone')}
+            </h2>
+            <PhoneVerificationCard />
           </section>
 
           <section className="ta-premium-section-block">

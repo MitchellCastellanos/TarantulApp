@@ -3539,6 +3539,7 @@
       "profile": "Perfil",
       "subscription": "Suscripción",
       "security": "Seguridad",
+      "phone": "Teléfono",
       "preferences": "Preferencias",
       "links": "Enlaces",
       "legal": "Legal",
@@ -3546,6 +3547,7 @@
       "about": "Acerca de",
       "danger": "Eliminar cuenta"
     },
+    "phoneHint": "Verifica tu teléfono para emitir etiquetas con marca en batch. Solo lo usamos para verificación — no para marketing.",
     "delete": {
       "intro": "Eliminar permanentemente tu cuenta y datos asociados (colección, posts, anuncios, mensajes). No se puede deshacer.",
       "passwordLabel": "Confirma con tu contraseña actual",
