@@ -72,7 +72,7 @@ desde el botón QR del **Dashboard** y del **specimen**, igual que Studio pero
 
 ---
 
-> **Estado:** Sprint 1 ✅ (mergeado PR #70). Sprint 2 ✅ (2A, 2B, 2C implementados).
+> **Estado:** Sprint 1 ✅ (mergeado PR #70). Sprint 2 ✅ (PR #71). Sprint 3 ✅ (marketplace badges ya existían; añadido gating de venta).
 
 ## SPRINT 2 — Experiencia & gating (3 tracks paralelos, dependen de S1)
 

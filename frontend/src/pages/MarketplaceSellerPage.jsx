@@ -11,6 +11,7 @@ import { imgUrl } from '../services/api'
 import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import VendorVerificationCard from '../components/VendorVerificationCard'
 import LogoUploader from '../components/LogoUploader'
+import BatchIssuerGate from '../components/BatchIssuerGate'
 import meBrandingService from '../services/meBrandingService'
 import { useCapabilities } from '../hooks/useCapabilities'
 import { usePageSeo } from '../hooks/usePageSeo'
@@ -45,6 +46,7 @@ export default function MarketplaceSellerPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const { data: capabilities } = useCapabilities()
+  const sellerBatchReady = capabilities?.phoneVerified === true && capabilities?.batchTermsAccepted === true
   const queryClient = useQueryClient()
   const [myListings, setMyListings] = useState([])
   const [myProfile, setMyProfile] = useState({
@@ -219,7 +221,12 @@ export default function MarketplaceSellerPage() {
         data?.boostAppliedViaCredit ? t('marketplace.listingBoostAppliedViaCredit') : t('marketplace.createdOk')
       )
     } catch (err) {
-      setMessage(err?.response?.data?.error || t('marketplace.error'))
+      const code = err?.response?.data?.error
+      if (code === 'PHONE_VERIFICATION_REQUIRED' || code === 'BATCH_TERMS_REQUIRED') {
+        setMessage(t('phoneGate.title'))
+      } else {
+        setMessage(code || t('marketplace.error'))
+      }
     } finally {
       setSavingListing(false)
     }
@@ -567,6 +574,9 @@ export default function MarketplaceSellerPage() {
             <div className="card border-0 shadow-sm ta-premium-pane h-100">
               <div className="card-body">
                 <h2 className="h6 mb-3">{t('marketplace.publishTitle')}</h2>
+                {!sellerBatchReady && capabilities && (
+                  <BatchIssuerGate caps={capabilities} onReady={() => {}} />
+                )}
                 <p className="small text-muted mb-2">
                   {t('marketplace.sellerLegalNotice')}{' '}
                   <Link to="/terms" target="_blank" rel="noreferrer">{t('auth.legalTerms')}</Link>
@@ -735,7 +745,7 @@ export default function MarketplaceSellerPage() {
                       {t('marketplace.boostLockedHint')}
                     </div>
                   )}
-                  <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>
+                  <button className="btn btn-sm btn-dark w-100" disabled={savingListing || !sellerBatchReady}>
                     {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                   </button>
                 </form>
