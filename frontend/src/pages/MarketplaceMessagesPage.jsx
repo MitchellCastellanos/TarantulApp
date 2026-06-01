@@ -12,7 +12,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const MIN_CHAT_MESSAGES_FOR_REVIEW = 6
 const THREAD_PAGE_SIZE = 80
-const TX_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'disputed', 'cancelled']
+const TX_STATUSES = ['pending', 'claim_requested', 'reserved', 'paid', 'shipped', 'delivered', 'disputed', 'cancelled']
 
 export default function MarketplaceMessagesPage() {
   const { t } = useTranslation()

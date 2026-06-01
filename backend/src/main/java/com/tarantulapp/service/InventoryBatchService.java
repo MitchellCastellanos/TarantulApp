@@ -74,6 +74,12 @@ public class InventoryBatchService {
     }
 
     @Transactional(readOnly = true)
+    public boolean ownsBatch(UUID batchId, UUID userId) {
+        if (batchId == null || userId == null) return false;
+        return batchRepository.findByIdAndUserId(batchId, userId).isPresent();
+    }
+
+    @Transactional(readOnly = true)
     public InventoryBatchResponse getForUser(UUID batchId, UUID userId) {
         userCapabilitiesService.ensureStudioAccess(userId);
         InventoryBatch batch = requireOwnedBatch(batchId, userId);

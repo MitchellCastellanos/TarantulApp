@@ -70,6 +70,8 @@ class MarketplaceControllerTest {
                 true,
                 false,
                 null,
+                null,
+                null,
                 null
         )).thenReturn(Map.of("id", UUID.randomUUID(), "title", "Listing 1"));
 
@@ -90,6 +92,8 @@ class MarketplaceControllerTest {
                 true,
                 true,
                 false,
+                null,
+                null,
                 null,
                 null
         );
@@ -117,6 +121,8 @@ class MarketplaceControllerTest {
                 true,
                 true,
                 false,
+                null,
+                null,
                 null,
                 null
         );

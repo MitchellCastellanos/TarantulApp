@@ -96,6 +96,7 @@ public class MarketplaceService {
     private final SpeciesWatchService speciesWatchService;
     private final NotificationService notificationService;
     private final VerifiedOriginService verifiedOriginService;
+    private final InventoryBatchService inventoryBatchService;
     @Value("${app.marketplace.partner-feed.hard-cap:500}")
     private int partnerFeedHardCap = 500;
     @Value("${app.marketplace.strategic-bootstrap-mode:true}")
@@ -131,7 +132,8 @@ public class MarketplaceService {
                               KeeperRankCalculator keeperRankCalculator,
                               SpeciesWatchService speciesWatchService,
                               NotificationService notificationService,
-                              VerifiedOriginService verifiedOriginService) {
+                              VerifiedOriginService verifiedOriginService,
+                              InventoryBatchService inventoryBatchService) {
         this.marketplaceListingRepository = marketplaceListingRepository;
         this.listingEventRepository = listingEventRepository;
         this.partnerListingRepository = partnerListingRepository;
@@ -153,6 +155,7 @@ public class MarketplaceService {
         this.speciesWatchService = speciesWatchService;
         this.notificationService = notificationService;
         this.verifiedOriginService = verifiedOriginService;
+        this.inventoryBatchService = inventoryBatchService;
     }
 
     @Transactional
@@ -224,7 +227,9 @@ public class MarketplaceService {
                                              boolean sellerCertifiesLegalTradeCompliance,
                                              boolean wildCaught,
                                              String captureOriginCountryIso,
-                                             String regulatoryPermitRefs) {
+                                             String regulatoryPermitRefs,
+                                             UUID inventoryBatchId,
+                                             Integer inventoryLabelCount) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Titulo requerido");
         }
@@ -282,6 +287,39 @@ public class MarketplaceService {
         listing.setStatus("active");
         listing = marketplaceListingRepository.save(listing);
 
+        // Optional: attach this listing to a Studio inventory batch and generate QR labels
+        // (passports) for the specimens being sold. Reuses the Studio inventory pipeline so the
+        // seller can list "7 of a species" and immediately get printable labels + provenance.
+        List<Map<String, Object>> generatedLabels = List.of();
+        if (inventoryBatchId != null) {
+            if (!inventoryBatchService.ownsBatch(inventoryBatchId, userId)) {
+                throw new IllegalArgumentException("El batch seleccionado no existe o no es tuyo.");
+            }
+            listing.setBatchId(inventoryBatchId);
+            listing = marketplaceListingRepository.save(listing);
+
+            int labelCount = inventoryLabelCount == null ? 0 : inventoryLabelCount;
+            if (labelCount > 0) {
+                com.tarantulapp.dto.GenerateBatchPassportsRequest passportReq =
+                        new com.tarantulapp.dto.GenerateBatchPassportsRequest();
+                passportReq.setCount(Math.min(500, labelCount));
+                passportReq.setStage(listing.getStage());
+                passportReq.setSex(listing.getSex());
+                passportReq.setLabelNotes(listing.getSpeciesName());
+                com.tarantulapp.dto.GenerateBatchPassportsResponse passports =
+                        inventoryBatchService.generatePassports(inventoryBatchId, userId, passportReq);
+                generatedLabels = passports.getPassports().stream()
+                        .map(p -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("passportId", p.getPassportId());
+                            m.put("shortId", p.getShortId());
+                            m.put("publicUrl", p.getPublicUrl());
+                            return m;
+                        })
+                        .collect(Collectors.toList());
+            }
+        }
+
         // Fire-and-forget wishlist alerts to species watchers (runs on pushExecutor).
         try {
             String priceLabel = listing.getPriceAmount() == null
@@ -317,6 +355,8 @@ public class MarketplaceService {
                 throw new IllegalArgumentException("No tienes créditos de boost disponibles y el checkout no está configurado.");
             }
         }
+        out.put("inventoryBatchId", listing.getBatchId());
+        out.put("generatedLabels", generatedLabels);
         return out;
     }
 
@@ -761,7 +801,9 @@ public class MarketplaceService {
                                                          Boolean hasImage, BigDecimal minPrice, BigDecimal maxPrice,
                                                          String shipsToCountryNorm) {
         String normalizedStatus = normalizeStatus(status);
-        if (normalizedStatus == null || "hidden".equals(normalizedStatus)) {
+        // "reserved" listings are taken off the public shelf until released or sold, so they are
+        // never browsable in the public feed regardless of the requested status filter.
+        if (normalizedStatus == null || "hidden".equals(normalizedStatus) || "reserved".equals(normalizedStatus)) {
             normalizedStatus = "active";
         }
         List<MarketplaceListing> byTitle;
@@ -1192,6 +1234,7 @@ public class MarketplaceService {
         out.put("regulatoryPermitRefs", l.getRegulatoryPermitRefs() == null ? "" : l.getRegulatoryPermitRefs());
         out.put("sellerTradeDisclosureAcceptedAt", l.getSellerTradeDisclosureAcceptedAt());
         out.put("listingCategory", MarketplaceListingCategories.normalizeOrDefault(l.getListingCategory()));
+        out.put("batchId", l.getBatchId());
         out.put("source", "peer");
         out.put("isPartner", false);
         out.put("badgeLabel", null);
@@ -1888,7 +1931,7 @@ public class MarketplaceService {
     private String normalizeStatus(String raw) {
         if (raw == null || raw.isBlank()) return "active";
         String s = raw.trim().toLowerCase();
-        if ("active".equals(s) || "sold".equals(s) || "hidden".equals(s)) return s;
+        if ("active".equals(s) || "sold".equals(s) || "hidden".equals(s) || "reserved".equals(s)) return s;
         return null;
     }
 
