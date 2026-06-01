@@ -127,6 +127,24 @@ public class User {
     @Column(name = "verified_origin_kind", length = 20)
     private String verifiedOriginKind;
 
+    /** Verified phone (E.164). Required before batch / non-P2P label issuance. */
+    @Column(name = "phone_e164", length = 20)
+    private String phoneE164;
+
+    @Column(name = "phone_verified_at")
+    private Instant phoneVerifiedAt;
+
+    /** Number of verification codes requested in the current rate-limit window. */
+    @Column(name = "phone_verify_attempts", nullable = false)
+    private Integer phoneVerifyAttempts = 0;
+
+    @Column(name = "phone_verify_last_sent_at")
+    private Instant phoneVerifyLastSentAt;
+
+    /** When the user accepted the batch-issuer terms (branded cards/passports in batch). */
+    @Column(name = "batch_issuer_terms_accepted_at")
+    private Instant batchIssuerTermsAcceptedAt;
+
     /** Internal ops signal; never exposed in public DTOs. */
     @Column(name = "origin_trust_score", nullable = false)
     private Integer originTrustScore = 0;
@@ -416,5 +434,22 @@ public class User {
 
     public Instant getStudioActivatedAt() { return studioActivatedAt; }
     public void setStudioActivatedAt(Instant studioActivatedAt) { this.studioActivatedAt = studioActivatedAt; }
+
+    public String getPhoneE164() { return phoneE164; }
+    public void setPhoneE164(String phoneE164) { this.phoneE164 = phoneE164; }
+
+    public Instant getPhoneVerifiedAt() { return phoneVerifiedAt; }
+    public void setPhoneVerifiedAt(Instant phoneVerifiedAt) { this.phoneVerifiedAt = phoneVerifiedAt; }
+
+    public Integer getPhoneVerifyAttempts() { return phoneVerifyAttempts; }
+    public void setPhoneVerifyAttempts(Integer phoneVerifyAttempts) { this.phoneVerifyAttempts = phoneVerifyAttempts; }
+
+    public Instant getPhoneVerifyLastSentAt() { return phoneVerifyLastSentAt; }
+    public void setPhoneVerifyLastSentAt(Instant phoneVerifyLastSentAt) { this.phoneVerifyLastSentAt = phoneVerifyLastSentAt; }
+
+    public Instant getBatchIssuerTermsAcceptedAt() { return batchIssuerTermsAcceptedAt; }
+    public void setBatchIssuerTermsAcceptedAt(Instant batchIssuerTermsAcceptedAt) { this.batchIssuerTermsAcceptedAt = batchIssuerTermsAcceptedAt; }
+
+    public boolean isPhoneVerified() { return phoneVerifiedAt != null; }
 
 }
