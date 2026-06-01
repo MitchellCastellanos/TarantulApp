@@ -92,6 +92,12 @@ public class ProDayGrantService {
         return grant;
     }
 
+    /** True if the user has ever received a grant from this source (used to detect first passport claim). */
+    @Transactional(readOnly = true)
+    public boolean hasGrantOfSource(UUID userId, ProDayGrantSource source) {
+        return grantRepository.existsByUserIdAndSource(userId, source);
+    }
+
     /** Read-only payload for the gamification card. */
     @Transactional(readOnly = true)
     public Map<String, Object> summaryForUser(UUID userId) {
