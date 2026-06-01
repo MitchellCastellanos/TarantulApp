@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import FangPanel from '../components/FangPanel'
+import BatchIssuerGate from '../components/BatchIssuerGate'
 import studioService from '../services/studioService'
+import { useCapabilities } from '../hooks/useCapabilities'
 
 export default function StudioBatchPage() {
   const { batchId } = useParams()
@@ -27,6 +29,9 @@ export default function StudioBatchPage() {
     queryFn: () => studioService.claimSignals(batchId),
     enabled: Boolean(batchId),
   })
+
+  const { data: caps } = useCapabilities()
+  const batchReady = caps?.phoneVerified === true && caps?.batchTermsAccepted === true
 
   const [passportCount, setPassportCount] = useState('10')
   const [stage, setStage] = useState('sling')
@@ -138,6 +143,7 @@ export default function StudioBatchPage() {
 
       <FangPanel className="mb-3">
         <h3 className="h6 mb-3">{t('studio.generatePassportsTitle')}</h3>
+        {!batchReady && caps && <BatchIssuerGate caps={caps} onReady={() => {}} />}
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -176,7 +182,7 @@ export default function StudioBatchPage() {
           <label className="form-label small">{t('studio.labelNotes')}</label>
           <input className="form-control form-control-sm mb-3" value={labelNotes} onChange={(e) => setLabelNotes(e.target.value)} />
           {err && <p className="small text-danger">{err}</p>}
-          <button type="submit" className="btn btn-dark btn-sm" disabled={generate.isPending}>
+          <button type="submit" className="btn btn-dark btn-sm" disabled={generate.isPending || !batchReady}>
             {generate.isPending ? t('common.loading') : t('studio.generatePassportsCta')}
           </button>
         </form>

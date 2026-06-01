@@ -35,4 +35,11 @@ public class MeCapabilitiesController {
         UUID userId = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(userCapabilitiesService.activateStudio(userId));
     }
+
+    /** Accept the batch-issuer terms (branded cards/passports in batch). */
+    @PostMapping("/batch-issuer-terms/accept")
+    public ResponseEntity<MeCapabilitiesDTO> acceptBatchTerms() {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(userCapabilitiesService.acceptBatchTerms(userId));
+    }
 }

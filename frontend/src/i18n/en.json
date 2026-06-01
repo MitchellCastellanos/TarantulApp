@@ -2047,6 +2047,31 @@
     "reportSent": "Report sent. Thank you.",
     "reportError": "Could not send report."
   },
+  "phoneGate": {
+    "title": "Verify your phone to issue labels in batch",
+    "intro": "Issuing branded cards/passports in batch (anything other than a P2P transfer) requires a verified phone number and accepting the issuer terms.",
+    "phoneStep": "1. Verify your phone",
+    "phoneVerified": "Phone verified",
+    "sendCode": "Send code",
+    "resend": "Resend",
+    "codePlaceholder": "6-digit code",
+    "verify": "Verify",
+    "termsStep": "2. Accept issuer terms",
+    "termsAccepted": "Issuer terms accepted",
+    "termsLabel": "I accept the issuer terms for branded batch labels and confirm the specimens' origin is accurate.",
+    "confirm": "Confirm",
+    "errors": {
+      "generic": "Something went wrong. Try again.",
+      "phone_invalid_e164": "Enter the number in international format, e.g. +14155552671.",
+      "phone_code_invalid": "That code didn't match. Try again.",
+      "phone_code_required": "Enter the code we sent you.",
+      "phone_verify_rate_limited": "Please wait a moment before requesting another code.",
+      "phone_verify_too_many_attempts": "Too many attempts. Try again later.",
+      "phone_verify_send_failed": "Could not send the code. Check the number.",
+      "phone_verify_unavailable": "Verification is temporarily unavailable.",
+      "phone_not_set": "Enter and send a code to your phone first."
+    }
+  },
   "passport": {
     "boughtFrom": "Bought from",
     "originMeaningTitle": "Verified Origin.",
