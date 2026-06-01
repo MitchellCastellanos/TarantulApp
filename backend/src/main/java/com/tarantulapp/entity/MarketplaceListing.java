@@ -92,6 +92,10 @@ public class MarketplaceListing {
     @Column(name = "listing_category", nullable = false, length = 32)
     private String listingCategory = "tarantulas";
 
+    /** Optional Studio inventory batch this listing was attached to at creation (for labels/provenance). */
+    @Column(name = "batch_id", columnDefinition = "uuid")
+    private UUID batchId;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -150,4 +154,6 @@ public class MarketplaceListing {
     }
     public String getListingCategory() { return listingCategory; }
     public void setListingCategory(String listingCategory) { this.listingCategory = listingCategory; }
+    public UUID getBatchId() { return batchId; }
+    public void setBatchId(UUID batchId) { this.batchId = batchId; }
 }

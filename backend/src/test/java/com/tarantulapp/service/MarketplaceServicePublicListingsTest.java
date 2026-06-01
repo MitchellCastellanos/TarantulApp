@@ -67,6 +67,10 @@ class MarketplaceServicePublicListingsTest {
     @Mock private ChatMessageRepository chatMessageRepository;
     @Mock private KeeperRankCalculator keeperRankCalculator;
     @Mock private NotificationService notificationService;
+    @Mock private InventoryBatchService inventoryBatchService;
+    @Mock private VerifiedOriginService verifiedOriginService;
+    @Mock private SpeciesWatchService speciesWatchService;
+    @Mock private VendorBoostCreditService vendorBoostCreditService;
 
     @InjectMocks
     private MarketplaceService marketplaceService;

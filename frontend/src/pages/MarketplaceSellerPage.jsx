@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import marketplaceService from '../services/marketplaceService'
+import studioService from '../services/studioService'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import { STATES_BY_COUNTRY, CITIES_BY_STATE, STORE_COUNTRY_OPTIONS, currencyForCountry } from '../constants/locations'
 import { imgUrl } from '../services/api'
@@ -37,9 +38,12 @@ const EMPTY_LISTING_FORM = {
   wildCaught: false,
   captureOriginCountryIso: '',
   regulatoryPermitRefs: '',
+  addToInventory: false,
+  inventoryBatchId: '',
+  inventoryLabelCount: '',
 }
 
-const FILTERS = ['all', 'active', 'sold', 'hidden']
+const FILTERS = ['all', 'active', 'reserved', 'sold', 'hidden']
 
 export default function MarketplaceSellerPage() {
   const { t } = useTranslation()
@@ -71,6 +75,7 @@ export default function MarketplaceSellerPage() {
     vendorBoostCreditsAvailable: 0,
   })
   const [listingForm, setListingForm] = useState(EMPTY_LISTING_FORM)
+  const [studioBatches, setStudioBatches] = useState([])
   const [listingBoostAvailable, setListingBoostAvailable] = useState(false)
   const [savingListing, setSavingListing] = useState(false)
   const [uploadingListingImage, setUploadingListingImage] = useState(false)
@@ -150,6 +155,16 @@ export default function MarketplaceSellerPage() {
       .catch(() => setListingBoostAvailable(false))
   }, [])
 
+  // Best-effort: load the seller's Studio inventory batches so they can attach a new listing
+  // to a batch and generate QR labels. Silently ignored if the seller has no Studio access.
+  useEffect(() => {
+    if (!user) return
+    studioService
+      .listBatches()
+      .then((rows) => setStudioBatches(Array.isArray(rows) ? rows : []))
+      .catch(() => setStudioBatches([]))
+  }, [user])
+
   const vendorBoostCredits = Number(sellerProgram.vendorBoostCreditsAvailable || 0)
   const boostCheckoutAvailable = listingBoostAvailable
   const boostOfferAvailable = boostCheckoutAvailable || vendorBoostCredits > 0
@@ -197,8 +212,10 @@ export default function MarketplaceSellerPage() {
         setSavingListing(false)
         return
       }
-      const { requestBoost, ...rest } = listingForm
+      const { requestBoost, addToInventory, inventoryBatchId, inventoryLabelCount, ...rest } = listingForm
       const isoRaw = listingForm.captureOriginCountryIso || ''
+      const attachInventory = !!addToInventory && !!inventoryBatchId
+      const labelCount = attachInventory && inventoryLabelCount ? Number(inventoryLabelCount) : null
       const data = await marketplaceService.createListing({
         ...rest,
         // Country + currency are locked to the seller's profile (backend enforces this too).
@@ -207,6 +224,8 @@ export default function MarketplaceSellerPage() {
         captureOriginCountryIso: listingForm.wildCaught ? isoRaw.trim().toUpperCase().slice(0, 2) : null,
         priceAmount: listingForm.priceAmount ? Number(listingForm.priceAmount) : null,
         requestListingBoost: !!requestBoost,
+        inventoryBatchId: attachInventory ? inventoryBatchId : null,
+        inventoryLabelCount: labelCount && labelCount > 0 ? labelCount : null,
       })
       if (data?.boostCheckoutUrl) {
         window.location.assign(data.boostCheckoutUrl)
@@ -215,8 +234,14 @@ export default function MarketplaceSellerPage() {
       setListingForm(EMPTY_LISTING_FORM)
       await loadMine()
       queryClient.invalidateQueries({ queryKey: keeperProfileKeys.all })
+      const generatedCount = Array.isArray(data?.generatedLabels) ? data.generatedLabels.length : 0
+      const baseMsg = data?.boostAppliedViaCredit
+        ? t('marketplace.listingBoostAppliedViaCredit')
+        : t('marketplace.createdOk')
       setMessage(
-        data?.boostAppliedViaCredit ? t('marketplace.listingBoostAppliedViaCredit') : t('marketplace.createdOk')
+        generatedCount > 0
+          ? `${baseMsg} ${t('marketplace.inventoryLabelsGenerated', { count: generatedCount })}`
+          : baseMsg
       )
     } catch (err) {
       setMessage(err?.response?.data?.error || t('marketplace.error'))
@@ -250,6 +275,7 @@ export default function MarketplaceSellerPage() {
     const key = String(s || '').toLowerCase()
     if (key === 'sold') return t('marketplace.listingStatusSold')
     if (key === 'hidden') return t('marketplace.listingStatusHidden')
+    if (key === 'reserved') return t('marketplace.listingStatusReserved')
     return t('marketplace.listingStatusActive')
   }
 
@@ -735,6 +761,60 @@ export default function MarketplaceSellerPage() {
                       {t('marketplace.boostLockedHint')}
                     </div>
                   )}
+                  {studioBatches.length > 0 && (
+                    <div className="border rounded p-2 mb-2">
+                      <div className="form-check mb-1">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="seller-listing-add-inventory"
+                          checked={!!listingForm.addToInventory}
+                          onChange={(e) =>
+                            setListingForm((f) => ({ ...f, addToInventory: e.target.checked }))
+                          }
+                        />
+                        <label className="form-check-label fw-semibold" htmlFor="seller-listing-add-inventory" style={{ cursor: 'pointer' }}>
+                          {t('marketplace.inventoryLabelsTitle')}
+                        </label>
+                      </div>
+                      <div className="small text-muted mb-2">{t('marketplace.inventoryLabelsHint')}</div>
+                      {listingForm.addToInventory && (
+                        <div className="d-flex flex-column gap-2">
+                          <div>
+                            <label className="form-label small mb-1">{t('marketplace.inventoryBatchSelect')}</label>
+                            <select
+                              className="form-select form-select-sm"
+                              value={listingForm.inventoryBatchId}
+                              onChange={(e) =>
+                                setListingForm((f) => ({ ...f, inventoryBatchId: e.target.value }))
+                              }
+                            >
+                              <option value="">{t('marketplace.inventoryBatchNone')}</option>
+                              {studioBatches.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.name}
+                                  {b.scientificName ? ` · ${b.scientificName}` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="form-label small mb-1">{t('marketplace.inventoryLabelCount')}</label>
+                            <input
+                              className="form-control form-control-sm"
+                              type="number"
+                              min="0"
+                              max="500"
+                              value={listingForm.inventoryLabelCount}
+                              onChange={(e) =>
+                                setListingForm((f) => ({ ...f, inventoryLabelCount: e.target.value }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <button className="btn btn-sm btn-dark w-100" disabled={savingListing}>
                     {savingListing ? t('common.saving') : t('marketplace.publishBtn')}
                   </button>
@@ -762,6 +842,7 @@ export default function MarketplaceSellerPage() {
                     >
                       {f === 'all' && t('marketplace.listingFilterAll')}
                       {f === 'active' && t('marketplace.listingFilterActive')}
+                      {f === 'reserved' && t('marketplace.listingStatusReserved')}
                       {f === 'sold' && t('marketplace.listingFilterSold')}
                       {f === 'hidden' && t('marketplace.listingFilterHidden')}
                     </button>

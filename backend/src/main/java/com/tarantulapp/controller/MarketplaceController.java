@@ -72,7 +72,11 @@ public class MarketplaceController {
             Boolean wildCaught,
             /** ISO-3166-1 alpha-2 required when wildCaught is true */
             String captureOriginCountryIso,
-            String regulatoryPermitRefs
+            String regulatoryPermitRefs,
+            /** Optional Studio inventory batch to attach this listing to (for labels/provenance). */
+            UUID inventoryBatchId,
+            /** Optional number of QR labels (passports) to generate in the batch for this listing. */
+            @Min(0) @Max(500) Integer inventoryLabelCount
     ) {}
 
     record UpdateListingStatusRequest(@NotBlank String status) {}
@@ -153,7 +157,9 @@ public class MarketplaceController {
                 Boolean.TRUE.equals(req.sellerCertifiesLegalTradeCompliance()),
                 Boolean.TRUE.equals(req.wildCaught()),
                 req.captureOriginCountryIso(),
-                req.regulatoryPermitRefs()
+                req.regulatoryPermitRefs(),
+                req.inventoryBatchId(),
+                req.inventoryLabelCount()
         ));
     }
 

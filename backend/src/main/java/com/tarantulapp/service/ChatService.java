@@ -36,7 +36,8 @@ public class ChatService {
 
     private static final int MAX_PAGE = 50;
     private static final Set<String> TX_STATUSES = Set.of(
-            "pending", "paid", "shipped", "delivered", "disputed", "cancelled"
+            "pending", "claim_requested", "reserved",
+            "paid", "shipped", "delivered", "disputed", "cancelled"
     );
 
     private final ChatThreadRepository chatThreadRepository;
@@ -47,6 +48,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public ChatService(ChatThreadRepository chatThreadRepository,
                        ChatMessageRepository chatMessageRepository,
@@ -55,7 +57,8 @@ public class ChatService {
                        MarketplaceListingRepository marketplaceListingRepository,
                        UserRepository userRepository,
                        FileStorageService fileStorageService,
-                       NotificationService notificationService) {
+                       NotificationService notificationService,
+                       EmailService emailService) {
         this.chatThreadRepository = chatThreadRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.chatThreadEventRepository = chatThreadEventRepository;
@@ -64,6 +67,7 @@ public class ChatService {
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -184,6 +188,7 @@ public class ChatService {
         thread.setTransactionStatusUpdatedAt(java.time.Instant.now());
         thread.setTransactionStatusUpdatedByUserId(currentUserId);
         chatThreadRepository.save(thread);
+        applyListingStatusForDealTransition(listing, normalized);
         addSystemEvent(threadId, currentUserId, "status_change", normalized, null, null);
         notifyTransactionStatusChanged(thread, currentUserId, normalized);
         return threadToDto(thread, currentUserId);
@@ -381,6 +386,17 @@ public class ChatService {
         if ("disputed".equals(to) || "cancelled".equals(to)) {
             return true;
         }
+        // Claim/reserve flow: buyer requests a claim, seller releases the specimen (reserve) to that
+        // buyer (taking it off the public shelf), then the buyer pays.
+        if ("pending".equals(from) && "claim_requested".equals(to)) {
+            return !seller;
+        }
+        if ("claim_requested".equals(from) && "reserved".equals(to)) {
+            return seller;
+        }
+        if ("reserved".equals(from) && "paid".equals(to)) {
+            return !seller;
+        }
         if ("pending".equals(from) && "paid".equals(to)) {
             return !seller;
         }
@@ -508,6 +524,67 @@ public class ChatService {
                 "Deal status changed to " + status + ".",
                 Map.of("route", "/marketplace/messages?thread=" + thread.getId(), "threadId", thread.getId(), "status", status)
         );
+
+        // Email both participants (seller + buyer) so every claim/reserve/payment step is on record.
+        MarketplaceListing listing = thread.getListingId() == null
+                ? null
+                : marketplaceListingRepository.findById(thread.getListingId()).orElse(null);
+        String listingTitle = listing == null ? null : listing.getTitle();
+        UUID sellerUserId = listing == null ? null : listing.getSellerUserId();
+        emailDealStatus(thread, thread.getUserLow(), sellerUserId, listingTitle, status);
+        emailDealStatus(thread, thread.getUserHigh(), sellerUserId, listingTitle, status);
+    }
+
+    private void emailDealStatus(ChatThread thread, UUID userId, UUID sellerUserId, String listingTitle, String status) {
+        if (userId == null) {
+            return;
+        }
+        userRepository.findById(userId).ifPresent(u -> {
+            if (u.getEmail() == null || u.getEmail().isBlank()) {
+                return;
+            }
+            boolean isSeller = userId.equals(sellerUserId);
+            String threadPath = "/marketplace/messages?thread=" + thread.getId();
+            try {
+                emailService.sendMarketplaceDealStatusUpdate(
+                        u.getEmail(),
+                        u.getDisplayName(),
+                        listingTitle,
+                        status,
+                        threadPath,
+                        isSeller,
+                        u.getPreferredLocale());
+            } catch (RuntimeException ignored) {
+                // Deal email is best-effort; never break the status transition.
+            }
+        });
+    }
+
+    private void applyListingStatusForDealTransition(MarketplaceListing listing, String txStatus) {
+        if (listing == null) {
+            return;
+        }
+        String current = listing.getStatus() == null ? "active" : listing.getStatus().toLowerCase();
+        String next = null;
+        switch (txStatus) {
+            case "reserved" -> {
+                // Seller released the specimen to this buyer: take it off the public shelf.
+                if ("active".equals(current)) next = "reserved";
+            }
+            case "paid" -> {
+                // Buyer paid: the specimen is sold and stays off the shelf for good.
+                if (!"sold".equals(current)) next = "sold";
+            }
+            case "cancelled" -> {
+                // Deal fell through before payment: release the reservation back onto the shelf.
+                if ("reserved".equals(current)) next = "active";
+            }
+            default -> { /* pending / claim_requested / shipped / delivered / disputed: no shelf change */ }
+        }
+        if (next != null && !next.equals(current)) {
+            listing.setStatus(next);
+            marketplaceListingRepository.save(listing);
+        }
     }
 
     private void notifyEventAdded(ChatThread thread, UUID actorUserId, String eventType) {

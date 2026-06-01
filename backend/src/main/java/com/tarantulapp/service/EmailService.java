@@ -963,6 +963,94 @@ public class EmailService {
         return "en";
     }
 
+    /**
+     * Notifies a marketplace deal participant (buyer or seller) that the transaction status changed
+     * — including claim/reserve steps so a seller is alerted when a buyer claims, and a buyer is told
+     * when the seller releases (reserves) the specimen to them.
+     */
+    @Async("emailExecutor")
+    public void sendMarketplaceDealStatusUpdate(String toEmail, String displayName, String listingTitle,
+                                                String status, String threadPath, boolean recipientIsSeller,
+                                                String locale) {
+        String loc = transferLoc(locale);
+        String name = (displayName == null || displayName.isBlank()) ? null : displayName;
+        String item = (listingTitle == null || listingTitle.isBlank())
+                ? (loc.equals("es") ? "tu anuncio" : loc.equals("fr") ? "votre annonce" : "your listing")
+                : ("“" + listingTitle + "”");
+        String url = baseUrl + (threadPath == null ? "" : threadPath);
+        String statusLabel = dealStatusLabel(status, loc);
+        String hint = dealStatusHint(status, loc, recipientIsSeller);
+        String subject;
+        String body;
+        switch (loc) {
+            case "es" -> {
+                subject = "Actualización de trato (" + statusLabel + "): " + (listingTitle == null ? "TarantulApp" : listingTitle);
+                body = (name == null ? "Hola," : "Hola " + name + ",") + "\n\n"
+                        + "El estado del trato para " + item + " cambió a: " + statusLabel + ".\n"
+                        + (hint.isBlank() ? "" : hint + "\n")
+                        + "\nAbre la conversación:\n" + url + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            case "fr" -> {
+                subject = "Mise à jour de la transaction (" + statusLabel + ") : " + (listingTitle == null ? "TarantulApp" : listingTitle);
+                body = (name == null ? "Bonjour," : "Bonjour " + name + ",") + "\n\n"
+                        + "Le statut de la transaction pour " + item + " est passé à : " + statusLabel + ".\n"
+                        + (hint.isBlank() ? "" : hint + "\n")
+                        + "\nOuvrez la conversation :\n" + url + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+            default -> {
+                subject = "Deal update (" + statusLabel + "): " + (listingTitle == null ? "TarantulApp" : listingTitle);
+                body = (name == null ? "Hi," : "Hi " + name + ",") + "\n\n"
+                        + "The deal status for " + item + " changed to: " + statusLabel + ".\n"
+                        + (hint.isBlank() ? "" : hint + "\n")
+                        + "\nOpen the conversation:\n" + url + "\n\n— TarantulApp\n" + baseUrl + "\n";
+            }
+        }
+        try {
+            doSend(toEmail, subject, body);
+        } catch (Exception e) {
+            log.warn("Marketplace deal status email failed for {}: {}", LogSafe.maskEmail(toEmail), e.getMessage());
+        }
+    }
+
+    private static String dealStatusLabel(String status, String loc) {
+        String s = status == null ? "" : status;
+        return switch (s) {
+            case "claim_requested" -> loc.equals("es") ? "apartado solicitado" : loc.equals("fr") ? "réservation demandée" : "claim requested";
+            case "reserved" -> loc.equals("es") ? "apartado" : loc.equals("fr") ? "réservé" : "reserved";
+            case "paid" -> loc.equals("es") ? "pagado" : loc.equals("fr") ? "payé" : "paid";
+            case "shipped" -> loc.equals("es") ? "enviado" : loc.equals("fr") ? "expédié" : "shipped";
+            case "delivered" -> loc.equals("es") ? "entregado" : loc.equals("fr") ? "livré" : "delivered";
+            case "disputed" -> loc.equals("es") ? "en disputa" : loc.equals("fr") ? "en litige" : "disputed";
+            case "cancelled" -> loc.equals("es") ? "cancelado" : loc.equals("fr") ? "annulé" : "cancelled";
+            default -> loc.equals("es") ? "pendiente" : loc.equals("fr") ? "en attente" : "pending";
+        };
+    }
+
+    private static String dealStatusHint(String status, String loc, boolean recipientIsSeller) {
+        String s = status == null ? "" : status;
+        if ("claim_requested".equals(s)) {
+            if (recipientIsSeller) {
+                return loc.equals("es") ? "Un comprador quiere apartar este espécimen. Libéralo (apartar) o recházalo desde la conversación."
+                        : loc.equals("fr") ? "Un acheteur souhaite réserver ce spécimen. Validez (réserver) ou refusez depuis la conversation."
+                        : "A buyer wants to claim this specimen. Release (reserve) it to them or decline from the conversation.";
+            }
+            return loc.equals("es") ? "Enviaste tu solicitud de apartado. El vendedor debe liberarlo antes del pago."
+                    : loc.equals("fr") ? "Votre demande de réservation a été envoyée. Le vendeur doit la valider avant le paiement."
+                    : "Your claim request was sent. The seller must release it to you before payment.";
+        }
+        if ("reserved".equals(s)) {
+            if (recipientIsSeller) {
+                return loc.equals("es") ? "Apartaste el espécimen para este comprador; ya no aparece en la tienda."
+                        : loc.equals("fr") ? "Vous avez réservé le spécimen pour cet acheteur ; il n'apparaît plus en boutique."
+                        : "You reserved the specimen for this buyer; it is no longer on the shelf.";
+            }
+            return loc.equals("es") ? "El vendedor te apartó el espécimen. Continúa con el pago para confirmarlo."
+                    : loc.equals("fr") ? "Le vendeur vous a réservé le spécimen. Procédez au paiement pour le confirmer."
+                    : "The seller reserved the specimen for you. Continue to payment to confirm it.";
+        }
+        return "";
+    }
+
     /** Offer email to the recipient — they sign in / create an account with this email to accept. */
     public void sendSpecimenTransferOffer(String toEmail, String fromName, String specimenName,
                                           String acceptUrl, String locale) {
