@@ -42,7 +42,35 @@ public class UserCapabilitiesService {
         dto.setOfficialPartner(isOfficialPartner(user));
         dto.setBranding(BrandingService.canBrand(user, officialVendorRepository));
         dto.setPickupAuthorized(canUsePickupPoints(user));
+        dto.setPhoneVerified(user.isPhoneVerified());
+        dto.setBatchTermsAccepted(user.getBatchIssuerTermsAcceptedAt() != null);
         return dto;
+    }
+
+    /**
+     * Batch / non-P2P label issuance requires a verified phone and accepted issuer terms.
+     * Admins are exempt. Throws {@code PHONE_VERIFICATION_REQUIRED} / {@code BATCH_TERMS_REQUIRED}.
+     */
+    public void ensureBatchIssuerReady(UUID userId) {
+        User user = requireUser(userId);
+        if (Boolean.TRUE.equals(user.getIsAdmin()) || adminAccessService.shouldBootstrapAdmin(user)) {
+            return;
+        }
+        if (!user.isPhoneVerified()) {
+            throw new IllegalArgumentException("PHONE_VERIFICATION_REQUIRED");
+        }
+        if (user.getBatchIssuerTermsAcceptedAt() == null) {
+            throw new IllegalArgumentException("BATCH_TERMS_REQUIRED");
+        }
+    }
+
+    public MeCapabilitiesDTO acceptBatchTerms(UUID userId) {
+        User user = requireUser(userId);
+        if (user.getBatchIssuerTermsAcceptedAt() == null) {
+            user.setBatchIssuerTermsAcceptedAt(Instant.now());
+            userRepository.save(user);
+        }
+        return getCapabilities(userId);
     }
 
     public MeCapabilitiesDTO activateStudio(UUID userId) {

@@ -10,6 +10,8 @@ public class MeCapabilitiesDTO {
     private boolean verifiedBreeder;
     private boolean branding;
     private boolean pickupAuthorized;
+    private boolean phoneVerified;
+    private boolean batchTermsAccepted;
 
     public boolean isCollection() { return collection; }
     public void setCollection(boolean collection) { this.collection = collection; }
@@ -29,4 +31,8 @@ public class MeCapabilitiesDTO {
     public void setBranding(boolean branding) { this.branding = branding; }
     public boolean isPickupAuthorized() { return pickupAuthorized; }
     public void setPickupAuthorized(boolean pickupAuthorized) { this.pickupAuthorized = pickupAuthorized; }
+    public boolean isPhoneVerified() { return phoneVerified; }
+    public void setPhoneVerified(boolean phoneVerified) { this.phoneVerified = phoneVerified; }
+    public boolean isBatchTermsAccepted() { return batchTermsAccepted; }
+    public void setBatchTermsAccepted(boolean batchTermsAccepted) { this.batchTermsAccepted = batchTermsAccepted; }
 }

@@ -67,6 +67,11 @@ class MarketplaceServicePublicListingsTest {
     @Mock private ChatMessageRepository chatMessageRepository;
     @Mock private KeeperRankCalculator keeperRankCalculator;
     @Mock private NotificationService notificationService;
+    @Mock private com.tarantulapp.repository.TarantulaSpoodRepository tarantulaSpoodRepository;
+    @Mock private com.tarantulapp.service.VendorBoostCreditService vendorBoostCreditService;
+    @Mock private com.tarantulapp.service.SpeciesWatchService speciesWatchService;
+    @Mock private com.tarantulapp.service.VerifiedOriginService verifiedOriginService;
+    @Mock private com.tarantulapp.service.UserCapabilitiesService userCapabilitiesService;
 
     @InjectMocks
     private MarketplaceService marketplaceService;

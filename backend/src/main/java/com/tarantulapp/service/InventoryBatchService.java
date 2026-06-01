@@ -134,6 +134,8 @@ public class InventoryBatchService {
 
     public GenerateBatchPassportsResponse generatePassports(UUID batchId, UUID userId, GenerateBatchPassportsRequest req) {
         userCapabilitiesService.ensurePassportCreator(userId);
+        // Issuing labels in batch is not a P2P transfer: require a verified phone + accepted terms.
+        userCapabilitiesService.ensureBatchIssuerReady(userId);
         activateStudioIfNeeded(userId);
         InventoryBatch batch = requireOwnedBatch(batchId, userId);
 

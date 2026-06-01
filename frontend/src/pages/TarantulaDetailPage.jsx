@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
@@ -10,6 +10,7 @@ import FeedingModal from '../components/FeedingModal'
 import MoltModal from '../components/MoltModal'
 import BehaviorModal from '../components/BehaviorModal'
 import QRModal from '../components/QRModal'
+import SpecimenOnboarding from '../components/SpecimenOnboarding'
 import PhotoGallery from '../components/PhotoGallery'
 import FangPanel from '../components/FangPanel'
 import ChitinCardFrame from '../components/ChitinCardFrame'
@@ -112,6 +113,11 @@ export default function TarantulaDetailPage() {
   const [feedings, setFeedings] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // 'feeding' | 'molt' | 'behavior' | 'qr' | 'deceased' | 'transfer'
+  const location = useLocation()
+  // Brief post-claim tour: triggered by navigation state, shown once per device.
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => location.state?.onboarding === true && !localStorage.getItem('ta.onboard.specimen.seen'),
+  )
   const [transferEmail, setTransferEmail] = useState('')
   const [transferMsg, setTransferMsg] = useState('')
   const [transferBusy, setTransferBusy] = useState(false)
@@ -386,6 +392,20 @@ export default function TarantulaDetailPage() {
       {modal === 'molt'     && <MoltModal     tarantulaId={id} tarantula={tarantula} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'behavior' && <BehaviorModal tarantulaId={id} onClose={() => setModal(null)} onSaved={handleLogSaved} />}
       {modal === 'qr'       && <QRModal tarantula={tarantula}  onClose={() => setModal(null)} />}
+      {showOnboarding && tarantula && (
+        <SpecimenOnboarding
+          steps={[
+            { key: 'tabs', text: t('passport.onboardTabs') },
+            { key: 'log', text: t('passport.onboardLog') },
+            { key: 'qr', text: t('passport.onboardQr') },
+          ]}
+          onClose={() => {
+            setShowOnboarding(false)
+            try { localStorage.setItem('ta.onboard.specimen.seen', '1') } catch { /* ignore */ }
+            navigate(location.pathname, { replace: true, state: {} })
+          }}
+        />
+      )}
       {modal === 'transfer' && (
         <div className="modal fade show d-block" tabIndex={-1} style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -534,13 +554,15 @@ export default function TarantulaDetailPage() {
           </div>
         )}
 
-        <TaSegmentedControl
-          className="mb-3"
-          ariaLabel={t('tarantula.detailTabsAria')}
-          value={detailTab}
-          onChange={setDetailTab}
-          options={detailTabOptions}
-        />
+        <div data-onboarding="tabs">
+          <TaSegmentedControl
+            className="mb-3"
+            ariaLabel={t('tarantula.detailTabsAria')}
+            value={detailTab}
+            onChange={setDetailTab}
+            options={detailTabOptions}
+          />
+        </div>
 
         {detailTab === 'profile' && (
           <div className="mx-auto" style={{ maxWidth: 520 }}>
@@ -671,14 +693,16 @@ export default function TarantulaDetailPage() {
                       <p className="small text-muted mb-2 mb-md-3" style={{ fontSize: '0.78rem', lineHeight: 1.35 }}>
                         {t('tarantula.quickLogHint')}
                       </p>
-                      <LogEventButtonRow
-                        mayEdit={mayEdit}
-                        lockedHint={t('tarantula.lockedEditHint')}
-                        onFeeding={() => setModal('feeding')}
-                        onMolt={() => setModal('molt')}
-                        onBehavior={() => setModal('behavior')}
-                        t={t}
-                      />
+                      <div data-onboarding="log">
+                        <LogEventButtonRow
+                          mayEdit={mayEdit}
+                          lockedHint={t('tarantula.lockedEditHint')}
+                          onFeeding={() => setModal('feeding')}
+                          onMolt={() => setModal('molt')}
+                          onBehavior={() => setModal('behavior')}
+                          t={t}
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -748,7 +772,7 @@ export default function TarantulaDetailPage() {
                           ✏️ {t('common.edit')}
                         </Link>
                       )}
-                      <button className="btn btn-outline-secondary btn-sm flex-fill" type="button" onClick={() => setModal('qr')}>
+                      <button data-onboarding="qr" className="btn btn-outline-secondary btn-sm flex-fill" type="button" onClick={() => setModal('qr')}>
                         📱 {t('tarantula.qrCode')}
                       </button>
                       <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={handleExportPdf}>

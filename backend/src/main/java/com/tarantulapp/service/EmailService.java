@@ -584,6 +584,33 @@ public class EmailService {
         }
     }
 
+    /**
+     * Alerts the admin that a claimed label has not been confirmed by its issuer within the grace
+     * window, so the admin can contact the responsible seller/vendor/partner.
+     */
+    @Async("emailExecutor")
+    public void sendAdminClaimPendingAlert(
+            String shortId,
+            String issuerName,
+            String issuerEmail,
+            Instant claimedAt
+    ) {
+        if (adminNotifyTo == null || adminNotifyTo.isBlank()) return;
+        try {
+            doSend(adminNotifyTo,
+                "[TarantulApp] Claim not confirmed (" + safe(shortId) + ")",
+                "A claimed label has not been confirmed by its issuer within 2 hours.\n\n" +
+                "Label: " + safe(shortId) + "\n" +
+                "Issuer (seller/vendor/partner): " + safe(issuerName) + " <" + safe(issuerEmail) + ">\n" +
+                "Claimed at: " + (claimedAt == null ? "" : claimedAt.toString()) + "\n\n" +
+                "Please contact the issuer to release/confirm the claim. Review in Admin > Labels."
+            );
+            log.info("Admin claim-pending alert sent to {} for label {}", adminNotifyTo, shortId);
+        } catch (Exception e) {
+            log.error("Failed to send admin claim-pending alert for label {}: {}", shortId, e.getMessage());
+        }
+    }
+
     @Async("emailExecutor")
     public void sendAdminBetaApplicationNotification(
             UUID applicationId,

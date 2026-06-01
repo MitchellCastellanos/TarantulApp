@@ -96,6 +96,7 @@ public class MarketplaceService {
     private final SpeciesWatchService speciesWatchService;
     private final NotificationService notificationService;
     private final VerifiedOriginService verifiedOriginService;
+    private final UserCapabilitiesService userCapabilitiesService;
     @Value("${app.marketplace.partner-feed.hard-cap:500}")
     private int partnerFeedHardCap = 500;
     @Value("${app.marketplace.strategic-bootstrap-mode:true}")
@@ -131,8 +132,8 @@ public class MarketplaceService {
                               KeeperRankCalculator keeperRankCalculator,
                               SpeciesWatchService speciesWatchService,
                               NotificationService notificationService,
-                              VerifiedOriginService verifiedOriginService) {
-        this.marketplaceListingRepository = marketplaceListingRepository;
+                              VerifiedOriginService verifiedOriginService,
+                              UserCapabilitiesService userCapabilitiesService) {        this.marketplaceListingRepository = marketplaceListingRepository;
         this.listingEventRepository = listingEventRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.officialVendorRepository = officialVendorRepository;
@@ -153,6 +154,7 @@ public class MarketplaceService {
         this.speciesWatchService = speciesWatchService;
         this.notificationService = notificationService;
         this.verifiedOriginService = verifiedOriginService;
+        this.userCapabilitiesService = userCapabilitiesService;
     }
 
     @Transactional
@@ -229,6 +231,8 @@ public class MarketplaceService {
             throw new IllegalArgumentException("Titulo requerido");
         }
         User seller = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        // Selling on the marketplace is not a P2P transfer: require a verified phone + accepted terms.
+        userCapabilitiesService.ensureBatchIssuerReady(userId);
         Map<String, Object> sellerProgram = resolveSellerProgramInternal(seller);
         String tier = String.valueOf(sellerProgram.get("tier"));
         String category = MarketplaceListingCategories.normalizeOrDefault(listingCategory);
