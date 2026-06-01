@@ -62,6 +62,10 @@ public class Passport {
     @Column(name = "pro_granted_at")
     private Instant proGrantedAt;
 
+    /** Set once the 2h "claim not confirmed" alert has been processed for this passport. */
+    @Column(name = "claim_pending_alert_sent_at")
+    private Instant claimPendingAlertSentAt;
+
     @Column(name = "batch_id", columnDefinition = "uuid")
     private UUID batchId;
 
@@ -112,6 +116,8 @@ public class Passport {
     public void setLabelNotes(String labelNotes) { this.labelNotes = labelNotes; }
     public Instant getProGrantedAt() { return proGrantedAt; }
     public void setProGrantedAt(Instant proGrantedAt) { this.proGrantedAt = proGrantedAt; }
+    public Instant getClaimPendingAlertSentAt() { return claimPendingAlertSentAt; }
+    public void setClaimPendingAlertSentAt(Instant claimPendingAlertSentAt) { this.claimPendingAlertSentAt = claimPendingAlertSentAt; }
     public Instant getClaimedAt() { return claimedAt; }
     public void setClaimedAt(Instant claimedAt) { this.claimedAt = claimedAt; }
     public UUID getClaimedByUserId() { return claimedByUserId; }
