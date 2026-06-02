@@ -1589,6 +1589,10 @@
     }
   },
   "qr": {
+    "verifiedOrigin": {
+      "willCarry": "Your account has Verified Origin — passports you issue in batch carry the Verified Origin badge for the keeper who claims them.",
+      "notYet": "These passports are issued without a Verified Origin badge. Apply for Verified Origin in Studio to add a reviewed trust signal to the specimens you issue."
+    },
     "facts": {
       "toggle": "Care facts on label",
       "disclaimer": "Care data are approximate; temperature is indicative only.",
@@ -2234,6 +2238,14 @@
     "submitSuccess": "Application received — we'll review it soon.",
     "submitError": "Could not submit. Try again or contact support.",
     "pending": "Your Verified Origin application is under review."
+  },
+  "provenance": {
+    "selfLogged": "Self-logged",
+    "selfLoggedHint": "You created this specimen's record in the app.",
+    "issuedBy": "Issued by {{name}}",
+    "issuedByHint": "This record was issued as a passport by another keeper or store.",
+    "issuedByVerified": "Issued by {{name}}",
+    "anotherIssuer": "another issuer"
   },
   "proGrants": {
     "title": "Your Pro days",

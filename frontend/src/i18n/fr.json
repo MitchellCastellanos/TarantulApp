@@ -1564,6 +1564,10 @@
     }
   },
   "qr": {
+    "verifiedOrigin": {
+      "willCarry": "Votre compte a Verified Origin — les passeports que vous émettez en lot portent le badge Verified Origin pour le keeper qui les réclame.",
+      "notYet": "Ces passeports sont émis sans badge Verified Origin. Demandez Verified Origin dans Studio pour ajouter un signal de confiance vérifié aux spécimens que vous émettez."
+    },
     "facts": {
       "toggle": "Infos de maintenance sur l’étiquette",
       "disclaimer": "Données de maintenance approximatives ; la température est indicative.",
@@ -2170,6 +2174,14 @@
     "submitSuccess": "Demande reçue — nous l'examinerons bientôt.",
     "submitError": "Envoi impossible. Réessayez ou contactez le support.",
     "pending": "Votre demande Verified Origin est en cours d'examen."
+  },
+  "provenance": {
+    "selfLogged": "Enregistré par vous",
+    "selfLoggedHint": "Vous avez créé la fiche de ce spécimen dans l'app.",
+    "issuedBy": "Émis par {{name}}",
+    "issuedByHint": "Cette fiche a été émise comme passeport par un autre keeper ou une boutique.",
+    "issuedByVerified": "Émis par {{name}}",
+    "anotherIssuer": "un autre émetteur"
   },
   "proGrants": {
     "title": "Vos jours Pro",

@@ -18,6 +18,7 @@ import SpeciesProfileCard from '../components/SpeciesProfileCard'
 import MoltGrowthChart from '../components/MoltGrowthChart'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import TaSegmentedControl from '../components/TaSegmentedControl'
+import VerifiedOriginBadge from '../components/VerifiedOriginBadge'
 import tarantulaService from '../services/tarantulaService'
 import meTransfersService from '../services/meTransfersService'
 import logsService from '../services/logsService'
@@ -635,6 +636,26 @@ export default function TarantulaDetailPage() {
                       </span>
                     )}
                   </div>
+                  {tarantula.provenance && (
+                    <div className="d-flex align-items-center gap-2 flex-wrap mb-3">
+                      {tarantula.provenance === 'ISSUED_VERIFIED' ? (
+                        <>
+                          <VerifiedOriginBadge verified origin={{ verified: true, displayName: tarantula.originName }} />
+                          <span className="small text-muted">
+                            {t('provenance.issuedByVerified', { name: tarantula.originName || '' })}
+                          </span>
+                        </>
+                      ) : tarantula.provenance === 'ISSUED_UNVERIFIED' ? (
+                        <span className="badge bg-light text-dark border" title={t('provenance.issuedByHint')}>
+                          {t('provenance.issuedBy', { name: tarantula.originName || t('provenance.anotherIssuer') })}
+                        </span>
+                      ) : (
+                        <span className="badge bg-light text-dark border" title={t('provenance.selfLoggedHint')}>
+                          {t('provenance.selfLogged')}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {estimatedInstar != null && (
                     <p className="small text-muted mb-3" style={{ fontSize: '0.74rem', lineHeight: 1.35 }}>
                       {t('molt.instarExplain')}

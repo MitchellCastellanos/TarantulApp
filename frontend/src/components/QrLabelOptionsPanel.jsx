@@ -11,12 +11,19 @@ export default function QrLabelOptionsPanel({
   speciesLinked,
   hideTargetMode = false,
   className = '',
+  verifiedOrigin = null,
 }) {
   const { t } = useTranslation()
   const speciesDisabled = !speciesLinked
 
   return (
     <div className={`mb-4 ${className}`.trim()}>
+      {verifiedOrigin === true && (
+        <div className="alert alert-success py-2 small mb-3">{t('qr.verifiedOrigin.willCarry')}</div>
+      )}
+      {verifiedOrigin === false && (
+        <div className="alert alert-light border py-2 small mb-3">{t('qr.verifiedOrigin.notYet')}</div>
+      )}
       <div className="form-check form-switch mb-3">
         <input
           className="form-check-input"
