@@ -82,6 +82,32 @@ public class MarketplaceOrder {
     @Column(name = "closed_at")
     private Instant closedAt;
 
+    /**
+     * Verified Origin issuer authorization overlay: when the seller is a Verified Origin issuer the
+     * order is "blocked" until the issuer authorizes (granting the buyer Pro days + unblocking custody).
+     */
+    @Column(name = "requires_issuer_validation", nullable = false)
+    private boolean requiresIssuerValidation = false;
+
+    /** null | pending | authorized | rejected. */
+    @Column(name = "issuer_validation_status", length = 20)
+    private String issuerValidationStatus;
+
+    @Column(name = "issuer_validated_at")
+    private Instant issuerValidatedAt;
+
+    /** Proof of purchase: in-store upload, or the emailed receipt for online buys. */
+    @Column(name = "receipt_url", columnDefinition = "text")
+    private String receiptUrl;
+
+    /** in_store_upload | online_email. */
+    @Column(name = "receipt_kind", length = 20)
+    private String receiptKind;
+
+    /** Anti-abuse: Pro days for this purchase are granted exactly once. */
+    @Column(name = "pro_grant_done", nullable = false)
+    private boolean proGrantDone = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -142,6 +168,18 @@ public class MarketplaceOrder {
     public void setDeliveredAt(Instant deliveredAt) { this.deliveredAt = deliveredAt; }
     public Instant getClosedAt() { return closedAt; }
     public void setClosedAt(Instant closedAt) { this.closedAt = closedAt; }
+    public boolean isRequiresIssuerValidation() { return requiresIssuerValidation; }
+    public void setRequiresIssuerValidation(boolean requiresIssuerValidation) { this.requiresIssuerValidation = requiresIssuerValidation; }
+    public String getIssuerValidationStatus() { return issuerValidationStatus; }
+    public void setIssuerValidationStatus(String issuerValidationStatus) { this.issuerValidationStatus = issuerValidationStatus; }
+    public Instant getIssuerValidatedAt() { return issuerValidatedAt; }
+    public void setIssuerValidatedAt(Instant issuerValidatedAt) { this.issuerValidatedAt = issuerValidatedAt; }
+    public String getReceiptUrl() { return receiptUrl; }
+    public void setReceiptUrl(String receiptUrl) { this.receiptUrl = receiptUrl; }
+    public String getReceiptKind() { return receiptKind; }
+    public void setReceiptKind(String receiptKind) { this.receiptKind = receiptKind; }
+    public boolean isProGrantDone() { return proGrantDone; }
+    public void setProGrantDone(boolean proGrantDone) { this.proGrantDone = proGrantDone; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

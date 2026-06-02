@@ -305,6 +305,42 @@ export default function MarketplaceMessagesPage() {
     }
   }
 
+  const attachReceiptOnline = async () => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.attachOrderReceiptOnline(activeThread.id)
+      setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
+      setMessage(t('marketplace.orderReceiptAttached'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const uploadReceiptFile = async (file) => {
+    if (!activeThread?.id || !file) return
+    try {
+      const order = await chatService.uploadOrderReceipt(activeThread.id, file)
+      setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
+      setMessage(t('marketplace.orderReceiptAttached'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
+  const issuerValidateOrder = async (authorize) => {
+    if (!activeThread?.id) return
+    try {
+      const order = await chatService.issuerValidateOrder(activeThread.id, authorize)
+      setThreadOrder(order)
+      await refreshThreadOrderAuditOnly(activeThread.id)
+      setMessage(authorize ? t('marketplace.orderIssuerAuthorized') : t('marketplace.orderIssuerRejected'))
+    } catch (err) {
+      setMessage(err?.response?.data?.error || t('marketplace.error'))
+    }
+  }
+
   const sendMarketplaceMessage = async (e) => {
     e.preventDefault()
     if (!activeThread?.id) return
@@ -607,6 +643,58 @@ export default function MarketplaceMessagesPage() {
                             {threadOrder.termsSummary && (
                               <div className="small text-muted mb-2">
                                 <span className="fw-semibold">{t('marketplace.orderTermsSnapshot')}:</span> {threadOrder.termsSummary}
+                              </div>
+                            )}
+                            {threadOrder.requiresIssuerValidation && (
+                              <div className={`border rounded p-2 mb-2 small ${threadOrder.issuerBlocked ? 'border-warning bg-warning-subtle' : 'border-success bg-success-subtle'}`}>
+                                <div className="fw-semibold mb-1">{t('marketplace.issuerValidationTitle')}</div>
+                                {threadOrder.issuerValidationStatus === 'authorized' ? (
+                                  <div className="text-success">{t('marketplace.issuerValidationAuthorized')}</div>
+                                ) : threadOrder.issuerValidationStatus === 'rejected' ? (
+                                  <div className="text-danger">{t('marketplace.issuerValidationRejected')}</div>
+                                ) : (
+                                  <div className="text-muted mb-2">{t('marketplace.issuerValidationBlocked')}</div>
+                                )}
+                                {!isSellerInThread && threadOrder.issuerBlocked && (
+                                  <div className="d-flex flex-column gap-2 mt-1">
+                                    <span className="text-muted">{t('marketplace.issuerValidationBuyerHint')}</span>
+                                    <div className="d-flex gap-2 flex-wrap align-items-center">
+                                      <label className="btn btn-sm btn-outline-dark mb-0">
+                                        {t('marketplace.issuerValidationUploadReceipt')}
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="d-none"
+                                          onChange={(e) => uploadReceiptFile(e.target.files?.[0])}
+                                        />
+                                      </label>
+                                      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={attachReceiptOnline}>
+                                        {t('marketplace.issuerValidationOnlineReceipt')}
+                                      </button>
+                                    </div>
+                                    {threadOrder.receiptKind && (
+                                      <span className="text-success">{t('marketplace.issuerValidationReceiptOn', { kind: t(`marketplace.receiptKind.${threadOrder.receiptKind}`) })}</span>
+                                    )}
+                                  </div>
+                                )}
+                                {isSellerInThread && threadOrder.issuerBlocked && (
+                                  <div className="d-flex flex-column gap-2 mt-1">
+                                    <span className="text-muted">{t('marketplace.issuerValidationSellerHint')}</span>
+                                    {threadOrder.receiptUrl && (
+                                      <a href={threadOrder.receiptUrl} target="_blank" rel="noreferrer" className="text-decoration-none">
+                                        {t('marketplace.issuerValidationViewReceipt')}
+                                      </a>
+                                    )}
+                                    <div className="d-flex gap-2 flex-wrap">
+                                      <button type="button" className="btn btn-sm btn-success" onClick={() => issuerValidateOrder(true)}>
+                                        {t('marketplace.issuerValidationAuthorizeCta')}
+                                      </button>
+                                      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => issuerValidateOrder(false)}>
+                                        {t('marketplace.issuerValidationRejectCta')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div className="d-flex gap-2 flex-wrap">
