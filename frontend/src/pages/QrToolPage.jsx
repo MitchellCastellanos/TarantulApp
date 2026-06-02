@@ -9,6 +9,7 @@ import FangPanel from '../components/FangPanel'
 import ProTrialCtaLink from '../components/ProTrialCtaLink'
 import { useAuth } from '../context/AuthContext'
 import { usePageSeo } from '../hooks/usePageSeo'
+import { useCapabilities } from '../hooks/useCapabilities'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
 import studioService from '../services/studioService'
@@ -69,6 +70,7 @@ function resolveAppPathFromScan(raw) {
 export default function QrToolPage() {
   const { t, i18n } = useTranslation()
   const { token, user } = useAuth()
+  const { data: capabilities } = useCapabilities()
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -802,6 +804,7 @@ export default function QrToolPage() {
                             onQrTargetChange={() => {}}
                             speciesLinked={Boolean(batchData.speciesId)}
                             hideTargetMode
+                            verifiedOrigin={Boolean(capabilities?.verifiedOrigin)}
                           />
                           {consumerCaptionControl}
 

@@ -32,6 +32,16 @@ public class TarantulaResponse {
     /** Spoods (likes) en la ficha pública; 0 si sin registros. */
     private long spoodCount;
 
+    /**
+     * Provenance of the specimen's record:
+     * SELF_LOGGED = the keeper created the record themselves (no passport, or they issued it);
+     * ISSUED_VERIFIED = issued via a passport from a Verified Origin issuer;
+     * ISSUED_UNVERIFIED = issued via a passport from an issuer without Verified Origin.
+     */
+    private String provenance;
+    /** Display name of the issuer/origin when the record was issued by someone else. */
+    private String originName;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getName() { return name; }
@@ -76,4 +86,9 @@ public class TarantulaResponse {
 
     public long getSpoodCount() { return spoodCount; }
     public void setSpoodCount(long spoodCount) { this.spoodCount = spoodCount; }
+
+    public String getProvenance() { return provenance; }
+    public void setProvenance(String provenance) { this.provenance = provenance; }
+    public String getOriginName() { return originName; }
+    public void setOriginName(String originName) { this.originName = originName; }
 }

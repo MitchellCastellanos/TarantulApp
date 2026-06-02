@@ -1327,6 +1327,25 @@
     "orderPanelEmpty": "No order exists for this deal yet.",
     "orderCreateCta": "Create order",
     "orderStatus": "Order status",
+    "orderReceiptAttached": "Receipt attached. The issuer will validate at delivery.",
+    "orderIssuerAuthorized": "Purchase authorized — Pro days added to the buyer.",
+    "orderIssuerRejected": "Purchase marked as not authorized.",
+    "issuerValidationTitle": "Verified Origin issuer authorization",
+    "issuerValidationAuthorized": "Authorized by the issuer — Pro days were added.",
+    "issuerValidationRejected": "The issuer did not authorize this purchase. Contact them in this thread.",
+    "issuerValidationBlocked": "This item is held until the Verified Origin issuer authorizes it at delivery.",
+    "issuerValidationBuyerHint": "In-store? Ask for your receipt and upload it. Bought online here? Your receipt was emailed — record it below.",
+    "issuerValidationUploadReceipt": "Upload receipt",
+    "issuerValidationOnlineReceipt": "Bought online (receipt emailed)",
+    "issuerValidationReceiptOn": "Proof of purchase: {{kind}}",
+    "issuerValidationSellerHint": "Validate the buyer's purchase at delivery to release their Pro days and confirm custody.",
+    "issuerValidationViewReceipt": "View uploaded receipt",
+    "issuerValidationAuthorizeCta": "Authorize purchase",
+    "issuerValidationRejectCta": "Can't authorize",
+    "receiptKind": {
+      "in_store_upload": "in-store receipt",
+      "online_email": "emailed (online)"
+    },
     "orderAgreedSubtotal": "Listing / agreed subtotal",
     "orderReportPaymentHint": "Leave a short reference (transfer folio, MercadoPago id, etc.) so the seller can match it.",
     "orderStripeCheckout": "Pay with Stripe",
@@ -1589,6 +1608,10 @@
     }
   },
   "qr": {
+    "verifiedOrigin": {
+      "willCarry": "Your account has Verified Origin — passports you issue in batch carry the Verified Origin badge for the keeper who claims them.",
+      "notYet": "These passports are issued without a Verified Origin badge. Apply for Verified Origin in Studio to add a reviewed trust signal to the specimens you issue."
+    },
     "facts": {
       "toggle": "Care facts on label",
       "disclaimer": "Care data are approximate; temperature is indicative only.",
@@ -2235,6 +2258,14 @@
     "submitError": "Could not submit. Try again or contact support.",
     "pending": "Your Verified Origin application is under review."
   },
+  "provenance": {
+    "selfLogged": "Self-logged",
+    "selfLoggedHint": "You created this specimen's record in the app.",
+    "issuedBy": "Issued by {{name}}",
+    "issuedByHint": "This record was issued as a passport by another keeper or store.",
+    "issuedByVerified": "Issued by {{name}}",
+    "anotherIssuer": "another issuer"
+  },
   "proGrants": {
     "title": "Your Pro days",
     "subtitle": "How many free Pro days you have left, where they came from, and how to earn more.",
@@ -2499,15 +2530,18 @@
     "lastUpdated": "Last updated: May 2026",
     "contactTitle": "Contact",
     "verifiedVendors": {
-      "title": "Verified Vendors",
-      "intro": "Verified Vendors are peer marketplace sellers reviewed by the",
+      "title": "Verified Origin",
+      "intro": "The Verified Origin badge marks sellers and issuers reviewed by the",
       "bullets": [
-        "They completed identity and storefront checks with our team.",
-        "Listings must follow marketplace policy and accurate species disclosures.",
+        "They completed identity and storefront checks with our team — the badge appears on their storefront, listings, and the passports they issue.",
+        "Founding Official Partners with an admin-approved synced catalog also carry the badge, and you can filter the marketplace to Verified Origin only.",
+        "Listings and issued passports must follow marketplace policy and accurate species disclosures.",
         "Verification is not a guarantee of every transaction — buyers should still confirm legality and shipping terms.",
         "Report concerns from any listing or keeper profile."
       ],
-      "browseCta": "Browse verified vendors"
+      "browseCta": "Browse Verified Origin sellers",
+      "partnerNote": "Verified Origin is a trust badge. The Official Partner program is a separate track for shops that mirror their catalog into the app — partners earn Verified Origin once approved.",
+      "partnerCta": "Learn about the Official Partner program"
     },
     "terms": {
       "title": "Terms of Service",

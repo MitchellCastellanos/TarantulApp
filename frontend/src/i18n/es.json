@@ -1334,6 +1334,25 @@
     "orderPanelEmpty": "Aún no hay orden creada para este trato.",
     "orderCreateCta": "Crear orden",
     "orderStatus": "Estado de orden",
+    "orderReceiptAttached": "Recibo adjuntado. El emisor validará en la entrega.",
+    "orderIssuerAuthorized": "Compra autorizada — días Pro añadidos al comprador.",
+    "orderIssuerRejected": "Compra marcada como no autorizada.",
+    "issuerValidationTitle": "Autorización del emisor Verified Origin",
+    "issuerValidationAuthorized": "Autorizada por el emisor — se añadieron días Pro.",
+    "issuerValidationRejected": "El emisor no autorizó esta compra. Contáctalo en este hilo.",
+    "issuerValidationBlocked": "Este artículo está bloqueado hasta que el emisor Verified Origin lo autorice en la entrega.",
+    "issuerValidationBuyerHint": "¿En tienda? Pide tu recibo y súbelo. ¿Compraste en línea aquí? Tu recibo se envió por email — regístralo abajo.",
+    "issuerValidationUploadReceipt": "Subir recibo",
+    "issuerValidationOnlineReceipt": "Comprado en línea (recibo por email)",
+    "issuerValidationReceiptOn": "Comprobante de compra: {{kind}}",
+    "issuerValidationSellerHint": "Valida la compra del comprador en la entrega para liberar sus días Pro y confirmar la custodia.",
+    "issuerValidationViewReceipt": "Ver recibo subido",
+    "issuerValidationAuthorizeCta": "Autorizar compra",
+    "issuerValidationRejectCta": "No puedo autorizar",
+    "receiptKind": {
+      "in_store_upload": "recibo en tienda",
+      "online_email": "por email (en línea)"
+    },
     "orderAgreedSubtotal": "Subtotal del anuncio / acordado",
     "orderReportPaymentHint": "Deja una referencia breve (folio de transferencia, id de MercadoPago, etc.) para que el vendedor lo concilie.",
     "orderStripeCheckout": "Pagar con Stripe",
@@ -1590,6 +1609,10 @@
     }
   },
   "qr": {
+    "verifiedOrigin": {
+      "willCarry": "Tu cuenta tiene Verified Origin — los pasaportes que emitas en lote llevan la insignia Verified Origin para el keeper que los reclame.",
+      "notYet": "Estos pasaportes se emiten sin insignia Verified Origin. Solicita Verified Origin en Studio para añadir una señal de confianza revisada a los especímenes que emites."
+    },
     "facts": {
       "toggle": "Datos de cuidado en la etiqueta",
       "disclaimer": "Datos de cuidado aproximados; la temperatura es orientativa.",
@@ -2237,6 +2260,14 @@
     "submitError": "No se pudo enviar. Intenta de nuevo o contacta soporte.",
     "pending": "Tu solicitud de Verified Origin está en revisión."
   },
+  "provenance": {
+    "selfLogged": "Registrada por ti",
+    "selfLoggedHint": "Tú creaste la ficha de este espécimen en la app.",
+    "issuedBy": "Emitida por {{name}}",
+    "issuedByHint": "Esta ficha fue emitida como pasaporte por otro keeper o tienda.",
+    "issuedByVerified": "Emitida por {{name}}",
+    "anotherIssuer": "otro emisor"
+  },
   "proGrants": {
     "title": "Tus d\u00edas Pro",
     "subtitle": "Cu\u00e1ntos d\u00edas Pro gratis te quedan, de d\u00f3nde vienen y c\u00f3mo conseguir m\u00e1s.",
@@ -2500,6 +2531,20 @@
   "legal": {
     "lastUpdated": "Última actualización: mayo 2026",
     "contactTitle": "Contacto",
+    "verifiedVendors": {
+      "title": "Verified Origin",
+      "intro": "La insignia Verified Origin identifica a vendedores y emisores revisados por el equipo de",
+      "bullets": [
+        "Completaron verificaciones de identidad y de su tienda con nuestro equipo — la insignia aparece en su storefront, sus anuncios y los pasaportes que emiten.",
+        "Los Socios Oficiales fundadores con catálogo sincronizado aprobado por admin también llevan la insignia, y puedes filtrar el marketplace solo a Verified Origin.",
+        "Los anuncios y pasaportes emitidos deben seguir la política del marketplace y declarar la especie con exactitud.",
+        "La verificación no garantiza cada transacción — el comprador debe confirmar legalidad y condiciones de envío.",
+        "Reporta cualquier inquietud desde un anuncio o perfil de keeper."
+      ],
+      "browseCta": "Ver vendedores con Verified Origin",
+      "partnerNote": "Verified Origin es una insignia de confianza. El programa Socio Oficial es un track aparte para tiendas que reflejan su catálogo en la app — los socios obtienen Verified Origin al ser aprobados.",
+      "partnerCta": "Conoce el programa Socio Oficial"
+    },
     "terms": {
       "title": "Términos del servicio",
       "intro": "Al usar",

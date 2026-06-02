@@ -4,6 +4,7 @@ import com.tarantulapp.service.ChatService;
 import com.tarantulapp.service.ChatThreadPushDeliveryService;
 import com.tarantulapp.service.BillingService;
 import com.tarantulapp.service.MarketplaceOrderService;
+import com.tarantulapp.util.FileStorageService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,17 +34,20 @@ public class ChatController {
     private final MarketplaceOrderService marketplaceOrderService;
     private final BillingService billingService;
     private final ChatThreadPushDeliveryService chatThreadPushDeliveryService;
+    private final FileStorageService fileStorageService;
     private final SecurityHelper securityHelper;
 
     public ChatController(ChatService chatService,
                           MarketplaceOrderService marketplaceOrderService,
                           BillingService billingService,
                           ChatThreadPushDeliveryService chatThreadPushDeliveryService,
+                          FileStorageService fileStorageService,
                           SecurityHelper securityHelper) {
         this.chatService = chatService;
         this.marketplaceOrderService = marketplaceOrderService;
         this.billingService = billingService;
         this.chatThreadPushDeliveryService = chatThreadPushDeliveryService;
+        this.fileStorageService = fileStorageService;
         this.securityHelper = securityHelper;
     }
 
@@ -193,6 +198,38 @@ public class ChatController {
     public ResponseEntity<Map<String, Object>> markOrderDelivered(@PathVariable UUID threadId) {
         UUID uid = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(marketplaceOrderService.markDelivered(uid, threadId));
+    }
+
+    record AttachReceiptRequest(String kind) {}
+
+    /** Buyer records that the online purchase receipt was emailed (no upload needed). */
+    @PostMapping("/threads/{threadId}/order/receipt")
+    public ResponseEntity<Map<String, Object>> attachOrderReceipt(@PathVariable UUID threadId,
+                                                                  @RequestBody(required = false) AttachReceiptRequest req) {
+        UUID uid = securityHelper.getCurrentUserId();
+        String kind = req == null || req.kind() == null ? "online_email" : req.kind();
+        return ResponseEntity.ok(marketplaceOrderService.attachReceipt(uid, threadId, null, kind));
+    }
+
+    /** Buyer uploads an in-store receipt image as proof of purchase. */
+    @PostMapping(value = "/threads/{threadId}/order/receipt-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> uploadOrderReceipt(@PathVariable UUID threadId,
+                                                                  @RequestPart("file") MultipartFile file) throws IOException {
+        UUID uid = securityHelper.getCurrentUserId();
+        String url = fileStorageService.saveFile(file, "marketplace-receipts/" + threadId);
+        return ResponseEntity.ok(marketplaceOrderService.attachReceipt(uid, threadId, url, "in_store_upload"));
+    }
+
+    record IssuerValidateRequest(Boolean authorize, String note) {}
+
+    /** Verified Origin issuer authorizes (or rejects) the purchase at delivery. */
+    @PostMapping("/threads/{threadId}/order/issuer-validate")
+    public ResponseEntity<Map<String, Object>> issuerValidateOrder(@PathVariable UUID threadId,
+                                                                   @RequestBody(required = false) IssuerValidateRequest req) {
+        UUID uid = securityHelper.getCurrentUserId();
+        boolean authorize = req != null && Boolean.TRUE.equals(req.authorize());
+        String note = req == null ? null : req.note();
+        return ResponseEntity.ok(marketplaceOrderService.issuerValidate(uid, threadId, authorize, note));
     }
 
     @PostMapping("/threads/{threadId}/order/close")

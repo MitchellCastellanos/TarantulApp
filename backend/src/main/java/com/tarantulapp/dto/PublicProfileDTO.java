@@ -53,7 +53,11 @@ public class PublicProfileDTO {
     private String originHandle;
     /** Provenance: display name of the origin the specimen came from. */
     private String originName;
+    /** Provenance code: SELF_LOGGED | ISSUED_VERIFIED | ISSUED_UNVERIFIED. */
+    private String provenance;
 
+    public String getProvenance() { return provenance; }
+    public void setProvenance(String provenance) { this.provenance = provenance; }
     public String getOriginHandle() { return originHandle; }
     public void setOriginHandle(String originHandle) { this.originHandle = originHandle; }
     public String getOriginName() { return originName; }

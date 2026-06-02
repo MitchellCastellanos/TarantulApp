@@ -235,4 +235,50 @@ class MarketplaceServicePublicListingsTest {
         assertTrue(peerCount >= 60);
         assertTrue(partnerCount <= 12, "Partner rows should shrink to ~15% share at high peer inventory");
     }
+
+    @Test
+    void verifiedOnlyFilterMatchesVerifiedOriginNotLegacyBreeder() {
+        UUID verifiedSellerId = UUID.randomUUID();
+        MarketplaceListing verifiedListing = new MarketplaceListing();
+        verifiedListing.setId(UUID.randomUUID());
+        verifiedListing.setSellerUserId(verifiedSellerId);
+        verifiedListing.setTitle("Verified origin listing");
+        verifiedListing.setStatus("active");
+        verifiedListing.setCurrency("USD");
+
+        UUID plainSellerId = UUID.randomUUID();
+        MarketplaceListing plainListing = new MarketplaceListing();
+        plainListing.setId(UUID.randomUUID());
+        plainListing.setSellerUserId(plainSellerId);
+        plainListing.setTitle("Unverified listing");
+        plainListing.setStatus("active");
+        plainListing.setCurrency("USD");
+
+        // Canonical Verified Origin grant, but the legacy verifiedBreeder flag is explicitly false:
+        // the filter must still include this seller because the public badge would show.
+        User verifiedSeller = new User();
+        verifiedSeller.setId(verifiedSellerId);
+        verifiedSeller.setEmail("vo@example.com");
+        verifiedSeller.setVerifiedBreeder(false);
+        verifiedSeller.setVerifiedOriginAt(Instant.now());
+
+        User plainSeller = new User();
+        plainSeller.setId(plainSellerId);
+        plainSeller.setEmail("plain@example.com");
+
+        when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                eq(SYNC_PARTNER_TIERS)))
+                .thenReturn(List.of());
+        when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
+                .thenReturn(List.of(verifiedListing, plainListing));
+        when(userRepository.findById(verifiedSellerId)).thenReturn(Optional.of(verifiedSeller));
+        when(userRepository.findById(plainSellerId)).thenReturn(Optional.of(plainSeller));
+
+        List<Map<String, Object>> out = marketplaceService.publicListings(
+                null, "active", null, null, null, null, null, null, null, null, null,
+                null, Boolean.TRUE, null, null, null, null, null);
+
+        assertEquals(1, out.size());
+        assertEquals("Verified origin listing", out.get(0).get("title"));
+    }
 }

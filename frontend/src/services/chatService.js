@@ -70,6 +70,19 @@ const chatService = {
 
   createOrderCheckout: (threadId) =>
     api.post(`/chat/threads/${threadId}/order/checkout`).then((r) => r.data),
+
+  // Verified Origin issuer authorization flow.
+  attachOrderReceiptOnline: (threadId) =>
+    api.post(`/chat/threads/${threadId}/order/receipt`, { kind: 'online_email' }).then((r) => r.data),
+
+  uploadOrderReceipt: (threadId, file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post(`/chat/threads/${threadId}/order/receipt-upload`, form).then((r) => r.data)
+  },
+
+  issuerValidateOrder: (threadId, authorize, note = '') =>
+    api.post(`/chat/threads/${threadId}/order/issuer-validate`, { authorize, note }).then((r) => r.data),
 }
 
 export default chatService

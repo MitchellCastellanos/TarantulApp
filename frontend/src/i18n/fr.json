@@ -1307,6 +1307,25 @@
     "orderPanelEmpty": "Aucune commande n'existe encore pour ce deal.",
     "orderCreateCta": "Créer commande",
     "orderStatus": "Statut commande",
+    "orderReceiptAttached": "Reçu joint. L'émetteur validera à la livraison.",
+    "orderIssuerAuthorized": "Achat autorisé — jours Pro ajoutés à l'acheteur.",
+    "orderIssuerRejected": "Achat marqué comme non autorisé.",
+    "issuerValidationTitle": "Autorisation de l'émetteur Verified Origin",
+    "issuerValidationAuthorized": "Autorisé par l'émetteur — des jours Pro ont été ajoutés.",
+    "issuerValidationRejected": "L'émetteur n'a pas autorisé cet achat. Contactez-le dans ce fil.",
+    "issuerValidationBlocked": "Cet article est bloqué jusqu'à ce que l'émetteur Verified Origin l'autorise à la livraison.",
+    "issuerValidationBuyerHint": "En boutique ? Demandez votre reçu et téléversez-le. Acheté en ligne ici ? Votre reçu a été envoyé par e-mail — enregistrez-le ci-dessous.",
+    "issuerValidationUploadReceipt": "Téléverser le reçu",
+    "issuerValidationOnlineReceipt": "Acheté en ligne (reçu par e-mail)",
+    "issuerValidationReceiptOn": "Preuve d'achat : {{kind}}",
+    "issuerValidationSellerHint": "Validez l'achat de l'acheteur à la livraison pour débloquer ses jours Pro et confirmer la garde.",
+    "issuerValidationViewReceipt": "Voir le reçu téléversé",
+    "issuerValidationAuthorizeCta": "Autoriser l'achat",
+    "issuerValidationRejectCta": "Impossible d'autoriser",
+    "receiptKind": {
+      "in_store_upload": "reçu en boutique",
+      "online_email": "par e-mail (en ligne)"
+    },
     "orderAgreedSubtotal": "Sous-total annoncé / convenu",
     "orderReportPaymentHint": "Ajoutez une référence courte (virement, id Mercado Pago…) pour que le vendeur puisse la rattacher.",
     "orderStripeCheckout": "Payer avec Stripe",
@@ -1564,6 +1583,10 @@
     }
   },
   "qr": {
+    "verifiedOrigin": {
+      "willCarry": "Votre compte a Verified Origin — les passeports que vous émettez en lot portent le badge Verified Origin pour le keeper qui les réclame.",
+      "notYet": "Ces passeports sont émis sans badge Verified Origin. Demandez Verified Origin dans Studio pour ajouter un signal de confiance vérifié aux spécimens que vous émettez."
+    },
     "facts": {
       "toggle": "Infos de maintenance sur l’étiquette",
       "disclaimer": "Données de maintenance approximatives ; la température est indicative.",
@@ -2171,6 +2194,14 @@
     "submitError": "Envoi impossible. Réessayez ou contactez le support.",
     "pending": "Votre demande Verified Origin est en cours d'examen."
   },
+  "provenance": {
+    "selfLogged": "Enregistré par vous",
+    "selfLoggedHint": "Vous avez créé la fiche de ce spécimen dans l'app.",
+    "issuedBy": "Émis par {{name}}",
+    "issuedByHint": "Cette fiche a été émise comme passeport par un autre keeper ou une boutique.",
+    "issuedByVerified": "Émis par {{name}}",
+    "anotherIssuer": "un autre émetteur"
+  },
   "proGrants": {
     "title": "Vos jours Pro",
     "subtitle": "Combien de jours Pro gratuits il vous reste, d'o\u00f9 ils viennent et comment en gagner plus.",
@@ -2435,6 +2466,20 @@
   "legal": {
     "lastUpdated": "Dernière mise à jour : mai 2026",
     "contactTitle": "Contact",
+    "verifiedVendors": {
+      "title": "Verified Origin",
+      "intro": "Le badge Verified Origin identifie les vendeurs et émetteurs examinés par l'équipe de",
+      "bullets": [
+        "Ils ont complété les vérifications d'identité et de vitrine avec notre équipe — le badge apparaît sur leur vitrine, leurs annonces et les passeports qu'ils émettent.",
+        "Les Partenaires Officiels fondateurs avec catalogue synchronisé approuvé par l'admin portent aussi le badge, et vous pouvez filtrer le marketplace sur Verified Origin uniquement.",
+        "Les annonces et passeports émis doivent respecter la politique du marketplace et déclarer l'espèce avec exactitude.",
+        "La vérification ne garantit pas chaque transaction — l'acheteur doit confirmer la légalité et les conditions d'expédition.",
+        "Signalez toute préoccupation depuis une annonce ou un profil de keeper."
+      ],
+      "browseCta": "Voir les vendeurs Verified Origin",
+      "partnerNote": "Verified Origin est un badge de confiance. Le programme Partenaire Officiel est un parcours distinct pour les boutiques qui reflètent leur catalogue dans l'app — les partenaires obtiennent Verified Origin une fois approuvés.",
+      "partnerCta": "Découvrir le programme Partenaire Officiel"
+    },
     "terms": {
       "title": "Conditions d'utilisation",
       "intro": "En utilisant",

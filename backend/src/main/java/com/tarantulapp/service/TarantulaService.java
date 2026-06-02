@@ -143,7 +143,54 @@ public class TarantulaService {
         Tarantula t = getOwned(id, userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-        return toResponse(t, planAccessService.lockedTarantulaIds(user));
+        TarantulaResponse r = toResponse(t, planAccessService.lockedTarantulaIds(user));
+        applyProvenance(r, t);
+        return r;
+    }
+
+    /**
+     * Tags the specimen sheet with how its record originated: self-logged by the keeper, or issued
+     * via a passport from another (optionally Verified Origin) issuer. Single-specimen path only, to
+     * avoid N+1 passport lookups on the collection list.
+     */
+    private void applyProvenance(TarantulaResponse r, Tarantula t) {
+        com.tarantulapp.entity.Passport passport = t.getPassportId() == null ? null
+                : passportRepository.findById(t.getPassportId()).orElse(null);
+        com.tarantulapp.dto.PublicOriginDTO origin = null;
+        String originName = null;
+        if (passport != null) {
+            UUID issuer = passport.getOriginUserId() != null
+                    ? passport.getOriginUserId() : passport.getCreatedByUserId();
+            if (issuer != null && !issuer.equals(t.getUserId())) {
+                User originUser = userRepository.findById(issuer).orElse(null);
+                if (originUser != null) {
+                    origin = verifiedOriginService.resolvePublicOrigin(originUser);
+                    originName = origin != null ? origin.getDisplayName()
+                            : (originUser.getPublicHandle() != null && !originUser.getPublicHandle().isBlank()
+                                ? originUser.getPublicHandle() : originUser.getDisplayName());
+                }
+            }
+        }
+        r.setProvenance(resolveProvenance(t.getUserId(), passport, origin != null));
+        if (!"SELF_LOGGED".equals(r.getProvenance())) {
+            r.setOriginName(originName);
+        }
+    }
+
+    /**
+     * SELF_LOGGED when there is no passport or the keeper is also the issuer; otherwise ISSUED_VERIFIED
+     * / ISSUED_UNVERIFIED depending on the issuer's Verified Origin status.
+     */
+    private String resolveProvenance(UUID ownerUserId, com.tarantulapp.entity.Passport passport, boolean originVerified) {
+        if (passport == null) {
+            return "SELF_LOGGED";
+        }
+        UUID issuer = passport.getOriginUserId() != null
+                ? passport.getOriginUserId() : passport.getCreatedByUserId();
+        if (issuer == null || issuer.equals(ownerUserId)) {
+            return "SELF_LOGGED";
+        }
+        return originVerified ? "ISSUED_VERIFIED" : "ISSUED_UNVERIFIED";
     }
 
     public TarantulaResponse update(UUID id, TarantulaRequest req, UUID userId) {
@@ -390,6 +437,7 @@ public class TarantulaService {
                 dto.setOriginName(origin.getDisplayName());
             }
         });
+        dto.setProvenance(resolveProvenance(t.getUserId(), passport, dto.getOrigin() != null));
         dto.setIsPublic(Boolean.TRUE.equals(t.getIsPublic()));
         dto.setName(t.getName());
         dto.setStage(t.getStage());
