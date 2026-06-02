@@ -2500,6 +2500,20 @@
   "legal": {
     "lastUpdated": "Última actualización: mayo 2026",
     "contactTitle": "Contacto",
+    "verifiedVendors": {
+      "title": "Verified Origin",
+      "intro": "La insignia Verified Origin identifica a vendedores y emisores revisados por el equipo de",
+      "bullets": [
+        "Completaron verificaciones de identidad y de su tienda con nuestro equipo — la insignia aparece en su storefront, sus anuncios y los pasaportes que emiten.",
+        "Los Socios Oficiales fundadores con catálogo sincronizado aprobado por admin también llevan la insignia, y puedes filtrar el marketplace solo a Verified Origin.",
+        "Los anuncios y pasaportes emitidos deben seguir la política del marketplace y declarar la especie con exactitud.",
+        "La verificación no garantiza cada transacción — el comprador debe confirmar legalidad y condiciones de envío.",
+        "Reporta cualquier inquietud desde un anuncio o perfil de keeper."
+      ],
+      "browseCta": "Ver vendedores con Verified Origin",
+      "partnerNote": "Verified Origin es una insignia de confianza. El programa Socio Oficial es un track aparte para tiendas que reflejan su catálogo en la app — los socios obtienen Verified Origin al ser aprobados.",
+      "partnerCta": "Conoce el programa Socio Oficial"
+    },
     "terms": {
       "title": "Términos del servicio",
       "intro": "Al usar",

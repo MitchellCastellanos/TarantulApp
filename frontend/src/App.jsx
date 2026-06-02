@@ -216,6 +216,7 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/marketplace-policy" element={<MarketplacePolicyPage />} />
       <Route path="/legal/verified-vendors" element={<LegalVerifiedVendorsPage />} />
+      <Route path="/legal/verified-origin" element={<LegalVerifiedVendorsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/discover" element={<DiscoverPage />} />

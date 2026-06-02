@@ -855,7 +855,11 @@ public class MarketplaceService {
     private boolean matchesVerifiedFilter(MarketplaceListing m, Boolean verifiedOnly) {
         if (!Boolean.TRUE.equals(verifiedOnly)) return true;
         User seller = userRepository.findById(m.getSellerUserId()).orElse(null);
-        return seller != null && Boolean.TRUE.equals(seller.getVerifiedBreeder());
+        // Search-by-verified-origin must match what the public badge shows. The badge is driven by
+        // VerifiedOriginService.isVerified (canonical verified-origin / storefront grant), so the
+        // filter uses the same source of truth instead of the legacy verifiedBreeder boolean —
+        // otherwise admin-approved Verified Origin sellers would carry the badge but be excluded here.
+        return VerifiedOriginService.isVerified(seller);
     }
 
     private boolean matchesBoostedFilter(MarketplaceListing m, Boolean boostedOnly) {

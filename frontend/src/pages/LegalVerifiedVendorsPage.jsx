@@ -19,6 +19,11 @@ export default function LegalVerifiedVendorsPage() {
         <p className="mt-4">
           <Link to="/marketplace?verifiedOnly=1">{t('legal.verifiedVendors.browseCta')}</Link>
         </p>
+        <hr className="my-4" />
+        <p className="text-muted small mb-1">{t('legal.verifiedVendors.partnerNote')}</p>
+        <p>
+          <Link to="/partners">{t('legal.verifiedVendors.partnerCta')}</Link>
+        </p>
       </div>
     </div>
   )

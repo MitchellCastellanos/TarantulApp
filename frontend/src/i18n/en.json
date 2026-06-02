@@ -2499,15 +2499,18 @@
     "lastUpdated": "Last updated: May 2026",
     "contactTitle": "Contact",
     "verifiedVendors": {
-      "title": "Verified Vendors",
-      "intro": "Verified Vendors are peer marketplace sellers reviewed by the",
+      "title": "Verified Origin",
+      "intro": "The Verified Origin badge marks sellers and issuers reviewed by the",
       "bullets": [
-        "They completed identity and storefront checks with our team.",
-        "Listings must follow marketplace policy and accurate species disclosures.",
+        "They completed identity and storefront checks with our team — the badge appears on their storefront, listings, and the passports they issue.",
+        "Founding Official Partners with an admin-approved synced catalog also carry the badge, and you can filter the marketplace to Verified Origin only.",
+        "Listings and issued passports must follow marketplace policy and accurate species disclosures.",
         "Verification is not a guarantee of every transaction — buyers should still confirm legality and shipping terms.",
         "Report concerns from any listing or keeper profile."
       ],
-      "browseCta": "Browse verified vendors"
+      "browseCta": "Browse Verified Origin sellers",
+      "partnerNote": "Verified Origin is a trust badge. The Official Partner program is a separate track for shops that mirror their catalog into the app — partners earn Verified Origin once approved.",
+      "partnerCta": "Learn about the Official Partner program"
     },
     "terms": {
       "title": "Terms of Service",
