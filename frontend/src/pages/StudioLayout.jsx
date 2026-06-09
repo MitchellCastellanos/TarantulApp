@@ -1,5 +1,4 @@
-import { Suspense } from 'react'
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
+import { NavLink, Link, useLocation, useOutlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { useCapabilities } from '../hooks/useCapabilities'
@@ -7,6 +6,7 @@ import { useCapabilities } from '../hooks/useCapabilities'
 export default function StudioLayout() {
   const { t } = useTranslation()
   const location = useLocation()
+  const outlet = useOutlet()
   const { data: capabilities, isPending } = useCapabilities()
   const bootstrapping = isPending && !capabilities
 
@@ -77,9 +77,7 @@ export default function StudioLayout() {
           </li>
         </ul>
 
-        <Suspense fallback={<p className="small text-muted mb-0">{t('common.loading')}</p>}>
-          <Outlet key={outletKey} />
-        </Suspense>
+        <div key={outletKey}>{outlet}</div>
       </div>
     </div>
   )

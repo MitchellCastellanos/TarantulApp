@@ -24,6 +24,7 @@ import StudioPage from './pages/StudioPage'
 import StudioBatchPage from './pages/StudioBatchPage'
 import StudioPassportsPage from './pages/StudioPassportsPage'
 import StudioOriginPage from './pages/StudioOriginPage'
+import QrToolPage from './pages/QrToolPage'
 
 // Lazy-loaded routes — each becomes its own JS chunk and only downloads when visited.
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -48,7 +49,6 @@ const DiscoverTaxonDetailPage = lazy(() => import('./pages/DiscoverTaxonDetailPa
 const DiscoverSpeciesDetailPage = lazy(() => import('./pages/DiscoverSpeciesDetailPage'))
 const DiscoverComparePage = lazy(() => import('./pages/DiscoverComparePage'))
 const DiscoverCatalogBrowsePage = lazy(() => import('./pages/DiscoverCatalogBrowsePage'))
-const QrToolPage = lazy(() => import('./pages/QrToolPage'))
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'))
 const MarketplaceListingDetailPage = lazy(() => import('./pages/MarketplaceListingDetailPage'))
 const MarketplaceMessagesPage = lazy(() => import('./pages/MarketplaceMessagesPage'))
@@ -380,7 +380,6 @@ export default function App() {
       <PlayStoreGateProvider>
         <BrowserRouter
           future={{
-            v7_startTransition: true,
             v7_relativeSplatPath: true,
           }}
         >
