@@ -1,6 +1,11 @@
 import QRCode from 'qrcode'
 import { imgUrl } from '../services/api'
 import { sanitizeFilename, shareOrDownloadDataUrl } from './shareOrDownloadBlob'
+import {
+  DEFAULT_VENDOR_LABEL_SIZE_ID,
+  resolveVendorLabelSizePreset,
+  vendorLabelCanvasPx,
+} from './labelSizes'
 
 /** Logo sobre fondo claro (QR / Excel / Word en blanco). */
 export const BRAND_LOGO_FOR_LIGHT_BG = '/logo-black.png?v=2'
@@ -12,6 +17,16 @@ export const SIMPLE_LABEL_QR_PX = 224
 
 /** QR en etiqueta con care facts (layout horizontal). */
 export const CARE_LABEL_QR_PX = 152
+
+/** Label layout modes (simple / care / vendor-passport). */
+export const LABEL_LAYOUT_MODES = /** @type {const} */ ({
+  SIMPLE: 'simple',
+  CARE: 'care',
+  VENDOR_PASSPORT: 'vendor-passport',
+})
+
+const TA_POWERED_BY = 'Powered by TarantulApp™'
+const VERIFIED_ORIGIN_LABEL = 'Verified Origin'
 
 const SIMPLE = {
   pad: 8,
@@ -411,6 +426,397 @@ async function drawPartnerLogoCorner(ctx, canvasW, canvasH, partnerLogoSrc) {
   }
 }
 
+/** Tier typography + density for vendor-passport labels. */
+function vendorPassportProfile(tier) {
+  switch (tier) {
+    case 'vial':
+      return {
+        pad: 5,
+        commonSize: 10,
+        commonLineH: 12,
+        sciSize: 8,
+        sciLineH: 10,
+        vendorSize: 8,
+        vendorLineH: 10,
+        badgeSize: 7,
+        factSize: 7,
+        factLineH: 9,
+        captionSize: 7,
+        captionLineH: 9,
+        idSize: 7,
+        poweredSize: 6,
+        logoMax: 22,
+        maxCommonLines: 1,
+        maxSciLines: 1,
+        maxFacts: 2,
+        maxFactChars: 42,
+        qrScale: 0.34,
+        stackQr: true,
+      }
+    case 'small':
+      return {
+        pad: 7,
+        commonSize: 12,
+        commonLineH: 14,
+        sciSize: 9,
+        sciLineH: 11,
+        vendorSize: 9,
+        vendorLineH: 11,
+        badgeSize: 7,
+        factSize: 8,
+        factLineH: 10,
+        captionSize: 8,
+        captionLineH: 10,
+        idSize: 8,
+        poweredSize: 6,
+        logoMax: 30,
+        maxCommonLines: 2,
+        maxSciLines: 1,
+        maxFacts: 4,
+        maxFactChars: 52,
+        qrScale: 0.38,
+        stackQr: false,
+      }
+    case 'large':
+      return {
+        pad: 10,
+        commonSize: 16,
+        commonLineH: 19,
+        sciSize: 12,
+        sciLineH: 15,
+        vendorSize: 11,
+        vendorLineH: 13,
+        badgeSize: 8,
+        factSize: 10,
+        factLineH: 12,
+        captionSize: 9,
+        captionLineH: 11,
+        idSize: 9,
+        poweredSize: 7,
+        logoMax: 44,
+        maxCommonLines: 2,
+        maxSciLines: 2,
+        maxFacts: 8,
+        maxFactChars: 64,
+        qrScale: 0.42,
+        stackQr: false,
+      }
+    default:
+      return {
+        pad: 8,
+        commonSize: 14,
+        commonLineH: 17,
+        sciSize: 10,
+        sciLineH: 12,
+        vendorSize: 10,
+        vendorLineH: 12,
+        badgeSize: 7,
+        factSize: 9,
+        factLineH: 11,
+        captionSize: 8,
+        captionLineH: 10,
+        idSize: 8,
+        poweredSize: 6,
+        logoMax: 36,
+        maxCommonLines: 2,
+        maxSciLines: 1,
+        maxFacts: 6,
+        maxFactChars: 56,
+        qrScale: 0.4,
+        stackQr: false,
+      }
+  }
+}
+
+/** Prioritize and truncate care facts to avoid overcrowding. */
+export function truncateFactLines(factLines, { maxLines = 6, maxCharsPerLine = 56 } = {}) {
+  if (!Array.isArray(factLines) || !factLines.length) return []
+  const out = []
+  for (const raw of factLines) {
+    const line = String(raw ?? '').trim()
+    if (!line) continue
+    const clipped =
+      line.length > maxCharsPerLine ? `${line.slice(0, Math.max(1, maxCharsPerLine - 1))}…` : line
+    out.push(clipped)
+    if (out.length >= maxLines) break
+  }
+  return out
+}
+
+function ellipsizeToWidth(ctx, text, maxWidth) {
+  const raw = String(text ?? '').trim()
+  if (!raw) return ''
+  if (ctx.measureText(raw).width <= maxWidth) return raw
+  const ell = '…'
+  let w = raw
+  while (w.length > 1 && ctx.measureText(w + ell).width > maxWidth) {
+    w = w.slice(0, -1)
+  }
+  return w + ell
+}
+
+function measureVendorOriginBlock(ctx, profile, vendorName, textW, hasLogo) {
+  const logoW = hasLogo ? profile.logoMax + 6 : 0
+  const textColW = Math.max(40, textW - logoW)
+  ctx.font = `600 ${profile.vendorSize}px sans-serif`
+  const vendorLine = ellipsizeToWidth(ctx, vendorName || '', textColW)
+  const badgeH = profile.badgeSize + 4
+  const textH = vendorLine ? profile.vendorLineH : 0
+  const blockH = Math.max(hasLogo ? profile.logoMax : 0, textH + badgeH) + 8
+  return { blockH, vendorLine, logoW, textColW, badgeH }
+}
+
+function measureVendorPassportLayout(
+  ctx,
+  {
+    nameLine,
+    speciesLine,
+    factLines,
+    captionLine,
+    shortIdLine,
+    vendorName,
+    partnerLogoSrc,
+    physicalSizeId,
+    canvasW,
+    canvasH,
+  },
+) {
+  const preset = resolveVendorLabelSizePreset(physicalSizeId)
+  const profile = vendorPassportProfile(preset.tier)
+  const innerW = canvasW - profile.pad * 2
+  const hasLogo = Boolean(partnerLogoSrc && String(partnerLogoSrc).trim())
+
+  ctx.font = `bold ${profile.commonSize}px sans-serif`
+  const commonLines = wrapLinesToWidth(ctx, nameLine, innerW).slice(0, profile.maxCommonLines)
+  ctx.font = `italic ${profile.sciSize}px sans-serif`
+  const sciLines = wrapLinesToWidth(ctx, speciesLine, innerW).slice(0, profile.maxSciLines)
+
+  const origin = measureVendorOriginBlock(ctx, profile, vendorName, innerW, hasLogo)
+  const facts = truncateFactLines(factLines, {
+    maxLines: profile.maxFacts,
+    maxCharsPerLine: profile.maxFactChars,
+  })
+
+  let headerH = 0
+  if (commonLines.length) headerH += commonLines.length * profile.commonLineH + 2
+  if (sciLines.length) headerH += sciLines.length * profile.sciLineH
+  const factsH = facts.length ? 4 + facts.length * profile.factLineH : 0
+
+  const qrSize = Math.min(
+    Math.round(Math.min(canvasW, canvasH) * profile.qrScale),
+    profile.stackQr ? Math.round(innerW * 0.55) : Math.round(canvasH * 0.45),
+  )
+
+  ctx.font = `${profile.captionSize}px sans-serif`
+  const captionLines = captionLine
+    ? wrapLinesToWidth(ctx, captionLine, innerW).slice(0, profile.stackQr ? 1 : 2)
+    : []
+  const captionH = captionLines.length ? 3 + captionLines.length * profile.captionLineH : 0
+  const idH = shortIdLine ? profile.idSize + 4 : 0
+  const poweredH = profile.poweredSize + 4
+
+  let bodyH
+  if (profile.stackQr) {
+    bodyH = qrSize + (idH ? idH + 2 : 0)
+  } else {
+    const textStackH = factsH + captionH + idH + poweredH
+    bodyH = Math.max(qrSize, textStackH)
+  }
+
+  const totalH =
+    profile.pad +
+    headerH +
+    (origin.blockH > 0 ? origin.blockH + 4 : 0) +
+    bodyH +
+    (profile.stackQr ? captionH + poweredH + 2 : poweredH + 2) +
+    profile.pad
+
+  void totalH
+
+  return {
+    W: canvasW,
+    H: canvasH,
+    profile,
+    commonLines,
+    sciLines,
+    facts,
+    captionLines,
+    qrSize,
+    origin,
+    hasLogo,
+    innerW,
+  }
+}
+
+async function drawVerifiedOriginBlock(ctx, x, y, w, profile, { partnerLogoSrc, vendorLine, verifiedOrigin, hasLogo }) {
+  const blockPad = 4
+  const innerH = Math.max(hasLogo ? profile.logoMax : 0, profile.vendorLineH + profile.badgeSize + 6) + blockPad * 2
+  ctx.save()
+  ctx.fillStyle = '#f6f4ef'
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.roundRect(x, y, w, innerH, 4)
+  ctx.fill()
+  ctx.stroke()
+
+  let textX = x + blockPad
+  const centerY = y + innerH / 2
+
+  if (hasLogo) {
+    try {
+      const src = imgUrl(partnerLogoSrc) || partnerLogoSrc
+      const logo = await loadImageElement(src)
+      const scale = Math.min(profile.logoMax / logo.width, profile.logoMax / logo.height)
+      const lw = Math.max(1, Math.round(logo.width * scale))
+      const lh = Math.max(1, Math.round(logo.height * scale))
+      const lx = x + blockPad
+      const ly = centerY - lh / 2
+      ctx.drawImage(logo, lx, ly, lw, lh)
+      textX = lx + lw + 6
+    } catch {
+      /* optional logo */
+    }
+  }
+
+  let ty = y + blockPad + 1
+  if (vendorLine) {
+    ctx.font = `600 ${profile.vendorSize}px sans-serif`
+    ctx.fillStyle = '#1a1a1a'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText(vendorLine, textX, ty)
+    ty += profile.vendorLineH
+  }
+
+  if (verifiedOrigin) {
+    ctx.font = `600 ${profile.badgeSize}px sans-serif`
+    ctx.fillStyle = '#1b6b3a'
+    ctx.fillText(`✓ ${VERIFIED_ORIGIN_LABEL}`, textX, ty)
+  }
+
+  ctx.restore()
+  return innerH
+}
+
+async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, shortIdLine, captionLines, verifiedOrigin, partnerLogoSrc }) {
+  const { profile, commonLines, sciLines, facts, origin, hasLogo, innerW, W } = measure
+  const x0 = profile.pad
+  let y = profile.pad
+
+  if (commonLines.length) {
+    y = drawLeftLines(
+      ctx,
+      x0,
+      y,
+      commonLines,
+      profile.commonLineH,
+      `bold ${profile.commonSize}px sans-serif`,
+      '#111',
+    )
+    y += 2
+  }
+  if (sciLines.length) {
+    y = drawLeftLines(
+      ctx,
+      x0,
+      y,
+      sciLines,
+      profile.sciLineH,
+      `italic ${profile.sciSize}px sans-serif`,
+      '#444',
+    )
+  }
+
+  if (vendorLineOrBadge(measure, verifiedOrigin)) {
+    y += 3
+    const blockH = await drawVerifiedOriginBlock(ctx, x0, y, innerW, profile, {
+      partnerLogoSrc,
+      vendorLine: origin.vendorLine,
+      verifiedOrigin,
+      hasLogo,
+    })
+    y += blockH + 4
+  }
+
+  const qrImg = await loadImageElement(composed)
+
+  if (profile.stackQr) {
+    const qrX = (W - qrSize) / 2
+    ctx.drawImage(qrImg, qrX, y, qrSize, qrSize)
+    y += qrSize + 2
+    if (shortIdLine) {
+      ctx.font = `600 ${profile.idSize}px sans-serif`
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(String(shortIdLine), W / 2, y)
+      y += profile.idSize + 4
+    }
+    if (facts.length) {
+      y += 2
+      y = drawLeftLines(ctx, x0, y, facts, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
+    }
+    if (captionLines.length) {
+      y += 3
+      drawLeftLines(ctx, x0, y, captionLines, profile.captionLineH, `${profile.captionSize}px sans-serif`, '#555')
+      y += captionLines.length * profile.captionLineH
+    }
+  } else {
+    const qrX = x0
+    const qrY = y
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+    const textX = qrX + qrSize + 8
+    const textW = innerW - qrSize - 8
+    let ty = qrY
+
+    if (facts.length) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(textX, ty, textW, measure.H)
+      ctx.clip()
+      for (const fact of facts) {
+        const sub = wrapLinesToWidth(ctx, fact, textW)
+        ty = drawLeftLines(ctx, textX, ty, sub, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
+      }
+      ctx.restore()
+    }
+
+    let metaY = Math.max(ty, qrY + qrSize - (shortIdLine ? profile.idSize + 8 : 0))
+    if (shortIdLine) {
+      ctx.font = `600 ${profile.idSize}px sans-serif`
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(String(shortIdLine), textX, metaY)
+      metaY += profile.idSize + 4
+    }
+    if (captionLines.length) {
+      drawLeftLines(
+        ctx,
+        textX,
+        metaY,
+        captionLines,
+        profile.captionLineH,
+        `${profile.captionSize}px sans-serif`,
+        '#555',
+      )
+    }
+    y = Math.max(qrY + qrSize, metaY + captionLines.length * profile.captionLineH)
+  }
+
+  y += 4
+  ctx.font = `${profile.poweredSize}px sans-serif`
+  ctx.fillStyle = '#888'
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'top'
+  ctx.fillText(TA_POWERED_BY, W - profile.pad, y)
+}
+
+function vendorLineOrBadge(measure, verifiedOrigin) {
+  return Boolean(measure.origin.vendorLine || verifiedOrigin || measure.hasLogo)
+}
+
 /** Width reserved in the care-facts text column so the corner logo does not overlap copy. */
 export function partnerLogoTextReserve(partnerLogoSrc) {
   const src =
@@ -419,8 +825,8 @@ export function partnerLogoTextReserve(partnerLogoSrc) {
 }
 
 /**
- * PNG de etiqueta: vertical centrada (solo QR) u horizontal (con care facts).
- * TarantulApp logo always sits in the QR center; optional partnerLogoSrc renders top-right.
+ * PNG de etiqueta: simple, care facts, or co-branded vendor-passport.
+ * TarantulApp logo sits in the QR center; vendor logo lives in the Verified Origin block.
  */
 export async function buildFullLabelPngDataUrl({
   url,
@@ -431,13 +837,90 @@ export async function buildFullLabelPngDataUrl({
   normalizeHeight = null,
   brandLogoSrc = null,
   partnerLogoSrc = null,
-  shortIdLine: _shortIdLine,
+  shortIdLine = null,
   worldBadgeInfo: _worldBadgeInfo,
+  layoutMode = null,
+  physicalSizeId = DEFAULT_VENDOR_LABEL_SIZE_ID,
+  vendorName = null,
+  verifiedOrigin = false,
 }) {
   const partnerLogo = partnerLogoSrc ?? brandLogoSrc
-  const logoReserve = partnerLogoTextReserve(partnerLogo)
   const hasFacts = Array.isArray(factLines) && factLines.length > 0
-  const qrSize = hasFacts ? CARE_LABEL_QR_PX : SIMPLE_LABEL_QR_PX
+  const effectiveLayout =
+    layoutMode === LABEL_LAYOUT_MODES.VENDOR_PASSPORT
+      ? LABEL_LAYOUT_MODES.VENDOR_PASSPORT
+      : layoutMode === LABEL_LAYOUT_MODES.CARE
+        ? LABEL_LAYOUT_MODES.CARE
+        : layoutMode === LABEL_LAYOUT_MODES.SIMPLE
+          ? LABEL_LAYOUT_MODES.SIMPLE
+          : hasFacts
+            ? LABEL_LAYOUT_MODES.CARE
+            : LABEL_LAYOUT_MODES.SIMPLE
+
+  const measureCanvas = document.createElement('canvas')
+  const mctx = measureCanvas.getContext('2d')
+
+  let W
+  let H
+  let drawPayload
+  let qrSize
+
+  if (effectiveLayout === LABEL_LAYOUT_MODES.VENDOR_PASSPORT) {
+    const preset = resolveVendorLabelSizePreset(physicalSizeId)
+    const { widthPx, heightPx } = vendorLabelCanvasPx(preset)
+    const vendorMeasure = measureVendorPassportLayout(mctx, {
+      nameLine,
+      speciesLine,
+      factLines,
+      captionLine,
+      shortIdLine,
+      vendorName,
+      partnerLogoSrc: partnerLogo,
+      physicalSizeId,
+      canvasW: widthPx,
+      canvasH: heightPx,
+    })
+    qrSize = vendorMeasure.qrSize
+    W = vendorMeasure.W
+    H = vendorMeasure.H
+    drawPayload = { mode: 'vendor-passport', measure: vendorMeasure, verifiedOrigin }
+  } else {
+    qrSize =
+      effectiveLayout === LABEL_LAYOUT_MODES.CARE ? CARE_LABEL_QR_PX : SIMPLE_LABEL_QR_PX
+
+    if (effectiveLayout === LABEL_LAYOUT_MODES.SIMPLE) {
+      const m = measureSimpleVertical(mctx, { nameLine, speciesLine, captionLine, qrSize })
+      W = m.W
+      H = m.H
+      drawPayload = {
+        mode: 'simple',
+        nameLines: m.nameLines,
+        speciesLines: m.speciesLines,
+        captionLines: m.captionLines,
+      }
+    } else {
+      const logoReserve = partnerLogoTextReserve(partnerLogo)
+      const m = measureCareHorizontal(mctx, {
+        nameLine,
+        speciesLine,
+        factLines,
+        captionLine,
+        qrSize,
+        partnerLogoReserve: logoReserve,
+      })
+      W = m.W
+      H = m.H
+      drawPayload = {
+        mode: 'care',
+        titleLines: m.titleLines,
+        speciesLines: m.speciesLines,
+        factLines: m.factLines,
+        captionLines: m.captionLines,
+        textW: m.textW,
+        textH: m.textH,
+      }
+    }
+  }
 
   const raw = await QRCode.toDataURL(url, {
     width: qrSize,
@@ -447,47 +930,14 @@ export async function buildFullLabelPngDataUrl({
   })
   const composed = await compositeQrPngDataUrl(raw, qrSize, QR_CENTER_LOGO_FRACTION, BRAND_LOGO_FOR_LIGHT_BG)
 
-  const measureCanvas = document.createElement('canvas')
-  const mctx = measureCanvas.getContext('2d')
-
-  let W
-  let H
-  let drawPayload
-
-  if (!hasFacts) {
-    const m = measureSimpleVertical(mctx, { nameLine, speciesLine, captionLine, qrSize })
-    W = m.W
-    H = m.H
-    drawPayload = {
-      mode: 'simple',
-      nameLines: m.nameLines,
-      speciesLines: m.speciesLines,
-      captionLines: m.captionLines,
-    }
-  } else {
-    const m = measureCareHorizontal(mctx, {
-      nameLine,
-      speciesLine,
-      factLines,
-      captionLine,
-      qrSize,
-      partnerLogoReserve: logoReserve,
-    })
-    W = m.W
-    H = m.H
-    drawPayload = {
-      mode: 'care',
-      titleLines: m.titleLines,
-      speciesLines: m.speciesLines,
-      factLines: m.factLines,
-      captionLines: m.captionLines,
-      textW: m.textW,
-      textH: m.textH,
-    }
-  }
-
   const targetH = normalizeHeight != null ? Math.max(H, normalizeHeight) : H
-  const layoutDims = { canvasW: W, canvasH: targetH, qrSize }
+  const layoutDims = {
+    canvasW: W,
+    canvasH: targetH,
+    qrSize,
+    layoutMode: effectiveLayout,
+    physicalSizeId: effectiveLayout === LABEL_LAYOUT_MODES.VENDOR_PASSPORT ? physicalSizeId : null,
+  }
 
   const canvas = document.createElement('canvas')
   canvas.width = W
@@ -497,7 +947,16 @@ export async function buildFullLabelPngDataUrl({
   ctx.fillRect(0, 0, W, targetH)
 
   const renderLabel = async (targetCtx) => {
-    if (drawPayload.mode === 'simple') {
+    if (drawPayload.mode === 'vendor-passport') {
+      await drawVendorPassportLabel(targetCtx, drawPayload.measure, {
+        composed,
+        qrSize,
+        shortIdLine,
+        captionLines: drawPayload.measure.captionLines,
+        verifiedOrigin: drawPayload.verifiedOrigin,
+        partnerLogoSrc: partnerLogo,
+      })
+    } else if (drawPayload.mode === 'simple') {
       await drawSimpleVerticalLabel(targetCtx, W, H, {
         composed,
         qrSize,
@@ -529,7 +988,9 @@ export async function buildFullLabelPngDataUrl({
     await renderLabel(ctx)
   }
 
-  await drawPartnerLogoCorner(ctx, W, targetH, partnerLogo)
+  if (effectiveLayout !== LABEL_LAYOUT_MODES.VENDOR_PASSPORT) {
+    await drawPartnerLogoCorner(ctx, W, targetH, partnerLogo)
+  }
 
   drawCutBorder(ctx, W, targetH)
 
@@ -552,6 +1013,10 @@ export async function downloadBrandedQrPng({
   partnerLogoSrc = null,
   shortIdLine,
   worldBadgeInfo,
+  layoutMode = null,
+  physicalSizeId,
+  vendorName = null,
+  verifiedOrigin = false,
 }) {
   const { dataUrl } = await buildFullLabelPngDataUrl({
     url,
@@ -563,6 +1028,10 @@ export async function downloadBrandedQrPng({
     partnerLogoSrc,
     shortIdLine,
     worldBadgeInfo,
+    layoutMode,
+    physicalSizeId,
+    vendorName,
+    verifiedOrigin,
   })
   const safeName = sanitizeFilename(filenameBase || 'qr')
   await shareOrDownloadDataUrl(dataUrl, `${safeName}-QR.png`, {

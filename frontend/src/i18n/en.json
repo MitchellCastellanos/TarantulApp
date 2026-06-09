@@ -1653,16 +1653,44 @@
         "doil": "Docile"
       }
     },
+    "layout": {
+      "heading": "Label layout",
+      "simple": {
+        "label": "Simple QR",
+        "help": "Centered QR with species name — classic terrarium label."
+      },
+      "care": {
+        "label": "Care facts",
+        "help": "Horizontal layout with quick care facts beside the QR."
+      },
+      "vendor-passport": {
+        "label": "Vendor passport",
+        "help": "Co-branded breeder label with your logo in a Verified Origin block, powered by TarantulApp."
+      }
+    },
+    "vendorSize": {
+      "heading": "Physical label size",
+      "help": "Width × height for print. Vial is compact; large is for display tables.",
+      "vial": "Vial — {{w}}×{{h}} cm",
+      "small": "Small — {{w}}×{{h}} cm",
+      "medium": "Medium — {{w}}×{{h}} cm",
+      "large": "Large (display) — {{w}}×{{h}} cm"
+    },
     "qrTarget": {
       "heading": "QR links to",
       "specimen": {
-        "label": "This specimen",
-        "help": "Opens this spider’s profile (history, molts, etc.). Best for your own collection."
+        "label": "Passport URL",
+        "help": "Opens this specimen’s public passport (/t/…). Best for traceable sales and batch labels."
       },
       "species": {
-        "label": "Species (generic)",
+        "label": "Species care sheet",
         "help": "Opens the public species care sheet. Best when selling or gifting: the buyer scans and learns on TarantulApp.",
         "disabled": "Link a species from the catalog to use a generic QR."
+      },
+      "storefront": {
+        "label": "Your storefront",
+        "help": "Opens your TarantulApp partner shop — great for table displays and brand discovery.",
+        "disabled": "Set a public handle in your profile to link to your storefront."
       }
     },
     "previewLoading": "Updating label preview…",

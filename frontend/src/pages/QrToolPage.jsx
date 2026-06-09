@@ -33,17 +33,29 @@ import {
   LABEL_BULK_MAX,
   triggerLabelPdfDownload,
 } from '../utils/buildLabelBulkPdf'
-import { DEFAULT_LABEL_SIZE_ID, LABEL_SIZE_IDS, resolveLabelSizePreset } from '../utils/labelSizes'
+import {
+  DEFAULT_LABEL_SIZE_ID,
+  LABEL_SIZE_IDS,
+  VENDOR_LABEL_SIZE_IDS,
+  resolveLabelSizePreset,
+  resolveVendorLabelSizePreset,
+} from '../utils/labelSizes'
 import {
   buildBatchPassportItems,
   buildQrBulkItem,
   buildQrLabelExtras,
   buildQrLabelLines,
   readQrCareFactsEnabled,
+  readQrLayoutMode,
   readQrTargetMode,
+  readQrVendorSizeId,
+  resolveEffectiveLayoutMode,
   resolveQrUrl,
+  resolveVendorDisplayName,
   writeQrCareFactsEnabled,
+  writeQrLayoutMode,
   writeQrTargetMode,
+  writeQrVendorSizeId,
 } from '../utils/qrLabelOptions'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
 import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
@@ -93,6 +105,10 @@ export default function QrToolPage() {
     return imgUrl(branding.logoUrl) || branding.logoUrl
   }, [branding])
 
+  const vendorName = useMemo(() => resolveVendorDisplayName(user), [user])
+  const storefrontLinked = Boolean(user?.publicHandle)
+  const showVendorPassport = Boolean(capabilities?.branding)
+
   // Optional consumer-facing caption printed on the label, in the buyer's language (EN/FR).
   const CONSUMER_CAPTIONS = { en: 'Scan for care & origin', fr: 'Scannez : soins et origine' }
   const captionLine = consumerCaptionLang ? CONSUMER_CAPTIONS[consumerCaptionLang] : null
@@ -135,6 +151,14 @@ export default function QrToolPage() {
   const [batchSelected, setBatchSelected] = useState(() => new Set())
   const [careFactsOn, setCareFactsOn] = useState(() => readQrCareFactsEnabled())
   const [qrTargetMode, setQrTargetMode] = useState(() => readQrTargetMode())
+  const [layoutMode, setLayoutMode] = useState(() => readQrLayoutMode())
+  const [vendorSizeId, setVendorSizeId] = useState(() => readQrVendorSizeId())
+  const effectiveLayout = useMemo(
+    () => resolveEffectiveLayoutMode(layoutMode, careFactsOn),
+    [layoutMode, careFactsOn],
+  )
+  const exportSizeId =
+    effectiveLayout === 'vendor-passport' ? vendorSizeId : labelSizeId
   const [labelPreviewUrl, setLabelPreviewUrl] = useState('')
   const [labelPreviewBusy, setLabelPreviewBusy] = useState(false)
   const [scanHint, setScanHint] = useState('')
@@ -180,6 +204,8 @@ export default function QrToolPage() {
     if (!batchId) return
     setCareFactsOn(true)
     writeQrCareFactsEnabled(true)
+    setLayoutMode('vendor-passport')
+    writeQrLayoutMode('vendor-passport')
   }, [batchId])
 
   const batchSelectedList = useMemo(
@@ -205,6 +231,9 @@ export default function QrToolPage() {
       careFactsOn,
       locale: i18n.language,
       species: batchSpecies,
+      layoutMode: effectiveLayout,
+      vendorUser: user,
+      verifiedOrigin: Boolean(capabilities?.verifiedOrigin),
     })
 
   const toggleBatchPassport = (id) => {
@@ -231,11 +260,13 @@ export default function QrToolPage() {
     try {
       await triggerLabelPdfDownload({
         items,
-        sizeId: labelSizeId,
+        sizeId: exportSizeId,
+        layoutMode: effectiveLayout,
         docTitle: t('labelStudio.pdfDocTitle'),
-        filename: `${filenameBase}-${labelSizeId}.pdf`,
+        filename: `${filenameBase}-${exportSizeId}.pdf`,
         partnerLogoSrc,
         captionLine,
+        verifiedOrigin: Boolean(capabilities?.verifiedOrigin),
       })
       await registerPrint()
     } finally {
@@ -264,11 +295,15 @@ export default function QrToolPage() {
       setQrTargetMode('specimen')
       writeQrTargetMode('specimen')
     }
-  }, [qrTargetMode, selected, speciesLinked])
+    if (qrTargetMode === 'storefront' && !storefrontLinked) {
+      setQrTargetMode('specimen')
+      writeQrTargetMode('specimen')
+    }
+  }, [qrTargetMode, selected, speciesLinked, storefrontLinked])
 
   const qrHref = useMemo(
-    () => (selected ? resolveQrUrl(selected, qrTargetMode) : ''),
-    [selected, qrTargetMode],
+    () => (selected ? resolveQrUrl(selected, qrTargetMode, user) : ''),
+    [selected, qrTargetMode, user],
   )
   const parsed = useMemo(() => {
     if (!qrHref) return { ok: false, empty: true, href: '' }
@@ -276,8 +311,8 @@ export default function QrToolPage() {
   }, [qrHref])
 
   const labelLines = useMemo(
-    () => (selected ? buildQrLabelLines(selected, qrTargetMode, t) : null),
-    [selected, qrTargetMode, t],
+    () => (selected ? buildQrLabelLines(selected, qrTargetMode, t, effectiveLayout) : null),
+    [selected, qrTargetMode, t, effectiveLayout],
   )
 
   const labelExtras = useMemo(
@@ -299,6 +334,11 @@ export default function QrToolPage() {
       factLines: labelExtras.factLines,
       captionLine,
       partnerLogoSrc,
+      layoutMode: effectiveLayout,
+      physicalSizeId: vendorSizeId,
+      vendorName,
+      verifiedOrigin: Boolean(capabilities?.verifiedOrigin),
+      shortIdLine: selected.shortId || null,
     })
       .then(({ dataUrl }) => {
         if (!cancelled) setLabelPreviewUrl(dataUrl)
@@ -312,7 +352,21 @@ export default function QrToolPage() {
     return () => {
       cancelled = true
     }
-  }, [mode, parsed.href, selected, labelLines, labelExtras, careFactsOn, qrTargetMode, partnerLogoSrc, captionLine])
+  }, [
+    mode,
+    parsed.href,
+    selected,
+    labelLines,
+    labelExtras,
+    careFactsOn,
+    qrTargetMode,
+    partnerLogoSrc,
+    captionLine,
+    effectiveLayout,
+    vendorSizeId,
+    vendorName,
+    capabilities?.verifiedOrigin,
+  ])
 
   const ogImage = `${origin}/icon-512.png`
 
@@ -408,6 +462,11 @@ export default function QrToolPage() {
         filenameBase: labelLines.filenameBase,
         captionLine,
         partnerLogoSrc,
+        layoutMode: effectiveLayout,
+        physicalSizeId: vendorSizeId,
+        vendorName,
+        verifiedOrigin: Boolean(capabilities?.verifiedOrigin),
+        shortIdLine: selected.shortId || null,
       })
     } catch (e) {
       console.warn('downloadBrandedQrPng', e)
@@ -423,6 +482,20 @@ export default function QrToolPage() {
   const onQrTargetChange = (mode) => {
     setQrTargetMode(mode)
     writeQrTargetMode(mode)
+  }
+
+  const onLayoutModeChange = (mode) => {
+    setLayoutMode(mode)
+    writeQrLayoutMode(mode)
+    if (mode === 'vendor-passport' && batchId) {
+      setCareFactsOn(true)
+      writeQrCareFactsEnabled(true)
+    }
+  }
+
+  const onVendorSizeChange = (id) => {
+    setVendorSizeId(id)
+    writeQrVendorSizeId(id)
   }
 
   const bulkFooterNote = (baseKey) => {
@@ -462,6 +535,8 @@ export default function QrToolPage() {
           careFactsOn,
           t,
           locale: i18n.language,
+          layoutMode: effectiveLayout,
+          vendorUser: user,
         }),
       )
 
@@ -805,6 +880,11 @@ export default function QrToolPage() {
                             speciesLinked={Boolean(batchData.speciesId)}
                             hideTargetMode
                             verifiedOrigin={Boolean(capabilities?.verifiedOrigin)}
+                            layoutMode={effectiveLayout}
+                            onLayoutModeChange={onLayoutModeChange}
+                            vendorSizeId={vendorSizeId}
+                            onVendorSizeChange={onVendorSizeChange}
+                            showVendorPassport={showVendorPassport}
                           />
                           {consumerCaptionControl}
 
@@ -866,12 +946,24 @@ export default function QrToolPage() {
                                 <label className="form-label small fw-semibold">{t('labelStudio.sizeLabel')}</label>
                                 <select
                                   className="form-select form-select-sm"
-                                  value={labelSizeId}
-                                  onChange={(e) => setLabelSizeId(e.target.value)}
+                                  value={exportSizeId}
+                                  onChange={(e) =>
+                                    effectiveLayout === 'vendor-passport'
+                                      ? onVendorSizeChange(e.target.value)
+                                      : setLabelSizeId(e.target.value)
+                                  }
                                 >
-                                  {LABEL_SIZE_IDS.map((id) => (
+                                  {(effectiveLayout === 'vendor-passport'
+                                    ? VENDOR_LABEL_SIZE_IDS
+                                    : LABEL_SIZE_IDS
+                                  ).map((id) => (
                                     <option key={id} value={id}>
-                                      {t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
+                                      {effectiveLayout === 'vendor-passport'
+                                        ? t(`qr.vendorSize.${id}`, {
+                                            w: resolveVendorLabelSizePreset(id).widthCm,
+                                            h: resolveVendorLabelSizePreset(id).heightCm,
+                                          })
+                                        : t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
                                     </option>
                                   ))}
                                 </select>
@@ -925,6 +1017,19 @@ export default function QrToolPage() {
                     mode === 'single'
                       ? speciesLinked
                       : bulkList.some((ta) => ta.species?.id != null)
+                  }
+                  layoutMode={layoutMode}
+                  onLayoutModeChange={onLayoutModeChange}
+                  vendorSizeId={vendorSizeId}
+                  onVendorSizeChange={onVendorSizeChange}
+                  storefrontLinked={storefrontLinked}
+                  showVendorPassport={showVendorPassport}
+                  verifiedOrigin={
+                    capabilities?.verifiedOrigin === true
+                      ? true
+                      : capabilities?.verifiedOrigin === false
+                        ? false
+                        : null
                   }
                 />
               )}
@@ -1075,7 +1180,7 @@ export default function QrToolPage() {
 
                       <div className="list-group list-group-flush border rounded mb-4" style={{ maxHeight: 360, overflowY: 'auto' }}>
                         {bulkList.map((ta) => {
-                          const url = resolveQrUrl(ta, qrTargetMode) || ' '
+                          const url = resolveQrUrl(ta, qrTargetMode, user) || ' '
                           const on = bulkSelected.has(ta.id)
                           return (
                             <label
@@ -1123,16 +1228,32 @@ export default function QrToolPage() {
                             <label className="form-label small fw-semibold">{t('labelStudio.sizeLabel')}</label>
                             <select
                               className="form-select form-select-sm"
-                              value={labelSizeId}
-                              onChange={(e) => setLabelSizeId(e.target.value)}
+                              value={exportSizeId}
+                              onChange={(e) =>
+                                effectiveLayout === 'vendor-passport'
+                                  ? onVendorSizeChange(e.target.value)
+                                  : setLabelSizeId(e.target.value)
+                              }
                             >
-                              {LABEL_SIZE_IDS.map((id) => (
+                              {(effectiveLayout === 'vendor-passport'
+                                ? VENDOR_LABEL_SIZE_IDS
+                                : LABEL_SIZE_IDS
+                              ).map((id) => (
                                 <option key={id} value={id}>
-                                  {t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
+                                  {effectiveLayout === 'vendor-passport'
+                                    ? t(`qr.vendorSize.${id}`, {
+                                        w: resolveVendorLabelSizePreset(id).widthCm,
+                                        h: resolveVendorLabelSizePreset(id).heightCm,
+                                      })
+                                    : t(`labelStudio.size.${id}`, resolveLabelSizePreset(id).cm + ' cm')}
                                 </option>
                               ))}
                             </select>
-                            <p className="small text-muted mt-2 mb-0">{t('labelStudio.sizeHelp')}</p>
+                            <p className="small text-muted mt-2 mb-0">
+                              {effectiveLayout === 'vendor-passport'
+                                ? t('qr.vendorSize.help')
+                                : t('labelStudio.sizeHelp')}
+                            </p>
                           </div>
                           <div className="col-md-6">
                             <label className="form-label small fw-semibold">{t('qrBulk.sizeLabel')}</label>
@@ -1158,6 +1279,13 @@ export default function QrToolPage() {
                                 careFactsOn={careFactsOn}
                                 t={t}
                                 locale={i18n.language}
+                                layoutMode={layoutMode}
+                                physicalSizeId={vendorSizeId}
+                                partnerLogoSrc={partnerLogoSrc}
+                                vendorName={vendorName}
+                                verifiedOrigin={Boolean(capabilities?.verifiedOrigin)}
+                                captionLine={captionLine}
+                                vendorUser={user}
                               />
                             </div>
                           </div>
