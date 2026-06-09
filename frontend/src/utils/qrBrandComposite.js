@@ -503,26 +503,26 @@ function vendorPassportProfile(tier) {
       }
     default:
       return {
-        pad: 8,
-        commonSize: 14,
-        commonLineH: 17,
-        sciSize: 10,
-        sciLineH: 12,
-        vendorSize: 10,
-        vendorLineH: 12,
+        pad: 7,
+        commonSize: 12,
+        commonLineH: 14,
+        sciSize: 9,
+        sciLineH: 11,
+        vendorSize: 9,
+        vendorLineH: 11,
         badgeSize: 7,
-        factSize: 9,
-        factLineH: 11,
-        captionSize: 8,
-        captionLineH: 10,
-        idSize: 8,
+        factSize: 8,
+        factLineH: 10,
+        captionSize: 7,
+        captionLineH: 9,
+        idSize: 7,
         poweredSize: 6,
-        logoMax: 36,
-        maxCommonLines: 2,
+        logoMax: 28,
+        maxCommonLines: 1,
         maxSciLines: 1,
-        maxFacts: 6,
-        maxFactChars: 56,
-        qrScale: 0.4,
+        maxFacts: 3,
+        maxFactChars: 48,
+        qrScale: 0.34,
         stackQr: false,
       }
   }
@@ -566,6 +566,26 @@ function measureVendorOriginBlock(ctx, profile, vendorName, textW, hasLogo) {
   return { blockH, vendorLine, logoW, textColW, badgeH }
 }
 
+function measureHeaderBlock(ctx, profile, nameLine, speciesLine, innerW) {
+  ctx.font = `bold ${profile.commonSize}px sans-serif`
+  const commonLines = wrapLinesToWidth(ctx, nameLine, innerW).slice(0, profile.maxCommonLines)
+  ctx.font = `italic ${profile.sciSize}px sans-serif`
+  const sciLines = wrapLinesToWidth(ctx, speciesLine, innerW).slice(0, profile.maxSciLines)
+  let headerH = 0
+  if (commonLines.length) headerH += commonLines.length * profile.commonLineH + 2
+  if (sciLines.length) headerH += sciLines.length * profile.sciLineH
+  return { commonLines, sciLines, headerH }
+}
+
+function countFactRenderLines(ctx, facts, textW, profile) {
+  ctx.font = `${profile.factSize}px sans-serif`
+  let lines = 0
+  for (const fact of facts) {
+    lines += wrapLinesToWidth(ctx, fact, textW).length
+  }
+  return lines
+}
+
 function measureVendorPassportLayout(
   ctx,
   {
@@ -579,59 +599,94 @@ function measureVendorPassportLayout(
     physicalSizeId,
     canvasW,
     canvasH,
+    verifiedOrigin = false,
   },
 ) {
   const preset = resolveVendorLabelSizePreset(physicalSizeId)
   const profile = vendorPassportProfile(preset.tier)
   const innerW = canvasW - profile.pad * 2
   const hasLogo = Boolean(partnerLogoSrc && String(partnerLogoSrc).trim())
+  const poweredH = profile.poweredSize + 5
+  const poweredY = canvasH - profile.pad - poweredH
 
-  ctx.font = `bold ${profile.commonSize}px sans-serif`
-  const commonLines = wrapLinesToWidth(ctx, nameLine, innerW).slice(0, profile.maxCommonLines)
-  ctx.font = `italic ${profile.sciSize}px sans-serif`
-  const sciLines = wrapLinesToWidth(ctx, speciesLine, innerW).slice(0, profile.maxSciLines)
+  let { commonLines, sciLines, headerH } = measureHeaderBlock(ctx, profile, nameLine, speciesLine, innerW)
+  let origin = measureVendorOriginBlock(ctx, profile, vendorName, innerW, hasLogo)
+  const showOrigin = vendorLineOrBadgeStatic(origin, hasLogo) || verifiedOrigin
+  let originGap = showOrigin ? origin.blockH + 4 : 0
 
-  const origin = measureVendorOriginBlock(ctx, profile, vendorName, innerW, hasLogo)
-  const facts = truncateFactLines(factLines, {
+  let bodyTop = profile.pad + headerH + (originGap ? originGap + 3 : 0)
+  let bodyBudget = Math.max(24, poweredY - bodyTop - 4)
+
+  let qrSize = Math.min(
+    Math.round(innerW * (profile.stackQr ? 0.5 : 0.36)),
+    Math.round(bodyBudget * (profile.stackQr ? 0.72 : 0.88)),
+    Math.round(Math.min(canvasW, canvasH) * profile.qrScale),
+  )
+
+  ctx.font = `${profile.captionSize}px sans-serif`
+  let captionLines = captionLine
+    ? wrapLinesToWidth(ctx, captionLine, innerW).slice(0, profile.stackQr ? 1 : 1)
+    : []
+  const idReserve = shortIdLine ? profile.idSize + 3 : 0
+  const captionReserve = captionLines.length ? captionLines.length * profile.captionLineH + 2 : 0
+
+  let facts = truncateFactLines(factLines, {
     maxLines: profile.maxFacts,
     maxCharsPerLine: profile.maxFactChars,
   })
 
-  let headerH = 0
-  if (commonLines.length) headerH += commonLines.length * profile.commonLineH + 2
-  if (sciLines.length) headerH += sciLines.length * profile.sciLineH
-  const factsH = facts.length ? 4 + facts.length * profile.factLineH : 0
+  const minQr = profile.stackQr ? 36 : 40
 
-  const qrSize = Math.min(
-    Math.round(Math.min(canvasW, canvasH) * profile.qrScale),
-    profile.stackQr ? Math.round(innerW * 0.55) : Math.round(canvasH * 0.45),
-  )
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    if (profile.stackQr) {
+      const stackNeed = qrSize + idReserve + captionReserve + (facts.length ? facts.length * profile.factLineH + 2 : 0)
+      if (stackNeed <= bodyBudget) break
+      if (facts.length > 0) {
+        facts = facts.slice(0, -1)
+        continue
+      }
+      if (captionLines.length > 0) {
+        captionLines = []
+        continue
+      }
+      qrSize = Math.max(minQr, qrSize - 4)
+      if (qrSize <= minQr) break
+      continue
+    }
 
-  ctx.font = `${profile.captionSize}px sans-serif`
-  const captionLines = captionLine
-    ? wrapLinesToWidth(ctx, captionLine, innerW).slice(0, profile.stackQr ? 1 : 2)
-    : []
-  const captionH = captionLines.length ? 3 + captionLines.length * profile.captionLineH : 0
-  const idH = shortIdLine ? profile.idSize + 4 : 0
-  const poweredH = profile.poweredSize + 4
+    const textW = Math.max(48, innerW - qrSize - 8)
+    let factLinesCount = countFactRenderLines(ctx, facts, textW, profile)
+    const sideNeed = Math.max(qrSize, factLinesCount * profile.factLineH + idReserve + captionReserve)
+    if (sideNeed <= bodyBudget) break
 
-  let bodyH
-  if (profile.stackQr) {
-    bodyH = qrSize + (idH ? idH + 2 : 0)
-  } else {
-    const textStackH = factsH + captionH + idH + poweredH
-    bodyH = Math.max(qrSize, textStackH)
+    if (factLinesCount > 1 && facts.length > 0) {
+      facts = facts.slice(0, -1)
+      continue
+    }
+    if (facts.length > 0) {
+      facts = facts.slice(0, -1)
+      continue
+    }
+    if (captionLines.length > 0) {
+      captionLines = []
+      continue
+    }
+    qrSize = Math.max(minQr, qrSize - 4)
+    if (qrSize <= minQr) break
   }
 
-  const totalH =
-    profile.pad +
-    headerH +
-    (origin.blockH > 0 ? origin.blockH + 4 : 0) +
-    bodyH +
-    (profile.stackQr ? captionH + poweredH + 2 : poweredH + 2) +
-    profile.pad
-
-  void totalH
+  if (bodyTop + Math.max(qrSize, minQr) + 4 > poweredY && headerH > profile.commonLineH + 4) {
+    const shrunk = measureHeaderBlock(ctx, profile, nameLine, speciesLine, innerW)
+    if (shrunk.commonLines.length > 1) {
+      ctx.font = `bold ${profile.commonSize}px sans-serif`
+      const one = ellipsizeToWidth(ctx, nameLine, innerW)
+      commonLines = one ? [one] : shrunk.commonLines.slice(0, 1)
+      sciLines = shrunk.sciLines
+      headerH = (commonLines.length ? profile.commonLineH + 2 : 0) + sciLines.length * profile.sciLineH
+      bodyTop = profile.pad + headerH + (originGap ? originGap + 3 : 0)
+      bodyBudget = Math.max(24, poweredY - bodyTop - 4)
+    }
+  }
 
   return {
     W: canvasW,
@@ -641,11 +696,19 @@ function measureVendorPassportLayout(
     sciLines,
     facts,
     captionLines,
-    qrSize,
+    qrSize: Math.max(minQr, qrSize),
     origin,
     hasLogo,
     innerW,
+    bodyTop,
+    bodyBudget,
+    poweredY,
+    showOrigin,
   }
+}
+
+function vendorLineOrBadgeStatic(origin, hasLogo) {
+  return Boolean(origin?.vendorLine || hasLogo)
 }
 
 async function drawVerifiedOriginBlock(ctx, x, y, w, profile, { partnerLogoSrc, vendorLine, verifiedOrigin, hasLogo }) {
@@ -700,7 +763,7 @@ async function drawVerifiedOriginBlock(ctx, x, y, w, profile, { partnerLogoSrc, 
 }
 
 async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, shortIdLine, captionLines, verifiedOrigin, partnerLogoSrc }) {
-  const { profile, commonLines, sciLines, facts, origin, hasLogo, innerW, W } = measure
+  const { profile, commonLines, sciLines, facts, origin, hasLogo, innerW, W, H, poweredY, showOrigin } = measure
   const x0 = profile.pad
   let y = profile.pad
 
@@ -728,7 +791,7 @@ async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, shortId
     )
   }
 
-  if (vendorLineOrBadge(measure, verifiedOrigin)) {
+  if (showOrigin || verifiedOrigin) {
     y += 3
     const blockH = await drawVerifiedOriginBlock(ctx, x0, y, innerW, profile, {
       partnerLogoSrc,
@@ -740,81 +803,86 @@ async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, shortId
   }
 
   const qrImg = await loadImageElement(composed)
+  const bodyBottom = poweredY - 2
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, y, W, Math.max(0, bodyBottom - y))
+  ctx.clip()
 
   if (profile.stackQr) {
     const qrX = (W - qrSize) / 2
     ctx.drawImage(qrImg, qrX, y, qrSize, qrSize)
-    y += qrSize + 2
+    let stackY = y + qrSize + 2
     if (shortIdLine) {
       ctx.font = `600 ${profile.idSize}px sans-serif`
       ctx.fillStyle = '#333'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillText(String(shortIdLine), W / 2, y)
-      y += profile.idSize + 4
+      ctx.fillText(String(shortIdLine), W / 2, stackY)
+      stackY += profile.idSize + 3
     }
     if (facts.length) {
-      y += 2
-      y = drawLeftLines(ctx, x0, y, facts, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
+      stackY += 2
+      drawLeftLines(ctx, x0, stackY, facts, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
     }
     if (captionLines.length) {
-      y += 3
-      drawLeftLines(ctx, x0, y, captionLines, profile.captionLineH, `${profile.captionSize}px sans-serif`, '#555')
-      y += captionLines.length * profile.captionLineH
-    }
-  } else {
-    const qrX = x0
-    const qrY = y
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
-    const textX = qrX + qrSize + 8
-    const textW = innerW - qrSize - 8
-    let ty = qrY
-
-    if (facts.length) {
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(textX, ty, textW, measure.H)
-      ctx.clip()
-      for (const fact of facts) {
-        const sub = wrapLinesToWidth(ctx, fact, textW)
-        ty = drawLeftLines(ctx, textX, ty, sub, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
-      }
-      ctx.restore()
-    }
-
-    let metaY = Math.max(ty, qrY + qrSize - (shortIdLine ? profile.idSize + 8 : 0))
-    if (shortIdLine) {
-      ctx.font = `600 ${profile.idSize}px sans-serif`
-      ctx.fillStyle = '#333'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(String(shortIdLine), textX, metaY)
-      metaY += profile.idSize + 4
-    }
-    if (captionLines.length) {
+      const capY = bodyBottom - captionLines.length * profile.captionLineH
       drawLeftLines(
         ctx,
-        textX,
-        metaY,
+        x0,
+        capY,
         captionLines,
         profile.captionLineH,
         `${profile.captionSize}px sans-serif`,
         '#555',
       )
     }
-    y = Math.max(qrY + qrSize, metaY + captionLines.length * profile.captionLineH)
+  } else {
+    const qrX = x0
+    const qrY = y
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+    const textX = qrX + qrSize + 6
+    const textW = Math.max(40, innerW - qrSize - 6)
+    let ty = qrY
+
+    for (const fact of facts) {
+      const sub = wrapLinesToWidth(ctx, fact, textW)
+      ty = drawLeftLines(ctx, textX, ty, sub, profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
+      if (ty >= bodyBottom) break
+    }
+
+    let metaY = qrY + Math.max(0, qrSize - profile.idSize - 2)
+    if (shortIdLine && metaY < bodyBottom - profile.idSize) {
+      ctx.font = `600 ${profile.idSize}px sans-serif`
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(String(shortIdLine), textX, metaY)
+    }
+    if (captionLines.length) {
+      const capY = bodyBottom - captionLines.length * profile.captionLineH
+      if (capY > qrY) {
+        drawLeftLines(
+          ctx,
+          textX,
+          capY,
+          captionLines,
+          profile.captionLineH,
+          `${profile.captionSize}px sans-serif`,
+          '#555',
+        )
+      }
+    }
   }
 
-  y += 4
+  ctx.restore()
+
   ctx.font = `${profile.poweredSize}px sans-serif`
   ctx.fillStyle = '#888'
   ctx.textAlign = 'right'
   ctx.textBaseline = 'top'
-  ctx.fillText(TA_POWERED_BY, W - profile.pad, y)
-}
-
-function vendorLineOrBadge(measure, verifiedOrigin) {
-  return Boolean(measure.origin.vendorLine || verifiedOrigin || measure.hasLogo)
+  ctx.fillText(TA_POWERED_BY, W - profile.pad, poweredY)
 }
 
 /** Width reserved in the care-facts text column so the corner logo does not overlap copy. */
@@ -879,6 +947,7 @@ export async function buildFullLabelPngDataUrl({
       physicalSizeId,
       canvasW: widthPx,
       canvasH: heightPx,
+      verifiedOrigin,
     })
     qrSize = vendorMeasure.qrSize
     W = vendorMeasure.W

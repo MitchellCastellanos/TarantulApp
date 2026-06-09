@@ -12,6 +12,7 @@ import { usePageSeo } from '../hooks/usePageSeo'
 import { useCapabilities } from '../hooks/useCapabilities'
 import tarantulaService from '../services/tarantulaService'
 import marketplaceService from '../services/marketplaceService'
+import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 import studioService from '../services/studioService'
 import speciesService from '../services/speciesService'
 import meBrandingService from '../services/meBrandingService'
@@ -58,7 +59,6 @@ import {
   writeQrVendorSizeId,
 } from '../utils/qrLabelOptions'
 import { tarantulaKeys } from '../query/tarantulaQueryKeys.js'
-import { keeperProfileKeys } from '../query/keeperProfileKeys.js'
 
 /** Contenedor estable para Html5Qrcode (evita re-montajes con ids aleatorios). */
 const TA_QR_ANDROID_READER_ID = 'ta-qr-android-reader'
@@ -105,7 +105,13 @@ export default function QrToolPage() {
     return imgUrl(branding.logoUrl) || branding.logoUrl
   }, [branding])
 
-  const vendorName = useMemo(() => resolveVendorDisplayName(user), [user])
+  const { data: keeperProfile } = useQuery({
+    queryKey: keeperProfileKeys.detail(),
+    queryFn: () => marketplaceService.getMyProfile(),
+    enabled: Boolean(token),
+    staleTime: 60_000,
+  })
+  const vendorName = useMemo(() => resolveVendorDisplayName(keeperProfile), [keeperProfile])
   const storefrontLinked = Boolean(user?.publicHandle)
   const showVendorPassport = Boolean(capabilities?.branding)
 
@@ -233,6 +239,7 @@ export default function QrToolPage() {
       species: batchSpecies,
       layoutMode: effectiveLayout,
       vendorUser: user,
+      vendorProfile: keeperProfile,
       verifiedOrigin: Boolean(capabilities?.verifiedOrigin),
     })
 
@@ -537,6 +544,7 @@ export default function QrToolPage() {
           locale: i18n.language,
           layoutMode: effectiveLayout,
           vendorUser: user,
+          vendorProfile: keeperProfile,
         }),
       )
 

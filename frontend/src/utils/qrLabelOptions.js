@@ -186,20 +186,15 @@ export function buildQrLabelExtras(species, t, locale, careFactsOn) {
 }
 
 /**
- * Vendor display name for co-branded labels.
- * @param {{ storefrontName?: string, displayName?: string, publicHandle?: string, name?: string }|null} user
+ * Operation / storefront name for Verified Origin block — never the public handle.
+ * @param {{ storefrontName?: string }|null} profile
  */
-export function resolveVendorDisplayName(user) {
-  if (!user) return ''
-  return (
-    String(user.storefrontName || '').trim() ||
-    String(user.displayName || '').trim() ||
-    String(user.publicHandle || '').trim() ||
-    String(user.name || '').trim()
-  )
+export function resolveVendorDisplayName(profile) {
+  if (!profile) return ''
+  return String(profile.storefrontName || '').trim()
 }
 
-export function buildQrBulkItem(tarantula, { qrTargetMode, careFactsOn, t, locale, layoutMode, vendorUser }) {
+export function buildQrBulkItem(tarantula, { qrTargetMode, careFactsOn, t, locale, layoutMode, vendorUser, vendorProfile }) {
   const effectiveLayout = resolveEffectiveLayoutMode(layoutMode, careFactsOn)
   const url = resolveQrUrl(tarantula, qrTargetMode, vendorUser)
   const { titleLine1, titleLine2, filenameBase } = buildQrLabelLines(
@@ -216,7 +211,7 @@ export function buildQrBulkItem(tarantula, { qrTargetMode, careFactsOn, t, local
     filenameBase,
     factLines,
     shortIdLine: tarantula.shortId || null,
-    vendorName: effectiveLayout === 'vendor-passport' ? resolveVendorDisplayName(vendorUser) : null,
+    vendorName: effectiveLayout === 'vendor-passport' ? resolveVendorDisplayName(vendorProfile) : null,
   }
 }
 
@@ -233,6 +228,7 @@ export function buildPassportLabelItem({
   species,
   layoutMode = 'vendor-passport',
   vendorUser = null,
+  vendorProfile = null,
   verifiedOrigin = false,
 }) {
   const url = resolvePassportQrUrl(passport)
@@ -266,7 +262,7 @@ export function buildPassportLabelItem({
     filenameBase: passport.shortId,
     factLines: factLines?.length ? factLines : null,
     shortIdLine: passport.shortId,
-    vendorName: isVendor ? resolveVendorDisplayName(vendorUser) : null,
+    vendorName: isVendor ? resolveVendorDisplayName(vendorProfile) : null,
     verifiedOrigin: isVendor ? Boolean(verifiedOrigin) : false,
   }
 }
