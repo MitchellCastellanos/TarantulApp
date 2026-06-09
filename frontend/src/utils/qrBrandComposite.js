@@ -500,25 +500,26 @@ function vendorPassportProfile(tier) {
       }
     default:
       return {
-        pad: 7,
-        commonSize: 12,
-        commonLineH: 14,
-        sciSize: 9,
-        sciLineH: 11,
-        vendorSize: 9,
-        vendorLineH: 11,
-        badgeSize: 7,
-        factSize: 7.5,
-        factLineH: 9,
-        captionSize: 7,
-        captionLineH: 9,
-        idSize: 7,
-        poweredSize: 6,
-        logoMax: 28,
+        pad: 6,
+        commonSize: 11,
+        commonLineH: 13,
+        sciSize: 8.5,
+        sciLineH: 10,
+        vendorSize: 8,
+        vendorLineH: 10,
+        badgeSize: 6.5,
+        factSize: 7,
+        factLineH: 8.5,
+        captionSize: 6.5,
+        captionLineH: 8,
+        idSize: 6.5,
+        poweredSize: 5.5,
+        logoMax: 22,
         maxCommonLines: 1,
         maxSciLines: 1,
-        qrColGap: 5,
-        qrWidthFrac: 0.33,
+        qrColGap: 4,
+        qrWidthFrac: 0.3,
+        minQr: 28,
         stackQr: false,
       }
   }
@@ -577,14 +578,25 @@ function measureHeaderBlock(ctx, profile, nameLine, speciesLine, innerW) {
   return { commonLines, sciLines, headerH }
 }
 
+/** Split compound care lines (joined with ·) into separate items for denser labels. */
+function expandVendorFactSegments(factLines) {
+  const out = []
+  for (const raw of factLines || []) {
+    const line = String(raw ?? '').trim()
+    if (!line) continue
+    const parts = line.split(/\s*·\s*/).map((p) => p.trim()).filter(Boolean)
+    if (parts.length > 1) out.push(...parts)
+    else out.push(line)
+  }
+  return out
+}
+
 /** Flatten care-fact strings into wrapped lines (width-based, no char clipping). */
 function wrapVendorFactLines(ctx, factLines, textW, profile) {
   ctx.font = `${profile.factSize}px sans-serif`
   const wrapped = []
-  for (const raw of factLines || []) {
-    const line = String(raw ?? '').trim()
-    if (!line) continue
-    wrapped.push(...wrapLinesToWidth(ctx, line, textW))
+  for (const segment of expandVendorFactSegments(factLines)) {
+    wrapped.push(...wrapLinesToWidth(ctx, segment, textW))
   }
   return wrapped
 }
@@ -606,10 +618,7 @@ function computeVendorBodyLayout(
   profile,
   { innerW, bodyBudget, stackQr, factLines, shortIdLine, captionLine },
 ) {
-  const minQr = stackQr ? 34 : 42
-  const maxQr = stackQr
-    ? Math.round(innerW * 0.46)
-    : Math.round(innerW * (profile.qrWidthFrac ?? 0.36))
+  const minQr = profile.minQr ?? (stackQr ? 30 : 28)
   const colGap = profile.qrColGap ?? 6
   const idReserve = shortIdLine ? profile.idSize + 2 : 0
 
@@ -619,43 +628,93 @@ function computeVendorBodyLayout(
     : []
   const captionReserve = captionWrapped.length ? captionWrapped.length * profile.captionLineH + 2 : 0
 
-  let best = null
+  const candidates = []
 
-  for (let qrSize = maxQr; qrSize >= minQr; qrSize -= 2) {
-    const textW = stackQr ? innerW : Math.max(52, innerW - qrSize - colGap)
-    const factAreaH = stackQr
-      ? bodyBudget - qrSize - idReserve - captionReserve - 4
-      : bodyBudget - captionReserve - idReserve
-    const maxFactLines = Math.max(1, Math.floor(factAreaH / profile.factLineH))
-    const wrapped = wrapVendorFactLines(ctx, factLines, textW, profile)
-    const factRenderLines = fitWrappedFactLines(ctx, wrapped, maxFactLines, textW)
-    const factH = factRenderLines.length * profile.factLineH
-    const stackNeed = stackQr
-      ? qrSize + factH + idReserve + captionReserve + 4
-      : Math.max(qrSize, factH + idReserve + captionReserve)
+  if (stackQr) {
+    const maxQr = Math.round(innerW * 0.46)
+    for (let qrSize = Math.min(maxQr, bodyBudget); qrSize >= minQr; qrSize -= 2) {
+      const textW = innerW
+      const factAreaH = bodyBudget - qrSize - idReserve - captionReserve - 4
+      const maxFactLines = Math.max(0, Math.floor(factAreaH / profile.factLineH))
+      const wrapped = wrapVendorFactLines(ctx, factLines, textW, profile)
+      const factRenderLines = fitWrappedFactLines(ctx, wrapped, maxFactLines, textW)
+      const need = qrSize + factRenderLines.length * profile.factLineH + idReserve + captionReserve + 4
+      if (need <= bodyBudget) {
+        candidates.push({
+          bodyMode: 'stack',
+          qrSize,
+          textW,
+          factRenderLines,
+          captionLines: captionWrapped,
+          colGap,
+          score: factRenderLines.length * 100 + qrSize,
+        })
+      }
+    }
+  } else {
+    const widthCap = Math.round(innerW * (profile.qrWidthFrac ?? 0.34))
+    const heightCap = Math.max(minQr, bodyBudget)
+    const maxQr = Math.min(widthCap, heightCap)
 
-    if (stackNeed <= bodyBudget) {
-      best = { qrSize, textW, factRenderLines, captionLines: captionWrapped, colGap }
-      break
+    for (let qrSize = maxQr; qrSize >= minQr; qrSize -= 2) {
+      const textW = Math.max(48, innerW - qrSize - colGap)
+      const factAreaH = bodyBudget - captionReserve - idReserve
+      const maxFactLines = Math.max(0, Math.floor(factAreaH / profile.factLineH))
+      const wrapped = wrapVendorFactLines(ctx, factLines, textW, profile)
+      const factRenderLines = fitWrappedFactLines(ctx, wrapped, maxFactLines, textW)
+      const factH = factRenderLines.length * profile.factLineH
+      const need = Math.max(qrSize, factH + idReserve + captionReserve)
+      if (need <= bodyBudget) {
+        candidates.push({
+          bodyMode: 'side',
+          qrSize,
+          textW,
+          factRenderLines,
+          captionLines: captionWrapped,
+          colGap,
+          score: factRenderLines.length * 100 + qrSize,
+        })
+      }
+    }
+
+    const belowQr = Math.min(Math.round(innerW * 0.24), Math.round(bodyBudget * 0.38), maxQr)
+    if (belowQr >= minQr) {
+      const factsH = bodyBudget - belowQr - 3
+      const maxFactLines = Math.max(0, Math.floor(factsH / profile.factLineH))
+      const wrapped = wrapVendorFactLines(ctx, factLines, innerW, profile)
+      const factRenderLines = fitWrappedFactLines(ctx, wrapped, maxFactLines, innerW)
+      const need = belowQr + 3 + factRenderLines.length * profile.factLineH + captionReserve
+      if (need <= bodyBudget && factRenderLines.length >= 2) {
+        candidates.push({
+          bodyMode: 'below',
+          qrSize: belowQr,
+          textW: innerW,
+          factRenderLines,
+          captionLines: captionWrapped,
+          colGap,
+          score: factRenderLines.length * 100 + 10,
+        })
+      }
     }
   }
 
-  if (!best) {
-    const qrSize = minQr
-    const textW = stackQr ? innerW : Math.max(52, innerW - qrSize - colGap)
-    const factAreaH = Math.max(profile.factLineH, bodyBudget - qrSize - idReserve - captionReserve - 6)
-    const maxFactLines = Math.max(1, Math.floor(factAreaH / profile.factLineH))
-    const wrapped = wrapVendorFactLines(ctx, factLines, textW, profile)
-    best = {
-      qrSize,
-      textW,
-      factRenderLines: fitWrappedFactLines(ctx, wrapped, maxFactLines, textW),
-      captionLines: captionWrapped,
-      colGap,
-    }
+  if (candidates.length) {
+    candidates.sort((a, b) => b.score - a.score)
+    return candidates[0]
   }
 
-  return best
+  const qrSize = Math.min(minQr, bodyBudget)
+  const textW = stackQr ? innerW : Math.max(48, innerW - qrSize - colGap)
+  const maxFactLines = Math.max(1, Math.floor((bodyBudget - qrSize) / profile.factLineH))
+  const wrapped = wrapVendorFactLines(ctx, factLines, textW, profile)
+  return {
+    bodyMode: stackQr ? 'stack' : 'side',
+    qrSize,
+    textW,
+    factRenderLines: fitWrappedFactLines(ctx, wrapped, maxFactLines, textW),
+    captionLines: captionWrapped,
+    colGap,
+  }
 }
 
 function measureVendorPassportLayout(
@@ -730,6 +789,7 @@ function measureVendorPassportLayout(
     qrSize: bodyLayout.qrSize,
     textW: bodyLayout.textW,
     colGap: bodyLayout.colGap,
+    bodyMode: bodyLayout.bodyMode,
     origin,
     hasLogo,
     innerW,
@@ -826,6 +886,7 @@ async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, verifie
     shortIdLine,
     textW,
     colGap,
+    bodyMode,
   } = measure
   const x0 = profile.pad
   let y = profile.pad
@@ -873,7 +934,28 @@ async function drawVendorPassportLabel(ctx, measure, { composed, qrSize, verifie
   ctx.rect(0, y, W, Math.max(0, bodyBottom - y))
   ctx.clip()
 
-  if (profile.stackQr) {
+  if (bodyMode === 'below') {
+    const qrX = x0
+    const qrY = y
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+    let factsY = qrY + qrSize + 3
+    const factsBottom = bodyBottom - captionLines.length * profile.captionLineH - 2
+    for (const ln of factRenderLines) {
+      if (factsY + profile.factLineH > factsBottom) break
+      factsY = drawLeftLines(ctx, x0, factsY, [ln], profile.factLineH, `${profile.factSize}px sans-serif`, '#222')
+    }
+    if (captionLines.length) {
+      drawLeftLines(
+        ctx,
+        x0,
+        bodyBottom - captionLines.length * profile.captionLineH,
+        captionLines,
+        profile.captionLineH,
+        `${profile.captionSize}px sans-serif`,
+        '#666',
+      )
+    }
+  } else if (profile.stackQr || bodyMode === 'stack') {
     const qrX = (W - qrSize) / 2
     ctx.drawImage(qrImg, qrX, y, qrSize, qrSize)
     let stackY = y + qrSize + 2

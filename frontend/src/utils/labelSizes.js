@@ -12,7 +12,7 @@ export const DEFAULT_LABEL_SIZE_ID = 'medium'
 export const VENDOR_LABEL_SIZE_PRESETS = {
   vial: { id: 'vial', widthCm: 2.5, heightCm: 3.5, columns: 4, tier: 'vial' },
   small: { id: 'small', widthCm: 3.5, heightCm: 2.5, columns: 3, tier: 'small' },
-  medium: { id: 'medium', widthCm: 5, heightCm: 3.5, columns: 2, tier: 'medium' },
+  medium: { id: 'medium', widthCm: 5, heightCm: 4, columns: 2, tier: 'medium' },
   large: { id: 'large', widthCm: 7, heightCm: 5, columns: 2, tier: 'large' },
 }
 

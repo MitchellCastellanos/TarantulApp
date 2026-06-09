@@ -646,7 +646,7 @@
     "size": {
       "tiny": "Tiny (2 cm)",
       "small": "Small (2.8 cm)",
-      "medium": "Medium (4 cm)",
+      "medium": "Medium (5×4 cm)",
       "large": "Large (5 cm)"
     }
   },
@@ -1673,7 +1673,7 @@
       "help": "Width × height for print. Vial is compact; large is for display tables.",
       "vial": "Vial — {{w}}×{{h}} cm",
       "small": "Small — {{w}}×{{h}} cm",
-      "medium": "Medium — {{w}}×{{h}} cm",
+      "medium": "Medium — {{w}}×{{h}} cm (breeder default)",
       "large": "Large (display) — {{w}}×{{h}} cm"
     },
     "qrTarget": {
