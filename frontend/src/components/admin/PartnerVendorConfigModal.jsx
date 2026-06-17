@@ -25,6 +25,9 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [feedType, setFeedType] = useState('')
   const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_WOO_FEED_JSON)
   const [jsonError, setJsonError] = useState('')
+  // Integrated cart (add-to-cart + cart bar handoff). When off, each listing links
+  // directly to its own product page on the partner website.
+  const [cartEnabled, setCartEnabled] = useState(true)
   // In-app TarantulApp checkout (beta, Canada only).
   const [inAppEnabled, setInAppEnabled] = useState(false)
   const [checkoutMode, setCheckoutMode] = useState('website')
@@ -49,6 +52,9 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     const fc = vendor.feedConfig && Object.keys(vendor.feedConfig).length > 0 ? vendor.feedConfig : null
     setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : defaultFeedJsonForType(vendor.feedType))
     setJsonError('')
+    const cartOff = vendor.feedConfig?.cartEnabled === false
+      || String(vendor.feedConfig?.cartHandoffMode || '').toLowerCase() === 'none'
+    setCartEnabled(!cartOff)
     const inApp = (vendor.feedConfig && vendor.feedConfig.inAppCheckout) || {}
     setInAppEnabled(!!inApp.enabled)
     setCheckoutMode(vendor.feedConfig?.checkoutMode === 'tarantulapp' ? 'tarantulapp' : 'website')
@@ -131,6 +137,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
         ...feedConfig,
         partnerTier: isFounding ? 'founding' : 'official',
         boostLevel: isFounding ? 2 : 1,
+        cartEnabled,
         checkoutMode: inAppCountryOk && inAppEnabled ? checkoutMode : 'website',
         inAppCheckout: inApp,
       },
@@ -192,6 +199,17 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 {jsonError ? <div className="invalid-feedback d-block">{jsonError}</div> : null}
                 <p className="small text-muted mb-0 mt-1">{t('admin.partnerFeedConfigJsonHint')}</p>
                 <p className="small text-muted mb-0">{t('admin.partnerFeedSyncOptionalHint')}</p>
+              </div>
+              <div className="col-12">
+                <hr className="my-2" />
+                <div className="form-check ms-2">
+                  <input className="form-check-input" type="checkbox" id="cartEnabled"
+                    checked={cartEnabled} onChange={(e) => setCartEnabled(e.target.checked)} />
+                  <label className="form-check-label small" htmlFor="cartEnabled">
+                    {t('admin.partnerCartEnabledLabel')}
+                  </label>
+                </div>
+                <p className="small text-muted mb-0 mt-1">{t('admin.partnerCartEnabledHint')}</p>
               </div>
               <div className="col-12">
                 <hr className="my-2" />

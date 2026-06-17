@@ -20,7 +20,7 @@ import PublicKeeperHandle from '../components/PublicKeeperHandle'
 import { usePageSeo } from '../hooks/usePageSeo'
 import PartnerCartBar from '../components/PartnerCartBar'
 import { addPartnerCartLine } from '../utils/partnerCart'
-import { partnerStorefrontPath, vendorHasInAppStorefront } from '../utils/partnerStorefront'
+import { partnerStorefrontPath, vendorCartEnabled, vendorHasInAppStorefront } from '../utils/partnerStorefront'
 import ListingShareKit from '../components/ListingShareKit'
 import SpeciesTradeNoteBlock from '../components/SpeciesTradeNoteBlock'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
@@ -158,6 +158,7 @@ export default function MarketplaceListingDetailPage() {
   }
 
   const isPartner = listing && (listing.source === 'partner' || listing.isPartner)
+  const partnerCartEnabled = !listing?.officialVendor || vendorCartEnabled(listing.officialVendor)
   const sellerId = listing?.sellerUserId
   const sellerHandle = listing?.sellerHandle
   const canMessage = sellerId && user && String(user.id) !== String(sellerId)
@@ -549,27 +550,42 @@ export default function MarketplaceListingDetailPage() {
                           </span>
                         )}
                       </h3>
-                      <button
-                        type="button"
-                        className="btn btn-warning btn-sm w-100 mb-2"
-                        onClick={() => {
-                          trackListingEvent(listingId, 'contact_tap_cart', { country: listing?.country })
-                          addPartnerCartLine({
-                            vendorSlug: listing.officialVendor?.slug,
-                            listingId: listing.id,
-                            externalProductId: listing.partnerExternalId,
-                            title: listing.title,
-                            priceAmount: listing.priceAmount,
-                            currency: listing.currency,
-                            imageUrl: listing.imageUrl,
-                            canonicalUrl: listing.canonicalUrl,
-                            quantity: 1,
-                          })
-                          setMessage(t('marketplace.partnerCartAdded'))
-                        }}
-                      >
-                        {t('marketplace.partnerAddToCart')}
-                      </button>
+                      {partnerCartEnabled && (
+                        <button
+                          type="button"
+                          className="btn btn-warning btn-sm w-100 mb-2"
+                          onClick={() => {
+                            trackListingEvent(listingId, 'contact_tap_cart', { country: listing?.country })
+                            addPartnerCartLine({
+                              vendorSlug: listing.officialVendor?.slug,
+                              listingId: listing.id,
+                              externalProductId: listing.partnerExternalId,
+                              title: listing.title,
+                              priceAmount: listing.priceAmount,
+                              currency: listing.currency,
+                              imageUrl: listing.imageUrl,
+                              canonicalUrl: listing.canonicalUrl,
+                              quantity: 1,
+                            })
+                            setMessage(t('marketplace.partnerCartAdded'))
+                          }}
+                        >
+                          {t('marketplace.partnerAddToCart')}
+                        </button>
+                      )}
+                      {!partnerCartEnabled && listing.canonicalUrl && (
+                        <a
+                          href={listing.canonicalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-warning btn-sm w-100 mb-2 fw-semibold"
+                          onClick={() => trackListingEvent(listingId, 'contact_tap_external', { country: listing?.country })}
+                        >
+                          {t('marketplace.partnerBuyOnSite', {
+                            name: listing.officialVendor?.name || listing.sellerName,
+                          })}
+                        </a>
+                      )}
                       {listing.officialVendor && vendorHasInAppStorefront(listing.officialVendor) && partnerStorefrontPath(listing.officialVendor.slug) ? (
                         <Link
                           to={partnerStorefrontPath(listing.officialVendor.slug)}
@@ -592,7 +608,7 @@ export default function MarketplaceListingDetailPage() {
                           })}
                         </a>
                       )}
-                      {listing.canonicalUrl && (
+                      {partnerCartEnabled && listing.canonicalUrl && (
                         <a
                           href={listing.canonicalUrl}
                           target="_blank"
@@ -655,7 +671,7 @@ export default function MarketplaceListingDetailPage() {
           </section>
         )}
       </div>
-      <PartnerCartBar />
+      {partnerCartEnabled && <PartnerCartBar />}
       {shareOpen && listing && (
         <ListingShareKit
           listingId={listingId}

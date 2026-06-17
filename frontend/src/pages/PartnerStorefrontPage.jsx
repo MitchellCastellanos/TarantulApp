@@ -8,6 +8,7 @@ import StorefrontShareKit from '../components/StorefrontShareKit'
 import marketplaceService from '../services/marketplaceService'
 import { decodeListingTitle, partnerListingImageUrl } from '../utils/listingDisplay'
 import { addPartnerCartLine } from '../utils/partnerCart'
+import { vendorCartEnabled } from '../utils/partnerStorefront'
 import { sortMarketplaceListings } from '../utils/marketplaceListingSort'
 import { usePageSeo } from '../hooks/usePageSeo'
 import { isFoundingPartnerTier } from '../utils/partnerProgramTier'
@@ -72,6 +73,7 @@ export default function PartnerStorefrontPage() {
   const promotedOnly = searchParams.get('promoted') === '1'
 
   const isFounding = isFoundingPartnerTier(vendor)
+  const cartEnabled = vendorCartEnabled(vendor)
   const location = useMemo(
     () => [vendor?.city, vendor?.state, vendor?.country].filter(Boolean).join(' · '),
     [vendor?.city, vendor?.country, vendor?.state],
@@ -351,9 +353,24 @@ export default function PartnerStorefrontPage() {
                           : t('marketplace.priceOnRequest')}
                       </div>
                       <div className="d-flex gap-2 flex-wrap">
-                        <button type="button" className="btn btn-sm btn-warning" onClick={(ev) => addLine(l, ev)}>
-                          {t('marketplace.partnerAddToCart')}
-                        </button>
+                        {cartEnabled ? (
+                          <button type="button" className="btn btn-sm btn-warning" onClick={(ev) => addLine(l, ev)}>
+                            {t('marketplace.partnerAddToCart')}
+                          </button>
+                        ) : l.canonicalUrl ? (
+                          <a
+                            href={l.canonicalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-sm btn-warning fw-semibold"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              trackListingEvent(l.id, 'contact_tap_external', { country: l.country })
+                            }}
+                          >
+                            {t('marketplace.partnerStorefrontBuyOnSite')}
+                          </a>
+                        ) : null}
                         <Link
                           to={`/marketplace/listing/${l.id}`}
                           className="btn btn-sm btn-outline-warning"
@@ -387,7 +404,7 @@ export default function PartnerStorefrontPage() {
         </div>
       )}
 
-      <PartnerCartBar />
+      {cartEnabled && <PartnerCartBar />}
 
       {shareOpen && vendor && storefrontUrl && (
         <StorefrontShareKit

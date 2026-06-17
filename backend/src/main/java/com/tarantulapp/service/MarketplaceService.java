@@ -571,6 +571,7 @@ public class MarketplaceService {
         out.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
         out.put("nationalShipping", Boolean.TRUE.equals(vendor.getNationalShipping()));
         out.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
+        out.put("cartEnabled", vendorCartEnabled(vendor));
         out.put("storefrontPath", vendor.getSlug() == null ? null : "/partner/" + vendor.getSlug());
         return out;
     }
@@ -1265,6 +1266,26 @@ public class MarketplaceService {
         return tier.isFoundingPartner() ? "founding" : "official";
     }
 
+    /**
+     * Whether a partner uses the in-app integrated cart (add-to-cart + cart bar handoff).
+     * When disabled, the UI hides add-to-cart and each listing links directly to its own
+     * product page on the partner website. Driven by {@code feedConfig}:
+     * {@code cartEnabled: false} or {@code cartHandoffMode: "none"} both turn the cart off.
+     * Defaults to enabled for backward compatibility.
+     */
+    private static boolean vendorCartEnabled(OfficialVendor vendor) {
+        Map<String, Object> feed = vendor == null || vendor.getFeedConfig() == null
+                ? Map.of() : vendor.getFeedConfig();
+        Object cartEnabled = feed.get("cartEnabled");
+        if (cartEnabled instanceof Boolean b) {
+            if (!b) return false;
+        } else if (cartEnabled instanceof String s && "false".equalsIgnoreCase(s.trim())) {
+            return false;
+        }
+        Object mode = feed.get("cartHandoffMode");
+        return mode == null || !"none".equalsIgnoreCase(String.valueOf(mode).trim());
+    }
+
     private Map<String, Object> mapPartnerListing(PartnerListing listing, OfficialVendor vendor) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", listing.getId());
@@ -1312,6 +1333,7 @@ public class MarketplaceService {
             vendorMeta.put("partnerTier", partnerTierKey(vendor.getPartnerProgramTier()));
             vendorMeta.put("isFoundingPartner", founding);
             vendorMeta.put("listingImportEnabled", Boolean.TRUE.equals(vendor.getListingImportEnabled()));
+            vendorMeta.put("cartEnabled", vendorCartEnabled(vendor));
             vendorMeta.put("enabled", Boolean.TRUE.equals(vendor.getEnabled()));
             out.put("officialVendor", vendorMeta);
         }

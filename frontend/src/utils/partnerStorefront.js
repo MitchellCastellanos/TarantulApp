@@ -25,6 +25,15 @@ export function vendorHasInAppStorefront(vendor) {
   return true
 }
 
+/**
+ * Whether a partner uses the in-app integrated cart (add-to-cart + cart bar handoff).
+ * When false, each listing links directly to its own product page on the partner site.
+ * Backend exposes `cartEnabled` on the vendor summary; defaults to enabled when absent.
+ */
+export function vendorCartEnabled(vendor) {
+  return vendor?.cartEnabled !== false
+}
+
 /** Primary CTA for a partner card: in-app storefront when synced, else external site. */
 export function partnerFeaturedHref(vendor) {
   if (vendorHasInAppStorefront(vendor)) {
