@@ -10,10 +10,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class PartnerListingImageProxyService {
+
+    /**
+     * Public image CDNs partners commonly serve catalog photos from (a different host than their
+     * storefront domain). These are read-only public image hosts, so allowing them in the proxy is
+     * safe and avoids per-vendor config for the common cases (Cloudinary, Shopify CDN, etc.).
+     */
+    private static final Set<String> TRUSTED_IMAGE_CDN_HOSTS = Set.of(
+            "res.cloudinary.com",
+            "cdn.shopify.com",
+            "images.squarespace-cdn.com"
+    );
 
     private final RestTemplate restTemplate;
     private final OfficialVendorRepository officialVendorRepository;
@@ -39,7 +53,7 @@ public class PartnerListingImageProxyService {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
-    private URI validateUrl(String rawUrl) {
+    URI validateUrl(String rawUrl) {
         if (rawUrl == null || rawUrl.isBlank()) {
             throw new IllegalArgumentException("Missing image url");
         }
@@ -62,9 +76,45 @@ public class PartnerListingImageProxyService {
 
     private boolean isAllowedHost(String host) {
         String lower = host.toLowerCase(Locale.ROOT);
+        if (matchesTrustedCdn(lower)) {
+            return true;
+        }
         for (OfficialVendor vendor : officialVendorRepository.findAll()) {
             if (matchesConfiguredHost(lower, vendor.getFeedBaseUrl())
-                    || matchesConfiguredHost(lower, vendor.getWebsiteUrl())) {
+                    || matchesConfiguredHost(lower, vendor.getWebsiteUrl())
+                    || matchesConfiguredImageHosts(lower, vendor)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesTrustedCdn(String requestHost) {
+        for (String cdn : TRUSTED_IMAGE_CDN_HOSTS) {
+            if (requestHost.equals(cdn) || requestHost.endsWith("." + cdn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Optional per-vendor allowlist: feedConfig.imageHosts = ["images.example.com", ...]. */
+    private boolean matchesConfiguredImageHosts(String requestHost, OfficialVendor vendor) {
+        Map<String, Object> config = vendor.getFeedConfig();
+        if (config == null) {
+            return false;
+        }
+        Object raw = config.get("imageHosts");
+        if (!(raw instanceof Collection<?> hosts)) {
+            return false;
+        }
+        for (Object entry : hosts) {
+            if (entry == null) {
+                continue;
+            }
+            String configured = entry.toString().trim().toLowerCase(Locale.ROOT);
+            if (!configured.isEmpty()
+                    && (requestHost.equals(configured) || requestHost.endsWith("." + configured))) {
                 return true;
             }
         }
