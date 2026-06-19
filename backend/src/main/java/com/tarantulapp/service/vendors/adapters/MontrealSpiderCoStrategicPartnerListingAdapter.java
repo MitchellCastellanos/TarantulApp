@@ -99,17 +99,23 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
             if (status == 401 || status == 403) {
-                log.warn("Montreal Spider Co fetch unauthorized (HTTP {}) for {} — check feedConfig.apiKey",
-                        status, vendor.getSlug());
+                log.warn("Montreal Spider Co fetch unauthorized (HTTP {}) for {} at {} — check feedConfig.apiKey",
+                        status, vendor.getSlug(), catalogUrl);
+                return List.of();
+            }
+            if (status == 404) {
+                log.warn("Montreal Spider Co fetch HTTP 404 for {} at {} — endpoint not found. "
+                                + "Verify the catalog API is deployed at this URL (set feedBaseUrl or feedConfig.catalogUrl).",
+                        vendor.getSlug(), catalogUrl);
                 return List.of();
             }
             if (status < 200 || status >= 300) {
-                log.warn("Montreal Spider Co fetch HTTP {} for {}", status, vendor.getSlug());
+                log.warn("Montreal Spider Co fetch HTTP {} for {} at {}", status, vendor.getSlug(), catalogUrl);
                 return List.of();
             }
             root = objectMapper.readTree(response.body());
         } catch (Exception ex) {
-            log.warn("Montreal Spider Co fetch failed {}: {}", vendor.getSlug(), ex.getMessage());
+            log.warn("Montreal Spider Co fetch failed {} at {}: {}", vendor.getSlug(), catalogUrl, ex.getMessage());
             return List.of();
         }
 
