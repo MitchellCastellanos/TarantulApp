@@ -53,6 +53,16 @@ public class PartnerFeedCapabilityRegistry {
                     "Usar CSV mientras tanto, o API key Lightspeed en feed_config."
             ),
             new PartnerFeedCapability(
+                    "montreal_spider_co",
+                    "Montreal Spider Co (API propia)",
+                    true,
+                    List.of("feedBaseUrl"),
+                    List.of("montreal_spider_co", "custom", "nextjs"),
+                    "Autosync Montreal Spider Co disponible hoy",
+                    "Montreal Spider Co — falta endpoint de catálogo",
+                    "Configura feedBaseUrl con https://montrealspider.ca/api/catalog (y feedConfig.apiKey si el socio activó CATALOG_API_KEY)."
+            ),
+            new PartnerFeedCapability(
                     "static",
                     "JSON estático (bootstrap)",
                     false,

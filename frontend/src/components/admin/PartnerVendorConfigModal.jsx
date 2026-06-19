@@ -16,6 +16,12 @@ const DEFAULT_CSV_FEED_JSON = `{
   "categoryMapping": {}
 }`
 
+const DEFAULT_MONTREAL_SPIDER_CO_FEED_JSON = `{
+  "apiKey": "",
+  "siteBaseUrl": "https://montrealspider.ca",
+  "allowedCategories": ["tarantulas"]
+}`
+
 export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave }) {
   const { t } = useTranslation()
   const [tier, setTier] = useState('official')
@@ -25,6 +31,8 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
   const [feedType, setFeedType] = useState('')
   const [feedConfigJson, setFeedConfigJson] = useState(DEFAULT_WOO_FEED_JSON)
   const [jsonError, setJsonError] = useState('')
+  // Master switch for auto-sync: scheduled and "Test Sync" runs only import when this is on.
+  const [importEnabled, setImportEnabled] = useState(false)
   // Integrated cart (add-to-cart + cart bar handoff). When off, each listing links
   // directly to its own product page on the partner website.
   const [cartEnabled, setCartEnabled] = useState(true)
@@ -52,6 +60,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     const fc = vendor.feedConfig && Object.keys(vendor.feedConfig).length > 0 ? vendor.feedConfig : null
     setFeedConfigJson(fc ? JSON.stringify(fc, null, 2) : defaultFeedJsonForType(vendor.feedType))
     setJsonError('')
+    setImportEnabled(!!vendor.listingImportEnabled)
     const cartOff = vendor.feedConfig?.cartEnabled === false
       || String(vendor.feedConfig?.cartHandoffMode || '').toLowerCase() === 'none'
     setCartEnabled(!cartOff)
@@ -87,11 +96,12 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
 
   const onFeedTypeChange = (next) => {
     setFeedType(next)
-    if (next === 'csv' && feedConfigJson.trim() === DEFAULT_WOO_FEED_JSON.trim()) {
-      setFeedConfigJson(DEFAULT_CSV_FEED_JSON)
-    }
-    if (next === 'woocommerce' && feedConfigJson.trim() === DEFAULT_CSV_FEED_JSON.trim()) {
-      setFeedConfigJson(DEFAULT_WOO_FEED_JSON)
+    // Swap in the matching template only when the textarea still holds an untouched default,
+    // so we never clobber config an admin has already edited.
+    const KNOWN_DEFAULTS = [DEFAULT_WOO_FEED_JSON, DEFAULT_CSV_FEED_JSON, DEFAULT_MONTREAL_SPIDER_CO_FEED_JSON]
+    const current = feedConfigJson.trim()
+    if (KNOWN_DEFAULTS.some((tpl) => tpl.trim() === current)) {
+      setFeedConfigJson(defaultFeedJsonForType(next))
     }
   }
 
@@ -129,6 +139,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
     onSave({
       partnerProgramTier: isFounding ? 'FOUNDING_PARTNER' : 'OFFICIAL_PARTNER',
       strategicFounder: isFounding,
+      listingImportEnabled: importEnabled,
       badge: badge.trim(),
       websiteUrl: websiteUrl.trim(),
       feedBaseUrl: feedBaseUrl.trim(),
@@ -186,6 +197,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                   <option value="static">static</option>
                   <option value="shopify">shopify</option>
                   <option value="lightspeed">lightspeed</option>
+                  <option value="montreal_spider_co">montreal_spider_co</option>
                 </select>
               </div>
               <div className="col-12">
@@ -199,6 +211,17 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
                 {jsonError ? <div className="invalid-feedback d-block">{jsonError}</div> : null}
                 <p className="small text-muted mb-0 mt-1">{t('admin.partnerFeedConfigJsonHint')}</p>
                 <p className="small text-muted mb-0">{t('admin.partnerFeedSyncOptionalHint')}</p>
+              </div>
+              <div className="col-12">
+                <hr className="my-2" />
+                <div className="form-check ms-2">
+                  <input className="form-check-input" type="checkbox" id="importEnabled"
+                    checked={importEnabled} onChange={(e) => setImportEnabled(e.target.checked)} />
+                  <label className="form-check-label small" htmlFor="importEnabled">
+                    {t('admin.partnerImportEnabledLabel')}
+                  </label>
+                </div>
+                <p className="small text-muted mb-0 mt-1">{t('admin.partnerImportEnabledHint')}</p>
               </div>
               <div className="col-12">
                 <hr className="my-2" />
@@ -398,5 +421,7 @@ export default function PartnerVendorConfigModal({ vendor, busy, onClose, onSave
 }
 
 function defaultFeedJsonForType(type) {
-  return type === 'csv' ? DEFAULT_CSV_FEED_JSON : DEFAULT_WOO_FEED_JSON
+  if (type === 'csv') return DEFAULT_CSV_FEED_JSON
+  if (type === 'montreal_spider_co') return DEFAULT_MONTREAL_SPIDER_CO_FEED_JSON
+  return DEFAULT_WOO_FEED_JSON
 }

@@ -3055,6 +3055,8 @@
     "partnerFeedTypeNone": "Pas de sync catalogue",
     "partnerFeedTypePromptOptional": "Type de flux (optionnel — vide = badge seul) :",
     "partnerFeedSyncOptionalHint": "Uniquement pour les partenaires avec import catalogue. Les badge-only peuvent laisser le flux vide.",
+    "partnerImportEnabledLabel": "Activer la sync catalogue (import d'annonces)",
+    "partnerImportEnabledHint": "Interrupteur principal de l'auto-sync. Doit être activé pour que la sync planifiée ou le bouton « Test Sync » importent des annonces du flux de ce partenaire.",
     "partnerCartEnabledLabel": "Panier intégré (ajouter au panier)",
     "partnerCartEnabledHint": "Désactivé, aucun bouton « Ajouter au panier » ni barre de panier : chaque annonce renvoie directement vers sa propre fiche produit sur le site du partenaire.",
     "partnerCheckoutSection": "Paiement dans TarantulApp (bêta)",

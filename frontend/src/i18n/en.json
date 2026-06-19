@@ -3162,6 +3162,8 @@
     "partnerFeedTypeNone": "No catalog sync",
     "partnerFeedTypePromptOptional": "Feed type (optional — leave blank for badge-only):",
     "partnerFeedSyncOptionalHint": "Only needed for partners with catalog import. Badge-only partners can leave feed fields empty.",
+    "partnerImportEnabledLabel": "Enable catalog sync (listing import)",
+    "partnerImportEnabledHint": "Master switch for auto-sync. Must be on before scheduled or \"Test Sync\" runs will import any listings from this partner's feed.",
     "partnerCartEnabledLabel": "Integrated cart (add to cart)",
     "partnerCartEnabledHint": "When off, no \"Add to cart\" button or cart bar is shown: each listing links directly to its own product page on the partner site.",
     "partnerCheckoutSection": "In-app TarantulApp checkout (beta)",
