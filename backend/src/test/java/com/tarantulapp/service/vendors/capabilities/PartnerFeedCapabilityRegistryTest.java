@@ -11,8 +11,14 @@ class PartnerFeedCapabilityRegistryTest {
   private final PartnerFeedCapabilityRegistry registry = new PartnerFeedCapabilityRegistry();
 
   @Test
-  void recommendsCsvForLightspeed() {
-    assertEquals("csv", registry.recommendFeedType("lightspeed", false));
+  void recommendsLightspeedForLightspeedStore() {
+    // Lightspeed is a first-class feed type now that the Lightspeed eCom adapter exists.
+    assertEquals("lightspeed", registry.recommendFeedType("lightspeed", false));
+  }
+
+  @Test
+  void recommendsCsvForUnknownStore() {
+    assertEquals("csv", registry.recommendFeedType("wix", false));
   }
 
   @Test

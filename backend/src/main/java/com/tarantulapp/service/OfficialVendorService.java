@@ -1088,7 +1088,7 @@ public class OfficialVendorService {
         if (raw == null) return null;
         String t = raw.trim().toLowerCase(Locale.ROOT);
         if (t.isBlank()) return null;
-        if (!List.of("woocommerce", "static", "mock", "shopify", "html_scraper", "csv", "lightspeed").contains(t)) {
+        if (!List.of("woocommerce", "static", "mock", "shopify", "html_scraper", "csv", "lightspeed", "montreal_spider_co").contains(t)) {
             throw new IllegalArgumentException("INVALID_FEED_TYPE");
         }
         return t;

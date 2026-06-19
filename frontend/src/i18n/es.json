@@ -3138,6 +3138,8 @@
     "partnerFeedTypeNone": "Sin sync de catálogo",
     "partnerFeedTypePromptOptional": "Tipo de feed (opcional — vacío = solo insignia):",
     "partnerFeedSyncOptionalHint": "Solo para partners con import de catálogo. Los badge-only pueden dejar el feed vacío.",
+    "partnerImportEnabledLabel": "Activar sync de catálogo (import de listings)",
+    "partnerImportEnabledHint": "Interruptor maestro del auto-sync. Debe estar activo para que el sync programado o el botón «Test Sync» importen listings del feed de este partner.",
     "partnerCartEnabledLabel": "Carrito integrado (agregar al carrito)",
     "partnerCartEnabledHint": "Si se desactiva, no se muestra «Agregar al carrito» ni la barra de carrito: cada listado redirige a su propio producto en el sitio del socio.",
     "partnerCheckoutSection": "Cobro dentro de TarantulApp (beta)",
