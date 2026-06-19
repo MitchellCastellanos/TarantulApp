@@ -109,6 +109,24 @@ class MontrealSpiderCoStrategicPartnerListingAdapterTest {
     }
 
     @Test
+    void siteBaseReducesToOriginSoProductUrlsAreNotDoubledWithLocale() {
+        // Vendor website carries a locale path; product links must not become /en/en/product/...
+        OfficialVendor localized = vendor();
+        localized.setWebsiteUrl("https://www.montrealspider.ca/en");
+        String siteBase = adapter.resolveSiteBaseUrl(localized, "https://www.montrealspider.ca/api/catalog");
+        assertEquals("https://www.montrealspider.ca", siteBase);
+        assertEquals("https://www.montrealspider.ca/en/product/some-slug", siteBase + "/en/product/some-slug");
+    }
+
+    @Test
+    void siteBaseFallsBackToCatalogOriginWhenNoWebsite() {
+        OfficialVendor noSite = vendor();
+        noSite.setWebsiteUrl(null);
+        assertEquals("https://www.montrealspider.ca",
+                adapter.resolveSiteBaseUrl(noSite, "https://www.montrealspider.ca/api/catalog"));
+    }
+
+    @Test
     void supportsRequiresFeedTypeAndCatalogUrl() {
         assertTrue(adapter.supports(vendor()));
 
