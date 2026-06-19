@@ -4,6 +4,7 @@ import com.tarantulapp.entity.ChatThread;
 import com.tarantulapp.entity.MarketplaceListing;
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.PartnerListing;
+import com.tarantulapp.entity.PartnerListingAvailability;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
 import com.tarantulapp.entity.SellerReview;
@@ -497,11 +498,13 @@ public class MarketplaceService {
                         vendor.getId(), List.of(PartnerListingStatus.ACTIVE));
 
         long catalogTotal = allActive.stream()
+                .filter(MarketplaceService::isInStockForPublicDisplay)
                 .filter(p -> PartnerListingCatalogRules.isAllowedListing(
                         p.getTitle(), p.getDescription(), p.getListingCategory(), vendor.getFeedConfig()))
                 .count();
 
         List<Map<String, Object>> items = allActive.stream()
+                .filter(MarketplaceService::isInStockForPublicDisplay)
                 .filter(p -> categoryNorm == null || matchesPartnerListingCategoryFilter(p, categoryNorm))
                 .filter(p -> queryNorm == null || partnerMatchesQuery(p, queryNorm))
                 .filter(p -> promotedOnly == null || !promotedOnly || Boolean.TRUE.equals(p.getPromoted()))
@@ -923,6 +926,7 @@ public class MarketplaceService {
 
         return partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE)
                 .stream()
+                .filter(MarketplaceService::isInStockForPublicDisplay)
                 .filter(p -> eligibleVendorById.containsKey(p.getOfficialVendorId()))
                 .filter(p -> {
                     OfficialVendor v = eligibleVendorById.get(p.getOfficialVendorId());
@@ -943,6 +947,15 @@ public class MarketplaceService {
                 .limit(Math.max(1, partnerFeedHardCap))
                 .map(p -> mapPartnerListing(p, eligibleVendorById.get(p.getOfficialVendorId())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Out-of-stock partner listings stay ACTIVE in the DB (so they restore on the next sync when
+     * restocked) but are hidden from public catalog surfaces. UNKNOWN availability stays visible so
+     * we don't drop items whose feed simply omits a stock count.
+     */
+    private static boolean isInStockForPublicDisplay(PartnerListing listing) {
+        return listing.getAvailability() != PartnerListingAvailability.OUT_OF_STOCK;
     }
 
     private int founderBoost(OfficialVendor vendor) {

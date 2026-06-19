@@ -99,22 +99,30 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
             if (status == 401 || status == 403) {
-                log.warn("Montreal Spider Co fetch unauthorized (HTTP {}) for {} — check feedConfig.apiKey",
-                        status, vendor.getSlug());
+                log.warn("Montreal Spider Co fetch unauthorized (HTTP {}) for {} at {} — check feedConfig.apiKey",
+                        status, vendor.getSlug(), catalogUrl);
+                return List.of();
+            }
+            if (status == 404) {
+                log.warn("Montreal Spider Co fetch HTTP 404 for {} at {} — endpoint not found. "
+                                + "Verify the catalog API is deployed at this URL (set feedBaseUrl or feedConfig.catalogUrl).",
+                        vendor.getSlug(), catalogUrl);
                 return List.of();
             }
             if (status < 200 || status >= 300) {
-                log.warn("Montreal Spider Co fetch HTTP {} for {}", status, vendor.getSlug());
+                log.warn("Montreal Spider Co fetch HTTP {} for {} at {}", status, vendor.getSlug(), catalogUrl);
                 return List.of();
             }
             root = objectMapper.readTree(response.body());
         } catch (Exception ex) {
-            log.warn("Montreal Spider Co fetch failed {}: {}", vendor.getSlug(), ex.getMessage());
+            log.warn("Montreal Spider Co fetch failed {} at {}: {}", vendor.getSlug(), catalogUrl, ex.getMessage());
             return List.of();
         }
 
         List<StrategicVendorRawListing> out = mapCatalog(root, vendor, siteBase);
-        log.info("Montreal Spider Co adapter fetched {} listings for {}", out.size(), vendor.getSlug());
+        long withImages = out.stream().filter(r -> r.imageUrl() != null).count();
+        log.info("Montreal Spider Co adapter fetched {} listings ({} with images) for {}",
+                out.size(), withImages, vendor.getSlug());
         return out;
     }
 
@@ -142,7 +150,7 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
         String scientific = text(product, "scientific");
         String commonEn = localized(product.get("common"));
         String descriptionEn = localized(product.get("description"));
-        String imageUrl = absolutizeUrl(text(product, "image"), siteBase);
+        String imageUrl = resolveImageUrl(product, siteBase);
         String productUrl = siteBase + "/en/product/" + slug;
         boolean promoted = product.path("featured").asBoolean(false);
 
@@ -233,6 +241,54 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
         } catch (Exception ex) {
             return trimTrailingSlash(catalogUrl);
         }
+    }
+
+    /**
+     * Resolves a product image across the field shapes Montreal Spider Co's catalog may use.
+     * The documented {@code image} string is tried first, then common single-image aliases (any of
+     * which may be a plain string or a Cloudinary-style object with {@code secure_url}/{@code url}),
+     * then the first entry of common image arrays. Relative paths are absolutized against the site.
+     */
+    static String resolveImageUrl(JsonNode product, String siteBase) {
+        if (product == null) {
+            return null;
+        }
+        for (String field : List.of(
+                "image", "imageUrl", "image_url", "mainImage", "thumbnail", "photo", "cover")) {
+            String url = imageFromNode(product.get(field), siteBase);
+            if (url != null) {
+                return url;
+            }
+        }
+        for (String field : List.of("images", "photos", "gallery", "media")) {
+            JsonNode arr = product.get(field);
+            if (arr != null && arr.isArray() && !arr.isEmpty()) {
+                String url = imageFromNode(arr.get(0), siteBase);
+                if (url != null) {
+                    return url;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Extracts a usable image URL from either a string node or an object node ({secure_url|url|src|path}). */
+    private static String imageFromNode(JsonNode node, String siteBase) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isTextual()) {
+            return absolutizeUrl(node.asText().trim(), siteBase);
+        }
+        if (node.isObject()) {
+            for (String key : List.of("secure_url", "url", "src", "path")) {
+                String url = absolutizeUrl(text(node, key), siteBase);
+                if (url != null) {
+                    return url;
+                }
+            }
+        }
+        return null;
     }
 
     private static String absolutizeUrl(String raw, String siteBase) {

@@ -12,6 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MontrealSpiderCoStrategicPartnerListingAdapterTest {
@@ -76,6 +77,35 @@ class MontrealSpiderCoStrategicPartnerListingAdapterTest {
         StrategicVendorRawListing juvenile = items.get(1);
         assertEquals("grammostola-pulchra-brazilian-black:j", juvenile.externalId());
         assertEquals(0, juvenile.stockQuantity(), "out-of-stock size should keep stock 0");
+    }
+
+    @Test
+    void resolvesImagesAcrossCommonFieldShapes() throws Exception {
+        String base = "https://montrealspider.ca";
+
+        assertEquals("https://res.cloudinary.com/msc/a.jpg",
+                MontrealSpiderCoStrategicPartnerListingAdapter.resolveImageUrl(
+                        objectMapper.readTree("{\"image\":\"https://res.cloudinary.com/msc/a.jpg\"}"), base));
+
+        // Alternate string field name.
+        assertEquals("https://res.cloudinary.com/msc/b.jpg",
+                MontrealSpiderCoStrategicPartnerListingAdapter.resolveImageUrl(
+                        objectMapper.readTree("{\"imageUrl\":\"https://res.cloudinary.com/msc/b.jpg\"}"), base));
+
+        // Array of Cloudinary-style objects -> first secure_url.
+        assertEquals("https://res.cloudinary.com/msc/c.jpg",
+                MontrealSpiderCoStrategicPartnerListingAdapter.resolveImageUrl(
+                        objectMapper.readTree(
+                                "{\"images\":[{\"secure_url\":\"https://res.cloudinary.com/msc/c.jpg\"}]}"), base));
+
+        // Relative /public path absolutized against the site base.
+        assertEquals("https://montrealspider.ca/images/species/x.png",
+                MontrealSpiderCoStrategicPartnerListingAdapter.resolveImageUrl(
+                        objectMapper.readTree("{\"image\":\"/images/species/x.png\"}"), base));
+
+        // No image present.
+        assertNull(MontrealSpiderCoStrategicPartnerListingAdapter.resolveImageUrl(
+                objectMapper.readTree("{\"slug\":\"no-image\"}"), base));
     }
 
     @Test

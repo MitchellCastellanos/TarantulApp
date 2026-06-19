@@ -180,6 +180,53 @@ class MarketplaceServicePublicListingsTest {
     }
 
     @Test
+    void publicListingsHidesOutOfStockPartnerListings() {
+        UUID vendorId = UUID.randomUUID();
+        OfficialVendor vendor = new OfficialVendor();
+        vendor.setId(vendorId);
+        vendor.setName("Stock Partner");
+        vendor.setSlug("stock-partner");
+        vendor.setPartnerProgramTier(PartnerProgramTier.OFFICIAL_PARTNER);
+        vendor.setListingImportEnabled(true);
+        vendor.setEnabled(true);
+
+        PartnerListing inStock = new PartnerListing();
+        inStock.setId(UUID.randomUUID());
+        inStock.setOfficialVendorId(vendorId);
+        inStock.setTitle("Available sling");
+        inStock.setStatus(PartnerListingStatus.ACTIVE);
+        inStock.setAvailability(PartnerListingAvailability.IN_STOCK);
+        inStock.setCurrency("CAD");
+        inStock.setProductCanonicalUrl("https://partner.example.com/p/in");
+        inStock.setLastSyncedAt(Instant.now());
+
+        PartnerListing outOfStock = new PartnerListing();
+        outOfStock.setId(UUID.randomUUID());
+        outOfStock.setOfficialVendorId(vendorId);
+        outOfStock.setTitle("Sold out juvenile");
+        outOfStock.setStatus(PartnerListingStatus.ACTIVE);
+        outOfStock.setAvailability(PartnerListingAvailability.OUT_OF_STOCK);
+        outOfStock.setCurrency("CAD");
+        outOfStock.setProductCanonicalUrl("https://partner.example.com/p/out");
+        outOfStock.setLastSyncedAt(Instant.now());
+
+        when(officialVendorRepository.findByPartnerProgramTierInAndListingImportEnabledTrueAndEnabledTrueOrderByInfluenceScoreDesc(
+                eq(SYNC_PARTNER_TIERS)))
+                .thenReturn(List.of(vendor));
+        when(partnerListingRepository.findTop3000ByStatusOrderByPromotedDescLastSyncedAtDesc(PartnerListingStatus.ACTIVE))
+                .thenReturn(List.of(inStock, outOfStock));
+        when(marketplaceListingRepository.findTop100ByStatusOrderByCreatedAtDesc("active"))
+                .thenReturn(List.of());
+
+        List<Map<String, Object>> out = marketplaceService.publicListings(
+                null, "active", null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null);
+
+        assertEquals(1, out.size(), "Out-of-stock partner listing should be hidden");
+        assertEquals("Available sling", out.get(0).get("title"));
+    }
+
+    @Test
     void publicListingsReducesPartnerShareAsPeerSupplyGrows() {
         UUID vendorId = UUID.randomUUID();
         OfficialVendor vendor = new OfficialVendor();
