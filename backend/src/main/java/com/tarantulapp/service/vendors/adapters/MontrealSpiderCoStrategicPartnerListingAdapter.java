@@ -121,9 +121,34 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
 
         List<StrategicVendorRawListing> out = mapCatalog(root, vendor, siteBase);
         long withImages = out.stream().filter(r -> r.imageUrl() != null).count();
-        log.info("Montreal Spider Co adapter fetched {} listings ({} with images) for {}",
-                out.size(), withImages, vendor.getSlug());
+        long withStock = out.stream().filter(r -> r.stockQuantity() != null).count();
+        log.info("Montreal Spider Co adapter fetched {} listings ({} with images, {} with stock) for {}",
+                out.size(), withImages, withStock, vendor.getSlug());
+        // If images or stock didn't resolve, the live JSON likely uses field names other than the
+        // documented ones. Dump the actual product/size field names so the mapping can be corrected
+        // without needing direct network access to the feed.
+        if (!out.isEmpty() && (withImages == 0 || withStock == 0) && root.isArray() && !root.isEmpty()) {
+            logSchemaHint(root.get(0), vendor.getSlug());
+        }
         return out;
+    }
+
+    private void logSchemaHint(JsonNode product, String slug) {
+        JsonNode sizes = product == null ? null : product.get("sizes");
+        List<String> sizeFields = sizes != null && sizes.isArray() && !sizes.isEmpty()
+                ? fieldNames(sizes.get(0)) : List.of();
+        log.warn("Montreal Spider Co schema hint for {} — product fields={} ; size fields={}. "
+                        + "Image and/or stock did not resolve; adapter field mapping may need adjusting.",
+                slug, fieldNames(product), sizeFields);
+    }
+
+    private static List<String> fieldNames(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return List.of();
+        }
+        List<String> names = new ArrayList<>();
+        node.fieldNames().forEachRemaining(names::add);
+        return names;
     }
 
     /** Maps a parsed catalog array into raw listings. Package-private for offline mapping tests. */
@@ -228,19 +253,33 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
         return lower.endsWith("/api/catalog") ? trimmed : trimmed + "/api/catalog";
     }
 
-    private String resolveSiteBaseUrl(OfficialVendor vendor, String catalogUrl) {
+    /**
+     * Resolves the site origin (scheme://host) used to build product page links and absolutize
+     * relative images. We deliberately reduce to the origin and ignore any path/locale segment so a
+     * configured value like {@code https://www.montrealspider.ca/en} cannot produce a doubled
+     * {@code /en/en/product/...} URL.
+     */
+    String resolveSiteBaseUrl(OfficialVendor vendor, String catalogUrl) {
         Map<String, Object> config = vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig();
-        String configured = trimTrailingSlash(firstNonBlank(stringVal(config, "siteBaseUrl"), vendor.getWebsiteUrl()));
-        if (configured != null) {
-            return configured;
+        String candidate = firstNonBlank(
+                stringVal(config, "siteBaseUrl"), vendor.getWebsiteUrl(), catalogUrl);
+        String origin = originOf(candidate);
+        return origin != null ? origin : trimTrailingSlash(candidate);
+    }
+
+    private static String originOf(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
         }
-        // Fall back to the scheme://host of the catalog endpoint.
         try {
-            URI uri = URI.create(catalogUrl);
-            return uri.getScheme() + "://" + uri.getAuthority();
-        } catch (Exception ex) {
-            return trimTrailingSlash(catalogUrl);
+            URI uri = URI.create(url.trim());
+            if (uri.getScheme() != null && uri.getAuthority() != null) {
+                return uri.getScheme() + "://" + uri.getAuthority();
+            }
+        } catch (Exception ignored) {
+            // fall through
         }
+        return null;
     }
 
     /**
