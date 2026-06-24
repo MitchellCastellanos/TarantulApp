@@ -17,6 +17,35 @@ const SCREENSHOTS = [
   },
 ]
 
+const SANS_TITLE = {
+  fontFamily: "Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  color: 'var(--ta-parchment)',
+}
+
+function SectionHeading({ children, className = 'h5 fw-bold mb-3' }) {
+  return (
+    <h2 className={className} style={SANS_TITLE}>
+      {children}
+    </h2>
+  )
+}
+
+function PanelTitle({ children }) {
+  return (
+    <h3 className="h6 fw-bold mb-2" style={SANS_TITLE}>
+      {children}
+    </h3>
+  )
+}
+
+function PremiumCard({ children, className = '' }) {
+  return (
+    <div className={`card ta-premium-pane border-0 h-100 ${className}`.trim()}>
+      <div className="card-body p-4">{children}</div>
+    </div>
+  )
+}
+
 export default function VerifiedOriginPage() {
   const { t } = useTranslation()
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -47,7 +76,9 @@ export default function VerifiedOriginPage() {
           </p>
           <div className="row g-4 align-items-start">
             <div className="col-lg-7">
-              <h1 className="h3 fw-bold mb-3">{t('verifiedOriginLanding.heroTitle')}</h1>
+              <h1 className="h3 fw-bold mb-3" style={SANS_TITLE}>
+                {t('verifiedOriginLanding.heroTitle')}
+              </h1>
               <p className="text-muted mb-4" style={{ maxWidth: '38rem', lineHeight: 1.6 }}>
                 {t('verifiedOriginLanding.heroLead')}
               </p>
@@ -63,43 +94,47 @@ export default function VerifiedOriginPage() {
                 <Link to="/marketplace?verifiedOnly=1" className="btn btn-success btn-sm fw-semibold">
                   {t('verifiedOriginLanding.ctaBrowse')}
                 </Link>
-                <Link to="/studio/origin" className="btn btn-outline-dark btn-sm">
+                <Link
+                  to="/studio/origin"
+                  className="btn btn-sm"
+                  style={{
+                    border: '1px solid var(--ta-border)',
+                    color: 'var(--ta-parchment)',
+                    background: 'transparent',
+                  }}
+                >
                   {t('verifiedOriginLanding.ctaApply')}
                 </Link>
               </div>
             </div>
             <div className="col-lg-5">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body p-4">
-                  <h2 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.kindsTitle')}</h2>
-                  <p className="small text-muted mb-3">{t('verifiedOriginLanding.kindsBlurb')}</p>
-                  <div className="d-flex flex-wrap gap-2">
-                    {KINDS.map((kind) => (
-                      <span key={kind} className="badge bg-light text-dark border">
-                        {t(`verifiedOrigin.kind.${kind}`)}
-                      </span>
-                    ))}
-                  </div>
+              <PremiumCard>
+                <PanelTitle>{t('verifiedOriginLanding.kindsTitle')}</PanelTitle>
+                <p className="small text-muted mb-3">{t('verifiedOriginLanding.kindsBlurb')}</p>
+                <div className="d-flex flex-wrap gap-2">
+                  {KINDS.map((kind) => (
+                    <span key={kind} className="badge border text-body-secondary">
+                      {t(`verifiedOrigin.kind.${kind}`)}
+                    </span>
+                  ))}
                 </div>
-              </div>
+              </PremiumCard>
             </div>
           </div>
         </header>
 
         <section className="mb-5">
-          <h2 className="h5 fw-bold mb-3">{t('verifiedOriginLanding.certifiesTitle')}</h2>
+          <SectionHeading>{t('verifiedOriginLanding.certifiesTitle')}</SectionHeading>
           <div className="row g-3">
             {Array.isArray(certifies)
               ? certifies.map((item) => (
                   <div key={item.title} className="col-md-4">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body p-4">
-                        <h3 className="h6 fw-bold mb-2">{item.title}</h3>
-                        <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
-                          {item.body}
-                        </p>
-                      </div>
-                    </div>
+                    <PremiumCard>
+                      <PanelTitle>{item.title}</PanelTitle>
+                      <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
+                        {item.body}
+                      </p>
+                    </PremiumCard>
                   </div>
                 ))
               : null}
@@ -107,40 +142,32 @@ export default function VerifiedOriginPage() {
         </section>
 
         <section className="mb-5">
-          <div
-            className="rounded-3 p-4"
-            style={{
-              border: '1px solid rgba(108, 117, 125, 0.25)',
-              background: 'rgba(248, 249, 250, 0.85)',
-            }}
-          >
-            <h2 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.notCertifiesTitle')}</h2>
+          <PremiumCard>
+            <PanelTitle>{t('verifiedOriginLanding.notCertifiesTitle')}</PanelTitle>
             <ul className="small text-muted mb-0 ps-3" style={{ lineHeight: 1.65 }}>
               {Array.isArray(notCertifies) ? notCertifies.map((line) => <li key={line}>{line}</li>) : null}
             </ul>
-          </div>
+          </PremiumCard>
         </section>
 
         <section className="mb-5">
-          <h2 className="h5 fw-bold mb-3">{t('verifiedOriginLanding.howTitle')}</h2>
+          <SectionHeading>{t('verifiedOriginLanding.howTitle')}</SectionHeading>
           <div className="row g-3">
             {Array.isArray(howSteps)
               ? howSteps.map((step, i) => (
                   <div key={step.title} className="col-md-4">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body p-4">
-                        <p
-                          className="small fw-bold mb-2"
-                          style={{ color: 'var(--ta-gold-classic)', letterSpacing: '0.06em' }}
-                        >
-                          {String(i + 1).padStart(2, '0')}
-                        </p>
-                        <h3 className="h6 fw-bold mb-2">{step.title}</h3>
-                        <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
-                          {step.body}
-                        </p>
-                      </div>
-                    </div>
+                    <PremiumCard>
+                      <p
+                        className="small fw-bold mb-2"
+                        style={{ color: 'var(--ta-gold-classic)', letterSpacing: '0.06em' }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </p>
+                      <PanelTitle>{step.title}</PanelTitle>
+                      <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
+                        {step.body}
+                      </p>
+                    </PremiumCard>
                   </div>
                 ))
               : null}
@@ -148,25 +175,23 @@ export default function VerifiedOriginPage() {
         </section>
 
         <section className="mb-5">
-          <div className="card border-success border-opacity-25 shadow-sm">
-            <div className="card-body p-4">
-              <h2 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.deliveryTitle')}</h2>
-              <p className="small text-muted mb-3" style={{ lineHeight: 1.6 }}>
-                {t('verifiedOriginLanding.deliveryBody')}
-              </p>
-              <ol className="small mb-0 ps-3" style={{ lineHeight: 1.65 }}>
-                {Array.isArray(deliverySteps) ? deliverySteps.map((line) => <li key={line}>{line}</li>) : null}
-              </ol>
-            </div>
-          </div>
+          <PremiumCard className="border border-success border-opacity-25">
+            <PanelTitle>{t('verifiedOriginLanding.deliveryTitle')}</PanelTitle>
+            <p className="small text-muted mb-3" style={{ lineHeight: 1.6 }}>
+              {t('verifiedOriginLanding.deliveryBody')}
+            </p>
+            <ol className="small text-muted mb-0 ps-3" style={{ lineHeight: 1.65 }}>
+              {Array.isArray(deliverySteps) ? deliverySteps.map((line) => <li key={line}>{line}</li>) : null}
+            </ol>
+          </PremiumCard>
         </section>
 
         <section className="mb-5">
-          <h2 className="h5 fw-bold mb-3">{t('verifiedOriginLanding.whereTitle')}</h2>
+          <SectionHeading>{t('verifiedOriginLanding.whereTitle')}</SectionHeading>
           <div className="row g-3">
             {SCREENSHOTS.map((shot) => (
               <div key={shot.src} className="col-md-6">
-                <div className="card border-0 shadow-sm h-100 overflow-hidden">
+                <div className="card ta-premium-pane border-0 h-100 overflow-hidden">
                   <img
                     src={shot.src}
                     alt={t(shot.captionKey)}
@@ -184,72 +209,86 @@ export default function VerifiedOriginPage() {
         </section>
 
         <section className="mb-5">
-          <h2 className="h5 fw-bold mb-3">{t('verifiedOriginLanding.compareTitle')}</h2>
+          <SectionHeading>{t('verifiedOriginLanding.compareTitle')}</SectionHeading>
           <div className="row g-3">
             <div className="col-md-6">
-              <div className="card border-success border-opacity-50 shadow-sm h-100">
-                <div className="card-body p-4">
-                  <h3 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.compareVoTitle')}</h3>
-                  <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
-                    {t('verifiedOriginLanding.compareVoBody')}
-                  </p>
-                </div>
-              </div>
+              <PremiumCard className="border border-success border-opacity-50">
+                <PanelTitle>{t('verifiedOriginLanding.compareVoTitle')}</PanelTitle>
+                <p className="small text-muted mb-0" style={{ lineHeight: 1.6 }}>
+                  {t('verifiedOriginLanding.compareVoBody')}
+                </p>
+              </PremiumCard>
             </div>
             <div className="col-md-6">
-              <div className="card border-warning border-opacity-50 shadow-sm h-100">
-                <div className="card-body p-4">
-                  <h3 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.comparePartnerTitle')}</h3>
-                  <p className="small text-muted mb-3" style={{ lineHeight: 1.6 }}>
-                    {t('verifiedOriginLanding.comparePartnerBody')}
-                  </p>
-                  <Link to="/partners" className="btn btn-sm btn-outline-dark">
-                    {t('legal.verifiedVendors.partnerCta')}
-                  </Link>
-                </div>
-              </div>
+              <PremiumCard className="border border-warning border-opacity-50">
+                <PanelTitle>{t('verifiedOriginLanding.comparePartnerTitle')}</PanelTitle>
+                <p className="small text-muted mb-3" style={{ lineHeight: 1.6 }}>
+                  {t('verifiedOriginLanding.comparePartnerBody')}
+                </p>
+                <Link
+                  to="/partners"
+                  className="btn btn-sm"
+                  style={{
+                    border: '1px solid var(--ta-border)',
+                    color: 'var(--ta-parchment)',
+                    background: 'transparent',
+                  }}
+                >
+                  {t('legal.verifiedVendors.partnerCta')}
+                </Link>
+              </PremiumCard>
             </div>
           </div>
           <p className="small text-muted mt-3 mb-0">{t('verifiedOriginLanding.compareNote')}</p>
         </section>
 
         <section className="mb-5">
-          <div
-            className="rounded-3 p-4"
-            style={{
-              border: '1px solid rgba(200, 170, 80, 0.35)',
-              background: 'rgba(255, 252, 245, 0.9)',
-            }}
-          >
-            <h2 className="h6 fw-bold mb-2">{t('verifiedOriginLanding.partnerEmbedTitle')}</h2>
+          <PremiumCard>
+            <PanelTitle>{t('verifiedOriginLanding.partnerEmbedTitle')}</PanelTitle>
             <p className="small text-muted mb-3" style={{ lineHeight: 1.6 }}>
               {t('verifiedOriginLanding.partnerEmbedBody')}
             </p>
-            <code
-              className="d-block small p-3 rounded bg-white border text-break"
-              style={{ lineHeight: 1.55 }}
+            <pre
+              className="small p-3 rounded border text-break mb-0"
+              style={{
+                lineHeight: 1.55,
+                background: 'rgba(0, 0, 0, 0.28)',
+                borderColor: 'var(--ta-border)',
+                color: 'var(--ta-text)',
+                whiteSpace: 'pre-wrap',
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+              }}
             >
               {`<a href="${publicUrl}">${t('verifiedOriginLanding.partnerEmbedLinkText')}</a>`}
-            </code>
-          </div>
+            </pre>
+          </PremiumCard>
         </section>
 
-        <section className="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-          <div>
-            <h2 className="h6 fw-bold mb-1">{t('verifiedOriginLanding.applyCardTitle')}</h2>
-            <p className="small text-muted mb-0">{t('verifiedOriginLanding.applyCardBlurb')}</p>
+        <PremiumCard className="mb-4">
+          <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <div>
+              <PanelTitle>{t('verifiedOriginLanding.applyCardTitle')}</PanelTitle>
+              <p className="small text-muted mb-0">{t('verifiedOriginLanding.applyCardBlurb')}</p>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <Link to="/marketplace?verifiedOnly=1" className="btn btn-success btn-sm">
+                {t('verifiedOriginLanding.ctaBrowse')}
+              </Link>
+              <Link
+                to="/studio/origin"
+                className="btn btn-sm"
+                style={{
+                  border: '1px solid var(--ta-border)',
+                  color: 'var(--ta-parchment)',
+                  background: 'transparent',
+                }}
+              >
+                {t('verifiedOriginLanding.ctaApply')}
+              </Link>
+            </div>
           </div>
-          <div className="d-flex flex-wrap gap-2">
-            <Link to="/marketplace?verifiedOnly=1" className="btn btn-success btn-sm">
-              {t('verifiedOriginLanding.ctaBrowse')}
-            </Link>
-            <Link to="/studio/origin" className="btn btn-dark btn-sm">
-              {t('verifiedOriginLanding.ctaApply')}
-            </Link>
-          </div>
-        </section>
+        </PremiumCard>
 
-        <hr className="my-4" />
         <p className="small text-muted mb-0">
           <Link to="/legal/verified-origin">{t('verifiedOriginLanding.legalLink')}</Link>
         </p>
