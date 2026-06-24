@@ -28,9 +28,10 @@ import java.util.Map;
  *
  * <p>Montreal Spider Co runs a proprietary stack (no Shopify/WooCommerce), exposing a single
  * {@code GET /api/catalog} endpoint that returns the full catalog as a JSON array of products.
- * Each product carries bilingual {@code {en, fr}} fields and 1–N {@code sizes[]} tiers, each with
- * its own price and warehouse stock. We flatten every size into an individual partner listing keyed
- * by {@code {slug}:{sizeId}} so price/stock track per tier.
+ * Each product carries bilingual {@code {en, fr}} fields and 1–N price/stock tiers. The live feed
+ * uses {@code availability[]} ({@code key}, {@code sizeLabel}, {@code price}, {@code stock}); the
+ * integration brief used {@code sizes[]} ({@code id}, {@code label}). Both shapes are supported.
+ * Every tier becomes its own partner listing keyed by {@code {slug}:{tierId}}.
  *
  * <p>Configuration (all on the official vendor record, set from the admin UI):
  * <ul>
@@ -134,12 +135,12 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
     }
 
     private void logSchemaHint(JsonNode product, String slug) {
-        JsonNode sizes = product == null ? null : product.get("sizes");
-        List<String> sizeFields = sizes != null && sizes.isArray() && !sizes.isEmpty()
-                ? fieldNames(sizes.get(0)) : List.of();
-        log.warn("Montreal Spider Co schema hint for {} — product fields={} ; size fields={}. "
+        JsonNode tiers = product == null ? null : resolveTierArray(product);
+        List<String> tierFields = tiers != null && tiers.isArray() && !tiers.isEmpty()
+                ? fieldNames(tiers.get(0)) : List.of();
+        log.warn("Montreal Spider Co schema hint for {} — product fields={} ; tier fields={}. "
                         + "Image and/or stock did not resolve; adapter field mapping may need adjusting.",
-                slug, fieldNames(product), sizeFields);
+                slug, fieldNames(product), tierFields);
     }
 
     private static List<String> fieldNames(JsonNode node) {
@@ -168,27 +169,30 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
     private void mapProduct(JsonNode product, OfficialVendor vendor, String siteBase,
                             List<StrategicVendorRawListing> out) {
         String slug = text(product, "slug");
-        JsonNode sizes = product.get("sizes");
-        if (slug == null || sizes == null || !sizes.isArray() || sizes.isEmpty()) {
+        JsonNode tiers = resolveTierArray(product);
+        if (slug == null || tiers == null || !tiers.isArray() || tiers.isEmpty()) {
             return;
         }
         String scientific = text(product, "scientific");
         String commonEn = localized(product.get("common"));
         String descriptionEn = localized(product.get("description"));
-        String imageUrl = resolveImageUrl(product, siteBase);
+        String defaultImageUrl = resolveImageUrl(product, siteBase);
         String productUrl = siteBase + "/en/product/" + slug;
         boolean promoted = product.path("featured").asBoolean(false);
 
-        for (JsonNode size : sizes) {
-            String sizeId = text(size, "id");
-            if (sizeId == null) {
+        for (JsonNode tier : tiers) {
+            String tierId = resolveTierId(tier);
+            if (tierId == null) {
                 continue;
             }
-            String sizeLabelEn = localized(size.get("label"));
-            String title = buildTitle(commonEn, scientific, sizeLabelEn);
+            String tierLabel = resolveTierLabel(tier);
+            String title = buildTitle(commonEn, scientific, tierLabel);
             if (title == null) {
                 continue;
             }
+            String imageUrl = firstNonBlank(
+                    imageFromNode(tier.get("photo"), siteBase),
+                    defaultImageUrl);
             // Defensive: respect the shared partner gates (blocked specimen terms / categories),
             // even though Montreal Spider Co only sells captive-bred tarantulas today.
             if (!PartnerListingCatalogRules.isAllowedListing(
@@ -196,13 +200,13 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
                 continue;
             }
             out.add(new StrategicVendorRawListing(
-                    slug + ":" + sizeId,
+                    slug + ":" + tierId,
                     title,
                     descriptionEn,
                     scientific,
-                    parseDecimal(size.get("price")),
+                    parseDecimal(tier.get("price")),
                     "CAD",
-                    parseInt(size.get("stock")),
+                    parseInt(tier.get("stock")),
                     imageUrl,
                     productUrl,
                     vendor.getCountry(),
@@ -213,6 +217,28 @@ public class MontrealSpiderCoStrategicPartnerListingAdapter implements Strategic
                     null
             ));
         }
+    }
+
+    /** Live feed uses {@code availability[]}; the integration brief documented {@code sizes[]}. */
+    private static JsonNode resolveTierArray(JsonNode product) {
+        if (product == null) {
+            return null;
+        }
+        JsonNode availability = product.get("availability");
+        if (availability != null && availability.isArray() && !availability.isEmpty()) {
+            return availability;
+        }
+        return product.get("sizes");
+    }
+
+    private static String resolveTierId(JsonNode tier) {
+        return firstNonBlank(text(tier, "key"), text(tier, "id"));
+    }
+
+    private static String resolveTierLabel(JsonNode tier) {
+        return firstNonBlank(
+                text(tier, "sizeLabel"),
+                localized(tier.get("label")));
     }
 
     private static String buildTitle(String commonEn, String scientific, String sizeLabelEn) {

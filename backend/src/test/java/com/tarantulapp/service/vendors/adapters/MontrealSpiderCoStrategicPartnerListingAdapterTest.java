@@ -80,6 +80,60 @@ class MontrealSpiderCoStrategicPartnerListingAdapterTest {
     }
 
     @Test
+    void flattensAvailabilityIntoListingsWithStableExternalIds() throws Exception {
+        String liveJson = """
+                [
+                  {
+                    "slug": "tliltocatl-vagans-mexican-red-rump",
+                    "scientific": "Tliltocatl vagans",
+                    "common": { "en": "Mexican Red Rump", "fr": "Croupe rouge du Mexique" },
+                    "featured": false,
+                    "image": "https://res.cloudinary.com/msc/default.jpg",
+                    "description": { "en": "Classic beginner species.", "fr": "Espèce classique pour débutants." },
+                    "availability": [
+                      {
+                        "key": "6:unsexed:59",
+                        "sizeLabel": "2 3/8″",
+                        "sex": "unsexed",
+                        "price": 59,
+                        "stock": 2
+                      },
+                      {
+                        "key": "8:unsexed:64",
+                        "sizeLabel": "3 1/8″",
+                        "sex": "unsexed",
+                        "price": 64,
+                        "stock": 1,
+                        "photo": "https://res.cloudinary.com/msc/tier.jpg"
+                      }
+                    ]
+                  },
+                  {
+                    "slug": "psalmopoeus-irminia-venezuelan-suntiger",
+                    "scientific": "Psalmopoeus irminia",
+                    "common": { "en": "Venezuelan Suntiger", "fr": "Tigre solaire du Venezuela" },
+                    "availability": []
+                  }
+                ]
+                """;
+        JsonNode root = objectMapper.readTree(liveJson);
+        List<StrategicVendorRawListing> items = adapter.mapCatalog(root, vendor(), "https://www.montrealspider.ca");
+
+        assertEquals(2, items.size(), "Empty availability[] should be skipped; each tier becomes a listing");
+
+        StrategicVendorRawListing small = items.get(0);
+        assertEquals("tliltocatl-vagans-mexican-red-rump:6:unsexed:59", small.externalId());
+        assertEquals("Mexican Red Rump — 2 3/8″", small.title());
+        assertEquals(new BigDecimal("59"), small.priceAmount());
+        assertEquals(2, small.stockQuantity());
+        assertEquals("https://res.cloudinary.com/msc/default.jpg", small.imageUrl());
+
+        StrategicVendorRawListing large = items.get(1);
+        assertEquals("tliltocatl-vagans-mexican-red-rump:8:unsexed:64", large.externalId());
+        assertEquals("https://res.cloudinary.com/msc/tier.jpg", large.imageUrl());
+    }
+
+    @Test
     void resolvesImagesAcrossCommonFieldShapes() throws Exception {
         String base = "https://montrealspider.ca";
 
