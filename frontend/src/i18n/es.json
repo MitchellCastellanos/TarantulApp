@@ -3734,6 +3734,75 @@
     "keeperProCta": "Ver planes Pro",
     "keeperSellCta": "Hub de vendedor"
   },
+  "verifiedOriginLanding": {
+    "pageTitle": "Verified Origin — sello de confianza TarantulApp",
+    "metaDescription": "Verified Origin es el sello de confianza de TarantulApp para criadores, tiendas y vendedores revisados. Qué certifica, cómo funciona la autorización en entrega y cómo explorar vendedores verificados.",
+    "eyebrow": "Sello de confianza",
+    "heroTitle": "Verified Origin",
+    "heroLead": "El sello de confianza de TarantulApp para criadores, tiendas y vendedores serios. Nuestro equipo revisa manualmente identidad, operación y legitimidad del origen — para que el comprador sepa quién está detrás del animal.",
+    "kindsTitle": "Tipos de emisor",
+    "kindsBlurb": "La insignia muestra el tipo de emisor verificado: criador, tienda, vendor o vendedor.",
+    "ctaBrowse": "Ver vendedores verificados",
+    "ctaApply": "Solicitar en Studio",
+    "certifiesTitle": "Qué certifica Verified Origin",
+    "certifiesItems": [
+      {
+        "title": "Vendedor revisado",
+        "body": "Verificaciones de identidad y tienda con el equipo de TarantulApp — no es una etiqueta auto-declarada."
+      },
+      {
+        "title": "Origen legítimo",
+        "body": "Programa de cría, tienda u origen revisado en anuncios y pasaportes de espécimen."
+      },
+      {
+        "title": "Visible en todo el ecosistema",
+        "body": "La insignia verde aparece en storefronts, anuncios del marketplace y pasaportes que emite el vendedor."
+      }
+    ],
+    "notCertifiesTitle": "Qué no garantiza",
+    "notCertifiesItems": [
+      "Verified Origin no es un seguro ni garantiza el resultado de cada transacción.",
+      "El comprador debe confirmar legalidad y condiciones de envío en su país.",
+      "Anuncios y pasaportes deben seguir la política del marketplace y declarar la especie con exactitud."
+    ],
+    "howTitle": "Cómo se obtiene",
+    "howSteps": [
+      {
+        "title": "Aplica en la app",
+        "body": "Studio › Origin — elige criador, tienda, vendor o vendedor y cuéntanos sobre tu operación."
+      },
+      {
+        "title": "Revisión manual",
+        "body": "Nuestro equipo revisa identidad, tienda y evidencia de origen. Sin aprobación automática."
+      },
+      {
+        "title": "Insignia activa",
+        "body": "Una vez aprobado, Verified Origin aparece en tu storefront, anuncios y pasaportes emitidos."
+      }
+    ],
+    "deliveryTitle": "Autorización en la entrega",
+    "deliveryBody": "En compras a un emisor Verified Origin, el vendedor valida el recibo antes de liberar la custodia del pasaporte del espécimen — y el comprador recibe días Pro con su animal.",
+    "deliverySteps": [
+      "El comprador completa la compra y registra o sube un recibo.",
+      "El emisor Verified Origin autoriza la entrega en el hilo de compra.",
+      "El comprador recibe días Pro vinculados al pasaporte del espécimen."
+    ],
+    "whereTitle": "Qué ven los compradores",
+    "screenshotStorefront": "Verified Origin en el storefront de un socio — insignia, logo y perfil de origen revisado.",
+    "screenshotMarketplace": "Anuncios del marketplace con la insignia — los compradores pueden filtrar solo Verified Origin.",
+    "compareTitle": "Verified Origin vs Socio Oficial",
+    "compareVoTitle": "Verified Origin",
+    "compareVoBody": "Sello de confianza tras revisión manual. Cualquier criador, tienda o vendedor serio puede aplicar. Visible en storefronts, anuncios y pasaportes.",
+    "comparePartnerTitle": "Socio Oficial",
+    "comparePartnerBody": "Track aparte para tiendas que reflejan su catálogo WooCommerce en TarantulApp — con vitrina in-app e insignia de socio.",
+    "compareNote": "Un Socio Oficial aprobado también obtiene Verified Origin. Los programas son complementarios, no lo mismo.",
+    "partnerEmbedTitle": "Para socios Verified Origin",
+    "partnerEmbedBody": "Pega este enlace en tu sitio web — footer, página «Sobre nosotros» o fichas de producto — para que tus visitantes entiendan qué significa la insignia.",
+    "partnerEmbedLinkText": "Más información sobre TarantulApp Verified Origin",
+    "applyCardTitle": "¿Listo para aplicar o comprar verificado?",
+    "applyCardBlurb": "Los vendedores aplican en Studio › Origin. Los compradores pueden explorar el marketplace filtrado solo a emisores verificados.",
+    "legalLink": "Aviso legal y política de verificación"
+  },
   "vendorVerification": {
     "title": "Solicitar insignia Vendor verificado",
     "blurb": "Pagar Vendor desbloquea herramientas; la verificación es una revisión de confianza aparte (1–2 días hábiles).",

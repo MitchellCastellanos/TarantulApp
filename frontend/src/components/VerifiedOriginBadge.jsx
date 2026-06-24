@@ -37,7 +37,7 @@ export default function VerifiedOriginBadge({ origin, className = '', showToolti
     return (
       <span className="d-inline-flex align-items-center gap-1 flex-wrap">
         {badge}
-        <Link to="/legal/verified-origin" className="small text-muted text-decoration-none">
+        <Link to="/verified-origin" className="small text-muted text-decoration-none">
           {t('verifiedOrigin.learnMore')}
         </Link>
       </span>

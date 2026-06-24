@@ -3772,6 +3772,75 @@
     "keeperProCta": "View Pro plans",
     "keeperSellCta": "Seller hub"
   },
+  "verifiedOriginLanding": {
+    "pageTitle": "Verified Origin — TarantulApp trust badge",
+    "metaDescription": "Verified Origin is TarantulApp's trust badge for reviewed breeders, stores, and sellers. Learn what it certifies, how delivery authorization works, and how to browse verified sellers.",
+    "eyebrow": "Trust badge",
+    "heroTitle": "Verified Origin",
+    "heroLead": "The TarantulApp trust badge for serious breeders, stores, and sellers. Our team manually reviews identity, the operation, and the legitimacy of their origin — so buyers know who stands behind the animal.",
+    "kindsTitle": "Issuer types",
+    "kindsBlurb": "The badge shows the type of verified issuer — breeder, store, vendor, or individual seller.",
+    "ctaBrowse": "Browse verified sellers",
+    "ctaApply": "Apply in Studio",
+    "certifiesTitle": "What Verified Origin certifies",
+    "certifiesItems": [
+      {
+        "title": "Reviewed seller",
+        "body": "Identity and storefront checks completed with the TarantulApp team — not a self-claimed label."
+      },
+      {
+        "title": "Legitimate origin",
+        "body": "Breeding program, shop, or sourcing story reviewed for credibility on listings and specimen passports."
+      },
+      {
+        "title": "Visible everywhere",
+        "body": "The green badge appears on storefronts, marketplace listings, and passports the issuer creates."
+      }
+    ],
+    "notCertifiesTitle": "What it does not guarantee",
+    "notCertifiesItems": [
+      "Verified Origin is not insurance and does not guarantee every transaction outcome.",
+      "Buyers should still confirm legality and shipping terms in their country.",
+      "Listings and passports must follow marketplace policy and accurate species disclosures."
+    ],
+    "howTitle": "How sellers earn it",
+    "howSteps": [
+      {
+        "title": "Apply in the app",
+        "body": "Studio › Origin — choose breeder, store, vendor, or seller and tell us about your operation."
+      },
+      {
+        "title": "Manual review",
+        "body": "Our team reviews identity, storefront, and origin evidence. No automated approval."
+      },
+      {
+        "title": "Badge goes live",
+        "body": "Once approved, Verified Origin appears on your storefront, listings, and issued passports."
+      }
+    ],
+    "deliveryTitle": "Authorization at delivery",
+    "deliveryBody": "On purchases from a Verified Origin issuer, the seller validates the receipt before custody of the specimen passport is released — and the buyer receives Pro days with their animal.",
+    "deliverySteps": [
+      "Buyer completes purchase and records or uploads a receipt.",
+      "Verified Origin issuer authorizes delivery in the purchase thread.",
+      "Buyer receives Pro days linked to the specimen passport."
+    ],
+    "whereTitle": "What buyers see",
+    "screenshotStorefront": "Verified Origin on a partner storefront — badge, logo, and reviewed origin profile.",
+    "screenshotMarketplace": "Marketplace listings with the badge — buyers can filter to Verified Origin only.",
+    "compareTitle": "Verified Origin vs Official Partner",
+    "compareVoTitle": "Verified Origin",
+    "compareVoBody": "A trust badge after manual review. Any serious breeder, store, or seller can apply. Shows on storefronts, listings, and passports.",
+    "comparePartnerTitle": "Official Partner",
+    "comparePartnerBody": "A separate track for shops that mirror their WooCommerce catalog into TarantulApp — with an in-app storefront and partner badge.",
+    "compareNote": "An approved Official Partner also earns Verified Origin. The programs are complementary, not the same thing.",
+    "partnerEmbedTitle": "For Verified Origin partners",
+    "partnerEmbedBody": "Add this link anywhere on your website — footer, about page, or product pages — so visitors can learn what the badge means.",
+    "partnerEmbedLinkText": "Learn more about TarantulApp Verified Origin",
+    "applyCardTitle": "Ready to apply or shop verified?",
+    "applyCardBlurb": "Sellers apply in Studio › Origin. Buyers can browse the marketplace filtered to verified issuers only.",
+    "legalLink": "Legal notice and verification policy"
+  },
   "vendorVerification": {
     "title": "Apply for Verified Vendor badge",
     "blurb": "Paying for Vendor unlocks tools; verification is a separate trust review by our team (usually 1–2 business days).",

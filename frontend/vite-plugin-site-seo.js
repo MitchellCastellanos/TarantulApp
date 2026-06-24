@@ -12,6 +12,8 @@ const PUBLIC_ROUTES = [
   '/discover',
   '/herramientas/qr',
   '/about',
+  '/verified-origin',
+  '/partners',
   '/marketplace',
   '/pro',
   '/privacy',

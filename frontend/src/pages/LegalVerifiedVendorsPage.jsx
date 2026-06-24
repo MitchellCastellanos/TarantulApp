@@ -11,7 +11,10 @@ export default function LegalVerifiedVendorsPage() {
       <Navbar />
       <div className="container mt-4 mb-5" style={{ maxWidth: 720 }}>
         <h2 className="fw-bold mb-1">{t('legal.verifiedVendors.title')}</h2>
-        <p className="text-muted small mb-4">{t('legal.lastUpdated')}</p>
+        <p className="text-muted small mb-2">{t('legal.lastUpdated')}</p>
+        <p className="small mb-4">
+          <Link to="/verified-origin">{t('verifiedOrigin.learnMore')}</Link>
+        </p>
         <p>{t('legal.verifiedVendors.intro')} <BrandName />.</p>
         <ul>
           {Array.isArray(bullets) ? bullets.map((b) => <li key={b}>{b}</li>) : null}
