@@ -2,6 +2,8 @@ package com.tarantulapp.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -69,6 +71,23 @@ public class Passport {
     @Column(name = "batch_id", columnDefinition = "uuid")
     private UUID batchId;
 
+    /** Claim lifecycle gate; see {@link PassportClaimStatus}. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "claim_status", nullable = false, length = 20)
+    private PassportClaimStatus claimStatus = PassportClaimStatus.CLAIMABLE;
+
+    /**
+     * Business-held claim code (proof of purchase for ON_SHELF labels). Stored in plain text on
+     * purpose: the issuer must be able to read it back at the point of sale, and it only gates
+     * the claim of this one label — it grants no account access.
+     */
+    @Column(name = "claim_code", length = 16)
+    private String claimCode;
+
+    /** Last time the issuer/admin released this passport for open claim (ON_SHELF → CLAIMABLE). */
+    @Column(name = "claim_released_at")
+    private Instant claimReleasedAt;
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
@@ -84,6 +103,9 @@ public class Passport {
         updatedAt = now;
         if (proGiftDays == null) {
             proGiftDays = 30;
+        }
+        if (claimStatus == null) {
+            claimStatus = PassportClaimStatus.CLAIMABLE;
         }
     }
 
@@ -126,6 +148,12 @@ public class Passport {
     public void setTarantulaId(UUID tarantulaId) { this.tarantulaId = tarantulaId; }
     public UUID getBatchId() { return batchId; }
     public void setBatchId(UUID batchId) { this.batchId = batchId; }
+    public PassportClaimStatus getClaimStatus() { return claimStatus; }
+    public void setClaimStatus(PassportClaimStatus claimStatus) { this.claimStatus = claimStatus; }
+    public String getClaimCode() { return claimCode; }
+    public void setClaimCode(String claimCode) { this.claimCode = claimCode; }
+    public Instant getClaimReleasedAt() { return claimReleasedAt; }
+    public void setClaimReleasedAt(Instant claimReleasedAt) { this.claimReleasedAt = claimReleasedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -16,13 +16,20 @@ public class GenerateBatchPassportsResponse {
         private java.util.UUID passportId;
         private String shortId;
         private String publicUrl;
+        /** Business-held claim code the seller reveals at checkout (ON_SHELF labels). */
+        private String claimCode;
 
         public GeneratedPassportLine() {}
 
         public GeneratedPassportLine(java.util.UUID passportId, String shortId, String publicUrl) {
+            this(passportId, shortId, publicUrl, null);
+        }
+
+        public GeneratedPassportLine(java.util.UUID passportId, String shortId, String publicUrl, String claimCode) {
             this.passportId = passportId;
             this.shortId = shortId;
             this.publicUrl = publicUrl;
+            this.claimCode = claimCode;
         }
 
         public java.util.UUID getPassportId() { return passportId; }
@@ -31,5 +38,7 @@ public class GenerateBatchPassportsResponse {
         public void setShortId(String shortId) { this.shortId = shortId; }
         public String getPublicUrl() { return publicUrl; }
         public void setPublicUrl(String publicUrl) { this.publicUrl = publicUrl; }
+        public String getClaimCode() { return claimCode; }
+        public void setClaimCode(String claimCode) { this.claimCode = claimCode; }
     }
 }

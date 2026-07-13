@@ -9,6 +9,11 @@ public class StudioPassportSummaryDTO {
     private String publicUrl;
     private boolean claimed;
     private Instant claimedAt;
+    /** ON_SHELF | CLAIMABLE | CLAIMED | VOID */
+    private String claimStatus;
+    /** Business-held claim code (only visible to the issuer). */
+    private String claimCode;
+    private Instant claimReleasedAt;
     private String stage;
     private String sex;
     private String labelNotes;
@@ -27,6 +32,12 @@ public class StudioPassportSummaryDTO {
     public void setClaimed(boolean claimed) { this.claimed = claimed; }
     public Instant getClaimedAt() { return claimedAt; }
     public void setClaimedAt(Instant claimedAt) { this.claimedAt = claimedAt; }
+    public String getClaimStatus() { return claimStatus; }
+    public void setClaimStatus(String claimStatus) { this.claimStatus = claimStatus; }
+    public String getClaimCode() { return claimCode; }
+    public void setClaimCode(String claimCode) { this.claimCode = claimCode; }
+    public Instant getClaimReleasedAt() { return claimReleasedAt; }
+    public void setClaimReleasedAt(Instant claimReleasedAt) { this.claimReleasedAt = claimReleasedAt; }
     public String getStage() { return stage; }
     public void setStage(String stage) { this.stage = stage; }
     public String getSex() { return sex; }

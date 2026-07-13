@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import adminService from '../../services/adminService'
 
@@ -20,6 +20,7 @@ function Dot({ color, title }) {
 /** Admin overview: labels issued per user, verified-origin flag, claim traffic-light, print on behalf. */
 export default function AdminLabelsPage() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [openIssuer, setOpenIssuer] = useState(null)
 
   const { data: issuers = [], isLoading } = useQuery({
@@ -31,6 +32,14 @@ export default function AdminLabelsPage() {
     queryKey: ['admin', 'issuer-passports', openIssuer],
     queryFn: () => adminService.issuerPassports(openIssuer),
     enabled: Boolean(openIssuer),
+  })
+
+  const setClaimStatus = useMutation({
+    mutationFn: ({ passportId, status }) => adminService.setPassportClaimStatus(passportId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'issuer-passports'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'label-issuers'] })
+    },
   })
 
   return (
@@ -111,28 +120,74 @@ export default function AdminLabelsPage() {
                       <th>{t('admin.labelsShortId', 'Label')}</th>
                       <th>{t('admin.labelsSpecies', 'Species')}</th>
                       <th>{t('admin.labelsStatus', 'Status')}</th>
+                      <th>{t('admin.labelsClaimGate', 'Claim gate')}</th>
+                      <th>{t('admin.labelsClaimCode', 'Code')}</th>
                       <th />
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.passportId}>
-                        <td><Dot color={r.color} title={r.status} /></td>
-                        <td><code>{r.shortId}</code></td>
-                        <td className="fst-italic">{r.scientificName || '—'}</td>
-                        <td className="small">{r.status}</td>
-                        <td className="text-end">
-                          <a
-                            className="btn btn-sm btn-outline-secondary"
-                            href={r.publicUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t('admin.labelsPrint', 'Open / print')}
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
+                    {rows.map((r) => {
+                      const unclaimed = !r.claimedAt && r.claimStatus !== 'VOID'
+                      const busy = setClaimStatus.isPending
+                      return (
+                        <tr key={r.passportId}>
+                          <td><Dot color={r.color} title={r.status} /></td>
+                          <td><code>{r.shortId}</code></td>
+                          <td className="fst-italic">{r.scientificName || '—'}</td>
+                          <td className="small">{r.status}</td>
+                          <td className="small">{r.claimStatus || 'CLAIMABLE'}</td>
+                          <td className="small">
+                            {r.claimStatus === 'ON_SHELF' && r.claimCode ? <code>{r.claimCode}</code> : '—'}
+                          </td>
+                          <td className="text-end">
+                            <div className="d-inline-flex flex-wrap gap-1 justify-content-end">
+                              {unclaimed && r.claimStatus !== 'ON_SHELF' && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-secondary"
+                                  disabled={busy}
+                                  onClick={() => setClaimStatus.mutate({ passportId: r.passportId, status: 'ON_SHELF' })}
+                                >
+                                  {t('admin.labelsFreeze', 'Freeze')}
+                                </button>
+                              )}
+                              {unclaimed && r.claimStatus !== 'CLAIMABLE' && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-success"
+                                  disabled={busy}
+                                  onClick={() => setClaimStatus.mutate({ passportId: r.passportId, status: 'CLAIMABLE' })}
+                                >
+                                  {t('admin.labelsRelease', 'Release')}
+                                </button>
+                              )}
+                              {unclaimed && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    if (window.confirm(t('admin.labelsVoidConfirm', 'Void this label? It can no longer be claimed.'))) {
+                                      setClaimStatus.mutate({ passportId: r.passportId, status: 'VOID' })
+                                    }
+                                  }}
+                                >
+                                  {t('admin.labelsVoid', 'Void')}
+                                </button>
+                              )}
+                              <a
+                                className="btn btn-sm btn-outline-secondary"
+                                href={r.publicUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {t('admin.labelsPrint', 'Open / print')}
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

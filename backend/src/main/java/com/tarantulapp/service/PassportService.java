@@ -2,12 +2,14 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.dto.AdminCreatePassportRequest;
 import com.tarantulapp.dto.AdminCreatePassportResponse;
+import com.tarantulapp.dto.PassportClaimControlResponse;
 import com.tarantulapp.dto.PassportClaimRequest;
 import com.tarantulapp.dto.PassportClaimResponse;
 import com.tarantulapp.dto.PublicOriginDTO;
 import com.tarantulapp.dto.PublicProfileDTO;
 import com.tarantulapp.entity.Passport;
 import com.tarantulapp.entity.PassportClaimEvent;
+import com.tarantulapp.entity.PassportClaimStatus;
 import com.tarantulapp.entity.ProDayGrant;
 import com.tarantulapp.entity.ProDayGrantSource;
 import com.tarantulapp.entity.Reminder;
@@ -21,12 +23,14 @@ import com.tarantulapp.repository.ReminderRepository;
 import com.tarantulapp.repository.SpeciesRepository;
 import com.tarantulapp.repository.TarantulaRepository;
 import com.tarantulapp.repository.UserRepository;
+import com.tarantulapp.util.SecurityHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -42,6 +46,11 @@ public class PassportService {
     /** Pro days rewarded for each specimen claimed after the first. */
     static final int SUBSEQUENT_CLAIM_PRO_DAYS = 7;
 
+    /** Claim-code alphabet without ambiguous glyphs (0/O, 1/I/L) so it survives being read aloud. */
+    private static final char[] CLAIM_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
+    private static final int CLAIM_CODE_LENGTH = 6;
+    private static final SecureRandom CLAIM_CODE_RANDOM = new SecureRandom();
+
     private final SpeciesRepository speciesRepository;
     private final UserRepository userRepository;
     private final ShortIdService shortIdService;
@@ -51,6 +60,8 @@ public class PassportService {
     private final ReminderRepository reminderRepository;
     private final PassportClaimEventRepository passportClaimEventRepository;
     private final VerifiedOriginService verifiedOriginService;
+    private final UserCapabilitiesService userCapabilitiesService;
+    private final SecurityHelper securityHelper;
 
     @Value("${app.public-base-url:https://tarantulapp.com}")
     private String publicBaseUrl;
@@ -64,7 +75,9 @@ public class PassportService {
                            ProDayGrantService proDayGrantService,
                            ReminderRepository reminderRepository,
                            PassportClaimEventRepository passportClaimEventRepository,
-                           VerifiedOriginService verifiedOriginService) {
+                           VerifiedOriginService verifiedOriginService,
+                           UserCapabilitiesService userCapabilitiesService,
+                           SecurityHelper securityHelper) {
         this.passportRepository = passportRepository;
         this.speciesRepository = speciesRepository;
         this.userRepository = userRepository;
@@ -75,6 +88,8 @@ public class PassportService {
         this.reminderRepository = reminderRepository;
         this.passportClaimEventRepository = passportClaimEventRepository;
         this.verifiedOriginService = verifiedOriginService;
+        this.userCapabilitiesService = userCapabilitiesService;
+        this.securityHelper = securityHelper;
     }
 
     /** Links a newly created keeper specimen to a claimed passport (same short_id for life). */
@@ -88,6 +103,7 @@ public class PassportService {
         passport.setSex(tarantula.getSex());
         passport.setClaimedAt(Instant.now());
         passport.setClaimedByUserId(ownerUserId);
+        passport.setClaimStatus(PassportClaimStatus.CLAIMED);
         passport.setTarantulaId(tarantula.getId());
         return passportRepository.save(passport);
     }
@@ -101,6 +117,23 @@ public class PassportService {
         dto.setSex(passport.getSex());
         dto.setLabelNotes(passport.getLabelNotes());
         dto.setProGiftDays(passport.getProGiftDays() != null ? passport.getProGiftDays() : 30);
+        PassportClaimStatus claimStatus = passport.getClaimStatus() != null
+                ? passport.getClaimStatus()
+                : PassportClaimStatus.CLAIMABLE;
+        dto.setClaimStatus(claimStatus.name());
+        dto.setClaimCodeSet(passport.getClaimCode() != null && !passport.getClaimCode().isBlank());
+
+        // Seller mode: the issuer scanning their own label gets release/hold controls in place.
+        // The claim code is only echoed back to the issuer, never to buyers.
+        boolean viewerIsIssuer = passport.getCreatedByUserId() != null
+                && securityHelper.tryGetCurrentUserId()
+                        .map(viewerId -> viewerId.equals(passport.getCreatedByUserId()))
+                        .orElse(false);
+        dto.setViewerIsIssuer(viewerIsIssuer);
+        if (viewerIsIssuer) {
+            dto.setPassportId(passport.getId());
+            dto.setIssuerClaimCode(passport.getClaimCode());
+        }
 
         Species species = passport.getSpecies();
         if (species != null) {
@@ -165,7 +198,9 @@ public class PassportService {
      * and optionally schedules a first feeding reminder.
      */
     public PassportClaimResponse claimPassport(String shortId, PassportClaimRequest req, UUID userId) {
-        Passport passport = passportRepository.findByShortId(shortId.trim())
+        // Row lock: two simultaneous claims of the same label serialize here instead of racing
+        // into a duplicate-key failure on tarantulas.short_id.
+        Passport passport = passportRepository.findByShortIdForUpdate(shortId.trim())
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
 
         if (passport.isClaimed()) {
@@ -174,6 +209,8 @@ public class PassportService {
             }
             throw new ResponseStatusException(HttpStatus.CONFLICT, "PASSPORT_ALREADY_CLAIMED");
         }
+
+        enforceClaimGate(passport, req, userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
@@ -207,6 +244,7 @@ public class PassportService {
         Instant now = Instant.now();
         passport.setClaimedAt(now);
         passport.setClaimedByUserId(userId);
+        passport.setClaimStatus(PassportClaimStatus.CLAIMED);
         passport.setTarantulaId(saved.getId());
         if (shouldGrant) {
             passport.setProGrantedAt(now);
@@ -241,6 +279,53 @@ public class PassportService {
         response.setFeedingReminderCreated(reminderCreated);
         response.setPageMode(PublicProfileDTO.PageMode.SPECIMEN);
         return response;
+    }
+
+    /**
+     * Possession/authorization gate ahead of custody:
+     * VOID labels are dead, ON_SHELF labels need the seller's claim code (or an explicit release),
+     * and issuers cannot claim their own labels (would pollute sale signals and farm Pro days).
+     */
+    private void enforceClaimGate(Passport passport, PassportClaimRequest req, UUID userId) {
+        PassportClaimStatus status = passport.getClaimStatus() != null
+                ? passport.getClaimStatus()
+                : PassportClaimStatus.CLAIMABLE;
+
+        if (status == PassportClaimStatus.VOID) {
+            throw new ResponseStatusException(HttpStatus.GONE, "PASSPORT_VOID");
+        }
+
+        if (userId.equals(passport.getCreatedByUserId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "PASSPORT_SELF_CLAIM");
+        }
+
+        if (status == PassportClaimStatus.ON_SHELF) {
+            String expected = normalizeClaimCode(passport.getClaimCode());
+            if (expected == null) {
+                // No code on file: the label stays view-only until the issuer releases it.
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "PASSPORT_NOT_RELEASED");
+            }
+            String provided = normalizeClaimCode(req.getClaimCode());
+            if (provided == null || !expected.equals(provided)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "CLAIM_CODE_INVALID");
+            }
+        }
+    }
+
+    /** Uppercases and strips separators so "ab-12 cd" matches "AB12CD". */
+    private static String normalizeClaimCode(String raw) {
+        if (raw == null) return null;
+        String cleaned = raw.replaceAll("[\\s-]", "").toUpperCase();
+        return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    /** Short human-friendly code the seller reads to the buyer at the point of sale. */
+    public static String generateClaimCode() {
+        StringBuilder sb = new StringBuilder(CLAIM_CODE_LENGTH);
+        for (int i = 0; i < CLAIM_CODE_LENGTH; i++) {
+            sb.append(CLAIM_CODE_ALPHABET[CLAIM_CODE_RANDOM.nextInt(CLAIM_CODE_ALPHABET.length)]);
+        }
+        return sb.toString();
     }
 
     private PassportClaimResponse buildClaimResponseForExisting(Passport passport) {
@@ -324,5 +409,98 @@ public class PassportService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    // ---------------------------------------------------------------------
+    // Issuer (Studio) claim controls: manage each label without assigning it.
+    // ---------------------------------------------------------------------
+
+    /** Issuer releases an ON_SHELF label for open claim (in-hand sale, no code needed). */
+    public PassportClaimControlResponse issuerRelease(UUID passportId, UUID userId) {
+        Passport passport = requireIssuerOwnedUnclaimed(passportId, userId);
+        passport.setClaimStatus(PassportClaimStatus.CLAIMABLE);
+        passport.setClaimReleasedAt(Instant.now());
+        return toClaimControlResponse(passportRepository.save(passport));
+    }
+
+    /** Issuer puts a label back on the shelf: scan shows data, claim needs the code again. */
+    public PassportClaimControlResponse issuerHold(UUID passportId, UUID userId) {
+        Passport passport = requireIssuerOwnedUnclaimed(passportId, userId);
+        passport.setClaimStatus(PassportClaimStatus.ON_SHELF);
+        if (passport.getClaimCode() == null || passport.getClaimCode().isBlank()) {
+            passport.setClaimCode(generateClaimCode());
+        }
+        return toClaimControlResponse(passportRepository.save(passport));
+    }
+
+    /** Issuer rotates the claim code (leaked code, returned specimen, re-shelving). */
+    public PassportClaimControlResponse issuerRotateClaimCode(UUID passportId, UUID userId) {
+        Passport passport = requireIssuerOwnedUnclaimed(passportId, userId);
+        passport.setClaimCode(generateClaimCode());
+        return toClaimControlResponse(passportRepository.save(passport));
+    }
+
+    /** Issuer voids their own label (misprint, lost, stolen). */
+    public PassportClaimControlResponse issuerVoid(UUID passportId, UUID userId) {
+        Passport passport = requireIssuerOwnedUnclaimed(passportId, userId);
+        passport.setClaimStatus(PassportClaimStatus.VOID);
+        return toClaimControlResponse(passportRepository.save(passport));
+    }
+
+    /**
+     * Admin sets the claim state of any unclaimed passport (freeze / release / void) without
+     * assigning it to anyone. CLAIMED is never settable by hand — custody only via claim.
+     */
+    public PassportClaimControlResponse adminSetClaimStatus(UUID passportId, String rawStatus) {
+        PassportClaimStatus target = parseControlStatus(rawStatus);
+        Passport passport = passportRepository.findById(passportId)
+                .orElseThrow(() -> new NotFoundException("Passport no encontrado"));
+        if (passport.isClaimed()) {
+            throw new IllegalArgumentException("PASSPORT_ALREADY_CLAIMED");
+        }
+        passport.setClaimStatus(target);
+        if (target == PassportClaimStatus.CLAIMABLE) {
+            passport.setClaimReleasedAt(Instant.now());
+        }
+        if (target == PassportClaimStatus.ON_SHELF
+                && (passport.getClaimCode() == null || passport.getClaimCode().isBlank())) {
+            passport.setClaimCode(generateClaimCode());
+        }
+        return toClaimControlResponse(passportRepository.save(passport));
+    }
+
+    private static PassportClaimStatus parseControlStatus(String rawStatus) {
+        if (rawStatus == null) {
+            throw new IllegalArgumentException("INVALID_CLAIM_STATUS");
+        }
+        return switch (rawStatus.trim().toUpperCase()) {
+            case "ON_SHELF" -> PassportClaimStatus.ON_SHELF;
+            case "CLAIMABLE" -> PassportClaimStatus.CLAIMABLE;
+            case "VOID" -> PassportClaimStatus.VOID;
+            default -> throw new IllegalArgumentException("INVALID_CLAIM_STATUS");
+        };
+    }
+
+    private Passport requireIssuerOwnedUnclaimed(UUID passportId, UUID userId) {
+        userCapabilitiesService.ensureStudioAccess(userId);
+        Passport passport = passportRepository.findById(passportId)
+                .orElseThrow(() -> new NotFoundException("Passport no encontrado"));
+        if (!userId.equals(passport.getCreatedByUserId())) {
+            throw new NotFoundException("Passport no encontrado");
+        }
+        if (passport.isClaimed()) {
+            throw new IllegalArgumentException("PASSPORT_ALREADY_CLAIMED");
+        }
+        return passport;
+    }
+
+    private static PassportClaimControlResponse toClaimControlResponse(Passport passport) {
+        return new PassportClaimControlResponse(
+                passport.getId(),
+                passport.getShortId(),
+                passport.getClaimStatus() != null ? passport.getClaimStatus().name() : PassportClaimStatus.CLAIMABLE.name(),
+                passport.getClaimCode(),
+                passport.getClaimReleasedAt()
+        );
     }
 }

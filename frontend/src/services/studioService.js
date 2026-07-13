@@ -11,6 +11,10 @@ const studioService = {
   claimSignals: (batchId) => api.get(`/studio/batches/${batchId}/claim-signals`).then(r => r.data),
   applyClaimSignal: (batchId, passportId) =>
     api.post(`/studio/batches/${batchId}/claim-signals/${passportId}/apply`).then(r => r.data),
+  releasePassport: (passportId) => api.post(`/studio/passports/${passportId}/release`).then(r => r.data),
+  holdPassport: (passportId) => api.post(`/studio/passports/${passportId}/hold`).then(r => r.data),
+  rotateClaimCode: (passportId) => api.post(`/studio/passports/${passportId}/claim-code/rotate`).then(r => r.data),
+  voidPassport: (passportId) => api.post(`/studio/passports/${passportId}/void`).then(r => r.data),
 }
 
 export default studioService

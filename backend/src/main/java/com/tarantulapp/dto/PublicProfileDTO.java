@@ -46,6 +46,17 @@ public class PublicProfileDTO {
     /** Passport-only: Pro days included as a gift when the keeper claims this specimen. */
     private Integer proGiftDays;
 
+    /** Passport-only: ON_SHELF | CLAIMABLE | VOID (null for claimed/legacy specimens). */
+    private String claimStatus;
+    /** Passport-only: true when the issuer holds a claim code for this label (ON_SHELF flow). */
+    private Boolean claimCodeSet;
+    /** Passport-only: true when the JWT viewer is the issuer of this label (enables seller mode). */
+    private boolean viewerIsIssuer;
+    /** Passport-only, issuer view: passport id for release/hold actions from the scanned page. */
+    private UUID passportId;
+    /** Passport-only, issuer view: backup claim code to dictate at the counter. Never sent to buyers. */
+    private String issuerClaimCode;
+
     /** Verified Origin of the passport creator or specimen keeper (public trust signal). */
     private PublicOriginDTO origin;
 
@@ -115,4 +126,14 @@ public class PublicProfileDTO {
     public void setProGiftDays(Integer proGiftDays) { this.proGiftDays = proGiftDays; }
     public PublicOriginDTO getOrigin() { return origin; }
     public void setOrigin(PublicOriginDTO origin) { this.origin = origin; }
+    public String getClaimStatus() { return claimStatus; }
+    public void setClaimStatus(String claimStatus) { this.claimStatus = claimStatus; }
+    public Boolean getClaimCodeSet() { return claimCodeSet; }
+    public void setClaimCodeSet(Boolean claimCodeSet) { this.claimCodeSet = claimCodeSet; }
+    public boolean isViewerIsIssuer() { return viewerIsIssuer; }
+    public void setViewerIsIssuer(boolean viewerIsIssuer) { this.viewerIsIssuer = viewerIsIssuer; }
+    public UUID getPassportId() { return passportId; }
+    public void setPassportId(UUID passportId) { this.passportId = passportId; }
+    public String getIssuerClaimCode() { return issuerClaimCode; }
+    public void setIssuerClaimCode(String issuerClaimCode) { this.issuerClaimCode = issuerClaimCode; }
 }

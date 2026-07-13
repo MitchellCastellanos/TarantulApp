@@ -1,8 +1,10 @@
 package com.tarantulapp.repository;
 
 import com.tarantulapp.entity.Passport;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
@@ -14,6 +16,11 @@ public interface PassportRepository extends JpaRepository<Passport, UUID> {
 
     @EntityGraph(attributePaths = "species")
     Optional<Passport> findByShortId(String shortId);
+
+    /** Row-locked lookup for the claim transaction: serializes concurrent claims of the same label. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Passport p where p.shortId = :shortId")
+    Optional<Passport> findByShortIdForUpdate(String shortId);
 
     boolean existsByShortId(String shortId);
 

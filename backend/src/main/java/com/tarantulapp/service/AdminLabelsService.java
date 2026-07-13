@@ -3,6 +3,7 @@ package com.tarantulapp.service;
 import com.tarantulapp.dto.AdminIssuerLabelsDTO;
 import com.tarantulapp.dto.AdminLabelRowDTO;
 import com.tarantulapp.entity.Passport;
+import com.tarantulapp.entity.PassportClaimStatus;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.repository.InventoryAdjustmentRepository;
 import com.tarantulapp.repository.PassportRepository;
@@ -95,6 +96,10 @@ public class AdminLabelsService {
             String status = statusOf(p, now);
             row.setStatus(status);
             row.setColor(colorOf(status));
+            row.setClaimStatus(p.getClaimStatus() != null
+                    ? p.getClaimStatus().name()
+                    : PassportClaimStatus.CLAIMABLE.name());
+            row.setClaimCode(p.getClaimCode());
             rows.add(row);
         }
         return rows;
@@ -106,6 +111,7 @@ public class AdminLabelsService {
     }
 
     String statusOf(Passport p, Instant now) {
+        if (p.getClaimStatus() == PassportClaimStatus.VOID) return "VOID";
         if (p.getClaimedAt() == null) return "UNCLAIMED";
         if (isConfirmed(p.getId())) return "CONFIRMED";
         boolean overdue = p.getClaimedAt().isBefore(now.minus(CONFIRM_GRACE));

@@ -1,8 +1,72 @@
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import FangPanel from '../components/FangPanel'
 import studioService from '../services/studioService'
+
+const STATUS_BADGE = {
+  ON_SHELF: 'text-bg-info',
+  CLAIMABLE: 'text-bg-warning',
+  CLAIMED: 'text-bg-success',
+  VOID: 'text-bg-dark',
+}
+
+export function PassportClaimStatusBadge({ status }) {
+  const { t } = useTranslation()
+  const s = status || 'CLAIMABLE'
+  return (
+    <span className={`badge ${STATUS_BADGE[s] || 'text-bg-secondary'}`}>
+      {t(`studio.claimStatus.${s}`, s)}
+    </span>
+  )
+}
+
+/** Release / hold / rotate-code / void controls for one unclaimed issuer label. */
+export function PassportClaimControls({ passport, size = 'sm' }) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['studio'] })
+  }
+  const release = useMutation({ mutationFn: () => studioService.releasePassport(passport.id), onSuccess: invalidate })
+  const hold = useMutation({ mutationFn: () => studioService.holdPassport(passport.id), onSuccess: invalidate })
+  const rotate = useMutation({ mutationFn: () => studioService.rotateClaimCode(passport.id), onSuccess: invalidate })
+  const voidLabel = useMutation({ mutationFn: () => studioService.voidPassport(passport.id), onSuccess: invalidate })
+
+  if (passport.claimed || passport.claimStatus === 'VOID') return null
+
+  const busy = release.isPending || hold.isPending || rotate.isPending || voidLabel.isPending
+  const onShelf = passport.claimStatus === 'ON_SHELF'
+
+  return (
+    <div className="d-flex flex-wrap gap-1">
+      {onShelf ? (
+        <button type="button" className={`btn btn-${size} btn-outline-success`} disabled={busy} onClick={() => release.mutate()}>
+          {t('studio.releaseCta')}
+        </button>
+      ) : (
+        <button type="button" className={`btn btn-${size} btn-outline-secondary`} disabled={busy} onClick={() => hold.mutate()}>
+          {t('studio.holdCta')}
+        </button>
+      )}
+      {onShelf && (
+        <button type="button" className={`btn btn-${size} btn-outline-secondary`} disabled={busy} onClick={() => rotate.mutate()}>
+          {t('studio.rotateCodeCta')}
+        </button>
+      )}
+      <button
+        type="button"
+        className={`btn btn-${size} btn-outline-danger`}
+        disabled={busy}
+        onClick={() => {
+          if (window.confirm(t('studio.voidConfirm'))) voidLabel.mutate()
+        }}
+      >
+        {t('studio.voidCta')}
+      </button>
+    </div>
+  )
+}
 
 export default function StudioPassportsPage() {
   const { t } = useTranslation()
@@ -25,7 +89,8 @@ export default function StudioPassportsPage() {
 
   return (
     <div>
-      <h2 className="h6 mb-3">{t('studio.allPassportsTitle')}</h2>
+      <h2 className="h6 mb-1">{t('studio.allPassportsTitle')}</h2>
+      <p className="small text-muted mb-3">{t('studio.claimControlHint')}</p>
       <div className="table-responsive">
         <table className="table table-sm align-middle">
           <thead>
@@ -34,6 +99,7 @@ export default function StudioPassportsPage() {
               <th>{t('studio.passportColSpecies')}</th>
               <th>{t('studio.passportColBatch')}</th>
               <th>{t('studio.passportColStatus')}</th>
+              <th>{t('studio.claimCodeCol')}</th>
               <th>{t('studio.passportColActions')}</th>
             </tr>
           </thead>
@@ -55,18 +121,21 @@ export default function StudioPassportsPage() {
                   )}
                 </td>
                 <td className="small">
-                  {p.claimed ? (
-                    <span className="badge text-bg-success">{t('studio.passportClaimed')}</span>
+                  <PassportClaimStatusBadge status={p.claimed ? 'CLAIMED' : p.claimStatus} />
+                </td>
+                <td className="small">
+                  {!p.claimed && p.claimStatus === 'ON_SHELF' && p.claimCode ? (
+                    <code>{p.claimCode}</code>
                   ) : (
-                    <span className="badge text-bg-secondary">{t('studio.passportUnclaimed')}</span>
+                    <span className="text-muted">—</span>
                   )}
                 </td>
                 <td>
-                  <div className="d-flex flex-wrap gap-1">
+                  <div className="d-flex flex-wrap gap-1 align-items-center">
                     <a href={p.publicUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-dark">
                       {t('studio.openPassport')}
                     </a>
-                    {!p.claimed && (
+                    {!p.claimed && p.claimStatus !== 'VOID' && (
                       <Link
                         to={`/studio/labels?batch=${p.batchId || ''}&mode=bulk`}
                         className="btn btn-sm btn-outline-secondary"
@@ -74,6 +143,7 @@ export default function StudioPassportsPage() {
                         {t('studio.printLabels')}
                       </Link>
                     )}
+                    <PassportClaimControls passport={p} />
                   </div>
                 </td>
               </tr>

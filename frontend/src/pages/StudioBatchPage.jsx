@@ -6,6 +6,7 @@ import FangPanel from '../components/FangPanel'
 import BatchIssuerGate from '../components/BatchIssuerGate'
 import studioService from '../services/studioService'
 import { useCapabilities } from '../hooks/useCapabilities'
+import { PassportClaimControls, PassportClaimStatusBadge } from './StudioPassportsPage'
 
 export default function StudioBatchPage() {
   const { batchId } = useParams()
@@ -198,13 +199,18 @@ export default function StudioBatchPage() {
         <FangPanel><p className="small text-muted mb-0">{t('studio.passportsEmpty')}</p></FangPanel>
       ) : (
         <FangPanel>
+          <p className="small text-muted mb-2">{t('studio.claimControlHint')}</p>
           <ul className="list-unstyled mb-0 small">
             {passports.map((p) => (
-              <li key={p.id} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                <a href={p.publicUrl} target="_blank" rel="noreferrer">{p.shortId}</a>
-                <span className={p.claimed ? 'text-success' : 'text-muted'}>
-                  {p.claimed ? t('studio.passportClaimed') : t('studio.passportUnclaimed')}
+              <li key={p.id} className="d-flex justify-content-between align-items-center gap-2 py-1 border-bottom flex-wrap">
+                <span className="d-inline-flex align-items-center gap-2">
+                  <a href={p.publicUrl} target="_blank" rel="noreferrer">{p.shortId}</a>
+                  <PassportClaimStatusBadge status={p.claimed ? 'CLAIMED' : p.claimStatus} />
+                  {!p.claimed && p.claimStatus === 'ON_SHELF' && p.claimCode && (
+                    <code title={t('studio.claimCodeCol')}>{p.claimCode}</code>
+                  )}
                 </span>
+                <PassportClaimControls passport={p} />
               </li>
             ))}
           </ul>

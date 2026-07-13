@@ -5,9 +5,11 @@ import com.tarantulapp.dto.GenerateBatchPassportsRequest;
 import com.tarantulapp.dto.GenerateBatchPassportsResponse;
 import com.tarantulapp.dto.InventoryBatchAdjustmentRequest;
 import com.tarantulapp.dto.InventoryBatchResponse;
+import com.tarantulapp.dto.PassportClaimControlResponse;
 import com.tarantulapp.dto.StudioClaimSignalDTO;
 import com.tarantulapp.dto.StudioPassportSummaryDTO;
 import com.tarantulapp.service.InventoryBatchService;
+import com.tarantulapp.service.PassportService;
 import com.tarantulapp.util.SecurityHelper;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -26,10 +28,14 @@ import java.util.UUID;
 public class StudioController {
 
     private final InventoryBatchService inventoryBatchService;
+    private final PassportService passportService;
     private final SecurityHelper securityHelper;
 
-    public StudioController(InventoryBatchService inventoryBatchService, SecurityHelper securityHelper) {
+    public StudioController(InventoryBatchService inventoryBatchService,
+                            PassportService passportService,
+                            SecurityHelper securityHelper) {
         this.inventoryBatchService = inventoryBatchService;
+        this.passportService = passportService;
         this.securityHelper = securityHelper;
     }
 
@@ -89,5 +95,32 @@ public class StudioController {
                                                                    @PathVariable UUID passportId) {
         UUID userId = securityHelper.getCurrentUserId();
         return ResponseEntity.ok(inventoryBatchService.applyClaimSignal(batchId, passportId, userId));
+    }
+
+    // Per-label claim controls: release for open claim, hold back on shelf, rotate the
+    // point-of-sale claim code, or void a lost/misprinted label. Issuer-owned labels only.
+
+    @PostMapping("/passports/{passportId}/release")
+    public ResponseEntity<PassportClaimControlResponse> releasePassport(@PathVariable UUID passportId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(passportService.issuerRelease(passportId, userId));
+    }
+
+    @PostMapping("/passports/{passportId}/hold")
+    public ResponseEntity<PassportClaimControlResponse> holdPassport(@PathVariable UUID passportId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(passportService.issuerHold(passportId, userId));
+    }
+
+    @PostMapping("/passports/{passportId}/claim-code/rotate")
+    public ResponseEntity<PassportClaimControlResponse> rotateClaimCode(@PathVariable UUID passportId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(passportService.issuerRotateClaimCode(passportId, userId));
+    }
+
+    @PostMapping("/passports/{passportId}/void")
+    public ResponseEntity<PassportClaimControlResponse> voidPassport(@PathVariable UUID passportId) {
+        UUID userId = securityHelper.getCurrentUserId();
+        return ResponseEntity.ok(passportService.issuerVoid(passportId, userId));
     }
 }

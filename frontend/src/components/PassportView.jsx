@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import billingService from '../services/billingService'
 import passportService from '../services/passportService'
 import reminderService from '../services/reminderService'
+import studioService from '../services/studioService'
 import { imgUrl } from '../services/api'
 import { publicUrl } from '../utils/publicAssets.js'
 
@@ -26,17 +27,33 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
 
   const [phase, setPhase] = useState('view')
   const [name, setName] = useState('')
+  const [claimCode, setClaimCode] = useState('')
   const [setupReminder, setSetupReminder] = useState(true)
   const [setupMoltReminder, setSetupMoltReminder] = useState(true)
   const [moltReminderCreated, setMoltReminderCreated] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [claimResult, setClaimResult] = useState(null)
+  // Seller mode: local override after release/hold so the page reflects the action without a refetch.
+  const [sellerOverride, setSellerOverride] = useState(null)
+  const [sellerBusy, setSellerBusy] = useState(false)
+  const [sellerError, setSellerError] = useState('')
+  const [showBackupCode, setShowBackupCode] = useState(false)
 
   const scientificName = profile?.scientificName || ''
   const commonName = profile?.commonName || ''
   const habitat = profile?.habitatType
   const proGiftDays = profile?.proGiftDays || 30
+  // Claim gate: legacy backends send no claimStatus → behave as CLAIMABLE (open claim).
+  const claimStatus = sellerOverride?.claimStatus || profile?.claimStatus || 'CLAIMABLE'
+  const claimCodeSet = Boolean(profile?.claimCodeSet)
+  const viewerIsIssuer = Boolean(profile?.viewerIsIssuer)
+  const issuerClaimCode = sellerOverride?.claimCode ?? profile?.issuerClaimCode
+  const isVoid = claimStatus === 'VOID'
+  const onShelf = claimStatus === 'ON_SHELF'
+  const needsClaimCode = onShelf && claimCodeSet
+  // On-shelf label without a code on file: view-only until the business releases it.
+  const claimLocked = isVoid || (onShelf && !claimCodeSet)
   const originName =
     profile?.origin?.displayName ||
     profile?.creatorDisplayName ||
@@ -54,7 +71,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
   }, [defaultName, name])
 
   useEffect(() => {
-    if (token && searchParams.get('claim') === '1') {
+    if (token && searchParams.get('claim') === '1' && !claimLocked) {
       setPhase('claimForm')
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev)
@@ -62,10 +79,26 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
         return next
       }, { replace: true })
     }
-  }, [token, searchParams, setSearchParams])
+  }, [token, searchParams, setSearchParams, claimLocked])
 
   const loginHref = `/login`
   const loginState = { redirectAfterAuth: `/t/${shortId}?claim=1` }
+
+  const runSellerAction = async (action) => {
+    if (!profile?.passportId) return
+    setSellerBusy(true)
+    setSellerError('')
+    try {
+      const result = action === 'release'
+        ? await studioService.releasePassport(profile.passportId)
+        : await studioService.holdPassport(profile.passportId)
+      setSellerOverride(result)
+    } catch {
+      setSellerError(t('passport.sellerActionError'))
+    } finally {
+      setSellerBusy(false)
+    }
+  }
 
   const runClaim = async () => {
     setBusy(true)
@@ -74,6 +107,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
       const result = await passportService.claim(shortId, {
         name: name.trim() || undefined,
         setupFeedingReminder: setupReminder,
+        claimCode: needsClaimCode ? claimCode.trim() : undefined,
       })
       setClaimResult(result)
       setPhase('wizard')
@@ -95,7 +129,11 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
       onClaimed?.(result)
     } catch (e) {
       const msg = e?.response?.data?.message || e?.response?.data?.error || ''
-      if (e?.response?.status === 409) {
+      if (e?.response?.status === 410) {
+        setError(t('passport.claimVoid'))
+      } else if (e?.response?.status === 403) {
+        setError(needsClaimCode ? t('passport.claimCodeInvalid') : t('passport.claimNotReleased'))
+      } else if (e?.response?.status === 409) {
         setError(t('passport.claimAlreadyClaimed'))
       } else if (msg.includes('6 tarántulas') || msg.includes('6 tarantulas')) {
         setError(t('passport.claimFreeLimit'))
@@ -378,12 +416,99 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
           </FangPanel>
         )}
 
+        {viewerIsIssuer && !isVoid && (
+          <FangPanel className="mb-3">
+            <p className="small fw-bold text-uppercase mb-2" style={{ color: 'var(--ta-gold)' }}>
+              {t('passport.sellerModeTitle')}
+            </p>
+            {onShelf ? (
+              <>
+                <p className="small mb-3" style={{ color: 'var(--ta-parchment)' }}>
+                  {t('passport.sellerModeShelfBody')}
+                </p>
+                <div className="d-grid gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-lg"
+                    style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
+                    disabled={sellerBusy}
+                    onClick={() => runSellerAction('release')}
+                  >
+                    {sellerBusy ? t('common.loading') : t('passport.sellerReleaseCta')}
+                  </button>
+                  {issuerClaimCode && (
+                    <button
+                      type="button"
+                      className="btn btn-link btn-sm text-muted"
+                      onClick={() => setShowBackupCode((v) => !v)}
+                    >
+                      {showBackupCode ? t('passport.sellerHideCode') : t('passport.sellerShowCode')}
+                    </button>
+                  )}
+                  {showBackupCode && issuerClaimCode && (
+                    <p className="text-center mb-0">
+                      <code className="fs-5">{issuerClaimCode}</code>
+                      <span className="small d-block" style={{ color: 'var(--ta-parchment)', opacity: 0.6 }}>
+                        {t('passport.sellerCodeHint')}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="small mb-3" style={{ color: 'var(--ta-parchment)' }}>
+                  ✓ {t('passport.sellerModeReleasedBody')}
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-light"
+                  disabled={sellerBusy}
+                  onClick={() => runSellerAction('hold')}
+                >
+                  {sellerBusy ? t('common.loading') : t('passport.sellerHoldCta')}
+                </button>
+              </>
+            )}
+            {sellerError && <p className="small text-danger mt-2 mb-0">{sellerError}</p>}
+          </FangPanel>
+        )}
+
+        {(isVoid || !viewerIsIssuer) && (
         <FangPanel>
-          {phase === 'view' && (
-            <div className="d-grid gap-2">
-              <p className="small text-center mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
-                {t('passport.claimPrompt')}
+          {isVoid && (
+            <div className="alert alert-warning small mb-0">
+              {t('passport.voidNotice')}
+            </div>
+          )}
+
+          {!isVoid && onShelf && !claimCodeSet && !viewerIsIssuer && (
+            <div className="text-center">
+              <p className="small mb-1" style={{ color: 'var(--ta-parchment)' }}>
+                {t('passport.shelfNotice')}
               </p>
+              <p className="small mb-0" style={{ color: 'var(--ta-parchment)', opacity: 0.7 }}>
+                {t('passport.shelfAskSeller')}
+              </p>
+            </div>
+          )}
+
+          {!claimLocked && !viewerIsIssuer && phase === 'view' && (
+            <div className="d-grid gap-2">
+              {needsClaimCode ? (
+                <>
+                  <p className="small text-center mb-1" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
+                    {t('passport.shelfBuyerScanRelease')}
+                  </p>
+                  <p className="small text-center mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.7 }}>
+                    {t('passport.shelfClaimPrompt')}
+                  </p>
+                </>
+              ) : (
+                <p className="small text-center mb-2" style={{ color: 'var(--ta-parchment)', opacity: 0.85 }}>
+                  {t('passport.claimPrompt')}
+                </p>
+              )}
               {token ? (
                 <button
                   type="button"
@@ -391,7 +516,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
                   style={{ background: 'var(--ta-gold)', color: '#111', fontWeight: 600 }}
                   onClick={() => setPhase('claimForm')}
                 >
-                  {t('passport.claimCta')}
+                  {needsClaimCode ? t('passport.haveCodeCta') : t('passport.claimCta')}
                 </button>
               ) : (
                 <Link
@@ -406,7 +531,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             </div>
           )}
 
-          {phase === 'claimForm' && (
+          {!claimLocked && !viewerIsIssuer && phase === 'claimForm' && (
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -416,6 +541,26 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
               <p className="small fw-bold mb-3" style={{ color: 'var(--ta-gold)' }}>
                 {t('passport.claimFormTitle')}
               </p>
+              {needsClaimCode && (
+                <>
+                  <label className="form-label small" style={{ color: 'var(--ta-parchment)' }}>
+                    {t('passport.claimCodeLabel')}
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control mb-1 text-uppercase font-monospace"
+                    maxLength={16}
+                    required
+                    value={claimCode}
+                    onChange={(e) => setClaimCode(e.target.value)}
+                    placeholder={t('passport.claimCodePlaceholder')}
+                    autoComplete="off"
+                  />
+                  <p className="small mb-3" style={{ color: 'var(--ta-parchment)', opacity: 0.6 }}>
+                    {t('passport.claimCodeHint')}
+                  </p>
+                </>
+              )}
               <label className="form-label small" style={{ color: 'var(--ta-parchment)' }}>
                 {t('passport.specimenNameLabel')}
               </label>
@@ -463,6 +608,7 @@ export default function PassportView({ profile, speciesView, shortId, onClaimed 
             </form>
           )}
         </FangPanel>
+        )}
 
         <p className="text-center small mt-3 mb-0" style={{ color: 'var(--ta-parchment)', opacity: 0.5 }}>
           {shortId}

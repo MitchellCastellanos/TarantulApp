@@ -5,6 +5,7 @@ import com.tarantulapp.security.AbuseRateLimitFilter;
 import com.tarantulapp.security.AuthRateLimitFilter;
 import com.tarantulapp.security.ChatMessageRateLimitFilter;
 import com.tarantulapp.security.DiscoverAggregationRateLimitFilter;
+import com.tarantulapp.security.PassportPublicRateLimitFilter;
 import com.tarantulapp.security.PublicFeedRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ public class SecurityConfig {
                                            AuthRateLimitFilter authRateLimitFilter,
                                            DiscoverAggregationRateLimitFilter discoverAggregationRateLimitFilter,
                                            PublicFeedRateLimitFilter publicFeedRateLimitFilter,
+                                           PassportPublicRateLimitFilter passportPublicRateLimitFilter,
                                            ChatMessageRateLimitFilter chatMessageRateLimitFilter,
                                            AbuseRateLimitFilter abuseRateLimitFilter,
                                             CorsConfigurationSource corsConfigurationSource) throws Exception {
@@ -176,6 +178,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .addFilterBefore(discoverAggregationRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(publicFeedRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(passportPublicRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(chatMessageRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

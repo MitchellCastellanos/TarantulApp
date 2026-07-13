@@ -11,6 +11,7 @@ import com.tarantulapp.entity.InventoryAdjustment;
 import com.tarantulapp.entity.InventoryBatch;
 import com.tarantulapp.entity.Passport;
 import com.tarantulapp.entity.PassportClaimEvent;
+import com.tarantulapp.entity.PassportClaimStatus;
 import com.tarantulapp.entity.Species;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.exception.NotFoundException;
@@ -160,11 +161,16 @@ public class InventoryBatchService {
             if (req.getProGiftDays() != null && req.getProGiftDays() > 0) {
                 passport.setProGiftDays(req.getProGiftDays());
             }
+            // Batch labels are printed before the sale, so they start shelf-safe: anyone can scan
+            // and view, but claiming needs the code the seller reveals at checkout (or a release).
+            passport.setClaimStatus(PassportClaimStatus.ON_SHELF);
+            passport.setClaimCode(PassportService.generateClaimCode());
             Passport saved = passportRepository.save(passport);
             lines.add(new GenerateBatchPassportsResponse.GeneratedPassportLine(
                     saved.getId(),
                     saved.getShortId(),
-                    base + "/t/" + saved.getShortId()
+                    base + "/t/" + saved.getShortId(),
+                    saved.getClaimCode()
             ));
         }
 
@@ -299,6 +305,11 @@ public class InventoryBatchService {
         dto.setPublicUrl(base + "/t/" + passport.getShortId());
         dto.setClaimed(passport.isClaimed());
         dto.setClaimedAt(passport.getClaimedAt());
+        dto.setClaimStatus(passport.getClaimStatus() != null
+                ? passport.getClaimStatus().name()
+                : PassportClaimStatus.CLAIMABLE.name());
+        dto.setClaimCode(passport.getClaimCode());
+        dto.setClaimReleasedAt(passport.getClaimReleasedAt());
         dto.setStage(passport.getStage());
         dto.setSex(passport.getSex());
         dto.setLabelNotes(passport.getLabelNotes());
