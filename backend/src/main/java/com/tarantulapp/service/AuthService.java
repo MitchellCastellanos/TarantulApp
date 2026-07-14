@@ -127,11 +127,12 @@ public class AuthService {
         if (!Boolean.TRUE.equals(request.getLegalAccepted())) {
             throw new IllegalArgumentException("LEGAL_ACCEPTANCE_REQUIRED");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = normalizeEmailForStorage(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
         User user = new User();
-        user.setEmail(request.getEmail());
+        user.setEmail(normalizedEmail);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setDisplayName(request.getDisplayName());
         user.setPlan(UserPlan.FREE);
@@ -313,14 +314,24 @@ public class AuthService {
 
     private java.util.Optional<User> findByEmailWithOneRetry(String email) {
         try {
-            return userRepository.findByEmail(email);
+            return userRepository.findByEmailIgnoreCase(email);
         } catch (RuntimeException ex) {
             if (!isTransientDbConnectivity(ex)) {
                 throw ex;
             }
             log.warn("Transient DB error on findByEmail, retrying once for email={}", email);
-            return userRepository.findByEmail(email);
+            return userRepository.findByEmailIgnoreCase(email);
         }
+    }
+
+    /**
+     * Email is treated as case-insensitive for lookup (see {@code findByEmailIgnoreCase}); we also
+     * store it lower-cased so new rows are consistent with the Google sign-in path which already
+     * normalizes via Google's tokeninfo response.
+     */
+    private static String normalizeEmailForStorage(String raw) {
+        if (raw == null) return null;
+        return raw.trim().toLowerCase(Locale.ROOT);
     }
 
     private boolean isTransientDbConnectivity(RuntimeException ex) {
@@ -407,7 +418,7 @@ public class AuthService {
     @Transactional
     public void forgotPassword(String email) {
         // Always respond the same (don't reveal whether email exists)
-        userRepository.findByEmail(email).ifPresent(user -> {
+        userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
             resetTokenRepository.deleteByUserId(user.getId());
 
             byte[] bytes = new byte[48];
@@ -543,7 +554,7 @@ public class AuthService {
         if (email == null) {
             throw new IllegalArgumentException("USER_NOT_FOUND_USE_EMAIL_TO_CREATE");
         }
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("EMAIL_ALREADY_REGISTERED");
         }
         User user = new User();
@@ -585,7 +596,7 @@ public class AuthService {
         }
         String s = raw.trim();
         if (s.contains("@")) {
-            return userRepository.findByEmail(s.toLowerCase(Locale.ROOT));
+            return userRepository.findByEmailIgnoreCase(s.toLowerCase(Locale.ROOT));
         }
         String handle = s.startsWith("@") ? s.substring(1) : s;
         if (handle.isBlank()) {

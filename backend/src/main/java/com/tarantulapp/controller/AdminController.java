@@ -1593,7 +1593,7 @@ public class AdminController {
                 user = userRepository.findById(req.userId()).orElse(null);
             }
             if (user == null && app.getEmail() != null) {
-                user = userRepository.findByEmail(app.getEmail().trim().toLowerCase()).orElse(null);
+                user = userRepository.findByEmailIgnoreCase(app.getEmail().trim()).orElse(null);
             }
             if (user != null) {
                 user.setIsBetaTester(true);

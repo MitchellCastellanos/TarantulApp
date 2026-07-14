@@ -36,7 +36,7 @@ public class LocalDevUserSeed implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (userRepository.existsByEmail(DEV_EMAIL)) {
+        if (userRepository.existsByEmailIgnoreCase(DEV_EMAIL)) {
             return;
         }
         User user = new User();
