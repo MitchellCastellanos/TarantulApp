@@ -23,7 +23,7 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/share": "^8.0.1",
-    "@sentry/react": "^8.45.0",
+    "@sentry/react": "^10.66.0",
     "@tanstack/react-query": "^5.100.10",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
