@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # First pass — table to stdout so the CI log shows exactly which CVEs were found.
       # exit-code 0 here means we always get the second pass (SARIF upload to the Security tab).
@@ -67,7 +67,7 @@ jobs:
         working-directory: frontend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node 20
         uses: actions/setup-node@v4
@@ -93,7 +93,7 @@ jobs:
         working-directory: backend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Scan recent history (depth 1000) so a leaked secret in a forgotten commit is still caught
           # without paying the cost of a full clone on every run.
@@ -139,7 +139,7 @@ jobs:
         language: [java, javascript-typescript]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Java 17
         if: matrix.language == 'java'
