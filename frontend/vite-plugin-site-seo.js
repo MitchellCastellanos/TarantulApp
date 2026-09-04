@@ -1,16 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-/** Rutas públicas indexables (sin área autenticada). */
-const PUBLIC_ROUTES = [
+/** Rutas públicas indexables (sin área autenticada). Reusada por scripts/prerender.mjs. */
+export const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/forgot-password',
   '/reset-password',
-  '/descubrir',
-  '/descubrir/comparar',
   '/discover',
-  '/herramientas/qr',
   '/about',
   '/verified-origin',
   '/partners',
@@ -88,11 +85,11 @@ function buildSitemapXml(base, extraRoutes = []) {
         ? '1.0'
         : isSpecies
           ? '0.75'
-          : route === '/herramientas/qr' || route === '/descubrir' || route === '/discover' || route === '/marketplace' || route === '/about'
+          : route === '/discover' || route === '/marketplace' || route === '/about'
             ? '0.9'
             : '0.65'
     const changefreq =
-      route === '/' || route === '/descubrir' || route === '/discover' || route === '/herramientas/qr' || route === '/marketplace' || isSpecies
+      route === '/' || route === '/discover' || route === '/marketplace' || isSpecies
         ? 'weekly'
         : 'monthly'
     return `  <url>

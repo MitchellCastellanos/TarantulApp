@@ -1,6 +1,8 @@
 import Navbar from '../components/Navbar'
 import { useTranslation } from 'react-i18next'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 function ContactBlock({ title, body, email }) {
   return (
@@ -26,6 +28,12 @@ function ContactBlock({ title, body, email }) {
 
 export default function ContactPage() {
   const { t } = useTranslation()
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('contact.title')} · ${BRAND_WITH_TM}`,
+    description: t('contact.intro'),
+    canonicalHref: origin ? `${origin}/contact` : undefined,
+  })
   const contactBlocks = [
     { title: t('contact.helloTitle'), body: t('contact.helloBody'), email: PUBLIC_CONTACT.hello },
     { title: t('contact.supportTitle'), body: t('contact.supportBody'), email: PUBLIC_CONTACT.support },

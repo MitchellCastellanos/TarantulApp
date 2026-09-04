@@ -3,10 +3,18 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import BrandName from '../components/BrandName'
 import { PUBLIC_CONTACT } from '../constants/publicContact'
+import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 export default function PrivacyPage() {
   const { t } = useTranslation()
   const sections = t('legal.privacy.sections', { returnObjects: true }) || []
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  usePageSeo({
+    title: `${t('legal.privacy.title')} · ${BRAND_WITH_TM}`,
+    description: `${t('legal.privacy.intro')} ${BRAND_WITH_TM}.`,
+    canonicalHref: origin ? `${origin}/privacy` : undefined,
+  })
   return (
     <div>
       <Navbar />
