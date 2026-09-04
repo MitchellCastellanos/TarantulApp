@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "prerender": "node scripts/prerender.mjs",
     "build:android-emulator": "vite build --mode android-emulator",
     "preview": "vite preview",
     "test:unit": "node --test src/utils/careFacts.test.js",

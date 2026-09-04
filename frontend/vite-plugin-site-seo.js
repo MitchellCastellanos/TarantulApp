@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-/** Rutas públicas indexables (sin área autenticada). */
-const PUBLIC_ROUTES = [
+/** Rutas públicas indexables (sin área autenticada). Reusada por scripts/prerender.mjs. */
+export const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/forgot-password',
