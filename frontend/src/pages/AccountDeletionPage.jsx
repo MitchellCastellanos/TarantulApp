@@ -5,10 +5,17 @@ import ChitinCardFrame from '../components/ChitinCardFrame'
 import BrandName from '../components/BrandName'
 import { DEFAULT_SUPPORT_EMAIL } from '../constants/publicContact'
 import { publicAccountDeletionArticleUrl, publicAccountSettingsUrl } from '../utils/publicSiteUrl'
+import { usePageSeo } from '../hooks/usePageSeo'
+import { BRAND_WITH_TM } from '../constants/brand'
 
 export default function AccountDeletionPage() {
   const { t } = useTranslation()
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL
+  usePageSeo({
+    title: `${t('accountDeletion.title')} · ${BRAND_WITH_TM}`,
+    description: t('accountDeletion.intro'),
+    canonicalHref: publicAccountDeletionArticleUrl(),
+  })
 
   return (
     <div className="ta-premium-page">
