@@ -17,8 +17,18 @@ export default function PartnerHubPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingMode, setSavingMode] = useState(false)
+  const [savingShipping, setSavingShipping] = useState(false)
+  const [requestingFeature, setRequestingFeature] = useState('')
   const [orders, setOrders] = useState([])
   const [connecting, setConnecting] = useState(false)
+  const [shippingForm, setShippingForm] = useState({
+    inPersonCities: '',
+    serviceArea: '',
+    shippingMode: 'coordinate',
+    flatRate: '',
+    currency: 'CAD',
+    notes: '',
+  })
 
   useEffect(() => {
     if (!capabilities?.officialPartner) {
@@ -29,7 +39,18 @@ export default function PartnerHubPage() {
     mePartnerService
       .hub()
       .then((data) => {
-        if (!cancelled) setHub(data)
+        if (!cancelled) {
+          setHub(data)
+          const sp = data?.vendor?.shippingProfile || {}
+          setShippingForm({
+            inPersonCities: sp.inPersonCities || '',
+            serviceArea: sp.serviceArea || '',
+            shippingMode: sp.shippingMode || 'coordinate',
+            flatRate: sp.flatRate || '',
+            currency: sp.currency || (String(data?.vendor?.country || '').toLowerCase() === 'canada' ? 'CAD' : 'USD'),
+            notes: sp.notes || '',
+          })
+        }
       })
       .catch(() => {
         if (!cancelled) setError(t('partnerHub.loadError'))
@@ -81,6 +102,42 @@ export default function PartnerHubPage() {
       setError(t('partnerHub.checkoutModeError'))
     } finally {
       setSavingMode(false)
+    }
+  }
+
+  const saveShippingProfile = async (e) => {
+    e.preventDefault()
+    setSavingShipping(true)
+    setError('')
+    try {
+      const next = await mePartnerService.updateShippingProfile(shippingForm)
+      setHub(next)
+    } catch {
+      setError(t('partnerHub.shippingSaveError'))
+    } finally {
+      setSavingShipping(false)
+    }
+  }
+
+  const requestFeature = async (requestType) => {
+    setRequestingFeature(requestType)
+    setError('')
+    try {
+      const created = await mePartnerService.createFeatureRequest({
+        requestType,
+        message: requestType === 'pickup_point'
+          ? t('partnerHub.pickupRequestMessage')
+          : t('partnerHub.inAppRequestMessage'),
+        payload: { shippingProfile: shippingForm },
+      })
+      setHub((prev) => ({
+        ...prev,
+        featureRequests: [created, ...(Array.isArray(prev?.featureRequests) ? prev.featureRequests : [])],
+      }))
+    } catch (err) {
+      setError(err?.response?.data?.error || t('partnerHub.featureRequestError'))
+    } finally {
+      setRequestingFeature('')
     }
   }
 
@@ -166,6 +223,75 @@ export default function PartnerHubPage() {
           <p className="small text-muted mt-3 mb-0">{t('partnerHub.adminSyncHint')}</p>
         </FangPanel>
 
+        <FangPanel className="mb-3">
+          <h2 className="h6 mb-2">{t('partnerHub.shippingTitle')}</h2>
+          <p className="small text-muted mb-3">{t('partnerHub.shippingHint')}</p>
+          <form onSubmit={saveShippingProfile}>
+            <div className="row g-2">
+              <div className="col-12">
+                <label className="form-label small">{t('partnerHub.inPersonCities')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  value={shippingForm.inPersonCities}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, inPersonCities: e.target.value }))}
+                  placeholder={t('partnerHub.inPersonCitiesPlaceholder')}
+                />
+              </div>
+              <div className="col-12">
+                <label className="form-label small">{t('partnerHub.serviceArea')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  value={shippingForm.serviceArea}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, serviceArea: e.target.value }))}
+                  placeholder={t('partnerHub.serviceAreaPlaceholder')}
+                />
+              </div>
+              <div className="col-md-5">
+                <label className="form-label small">{t('partnerHub.shippingMode')}</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={shippingForm.shippingMode}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, shippingMode: e.target.value }))}
+                >
+                  <option value="coordinate">{t('partnerHub.shippingModeCoordinate')}</option>
+                  <option value="flat">{t('partnerHub.shippingModeFlat')}</option>
+                  <option value="none">{t('partnerHub.shippingModeNone')}</option>
+                </select>
+              </div>
+              <div className="col-md-4">
+                <label className="form-label small">{t('partnerHub.flatRate')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  disabled={shippingForm.shippingMode !== 'flat'}
+                  value={shippingForm.flatRate}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, flatRate: e.target.value }))}
+                  placeholder="25.00"
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label small">{t('partnerHub.currency')}</label>
+                <input
+                  className="form-control form-control-sm"
+                  value={shippingForm.currency}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="col-12">
+                <label className="form-label small">{t('partnerHub.shippingNotes')}</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows={2}
+                  value={shippingForm.notes}
+                  onChange={(e) => setShippingForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+            <button type="submit" className="btn btn-sm btn-dark mt-3" disabled={savingShipping}>
+              {savingShipping ? t('common.loading') : t('partnerHub.shippingSave')}
+            </button>
+          </form>
+        </FangPanel>
+
         {checkout.inAppEligible && (
           <FangPanel className="mb-3">
             <h2 className="h6 mb-2">{t('partnerHub.checkoutModeTitle')}</h2>
@@ -206,6 +332,45 @@ export default function PartnerHubPage() {
             )}
           </FangPanel>
         )}
+
+        <FangPanel className="mb-3">
+          <h2 className="h6 mb-2">{t('partnerHub.requestsTitle')}</h2>
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              disabled={requestingFeature === 'pickup_point'}
+              onClick={() => requestFeature('pickup_point')}
+            >
+              {requestingFeature === 'pickup_point' ? t('common.loading') : t('partnerHub.requestPickup')}
+            </button>
+            {String(vendor.country || '').toLowerCase() === 'canada' && !checkout.inAppEligible && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-success"
+                disabled={requestingFeature === 'in_app_payments'}
+                onClick={() => requestFeature('in_app_payments')}
+              >
+                {requestingFeature === 'in_app_payments' ? t('common.loading') : t('partnerHub.requestInAppPayments')}
+              </button>
+            )}
+          </div>
+          {Array.isArray(hub.featureRequests) && hub.featureRequests.length > 0 ? (
+            <div className="list-group list-group-flush small">
+              {hub.featureRequests.slice(0, 5).map((req) => (
+                <div className="list-group-item px-0" key={req.id}>
+                  <div className="d-flex justify-content-between gap-2">
+                    <span className="fw-semibold">{t(`partnerHub.featureType.${req.requestType}`, { defaultValue: req.requestType })}</span>
+                    <span className="badge text-bg-secondary">{t(`partnerHub.featureStatus.${req.status}`, { defaultValue: req.status })}</span>
+                  </div>
+                  {req.responseMessage ? <div className="text-muted mt-1">{req.responseMessage}</div> : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="small text-muted mb-0">{t('partnerHub.requestsEmpty')}</p>
+          )}
+        </FangPanel>
 
         {checkout.inAppEligible && orders.length > 0 && (
           <FangPanel className="mb-3">

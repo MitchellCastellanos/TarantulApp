@@ -241,6 +241,7 @@ public class AdminController {
                                         String note) {}
     record VendorPickupPointsRequest(List<UUID> pickupPointIds, UUID defaultPickupPointId) {}
     record ListingPickupPointsRequest(List<UUID> pickupPointIds) {}
+    record PartnerFeatureReviewRequest(String action, String adminNote, String responseMessage) {}
     record PromoteUserOfficialPartnerRequest(String partnerProgramTier,
                                              Boolean enabled,
                                              Boolean enableImport,
@@ -373,6 +374,28 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> officialVendorLeads() {
         adminAccessService.assertCurrentUserCanUseMarketingTools();
         return ResponseEntity.ok(officialVendorService.adminListLeads());
+    }
+
+    @GetMapping("/partner-feature-requests")
+    public ResponseEntity<List<Map<String, Object>>> partnerFeatureRequests() {
+        adminAccessService.assertCurrentUserIsAdmin();
+        return ResponseEntity.ok(officialVendorService.adminListFeatureRequests());
+    }
+
+    @PatchMapping("/partner-feature-requests/{id}")
+    public ResponseEntity<Map<String, Object>> reviewPartnerFeatureRequest(
+            @PathVariable UUID id,
+            @RequestBody PartnerFeatureReviewRequest req) {
+        adminAccessService.assertCurrentUserIsAdmin();
+        try {
+            return ResponseEntity.ok(officialVendorService.adminReviewFeatureRequest(
+                    id,
+                    req == null ? null : req.action(),
+                    req == null ? null : req.adminNote(),
+                    req == null ? null : req.responseMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     record AdminUpsertOutreachLeadRequest(

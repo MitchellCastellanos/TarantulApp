@@ -2,6 +2,7 @@ package com.tarantulapp.service;
 
 import com.tarantulapp.entity.OfficialVendor;
 import com.tarantulapp.entity.OfficialVendorLead;
+import com.tarantulapp.entity.PartnerFeatureRequest;
 import com.tarantulapp.entity.User;
 import com.tarantulapp.entity.PartnerListingStatus;
 import com.tarantulapp.entity.PartnerProgramTier;
@@ -16,6 +17,7 @@ import com.tarantulapp.repository.OfficialVendorLeadRepository;
 import com.tarantulapp.repository.OfficialVendorRepository;
 import com.tarantulapp.repository.PartnerListingRepository;
 import com.tarantulapp.repository.PartnerListingSyncRunRepository;
+import com.tarantulapp.repository.PartnerFeatureRequestRepository;
 import com.tarantulapp.repository.UserRepository;
 import com.tarantulapp.service.vendors.PartnerListingCatalogRules;
 import com.tarantulapp.service.vendors.PartnerReadinessReportService;
@@ -54,6 +56,7 @@ public class OfficialVendorService {
     private final OfficialVendorLeadRepository officialVendorLeadRepository;
     private final PartnerListingRepository partnerListingRepository;
     private final PartnerListingSyncRunRepository partnerListingSyncRunRepository;
+    private final PartnerFeatureRequestRepository partnerFeatureRequestRepository;
     private final PartnerHandoffAnalyticsService partnerHandoffAnalyticsService;
     private final PartnerReadinessReportService partnerReadinessReportService;
     private final EmailService emailService;
@@ -66,6 +69,7 @@ public class OfficialVendorService {
                                  OfficialVendorLeadRepository officialVendorLeadRepository,
                                  PartnerListingRepository partnerListingRepository,
                                  PartnerListingSyncRunRepository partnerListingSyncRunRepository,
+                                 PartnerFeatureRequestRepository partnerFeatureRequestRepository,
                                  PartnerHandoffAnalyticsService partnerHandoffAnalyticsService,
                                  PartnerReadinessReportService partnerReadinessReportService,
                                  EmailService emailService,
@@ -77,6 +81,7 @@ public class OfficialVendorService {
         this.officialVendorLeadRepository = officialVendorLeadRepository;
         this.partnerListingRepository = partnerListingRepository;
         this.partnerListingSyncRunRepository = partnerListingSyncRunRepository;
+        this.partnerFeatureRequestRepository = partnerFeatureRequestRepository;
         this.partnerHandoffAnalyticsService = partnerHandoffAnalyticsService;
         this.partnerReadinessReportService = partnerReadinessReportService;
         this.emailService = emailService;
@@ -199,6 +204,9 @@ public class OfficialVendorService {
         out.put("vendor", mapVendorAdmin(vendor, handoffs30d));
         out.put("storefrontPath", "/partner/" + vendor.getSlug());
         out.put("publicHandle", handle.trim());
+        out.put("featureRequests", partnerFeatureRequestRepository
+                .findTop20ByOfficialVendorIdOrderByCreatedAtDesc(vendor.getId())
+                .stream().map(this::mapFeatureRequest).toList());
         return out;
     }
 
@@ -635,6 +643,88 @@ public class OfficialVendorService {
         return mePartnerHub(userId);
     }
 
+    @Transactional
+    public Map<String, Object> mePartnerUpdateShippingProfile(UUID userId, Map<String, Object> shippingProfile) {
+        OfficialVendor vendor = officialVendorForUser(userId);
+        Map<String, Object> feed = vendor.getFeedConfig() == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(vendor.getFeedConfig());
+        feed.put("shippingProfile", sanitizeShippingProfile(shippingProfile, vendor.getCountry()));
+        vendor.setFeedConfig(feed);
+        officialVendorRepository.save(vendor);
+        return mePartnerHub(userId);
+    }
+
+    @Transactional
+    public Map<String, Object> mePartnerCreateFeatureRequest(UUID userId, String requestType, String message,
+                                                             Map<String, Object> payload) {
+        OfficialVendor vendor = officialVendorForUser(userId);
+        String type = normalizeFeatureRequestType(requestType);
+        if ("in_app_payments".equals(type) && !RegionPolicy.isInAppCheckoutCountry(vendor.getCountry())) {
+            throw new IllegalArgumentException("IN_APP_PAYMENTS_CANADA_ONLY");
+        }
+        PartnerFeatureRequest req = new PartnerFeatureRequest();
+        req.setRequesterUserId(userId);
+        req.setOfficialVendorId(vendor.getId());
+        req.setRequestType(type);
+        req.setStatus("open");
+        req.setMessage(cleanText(message, 1200));
+        req.setPayload(payload == null ? new LinkedHashMap<>() : new LinkedHashMap<>(payload));
+        return mapFeatureRequest(partnerFeatureRequestRepository.save(req));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> adminListFeatureRequests() {
+        return partnerFeatureRequestRepository.findTop100ByOrderByCreatedAtDesc()
+                .stream().map(this::mapFeatureRequest).toList();
+    }
+
+    @Transactional
+    public Map<String, Object> adminReviewFeatureRequest(UUID requestId, String action, String adminNote,
+                                                         String responseMessage) {
+        PartnerFeatureRequest req = partnerFeatureRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Solicitud no encontrada"));
+        OfficialVendor vendor = officialVendorRepository.findById(req.getOfficialVendorId())
+                .orElseThrow(() -> new NotFoundException("Partner no encontrado"));
+        String normalized = normalizeFeatureRequestAction(action);
+        req.setStatus(normalized);
+        req.setAdminNote(cleanText(adminNote, 1200));
+        req.setResponseMessage(cleanText(defaultFeatureResponse(normalized, responseMessage), 1200));
+        req.setResolvedAt(Instant.now());
+
+        if ("approved".equals(normalized)) {
+            applyFeatureApproval(req, vendor);
+        }
+        return mapFeatureRequest(partnerFeatureRequestRepository.save(req));
+    }
+
+    private void applyFeatureApproval(PartnerFeatureRequest req, OfficialVendor vendor) {
+        if ("pickup_point".equals(req.getRequestType())) {
+            userRepository.findById(req.getRequesterUserId()).ifPresent(user -> {
+                user.setPickupAuthorizedAt(Instant.now());
+                user.setPickupAuthorizationNote("Approved from partner pickup request " + req.getId());
+                userRepository.save(user);
+            });
+            return;
+        }
+        if ("in_app_payments".equals(req.getRequestType()) && RegionPolicy.isInAppCheckoutCountry(vendor.getCountry())) {
+            Map<String, Object> feed = vendor.getFeedConfig() == null
+                    ? new LinkedHashMap<>()
+                    : new LinkedHashMap<>(vendor.getFeedConfig());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> inApp = feed.get("inAppCheckout") instanceof Map<?, ?> raw
+                    ? new LinkedHashMap<>((Map<String, Object>) raw)
+                    : new LinkedHashMap<>();
+            inApp.put("enabled", true);
+            inApp.putIfAbsent("payoutMode", "platform");
+            inApp.putIfAbsent("providers", List.of("stripe", "paypal", "klarna"));
+            feed.put("inAppCheckout", inApp);
+            feed.put("checkoutMode", PartnerCheckoutConfig.MODE_IN_APP);
+            vendor.setFeedConfig(feed);
+            officialVendorRepository.save(vendor);
+        }
+    }
+
     private Map<String, Object> buildOpsSummary(UUID vendorId, Map<UUID, Map<String, Object>> handoffs30d) {
         Map<String, Object> ops = new LinkedHashMap<>();
         Map<String, Object> handoff = handoffs30d.getOrDefault(vendorId, Map.of());
@@ -660,6 +750,97 @@ public class OfficialVendorService {
             ops.put("latestSync", null);
         }
         return ops;
+    }
+
+    private OfficialVendor officialVendorForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        String handle = user.getPublicHandle();
+        if (handle == null || handle.isBlank()) {
+            throw new NotFoundException("Partner no encontrado");
+        }
+        return officialVendorRepository.findBySlug(handle.trim())
+                .filter(v -> Boolean.TRUE.equals(v.getEnabled()))
+                .orElseThrow(() -> new NotFoundException("Partner no encontrado"));
+    }
+
+    private Map<String, Object> sanitizeShippingProfile(Map<String, Object> raw, String vendorCountry) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (raw == null) raw = Map.of();
+        out.put("inPersonCities", cleanText(asString(raw.get("inPersonCities")), 500));
+        out.put("serviceArea", cleanText(asString(raw.get("serviceArea")), 500));
+        String mode = asString(raw.get("shippingMode")).toLowerCase(Locale.ROOT);
+        if (!List.of("none", "coordinate", "flat").contains(mode)) {
+            mode = "coordinate";
+        }
+        out.put("shippingMode", mode);
+        out.put("flatRate", cleanText(asString(raw.get("flatRate")), 80));
+        out.put("currency", cleanText(defaultString(raw.get("currency"),
+                RegionPolicy.isInAppCheckoutCountry(vendorCountry) ? "CAD" : "USD"), 8));
+        out.put("notes", cleanText(asString(raw.get("notes")), 1000));
+        return out;
+    }
+
+    private String normalizeFeatureRequestType(String requestType) {
+        String type = requestType == null ? "" : requestType.trim().toLowerCase(Locale.ROOT);
+        return switch (type) {
+            case "pickup", "pickup_point", "pickup_points" -> "pickup_point";
+            case "in_app", "in_app_payments", "payments" -> "in_app_payments";
+            default -> throw new IllegalArgumentException("FEATURE_REQUEST_TYPE_INVALID");
+        };
+    }
+
+    private String normalizeFeatureRequestAction(String action) {
+        String a = action == null ? "" : action.trim().toLowerCase(Locale.ROOT);
+        return switch (a) {
+            case "approved", "approve" -> "approved";
+            case "needs_info", "needs-information", "needs_more_information" -> "needs_info";
+            case "waitlisted", "waitlist", "testing_later" -> "waitlisted";
+            default -> throw new IllegalArgumentException("FEATURE_REQUEST_ACTION_INVALID");
+        };
+    }
+
+    private String defaultFeatureResponse(String status, String responseMessage) {
+        if (responseMessage != null && !responseMessage.isBlank()) {
+            return responseMessage;
+        }
+        return switch (status) {
+            case "approved" -> "Solicitud aprobada. Ya puedes revisar la configuracion en tu Partner Hub.";
+            case "needs_info" -> "Necesitamos mas informacion para evaluar esta solicitud. Responde con los detalles de cobertura, procesos y contacto operativo.";
+            case "waitlisted" -> "Muchas gracias por el interes. Por ahora el programa esta en fase de pruebas, pero en cuanto tengamos noticias seras el primero en saberlo.";
+            default -> "";
+        };
+    }
+
+    private Map<String, Object> mapFeatureRequest(PartnerFeatureRequest req) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", req.getId().toString());
+        out.put("requesterUserId", req.getRequesterUserId().toString());
+        out.put("officialVendorId", req.getOfficialVendorId().toString());
+        officialVendorRepository.findById(req.getOfficialVendorId()).ifPresent(v -> {
+            out.put("vendorName", v.getName());
+            out.put("vendorSlug", v.getSlug());
+            out.put("vendorCountry", v.getCountry());
+        });
+        out.put("requestType", req.getRequestType());
+        out.put("status", req.getStatus());
+        out.put("message", req.getMessage() == null ? "" : req.getMessage());
+        out.put("adminNote", req.getAdminNote() == null ? "" : req.getAdminNote());
+        out.put("responseMessage", req.getResponseMessage() == null ? "" : req.getResponseMessage());
+        out.put("payload", req.getPayload() == null ? Map.of() : req.getPayload());
+        out.put("createdAt", req.getCreatedAt());
+        out.put("updatedAt", req.getUpdatedAt());
+        out.put("resolvedAt", req.getResolvedAt());
+        return out;
+    }
+
+    private String asString(Object v) {
+        return v == null ? "" : String.valueOf(v).trim();
+    }
+
+    private String defaultString(Object v, String fallback) {
+        String s = asString(v);
+        return s.isBlank() ? fallback : s;
     }
 
     private Map<String, Object> mapVendor(OfficialVendor vendor) {
@@ -689,6 +870,9 @@ public class OfficialVendorService {
         out.put("feedBaseUrl", vendor.getFeedBaseUrl() == null ? "" : vendor.getFeedBaseUrl());
         out.put("feedType", vendor.getFeedType() == null ? "" : vendor.getFeedType());
         out.put("feedConfig", vendor.getFeedConfig() == null ? Map.of() : vendor.getFeedConfig());
+        out.put("shippingProfile", vendor.getFeedConfig() == null
+                ? Map.of()
+                : vendor.getFeedConfig().getOrDefault("shippingProfile", Map.of()));
         // Public-safe checkout summary: only whether in-app pay is live + the effective channel.
         PartnerCheckoutConfig checkoutConfig = PartnerCheckoutConfig.fromVendor(vendor);
         Map<String, Object> checkout = new LinkedHashMap<>();
